@@ -1,0 +1,87 @@
+<html>
+<head>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.css">
+
+	<style>
+		.i {
+			margin-bottom: -3em;
+		}
+		.i:hover {
+			-webkit-animation: action 1.5s infinite normal;
+	        animation: action 1.5s infinite normal;
+		}
+	    @-webkit-keyframes action {
+	        0% { transform: translateY(0); }
+
+	        50% { transform: translateY(-10px); }
+	        100% {transform: translateY(0);}
+	    }
+	    @keyframes action {
+	        0% { transform: translateY(0); }
+	        50% { transform: translateY(-10px); }
+	        100% {transform: translateY(0);}
+	    }
+		.hero-text {
+			margin-top: auto;
+			margin-bottom: auto;
+			padding-right: 5em;
+		}
+		@media only screen and (max-width: 600px) {
+			.hero-text {
+				padding-right: 0em;
+			} d
+		}
+		
+	</style>
+</head>
+
+<body>
+<section class="hero is-info is-fullheight is-bold">
+	<div class="hero-body">
+		<div class="container">
+			<div class="columns">
+				<div class="column is-two-thirds hero-text">
+						<h1 class="title">
+								Penn Courses
+							</h1>
+						<h2 class="subtitle">
+							Everything you need to learn more about courses you're interested in, plan your next semester, and make sure you get to take the classes you want.
+						</h2>
+				</div>
+				<!-- <div class="column is-one-third"></div> -->
+				<div class="column">
+					<!-- <figure class="image">
+						<img src="penncourses-stack.png"/>
+					</figure> -->
+					<div style="height: 80%">
+						<figure class="image i" id="pcr" style="z-index: 3">
+							<a href="https://penncoursereview.com">
+							<img src="pcr.png" />
+							</a>
+						</figure>
+						<figure class="image i" id="pca" style="z-index: 2">
+							<a href="https://penncoursealert.com">
+							<img src="pca.png" />
+							</a>
+						</figure>
+						<figure class="image i" id="pcs" style="z-index: 1">
+							<a href="https://penncoursesearch.com">
+							<img src="pcp.png" />
+							</a>
+						</figure>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="hero-foot">
+		<div class="content has-text-centered">
+					<p style="padding-bottom: 1em;">
+						Made with ❤️ by <a href="https://pennlabs.org">Penn Labs</a> in Philadelphia
+					</p>
+				</div>
+		</div>
+</section>
+</body>
+
+</html>
