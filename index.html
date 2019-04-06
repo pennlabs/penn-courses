@@ -26,6 +26,14 @@
 			animation: popUp 1.5s
 		}
 
+		.up2 {
+			animation: up2 1.5s
+		}
+
+		.up1 {
+			animation: up1 1.5s
+		}
+
 		.prod-description {
 			display: none;
 		}
@@ -63,6 +71,28 @@
 			0% {
 				opacity: 0;
 				transform: translateY(-7em);
+			}
+			100% {
+				opacity: 1;
+				transform: translateY(0)
+			}
+		}
+
+		@keyframes up2 {
+			0% {
+				opacity: 0;
+				transform: translateY(14em);
+			}
+			100% {
+				opacity: 1;
+				transform: translateY(0)
+			}
+		}
+
+		@keyframes up1 {
+			0% {
+				opacity: 0;
+				transform: translateY(7em);
 			}
 			100% {
 				opacity: 1;
@@ -128,18 +158,18 @@
 				</div>
 				<div class="column">
 					<div style="width: 85%">
-						<figure class="image product popUp" id="pcr" style="z-index: 5">
+						<figure class="image product up2" id="pcr" style="z-index: 5">
 							<a href="https://penncoursereview.com">
 							<img src="pcr.png" />
 							</a>
 						</figure>
-						<figure class="image product fadeIn" id="pca" style="z-index: 3">
+						<figure class="image product up1" id="pca" style="z-index: 3">
 							<a href="https://penncoursealert.com">
 							<img src="pca.png" />
 							</a>
 						</figure>
 						
-						<figure class="image product popDown" id="pcp" style="z-index: 1">
+						<figure class="image product fadeIn" id="pcp" style="z-index: 1">
 							<a href="https://penncoursesearch.com">
 								<img src="pcp.png" />
 							</a>
@@ -176,7 +206,7 @@ function toggleSlide(j) {
 
 $(document).ready(() => {
 	setTimeout(() => {
-		$('.product').removeClass('fadeIn popDown popUp')
+		$('.product').removeClass('fadeIn popDown popUp up1 up2')
 	}, 1500)
 
 	$('.product').click(e => {
