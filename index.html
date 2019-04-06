@@ -11,7 +11,7 @@
 		}
 
 		.float {
-	    animation: action 1s infinite ease;
+	    animation: action 1.5s infinite ease-in-out;
 		}
 
 		.fadein {
@@ -131,9 +131,10 @@
 							</h1>
 						<h2 class="subtitle">
 							Everything you need to learn more about courses you're interested in, plan your next semester, 
-							and make sure you get to take the classes you want. <span id="clue">Click on each icon to learn more.</span>
+							and make sure you get to take the classes you want. 
 						</h2>
 						<div class="descriptions">
+							<div id="clue">Click on each icon to learn more.</div>
 							<div class="prod-description" id="pcr-desc">
 									<p>
 											<a href="https://penncoursereview.com" target="_blank">Penn Course Review</a> 
@@ -196,33 +197,53 @@
 
 <script>
 
-function toggleSlide(j) {
-	if (j.is(':visible')) {
-		j.slideUp()
-	} else {
-		j.slideDown()
-	}
-}
-
 $(document).ready(() => {
+	function stopFloat(icon) {
+		let product = icon.attr('id')
+		let desc = $('#' + product + '-desc')
+		console.log('product')
+		icon.one('animationiteration', e => {
+			icon.removeClass('float')
+		})
+	}
+
+	function toggleSlide(desc, icon) {
+		if (desc.is(':visible')) {
+			desc.slideUp()
+			// stopFloat(icon)
+		} else {
+			desc.slideDown()
+			// icon.addClass('float')
+		}
+	}
+
+	function fadeOut(e) {
+		e.addClass('hidden')
+		e.one('transitionend', e => {
+			e.hide()
+		})
+	}
+
 	setTimeout(() => {
 		$('.product').removeClass('fadeIn popDown popUp up1 up2')
 	}, 1500)
 
 	$('.product').click(e => {
 		e.preventDefault()
-		$('.prod-description').slideUp()
-		let i = $(e.target).parent().parent()
-		let product = $(e.target).parent().parent().attr('id')
-		let j = $('#' + product + '-desc')
+		let icon = $(e.target).parent().parent()
+		let product = icon.attr('id')
+		let desc = $('#' + product + '-desc')
 		
-		toggleSlide(j)
-
-		let clue = $('#clue')
-		clue.addClass('hidden')
-		clue.one('transitionend', e => {
-			clue.hide()
-		})
+		$('.prod-description').slideUp()
+		
+		// $('.product').each((i, e) => {
+		// 	let elt = $(e)
+		// 	if (elt.attr('id') !== product) {
+		// 		stopFloat(elt)
+		// 	}
+		// })
+		toggleSlide(desc, icon)
+		$('#clue').slideUp()
 	})
 
 	$('.product').mouseenter(e => {
@@ -230,11 +251,11 @@ $(document).ready(() => {
 		i.addClass('float')
 	})
 	$('.product').mouseleave(e => {
-		let i = $(e.target).parent().parent()
+		let icon = $(e.target).parent().parent()
+		let product = icon.attr('id')
+		let desc = $('#' + product + '-desc')
 		
-		i.one('animationiteration', e => {
-			i.removeClass('float')
-		})
+		stopFloat(icon)
 	})
 
 })
