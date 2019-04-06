@@ -1,6 +1,8 @@
 <html>
 <head>
 	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.css">
 
 	<style>
@@ -8,8 +10,8 @@
 			margin-bottom: -3em;
 		}
 
-		.float:hover {
-	    animation: action 1.5s infinite normal;
+		.float {
+	    animation: action 1s infinite ease;
 		}
 
 		.fadein {
@@ -25,10 +27,7 @@
 		}
 
 		.prod-description {
-			position: relative;
-			width: 100%;
 			display: none;
-			/* margin-bottom: -3rem !important; */
 		}
 
 		@keyframes fadeIn {
@@ -100,7 +99,7 @@
 							<div class="prod-description" id="pcr-desc">
 									<p>
 											<a href="https://penncoursereview.com">Penn Course Review</a> makes with professor rankings and course difficulties available so that
-											Penn students to make informed decisions on their course decisions.
+											Penn students to make informed decisions in course selection.
 									</p>
 								</div>
 								<div class="prod-description" id="pca-desc">
@@ -123,21 +122,21 @@
 					</figure> -->
 					<div style="width: 85%">
 						<figure class="image product popUp" id="pcr" style="z-index: 5">
-							<a>
-							<!-- <a href="https://penncoursereview.com"> -->
+							<!-- <a> -->
+							<a href="https://penncoursereview.com">
 							<img src="pcr.png" />
 							</a>
 						</figure>
 						<figure class="image product fadeIn" id="pca" style="z-index: 3">
-							<!-- <a href="https://penncoursealert.com"> -->
-							<a>
+							<a href="https://penncoursealert.com">
+							<!-- <a> -->
 							<img src="pca.png" />
 							</a>
 						</figure>
 						
 						<figure class="image product popDown" id="pcp" style="z-index: 1">
-							<!-- <a href="https://penncoursesearch.com"> -->
-							<a>
+							<a href="https://penncoursesearch.com">
+							<!-- <a> -->
 								<img src="pcp.png" />
 							</a>
 						</figure>
@@ -176,10 +175,10 @@ function toggleSlide(j, i) {
 $(document).ready(() => {
 	setTimeout(() => {
 		$('.product').removeClass('fadeIn popDown popUp')
-		$('.product').addClass('float')
 	}, 1500)
 
 	$('.product').click(e => {
+		e.preventDefault()
 		$('.prod-description').slideUp()
 		let i = $(e.target).parent().parent()
 		let product = $(e.target).parent().parent().attr('id')
@@ -188,7 +187,15 @@ $(document).ready(() => {
 	})
 
 	$('.product').mouseenter(e => {
+		let i = $(e.target).parent().parent()
+		i.addClass('float')
+	})
+	$('.product').mouseleave(e => {
+		let i = $(e.target).parent().parent()
 		
+		i.one('animationiteration', e => {
+			i.removeClass('float')
+		})
 	})
 
 })
