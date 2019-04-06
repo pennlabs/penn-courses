@@ -30,6 +30,14 @@
 			display: none;
 		}
 
+		#clue {
+			transition: opacity .5s
+		}
+
+		.hidden {
+			opacity: 0;
+		}
+
 		@keyframes fadeIn {
 			0% {opacity: 0}
 			100% {opacity: 1}
@@ -93,7 +101,7 @@
 							</h1>
 						<h2 class="subtitle">
 							Everything you need to learn more about courses you're interested in, plan your next semester, 
-							and make sure you get to take the classes you want.
+							and make sure you get to take the classes you want. <span id="clue">Click on each icon to learn more.</span>
 						</h2>
 						<div class="descriptions">
 							<div class="prod-description" id="pcr-desc">
@@ -162,13 +170,11 @@
 
 <script>
 
-function toggleSlide(j, i) {
+function toggleSlide(j) {
 	if (j.is(':visible')) {
 		j.slideUp()
-		// i.addClass('float')
 	} else {
 		j.slideDown()
-		// i.removeClass('float')
 	}
 }
 
@@ -183,7 +189,14 @@ $(document).ready(() => {
 		let i = $(e.target).parent().parent()
 		let product = $(e.target).parent().parent().attr('id')
 		let j = $('#' + product + '-desc')
-		toggleSlide(j, i)
+		
+		toggleSlide(j)
+
+		let clue = $('#clue')
+		clue.addClass('hidden')
+		clue.one('transitionend', e => {
+			clue.hide()
+		})
 	})
 
 	$('.product').mouseenter(e => {
