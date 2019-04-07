@@ -4,6 +4,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Penn Courses</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.css">
+	<script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
 
 	<style>
 		.product {
@@ -111,10 +112,10 @@
 			}
 		}
 
-		.prod-description > p > a {
+		/*.prod-description > p > a {
 			font-weight: bold;
 			text-decoration: underline;
-		}
+		}*/
 		
 	</style>
 	
@@ -126,7 +127,7 @@
 		<div class="container">
 			<div class="columns">
 				<div class="column is-two-thirds hero-text">
-						<h1 class="title">
+						<h1 class="title is-size-2">
 								Penn Courses
 							</h1>
 						<h2 class="subtitle">
@@ -134,24 +135,26 @@
 							and make sure you get to take the classes you want. 
 						</h2>
 						<div class="descriptions">
-							<div id="clue">Click on each icon to learn more.</div>
+							<div class="is-italic" id="clue">Click on each icon to learn more.</div>
 							<div class="prod-description" id="pcr-desc">
 									<p>
-											<a href="https://penncoursereview.com" target="_blank">Penn Course Review</a> 
-											makes professor ratings and course difficulties available so that
-											students to make informed decisions in course selection.
+											<b>Penn Course Review</b> provides quantitative data on professor and course ratings over the years, and is a trusted resource for choosing classes.
+											<br>
+											<a class="button is-info is-inverted is-rounded is-small" style="margin-top:1rem" href="https://penncoursereview.com">Visit Penn Course Review</a>
 									</p>
 								</div>
 								<div class="prod-description" id="pca-desc">
 									<p>
-											<a href="https://penncoursealert.com" target="_blank">Penn Course Alert</a> 
-											provides immediate, high quality notification via text and email for course availabilities.								
+											<b>Penn Course Alert</b> sends high quality, immediate alerts via text and email when full courses open up. Reduce the uncertainty and guesswork in registering for classes!	
+											<br>
+											<a class="button is-info is-inverted is-rounded is-small" style="margin-top:1rem" href="https://penncoursealert.com">Visit Penn Course Alert</a>							
 									</p>
 								</div>
 								<div class="prod-description" id="pcp-desc">
 									<p>
-											<a href="https://penncoursesearch.com" target="_blank">Penn Course Search</a> 
-											is a platform that provides useful information to students while planning their schedule.
+											<b>Penn Course Search</b> combines professor and course ratings with an easy-to-use mock scheduling tool. Choose the best schedule for your semester, with at-a-glance metrics and schedule comparison coming soon!
+											<br>
+											<a class="button is-info is-inverted is-rounded is-small" style="margin-top:1rem" href="https://penncoursesearch.com">Visit Penn Course Search</a>
 									</p>
 								</div>
 						</div>
@@ -181,11 +184,11 @@
 			</div>
 		</div>
 	</div>
-	<div class="hero-foot">
+	<div class="hero-foot" style="background-color:rgba(255,255,255,0.2)">
 		<div class="content has-text-centered">
-					<p style="padding-bottom: 1em;">
-						Made with ❤️ by <a href="https://pennlabs.org">Penn Labs</a> in Philadelphia
-					</p>
+			<p style="font-size:0.8rem; margin-top:1rem; margin-bottom:1rem">
+				Made with <span class="icon is-small" style="color:#F56F71"><i class="fa fa-heart"></i></span> by <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
+			</p>
 		</div>
 	</div>
 </section>
