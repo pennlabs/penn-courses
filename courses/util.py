@@ -1,0 +1,73 @@
+import re
+
+from .models import *
+
+
+def separate_course_code(course_code):
+    """return (dept, course, section) ID tuple given a course code in any possible format"""
+    course_regexes = [
+        re.compile(r'([A-Za-z]+) *(\d{3})(\d{3})'),
+        re.compile(r'([A-Za-z]+) *-(\d{3})-(\d{3})'),
+    ]
+
+    course_code = course_code.replace(' ', '').upper()
+    for regex in course_regexes:
+        m = regex.match(course_code)
+        if m is not None:
+            return m.group(1), m.group(2), m.group(3)
+
+    raise ValueError(f'Course code could not be parsed: {course_code}')
+
+
+def get_course_and_section(course_code, semester):
+    dept_code, course_id, section_id = separate_course_code(course_code)
+
+    course, created = Course.objects.get_or_create(department=dept_code,
+                                                   code=course_id,
+                                                   semester=semester)
+    section, created = Section.objects.get_or_create(course=course, code=section_id)
+
+    return course, section
+
+
+def record_update(section_id, semester, old_status, new_status, alerted, req):
+    _, section = get_course_and_section(section_id, semester)
+    u = StatusUpdate(section=section,
+                     old_status=old_status,
+                     new_status=new_status,
+                     alert_sent=alerted,
+                     request_body=req)
+    u.save()
+    return u
+
+
+def add_instructors(section, names):
+    for instructor in names:
+        i, _ = Instructor.objects.get_or_create(name=instructor)
+        section.instructors.add(i)
+    section.save()
+
+
+def upsert_course_from_opendata(info, semester):
+    course_code = info['section_id_normalized']
+    course, section = get_course_and_section(course_code, semester)
+
+    # https://stackoverflow.com/questions/11159118/incorrect-string-value-xef-xbf-xbd-for-column
+    course.title = info['course_title'].replace('\uFFFD', '')
+    course.description = info['course_description'].replace('\uFFFD', '')
+    course.save()
+
+    section.status = info['course_status']
+    section.capacity = int(info['max_enrollment'])
+    section.activity = info['activity']
+    section.meeting_times = json.dumps([meeting['meeting_days'] + ' '
+                                        + meeting['start_time'] + ' - '
+                                        + meeting['end_time'] for meeting in info['meetings']])
+
+    add_instructors(section, [instructor['name'] for instructor in info['instructors']])
+
+
+def update_course_from_record(update):
+    section = update.section
+    section.status = update.new_status
+    section.save()

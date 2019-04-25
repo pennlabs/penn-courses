@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "*"
+mysqlclient = "*"
+requests = "*"
+twilio = "*"
+phonenumbers = "*"
+django-extensions = "*"
+celery = "==4.2.2"
+redis = ">=3.2.0"
+sentry-sdk = "*"
+dj-database-url = "*"
+django-celery-beat = "*"
+django-celery-results = "*"
+gunicorn = "*"
+whitenoise = "*"
+
+[dev-packages]
+coveralls = "*"
+unittest-xml-reporting = "*"
+
+[requires]
+python_version = "3.7"
