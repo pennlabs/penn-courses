@@ -42,7 +42,7 @@ class Course(models.Model):
 
     # Handle crosslisted courses.
     # All crosslisted courses have a "primary listing" in the registrar.
-    primary_listing = models.ForeignKey('Course', 'listing_set', on_delete=models.CASCADE)
+    primary_listing = models.ForeignKey('Course', related_name='listing_set', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = (('department', 'code', 'semester'), )
@@ -78,6 +78,7 @@ class Section(models.Model):
         ('SEM', 'Seminar'),
         ('SRT', 'Senior Thesis'),
         ('STU', 'Studio'),
+        ('***', 'Undefined'),
     )
 
     class Meta:
