@@ -56,27 +56,6 @@ def get_room(building_code, room_number):
     return room
 
 
-'''
-{
-  "building_code": "LEVH",
-  "building_name": "Levine Hall, Melvin and Claire - Weiss Tech House",
-  "end_hour_24": 13,
-  "end_minutes": 30,
-  "end_time": "01:30 PM",
-  "end_time_24": 13.3,
-  "meeting_days": "MW",
-  "room_number": "101",
-  "section_id": "CIS 550401",
-  "section_id_normalized": "CIS -550-401",
-  "start_hour_24": 12,
-  "start_minutes": 0,
-  "start_time": "12:00 PM",
-  "start_time_24": 12.0,
-  "term": "2019C"
-}
-'''
-
-
 def add_meetings(section, meetings):
     for meeting in meetings:
         room = get_room(meeting['building_code'], meeting['room_number'])
