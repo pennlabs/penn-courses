@@ -1,4 +1,5 @@
 import re
+import json
 
 from .models import *
 
@@ -48,6 +49,55 @@ def add_instructors(section, names):
     section.save()
 
 
+def get_room(building_code, room_number):
+    building, _ = Building.objects.get_or_create(code=building_code)
+    room, _ = Room.objects.get_or_create(building=building,
+                                         number=room_number)
+    return room
+
+
+'''
+{
+  "building_code": "LEVH",
+  "building_name": "Levine Hall, Melvin and Claire - Weiss Tech House",
+  "end_hour_24": 13,
+  "end_minutes": 30,
+  "end_time": "01:30 PM",
+  "end_time_24": 13.3,
+  "meeting_days": "MW",
+  "room_number": "101",
+  "section_id": "CIS 550401",
+  "section_id_normalized": "CIS -550-401",
+  "start_hour_24": 12,
+  "start_minutes": 0,
+  "start_time": "12:00 PM",
+  "start_time_24": 12.0,
+  "term": "2019C"
+}
+'''
+
+
+def add_meetings(section, meetings):
+    for meeting in meetings:
+        room = get_room(meeting['building_code'], meeting['room_number'])
+        start_time = meeting['start_time'] * 100
+        end_time = meeting['end_time'] * 100
+        for day in meeting['meeting_days'].split(''):
+            m = Meeting(section=section,
+                        day=day,
+                        start=start_time,
+                        end=end_time,
+                        room=room)
+            m.save()
+
+
+def set_crosslistings(course, crosslist_primary):
+    if len(crosslist_primary) == 0:
+        course.primary_listing = course
+    primary_course, _ = get_course_and_section(crosslist_primary, course.semester)
+    course.primary_listing = primary_course
+
+
 def upsert_course_from_opendata(info, semester):
     course_code = info['section_id_normalized']
     course, section = get_course_and_section(course_code, semester)
@@ -55,7 +105,7 @@ def upsert_course_from_opendata(info, semester):
     # https://stackoverflow.com/questions/11159118/incorrect-string-value-xef-xbf-xbd-for-column
     course.title = info['course_title'].replace('\uFFFD', '')
     course.description = info['course_description'].replace('\uFFFD', '')
-    course.save()
+    set_crosslistings(course, info['crosslist_primary'])
 
     section.status = info['course_status']
     section.capacity = int(info['max_enrollment'])
@@ -65,6 +115,10 @@ def upsert_course_from_opendata(info, semester):
                                         + meeting['end_time'] for meeting in info['meetings']])
 
     add_instructors(section, [instructor['name'] for instructor in info['instructors']])
+    add_meetings(section, info['meetings'])
+
+    section.save()
+    course.save()
 
 
 def update_course_from_record(update):

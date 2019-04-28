@@ -97,6 +97,10 @@ class Section(models.Model):
     meeting_times = models.TextField(blank=True)
     instructors = models.ManyToManyField(Instructor)
 
+    associated_sections = models.ManyToManyField('Section')
+
+    credits = models.DecimalField(max_digits=3, decimal_places=2)
+
     def __str__(self):
         return '%s-%s %s' % (self.course.course_id, self.code, self.course.semester)
 
@@ -139,21 +143,21 @@ The next section of models store information related to scheduling and location.
 
 class Building(models.Model):
     """ A building at Penn. """
-    code = models.CharField(max_length=4)
-    name = models.CharField(max_length=80)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    code = models.CharField(max_length=4, unique=True)
+    name = models.CharField(max_length=80, blank=True)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
 
 
 class Room(models.Model):
     """ A room in a Building. It optionally may be named. """
     building = models.ForeignKey(Building, on_delete=models.CASCADE)
-    roomnum = models.CharField(max_length=5)
+    number = models.CharField(max_length=5)
     name = models.CharField(max_length=80)
 
     class Meta:
         """ To hold uniqueness constraint """
-        unique_together = (("building", "roomnum"),)
+        unique_together = (("building", "number"),)
 
 
 class Meeting(models.Model):
