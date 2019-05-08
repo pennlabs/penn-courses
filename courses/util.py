@@ -70,11 +70,25 @@ def add_meetings(section, meetings):
             m.save()
 
 
+# TODO: Adding Requirements
+
+def add_associated_sections(section, info):
+    semester = section.course.semester
+    associations = ['labs', 'lectures', 'recitations']
+    for assoc in associations:
+        sections = info.get(assoc, [])
+        for sect in sections:
+            section_code = f"{sect['subject']}-{sect['course_id']}-{sect['section_id']}"
+            _, associated = get_course_and_section(section_code, semester)
+            section.associated_sections.add(associated)
+
+
 def set_crosslistings(course, crosslist_primary):
     if len(crosslist_primary) == 0:
         course.primary_listing = course
-    primary_course, _ = get_course_and_section(crosslist_primary, course.semester)
-    course.primary_listing = primary_course
+    else:
+        primary_course, _ = get_course_and_section(crosslist_primary, course.semester)
+        course.primary_listing = primary_course
 
 
 def upsert_course_from_opendata(info, semester):
@@ -95,6 +109,7 @@ def upsert_course_from_opendata(info, semester):
 
     add_instructors(section, [instructor['name'] for instructor in info['instructors']])
     add_meetings(section, info['meetings'])
+    add_associated_sections(section, info)
 
     section.save()
     course.save()

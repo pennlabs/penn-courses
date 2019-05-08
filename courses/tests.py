@@ -1,6 +1,7 @@
 from django.test import TestCase
 
 from .models import *
+from .util import *
 
 TEST_SEMESTER = '2019A'
 
@@ -85,4 +86,42 @@ class CourseStatusUpdateTestCase(TestCase):
         update_course_from_record(up)
         _, section = get_course_and_section(self.section.normalized, TEST_SEMESTER)
         self.assertEqual('O', section.status)
+
+
+class CrosslistingTestCase(TestCase):
+    def setUp(self):
+        self.anch, _ = get_course_and_section('ANCH-027-401', TEST_SEMESTER)
+        self.clst, _ = get_course_and_section('CLST-027-401', TEST_SEMESTER)
+
+    def test_add_primary_listing(self):
+        set_crosslistings(self.anch, '')
+        self.anch.save()
+        self.assertEqual(self.anch, self.anch.primary_listing)
+
+    def test_add_existing_class(self):
+        set_crosslistings(self.clst, 'ANCH-027-401')
+        self.clst.save()
+        clst, _ = get_course_and_section('CLST-027-401', TEST_SEMESTER)
+        anch, _ = get_course_and_section('ANCH-027-401', TEST_SEMESTER)
+        self.assertEqual(self.anch, clst.primary_listing)
+        self.assertEqual(2, Course.objects.count())
+
+    def test_crosslisting_set(self):
+        set_crosslistings(self.clst, 'ANCH-027-401')
+        set_crosslistings(self.anch, '')
+        self.clst.save()
+        self.anch.save()
+        self.assertTrue(self.anch in self.clst.crosslistings.all())
+        self.assertTrue(self.clst in self.anch.crosslistings.all())
+
+    def test_crosslisting_newsection(self):
+        set_crosslistings(self.anch, 'HIST-027-401')
+        self.anch.save()
+        self.assertEqual(3, Course.objects.count())
+
+
+class MeetingTestCase(TestCase):
+    def setUp(self):
+        pass
+
 

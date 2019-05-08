@@ -42,7 +42,11 @@ class Course(models.Model):
 
     # Handle crosslisted courses.
     # All crosslisted courses have a "primary listing" in the registrar.
-    primary_listing = models.ForeignKey('Course', related_name='listing_set', on_delete=models.CASCADE)
+    primary_listing = models.ForeignKey('Course',
+                                        related_name='listing_set',
+                                        on_delete=models.CASCADE,
+                                        null=True,
+                                        blank=True)
 
     class Meta:
         unique_together = (('department', 'code', 'semester'), )
@@ -56,7 +60,10 @@ class Course(models.Model):
 
     @property
     def crosslistings(self):
-        return self.primary_listing.listing_set
+        if self.primary_listing is not None:
+            return self.primary_listing.listing_set
+        else:
+            return None
 
 
 class Section(models.Model):
@@ -99,7 +106,15 @@ class Section(models.Model):
 
     associated_sections = models.ManyToManyField('Section')
 
-    credits = models.DecimalField(max_digits=3, decimal_places=2)
+    credits = models.DecimalField(max_digits=3,
+                                  decimal_places=2,
+                                  null=True,
+                                  blank=True)
+
+    # TODO: Add Registration Requirements
+    # TODO: Add [College|Wharton|Engineering] Requirements Fulfilled
+    # TODO: Add Prerequisites
+
 
     def __str__(self):
         return '%s-%s %s' % (self.course.course_id, self.code, self.course.semester)
