@@ -117,7 +117,7 @@ class Section(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     code = models.CharField(max_length=16)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sections')
 
     status = models.CharField(max_length=4, choices=STATUS_CHOICES)
 

@@ -50,6 +50,7 @@ class SectionSerializer(serializers.ModelSerializer):
         model = Section
         fields = (
             'section_id',
+            'pk',
             'activity',
             'credits',
             'semester',
@@ -57,8 +58,70 @@ class SectionSerializer(serializers.ModelSerializer):
             # 'associated_sections',
         )
 
-#
-# class SectionDetailSerializer(SectionSerializer):
-#     associated_sections = SectionSerializer(many=True, read_only=True)
-#
-#
+
+class SectionDetailSerializer(SectionSerializer):
+    associated_sections = SectionIdField(many=True, read_only=True)
+
+    class Meta:
+        model = Section
+        fields = (
+            'section_id',
+            'pk',
+            'activity',
+            'credits',
+            'semester',
+            'meetings',
+            'associated_sections',
+            'prereq_notes'
+        )
+
+class CourseIdField(serializers.RelatedField):
+    def to_representation(self, value):
+        return value.course_id
+
+
+class CourseListSerializer(serializers.ModelSerializer):
+    course_id = serializers.ReadOnlyField()
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        queryset = queryset.prefetch_related('primary_listing__listing_set__department',
+                                             'department')
+        return queryset
+
+    class Meta:
+        model = Course
+        fields = (
+            'course_id',
+            'pk',
+            'title',
+            'description',
+            'semester',
+        )
+
+
+class CourseDetailSerializer(CourseListSerializer):
+    crosslistings = CourseIdField(many=True, read_only=True)
+    sections = SectionDetailSerializer(many=True)
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        queryset = queryset.prefetch_related('primary_listing__listing_set__department',
+                                             'department',
+                                             'sections__course__department',
+                                             'sections__meetings__room__building',
+                                             'sections__associated_sections__course__department',
+                                             'sections__associated_sections__meetings__room__building')
+        return queryset
+
+    class Meta:
+        model = Course
+        fields = (
+            'course_id',
+            'pk',
+            'title',
+            'description',
+            'semester',
+            'crosslistings',
+            'sections',
+        )
