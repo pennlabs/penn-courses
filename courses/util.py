@@ -62,9 +62,9 @@ def get_room(building_code, room_number):
 def add_meetings(section, meetings):
     for meeting in meetings:
         room = get_room(meeting['building_code'], meeting['room_number'])
-        start_time = meeting['start_time'] * 100
-        end_time = meeting['end_time'] * 100
-        for day in meeting['meeting_days'].split(''):
+        start_time = meeting['start_time_24'] * 100
+        end_time = meeting['end_time_24'] * 100
+        for day in list(meeting['meeting_days']):
             m = Meeting(section=section,
                         day=day,
                         start=start_time,
@@ -72,8 +72,6 @@ def add_meetings(section, meetings):
                         room=room)
             m.save()
 
-
-# TODO: Adding Requirements
 
 def add_associated_sections(section, info):
     semester = section.course.semester
@@ -111,6 +109,11 @@ def upsert_course_from_opendata(info, semester):
     course.title = info['course_title'].replace('\uFFFD', '')
     course.description = info['course_description'].replace('\uFFFD', '')
     set_crosslistings(course, info['crosslist_primary'])
+
+    try:
+        section.credits = int(info['credits'].split(' ')[0])
+    except:
+        section.credits = 0
 
     section.status = info['course_status']
     section.capacity = int(info['max_enrollment'])

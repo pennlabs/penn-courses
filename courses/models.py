@@ -1,3 +1,5 @@
+import math
+
 from django.db import models
 
 from options.models import get_value
@@ -81,6 +83,9 @@ class Restriction(models.Model):
     @property
     def permit_required(self):
         return 'permission' in self.description.lower()
+
+    def __str__(self):
+        return f'{self.code} - {self.description}'
 
 
 class Section(models.Model):
@@ -178,6 +183,9 @@ class Building(models.Model):
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
 
+    def __str__(self):
+        return self.name if len(self.name) > 0 else self.code
+
 
 class Room(models.Model):
     """ A room in a Building. It optionally may be named. """
@@ -189,6 +197,9 @@ class Room(models.Model):
         """ To hold uniqueness constraint """
         unique_together = (("building", "number"),)
 
+    def __str__(self):
+        return f'{self.building.code} {self.number}'
+
 
 class Meeting(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='meetings')
@@ -197,6 +208,24 @@ class Meeting(models.Model):
     start = models.IntegerField()
     end = models.IntegerField()
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
+
+    @staticmethod
+    def int_to_time(time):
+        hour = math.floor(time) % 12
+        minute = (time % 1) * 60
+
+        return f'{hour if hour != 0 else 12}:{minute if minute != 0 else "00"} {"AM" if time < 12 else "PM"}'
+
+    @property
+    def start_time(self):
+        return Meeting.int_to_time(self.start)
+
+    @property
+    def end_time(self):
+        return Meeting.int_to_time(self.end)
+
+    def __str__(self):
+        return f'{self.section}: {self.start_time}-{self.end_time} in {self.room}'
 
 
 """

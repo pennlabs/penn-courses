@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
     'courses',
     'options',
     'shortener',
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -122,3 +124,15 @@ USE_TZ = True
 STATIC_URL = '/static/'
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_ROOT = os.path.join(PROJECT_DIR, 'static')
+
+# Penn OpenData API
+API_KEY = os.environ.get('API_KEY', '')
+API_SECRET = os.environ.get('API_SECRET', '')
+API_URL = 'https://esb.isc-seo.upenn.edu/8091/open_data/course_section_search'
+
+# Redis
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
+
+INTERNAL_IPS = [
+    '127.0.0.1'
+]

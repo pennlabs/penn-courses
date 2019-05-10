@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 r = redis.Redis.from_url(settings.REDIS_URL)
 
 
-@shared_task(name='pca.tasks.load_courses')
+# @shared_task(name='courses.tasks.load_courses')
 def load_courses(query='', semester=None):
     if semester is None:
         semester = get_value('SEMESTER')
@@ -23,4 +23,4 @@ def load_courses(query='', semester=None):
     for course in results:
         upsert_course_from_opendata(course, semester)
 
-    return {'result': 'succeeded', 'name': 'pca.tasks.load_courses'}
+    return {'result': 'succeeded', 'name': 'courses.tasks.load_courses'}

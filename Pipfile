@@ -19,6 +19,7 @@ django-celery-results = "*"
 gunicorn = "*"
 whitenoise = "*"
 urllib3 = "==1.24.2"
+django-debug-toolbar = "*"
 
 [dev-packages]
 coveralls = "*"
