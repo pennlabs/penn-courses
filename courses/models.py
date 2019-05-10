@@ -204,9 +204,11 @@ class Room(models.Model):
 class Meeting(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='meetings')
     day = models.CharField(max_length=1)
-    # the time hh:mm is formatted as decimal hhmm, i.e. h*100 + m
-    start = models.IntegerField()
-    end = models.IntegerField()
+    # the time hh:mm is formatted as decimal hh.mm, h + mm / 100
+    start = models.DecimalField(max_digits=4,
+                                decimal_places=2)
+    end = models.DecimalField(max_digits=4,
+                              decimal_places=2)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
 
     class Meta:

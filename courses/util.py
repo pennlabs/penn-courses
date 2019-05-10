@@ -62,8 +62,8 @@ def get_room(building_code, room_number):
 def add_meetings(section, meetings):
     for meeting in meetings:
         room = get_room(meeting['building_code'], meeting['room_number'])
-        start_time = meeting['start_time_24'] * 100
-        end_time = meeting['end_time_24'] * 100
+        start_time = meeting['start_time_24']
+        end_time = meeting['end_time_24']
         for day in list(meeting['meeting_days']):
             m, _ = Meeting.objects.get_or_create(section=section,
                                                  day=day,

@@ -143,6 +143,11 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 MESSAGE_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = 'django-db'
 
+# Django REST Framework
+REST_FRAMEWORK = {
+    'COERCE_DECIMAL_TO_STRING': False
+}
+
 # Django Debug Toolbar
 INTERNAL_IPS = [
     '127.0.0.1'

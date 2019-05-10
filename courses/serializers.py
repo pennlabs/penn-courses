@@ -33,7 +33,7 @@ class SectionSerializer(serializers.ModelSerializer):
     section_id = serializers.ReadOnlyField(source='normalized')
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
-    associated_sections = SectionIdField(many=True, read_only=True)
+    # associated_sections = SectionIdField(many=True, read_only=True)
 
     @staticmethod
     def get_semester(obj):
@@ -54,5 +54,11 @@ class SectionSerializer(serializers.ModelSerializer):
             'credits',
             'semester',
             'meetings',
-            'associated_sections',
+            # 'associated_sections',
         )
+
+#
+# class SectionDetailSerializer(SectionSerializer):
+#     associated_sections = SectionSerializer(many=True, read_only=True)
+#
+#
