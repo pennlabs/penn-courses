@@ -209,6 +209,9 @@ class Meeting(models.Model):
     end = models.IntegerField()
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = (('section', 'day', 'start', 'end', 'room'), )
+
     @staticmethod
     def int_to_time(time):
         hour = math.floor(time) % 12

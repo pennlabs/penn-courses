@@ -65,12 +65,11 @@ def add_meetings(section, meetings):
         start_time = meeting['start_time_24'] * 100
         end_time = meeting['end_time_24'] * 100
         for day in list(meeting['meeting_days']):
-            m = Meeting(section=section,
-                        day=day,
-                        start=start_time,
-                        end=end_time,
-                        room=room)
-            m.save()
+            m, _ = Meeting.objects.get_or_create(section=section,
+                                                 day=day,
+                                                 start=start_time,
+                                                 end=end_time,
+                                                 room=room)
 
 
 def add_associated_sections(section, info):
