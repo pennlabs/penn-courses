@@ -19,7 +19,7 @@ class SectionList(generics.ListAPIView):
 class CourseList(generics.ListAPIView):
     serializer_class = CourseListSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('department__code', )
+    search_fields = ('department__code', 'title')
 
     def get_queryset(self):
         queryset = Course.objects.all()
