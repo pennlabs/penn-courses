@@ -23,10 +23,13 @@ def separate_course_code(course_code):
 def get_course_and_section(course_code, semester):
     dept_code, course_id, section_id = separate_course_code(course_code)
 
-    course, created = Course.objects.get_or_create(department=dept_code,
-                                                   code=course_id,
-                                                   semester=semester)
-    section, created = Section.objects.get_or_create(course=course, code=section_id)
+    dept, _ = Department.objects.get_or_create(code=dept_code)
+
+    course, _ = Course.objects.get_or_create(department=dept,
+                                             code=course_id,
+                                             semester=semester)
+
+    section, _ = Section.objects.get_or_create(course=course, code=section_id)
 
     return course, section
 
@@ -91,6 +94,15 @@ def set_crosslistings(course, crosslist_primary):
         course.primary_listing = primary_course
 
 
+def add_restrictions(section, requirements):
+    for r in requirements:
+        rest, _ = Restriction.objects.get_or_create(code=r['registration_control_code'],
+                                                    defaults={
+                                                     'description': r['requirement_description']
+                                                    })
+        section.restrictions.add(rest)
+
+
 def upsert_course_from_opendata(info, semester):
     course_code = info['section_id_normalized']
     course, section = get_course_and_section(course_code, semester)
@@ -103,6 +115,7 @@ def upsert_course_from_opendata(info, semester):
     section.status = info['course_status']
     section.capacity = int(info['max_enrollment'])
     section.activity = info['activity']
+    section.prereq_notes = '\n'.join(info['prerequisite_notes'])
     section.meeting_times = json.dumps([meeting['meeting_days'] + ' '
                                         + meeting['start_time'] + ' - '
                                         + meeting['end_time'] for meeting in info['meetings']])
@@ -110,6 +123,7 @@ def upsert_course_from_opendata(info, semester):
     add_instructors(section, [instructor['name'] for instructor in info['instructors']])
     add_meetings(section, info['meetings'])
     add_associated_sections(section, info)
+    add_restrictions(section, info['requirements'])
 
     section.save()
     course.save()

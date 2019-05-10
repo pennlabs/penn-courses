@@ -29,11 +29,19 @@ class Instructor(models.Model):
         return self.name
 
 
+class Department(models.Model):
+    code = models.CharField(max_length=8, unique=True)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.code
+
+
 class Course(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    department = models.CharField(max_length=8)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='courses')
     code = models.CharField(max_length=8)
     semester = models.CharField(max_length=5)
 
@@ -64,6 +72,15 @@ class Course(models.Model):
             return self.primary_listing.listing_set
         else:
             return None
+
+
+class Restriction(models.Model):
+    code = models.CharField(max_length=10, unique=True)
+    description = models.TextField()
+
+    @property
+    def permit_required(self):
+        return 'permission' in self.description.lower()
 
 
 class Section(models.Model):
@@ -102,19 +119,17 @@ class Section(models.Model):
     capacity = models.IntegerField(default=0)
     activity = models.CharField(max_length=50, choices=ACTIVITY_CHOICES)
     meeting_times = models.TextField(blank=True)
-    instructors = models.ManyToManyField(Instructor)
 
+    instructors = models.ManyToManyField(Instructor)
     associated_sections = models.ManyToManyField('Section')
+    restrictions = models.ManyToManyField(Restriction)
 
     credits = models.DecimalField(max_digits=3,
                                   decimal_places=2,
                                   null=True,
                                   blank=True)
 
-    # TODO: Add Registration Requirements
-    # TODO: Add [College|Wharton|Engineering] Requirements Fulfilled
-    # TODO: Add Prerequisites
-
+    prereq_notes = models.TextField(blank=True)
 
     def __str__(self):
         return '%s-%s %s' % (self.course.course_id, self.code, self.course.semester)
@@ -182,3 +197,44 @@ class Meeting(models.Model):
     start = models.IntegerField()
     end = models.IntegerField()
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
+
+
+"""
+Requirements
+"""
+
+
+class Requirement(models.Model):
+    SCHOOL_CHOICES = (
+        ('SEAS', 'Engineering'),
+        ('WH17-', 'Wharton 2017-'),
+        ('WH17+', 'Wharton 2017+'),
+        ('SAS', 'College')
+    )
+    # organize requirements by semester so that we don't get huge related sets which don't give particularly good
+    # info.
+    semester = models.CharField(max_length=5)
+    # code identifying this requirement
+    code = models.CharField(max_length=10)
+    # what school this requirement belongs to
+    school = models.CharField(max_length=5, choices=SCHOOL_CHOICES)
+    # whether or not this entry is saying that these courses fulfill a requirement or not
+    satisfies = models.BooleanField()
+    # name of the requirement
+    name = models.CharField(max_length=255)
+
+    # Departments which satisfy (or don't) this requirement
+    departments = models.ManyToManyField(Department, related_name='requirements')
+    # Course-level overrides for when a specific course's requirements are different
+    # from its departments'
+    courses = models.ManyToManyField(Course, related_name='overrides')
+
+    '''
+    As a general rule, if satisfies==False, there should NOT be departments in the requirement.
+    satisfies operates as a way to *override* for specific courses within a department.
+    Generally, if a department is not related to a requirement, then it DOES NOT satisfy that
+    requirement. Same for a specific course.
+    '''
+
+    class Meta:
+        unique_together = (('semester', 'code', 'satisfies'), )

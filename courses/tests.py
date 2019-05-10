@@ -35,7 +35,7 @@ class SepCourseCodeTest(TestCase):
 
 class GetCourseSectionTest(TestCase):
     def setUp(self):
-        self.c = Course(department='PSCI',
+        self.c = Course(department=Department.objects.get_or_create(code='PSCI')[0],
                         code='131',
                         semester=TEST_SEMESTER,
                         title='American Foreign Policy')
@@ -64,7 +64,7 @@ class GetCourseSectionTest(TestCase):
     def test_create_course(self):
         course, section = get_course_and_section('CIS 120 001', TEST_SEMESTER)
         self.assertEqual(Course.objects.count(), 2)
-        self.assertEqual(course.department, 'CIS')
+        self.assertEqual(course.department.code, 'CIS')
         self.assertEqual(course.code, '120')
         self.assertEqual(section.code, '001')
 
