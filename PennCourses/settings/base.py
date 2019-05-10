@@ -38,7 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'django_celery_results',
+    'django_celery_beat',
+    
     'debug_toolbar',
+
     'courses',
     'options',
     'shortener',
@@ -133,6 +138,11 @@ API_URL = 'https://esb.isc-seo.upenn.edu/8091/open_data/course_section_search'
 # Redis
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
+# Celery
+MESSAGE_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = 'django-db'
+
+# Django Debug Toolbar
 INTERNAL_IPS = [
     '127.0.0.1'
 ]
