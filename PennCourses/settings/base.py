@@ -62,7 +62,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'PennCourses.urls'
+ROOT_URLCONF = 'PennCourses.urls.base'
 
 TEMPLATES = [
     {
@@ -152,3 +152,18 @@ REST_FRAMEWORK = {
 INTERNAL_IPS = [
     '127.0.0.1'
 ]
+
+# Custom Switchboard Middleware
+HOST_TO_APP = {
+    'penncoursealert.com': 'pca',
+    'www.penncoursealert.com': 'pca',
+    'penncourseplan.com': 'pcp',
+    'www.penncourseplan.com': 'pcp',
+    'penncoursereview.com': 'pcr',
+    'www.penncoursereview.com': 'pcr'
+}
+
+DEBUG_APP = 'pcp'
+
+if len(ALLOWED_HOSTS) == 0:
+    ALLOWED_HOSTS = HOST_TO_APP.keys()
