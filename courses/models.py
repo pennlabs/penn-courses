@@ -50,6 +50,8 @@ class Course(models.Model):
     title = models.TextField()
     description = models.TextField(blank=True)
 
+    full_code = models.CharField(max_length=16, null=True, blank=True)
+
     # Handle crosslisted courses.
     # All crosslisted courses have a "primary listing" in the registrar.
     primary_listing = models.ForeignKey('Course',
@@ -74,6 +76,10 @@ class Course(models.Model):
             return self.primary_listing.listing_set
         else:
             return None
+
+    def save(self, *args, **kwargs):
+        self.full_code = f'{self.department.code}-{self.code}'
+        super().save(*args, **kwargs)
 
 
 class Restriction(models.Model):

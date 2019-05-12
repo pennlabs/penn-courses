@@ -7,7 +7,6 @@ from .models import *
 
 
 class SectionList(generics.ListAPIView):
-
     serializer_class = SectionSerializer
 
     def get_queryset(self):
@@ -16,10 +15,24 @@ class SectionList(generics.ListAPIView):
         return queryset
 
 
+class TypedSearchBackend(filters.SearchFilter):
+    def get_search_fields(self, view, request):
+        search_type = request.GET.get('type')
+
+        if search_type == 'dept':
+            return ['department__code']
+        elif search_type == 'course':
+            return ['full_code']
+        elif search_type == 'keyword':
+            return ['title', 'sections__instructors__name']
+        else:
+            return getattr(view, 'search_fields', None)
+
+
 class CourseList(generics.ListAPIView):
     serializer_class = CourseListSerializer
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('department__code', 'title')
+    filter_backends = (TypedSearchBackend,)
+    search_fields = ('department__code', 'code', 'title', 'sections__instructors__name')
 
     def get_queryset(self):
         queryset = Course.objects.all()
@@ -30,6 +43,7 @@ class CourseList(generics.ListAPIView):
 
 class CourseDetail(generics.RetrieveAPIView):
     serializer_class = CourseDetailSerializer
+    lookup_field = 'full_code'
 
     def get_queryset(self):
         queryset = Course.objects.all()

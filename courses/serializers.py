@@ -66,7 +66,6 @@ class SectionDetailSerializer(SectionSerializer):
         model = Section
         fields = (
             'section_id',
-            'pk',
             'activity',
             'credits',
             'semester',
@@ -93,7 +92,6 @@ class CourseListSerializer(serializers.ModelSerializer):
         model = Course
         fields = (
             'course_id',
-            'pk',
             'title',
             'description',
             'semester',
@@ -118,7 +116,6 @@ class CourseDetailSerializer(CourseListSerializer):
         model = Course
         fields = (
             'course_id',
-            'pk',
             'title',
             'description',
             'semester',
