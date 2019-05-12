@@ -52,6 +52,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'PennCourses.middleware.SwitchboardMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -152,6 +153,3 @@ REST_FRAMEWORK = {
 INTERNAL_IPS = [
     '127.0.0.1'
 ]
-
-# Custom Switchboard Middleware
-SWITCHBOARD_DEBUG_APP = 'pcp'

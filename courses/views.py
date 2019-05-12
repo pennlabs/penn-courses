@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import HttpResponse
 
 from rest_framework import mixins, generics, filters
 
@@ -49,3 +50,7 @@ class CourseDetail(generics.RetrieveAPIView):
         queryset = Course.objects.all()
         queryset = self.get_serializer_class().setup_eager_loading(queryset)
         return queryset
+
+
+def index(request):
+    return HttpResponse(f'Hello, {request.site}')
