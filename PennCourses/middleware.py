@@ -10,12 +10,13 @@ class SwitchboardMiddleware:
         # Code to be executed for each request before
         # the view (and later middleware) are called.
         if settings.DEBUG:
-            app = settings.DEBUG_APP
+            app = settings.SWITCHBOARD_DEBUG_APP
         else:
-            host, port = request.get_host().split(':')
+            host = request.get_host().split(':')[0]
             app = settings.HOST_TO_APP.get(host, 'base')
 
         request.site = app
+        # https://docs.djangoproject.com/en/2.2/topics/http/urls/#how-django-processes-a-request
         request.urlconf = f'PennCourses.urls.{app}'
 
         response = self.get_response(request)
