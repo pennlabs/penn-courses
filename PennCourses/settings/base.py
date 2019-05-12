@@ -165,5 +165,5 @@ HOST_TO_APP = {
 
 DEBUG_APP = 'pcp'
 
-if len(ALLOWED_HOSTS) == 0:
+if not DEBUG and len(ALLOWED_HOSTS) == 0:
     ALLOWED_HOSTS = HOST_TO_APP.keys()
