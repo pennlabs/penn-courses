@@ -9,8 +9,8 @@ class SwitchboardMiddleware:
     def __call__(self, request):
         # Code to be executed for each request before
         # the view (and later middleware) are called.
-        if settings.DEBUG:
-            app = settings.SWITCHBOARD_DEBUG_APP
+        if settings.SWITCHBOARD_TEST_APP is not None:
+            app = settings.SWITCHBOARD_TEST_APP
         else:
             host = request.get_host().split(':')[0]
             app = settings.HOST_TO_APP.get(host, 'base')

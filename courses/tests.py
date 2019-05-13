@@ -1,7 +1,11 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from django.test import RequestFactory
+
+from rest_framework.test import APIClient
 
 from .models import *
 from .util import *
+from .views import *
 
 TEST_SEMESTER = '2019A'
 
@@ -125,3 +129,85 @@ class MeetingTestCase(TestCase):
         pass
 
 
+'''
+API Test Cases
+'''
+
+
+class TypedSearchBackendTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.search = TypedSearchBackend()
+
+    def test_type_course(self):
+        req = self.factory.get('/', {'type': 'course', 'search': 'ABC123'})
+        terms = self.search.get_search_fields(None, req)
+        self.assertEqual(['full_code'], terms)
+
+    def test_type_keyword(self):
+        req = self.factory.get('/', {'type': 'keyword', 'search': 'ABC123'})
+        terms = self.search.get_search_fields(None, req)
+        self.assertEqual(['title', 'sections__instructors__name'], terms)
+
+    def test_auto_course(self):
+        courses = ['cis', 'CIS', 'cis120', 'anch-027', 'cis 121', 'ling-140']
+        for course in courses:
+            req = self.factory.get('/', {'type': 'auto', 'search': course})
+            terms = self.search.get_search_fields(None, req)
+            self.assertEqual(['full_code'], terms, f'search:{course}')
+
+    def test_auto_keyword(self):
+        keywords = ['rajiv', 'gandhi', 'programming', 'hello world']
+        for kw in keywords:
+            req = self.factory.get('/', {'type': 'auto', 'search': kw})
+            terms = self.search.get_search_fields(None, req)
+            self.assertEqual(['title', 'sections__instructors__name'], terms, f'search:{kw}')
+
+
+@override_settings(SWITCHBOARD_TEST_APP='api')
+class CourseListTestCase(TestCase):
+    def setUp(self):
+        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
+        self.client = APIClient()
+
+    def test_get_courses(self):
+        response = self.client.get('/courses/')
+        self.assertEqual(len(response.data), 2)
+        course_codes = [d['course_id'] for d in response.data]
+        self.assertTrue('CIS-120' in course_codes and 'MATH-114' in course_codes)
+
+    def test_search_by_dept(self):
+        response = self.client.get('/courses/', {'search': 'math', 'type': 'auto'})
+        self.assertEqual(len(response.data), 1)
+        course_codes = [d['course_id'] for d in response.data]
+        self.assertTrue('CIS-120' not in course_codes and 'MATH-114' in course_codes)
+
+    def test_search_by_instructor(self):
+        self.section.instructors.add(Instructor.objects.get_or_create(name='Tiffany Chang')[0])
+        self.math1.instructors.add(Instructor.objects.get_or_create(name='Josh Doman')[0])
+        searches = ['Tiffany', 'Chang']
+        for search in searches:
+            response = self.client.get('/courses/', {'search': search, 'type': 'auto'})
+            self.assertEqual(len(response.data), 1)
+            course_codes = [d['course_id'] for d in response.data]
+            self.assertTrue('CIS-120' in course_codes and 'MATH-114' not in course_codes, f'search:{search}')
+
+
+@override_settings(SWITCHBOARD_TEST_APP='api')
+class CourseDetailTestCase(TestCase):
+    def setUp(self):
+        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
+        self.client = APIClient()
+
+    def test_get_course(self):
+        course, section = get_course_and_section('CIS-120-201', TEST_SEMESTER)
+        response = self.client.get('/courses/CIS-120/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['course_id'], 'CIS-120')
+        self.assertEqual(len(response.data['sections']), 2)
+
+    def test_not_get_course(self):
+        response = self.client.get('/courses/CIS-160/')
+        self.assertEqual(response.status_code, 404)

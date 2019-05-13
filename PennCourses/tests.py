@@ -1,10 +1,15 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.test.client import RequestFactory
 
 from .middleware import SwitchboardMiddleware
 
 
 class SwitchboardTestCase(TestCase):
+    host_to_app = {
+        'penncourses.org': 'courses',
+        'penncoursealert.com': 'pca',
+        'penncourseplan.com': 'pcp'
+    }
     def setUp(self):
         self.factory = RequestFactory()
         self.host_to_app = {
@@ -15,8 +20,9 @@ class SwitchboardTestCase(TestCase):
 
     def assertRoute(self, route):
         def test(req):
-            self.assertEqual(req.site, route)
-            self.assertEqual(req.urlconf, 'PennCourses.urls.'+route)
+            print(req.urlconf)
+            self.assertEqual(route, req.site)
+            self.assertEqual('PennCourses.urls.'+route, req.urlconf)
         return test
 
     @staticmethod
@@ -24,23 +30,18 @@ class SwitchboardTestCase(TestCase):
         middleware = SwitchboardMiddleware(func)
         middleware(request)
 
+    @override_settings(SWITCHBOARD_TEST_APP='debug')
     def test_debug_app(self):
-        with self.settings(DEBUG=True, SWITCHBOARD_DEBUG_APP='debug'):
-            request = self.factory.get('/')
-            self.assertRequest(request, self.assertRoute('debug'))
+        request = self.factory.get('/')
+        self.assertRequest(request, self.assertRoute('debug'))
 
+    @override_settings(SWITCHBOARD_TEST_APP=None, HOST_TO_APP=host_to_app, ALLOWED_HOSTS=host_to_app.keys())
     def test_routing_successful(self):
-        with self.settings(DEBUG=False,
-                           HOST_TO_APP=self.host_to_app,
-                           ALLOWED_HOSTS=self.host_to_app.keys()):
+        request = self.factory.get('/', HTTP_HOST='penncoursealert.com')
+        self.assertRequest(request, self.assertRoute('pca'))
 
-            request = self.factory.get('/', HTTP_HOST='penncoursealert.com')
-            self.assertRequest(request, self.assertRoute('pca'))
-
+    @override_settings(SWITCHBOARD_TEST_APP=None, HOST_TO_APP=host_to_app,
+                       ALLOWED_HOSTS=list(host_to_app.keys()) + ['example.com'])
     def test_routing_fallback(self):
-        with self.settings(DEBUG=False,
-                           HOST_TO_APP=self.host_to_app,
-                           ALLOWED_HOSTS=list(self.host_to_app.keys()) + ['example.com']):
-
-            request = self.factory.get('/', HTTP_HOST='example.com')
-            self.assertRequest(request, self.assertRoute('base'))
+        request = self.factory.get('/', HTTP_HOST='example.com')
+        self.assertRequest(request, self.assertRoute('base'))

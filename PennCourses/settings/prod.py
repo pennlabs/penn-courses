@@ -1,5 +1,8 @@
 from .base import *
 
+DEBUG = False
+
+SWITCHBOARD_TEST_APP = None
 HOST_TO_APP = {
     'penncoursealert.com': 'pca',
     'www.penncoursealert.com': 'pca',

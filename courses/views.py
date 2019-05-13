@@ -26,15 +26,23 @@ class TypedSearchBackend(filters.SearchFilter):
         else:
             return 'keyword'
 
+    @staticmethod
+    def get_search_type(request):
+        return request.GET.get('type')
+
     def get_search_terms(self, request):
-        term = request.query_params.get(self.search_param, '')
-        match = self.code_re.match(term)
-        if match and match.group(1) and match.group(2):
-            term = f'{match.group(1)}-{match.group(2)}'
-        return [term]
+        search_type = self.get_search_type(request)
+        query = request.query_params.get(self.search_param, '')
+
+        match = self.code_re.match(query)
+        # If this is a course query, either by designation or by detection,
+        if (search_type == 'course' or (search_type == 'auto' and self.infer_search_type(query) == 'course')) \
+                and match and match.group(1) and match.group(2):
+            query = f'{match.group(1)}-{match.group(2)}'
+        return [query]
 
     def get_search_fields(self, view, request):
-        search_type = request.GET.get('type')
+        search_type = self.get_search_type(request)
 
         if search_type == 'auto':
             search_type = self.infer_search_type(request.GET.get('search'))
