@@ -12,7 +12,7 @@ TEST_SEMESTER = '2019A'
 
 
 def set_semester():
-    Option(key="SEMESTER", value=TEST_SEMESTER, type='TXT').save()
+    Option(key="SEMESTER", value=TEST_SEMESTER, value_type='TXT').save()
 
 
 class SepCourseCodeTest(TestCase):
@@ -175,6 +175,7 @@ class CourseListTestCase(TestCase):
         self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
         self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
         self.client = APIClient()
+        set_semester()
 
     def test_get_courses(self):
         response = self.client.get('/all/courses/')
@@ -197,6 +198,25 @@ class CourseListTestCase(TestCase):
             self.assertEqual(len(response.data), 1)
             course_codes = [d['course_id'] for d in response.data]
             self.assertTrue('CIS-120' in course_codes and 'MATH-114' not in course_codes, f'search:{search}')
+
+    def test_semester_setting(self):
+        new_sem = TEST_SEMESTER[:-1] + 'Z'
+        get_course_and_section('MATH-104-001', new_sem)
+
+        response = self.client.get(f'/{TEST_SEMESTER}/courses/')
+        self.assertEqual(len(response.data), 2)
+
+        response = self.client.get(f'/{new_sem}/courses/')
+        self.assertEqual(len(response.data), 1)
+
+        response = self.client.get('/all/courses/')
+        self.assertEqual(len(response.data), 3)
+
+    def test_current_semester(self):
+        new_sem = TEST_SEMESTER[:-1] + 'Z'
+        get_course_and_section('MATH-104-001', new_sem)
+        response = self.client.get(f'/current/courses/')
+        self.assertEqual(len(response.data), 2)
 
 
 @override_settings(SWITCHBOARD_TEST_APP='api')

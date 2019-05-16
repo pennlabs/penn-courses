@@ -4,6 +4,8 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from rest_framework import mixins, generics, filters
 
+from options.models import get_value
+
 from .serializers import *
 from .models import *
 
@@ -51,6 +53,9 @@ class BaseCourseMixin(generics.GenericAPIView):
         queryset = super().get_queryset()
         queryset = self.get_serializer_class().setup_eager_loading(queryset)
         semester = self.kwargs.get('semester', 'all')
+        if semester == 'current':
+            semester = get_value('SEMESTER', 'all')
+
         if semester != 'all':
             queryset = queryset.filter(semester=semester)
         return queryset
