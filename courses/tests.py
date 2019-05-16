@@ -3,11 +3,16 @@ from django.test import RequestFactory
 
 from rest_framework.test import APIClient
 
+from options.models import *
 from .models import *
 from .util import *
 from .views import *
 
 TEST_SEMESTER = '2019A'
+
+
+def set_semester():
+    Option(key="SEMESTER", value=TEST_SEMESTER, type='TXT').save()
 
 
 class SepCourseCodeTest(TestCase):
@@ -172,13 +177,13 @@ class CourseListTestCase(TestCase):
         self.client = APIClient()
 
     def test_get_courses(self):
-        response = self.client.get('/courses/')
+        response = self.client.get('/all/courses/')
         self.assertEqual(len(response.data), 2)
         course_codes = [d['course_id'] for d in response.data]
         self.assertTrue('CIS-120' in course_codes and 'MATH-114' in course_codes)
 
     def test_search_by_dept(self):
-        response = self.client.get('/courses/', {'search': 'math', 'type': 'auto'})
+        response = self.client.get('/all/courses/', {'search': 'math', 'type': 'auto'})
         self.assertEqual(len(response.data), 1)
         course_codes = [d['course_id'] for d in response.data]
         self.assertTrue('CIS-120' not in course_codes and 'MATH-114' in course_codes)
@@ -188,7 +193,7 @@ class CourseListTestCase(TestCase):
         self.math1.instructors.add(Instructor.objects.get_or_create(name='Josh Doman')[0])
         searches = ['Tiffany', 'Chang']
         for search in searches:
-            response = self.client.get('/courses/', {'search': search, 'type': 'auto'})
+            response = self.client.get('/all/courses/', {'search': search, 'type': 'auto'})
             self.assertEqual(len(response.data), 1)
             course_codes = [d['course_id'] for d in response.data]
             self.assertTrue('CIS-120' in course_codes and 'MATH-114' not in course_codes, f'search:{search}')
@@ -203,11 +208,11 @@ class CourseDetailTestCase(TestCase):
 
     def test_get_course(self):
         course, section = get_course_and_section('CIS-120-201', TEST_SEMESTER)
-        response = self.client.get('/courses/CIS-120/')
+        response = self.client.get('/all/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['course_id'], 'CIS-120')
         self.assertEqual(len(response.data['sections']), 2)
 
     def test_not_get_course(self):
-        response = self.client.get('/courses/CIS-160/')
+        response = self.client.get('/all/courses/CIS-160/')
         self.assertEqual(response.status_code, 404)

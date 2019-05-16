@@ -8,15 +8,6 @@ from .serializers import *
 from .models import *
 
 
-class SectionList(generics.ListAPIView):
-    serializer_class = SectionSerializer
-
-    def get_queryset(self):
-        queryset = Section.objects.all()
-        queryset = self.get_serializer_class().setup_eager_loading(queryset)
-        return queryset
-
-
 class TypedSearchBackend(filters.SearchFilter):
     code_re = re.compile(r'^([A-Za-z]{1,4})?[ |-]?(\d{1,5})?$')
 
@@ -55,26 +46,32 @@ class TypedSearchBackend(filters.SearchFilter):
             return super().get_search_fields(view, request)
 
 
-class CourseList(generics.ListAPIView):
+class BaseCourseMixin(generics.GenericAPIView):
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = self.get_serializer_class().setup_eager_loading(queryset)
+        semester = self.kwargs.get('semester', 'all')
+        if semester != 'all':
+            queryset = queryset.filter(semester=semester)
+        return queryset
+
+
+class SectionList(generics.ListAPIView, BaseCourseMixin):
+    serializer_class = SectionSerializer
+    queryset = Section.objects.all()
+
+
+class CourseList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = CourseListSerializer
     filter_backends = (TypedSearchBackend,)
     search_fields = ('full_code', 'title', 'sections__instructors__name')
-
-    def get_queryset(self):
-        queryset = Course.objects.all()
-        queryset = self.get_serializer_class().setup_eager_loading(queryset)
-
-        return queryset
+    queryset = Course.objects.all()
 
 
-class CourseDetail(generics.RetrieveAPIView):
+class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     serializer_class = CourseDetailSerializer
     lookup_field = 'full_code'
-
-    def get_queryset(self):
-        queryset = Course.objects.all()
-        queryset = self.get_serializer_class().setup_eager_loading(queryset)
-        return queryset
+    queryset = Course.objects.all()
 
 
 def index(request):

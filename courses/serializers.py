@@ -50,12 +50,11 @@ class SectionSerializer(serializers.ModelSerializer):
         model = Section
         fields = (
             'section_id',
-            'pk',
+            'status',
             'activity',
             'credits',
             'semester',
             'meetings',
-            # 'associated_sections',
         )
 
 
@@ -71,7 +70,8 @@ class SectionDetailSerializer(SectionSerializer):
             'semester',
             'meetings',
             'associated_sections',
-            'prereq_notes'
+            'prereq_notes',
+            'status',
         )
 
 class CourseIdField(serializers.RelatedField):
