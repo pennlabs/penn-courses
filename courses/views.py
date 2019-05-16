@@ -49,6 +49,10 @@ class TypedSearchBackend(filters.SearchFilter):
 
 
 class BaseCourseMixin(generics.GenericAPIView):
+    @staticmethod
+    def get_semester_field():
+        return 'semester'
+
     def get_queryset(self):
         queryset = super().get_queryset()
         queryset = self.get_serializer_class().setup_eager_loading(queryset)
@@ -57,13 +61,17 @@ class BaseCourseMixin(generics.GenericAPIView):
             semester = get_value('SEMESTER', 'all')
 
         if semester != 'all':
-            queryset = queryset.filter(semester=semester)
+            queryset = queryset.filter(**{self.get_semester_field(): semester})
         return queryset
 
 
 class SectionList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = SectionSerializer
     queryset = Section.objects.all()
+
+    @staticmethod
+    def get_semester_field():
+        return 'course__semester'
 
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
