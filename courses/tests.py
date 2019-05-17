@@ -129,28 +129,19 @@ class RequirementTestCase(TestCase):
         self.req1 = Requirement(semester=TEST_SEMESTER,
                                 school='SAS',
                                 code='TEST1',
-                                satisfies=True,
                                 name='Test 1')
 
         self.req2 = Requirement(semester=TEST_SEMESTER,
                                 school='SAS',
                                 code='TEST2',
-                                satisfies=True,
                                 name='Test 2')
-
-        self.rq1F = Requirement(semester=TEST_SEMESTER,
-                                school='SAS',
-                                code='TEST1',
-                                satisfies=False,
-                                name='Test 1')
 
         self.req1.save()
         self.req2.save()
-        self.rq1F.save()
 
         self.req1.departments.add(self.department)
         self.req2.courses.add(self.course)
-        self.rq1F.courses.add(self.course2)
+        self.req1.overrides.add(self.course2)
 
     def test_requirements_nooverride(self):
         reqs = self.course.requirements
@@ -158,7 +149,8 @@ class RequirementTestCase(TestCase):
 
     def test_requirements_override(self):
         reqs = self.course2.requirements
-        self.assertTrue(1, len(reqs))
+        print(self.req1.overrides.all())
+        self.assertEqual(1, len(reqs))
         self.assertEqual(self.req1, reqs[0])
 
 

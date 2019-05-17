@@ -125,7 +125,6 @@ def add_college_requirements(course, college_reqs):
     for req_name in college_reqs:
         req = Requirement.objects.get_or_create(semester=course.semester,
                                                 school='SAS',
-                                                satisfies=True,
                                                 code=name_to_code[req_name],
                                                 defaults={
                                                   'name': req_name

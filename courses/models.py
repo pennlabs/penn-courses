@@ -77,9 +77,9 @@ class Course(models.Model):
 
     @property
     def requirements(self):
-        return self.overrides.filter(satisfies=True).union(
-            self.department.requirements.filter(satisfies=True).exclude(id__in=self.overrides.filter(satisfies=False))
-        )
+        return self.requirement_set.all().union(
+            self.department.requirements.filter(semester=self.semester)
+        ).exclude(id__in=self.nonrequirement_set.all())
 
 
 class Restriction(models.Model):
@@ -257,26 +257,21 @@ class Requirement(models.Model):
     school = models.CharField(max_length=5, choices=SCHOOL_CHOICES)
     # code identifying this requirement
     code = models.CharField(max_length=10)
-    # whether or not this entry is saying that these courses fulfill a requirement or not
-    satisfies = models.BooleanField()
     # name of the requirement
     name = models.CharField(max_length=255)
 
-    # Departments which satisfy (or don't) this requirement
+    # Departments which satisfy this requirement
     departments = models.ManyToManyField(Department, related_name='requirements')
-    # Course-level overrides for when a specific course's requirements are different
-    # from its departments'
-    courses = models.ManyToManyField(Course, related_name='overrides')
+    # Courses which satisfy this requirement
+    courses = models.ManyToManyField(Course, related_name='requirement_set')
 
-    '''
-    As a general rule, if satisfies==False, there should NOT be departments in the requirement.
-    satisfies operates as a way to *override* for specific courses within a department.
-    Generally, if a department is not related to a requirement, then it DOES NOT satisfy that
-    requirement. Same for a specific course.
-    '''
+    # Courses which do not satisfy this requirement.
+    # For example, CIS classes are Engineering courses, but CIS-125 is NOT an engineering class, so for the ENG
+    # requirement, CIS-125 would go into the overrides set.
+    overrides = models.ManyToManyField(Course, related_name='nonrequirement_set')
 
     class Meta:
-        unique_together = (('semester', 'code', 'satisfies'), )
+        unique_together = (('semester', 'code'), )
 
     def __str__(self):
         return f'{self.code} @ {self.school} - {self.semester}'
