@@ -75,6 +75,11 @@ class Course(models.Model):
         else:
             return None
 
+    @property
+    def requirements(self):
+        # TODO: This won't work if a department fulfills but a course overrides as False.
+        return self.department.requirements.filter(satisfies=True).union(self.overrides.filter(satisfies=True))
+
 
 class Restriction(models.Model):
     code = models.CharField(max_length=10, unique=True)
