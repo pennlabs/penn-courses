@@ -54,12 +54,17 @@ class MeetingAdmin(admin.ModelAdmin):
         'section__course__department',
     )
 
+
+class RequirementAdmin(admin.ModelAdmin):
+    autocomplete_fields = ('departments', 'courses')
+
+
 admin.site.register(Department, DepartmentAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Section, SectionAdmin)
 admin.site.register(Building)
 admin.site.register(Room)
-admin.site.register(Requirement)
+admin.site.register(Requirement, RequirementAdmin)
 admin.site.register(Restriction)
 admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Meeting, MeetingAdmin)

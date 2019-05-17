@@ -241,17 +241,16 @@ Requirements
 class Requirement(models.Model):
     SCHOOL_CHOICES = (
         ('SEAS', 'Engineering'),
-        ('WH17-', 'Wharton 2017-'),
-        ('WH17+', 'Wharton 2017+'),
+        ('WH+', 'Wharton'),
         ('SAS', 'College')
     )
     # organize requirements by semester so that we don't get huge related sets which don't give particularly good
     # info.
     semester = models.CharField(max_length=5)
-    # code identifying this requirement
-    code = models.CharField(max_length=10)
     # what school this requirement belongs to
     school = models.CharField(max_length=5, choices=SCHOOL_CHOICES)
+    # code identifying this requirement
+    code = models.CharField(max_length=10)
     # whether or not this entry is saying that these courses fulfill a requirement or not
     satisfies = models.BooleanField()
     # name of the requirement
@@ -272,3 +271,6 @@ class Requirement(models.Model):
 
     class Meta:
         unique_together = (('semester', 'code', 'satisfies'), )
+
+    def __str__(self):
+        return f'{self.code} @ {self.school} - {self.semester}'

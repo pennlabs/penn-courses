@@ -20,14 +20,20 @@ def separate_course_code(course_code):
     raise ValueError(f'Course code could not be parsed: {course_code}')
 
 
-def get_course_and_section(course_code, semester):
-    dept_code, course_id, section_id = separate_course_code(course_code)
-
+def get_course(dept_code, course_id, semester):
     dept, _ = Department.objects.get_or_create(code=dept_code)
 
     course, _ = Course.objects.get_or_create(department=dept,
                                              code=course_id,
                                              semester=semester)
+
+    return course
+
+
+def get_course_and_section(course_code, semester):
+    dept_code, course_id, section_id = separate_course_code(course_code)
+
+    course = get_course(dept_code, course_id, semester)
 
     section, _ = Section.objects.get_or_create(course=course, code=section_id)
 
