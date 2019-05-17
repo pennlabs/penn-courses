@@ -120,6 +120,48 @@ class CrosslistingTestCase(TestCase):
         self.assertEqual(3, Course.objects.count())
 
 
+class RequirementTestCase(TestCase):
+    def setUp(self):
+        self.course = get_course('CIS', '120', TEST_SEMESTER)
+        self.course2 = get_course('CIS', '125', TEST_SEMESTER)
+        self.department = Department.objects.get(code='CIS')
+
+        self.req1 = Requirement(semester=TEST_SEMESTER,
+                                school='SAS',
+                                code='TEST1',
+                                satisfies=True,
+                                name='Test 1')
+
+        self.req2 = Requirement(semester=TEST_SEMESTER,
+                                school='SAS',
+                                code='TEST2',
+                                satisfies=True,
+                                name='Test 2')
+
+        self.rq1F = Requirement(semester=TEST_SEMESTER,
+                                school='SAS',
+                                code='TEST1',
+                                satisfies=False,
+                                name='Test 1')
+
+        self.req1.save()
+        self.req2.save()
+        self.rq1F.save()
+
+        self.req1.departments.add(self.department)
+        self.req2.courses.add(self.course)
+        self.rq1F.courses.add(self.course2)
+
+    def test_requirements_nooverride(self):
+        reqs = self.course.requirements
+        self.assertTrue(2, len(reqs))
+
+    def test_requirements_override(self):
+        reqs = self.course2.requirements
+        self.assertTrue(1, len(reqs))
+        self.assertEqual(self.req1, reqs[0])
+
+
 class MeetingTestCase(TestCase):
     def setUp(self):
         pass

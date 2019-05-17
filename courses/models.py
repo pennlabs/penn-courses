@@ -77,8 +77,9 @@ class Course(models.Model):
 
     @property
     def requirements(self):
-        # TODO: This won't work if a department fulfills but a course overrides as False.
-        return self.department.requirements.filter(satisfies=True).union(self.overrides.filter(satisfies=True))
+        return self.overrides.filter(satisfies=True).union(
+            self.department.requirements.filter(satisfies=True).exclude(id__in=self.overrides.filter(satisfies=False))
+        )
 
 
 class Restriction(models.Model):
