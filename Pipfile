@@ -22,10 +22,13 @@ urllib3 = "==1.24.2"
 django-debug-toolbar = "*"
 djangorestframework = "*"
 unidecode = "*"
+coreapi = "*"
+django-filter = "*"
 
 [dev-packages]
 coveralls = "*"
 unittest-xml-reporting = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.7"

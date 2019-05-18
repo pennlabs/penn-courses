@@ -52,6 +52,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'PennCourses.middleware.SwitchboardMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -62,7 +63,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'PennCourses.urls'
+ROOT_URLCONF = 'PennCourses.urls.base'
 
 TEMPLATES = [
     {
@@ -152,3 +153,5 @@ REST_FRAMEWORK = {
 INTERNAL_IPS = [
     '127.0.0.1'
 ]
+
+SWITCHBOARD_TEST_APP = None

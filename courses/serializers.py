@@ -33,7 +33,6 @@ class SectionSerializer(serializers.ModelSerializer):
     section_id = serializers.ReadOnlyField(source='normalized')
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
-    # associated_sections = SectionIdField(many=True, read_only=True)
 
     @staticmethod
     def get_semester(obj):
@@ -48,15 +47,14 @@ class SectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Section
-        fields = (
+        fields = [
             'section_id',
-            'pk',
+            'status',
             'activity',
             'credits',
             'semester',
             'meetings',
-            # 'associated_sections',
-        )
+        ]
 
 
 class SectionDetailSerializer(SectionSerializer):
@@ -64,16 +62,18 @@ class SectionDetailSerializer(SectionSerializer):
 
     class Meta:
         model = Section
-        fields = (
+        fields = [
             'section_id',
-            'pk',
+            'status',
             'activity',
             'credits',
             'semester',
             'meetings',
+        ] + [
             'associated_sections',
-            'prereq_notes'
-        )
+            'prereq_notes',
+        ]
+
 
 class CourseIdField(serializers.RelatedField):
     def to_representation(self, value):
@@ -91,13 +91,12 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = (
+        fields = [
             'course_id',
-            'pk',
             'title',
             'description',
             'semester',
-        )
+        ]
 
 
 class CourseDetailSerializer(CourseListSerializer):
@@ -116,12 +115,12 @@ class CourseDetailSerializer(CourseListSerializer):
 
     class Meta:
         model = Course
-        fields = (
+        fields = [
             'course_id',
-            'pk',
             'title',
             'description',
             'semester',
+        ] + [
             'crosslistings',
             'sections',
-        )
+        ]
