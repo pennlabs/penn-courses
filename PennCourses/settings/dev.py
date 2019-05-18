@@ -11,3 +11,10 @@ they operate with different URL schemes since they have different APIs. The app 
 in PennCourses/urls/. `pca` and `pcp` are two examples.
 '''
 SWITCHBOARD_TEST_APP = 'api'
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'db.sqlite3',
+    }
+}
