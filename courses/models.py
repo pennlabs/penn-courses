@@ -247,7 +247,7 @@ Requirements
 class Requirement(models.Model):
     SCHOOL_CHOICES = (
         ('SEAS', 'Engineering'),
-        ('WH+', 'Wharton'),
+        ('WH', 'Wharton'),
         ('SAS', 'College')
     )
     # organize requirements by semester so that we don't get huge related sets which don't give particularly good
@@ -271,7 +271,7 @@ class Requirement(models.Model):
     overrides = models.ManyToManyField(Course, related_name='nonrequirement_set')
 
     class Meta:
-        unique_together = (('semester', 'code'), )
+        unique_together = (('semester', 'code', 'school'), )
 
     def __str__(self):
         return f'{self.code} @ {self.school} - {self.semester}'
