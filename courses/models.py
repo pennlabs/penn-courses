@@ -78,9 +78,8 @@ class Course(models.Model):
 
     @property
     def requirements(self):
-        return self.requirement_set.all().union(
-            self.department.requirements.filter(semester=self.semester)
-        ).exclude(id__in=self.nonrequirement_set.all())
+        return Requirement.objects.exclude(id__in=self.nonrequirement_set.all())\
+            .filter(Q(id__in=self.requirement_set.all()) | Q(id__in=self.department.requirements.all()))
 
 
 class Restriction(models.Model):

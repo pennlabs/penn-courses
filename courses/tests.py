@@ -142,7 +142,12 @@ class RequirementTestCase(TestCase):
 
         self.req1.departments.add(self.department)
         self.req2.courses.add(self.course)
+        self.req2.courses.add(self.course2)
         self.req1.overrides.add(self.course2)
+
+    def assertCoursesEqual(self, expected, actual):
+        def get_codes(x): sorted([f'{c.department.code}-{c.code}' for c in x])
+        self.assertEqual(get_codes(expected), get_codes(actual))
 
     def test_requirements_nooverride(self):
         reqs = self.course.requirements
@@ -151,16 +156,26 @@ class RequirementTestCase(TestCase):
     def test_requirements_override(self):
         reqs = self.course2.requirements
         self.assertEqual(1, len(reqs))
-        self.assertEqual(self.req1, reqs[0])
+        self.assertEqual(self.req2, reqs[0])
 
     def test_satisfying_courses(self):
-        courses = self.req1.satisfying_courses.all()
         # make it so req1 has one department-level requirement, one course-level one, and one override.
         c1 = get_course('MEAM', '101', TEST_SEMESTER)
         self.req1.courses.add(c1)
+        courses = self.req1.satisfying_courses.all()
         self.assertEqual(2, len(courses))
-        def get_codes(x): sorted([f'{c.department.code}-{c.code}' for c in x])
-        self.assertEqual(get_codes([self.course, c1]), get_codes(courses))
+
+        self.assertCoursesEqual([self.course, c1], courses)
+
+    def test_override_precedent(self):
+        # even if a course is in the list of courses, don't include it if it's in the list of overrides
+        self.req1.courses.add(self.course2)
+        courses = self.req1.satisfying_courses.all()
+        self.assertEqual(1, len(courses))
+        self.assertCoursesEqual([self.course], courses)
+        reqs = self.course2.requirements
+        self.assertEqual(1, len(reqs))
+        self.assertEqual(self.req2, reqs[0])
 
 
 class MeetingTestCase(TestCase):
