@@ -27,6 +27,22 @@ def load_courses(query='', semester=None):
 
 
 def load_requirements(school=None, semester=None, requirements=None):
+    """
+    :param school: School to load requirements from. Current options are WH (Wharton) and SEAS (Engineering)
+    :param semester: Semester to load requirements in for.
+    :param requirements: If school is not specified, can input a custom requirements dict in this format:
+    {
+        codes: {"<requirement code>": "<full requirement name>", ...},
+        data: [
+            {
+                "department": <department>,
+                "course_id": <course id OR None if requirement is for whole course>},
+                "satisfies": <False if describing a course override, True for courses and depts which satisfy the req>
+            },
+            ... [one dict for every requirement rule]
+        ]
+    }
+    """
     if semester is None:
         semester = get_value('SEMESTER')
 
