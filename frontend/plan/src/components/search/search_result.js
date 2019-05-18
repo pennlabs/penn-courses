@@ -1,39 +1,30 @@
 import React from "react";
 import PropTypes from "prop-types";
 
+import Badge from "../Badge";
+
 export function SearchResult({ course, requestSectionInfo }) {
     return (
         <li
-            id={course.idDashed}
+            id={course.course_id}
             onClick={() => requestSectionInfo()}
             role="menuitem"
         >
-            <span
-                className="PCR Qual"
-                style={{
-                    background: `rgba(45, 160, 240, ${course.pcrQShade})`,
-                    color: course.pcrQColor,
-                }}
-            >
-                {course.revs.cQ || course.revs.cQT}
-            </span>
-
-            <span
-                className="PCR Diff"
-                style={{
-                    background: `rgba(231, 76, 60, ${course.pcrDShade})`,
-                    color: course.pcrDColor,
-                }}
-            >
-                {course.revs.cD || course.revs.cDT}
-            </span>
+            <Badge
+                baseColor={[45, 160, 240]}
+                value={2.0}
+            />
+            <Badge
+                baseColor={[231, 76, 60]}
+                value={4.0}
+            />
 
             <span className="cID">
-                {course.idSpaced}
+                {course.course_id}
             </span>
-
+            &nbsp;
             <span className="cTitle">
-                {course.courseTitle}
+                {course.title}
             </span>
 
         </li>

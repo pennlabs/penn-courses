@@ -169,68 +169,21 @@ const preprocessSectionSearchData = (searchData) => {
     return data;
 };
 
+const SEMESTER = "2019C";
 
 function buildCourseSearchUrl(initSearchData) {
     let searchData = initSearchData;
     searchData = preprocessCourseSearchData(searchData);
-    const url = `/Search?searchType=${searchData.searchType}&resultType=${searchData.resultType}&searchParam=${searchData.param}`;
     // console.log(url);
-    return url;
+    return `/registrar/${SEMESTER}/courses/?search=${searchData.param}`;
 }
 
 function buildSectionInfoSearchUrl(initCourseData) {
     let searchData = initCourseData;
     searchData = preprocessSectionSearchData(searchData);
-    const url = `/Search?searchType=${searchData.searchType}&resultType=${searchData.resultType}&searchParam=${searchData.param}`;
     // console.log(url);
-    return url;
+    return `/registrar/${SEMESTER}/courses/${searchData.param}`;
 }
-
-const processSearchData = searchData => searchData.map((item) => {
-    const newItem = item;
-    const qFrac = newItem.revs.cQ / 4;
-    const dFrac = newItem.revs.cD / 4;
-    const iFrac = newItem.revs.cI / 4;
-    newItem.pcrQShade = (qFrac ** 3) * 2; // This is the opacity of the PCR block
-    newItem.pcrDShade = (dFrac ** 3) * 2;
-    newItem.pcrIShade = (iFrac ** 3) * 2;
-    if (qFrac < 0.50) {
-        newItem.pcrQColor = "black";
-    } else {
-        newItem.pcrQColor = "white";
-    } // It's hard to see white text on a light background
-    if (dFrac < 0.50) {
-        newItem.pcrDColor = "black";
-    } else {
-        newItem.pcrDColor = "white";
-    }
-    if (iFrac < 0.50) {
-        newItem.pcrIColor = "black";
-    } else {
-        newItem.pcrIColor = "white";
-    }
-    // This is my way of calculating if a class is "good and easy."
-    // R > 1 means good and easy, < 1 means bad and hard
-    newItem.revs.QDratio = newItem.revs.cQ - newItem.revs.cD;
-
-    // Cleanup to keep incomplete data on the bottom;
-    if (Number.isNaN(item.revs.QDratio) || !Number.isFinite(item.revs.QDratio)) {
-        newItem.revs.QDratio = 0;
-    }
-    // the rating as a string - let's us make the actual rating
-    // something else and still show the correct number
-    newItem.revs.cQT = newItem.revs.cQ.toFixed(2);
-    if (newItem.revs.cQ === 0) {
-        newItem.revs.cQT = "";
-    }
-    newItem.revs.cDT = newItem.revs.cD.toFixed(2);
-    if (newItem.revs.cD === 0) {
-        newItem.revs.cDT = "";
-        newItem.revs.QDratio = -100;
-        newItem.revs.cD = 100;
-    }
-    return newItem;
-});
 
 
 export function courseSearchError(error) {
@@ -252,7 +205,7 @@ export function fetchCourseSearch(searchData) {
         dispatch(requestSearch(searchData));
         return fetch(buildCourseSearchUrl(searchData)).then(
             response => response.json().then(
-                json => dispatch(updateSearch(processSearchData(json))),
+                json => dispatch(updateSearch(json)),
                 error => dispatch(courseSearchError(error)),
             ),
             error => dispatch(courseSearchError(error)),
