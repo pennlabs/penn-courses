@@ -1,5 +1,5 @@
 from .base import *
 
 urlpatterns = [
-    path('courses/', include('courses.urls')),
+    path('registrar/', include('courses.urls')),
 ] + urlpatterns
