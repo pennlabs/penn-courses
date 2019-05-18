@@ -14,7 +14,7 @@ Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
     - You may run into some issues installing the mysql python driver on
     macOS. The development environment will use sqlite3 as the database
     by default, so this is not something to worry about.
-    - However, if you do want to run locally with the production
+    - However, if you do want to run locally with the production database,
     then run:
         1. `brew install openssl`
         2. `LDFLAGS=-L/usr/local/opt/openssl/lib pip install mysqlclient`
