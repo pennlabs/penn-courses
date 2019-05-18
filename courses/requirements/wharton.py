@@ -31,17 +31,19 @@ def _add_ccp(reqs, ccp):
 
 
 def _clean_data(data):
-    cleaned = []
+    cleaned = dict()
     for row in data:
         reqs = row[3].split(',')
         _add_ccp(reqs, row[4])
         reqs = [r for r in reqs if r != 'See Advisor']
-        cleaned.append({
-            'department': unidecode.unidecode(row[0]),
-            'course_id': row[1],
-            'requirements': reqs,
-        })
-
+        for req in reqs:
+            req_list = cleaned.get(req, [])
+            req_list.append({
+                'department': unidecode.unidecode(row[0]),
+                'course_id': row[1],
+                'satisfies': True
+            })
+            cleaned[req] = req_list
     return cleaned
 
 
@@ -55,13 +57,13 @@ REQUIREMENTS = {
 }
 
 
-def get_wharton_requirements():
+def get_requirements():
     return {
         'codes': REQUIREMENTS,
-        'data': _clean_data(_get_requirement_data())
+        'data': _clean_data(_get_requirement_data()[:10])
     }
 
 
 if __name__ == '__main__':
-    print(get_wharton_requirements())
+    print(get_requirements())
 

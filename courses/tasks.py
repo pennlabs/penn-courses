@@ -7,7 +7,7 @@ from celery import shared_task
 from options.models import get_value, get_bool
 from . import registrar
 from .util import upsert_course_from_opendata, get_course
-from .models import Course, Requirement
+from .models import Course, Requirement, Department
 
 logger = logging.getLogger(__name__)
 
@@ -32,33 +32,36 @@ def load_requirements(school, semester=None):
 
     if school == 'WH':
         from .requirements import wharton
-        requirements = wharton.get_wharton_requirements()
+        requirements = wharton.get_requirements()
     else:
         return None
 
     codes = requirements['codes']
     data = requirements['data']
 
-    rcache = {}
-
-    def get_req(r):
-        if r in rcache:
-            return rcache[r]
-        else:
-            rcache[r] = Requirement.objects.get_or_create(semester=semester,
-                                                          school=school,
-                                                          satisfies=True,
-                                                          code=r,
-                                                          defaults={
-                                                            'name': codes.get(r, '')
-                                                          })[0]
-            return rcache[r]
-
-    for line in data:
-        course = get_course(line['department'], line['course_id'], semester)
-        for req in line['requirements']:
-            requirement = get_req(req)
-            requirement.courses.add(course)
-
-
-
+    for req_id, items in data.items():
+        requirement = Requirement.objects.get_or_create(semester=semester,
+                                                        school=school,
+                                                        satisfies=True,
+                                                        code=req_id,
+                                                        defaults={
+                                                          'name': codes.get(req_id, '')
+                                                        })[0]
+        for item in items:
+            dept_id = item.get('dept_id')
+            course_id = item.get('course_id')
+            satisfies = item.get('satisfies')
+            dept, _ = Department.objects.get_or_create(code=dept_id)
+            if course_id is None:
+                requirement.departments.add(dept)
+            else:
+                # TODO: Maybe don't just get or create the course? Only add it as a requirement if it already exists?
+                # Since not every course is offered every semester.
+                try:
+                    course = Course.objects.get(department=dept, code=course_id, semester=semester)
+                except Course.DoesNotExist:
+                    continue
+                if satisfies:
+                    requirement.courses.add(course)
+                else:
+                    requirement.overrides.add(course)
