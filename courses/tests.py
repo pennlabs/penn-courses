@@ -129,6 +129,64 @@ class CrosslistingTestCase(TestCase):
         self.assertEqual(3, Course.objects.count())
 
 
+class RequirementTestCase(TestCase):
+    def setUp(self):
+        get_course('CIS', '120', '2012A')  # dummy course to make sure we're filtering by semester
+        self.course = get_course('CIS', '120', TEST_SEMESTER)
+        self.course2 = get_course('CIS', '125', TEST_SEMESTER)
+        self.department = Department.objects.get(code='CIS')
+
+        self.req1 = Requirement(semester=TEST_SEMESTER,
+                                school='SAS',
+                                code='TEST1',
+                                name='Test 1')
+
+        self.req2 = Requirement(semester=TEST_SEMESTER,
+                                school='SAS',
+                                code='TEST2',
+                                name='Test 2')
+
+        self.req1.save()
+        self.req2.save()
+
+        self.req1.departments.add(self.department)
+        self.req2.courses.add(self.course)
+        self.req2.courses.add(self.course2)
+        self.req1.overrides.add(self.course2)
+
+    def assertCoursesEqual(self, expected, actual):
+        def get_codes(x): sorted([f'{c.department.code}-{c.code}' for c in x])
+        self.assertEqual(get_codes(expected), get_codes(actual))
+
+    def test_requirements_nooverride(self):
+        reqs = self.course.requirements
+        self.assertTrue(2, len(reqs))
+
+    def test_requirements_override(self):
+        reqs = self.course2.requirements
+        self.assertEqual(1, len(reqs))
+        self.assertEqual(self.req2, reqs[0])
+
+    def test_satisfying_courses(self):
+        # make it so req1 has one department-level requirement, one course-level one, and one override.
+        c1 = get_course('MEAM', '101', TEST_SEMESTER)
+        self.req1.courses.add(c1)
+        courses = self.req1.satisfying_courses.all()
+        self.assertEqual(2, len(courses))
+
+        self.assertCoursesEqual([self.course, c1], courses)
+
+    def test_override_precedent(self):
+        # even if a course is in the list of courses, don't include it if it's in the list of overrides
+        self.req1.courses.add(self.course2)
+        courses = self.req1.satisfying_courses.all()
+        self.assertEqual(1, len(courses))
+        self.assertCoursesEqual([self.course], courses)
+        reqs = self.course2.requirements
+        self.assertEqual(1, len(reqs))
+        self.assertEqual(self.req2, reqs[0])
+
+
 class MeetingTestCase(TestCase):
     def setUp(self):
         pass

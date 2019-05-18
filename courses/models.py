@@ -1,6 +1,7 @@
 import math
 
 from django.db import models
+from django.db.models import Q
 
 from options.models import get_value
 
@@ -76,6 +77,11 @@ class Course(models.Model):
             return self.primary_listing.listing_set
         else:
             return None
+
+    @property
+    def requirements(self):
+        return Requirement.objects.exclude(id__in=self.nonrequirement_set.all())\
+            .filter(Q(id__in=self.requirement_set.all()) | Q(id__in=self.department.requirements.all()))
 
     def save(self, *args, **kwargs):
         self.full_code = f'{self.department.code}-{self.code}'
@@ -247,34 +253,37 @@ Requirements
 class Requirement(models.Model):
     SCHOOL_CHOICES = (
         ('SEAS', 'Engineering'),
-        ('WH17-', 'Wharton 2017-'),
-        ('WH17+', 'Wharton 2017+'),
+        ('WH', 'Wharton'),
         ('SAS', 'College')
     )
     # organize requirements by semester so that we don't get huge related sets which don't give particularly good
     # info.
     semester = models.CharField(max_length=5)
-    # code identifying this requirement
-    code = models.CharField(max_length=10)
     # what school this requirement belongs to
     school = models.CharField(max_length=5, choices=SCHOOL_CHOICES)
-    # whether or not this entry is saying that these courses fulfill a requirement or not
-    satisfies = models.BooleanField()
+    # code identifying this requirement
+    code = models.CharField(max_length=10)
     # name of the requirement
     name = models.CharField(max_length=255)
 
-    # Departments which satisfy (or don't) this requirement
+    # Departments which satisfy this requirement
     departments = models.ManyToManyField(Department, related_name='requirements')
-    # Course-level overrides for when a specific course's requirements are different
-    # from its departments'
-    courses = models.ManyToManyField(Course, related_name='overrides')
+    # Courses which satisfy this requirement
+    courses = models.ManyToManyField(Course, related_name='requirement_set')
 
-    '''
-    As a general rule, if satisfies==False, there should NOT be departments in the requirement.
-    satisfies operates as a way to *override* for specific courses within a department.
-    Generally, if a department is not related to a requirement, then it DOES NOT satisfy that
-    requirement. Same for a specific course.
-    '''
+    # Courses which do not satisfy this requirement.
+    # For example, CIS classes are Engineering courses, but CIS-125 is NOT an engineering class, so for the ENG
+    # requirement, CIS-125 would go into the overrides set.
+    overrides = models.ManyToManyField(Course, related_name='nonrequirement_set')
 
     class Meta:
-        unique_together = (('semester', 'code', 'satisfies'), )
+        unique_together = (('semester', 'code', 'school'), )
+
+    def __str__(self):
+        return f'{self.code} @ {self.school} - {self.semester}'
+
+    @property
+    def satisfying_courses(self):
+        return Course.objects.all()\
+            .exclude(id__in=self.overrides.all())\
+            .filter(Q(department__in=self.departments.all(), semester=self.semester) | Q(id__in=self.courses.all()))

@@ -20,14 +20,20 @@ def separate_course_code(course_code):
     raise ValueError(f'Course code could not be parsed: {course_code}')
 
 
-def get_course_and_section(course_code, semester):
-    dept_code, course_id, section_id = separate_course_code(course_code)
-
+def get_course(dept_code, course_id, semester):
     dept, _ = Department.objects.get_or_create(code=dept_code)
 
     course, _ = Course.objects.get_or_create(department=dept,
                                              code=course_id,
                                              semester=semester)
+
+    return course
+
+
+def get_course_and_section(course_code, semester):
+    dept_code, course_id, section_id = separate_course_code(course_code)
+
+    course = get_course(dept_code, course_id, semester)
 
     section, _ = Section.objects.get_or_create(course=course, code=section_id)
 
@@ -100,6 +106,32 @@ def add_restrictions(section, requirements):
         section.restrictions.add(rest)
 
 
+def add_college_requirements(course, college_reqs):
+    code_to_name = {
+        "MDS": "Society Sector",
+        "MDH": "History & Tradition Sector",
+        "MDA": "Arts & Letters Sector",
+        "MDO,MDB": "Humanities & Social Science Sector",
+        "MDL": "Living World Sector",
+        "MDP": "Physical World Sector",
+        "MDN,MDB": "Natural Science & Math Sector",
+        "MWC": "Writing Requirement",
+        "MQS": "College Quantitative Data Analysis Req.",
+        "MFR": "Formal Reasoning Course",
+        "MC1": "Cross Cultural Analysis",
+        "MC2": "Cultural Diversity in the US"
+    }
+    name_to_code = dict([(v, k) for k, v in code_to_name.items()])
+    for req_name in college_reqs:
+        req = Requirement.objects.get_or_create(semester=course.semester,
+                                                school='SAS',
+                                                code=name_to_code[req_name],
+                                                defaults={
+                                                  'name': req_name
+                                                })[0]
+        req.courses.add(course)
+
+
 def upsert_course_from_opendata(info, semester):
     course_code = info['section_id_normalized']
     course, section = get_course_and_section(course_code, semester)
@@ -126,6 +158,7 @@ def upsert_course_from_opendata(info, semester):
     add_meetings(section, info['meetings'])
     add_associated_sections(section, info)
     add_restrictions(section, info['requirements'])
+    add_college_requirements(section.course, info['fulfills_college_requirements'])
 
     section.save()
     course.save()

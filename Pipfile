@@ -21,6 +21,7 @@ whitenoise = "*"
 urllib3 = "==1.24.2"
 django-debug-toolbar = "*"
 djangorestframework = "*"
+unidecode = "*"
 coreapi = "*"
 django-filter = "*"
 
