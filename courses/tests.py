@@ -122,6 +122,7 @@ class CrosslistingTestCase(TestCase):
 
 class RequirementTestCase(TestCase):
     def setUp(self):
+        get_course('CIS', '120', '2012A')  # dummy course to make sure we're filtering by semester
         self.course = get_course('CIS', '120', TEST_SEMESTER)
         self.course2 = get_course('CIS', '125', TEST_SEMESTER)
         self.department = Department.objects.get(code='CIS')
@@ -149,9 +150,17 @@ class RequirementTestCase(TestCase):
 
     def test_requirements_override(self):
         reqs = self.course2.requirements
-        print(self.req1.overrides.all())
         self.assertEqual(1, len(reqs))
         self.assertEqual(self.req1, reqs[0])
+
+    def test_satisfying_courses(self):
+        courses = self.req1.satisfying_courses.all()
+        # make it so req1 has one department-level requirement, one course-level one, and one override.
+        c1 = get_course('MEAM', '101', TEST_SEMESTER)
+        self.req1.courses.add(c1)
+        self.assertEqual(2, len(courses))
+        def get_codes(x): sorted([f'{c.department.code}-{c.code}' for c in x])
+        self.assertEqual(get_codes([self.course, c1]), get_codes(courses))
 
 
 class MeetingTestCase(TestCase):

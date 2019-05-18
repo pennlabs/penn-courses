@@ -1,6 +1,7 @@
 import math
 
 from django.db import models
+from django.db.models import Q
 
 from options.models import get_value
 
@@ -275,3 +276,9 @@ class Requirement(models.Model):
 
     def __str__(self):
         return f'{self.code} @ {self.school} - {self.semester}'
+
+    @property
+    def satisfying_courses(self):
+        return Course.objects.all()\
+            .exclude(id__in=self.overrides.all())\
+            .filter(Q(department__in=self.departments.all(), semester=self.semester) | Q(id__in=self.courses.all()))
