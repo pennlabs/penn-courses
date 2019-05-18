@@ -6,7 +6,7 @@ import Badge from "../Badge";
 export function SearchResult({ course, requestSectionInfo }) {
     return (
         <li
-            id={course.course_id}
+            id={course.id}
             onClick={() => requestSectionInfo()}
             role="menuitem"
         >
@@ -20,7 +20,7 @@ export function SearchResult({ course, requestSectionInfo }) {
             />
 
             <span className="cID">
-                {course.course_id}
+                {course.id}
             </span>
             &nbsp;
             <span className="cTitle">

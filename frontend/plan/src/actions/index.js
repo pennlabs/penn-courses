@@ -162,26 +162,14 @@ const preprocessCourseSearchData = (searchData) => {
     return data;
 };
 
-const preprocessSectionSearchData = (searchData) => {
-    const data = searchData;
-    data.param = searchData.param.toLowerCase().replace(/\s/, "");
-    data.resultType = "sectSearch";
-    return data;
-};
 
 const SEMESTER = "2019C";
 
-function buildCourseSearchUrl(initSearchData) {
-    let searchData = initSearchData;
-    searchData = preprocessCourseSearchData(searchData);
-    // console.log(url);
+function buildCourseSearchUrl(searchData) {
     return `/registrar/${SEMESTER}/courses/?search=${searchData.param}`;
 }
 
-function buildSectionInfoSearchUrl(initCourseData) {
-    let searchData = initCourseData;
-    searchData = preprocessSectionSearchData(searchData);
-    // console.log(url);
+function buildSectionInfoSearchUrl(searchData) {
     return `/registrar/${SEMESTER}/courses/${searchData.param}`;
 }
 

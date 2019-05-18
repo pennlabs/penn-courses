@@ -81,7 +81,7 @@ class CourseIdField(serializers.RelatedField):
 
 
 class CourseListSerializer(serializers.ModelSerializer):
-    course_id = serializers.ReadOnlyField()
+    id = serializers.ReadOnlyField(source='course_id')
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -92,7 +92,7 @@ class CourseListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            'course_id',
+            'id',
             'title',
             'description',
             'semester',
@@ -116,7 +116,7 @@ class CourseDetailSerializer(CourseListSerializer):
     class Meta:
         model = Course
         fields = [
-            'course_id',
+            'id',
             'title',
             'description',
             'semester',
