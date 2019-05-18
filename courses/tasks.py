@@ -26,14 +26,17 @@ def load_courses(query='', semester=None):
     return {'result': 'succeeded', 'name': 'courses.tasks.load_courses'}
 
 
-def load_requirements(school, semester=None):
+def load_requirements(school=None, semester=None, requirements=None):
     if semester is None:
         semester = get_value('SEMESTER')
 
     if school == 'WH':
         from .requirements import wharton
         requirements = wharton.get_requirements()
-    else:
+    elif school == 'SEAS':
+        from .requirements import engineering
+        requirements = engineering.get_requirements()
+    elif requirements is None:
         return None
 
     codes = requirements['codes']
@@ -42,21 +45,20 @@ def load_requirements(school, semester=None):
     for req_id, items in data.items():
         requirement = Requirement.objects.get_or_create(semester=semester,
                                                         school=school,
-                                                        satisfies=True,
                                                         code=req_id,
                                                         defaults={
                                                           'name': codes.get(req_id, '')
                                                         })[0]
         for item in items:
-            dept_id = item.get('dept_id')
+            dept_id = item.get('department')
             course_id = item.get('course_id')
             satisfies = item.get('satisfies')
             dept, _ = Department.objects.get_or_create(code=dept_id)
             if course_id is None:
                 requirement.departments.add(dept)
             else:
-                # TODO: Maybe don't just get or create the course? Only add it as a requirement if it already exists?
-                # Since not every course is offered every semester.
+                # Unlike most functionality with courses, we do not want to create a relation between a course
+                # and a requirement if the course does not exist.
                 try:
                     course = Course.objects.get(department=dept, code=course_id, semester=semester)
                 except Course.DoesNotExist:

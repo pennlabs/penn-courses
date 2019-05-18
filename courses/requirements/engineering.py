@@ -159,7 +159,7 @@ REQUIREMENTS = {
     'MATH': 'Mathematics',
     'NATSCI': 'Natural Science',
     'ENG': 'Engineering',
-    'SS': 'Social Sciences',
+    'SS': 'Social Science',
     'H': 'Humanities',
     'TBS': 'Technology in Business and Society (TBS)',
 }
@@ -176,7 +176,7 @@ def get_requirements():
                 if course_ids is None:
                     course_ids = [None]
                 reqs[req].extend(
-                    [{'department': dept, 'course_id': course_id, 'satisfies': satisfies} for course_id in course_ids])
+                    [{'department': dept, 'course_id': str(course_id), 'satisfies': satisfies} for course_id in course_ids])
     return {
         'codes': REQUIREMENTS,
         'data': reqs
