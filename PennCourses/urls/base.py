@@ -17,11 +17,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.documentation import include_docs_urls
+
+from courses.views import index
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('s/', include('shortener.urls')),
-    path('courses/', include('courses.urls'))
+    path('documentation/', include_docs_urls(title='API Docs')),
+    path('', index),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:

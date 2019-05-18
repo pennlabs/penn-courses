@@ -3,6 +3,7 @@
 .DS_Store
 *.pyc
 __pycache__/
+.coverage
 node_modules/
 npm-debug.log*
 yarn-debug.log*

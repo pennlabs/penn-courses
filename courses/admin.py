@@ -54,6 +54,7 @@ class MeetingAdmin(admin.ModelAdmin):
         'section__course__department',
     )
 
+
 admin.site.register(Department, DepartmentAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Section, SectionAdmin)
