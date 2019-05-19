@@ -136,7 +136,7 @@ export default class SectionDisplay extends Component {
                     <div className="column is-one-fifth">
                         { this.getAddRemoveIcon() }
                         <span className="icon">
-                            {!section.isOpen ? this.getPcaButton()
+                            {(section.status !== "O") ? this.getPcaButton()
                                 : (
                                     <i className="fas fa-square has-text-success" />
                                 )

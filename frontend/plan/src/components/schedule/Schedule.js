@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
 
-import { removeSchedItem } from "../../actions";
+import { removeSchedItem, fetchSectionInfo } from "../../actions";
 
 import "./schedule.css";
 import Days from "./Days";
@@ -80,7 +80,7 @@ export const getConflictGroups = (meetings) => {
 
 class Schedule extends Component {
     render() {
-        const { schedData, removeSection } = this.props;
+        const { schedData, removeSection, focusSection } = this.props;
         const sections = schedData.meetings || [];
 
         if (sections.length < 1) {
@@ -115,7 +115,7 @@ class Schedule extends Component {
                     // if we've used all the colors, it's acceptable to start reusing colors.
                     used = [];
                 }
-                let i = hashString(c);
+                let i = Math.abs(hashString(c));
                 while (used.indexOf(colors[i % colors.length]) !== -1) {
                     i += 1;
                 }
@@ -139,9 +139,10 @@ class Schedule extends Component {
                     course: {
                         color,
                         id: s.id,
-                        coreqFulfilled: s.associated_sections.filter(
-                            coreq => sectionIds.indexOf(coreq.id) !== -1
-                        ).length > 0,
+                        coreqFulfilled: s.associated_sections.length === 0 ||
+                            s.associated_sections.filter(
+                                coreq => sectionIds.indexOf(coreq.id) !== -1
+                            ).length > 0,
                     },
                     style: {
                         width: "100%",
@@ -185,6 +186,10 @@ class Schedule extends Component {
                 }}
                 key={`${meeting.course.id}-${meeting.data.day}`}
                 remove={() => removeSection(meeting.course.id)}
+                focusSection={() => {
+                    const split = meeting.course.id.split("-");
+                    focusSection(`${split[0]}-${split[1]}`);
+                }}
             />
         ));
 
@@ -230,6 +235,7 @@ const mapStateToProps = state => (
 const mapDispatchToProps = dispatch => (
     {
         removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
+        focusSection: id => dispatch(fetchSectionInfo({ param: id })),
     }
 );
 

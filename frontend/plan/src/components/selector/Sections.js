@@ -54,10 +54,8 @@ const meetingTimeIntersection = (meetingTimesA, meetingTimesB) => {
 
 class Sections extends Component {
     scheduleContains = (sectionID) => {
-        const {
-            scheduleMeetings,
-        } = this.props;
-        return scheduleMeetings.map(section => section.sectionId).indexOf(sectionID) !== -1;
+        const { scheduleMeetings } = this.props;
+        return scheduleMeetings.map(section => section.id).indexOf(sectionID) !== -1;
     }
 
     render() {
@@ -116,7 +114,11 @@ class Sections extends Component {
                             if (this.scheduleContains(section.id)) {
                                 return false;
                             }
-                            return meetingTimeIntersection(scheduleMeetings, section.meetings);
+                            return meetingTimeIntersection(
+                                scheduleMeetings
+                                    .map(sec => sec.meetings)
+                                    .reduce((acc, val) => acc.concat(val)), section.meetings
+                            );
                         }}
                         sections={sections}
                         addSchedItem={addSchedItem}
