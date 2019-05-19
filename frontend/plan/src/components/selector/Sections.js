@@ -30,29 +30,21 @@ const mapStateToProps = state => (
     }
 );
 
-// generates a list of meeting times in the form [day, start hour, end hour]
-// from a meetingInfo object
-const generateMeetingTimes = (meetingInfo) => {
-    const meetingTimes = [];
-    for (let i = 0; i < meetingInfo.meetDay.length; i += 1) {
-        meetingTimes.push([meetingInfo.meetDay[i], meetingInfo.meetHour,
-            meetingInfo.meetHour + meetingInfo.hourLength]);
-    }
-    return meetingTimes;
-};
-
 // finds intersections between meeting times
 const meetingTimeIntersection = (meetingTimesA, meetingTimesB) => {
+    const overlap = (m1, m2) => {
+        const start1 = m1.start;
+        const start2 = m2.start;
+        const end1 = m1.end;
+        const end2 = m2.end;
+        return m1.day === m2.day && !(end1 <= start2 || end2 <= start1);
+    };
     for (let i = 0; i < meetingTimesA.length; i += 1) {
         for (let j = 0; j < meetingTimesB.length; j += 1) {
             const meetingA = meetingTimesA[i];
             const meetingB = meetingTimesB[j];
-            if (meetingA[0] === meetingB[0]) {
-                const rangeUnion = [Math.max(meetingA[1], meetingB[1]),
-                    Math.min(meetingA[2], meetingB[2])];
-                if (rangeUnion[0] < rangeUnion[1]) {
-                    return true;
-                }
+            if (overlap(meetingA, meetingB)) {
+                return true;
             }
         }
     }
@@ -65,8 +57,7 @@ class Sections extends Component {
         const {
             scheduleMeetings,
         } = this.props;
-
-        return scheduleMeetings.map(section => section.idDashed).indexOf(sectionID) !== -1;
+        return scheduleMeetings.map(section => section.sectionId).indexOf(sectionID) !== -1;
     }
 
     render() {
@@ -121,21 +112,11 @@ class Sections extends Component {
                     <SectionList
                         updateSectionInfo={updateSectionInfo}
                         scheduleContains={this.scheduleContains}
-                        overlaps={(meeting) => {
-                            if (this.scheduleContains(meeting.idDashed)) {
+                        overlaps={(section) => {
+                            if (this.scheduleContains(section.id)) {
                                 return false;
                             }
-                            let meetingTimes = [];
-                            meeting.fullSchedInfo.forEach((meetingInfo) => {
-                                meetingTimes = meetingTimes
-                                    .concat(generateMeetingTimes(meetingInfo));
-                            });
-                            let otherMeetingTimes = [];
-                            scheduleMeetings.forEach((meetingInfo) => {
-                                otherMeetingTimes = otherMeetingTimes
-                                    .concat(generateMeetingTimes(meetingInfo));
-                            });
-                            return meetingTimeIntersection(otherMeetingTimes, meetingTimes);
+                            return meetingTimeIntersection(scheduleMeetings, section.meetings);
                         }}
                         sections={sections}
                         addSchedItem={addSchedItem}

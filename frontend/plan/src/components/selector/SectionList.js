@@ -1,7 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
 import SectionDisplay from "./SectionDisplay";
-import { sectionInfoA } from "../../sections_data";
 
 export default function SectionList(props) {
     const {
@@ -18,14 +17,14 @@ export default function SectionList(props) {
         const section = sections[i];
         sectionsArr.push(
             <SectionDisplay
-                inSchedule={scheduleContains(section.idDashed)}
+                inSchedule={scheduleContains(section.id)}
                 overlap={overlaps(section)}
                 addSchedItem={addSchedItem}
                 removeSchedItem={removeSchedItem}
                 section={section}
                 key={i}
                 openSection={() => {
-                    updateSectionInfo(sectionInfoA);
+                    updateSectionInfo(sections);
                 }}
             />
         );

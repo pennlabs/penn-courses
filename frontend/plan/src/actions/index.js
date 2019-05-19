@@ -1,8 +1,9 @@
 import fetch from "cross-fetch";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
-export const UPDATE_SECTIONS = "UPDATE_SECTIONS";
 
+export const UPDATE_COURSE_INFO = "UPDATE_COURSE_INFO";
+export const UPDATE_SECTIONS = "UPDATE_SECTIONS";
 export const OPEN_SECTION_INFO = "OPEN_SECTION_INFO";
 export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
 export const CREATE_SCHEDULE = "CREATE_SCHEDULE";
@@ -65,10 +66,10 @@ export const addSchedItem = courseObj => (
     }
 );
 
-export const removeSchedItem = idDashed => (
+export const removeSchedItem = id => (
     {
         type: REMOVE_SCHED_ITEM,
-        idDashed,
+        id,
     }
 );
 
@@ -90,6 +91,14 @@ export const updateSectionInfo = sectionInfo => (
     {
         type: OPEN_SECTION_INFO,
         sectionInfo,
+    }
+);
+
+export const updateCourseInfo = (sections, info) => (
+    {
+        type: UPDATE_COURSE_INFO,
+        info,
+        sections,
     }
 );
 
@@ -150,19 +159,6 @@ export function requestSectionInfo(courseData) {
     };
 }
 
-
-const preprocessCourseSearchData = (searchData) => {
-    const data = searchData;
-    data.param = data.param.replace(/\s/, "");
-    if (/\d/.test(searchData.param)) {
-        data.resultType = "numbSearch";
-    } else {
-        data.resultType = "deptSearch";
-    }
-    return data;
-};
-
-
 const SEMESTER = "2019C";
 
 function buildCourseSearchUrl(searchData) {
@@ -206,7 +202,15 @@ export function fetchSectionInfo(searchData) {
         dispatch(requestSectionInfo(searchData));
         return fetch(buildSectionInfoSearchUrl(searchData)).then(
             response => response.json().then(
-                json => dispatch(updateSectionInfo(json)),
+                (json) => {
+                    const info = {
+                        id: json.id,
+                        description: json.description,
+                        crosslistings: json.crosslistings,
+                    };
+                    const { sections } = json;
+                    dispatch(updateCourseInfo(sections, info));
+                },
                 error => dispatch(sectionInfoSearchError(error)),
             ),
             error => dispatch(sectionInfoSearchError(error)),

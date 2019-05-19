@@ -1,12 +1,55 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 
+import Badge from "../Badge";
+
 export default class SectionDisplay extends Component {
     stripTime = (s) => {
         let newS = s.replace(" to ", "-");
         newS = newS.replace("on", "");
         return newS;
-    }
+    };
+
+    getTimeString = (meetings) => {
+        const intToTime = (t) => {
+            let hour = Math.floor(t % 12);
+            let min = Math.round((t % 1) * 100);
+            if (hour === 0) {
+                hour = 12;
+            }
+            if (min === 0) {
+                min = "00";
+            }
+            return `${hour}:${min}`;
+        };
+        const times = {};
+        let maxcount = 0;
+        let maxrange = null;
+        meetings.forEach((meeting) => {
+            const rangeId = `${meeting.start}-${meeting.end}`;
+            if (!times[rangeId]) {
+                times[rangeId] = [meeting.day];
+            } else {
+                times[rangeId].push(meeting.day);
+            }
+            if (times[rangeId].length > maxcount) {
+                maxcount = times[rangeId].length;
+                maxrange = rangeId;
+            }
+        });
+
+        const days = ["M", "T", "W", "R", "F", "S", "U"];
+        let daySet = "";
+        days.forEach((day) => {
+            times[maxrange].forEach((d) => {
+                if (d === day) {
+                    daySet += day;
+                }
+            });
+        })
+
+        return `${intToTime(maxrange.split("-")[0])}-${intToTime(maxrange.split("-")[1])} ${daySet}`;
+    };
 
     justSection = s => s.substring(s.lastIndexOf(" ") + 1);
 
@@ -16,7 +59,9 @@ export default class SectionDisplay extends Component {
             removeSchedItem,
             section: {
                 revs,
-                fullSchedInfo,
+                meetings,
+                id,
+                associated_sections,
             },
             inSchedule,
         } = this.props;
@@ -31,11 +76,16 @@ export default class SectionDisplay extends Component {
 
         if (!inSchedule) {
             onClick = () => {
-                addSchedItem({ ...fullSchedInfo[0], revs });
+                addSchedItem({
+                    meetings,
+                    revs,
+                    sectionId: id,
+                    associated_sections,
+                });
             };
         } else {
             onClick = () => {
-                removeSchedItem(fullSchedInfo[0].fullID);
+                removeSchedItem(id);
             };
         }
 
@@ -58,25 +108,12 @@ export default class SectionDisplay extends Component {
         );
     }
 
-    getInstructorReview = () => {
-        const {
-            section: {
-                revs,
-                pcrIShade,
-                pcrIColor,
-            },
-        } = this.props;
-
-        const bgColor = `rgba(46, 204, 113, ${pcrIShade})`;
-        return (
-            <span
-                className="PCR Inst"
-                style={{ background: bgColor, color: pcrIColor, marginTop: "2px" }}
-            >
-                { revs.cI }
-            </span>
-        );
-    }
+    getInstructorReview = () => (
+        <Badge
+            baseColor={[46, 204, 113]}
+            value={3}
+        />
+    );
 
     render() {
         const {
@@ -96,13 +133,9 @@ export default class SectionDisplay extends Component {
         if (overlap) {
             className += " hideSec";
         }
-        /* if((!$scope.sched.SecOverlap(this.section)
-            && $scope.schedSections.indexOf(this.section.idDashed) === -1)){
-            className += "hideSec";
-        } */
         return (
             <li
-                id={section.idDashed}
+                id={section.id}
                 className={className}
                 onClick={openSection}
                 style={{ cursor: "pointer" }}
@@ -130,7 +163,7 @@ export default class SectionDisplay extends Component {
                         <span
                             className="sectionText"
                         >
-                            { this.justSection(section.idSpaced) }
+                            { this.justSection(section.id.replace(/-/g, " ")) }
                         </span>
                     </div>
 
@@ -138,7 +171,7 @@ export default class SectionDisplay extends Component {
                         <span
                             className="sectionText"
                         >
-                            { this.stripTime(section.timeInfo) }
+                            { this.getTimeString(section.meetings) }
                         </span>
                     </div>
                 </div>

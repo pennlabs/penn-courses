@@ -30,7 +30,7 @@ class SectionIdField(serializers.RelatedField):
 
 
 class SectionSerializer(serializers.ModelSerializer):
-    section_id = serializers.ReadOnlyField(source='normalized')
+    id = serializers.ReadOnlyField(source='normalized')
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
 
@@ -48,7 +48,7 @@ class SectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Section
         fields = [
-            'section_id',
+            'id',
             'status',
             'activity',
             'credits',
@@ -63,7 +63,7 @@ class SectionDetailSerializer(SectionSerializer):
     class Meta:
         model = Section
         fields = [
-            'section_id',
+            'id',
             'status',
             'activity',
             'credits',

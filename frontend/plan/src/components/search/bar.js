@@ -132,7 +132,7 @@ class SearchBar extends Component {
                     </div>
 
                     {/* Course summary dropdown */}
-                    <SummaryDropdown />
+                    {/*<SummaryDropdown />*/}
                     <SchedulesDropdown
                         scheduleNames={scheduleNames}
                         scheduleSelected={scheduleSelected}

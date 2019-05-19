@@ -24,6 +24,11 @@ const hashString = (s) => {
     return hash;
 };
 
+const transformTime = (t) => {
+    const frac = t % 1;
+    return Math.floor(t) + Math.round((frac / 0.6) * 10) / 10;
+};
+
 
 // From an array of meetings, get the groups which conflict in timing.
 export const getConflictGroups = (meetings) => {
@@ -85,17 +90,9 @@ class Schedule extends Component {
         let startHour = 10.5;
         let endHour = 16;
 
-        // get the minimum start hour and the max end hour to set bounds on the schedule.
-        startHour = Math.floor(
-            Math.min(startHour, ...sections.map(m => m.meetHour)) - 0.5
-        );
-        endHour = Math.ceil(
-            Math.max(endHour, ...sections.map(m => m.meetHour + m.hourLength)) + 0.5
-        );
-
         // show the weekend days only if there's a section which meets on saturday (S) or sunday (U)
         const showWeekend = sections.filter(
-            sec => sec.meetDay.indexOf("S") !== -1 || sec.meetDay.indexOf("U") !== -1
+            sec => sec.day === "S" || sec.day === "U"
         ).length > 0;
 
         // actual schedule elements are offset by the row/col offset since
@@ -127,25 +124,23 @@ class Schedule extends Component {
                 return color;
             };
         })();
-        const sectionIds = sections.map(x => x.idDashed);
+        const sectionIds = sections.map(x => x.sectionId);
         // a meeting is the data that represents a single block on the schedule.
         const meetings = [];
-        sections.forEach((m) => {
-            const days = m.meetDay.split(""); // generate as many meetings as there are days
-            const color = getColor(m.idDashed);
-            meetings.push(...days.map(d => (
+        sections.forEach((s) => {
+            const color = getColor(s.sectionId);
+            meetings.push(...s.meetings.map(m => (
                 {
                     data: {
-                        day: d,
-                        start: m.meetHour,
-                        end: m.meetHour + m.hourLength,
+                        day: m.day,
+                        start: transformTime(m.start),
+                        end: transformTime(m.end),
                     },
                     course: {
                         color,
-                        id: m.idDashed,
-                        fullID: m.fullID,
-                        coreqFulfilled: m.SchedAsscSecs.filter(
-                            coreq => sectionIds.indexOf(coreq) !== -1
+                        id: s.sectionId,
+                        coreqFulfilled: s.associated_sections.filter(
+                            coreq => sectionIds.indexOf(coreq.id) !== -1
                         ).length > 0,
                     },
                     style: {
@@ -155,6 +150,13 @@ class Schedule extends Component {
                 }
             )));
         });
+        // get the minimum start hour and the max end hour to set bounds on the schedule.
+        startHour = Math.floor(
+            Math.min(startHour, ...meetings.map(m => m.data.start)) - 0.5
+        );
+        endHour = Math.ceil(
+            Math.max(endHour, ...meetings.map(m => m.data.end)) + 0.5
+        );
 
         getConflictGroups(meetings).forEach((conflict) => {
             // for every conflict of size k, make the meetings in that conflict
@@ -182,7 +184,7 @@ class Schedule extends Component {
                     col: colOffset,
                 }}
                 key={`${meeting.course.id}-${meeting.data.day}`}
-                remove={() => removeSection(meeting.course.fullID)}
+                remove={() => removeSection(meeting.course.id)}
             />
         ));
 
