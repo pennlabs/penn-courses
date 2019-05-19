@@ -139,8 +139,8 @@ class Schedule extends Component {
                     course: {
                         color,
                         id: s.id,
-                        coreqFulfilled: s.associated_sections.length === 0 ||
-                            s.associated_sections.filter(
+                        coreqFulfilled: s.associated_sections.length === 0
+                            || s.associated_sections.filter(
                                 coreq => sectionIds.indexOf(coreq.id) !== -1
                             ).length > 0,
                     },
