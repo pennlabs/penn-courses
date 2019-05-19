@@ -57,12 +57,7 @@ export default class SectionDisplay extends Component {
         const {
             addSchedItem,
             removeSchedItem,
-            section: {
-                revs,
-                meetings,
-                id,
-                associated_sections,
-            },
+            section,
             inSchedule,
         } = this.props;
 
@@ -76,16 +71,11 @@ export default class SectionDisplay extends Component {
 
         if (!inSchedule) {
             onClick = () => {
-                addSchedItem({
-                    meetings,
-                    revs,
-                    sectionId: id,
-                    associated_sections,
-                });
+                addSchedItem(section);
             };
         } else {
             onClick = () => {
-                removeSchedItem(id);
+                removeSchedItem(section.id);
             };
         }
 

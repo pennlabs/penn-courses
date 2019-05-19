@@ -124,11 +124,11 @@ class Schedule extends Component {
                 return color;
             };
         })();
-        const sectionIds = sections.map(x => x.sectionId);
+        const sectionIds = sections.map(x => x.id);
         // a meeting is the data that represents a single block on the schedule.
         const meetings = [];
         sections.forEach((s) => {
-            const color = getColor(s.sectionId);
+            const color = getColor(s.id);
             meetings.push(...s.meetings.map(m => (
                 {
                     data: {
@@ -138,7 +138,7 @@ class Schedule extends Component {
                     },
                     course: {
                         color,
-                        id: s.sectionId,
+                        id: s.id,
                         coreqFulfilled: s.associated_sections.filter(
                             coreq => sectionIds.indexOf(coreq.id) !== -1
                         ).length > 0,
