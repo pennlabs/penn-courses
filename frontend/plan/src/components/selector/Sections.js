@@ -117,7 +117,7 @@ class Sections extends Component {
                             return meetingTimeIntersection(
                                 scheduleMeetings
                                     .map(sec => sec.meetings)
-                                    .reduce((acc, val) => acc.concat(val)), section.meetings
+                                    .reduce((acc, val) => acc.concat(val), []), section.meetings
                             );
                         }}
                         sections={sections}
