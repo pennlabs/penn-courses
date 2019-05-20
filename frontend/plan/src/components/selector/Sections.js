@@ -10,6 +10,7 @@ import {
     updateSectionInfo,
     updateSections
 } from "../../actions";
+import { meetingSetsIntersect } from "../../meetUtil";
 
 const mapDispatchToProps = dispatch => (
     {
@@ -29,27 +30,6 @@ const mapStateToProps = state => (
             .meetings : [],
     }
 );
-
-// finds intersections between meeting times
-const meetingTimeIntersection = (meetingTimesA, meetingTimesB) => {
-    const overlap = (m1, m2) => {
-        const start1 = m1.start;
-        const start2 = m2.start;
-        const end1 = m1.end;
-        const end2 = m2.end;
-        return m1.day === m2.day && !(end1 <= start2 || end2 <= start1);
-    };
-    for (let i = 0; i < meetingTimesA.length; i += 1) {
-        for (let j = 0; j < meetingTimesB.length; j += 1) {
-            const meetingA = meetingTimesA[i];
-            const meetingB = meetingTimesB[j];
-            if (overlap(meetingA, meetingB)) {
-                return true;
-            }
-        }
-    }
-    return false;
-};
 
 
 class Sections extends Component {
@@ -114,10 +94,13 @@ class Sections extends Component {
                             if (this.scheduleContains(section.id)) {
                                 return false;
                             }
-                            return meetingTimeIntersection(
+                            return meetingSetsIntersect(
+                                // get all meetings from the current schedule.
                                 scheduleMeetings
                                     .map(sec => sec.meetings)
-                                    .reduce((acc, val) => acc.concat(val), []), section.meetings
+                                    .reduce((acc, val) => acc.concat(val), []),
+                                // and see if they intersect with this section's meeting times.
+                                section.meetings
                             );
                         }}
                         sections={sections}
