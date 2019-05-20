@@ -144,21 +144,6 @@ export const clearSchedule = () => (
     }
 );
 
-export function requestSearch(searchData) {
-    return {
-        type: REQUEST_SEARCH,
-        searchData,
-    };
-}
-
-
-export function requestSectionInfo(courseData) {
-    return {
-        type: REQUEST_SECTION_INFO_SEARCH,
-        courseData,
-    };
-}
-
 const SEMESTER = "2019C";
 
 function buildCourseSearchUrl(searchData) {
@@ -185,22 +170,20 @@ export function sectionInfoSearchError(error) {
 }
 
 export function fetchCourseSearch(searchData) {
-    return (dispatch) => {
-        dispatch(requestSearch(searchData));
-        return fetch(buildCourseSearchUrl(searchData)).then(
+    return dispatch => (
+        fetch(buildCourseSearchUrl(searchData)).then(
             response => response.json().then(
                 json => dispatch(updateSearch(json)),
                 error => dispatch(courseSearchError(error)),
             ),
             error => dispatch(courseSearchError(error)),
-        );
-    };
+        )
+    );
 }
 
 export function fetchSectionInfo(searchData) {
-    return (dispatch) => {
-        dispatch(requestSectionInfo(searchData));
-        return fetch(buildSectionInfoSearchUrl(searchData)).then(
+    return dispatch => (
+        fetch(buildSectionInfoSearchUrl(searchData)).then(
             response => response.json().then(
                 (json) => {
                     const info = {
@@ -214,8 +197,8 @@ export function fetchSectionInfo(searchData) {
                 error => dispatch(sectionInfoSearchError(error)),
             ),
             error => dispatch(sectionInfoSearchError(error)),
-        );
-    };
+        )
+    );
 }
 
 export function courseSearchLoading() {
