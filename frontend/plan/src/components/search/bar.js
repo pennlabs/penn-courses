@@ -26,8 +26,8 @@ class SearchBar extends Component {
         const {
             startSearch,
         } = this.props;
-        startSearch({ searchType: "courseIDSearch", param: event.target.value });
         this.setState({ searchBarValue: event.target.value });
+        startSearch({ searchType: "courseIDSearch", param: event.target.value });
     }
 
     searchToggler = () => {
