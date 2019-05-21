@@ -30,7 +30,7 @@ class SectionIdField(serializers.RelatedField):
 
 
 class SectionSerializer(serializers.ModelSerializer):
-    section_id = serializers.ReadOnlyField(source='normalized')
+    id = serializers.ReadOnlyField(source='normalized')
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
 
@@ -48,7 +48,7 @@ class SectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Section
         fields = [
-            'section_id',
+            'id',
             'status',
             'activity',
             'credits',
@@ -63,7 +63,7 @@ class SectionDetailSerializer(SectionSerializer):
     class Meta:
         model = Section
         fields = [
-            'section_id',
+            'id',
             'status',
             'activity',
             'credits',
@@ -81,7 +81,7 @@ class CourseIdField(serializers.RelatedField):
 
 
 class CourseListSerializer(serializers.ModelSerializer):
-    course_id = serializers.ReadOnlyField()
+    id = serializers.ReadOnlyField(source='course_id')
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -92,7 +92,7 @@ class CourseListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            'course_id',
+            'id',
             'title',
             'description',
             'semester',
@@ -116,7 +116,7 @@ class CourseDetailSerializer(CourseListSerializer):
     class Meta:
         model = Course
         fields = [
-            'course_id',
+            'id',
             'title',
             'description',
             'semester',

@@ -3,9 +3,9 @@ import {
     OPEN_SECTION_INFO,
     TOGGLE_SEARCH_FILTER,
     UPDATE_SEARCH,
-    UPDATE_SECTIONS
+    UPDATE_SECTIONS,
+    UPDATE_COURSE_INFO
 } from "../actions";
-import { sectionsDataA } from "../sections_data";
 
 // This file contains the reducers for everything related to sections and courses
 
@@ -16,7 +16,7 @@ import { sectionsDataA } from "../sections_data";
 // 4. Whether to display the search filter
 // 5. The coordinates of the search filter button
 const initialState = {
-    sections: sectionsDataA,
+    sections: [],
     searchResults: [],
     sectionInfo: undefined,
     showSearchFilter: false,
@@ -25,6 +25,12 @@ const initialState = {
 
 export const sections = (state = initialState, action) => {
     switch (action.type) {
+        case UPDATE_COURSE_INFO:
+            return {
+                ...state,
+                sectionInfo: action.info,
+                sections: action.sections,
+            };
         case OPEN_SECTION_INFO:
             return {
                 ...state,

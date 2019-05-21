@@ -68,24 +68,6 @@ class SearchBar extends Component {
         return (
             <div id="searchbar" className="level">
                 <span className="level-left">
-
-                    <div id="searchSelectContainer">
-                        <Dropdown
-                            id="searchSelect"
-                            updateLabel={true}
-                            defActive={0}
-                            defText="Search By"
-                            contents={[
-                                ["Course ID", () => {
-                                }],
-                                ["Keywords", () => {
-                                }],
-                                ["Instructor", () => {
-                                }]
-                            ]}
-                        />
-                    </div>
-
                     <form
                         onSubmit={this.handleSubmit}
                     >
@@ -150,7 +132,7 @@ class SearchBar extends Component {
                     </div>
 
                     {/* Course summary dropdown */}
-                    <SummaryDropdown />
+                    {/*<SummaryDropdown />*/}
                     <SchedulesDropdown
                         scheduleNames={scheduleNames}
                         scheduleSelected={scheduleSelected}

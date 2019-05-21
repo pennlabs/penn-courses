@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 export default function Block(props) {
     const days = ["M", "T", "W", "R", "F", "S", "U"];
     const {
-        offsets, meeting, course, remove, style,
+        offsets, meeting, course, remove, style, focusSection,
     } = props;
     const { day, start, end } = meeting;
     const { id, color, coreqFulfilled } = course;
@@ -15,7 +15,12 @@ export default function Block(props) {
         position: "relative",
     };
     return (
-        <div className={`block ${color}`} style={{ ...pos, ...style }}>
+        <div
+            role="button"
+            className={`block ${color}`}
+            style={{ ...pos, ...style }}
+            onClick={focusSection}
+        >
             <div className="inner-block">
                 <span
                     role="button"
@@ -60,4 +65,5 @@ Block.propTypes = {
         width: PropTypes.string,
         left: PropTypes.string,
     }),
+    focusSection: PropTypes.func,
 };

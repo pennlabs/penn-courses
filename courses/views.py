@@ -21,7 +21,7 @@ class TypedSearchBackend(filters.SearchFilter):
 
     @staticmethod
     def get_search_type(request):
-        return request.GET.get('type')
+        return request.GET.get('type', 'auto')
 
     def get_search_terms(self, request):
         search_type = self.get_search_type(request)

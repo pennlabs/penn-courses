@@ -1,8 +1,9 @@
 import fetch from "cross-fetch";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
-export const UPDATE_SECTIONS = "UPDATE_SECTIONS";
 
+export const UPDATE_COURSE_INFO = "UPDATE_COURSE_INFO";
+export const UPDATE_SECTIONS = "UPDATE_SECTIONS";
 export const OPEN_SECTION_INFO = "OPEN_SECTION_INFO";
 export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
 export const CREATE_SCHEDULE = "CREATE_SCHEDULE";
@@ -65,10 +66,10 @@ export const addSchedItem = courseObj => (
     }
 );
 
-export const removeSchedItem = idDashed => (
+export const removeSchedItem = id => (
     {
         type: REMOVE_SCHED_ITEM,
-        idDashed,
+        id,
     }
 );
 
@@ -90,6 +91,14 @@ export const updateSectionInfo = sectionInfo => (
     {
         type: OPEN_SECTION_INFO,
         sectionInfo,
+    }
+);
+
+export const updateCourseInfo = (sections, info) => (
+    {
+        type: UPDATE_COURSE_INFO,
+        info,
+        sections,
     }
 );
 
@@ -135,102 +144,15 @@ export const clearSchedule = () => (
     }
 );
 
-export function requestSearch(searchData) {
-    return {
-        type: REQUEST_SEARCH,
-        searchData,
-    };
+const SEMESTER = "2019C";
+
+function buildCourseSearchUrl(searchData) {
+    return `/registrar/${SEMESTER}/courses/?search=${searchData.param}`;
 }
 
-
-export function requestSectionInfo(courseData) {
-    return {
-        type: REQUEST_SECTION_INFO_SEARCH,
-        courseData,
-    };
+function buildSectionInfoSearchUrl(searchData) {
+    return `/registrar/${SEMESTER}/courses/${searchData.param}`;
 }
-
-
-const preprocessCourseSearchData = (searchData) => {
-    const data = searchData;
-    data.param = data.param.replace(/\s/, "");
-    if (/\d/.test(searchData.param)) {
-        data.resultType = "numbSearch";
-    } else {
-        data.resultType = "deptSearch";
-    }
-    return data;
-};
-
-const preprocessSectionSearchData = (searchData) => {
-    const data = searchData;
-    data.param = searchData.param.toLowerCase().replace(/\s/, "");
-    data.resultType = "sectSearch";
-    return data;
-};
-
-
-function buildCourseSearchUrl(initSearchData) {
-    let searchData = initSearchData;
-    searchData = preprocessCourseSearchData(searchData);
-    const url = `/Search?searchType=${searchData.searchType}&resultType=${searchData.resultType}&searchParam=${searchData.param}`;
-    // console.log(url);
-    return url;
-}
-
-function buildSectionInfoSearchUrl(initCourseData) {
-    let searchData = initCourseData;
-    searchData = preprocessSectionSearchData(searchData);
-    const url = `/Search?searchType=${searchData.searchType}&resultType=${searchData.resultType}&searchParam=${searchData.param}`;
-    // console.log(url);
-    return url;
-}
-
-const processSearchData = searchData => searchData.map((item) => {
-    const newItem = item;
-    const qFrac = newItem.revs.cQ / 4;
-    const dFrac = newItem.revs.cD / 4;
-    const iFrac = newItem.revs.cI / 4;
-    newItem.pcrQShade = (qFrac ** 3) * 2; // This is the opacity of the PCR block
-    newItem.pcrDShade = (dFrac ** 3) * 2;
-    newItem.pcrIShade = (iFrac ** 3) * 2;
-    if (qFrac < 0.50) {
-        newItem.pcrQColor = "black";
-    } else {
-        newItem.pcrQColor = "white";
-    } // It's hard to see white text on a light background
-    if (dFrac < 0.50) {
-        newItem.pcrDColor = "black";
-    } else {
-        newItem.pcrDColor = "white";
-    }
-    if (iFrac < 0.50) {
-        newItem.pcrIColor = "black";
-    } else {
-        newItem.pcrIColor = "white";
-    }
-    // This is my way of calculating if a class is "good and easy."
-    // R > 1 means good and easy, < 1 means bad and hard
-    newItem.revs.QDratio = newItem.revs.cQ - newItem.revs.cD;
-
-    // Cleanup to keep incomplete data on the bottom;
-    if (Number.isNaN(item.revs.QDratio) || !Number.isFinite(item.revs.QDratio)) {
-        newItem.revs.QDratio = 0;
-    }
-    // the rating as a string - let's us make the actual rating
-    // something else and still show the correct number
-    newItem.revs.cQT = newItem.revs.cQ.toFixed(2);
-    if (newItem.revs.cQ === 0) {
-        newItem.revs.cQT = "";
-    }
-    newItem.revs.cDT = newItem.revs.cD.toFixed(2);
-    if (newItem.revs.cD === 0) {
-        newItem.revs.cDT = "";
-        newItem.revs.QDratio = -100;
-        newItem.revs.cD = 100;
-    }
-    return newItem;
-});
 
 
 export function courseSearchError(error) {
@@ -248,29 +170,35 @@ export function sectionInfoSearchError(error) {
 }
 
 export function fetchCourseSearch(searchData) {
-    return (dispatch) => {
-        dispatch(requestSearch(searchData));
-        return fetch(buildCourseSearchUrl(searchData)).then(
+    return dispatch => (
+        fetch(buildCourseSearchUrl(searchData)).then(
             response => response.json().then(
-                json => dispatch(updateSearch(processSearchData(json))),
+                json => dispatch(updateSearch(json)),
                 error => dispatch(courseSearchError(error)),
             ),
             error => dispatch(courseSearchError(error)),
-        );
-    };
+        )
+    );
 }
 
 export function fetchSectionInfo(searchData) {
-    return (dispatch) => {
-        dispatch(requestSectionInfo(searchData));
-        return fetch(buildSectionInfoSearchUrl(searchData)).then(
+    return dispatch => (
+        fetch(buildSectionInfoSearchUrl(searchData)).then(
             response => response.json().then(
-                json => dispatch(updateSectionInfo(json)),
+                (json) => {
+                    const info = {
+                        id: json.id,
+                        description: json.description,
+                        crosslistings: json.crosslistings,
+                    };
+                    const { sections } = json;
+                    dispatch(updateCourseInfo(sections, info));
+                },
                 error => dispatch(sectionInfoSearchError(error)),
             ),
             error => dispatch(sectionInfoSearchError(error)),
-        );
-    };
+        )
+    );
 }
 
 export function courseSearchLoading() {

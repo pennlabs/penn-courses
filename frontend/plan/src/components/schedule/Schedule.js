@@ -3,7 +3,8 @@ import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
 
-import { removeSchedItem } from "../../actions";
+import { removeSchedItem, fetchSectionInfo } from "../../actions";
+import { getConflictGroups } from "../../meetUtil";
 
 import "./schedule.css";
 import Days from "./Days";
@@ -24,58 +25,15 @@ const hashString = (s) => {
     return hash;
 };
 
-
-// From an array of meetings, get the groups which conflict in timing.
-export const getConflictGroups = (meetings) => {
-    // returns true if the two meetings conflict.
-    const overlap = (m1, m2) => {
-        const start1 = m1.data.start;
-        const start2 = m2.data.start;
-        const end1 = m1.data.end;
-        const end2 = m2.data.end;
-        return m1.data.day === m2.data.day && !(end1 <= start2 || end2 <= start1);
-    };
-    // get a unique ID for a course's meeting
-    const id = m => `${m.course.id}-${m.data.day}-${m.data.start}-${m.data.end}`;
-
-    // `conflicts` is a union-find datastructure representing "conflict sets".
-    // https://en.wikipedia.org/wiki/Disjoint-set_data_structure
-    // meetings m1 and m2 are in the same conflict set if m1 and m2 conflict
-    // with at least one meeting m3 which is also in the set (m3 can be m1 or m2).
-    const conflicts = {};
-    const merge = (m1, m2) => {
-        conflicts[id(m2)] = new Set(
-            [...conflicts[id(m1)], ...conflicts[id(m2)]]
-        );
-        conflicts[id(m1)] = conflicts[id(m2)];
-    };
-
-    meetings.forEach((m) => {
-        conflicts[id(m)] = new Set([m]);
-    });
-
-    // compare every pair of meetings. if they overlap, merge their sets.
-    for (let i = 0; i < meetings.length - 1; i += 1) {
-        for (let j = i + 1; j < meetings.length; j += 1) {
-            if (overlap(meetings[i], meetings[j])) {
-                merge(meetings[i], meetings[j]);
-            }
-        }
-    }
-
-    // remove sets of size 1 from the results; they're not conflicting with anything.
-    Object.keys(conflicts).forEach((key) => {
-        if (conflicts[key].size <= 1) {
-            delete conflicts[key];
-        }
-    });
-    // use a Set to remove duplicates, so we get only unique conflict sets.
-    return Array.from(new Set(Object.values(conflicts)).values());
+const transformTime = (t) => {
+    const frac = t % 1;
+    return Math.floor(t) + Math.round((frac / 0.6) * 10) / 10;
 };
+
 
 class Schedule extends Component {
     render() {
-        const { schedData, removeSection } = this.props;
+        const { schedData, removeSection, focusSection } = this.props;
         const sections = schedData.meetings || [];
 
         if (sections.length < 1) {
@@ -85,17 +43,9 @@ class Schedule extends Component {
         let startHour = 10.5;
         let endHour = 16;
 
-        // get the minimum start hour and the max end hour to set bounds on the schedule.
-        startHour = Math.floor(
-            Math.min(startHour, ...sections.map(m => m.meetHour)) - 0.5
-        );
-        endHour = Math.ceil(
-            Math.max(endHour, ...sections.map(m => m.meetHour + m.hourLength)) + 0.5
-        );
-
         // show the weekend days only if there's a section which meets on saturday (S) or sunday (U)
         const showWeekend = sections.filter(
-            sec => sec.meetDay.indexOf("S") !== -1 || sec.meetDay.indexOf("U") !== -1
+            sec => sec.day === "S" || sec.day === "U"
         ).length > 0;
 
         // actual schedule elements are offset by the row/col offset since
@@ -118,7 +68,7 @@ class Schedule extends Component {
                     // if we've used all the colors, it's acceptable to start reusing colors.
                     used = [];
                 }
-                let i = hashString(c);
+                let i = Math.abs(hashString(c));
                 while (used.indexOf(colors[i % colors.length]) !== -1) {
                     i += 1;
                 }
@@ -127,26 +77,23 @@ class Schedule extends Component {
                 return color;
             };
         })();
-        const sectionIds = sections.map(x => x.idDashed);
+        const sectionIds = sections.map(x => x.id);
         // a meeting is the data that represents a single block on the schedule.
         const meetings = [];
-        sections.forEach((m) => {
-            const days = m.meetDay.split(""); // generate as many meetings as there are days
-            const color = getColor(m.idDashed);
-            meetings.push(...days.map(d => (
+        sections.forEach((s) => {
+            const color = getColor(s.id);
+            meetings.push(...s.meetings.map(m => (
                 {
-                    data: {
-                        day: d,
-                        start: m.meetHour,
-                        end: m.meetHour + m.hourLength,
-                    },
+                    day: m.day,
+                    start: transformTime(m.start),
+                    end: transformTime(m.end),
                     course: {
                         color,
-                        id: m.idDashed,
-                        fullID: m.fullID,
-                        coreqFulfilled: m.SchedAsscSecs.filter(
-                            coreq => sectionIds.indexOf(coreq) !== -1
-                        ).length > 0,
+                        id: s.id,
+                        coreqFulfilled: s.associated_sections.length === 0
+                            || s.associated_sections.filter(
+                                coreq => sectionIds.indexOf(coreq.id) !== -1
+                            ).length > 0,
                     },
                     style: {
                         width: "100%",
@@ -155,6 +102,13 @@ class Schedule extends Component {
                 }
             )));
         });
+        // get the minimum start hour and the max end hour to set bounds on the schedule.
+        startHour = Math.floor(
+            Math.min(startHour, ...meetings.map(m => m.start)) - 0.5
+        );
+        endHour = Math.ceil(
+            Math.max(endHour, ...meetings.map(m => m.end)) + 0.5
+        );
 
         getConflictGroups(meetings).forEach((conflict) => {
             // for every conflict of size k, make the meetings in that conflict
@@ -173,7 +127,7 @@ class Schedule extends Component {
         // position in grid is determined by the block given the meeting info and grid offsets.
         const blocks = meetings.map(meeting => (
             <Block
-                meeting={meeting.data}
+                meeting={meeting}
                 course={meeting.course}
                 style={meeting.style}
                 offsets={{
@@ -181,8 +135,12 @@ class Schedule extends Component {
                     row: rowOffset,
                     col: colOffset,
                 }}
-                key={`${meeting.course.id}-${meeting.data.day}`}
-                remove={() => removeSection(meeting.course.fullID)}
+                key={`${meeting.course.id}-${meeting.day}`}
+                remove={() => removeSection(meeting.course.id)}
+                focusSection={() => {
+                    const split = meeting.course.id.split("-");
+                    focusSection(`${split[0]}-${split[1]}`);
+                }}
             />
         ));
 
@@ -216,6 +174,7 @@ Schedule.propTypes = {
         meetings: PropTypes.array,
     }),
     removeSection: PropTypes.func,
+    focusSection: PropTypes.func,
 };
 
 const mapStateToProps = state => (
@@ -228,6 +187,7 @@ const mapStateToProps = state => (
 const mapDispatchToProps = dispatch => (
     {
         removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
+        focusSection: id => dispatch(fetchSectionInfo({ param: id })),
     }
 );
 
