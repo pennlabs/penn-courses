@@ -68,3 +68,31 @@ class CourseSearchTestCase(TestCase):
             self.assertEqual(len(response.data), 1)
             course_codes = [d['id'] for d in response.data]
             self.assertTrue('CIS-120' in course_codes and 'MATH-114' not in course_codes, f'search:{search}')
+
+
+@override_settings(SWITCHBOARD_TEST_APP='pcp')
+class RequirementFilterTestCase(TestCase):
+    def setUp(self):
+        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
+        self.req = Requirement(semester=TEST_SEMESTER, code='REQ', school='SAS')
+        self.req.save()
+        self.req.courses.add(self.math)
+        self.client = APIClient()
+        set_semester()
+
+    def test_return_all_courses(self):
+        response = self.client.get('/courses/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(response.data))
+
+    def test_filter_for_req(self):
+        response = self.client.get('/courses/', {'requirement': 'REQ@SAS'})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual('MATH-114', response.data[0]['id'])
+
+    def test_req_doesnt_exist(self):
+        response = self.client.get('/courses/', {'requirement': 'BLAH@SEAS'})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(0, len(response.data))
