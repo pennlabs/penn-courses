@@ -16,15 +16,18 @@ import { CLEAR_SCHEDULE_MODAL_NAME } from "../modals/clear_schedule_modal";
 class SearchBar extends Component {
     constructor(props) {
         super(props);
-        this.state = { searchFilterOpened: false };
+        this.state = {
+            searchFilterOpened: false,
+            searchBarValue: "",
+        };
     }
 
-    handleSubmit = (event) => {
+    handleChangeVal = (event) => {
         const {
             startSearch,
         } = this.props;
-        event.preventDefault();
-        startSearch({ searchType: "courseIDSearch", param: event.target.getElementsByTagName("input")[0].value });
+        startSearch({ searchType: "courseIDSearch", param: event.target.value });
+        this.setState({ searchBarValue: event.target.value });
     }
 
     searchToggler = () => {
@@ -64,22 +67,25 @@ class SearchBar extends Component {
             scheduleSelected,
             changeSchedule,
         } = this.props;
+
+        const {
+            searchBarValue,
+        } = this.state;
+
         /* eslint-enable no-shadow */
         return (
             <div id="searchbar" className="level">
                 <span className="level-left">
-                    <form
-                        onSubmit={this.handleSubmit}
-                    >
-                        <input
-                            id="CSearch"
-                            type="text"
-                            className="input is-small is-rounded"
-                            name="courseSearch"
-                            autoComplete="off"
-                            placeholder="Search for a department, course, or section"
-                        />
-                    </form>
+                    <input
+                        id="CSearch"
+                        type="text"
+                        value={searchBarValue}
+                        onChange={this.handleChangeVal}
+                        className="input is-small is-rounded"
+                        name="courseSearch"
+                        autoComplete="off"
+                        placeholder="Search for a department, course, or section"
+                    />
                     {this.searchToggler()}
                 </span>
 
