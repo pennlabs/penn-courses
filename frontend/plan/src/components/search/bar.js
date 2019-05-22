@@ -19,6 +19,7 @@ class SearchBar extends Component {
         this.state = {
             searchFilterOpened: false,
             searchBarValue: "",
+            timeout: 0,
         };
     }
 
@@ -26,8 +27,21 @@ class SearchBar extends Component {
         const {
             startSearch,
         } = this.props;
-        this.setState({ searchBarValue: event.target.value });
-        startSearch({ searchType: "courseIDSearch", param: event.target.value });
+
+        const {
+            timeout,
+        } = this.state;
+
+        const searchText = event.target.value;
+        this.setState({ searchBarValue: searchText });
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+
+        this.state.timeout = setTimeout(() => {
+            // console.log("SEARCHED");
+            startSearch({ searchType: "courseIDSearch", param: searchText });
+        }, 200);
     }
 
     searchToggler = () => {
