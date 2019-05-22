@@ -37,11 +37,11 @@ class SearchBar extends Component {
         if (timeout) {
             clearTimeout(timeout);
         }
-
-        this.state.timeout = setTimeout(() => {
-            // console.log("SEARCHED");
-            startSearch({ searchType: "courseIDSearch", param: searchText });
-        }, 200);
+        if (searchText.length >= 3) {
+            this.state.timeout = setTimeout(() => {
+                startSearch({ searchType: "courseIDSearch", param: searchText });
+            }, 200);
+        }
     }
 
     searchToggler = () => {
