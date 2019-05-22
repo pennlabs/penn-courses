@@ -1,6 +1,6 @@
 {
     "parser": "babel-eslint",
-    "extends": "airbnb",
+    "extends": ["airbnb", "react-app"],
     "env": {
         "browser": true
     },
