@@ -80,13 +80,51 @@ class CourseIdField(serializers.RelatedField):
         return value.course_id
 
 
+class RequirementListSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    @staticmethod
+    def setup_eager_loading(queryset):
+        return queryset
+
+    @staticmethod
+    def get_id(obj):
+        return f'{obj.code}@{obj.school}'
+
+    class Meta:
+        model = Requirement
+        fields = [
+            'id',
+            'code',
+            'school',
+            'semester',
+            'name'
+        ]
+
+
+class RequirementDetailSerializer(RequirementListSerializer):
+    satisfying_courses = CourseIdField(many=True, read_only=True)
+
+    class Meta:
+        model = Requirement
+        fields = [
+            'code',
+            'school',
+            'semester',
+            'name'
+        ] + [
+            'satisfying_courses'
+        ]
+
+
+
 class CourseListSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='course_id')
 
     @staticmethod
     def setup_eager_loading(queryset):
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
-                                             'department')
+                                             'department',
+                                             )
         return queryset
 
     class Meta:
@@ -102,6 +140,7 @@ class CourseListSerializer(serializers.ModelSerializer):
 class CourseDetailSerializer(CourseListSerializer):
     crosslistings = CourseIdField(many=True, read_only=True)
     sections = SectionDetailSerializer(many=True)
+    requirements = RequirementListSerializer(many=True)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -110,7 +149,10 @@ class CourseDetailSerializer(CourseListSerializer):
                                              'sections__course__department',
                                              'sections__meetings__room__building',
                                              'sections__associated_sections__course__department',
-                                             'sections__associated_sections__meetings__room__building')
+                                             'sections__associated_sections__meetings__room__building',
+                                             'department__requirements',
+                                             'requirement_set',
+                                             'nonrequirement_set')
         return queryset
 
     class Meta:
@@ -122,5 +164,6 @@ class CourseDetailSerializer(CourseListSerializer):
             'semester',
         ] + [
             'crosslistings',
+            'requirements',
             'sections',
         ]

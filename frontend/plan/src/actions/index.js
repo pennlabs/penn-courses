@@ -144,14 +144,12 @@ export const clearSchedule = () => (
     }
 );
 
-const SEMESTER = "2019C";
-
 function buildCourseSearchUrl(searchData) {
-    return `/registrar/${SEMESTER}/courses/?search=${searchData.param}`;
+    return `/courses/?search=${searchData.param}`;
 }
 
 function buildSectionInfoSearchUrl(searchData) {
-    return `/registrar/${SEMESTER}/courses/${searchData.param}`;
+    return `/courses/${searchData.param}`;
 }
 
 

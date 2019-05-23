@@ -56,7 +56,7 @@ class MeetingAdmin(admin.ModelAdmin):
 
 
 class RequirementAdmin(admin.ModelAdmin):
-    autocomplete_fields = ('departments', 'courses')
+    autocomplete_fields = ('departments', 'courses', 'overrides')
 
 
 admin.site.register(Department, DepartmentAdmin)
