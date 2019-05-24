@@ -15,7 +15,7 @@ function SearchResults({ searchResults, requestSectionInfo }) {
                 <SearchResult
                     key={i}
                     course={searchResult}
-                    requestSectionInfo={() => requestSectionInfo(searchResult.idSpaced)}
+                    requestSectionInfo={() => requestSectionInfo(searchResult.id)}
                 />
             );
             items.push(searchResultComponent);
