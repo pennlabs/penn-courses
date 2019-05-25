@@ -10,3 +10,4 @@ yarn-debug.log*
 yarn-error.log*
 frontend/*/build/
 *.sqlite3
+*-test.json
