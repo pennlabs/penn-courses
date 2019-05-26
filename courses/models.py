@@ -53,6 +53,8 @@ class Course(models.Model):
 
     full_code = models.CharField(max_length=16, null=True, blank=True)
 
+    prerequisites = models.TextField(blank=True)
+
     # Handle crosslisted courses.
     # All crosslisted courses have a "primary listing" in the registrar.
     primary_listing = models.ForeignKey('Course',
@@ -74,7 +76,7 @@ class Course(models.Model):
     @property
     def crosslistings(self):
         if self.primary_listing is not None:
-            return self.primary_listing.listing_set
+            return self.primary_listing.listing_set.exclude(id=self.id)
         else:
             return None
 
@@ -141,12 +143,10 @@ class Section(models.Model):
     associated_sections = models.ManyToManyField('Section')
     restrictions = models.ManyToManyField(Restriction)
 
-    credits = models.DecimalField(max_digits=3,
+    credits = models.DecimalField(max_digits=3,  # some course for 2019C is 14 CR...
                                   decimal_places=2,
                                   null=True,
                                   blank=True)
-
-    prereq_notes = models.TextField(blank=True)
 
     def __str__(self):
         return '%s-%s %s' % (self.course.course_id, self.code, self.course.semester)
