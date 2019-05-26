@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from review.models import Review
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -33,6 +34,9 @@ class SectionSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='normalized')
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
+    course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
+    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
+    instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
 
     @staticmethod
     def get_semester(obj):
@@ -54,6 +58,9 @@ class SectionSerializer(serializers.ModelSerializer):
             'credits',
             'semester',
             'meetings',
+            'course_quality',
+            'instructor_quality',
+            'difficulty',
         ]
 
 
@@ -68,6 +75,9 @@ class SectionDetailSerializer(SectionSerializer):
             'activity',
             'credits',
             'semester',
+            'course_quality',
+            'instructor_quality',
+            'difficulty',
             'meetings',
         ] + [
             'associated_sections',
@@ -116,7 +126,6 @@ class RequirementDetailSerializer(RequirementListSerializer):
         ]
 
 
-
 class CourseListSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='course_id')
 
@@ -124,6 +133,7 @@ class CourseListSerializer(serializers.ModelSerializer):
     def setup_eager_loading(queryset):
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
+                                             'sections__review_set__reviewbit_set'
                                              )
         return queryset
 
@@ -134,6 +144,10 @@ class CourseListSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'semester',
+            # 'review',
+            'course_quality',
+            'instructor_quality',
+            'difficulty'
         ]
 
 

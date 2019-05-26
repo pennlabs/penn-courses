@@ -1,9 +1,10 @@
 import math
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Subquery, OuterRef, Avg
 
 from options.models import get_value
+from review.models import ReviewBit
 
 
 def get_current_semester():
@@ -51,7 +52,7 @@ class Course(models.Model):
     title = models.TextField()
     description = models.TextField(blank=True)
 
-    full_code = models.CharField(max_length=16, null=True, blank=True)
+    full_code = models.CharField(max_length=16, blank=True)
 
     # Handle crosslisted courses.
     # All crosslisted courses have a "primary listing" in the registrar.
@@ -62,7 +63,7 @@ class Course(models.Model):
                                         blank=True)
 
     class Meta:
-        unique_together = (('department', 'code', 'semester'), )
+        unique_together = (('department', 'code', 'semester'), ('full_code', 'semester'))
 
     def __str__(self):
         return '%s %s' % (self.course_id, self.semester)
@@ -100,7 +101,27 @@ class Restriction(models.Model):
         return f'{self.code} - {self.description}'
 
 
+class SectionManager(models.Manager):
+    fields = ['course_quality', 'difficulty', 'instructor_quality']
+
+    def get_queryset(self):
+        return super().get_queryset().annotate(**{
+            field: Subquery(
+                ReviewBit.objects.filter(review__section__course__full_code=OuterRef('course__full_code'),
+                                         review__instructor__in=OuterRef('instructors'),
+                                         field=field)
+                .values('field')
+                .order_by()
+                .annotate(avg=Avg('score'))
+                .values('avg')[:1],
+                output_field=models.FloatField())
+            for field in self.fields
+        })
+
+
 class Section(models.Model):
+    objects = SectionManager()
+
     STATUS_CHOICES = (
         ('O', 'Open'),
         ('C', 'Closed'),
