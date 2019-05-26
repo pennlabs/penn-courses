@@ -1,10 +1,11 @@
 import math
 
 from django.db import models
-from django.db.models import Q, Subquery, OuterRef, Avg
+from django.db.models import Q
 
 from options.models import get_value
-from review.models import ReviewBit
+
+from .managers import CourseManager, SectionManager
 
 
 def get_current_semester():
@@ -42,6 +43,8 @@ class Department(models.Model):
 
 
 class Course(models.Model):
+    objects = CourseManager()
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -101,24 +104,6 @@ class Restriction(models.Model):
 
     def __str__(self):
         return f'{self.code} - {self.description}'
-
-
-class SectionManager(models.Manager):
-    fields = ['course_quality', 'difficulty', 'instructor_quality']
-
-    def get_queryset(self):
-        return super().get_queryset().annotate(**{
-            field: Subquery(
-                ReviewBit.objects.filter(review__section__course__full_code=OuterRef('course__full_code'),
-                                         review__instructor__in=OuterRef('instructors'),
-                                         field=field)
-                .values('field')
-                .order_by()
-                .annotate(avg=Avg('score'))
-                .values('avg')[:1],
-                output_field=models.FloatField())
-            for field in self.fields
-        })
 
 
 class Section(models.Model):
