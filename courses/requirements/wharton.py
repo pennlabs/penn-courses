@@ -52,6 +52,7 @@ REQUIREMENTS = {
     'CDUS': 'Cultural Diversity in the United States',
     'URE': 'Unrestricted Electives',
     'H': 'Humanities',
+    'SS': 'Social Science',
     'NSME': 'Natural Sciences, Math, and Engineering',
     'FGE': 'Uncategorized / Flex Gen Ed Only',
 }
