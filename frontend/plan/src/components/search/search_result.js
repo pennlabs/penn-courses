@@ -12,11 +12,11 @@ export function SearchResult({ course, requestSectionInfo }) {
         >
             <Badge
                 baseColor={[45, 160, 240]}
-                value={2.0}
+                value={course.course_quality}
             />
             <Badge
                 baseColor={[231, 76, 60]}
-                value={4.0}
+                value={course.difficulty}
             />
 
             <span className="cID">

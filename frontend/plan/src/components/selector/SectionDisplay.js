@@ -146,7 +146,10 @@ export default class SectionDisplay extends Component {
                     </div>
 
                     <div className="column is-one-fifth">
-                        { this.getInstructorReview() }
+                        <Badge
+                            baseColor={[46, 204, 113]}
+                            value={section.instructor_quality}
+                        />
                     </div>
 
                     <div className="column is-one-fifth" style={{ marginLeft: "0.4rem", marginTop: "2px" }}>
