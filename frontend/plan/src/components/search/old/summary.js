@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import connect from "react-redux/es/connect/connect";
 import PropTypes from "prop-types";
-import { Dropdown } from "../dropdown";
+import { Dropdown } from "../../old/dropdown";
 
 class SummaryDropdown extends Component {
     computeStats = () => {
