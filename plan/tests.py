@@ -88,13 +88,22 @@ class RequirementFilterTestCase(TestCase):
         self.assertEqual(2, len(response.data))
 
     def test_filter_for_req(self):
-        response = self.client.get('/courses/', {'requirement': 'REQ@SAS'})
+        response = self.client.get('/courses/', {'requirements': 'REQ@SAS'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual('MATH-114', response.data[0]['id'])
 
+    def test_multi_req(self):
+        course3, section3 = get_course_and_section('CIS-240-001', TEST_SEMESTER)
+        req2 = Requirement(semester=TEST_SEMESTER, code='REQ2', school='SEAS')
+        req2.save()
+        req2.courses.add(course3)
+
+        response = self.client.get('/courses/', {'requirements': 'REQ@SAS+REQ2@SEAS'})
+        self.assertEqual(2, len(response.data))
+
     def test_req_doesnt_exist(self):
-        response = self.client.get('/courses/', {'requirement': 'BLAH@SEAS'})
+        response = self.client.get('/courses/', {'requirements': 'BLAH@SEAS'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 

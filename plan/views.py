@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from courses.views import CourseList, CourseDetail
 from .search import TypedSearchBackend
 
@@ -13,14 +15,17 @@ class CourseListSearch(CourseList):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        req_id = self.request.query_params.get('requirement')
-        if req_id is not None:
-            code, school = req_id.split('@')
-            try:
-                requirement = Requirement.objects.get(semester=self.get_semester(), code=code, school=school)
-            except Requirement.DoesNotExist:
-                return queryset.none()
-            queryset = queryset.filter(id__in=requirement.satisfying_courses.all())
+        req_ids = self.request.query_params.get('requirements')
+        if req_ids is not None:
+            query = Q()
+            for req_id in req_ids.split('+'):
+                code, school = req_id.split('@')
+                try:
+                    requirement = Requirement.objects.get(semester=self.get_semester(), code=code, school=school)
+                except Requirement.DoesNotExist:
+                    return queryset.none()
+                query |= Q(id__in=requirement.satisfying_courses.all())
+            queryset = queryset.filter(query)
 
         return queryset
 
