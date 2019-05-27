@@ -55,7 +55,6 @@ def add_instructors(section, names):
     for instructor in names:
         i, _ = Instructor.objects.get_or_create(name=instructor)
         section.instructors.add(i)
-    section.save()
 
 
 def get_room(building_code, room_number):
@@ -134,22 +133,29 @@ def add_college_requirements(course, college_reqs):
 
 def upsert_course_from_opendata(info, semester):
     course_code = info['section_id_normalized']
-    course, section = get_course_and_section(course_code, semester)
+    try:
+        course, section = get_course_and_section(course_code, semester)
+    except ValueError:
+        return  # if we can't parse the course code, skip this course.
 
     # https://stackoverflow.com/questions/11159118/incorrect-string-value-xef-xbf-xbd-for-column
     course.title = info['course_title'].replace('\uFFFD', '')
     course.description = info['course_description'].replace('\uFFFD', '')
+    course.prerequisites = '\n'.join(info['prerequisite_notes'])
     set_crosslistings(course, info['crosslist_primary'])
 
-    try:
-        section.credits = int(info['credits'].split(' ')[0])
-    except:
-        section.credits = 0
+    m = re.match(r'([0-9]*(\.[0-9]+)?) CU', info['credits'])
+    if info['credit_type'] == 'CU' and m is not None:
+        try:
+            section.credits = float(m.group(1))
+        except ValueError:
+            section.credits = 0
+        except IndexError:
+            section.credits = 0
 
     section.status = info['course_status']
     section.capacity = int(info['max_enrollment'])
     section.activity = info['activity']
-    section.prereq_notes = '\n'.join(info['prerequisite_notes'])
     section.meeting_times = json.dumps([meeting['meeting_days'] + ' '
                                         + meeting['start_time'] + ' - '
                                         + meeting['end_time'] for meeting in info['meetings']])
