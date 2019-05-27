@@ -1,5 +1,7 @@
 import React from "react";
 import "bulma/css/bulma.css";
+import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
+import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
 import "./styles/App.css";
 import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
@@ -9,9 +11,9 @@ import Sections from "./components/selector/Sections";
 import Schedule from "./components/schedule/Schedule";
 
 import coursePlanApp from "./reducers";
-import SearchResults from "./components/search/search_results";
-import SearchBar from "./components/search/bar";
-import SearchFilter from "./components/search/filter";
+import SearchResults from "./components/search/old/search_results";
+import SearchBar from "./components/search/SearchBar";
+import SearchFilter from "./components/search/old/filter";
 import NewScheduleModal from "./components/modals/new_schedule_modal";
 import DeleteScheduleModal from "./components/modals/delete_schedule_modal";
 import RenameScheduleModal from "./components/modals/rename_schedule_modal_container";
@@ -87,7 +89,7 @@ function App() {
                     </div>
                 </div>
             </div>
-            <SearchFilter allowed={["filter_search_toggler"]} />
+            
             <footer className="footer">
                 <span className="arrow_container"><i className="fa fa-angle-up" /></span>
                 <div className="container">
