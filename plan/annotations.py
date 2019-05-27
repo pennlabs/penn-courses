@@ -38,4 +38,4 @@ def sections_with_reviews():
             'review__section__course__full_code': OuterRef('course__full_code'),
             'review__instructor__in': OuterRef('instructors')
         }
-    )
+    ).order_by('code')

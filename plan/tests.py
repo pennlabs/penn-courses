@@ -140,3 +140,18 @@ class CourseReviewAverageTestCase(TestCase):
         response = self.client.get('/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data['sections']))
+
+    def test_section_no_duplicates(self):
+        instructor3 = Instructor(name='person3')
+        instructor3.save()
+        rev3 = Review(section=self.rev2.section, instructor=instructor3)
+        rev3.save()
+        rev3.set_scores({
+            'course_quality': 1,
+            'instructor_quality': 1,
+            'difficulty': 1,
+        })
+        self.section2.instructors.add(instructor3)
+        response = self.client.get('/courses/CIS-120/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(response.data['sections']))

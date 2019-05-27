@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from django.db.models import Prefetch, OuterRef
+from django.db.models import Prefetch, OuterRef, Manager
 
 from courses.serializers import CourseListSerializer, CourseDetailSerializer, SectionDetailSerializer
 from courses.models import Course, Section
@@ -34,6 +34,51 @@ class CourseListWithReviewSerializer(CourseListSerializer):
         ]
 
 
+def unique(lst):
+    previous = float("NaN")
+    result = []
+    for elt in lst:
+        if elt != previous:
+            result.append(elt)
+        previous = elt
+    return result
+
+
+"""
+WARNING: This is most likely a hack. The review annotation seems to duplicate sections `m` times where `m` is the
+number of instructors attached to a section. I'm guessing this has to do with the fact that Reviews are
+per-instructor, so there's one row per review that's being aggregated. Any way, distinct() doesn't solve the issue
+for some reason, and there's no DISTINCT ON operation in MySQL, so we need to solve the issue outside of SQL.
+The solution which seems to impact effeciency the least is in the ListSerializer. Basically, right before
+we evaluate the queryset and serialize each row, we remove duplicates with the python equivalent of the `uniq`
+bash command. We know that this will hit all duplicates because the queryset is sorted by section ID, so duplicates
+will be right next to each other.
+
+TODO would be to find a way to do this in SQL, as it'll make the python code less complicated.
+"""
+
+
+class SectionDeduplicateListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        # This method will take O(2mN) as opposed to O(mN) before, where N is number of sections in the set and m
+        # is the maximum number of instructors on any section. Both numbers are generally constant anyways.
+        iterable = data.all() if isinstance(data, Manager) else data
+        iterable = unique(iterable)
+
+        return [
+            self.child.to_representation(item) for item in iterable
+        ]
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError(
+            "Serializers with many=True do not support multiple update by "
+            "default, only multiple create. For updates it is unclear how to "
+            "deal with insertions and deletions. If you need to support "
+            "multiple update, use a `ListSerializer` class and override "
+            "`.update()` so you can specify the behavior exactly."
+        )
+
+
 class SectionDetailWithReviewSerializer(SectionDetailSerializer):
     course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
     difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
@@ -41,6 +86,7 @@ class SectionDetailWithReviewSerializer(SectionDetailSerializer):
 
     class Meta:
         model = Section
+        list_serializer_class = SectionDeduplicateListSerializer
         fields = [
             'id',
             'status',
