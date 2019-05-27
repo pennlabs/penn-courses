@@ -49,10 +49,10 @@ WARNING: This is most likely a hack. The review annotation seems to duplicate se
 number of instructors attached to a section. I'm guessing this has to do with the fact that Reviews are
 per-instructor, so there's one row per review that's being aggregated. Any way, distinct() doesn't solve the issue
 for some reason, and there's no DISTINCT ON operation in MySQL, so we need to solve the issue outside of SQL.
-The solution which seems to impact effeciency the least is in the ListSerializer. Basically, right before
-we evaluate the queryset and serialize each row, we remove duplicates with the python equivalent of the `uniq`
-bash command. We know that this will hit all duplicates because the queryset is sorted by section ID, so duplicates
-will be right next to each other.
+The solution which seems to impact effeciency the least is in the ListSerializer. Basically, right after
+we evaluate the queryset and riht before we serialize each row, we remove duplicates with the python equivalent of the 
+`uniq` bash command. We know that this will hit all duplicates because the queryset is sorted by section ID, 
+so duplicates will be right next to each other.
 
 TODO would be to find a way to do this in SQL, as it'll make the python code less complicated.
 """
