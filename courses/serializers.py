@@ -72,7 +72,6 @@ class SectionDetailSerializer(SectionSerializer):
             'meetings',
         ] + [
             'associated_sections',
-            'prereq_notes',
         ]
 
 

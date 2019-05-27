@@ -52,7 +52,6 @@ class SectionDetailPlanSerializer(SectionDetailSerializer):
             'meetings',
         ] + [
             'associated_sections',
-            'prereq_notes',
         ]
 
 
@@ -65,6 +64,7 @@ class CourseDetailPlanSerializer(CourseDetailSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
+        queryset = annotations.review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
         queryset = queryset.prefetch_related(
             Prefetch('sections', queryset=annotations.sections_with_reviews()),
             'primary_listing__listing_set__department',

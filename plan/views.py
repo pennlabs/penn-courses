@@ -2,7 +2,7 @@ from courses.views import CourseList, CourseDetail
 from .search import TypedSearchBackend
 
 from courses.models import Requirement
-from .serializers import CourseListSearchSerializer
+from .serializers import CourseListSearchSerializer, CourseDetailPlanSerializer
 
 
 class CourseListSearch(CourseList):
@@ -26,4 +26,4 @@ class CourseListSearch(CourseList):
 
 
 class CourseDetailSearch(CourseDetail):
-    pass
+    serializer_class = CourseDetailPlanSerializer
