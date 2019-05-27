@@ -3,6 +3,14 @@ from django.db.models import Avg, Q
 
 
 class Review(models.Model):
+    """
+    Represents the aggregate review for an instructor for a single section of a course.
+    By virtue of being associated to a course, every semester of a course will have a new Review object.
+
+    Actual scores for the review is stored in the ReviewBit related object, can be accessed via the `reviewbit_set`
+    of the object.
+    """
+
     # sections have at most one review per instructor attached to the section.
     section = models.ForeignKey('courses.Section', on_delete=models.CASCADE)
     instructor = models.ForeignKey('courses.Instructor', on_delete=models.CASCADE)
@@ -44,6 +52,10 @@ class Review(models.Model):
 
 
 class ReviewBit(models.Model):
+    """
+    A single key/value pair associated with a review. Fields are things like "course_quality", and scores are averages
+    which range from 0 to 4.
+    """
     review = models.ForeignKey(Review, on_delete=models.CASCADE)
     field = models.CharField(max_length=32)
     score = models.DecimalField(max_digits=6, decimal_places=5)

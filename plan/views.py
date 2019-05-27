@@ -2,13 +2,13 @@ from courses.views import CourseList, CourseDetail
 from .search import TypedSearchBackend
 
 from courses.models import Requirement
-from .serializers import CourseListSearchSerializer, CourseDetailPlanSerializer
+from .serializers import CourseListWithReviewSerializer, CourseDetailWithReviewSerializer
 
 
 class CourseListSearch(CourseList):
     filter_backends = (TypedSearchBackend, )
     search_fields = ('full_code', 'title', 'sections__instructors__name')
-    serializer_class = CourseListSearchSerializer
+    serializer_class = CourseListWithReviewSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -26,4 +26,4 @@ class CourseListSearch(CourseList):
 
 
 class CourseDetailSearch(CourseDetail):
-    serializer_class = CourseDetailPlanSerializer
+    serializer_class = CourseDetailWithReviewSerializer
