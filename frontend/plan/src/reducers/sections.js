@@ -1,10 +1,10 @@
 import {
     COURSE_SEARCH_ERROR,
     OPEN_SECTION_INFO,
-    TOGGLE_SEARCH_FILTER,
     UPDATE_SEARCH,
     UPDATE_SECTIONS,
-    UPDATE_COURSE_INFO
+    UPDATE_COURSE_INFO,
+    LOAD_REQUIREMENTS
 } from "../actions";
 
 // This file contains the reducers for everything related to sections and courses
@@ -19,12 +19,33 @@ const initialState = {
     sections: [],
     searchResults: [],
     sectionInfo: undefined,
-    showSearchFilter: false,
-    searchFilterLocation: undefined,
+    schoolReq: {
+        SAS: [],
+        SEAS: [],
+        NURS: [],
+        WH: [],
+    },
+    filterSearch: {
+        selectedReq: null,
+        difficulty: null,
+        quality: null,
+        time: null,
+        type: null,
+        cu: null,
+    },
 };
 
 export const sections = (state = initialState, action) => {
     switch (action.type) {
+        case LOAD_REQUIREMENTS:
+            return {
+                ...state,
+                schoolReq: action.obj,
+                filterSearch: {
+                    ...state.filterSearch,
+                    selectedReq: action.selObj,
+                },
+            };
         case UPDATE_COURSE_INFO:
             return {
                 ...state,
@@ -48,12 +69,7 @@ export const sections = (state = initialState, action) => {
                 searchResults: action.searchResults,
                 sections: undefined,
             };
-        case TOGGLE_SEARCH_FILTER:
-            return {
-                ...state,
-                showSearchFilter: !state.showSearchFilter,
-                showSearchFilterLocation: action.location,
-            };
+        
         case COURSE_SEARCH_ERROR:
             // console.log(action.error);
             return state;

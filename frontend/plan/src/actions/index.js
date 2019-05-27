@@ -8,8 +8,6 @@ export const OPEN_SECTION_INFO = "OPEN_SECTION_INFO";
 export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
 export const CREATE_SCHEDULE = "CREATE_SCHEDULE";
 
-
-export const TOGGLE_SEARCH_FILTER = "TOGGLE_SEARCH_FILTER";
 export const OPEN_MODAL = "OPEN_MODAL";
 export const CLOSE_MODAL = "CLOSE_MODAL";
 export const ACTION_BUTTON_PRESSED = "ACTION_BUTTON_PRESSED";
@@ -24,12 +22,12 @@ export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
 export const COURSE_SEARCH_ERROR = "COURSE_SEARCH_ERROR";
 export const COURSE_SEARCH_LOADING = "COURSE_SEARCH_LOADING";
 export const COURSE_SEARCH_SUCCESS = "COURSE_SEARCH_SUCCESS";
-export const REQUEST_SEARCH = "REQUEST_SEARCH";
+
+export const LOAD_REQUIREMENTS = "LOAD_REQUIREMENTS";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
 export const SECTION_INFO_SEARCH_SUCCESS = "SECTION_INFO_SEARCH_SUCCESS";
-export const REQUEST_SECTION_INFO_SEARCH = "REQUEST_SECTION_INFO_SEARCH";
 
 
 export const duplicateSchedule = scheduleName => (
@@ -109,14 +107,6 @@ export const createSchedule = scheduleName => (
     }
 );
 
-export const toggleSearchFilterShown = location => (
-    {
-        type: TOGGLE_SEARCH_FILTER,
-        location,
-    }
-);
-
-
 export const openModal = modalShown => (
     {
         type: OPEN_MODAL,
@@ -142,6 +132,40 @@ export const clearSchedule = () => (
     {
         type: CLEAR_SCHEDULE,
     }
+);
+
+export const loadRequirements = () => (
+    dispatch => (
+        fetch("/requirements")
+            .then(
+                response => response.json()
+                    .then((data) => {
+                        const obj = {
+                            SAS: [],
+                            SEAS: [],
+                            WH: [],
+                            NURS: [],
+                        };
+                        const selObj = {};
+                        data.forEach((element) => {
+                            obj[element.school].push(element);
+                            selObj[element.id] = 0;
+                        });
+                        dispatch({
+                            type: LOAD_REQUIREMENTS,
+                            obj,
+                            selObj,
+                        });
+                    }, (error) => {
+                        // eslint-disable-next-line no-console
+                        console.log(error);
+                    }),
+                (error) => {
+                // eslint-disable-next-line no-console
+                    console.log(error);
+                }
+            )
+    )
 );
 
 function buildCourseSearchUrl(searchData) {
