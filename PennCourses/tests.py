@@ -10,6 +10,7 @@ class SwitchboardTestCase(TestCase):
         'penncoursealert.com': 'pca',
         'penncourseplan.com': 'pcp'
     }
+
     def setUp(self):
         self.factory = RequestFactory()
         self.host_to_app = {
@@ -20,7 +21,6 @@ class SwitchboardTestCase(TestCase):
 
     def assertRoute(self, route):
         def test(req):
-            print(req.urlconf)
             self.assertEqual(route, req.site)
             self.assertEqual('PennCourses.urls.'+route, req.urlconf)
         return test

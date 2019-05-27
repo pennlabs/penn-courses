@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 export default function Badge(props) {
     const range = 4;
     const { baseColor, value } = props;
-    const frac = value / range;
+    const frac = value ? value / range : 1;
     const opacity = (frac ** 3) * 2;
     const textColor = frac < 0.5 ? "black" : "white";
 
@@ -16,7 +16,7 @@ export default function Badge(props) {
                 color: textColor,
             }}
         >
-            {value}
+            {value ? value.toFixed(1) : "n/a"}
         </span>
     );
 }

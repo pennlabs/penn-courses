@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from review.models import Review
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -53,7 +54,7 @@ class SectionSerializer(serializers.ModelSerializer):
             'activity',
             'credits',
             'semester',
-            'meetings',
+            'meetings'
         ]
 
 
@@ -115,7 +116,6 @@ class RequirementDetailSerializer(RequirementListSerializer):
         ]
 
 
-
 class CourseListSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='course_id')
 
@@ -123,6 +123,7 @@ class CourseListSerializer(serializers.ModelSerializer):
     def setup_eager_loading(queryset):
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
+                                             'sections__review_set__reviewbit_set'
                                              )
         return queryset
 

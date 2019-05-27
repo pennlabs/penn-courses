@@ -51,7 +51,7 @@ class Course(models.Model):
     title = models.TextField()
     description = models.TextField(blank=True)
 
-    full_code = models.CharField(max_length=16, null=True, blank=True)
+    full_code = models.CharField(max_length=16, blank=True)
 
     prerequisites = models.TextField(blank=True)
 
@@ -64,7 +64,7 @@ class Course(models.Model):
                                         blank=True)
 
     class Meta:
-        unique_together = (('department', 'code', 'semester'), )
+        unique_together = (('department', 'code', 'semester'), ('full_code', 'semester'))
 
     def __str__(self):
         return '%s %s' % (self.course_id, self.semester)
