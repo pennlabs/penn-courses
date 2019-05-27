@@ -5,8 +5,6 @@ from django.db.models import Q
 
 from options.models import get_value
 
-from .managers import CourseManager, SectionManager
-
 
 def get_current_semester():
     return get_value('SEMESTER', '2019C')
@@ -43,8 +41,6 @@ class Department(models.Model):
 
 
 class Course(models.Model):
-    objects = CourseManager()
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -107,8 +103,6 @@ class Restriction(models.Model):
 
 
 class Section(models.Model):
-    objects = SectionManager()
-
     STATUS_CHOICES = (
         ('O', 'Open'),
         ('C', 'Closed'),

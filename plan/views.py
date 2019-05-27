@@ -1,4 +1,4 @@
-from courses.views import CourseList
+from courses.views import CourseList, CourseDetail
 from .search import TypedSearchBackend
 
 from courses.models import Requirement
@@ -23,3 +23,7 @@ class CourseListSearch(CourseList):
             queryset = queryset.filter(id__in=requirement.satisfying_courses.all())
 
         return queryset
+
+
+class CourseDetailSearch(CourseDetail):
+    pass

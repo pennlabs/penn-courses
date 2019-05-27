@@ -34,9 +34,6 @@ class SectionSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='normalized')
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
-    course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
-    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
-    instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
 
     @staticmethod
     def get_semester(obj):
@@ -57,10 +54,7 @@ class SectionSerializer(serializers.ModelSerializer):
             'activity',
             'credits',
             'semester',
-            'meetings',
-            'course_quality',
-            'instructor_quality',
-            'difficulty',
+            'meetings'
         ]
 
 
@@ -75,9 +69,6 @@ class SectionDetailSerializer(SectionSerializer):
             'activity',
             'credits',
             'semester',
-            'course_quality',
-            'instructor_quality',
-            'difficulty',
             'meetings',
         ] + [
             'associated_sections',
@@ -144,10 +135,6 @@ class CourseListSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'semester',
-            # 'review',
-            'course_quality',
-            'instructor_quality',
-            'difficulty'
         ]
 
 
