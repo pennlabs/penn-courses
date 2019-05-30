@@ -4,6 +4,7 @@ from rest_framework.test import APIClient
 from .search import TypedSearchBackend
 from courses.models import *
 from courses.util import *
+from review.models import *
 from options.models import Option
 
 TEST_SEMESTER = '2019A'
@@ -87,12 +88,79 @@ class RequirementFilterTestCase(TestCase):
         self.assertEqual(2, len(response.data))
 
     def test_filter_for_req(self):
-        response = self.client.get('/courses/', {'requirement': 'REQ@SAS'})
+        response = self.client.get('/courses/', {'requirements': 'REQ@SAS'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual('MATH-114', response.data[0]['id'])
 
+    def test_multi_req(self):
+        course3, section3 = get_course_and_section('CIS-240-001', TEST_SEMESTER)
+        req2 = Requirement(semester=TEST_SEMESTER, code='REQ2', school='SEAS')
+        req2.save()
+        req2.courses.add(course3)
+
+        response = self.client.get('/courses/', {'requirements': 'REQ@SAS+REQ2@SEAS'})
+        self.assertEqual(2, len(response.data))
+
     def test_req_doesnt_exist(self):
-        response = self.client.get('/courses/', {'requirement': 'BLAH@SEAS'})
+        response = self.client.get('/courses/', {'requirements': 'BLAH@SEAS'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+
+@override_settings(SWITCHBOARD_TEST_APP='pcp')
+class CourseReviewAverageTestCase(TestCase):
+    def setUp(self):
+        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        _, self.section2 = get_course_and_section('CIS-120-002', TEST_SEMESTER)
+        self.instructor = Instructor(name="Person1")
+        self.instructor.save()
+        self.rev1 = Review(section=get_course_and_section('CIS-120-003', '2005C')[1], instructor=self.instructor)
+        self.rev1.save()
+        self.rev1.set_scores({
+            'course_quality': 4,
+            'instructor_quality': 4,
+            'difficulty': 4,
+        })
+        self.instructor2 = Instructor(name="Person2")
+        self.instructor2.save()
+        self.rev2 = Review(section=get_course_and_section('CIS-120-002', '2015A')[1], instructor=self.instructor2)
+        self.rev2.instructor = self.instructor2
+        self.rev2.save()
+        self.rev2.set_scores({
+            'course_quality': 2,
+            'instructor_quality': 2,
+            'difficulty': 2,
+        })
+
+        self.section.instructors.add(self.instructor)
+        self.section2.instructors.add(self.instructor2)
+        self.client = APIClient()
+        set_semester()
+
+    def test_course_average(self):
+        response = self.client.get('/courses/CIS-120/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, response.data['course_quality'])
+        self.assertEqual(3, response.data['instructor_quality'])
+        self.assertEqual(3, response.data['difficulty'])
+
+    def test_section_reviews(self):
+        response = self.client.get('/courses/CIS-120/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(response.data['sections']))
+
+    def test_section_no_duplicates(self):
+        instructor3 = Instructor(name='person3')
+        instructor3.save()
+        rev3 = Review(section=self.rev2.section, instructor=instructor3)
+        rev3.save()
+        rev3.set_scores({
+            'course_quality': 1,
+            'instructor_quality': 1,
+            'difficulty': 1,
+        })
+        self.section2.instructors.add(instructor3)
+        response = self.client.get('/courses/CIS-120/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(response.data['sections']))

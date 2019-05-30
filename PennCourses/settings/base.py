@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'options',
     'shortener',
     'alert',
+    'review',
 ]
 
 MIDDLEWARE = [
