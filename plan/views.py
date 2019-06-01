@@ -23,7 +23,7 @@ class CourseListSearch(CourseList):
                 try:
                     requirement = Requirement.objects.get(semester=self.get_semester(), code=code, school=school)
                 except Requirement.DoesNotExist:
-                    return queryset.none()
+                    continue
                 query |= Q(id__in=requirement.satisfying_courses.all())
             queryset = queryset.filter(query)
 

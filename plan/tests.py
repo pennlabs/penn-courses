@@ -102,11 +102,6 @@ class RequirementFilterTestCase(TestCase):
         response = self.client.get('/courses/', {'requirements': 'REQ@SAS+REQ2@SEAS'})
         self.assertEqual(2, len(response.data))
 
-    def test_req_doesnt_exist(self):
-        response = self.client.get('/courses/', {'requirements': 'BLAH@SEAS'})
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(0, len(response.data))
-
 
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
 class CourseReviewAverageTestCase(TestCase):
