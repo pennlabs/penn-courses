@@ -156,6 +156,9 @@ TWILIO_SID = os.environ.get('TWILIO_SID', '')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_TOKEN', '')
 TWILIO_NUMBER = os.environ.get('TWILIO_NUMBER', '+12153984277')
 
+# Penn Course Review API
+PCR_TOKEN = os.environ.get('PCR_TOKEN', '')
+
 # Redis
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 

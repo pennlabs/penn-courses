@@ -1,10 +1,22 @@
 import json
 import re
 
+import requests
+from django.conf import settings
+
 from courses.models import Instructor
 from courses.util import get_course_and_section
 
-from .models import Review
+from review.models import Review
+
+
+token = settings.PCR_TOKEN
+base_url = 'https://api.penncoursereview.com/v1'
+
+
+def get_depts():
+    r = requests.get(base_url + '/depts/', {'token': token})
+    return [d['id'] for d in r.json()['result']['values']]
 
 
 def load_data(fname='review/cis-reviews-test.json'):
@@ -40,7 +52,14 @@ def save_reviews(revs):
         review.set_scores(rev['ratings'])
 
 
+def get_reviews_for_department(dept):
+    r = requests.get(base_url + f'/depts/{dept}/reviews/')
+    return extract_reviews(r.json(), dept)
+
+
 def load_reviews():
-    response = load_data()
-    r = extract_reviews(response['result'], 'CIS')
-    save_reviews(r)
+    reviews = []
+    depts = get_depts()
+    for dept in depts:
+        reviews.extend(get_reviews_for_department(dept))
+    save_reviews(reviews)
