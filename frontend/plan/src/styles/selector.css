@@ -1,0 +1,33 @@
+.header {
+    color: #a0a0a0;
+    /*font-size: 0.8em;*/
+}
+
+.segment {
+    border-bottom: solid gray 1px;
+}
+
+.scroll-container {
+  height: calc(100vh - 16em);
+  box-sizing: border-box;
+  border-radius: .375em;
+}
+
+.scrollable {
+    height: 90%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.badge {
+
+}
+
+.course-list {
+    font-size: .7em;
+}
+
+.selector-row:hover {
+    background-color: #dcdcdc;
+    cursor: pointer;
+}

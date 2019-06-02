@@ -14,6 +14,7 @@ import coursePlanApp from "./reducers";
 import SearchResults from "./components/search/old/search_results";
 import SearchBar from "./components/search/SearchBar";
 import SearchFilter from "./components/search/old/filter";
+import Selector from "./components/selector/Selector";
 import NewScheduleModal from "./components/modals/new_schedule_modal";
 import DeleteScheduleModal from "./components/modals/delete_schedule_modal";
 import RenameScheduleModal from "./components/modals/rename_schedule_modal_container";
@@ -41,76 +42,43 @@ store.subscribe(() => {
 function App() {
     return (
         <Provider store={store}>
-            <NewScheduleModal />
-            <DeleteScheduleModal />
-            <RenameScheduleModal />
-            <DuplicateScheduleModal />
-            <ClearScheduleModal />
-            <nav className="navbar is-link" role="navigation">
-                <div className="navbar-brand">
-                    <div className="navbar-item nav-header">
-                        Penn Course Search
-                    </div>
-                </div>
-                <div className="navbar-menu">
-                    <div className="navbar-start" />
-                    <div className="navbar-end">
-                        <a className="navbar-item" href="https://airtable.com/shrf3pVP8e8HO2tO1">
-                            Feedback
-                        </a>
-                        <a
-                            className="navbar-item"
-                            style={{ paddingRight: "0.5em" }}
-                            href="#todo"
-                        >
-                            About
-                        </a>
-                        <a
-                            className="navbar-item"
-                            style={{ paddingRight: "0.5em" }}
-                            href="#todo"
-                        >
-                            Help
-                        </a>
-                    </div>
-                </div>
-            </nav>
-            <SearchBar />
-            <div className="App">
-                <div className="columns" id="courses_and_sections">
-                    <div className="column is-two-fifths">
-                        <div className="columns">
-                            <SearchResults />
-                            <Sections />
+            <div>
+                <SearchBar />
+                <div className="App">
+                    <div className="columns">
+                        <div className="column is-one-quarter box">
+                            <Selector />
+                        </div>
+                        <div className="column is-one-fifth" />
+                        <div className="column box">
+                            <Schedule />
                         </div>
                     </div>
-                    <div id="InfoPanel" className="column">
-                        <Schedule />
-                    </div>
                 </div>
+                <SearchFilter allowed={["filter_search_toggler"]} />
+
+                <footer className="footer">
+                    <span className="arrow_container"><i className="fa fa-angle-up" /></span>
+                    <div className="container">
+                        <div className="content has-text-centered">
+                            <p style={{ fontSize: "0.8rem" }}>
+                                Made&nbsp;with&nbsp;
+                                <span className="icon is-small" style={{ color: "#F56F71" }}>
+                                    <i className="fa fa-heart" />
+                                </span>
+                                &nbsp;by&nbsp;
+                                <a href="https://github.com/benb116">
+                                    Ben Bernstein&nbsp;
+                                </a>
+                                and&nbsp;
+                                <a href="http://pennlabs.org" target="_blank" rel="noopener noreferrer">
+                                    Penn Labs
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </footer>
             </div>
-            
-            <footer className="footer">
-                <span className="arrow_container"><i className="fa fa-angle-up" /></span>
-                <div className="container">
-                    <div className="content has-text-centered">
-                        <p style={{ fontSize: "0.8rem" }}>
-                            Made&nbsp;with&nbsp;
-                            <span className="icon is-small" style={{ color: "#F56F71" }}>
-                                <i className="fa fa-heart" />
-                            </span>
-                            &nbsp;by&nbsp;
-                            <a href="https://github.com/benb116">
-                                Ben Bernstein&nbsp;
-                            </a>
-                            and&nbsp;
-                            <a href="http://pennlabs.org" target="_blank" rel="noopener noreferrer">
-                                Penn Labs
-                            </a>
-                        </p>
-                    </div>
-                </div>
-            </footer>
         </Provider>
     );
 }
