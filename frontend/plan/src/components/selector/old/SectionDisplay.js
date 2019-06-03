@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 
-import Badge from "../Badge";
+import Badge from "../../Badge";
 
 export default class SectionDisplay extends Component {
     stripTime = (s) => {

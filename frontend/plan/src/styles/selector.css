@@ -8,7 +8,7 @@
 }
 
 .scroll-container {
-  height: calc(100vh - 16em);
+  height: 100%;
   box-sizing: border-box;
   border-radius: .375em;
 }
@@ -19,12 +19,22 @@
     overflow-x: hidden;
 }
 
+.table.is-scrollable tbody {
+  overflow-y: scroll;
+  width: auto;
+  position: absolute;
+}
+
 .badge {
 
 }
 
 .course-list {
     font-size: .7em;
+}
+
+.selector-row {
+    /*display: block;*/
 }
 
 .selector-row:hover {
