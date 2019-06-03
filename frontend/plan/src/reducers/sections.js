@@ -16,6 +16,7 @@ import {
 // 4. Whether to display the search filter
 // 5. The coordinates of the search filter button
 const initialState = {
+    course: null,
     sections: [],
     searchResults: [],
     sectionInfo: undefined,
@@ -28,8 +29,7 @@ export const sections = (state = initialState, action) => {
         case UPDATE_COURSE_INFO:
             return {
                 ...state,
-                sectionInfo: action.info,
-                sections: action.sections,
+                course: action.course,
             };
         case OPEN_SECTION_INFO:
             return {

@@ -94,11 +94,10 @@ export const updateSectionInfo = sectionInfo => (
     }
 );
 
-export const updateCourseInfo = (sections, info) => (
+export const updateCourseInfo = course => (
     {
         type: UPDATE_COURSE_INFO,
-        info,
-        sections,
+        course,
     }
 );
 
@@ -176,6 +175,15 @@ export function fetchCourseSearch(searchData) {
             ),
             error => dispatch(courseSearchError(error)),
         )
+    );
+}
+
+export function fetchCourseDetails(courseId) {
+    return dispatch => (
+        fetch(`/courses/${courseId}`)
+            .then(res => res.json())
+            .then(course => dispatch(updateCourseInfo(course)))
+            .catch(error => dispatch(sectionInfoSearchError(error)))
     );
 }
 

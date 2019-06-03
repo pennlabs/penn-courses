@@ -173,7 +173,7 @@ const mapStateToProps = state => (
 
 
 const mapDispatchToProps = dispatch => ({
-    toggleSearchFilterShown: rect => dispatch(toggleSearchFilterShown(rect)),
+    toggleSearchFilterShown: () => {},
     showNewScheduleModal: () => dispatch(openModal(NEW_SCHEDULE_MODAL_NAME)),
     showDeleteScheduleModal: () => dispatch(openModal(DELETE_SCHEDULE_MODAL_NAME)),
     showRenameScheduleModal: () => dispatch(openModal(RENAME_SCHEDULE_MODAL_NAME)),

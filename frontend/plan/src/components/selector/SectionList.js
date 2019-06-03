@@ -1,61 +1,22 @@
 import React from "react";
 import PropTypes from "prop-types";
-import SectionDisplay from "./SectionDisplay";
 
-export default function SectionList(props) {
-    const {
-        updateSectionInfo,
-        sections,
-        scheduleContains,
-        overlaps,
-        addSchedItem,
-        removeSchedItem,
-        listRef,
-    } = props;
-    const sectionsArr = [];
-    for (let i = 0; i < sections.length; i += 1) {
-        const section = sections[i];
-        sectionsArr.push(
-            <SectionDisplay
-                inSchedule={scheduleContains(section.id)}
-                overlap={overlaps(section)}
-                addSchedItem={addSchedItem}
-                removeSchedItem={removeSchedItem}
-                section={section}
-                key={i}
-                openSection={() => {
-                    updateSectionInfo(sections);
-                }}
-            />
-        );
-        /* if (($scope.showAct === section.actType || $scope.showAct === 'noFilter') &&
-            (section.isOpen || $scope.showClosed) &&
-            ($scope.currentCourse || $scope.starSections.indexOf(section.idDashed) > -1)) {
-            sectionsArr.push(<SectionDisplay section={section} key={i}/>);
-        } */
-    }
-
+export default function SectionList({ sections }) {
     return (
-        <div id="SectionList" ref={listRef}>
-            <ul>
-                {sectionsArr}
-            </ul>
+        <div className="scroll-container">
+            <div className="columns segment">
+                <div className="column header">SECT</div>
+                <div className="column header">INSTR</div>
+                <div className="column header">TYPE</div>
+                <div className="column header">TIME</div>
+            </div>
+            <div className="scrollable course-list">
+                { /* Sections go in here */ }
+            </div>
         </div>
     );
 }
 
 SectionList.propTypes = {
-    updateSectionInfo: PropTypes.func.isRequired,
-    sections: PropTypes.arrayOf(PropTypes.object),
-    scheduleContains: PropTypes.func.isRequired,
-    overlaps: PropTypes.func.isRequired,
-    addSchedItem: PropTypes.func,
-    removeSchedItem: PropTypes.func,
-    listRef: PropTypes.shape({
-        current: PropTypes.object,
-    }),
-};
-
-SectionList.defaultProps = {
-    sections: [],
+    sections: PropTypes.arrayOf(PropTypes.object).isRequired,
 };

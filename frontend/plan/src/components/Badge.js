@@ -10,7 +10,7 @@ export default function Badge(props) {
 
     return (
         <span
-            className="tag"
+            className="tag is-rounded"
             style={{
                 background: `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${opacity})`,
                 color: textColor,

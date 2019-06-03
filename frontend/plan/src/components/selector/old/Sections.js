@@ -9,8 +9,8 @@ import {
     updateSearch,
     updateSectionInfo,
     updateSections
-} from "../../actions";
-import { meetingSetsIntersect } from "../../meetUtil";
+} from "../../../actions";
+import { meetingSetsIntersect } from "../../../meetUtil";
 
 const mapDispatchToProps = dispatch => (
     {
