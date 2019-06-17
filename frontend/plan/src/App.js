@@ -37,7 +37,7 @@ function App() {
             <div>
                 <SearchBar />
                 <div className="App">
-                    <div className="columns" style={{ height: "90vh" }}>
+                    <div className="columns main" style={{ height: "90vh" }}>
                         <div className="column is-one-quarter box">
                             <Selector />
                         </div>

@@ -1,22 +1,55 @@
 import React from "react";
 import PropTypes from "prop-types";
+import connect from "react-redux/es/connect/connect";
 
-export default function SectionList({ sections }) {
+import Section from "./Section";
+import { addSchedItem, removeSchedItem } from "../../actions";
+
+
+function SectionList({ sections, scheduleSections, manageSchedule }) {
+    const isInSchedule = ({ id }) => scheduleSections.indexOf(id) !== -1;
     return (
-        <div className="scroll-container">
-            <div className="columns segment">
-                <div className="column header">SECT</div>
-                <div className="column header">INSTR</div>
-                <div className="column header">TYPE</div>
-                <div className="column header">TIME</div>
-            </div>
-            <div className="scrollable course-list">
-                { /* Sections go in here */ }
-            </div>
-        </div>
+        [
+            <div className="section-row segment">
+                <div className="header">SECT</div>
+                <div className="header">TYPE</div>
+                <div className="header">TIME</div>
+                <div className="header">INSTR</div>
+            </div>,
+            <ul className="scrollable">
+                {sections.map(s => (
+                    <Section
+                        section={s}
+                        schedule={manageSchedule(s)}
+                        inSchedule={isInSchedule(s)}
+                    />
+                ))}
+            </ul>
+        ]
     );
 }
 
 SectionList.propTypes = {
     sections: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
+
+const mapStateToProps = (state, ownProps) => (
+    {
+        ...ownProps,
+        scheduleSections: state.schedule.schedules[state.schedule.scheduleSelected].meetings
+            .map(sec => sec.id),
+    }
+);
+
+
+const mapDispatchToProps = dispatch => (
+    {
+        manageSchedule: section => ({
+            add: () => dispatch(addSchedItem(section)),
+            remove: () => dispatch(removeSchedItem(section.id)),
+        }),
+    }
+);
+
+
+export default connect(mapStateToProps, mapDispatchToProps)(SectionList);

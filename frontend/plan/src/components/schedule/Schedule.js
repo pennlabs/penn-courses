@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
 
-import { removeSchedItem, fetchSectionInfo } from "../../actions";
+import { removeSchedItem, fetchCourseDetails } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
 import "./schedule.css";
@@ -187,7 +187,7 @@ const mapStateToProps = state => (
 const mapDispatchToProps = dispatch => (
     {
         removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
-        focusSection: id => dispatch(fetchSectionInfo({ param: id })),
+        focusSection: id => dispatch(fetchCourseDetails(id)),
     }
 );
 

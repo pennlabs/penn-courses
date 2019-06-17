@@ -59,10 +59,10 @@ export const changeSchedule = scheduleId => (
     }
 );
 
-export const addSchedItem = courseObj => (
+export const addSchedItem = section => (
     {
         type: ADD_SCHED_ITEM,
-        courseObj,
+        section,
     }
 );
 
