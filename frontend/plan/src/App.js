@@ -41,7 +41,25 @@ function App() {
                         <div className="column is-one-quarter box">
                             <Selector />
                         </div>
-                        <div className="column is-one-fifth" />
+                        <div className={"column is-one-fifth box"}
+                             style={
+                                 {
+                                     background: "transparent",
+                                    display: "flex",
+                                     flexDirection: "column",
+                                     border: "0",
+                                     boxShadow: "none",
+                                 }
+                             }>
+                            <h3 style={{display: "flex", fontWeight: "bold", marginBottom: "0.5rem"}}>
+                                Cart
+                            </h3>
+                            <section style={{background: "white",
+                                display: "flex", flexGrow: "1",
+                                borderRadius: "6px",
+                                boxShadow: "0 0 5px 0 rgba(200, 200, 200, 0.6)"
+                            }}/>
+                        </div>
                         <div className="column box">
                             <Schedule />
                         </div>
