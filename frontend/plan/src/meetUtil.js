@@ -67,3 +67,44 @@ export const meetingSetsIntersect = (meetingTimesA, meetingTimesB) => {
     }
     return false;
 };
+
+export const getTimeString = (meetings) => {
+    const intToTime = (t) => {
+        let hour = Math.floor(t % 12);
+        let min = Math.round((t % 1) * 100);
+        if (hour === 0) {
+            hour = 12;
+        }
+        if (min === 0) {
+            min = "00";
+        }
+        return `${hour}:${min}`;
+    };
+    const times = {};
+    let maxcount = 0;
+    let maxrange = null;
+    meetings.forEach((meeting) => {
+        const rangeId = `${meeting.start}-${meeting.end}`;
+        if (!times[rangeId]) {
+            times[rangeId] = [meeting.day];
+        } else {
+            times[rangeId].push(meeting.day);
+        }
+        if (times[rangeId].length > maxcount) {
+            maxcount = times[rangeId].length;
+            maxrange = rangeId;
+        }
+    });
+
+    const days = ["M", "T", "W", "R", "F", "S", "U"];
+    let daySet = "";
+    days.forEach((day) => {
+        times[maxrange].forEach((d) => {
+            if (d === day) {
+                daySet += day;
+            }
+        });
+    });
+
+    return `${intToTime(maxrange.split("-")[0])}-${intToTime(maxrange.split("-")[1])} ${daySet}`;
+};

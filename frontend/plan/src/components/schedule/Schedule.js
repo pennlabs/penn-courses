@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
 
-import { removeSchedItem, fetchSectionInfo } from "../../actions";
+import { removeSchedItem, fetchCourseDetails } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
 import "./schedule.css";
@@ -150,7 +150,7 @@ class Schedule extends Component {
         };
 
         return (
-            <div className="schedule box" style={dims}>
+            <div className="schedule" style={dims}>
                 <Days offset={colOffset} weekend={showWeekend} />
                 <Times
                     startTime={startHour}
@@ -187,14 +187,14 @@ const mapStateToProps = state => (
 const mapDispatchToProps = dispatch => (
     {
         removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
-        focusSection: id => dispatch(fetchSectionInfo({ param: id })),
+        focusSection: id => dispatch(fetchCourseDetails(id)),
     }
 );
 
 export default connect(mapStateToProps, mapDispatchToProps)(Schedule);
 
 const EmptySchedule = () => (
-    <div className="box" style={{ height: "100%" }}>
+    <div style={{ height: "100%" }}>
         <p style={{ fontSize: "1.5em", marginTop: "7em", display: "block" }}>
             Search for courses above
             <br />

@@ -453,10 +453,10 @@ ul {
 
 
 .box{
-  border-radius:3px;
-  background:white;
-  border: 1px solid lightgrey;
-  margin: 10px;
+  /*border-radius:3px;*/
+  /*background:white;*/
+  /*border: 1px solid lightgrey;*/
+  /*margin: 10px;*/
 }
 
 .box.column{

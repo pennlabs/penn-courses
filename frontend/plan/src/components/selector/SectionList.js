@@ -1,61 +1,55 @@
 import React from "react";
 import PropTypes from "prop-types";
-import SectionDisplay from "./SectionDisplay";
+import connect from "react-redux/es/connect/connect";
 
-export default function SectionList(props) {
-    const {
-        updateSectionInfo,
-        sections,
-        scheduleContains,
-        overlaps,
-        addSchedItem,
-        removeSchedItem,
-        listRef,
-    } = props;
-    const sectionsArr = [];
-    for (let i = 0; i < sections.length; i += 1) {
-        const section = sections[i];
-        sectionsArr.push(
-            <SectionDisplay
-                inSchedule={scheduleContains(section.id)}
-                overlap={overlaps(section)}
-                addSchedItem={addSchedItem}
-                removeSchedItem={removeSchedItem}
-                section={section}
-                key={i}
-                openSection={() => {
-                    updateSectionInfo(sections);
-                }}
-            />
-        );
-        /* if (($scope.showAct === section.actType || $scope.showAct === 'noFilter') &&
-            (section.isOpen || $scope.showClosed) &&
-            ($scope.currentCourse || $scope.starSections.indexOf(section.idDashed) > -1)) {
-            sectionsArr.push(<SectionDisplay section={section} key={i}/>);
-        } */
-    }
+import Section from "./Section";
+import { addSchedItem, removeSchedItem } from "../../actions";
 
+
+function SectionList({ sections, scheduleSections, manageSchedule }) {
+    const isInSchedule = ({ id }) => scheduleSections.indexOf(id) !== -1;
     return (
-        <div id="SectionList" ref={listRef}>
-            <ul>
-                {sectionsArr}
+        [
+            <div className="section-row segment">
+                <div className="header">SECT</div>
+                <div className="header">TYPE</div>
+                <div className="header">TIME</div>
+                <div className="header">INSTR</div>
+            </div>,
+            <ul className="scrollable">
+                {sections.map(s => (
+                    <Section
+                        section={s}
+                        schedule={manageSchedule(s)}
+                        inSchedule={isInSchedule(s)}
+                    />
+                ))}
             </ul>
-        </div>
+        ]
     );
 }
 
 SectionList.propTypes = {
-    updateSectionInfo: PropTypes.func.isRequired,
-    sections: PropTypes.arrayOf(PropTypes.object),
-    scheduleContains: PropTypes.func.isRequired,
-    overlaps: PropTypes.func.isRequired,
-    addSchedItem: PropTypes.func,
-    removeSchedItem: PropTypes.func,
-    listRef: PropTypes.shape({
-        current: PropTypes.object,
-    }),
+    sections: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 
-SectionList.defaultProps = {
-    sections: [],
-};
+const mapStateToProps = (state, ownProps) => (
+    {
+        ...ownProps,
+        scheduleSections: state.schedule.schedules[state.schedule.scheduleSelected].meetings
+            .map(sec => sec.id),
+    }
+);
+
+
+const mapDispatchToProps = dispatch => (
+    {
+        manageSchedule: section => ({
+            add: () => dispatch(addSchedItem(section)),
+            remove: () => dispatch(removeSchedItem(section.id)),
+        }),
+    }
+);
+
+
+export default connect(mapStateToProps, mapDispatchToProps)(SectionList);

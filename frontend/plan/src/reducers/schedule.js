@@ -102,7 +102,7 @@ export const schedule = (state = initialState, action) => {
                     [state.scheduleSelected]: {
                         ...state[state.scheduleSelected],
                         meetings: [...state.schedules[state.scheduleSelected].meetings,
-                            action.courseObj],
+                            action.section],
                     },
                 },
             };

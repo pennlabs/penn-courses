@@ -6,6 +6,7 @@
   "dependencies": {
     "bulma": "^0.7.2",
     "bulma-extensions": "^6.2.7",
+    "bulma-popover": "^1.0.0",
     "cross-fetch": "^3.0.2",
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
