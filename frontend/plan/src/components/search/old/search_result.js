@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import Badge from "../Badge";
+import Badge from "../../Badge";
 
 export function SearchResult({ course, requestSectionInfo }) {
     return (

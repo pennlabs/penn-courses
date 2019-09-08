@@ -2,7 +2,7 @@ import React from "react";
 import connect from "react-redux/es/connect/connect";
 import PropTypes from "prop-types";
 import { SearchResult } from "./search_result";
-import { fetchSectionInfo } from "../../actions";
+import { fetchSectionInfo } from "../../../actions";
 
 
 function SearchResults({ searchResults, requestSectionInfo }) {

@@ -1,17 +1,17 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
-import { Dropdown } from "../dropdown";
+import { Dropdown } from "../../dropdown";
 import SummaryDropdown from "./summary";
 import {
     changeSchedule, fetchCourseSearch, openModal, toggleSearchFilterShown
-} from "../../actions";
-import { NEW_SCHEDULE_MODAL_NAME } from "../modals/new_schedule_modal";
+} from "../../../actions";
+import { NEW_SCHEDULE_MODAL_NAME } from "../../modals/new_schedule_modal";
 import SchedulesDropdown from "./SchedulesDropdown";
-import { DELETE_SCHEDULE_MODAL_NAME } from "../modals/delete_schedule_modal";
-import { RENAME_SCHEDULE_MODAL_NAME } from "../modals/rename_schedule_modal_container";
-import { DUPLICATE_SCHEDULE_MODAL_NAME } from "../modals/duplicate_schedule_modal_container";
-import { CLEAR_SCHEDULE_MODAL_NAME } from "../modals/clear_schedule_modal";
+import { DELETE_SCHEDULE_MODAL_NAME } from "../../modals/delete_schedule_modal";
+import { RENAME_SCHEDULE_MODAL_NAME } from "../../modals/rename_schedule_modal_container";
+import { DUPLICATE_SCHEDULE_MODAL_NAME } from "../../modals/duplicate_schedule_modal_container";
+import { CLEAR_SCHEDULE_MODAL_NAME } from "../../modals/clear_schedule_modal";
 
 class SearchBar extends Component {
     constructor(props) {
