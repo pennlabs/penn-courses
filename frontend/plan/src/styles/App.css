@@ -6,7 +6,7 @@ html {
 body {
   width: 100%;
   min-width: 1000px;
-  background-color: #ECECEC;
+  background-color: #f1eff9;
   height:100%;
   margin: 0;
 }
@@ -505,14 +505,6 @@ ul {
   vertical-align:center;
 }
 
-#searchbar{
-  background-color:#D8D8D8;
-  padding:6px;
-}
-
-#searchbar form{
-  display:table;
-}
 
 
 .navbar-brand .navbar-item{

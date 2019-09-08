@@ -1,7 +1,7 @@
 import React from "react";
 import connect from "react-redux/es/connect/connect";
-import { OutClickable } from "../dropdown";
-import { toggleSearchFilterShown } from "../../actions";
+import { OutClickable } from "../../old/dropdown";
+// import { toggleSearchFilterShown } from "../../../actions";
 
 class SearchFilter extends OutClickable {
     // This has to be there for OutClickable to work
@@ -96,7 +96,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    initiateCollapse: () => dispatch(toggleSearchFilterShown()),
+    // initiateCollapse: () => dispatch(toggleSearchFilterShown()),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(SearchFilter);
