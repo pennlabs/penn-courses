@@ -20,7 +20,7 @@ export default function Times(props) {
         return `${hour}:${min} ${meridian}`;
     };
 
-    for (let i = Math.ceil(startTime); i < Math.floor(endTime); i += 1) {
+    for (let i = startTime; i <= endTime; i += 1) {
         timestamps.push((
             <span
                 className="time"
