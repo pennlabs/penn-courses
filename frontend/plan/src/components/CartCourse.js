@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import "../styles/course-cart.css";
 
 class CartCourse extends Component {
 
@@ -19,7 +20,9 @@ class CartCourse extends Component {
             backgroundColor: "white",
             border: "1px solid grey"
         };
-        return <div style={
+        return <div
+            className={"course-cart-item"}
+            style={
             {
                 display: "flex",
                 flexDirection: "row",
@@ -27,6 +30,7 @@ class CartCourse extends Component {
                 padding: "0.8rem",
                 borderBottom: "1px solid rgb(200, 200, 200)"
             }}
+            onClick={this.toggleCheck}
         >
             <div style={{
                 flexGrow: "2",
@@ -53,9 +57,8 @@ class CartCourse extends Component {
                             border: "none",
                             color: "#878ED8"
                         }
-                    }
-                       onClick={this.toggleCheck}/> :
-                    <div style={checkStyle} onClick={this.toggleCheck}/>}
+                    }/> :
+                    <div style={checkStyle}/>}
             </div>
         </div>;
     }
