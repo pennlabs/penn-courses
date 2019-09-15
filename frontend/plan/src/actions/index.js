@@ -29,6 +29,8 @@ export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
 export const SECTION_INFO_SEARCH_SUCCESS = "SECTION_INFO_SEARCH_SUCCESS";
 
+export const TOGGLE_CHECK = "TOGGLE_CHECK";
+
 export const ADD_CART_ITEM = "ADD_CART_ITEM";
 
 
@@ -252,3 +254,10 @@ export function courseSearchSuccess(items) {
         items,
     };
 }
+
+export const toggleCheck = courseId => {
+    return {
+        type: TOGGLE_CHECK,
+        courseId
+    };
+};

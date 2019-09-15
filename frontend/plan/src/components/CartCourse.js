@@ -6,11 +6,10 @@ class CartCourse extends Component {
 
     constructor(props) {
         super(props);
-        this.state = {checked: false};
     }
 
     toggleCheck = () => {
-        this.setState(({checked}) => ({checked: !checked}));
+        this.props.toggleCheck();
     };
 
     render() {
@@ -51,7 +50,7 @@ class CartCourse extends Component {
                 justifyContent: "center",
                 display: "flex"
             }}>
-                {this.state.checked ?
+                {this.props.checked ?
                     <i className="fas fa-check-circle" style={
                         {
                             ...checkStyle,
@@ -67,7 +66,8 @@ class CartCourse extends Component {
 
 CartCourse.propTypes = {
     name: PropTypes.string.isRequired,
-    code: PropTypes.string.isRequired
+    code: PropTypes.string.isRequired,
+    checked: PropTypes.bool
 };
 
 export default CartCourse;
