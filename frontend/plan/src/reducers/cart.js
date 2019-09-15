@@ -7,7 +7,7 @@ export const cart = (state = initialState, action) => {
         case ADD_CART_ITEM:
             const {cartCourses} = state;
             const {section} = action;
-            return {...state, cartCourses: [...cartCourses, action]};
+            return {...state, cartCourses: [...cartCourses, section]};
         default:
             return state
     }

@@ -24,7 +24,7 @@ class Cart extends Component {
 }
 
 const mapStateToProps = ({cart: {cartCourses}}) => ({
-    courses: cartCourses.map(({section: {id, name}}) => ({code: id, name: name}))
+    courses: cartCourses.map(({id, name}) => ({code: id, name: name}))
 });
 
 export default connect(mapStateToProps)(Cart);
