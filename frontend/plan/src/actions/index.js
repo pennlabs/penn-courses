@@ -29,6 +29,8 @@ export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
 export const SECTION_INFO_SEARCH_SUCCESS = "SECTION_INFO_SEARCH_SUCCESS";
 
+export const ADD_CART_ITEM = "ADD_CART_ITEM";
+
 
 export const duplicateSchedule = scheduleName => (
     {
@@ -60,6 +62,13 @@ export const changeSchedule = scheduleId => (
 export const addSchedItem = section => (
     {
         type: ADD_SCHED_ITEM,
+        section,
+    }
+);
+
+export const addCartItem = section => (
+    {
+        type: ADD_CART_ITEM,
         section,
     }
 );

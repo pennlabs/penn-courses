@@ -57,7 +57,7 @@ function App() {
                             <h3 style={{display: "flex", fontWeight: "bold", marginBottom: "0.5rem"}}>
                                 Cart
                             </h3>
-                            {<Cart courses={sampleCartCourses}/>}
+                            <Cart/>
                         </div>
                         <div className="column box">
                             <Schedule />

@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 
 import Section from "./Section";
-import { addSchedItem, removeSchedItem } from "../../actions";
+import {addCartItem, addSchedItem, removeSchedItem} from "../../actions";
 
 
 function SectionList({ sections, scheduleSections, manageSchedule }) {
@@ -45,7 +45,7 @@ const mapStateToProps = (state, ownProps) => (
 const mapDispatchToProps = dispatch => (
     {
         manageSchedule: section => ({
-            add: () => dispatch(addSchedItem(section)),
+            add: () => dispatch(addCartItem(section)),
             remove: () => dispatch(removeSchedItem(section.id)),
         }),
     }

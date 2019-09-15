@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import PropTypes from "prop-types";
 import "../styles/course-cart.css";
 
 class CartCourse extends Component {
@@ -23,13 +24,13 @@ class CartCourse extends Component {
         return <div
             className={"course-cart-item"}
             style={
-            {
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-around",
-                padding: "0.8rem",
-                borderBottom: "1px solid rgb(200, 200, 200)"
-            }}
+                {
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "space-around",
+                    padding: "0.8rem",
+                    borderBottom: "1px solid rgb(200, 200, 200)"
+                }}
             onClick={this.toggleCheck}
         >
             <div style={{
@@ -63,5 +64,10 @@ class CartCourse extends Component {
         </div>;
     }
 }
+
+CartCourse.propTypes = {
+    name: PropTypes.string.isRequired,
+    code: PropTypes.string.isRequired
+};
 
 export default CartCourse;

@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import CartCourse from "./CartCourse";
+import {connect} from "react-redux";
 
 class Cart extends Component {
 
@@ -22,4 +23,8 @@ class Cart extends Component {
 
 }
 
-export default Cart;
+const mapStateToProps = ({cart: {cartCourses}}) => ({
+    courses: cartCourses.map(({section: {id, name}}) => ({code: id, name: name}))
+});
+
+export default connect(mapStateToProps)(Cart);
