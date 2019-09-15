@@ -53,7 +53,7 @@ class Schedule extends Component {
         const rowOffset = 1;
         const colOffset = 1;
 
-        const getNumRows = () => (Math.ceil(endHour) - Math.floor(startHour)) * 2 + rowOffset;
+        const getNumRows = () => (endHour - startHour + 1) * 2 + rowOffset;
         const getNumCol = () => 5 + colOffset + (showWeekend ? 2 : 0);
 
         // step 2 in the CIS121 review: hashing with linear probing.
@@ -104,10 +104,10 @@ class Schedule extends Component {
         });
         // get the minimum start hour and the max end hour to set bounds on the schedule.
         startHour = Math.floor(
-            Math.min(startHour, ...meetings.map(m => m.start)) - 0.5
+            Math.min(startHour, ...meetings.map(m => m.start))
         );
         endHour = Math.ceil(
-            Math.max(endHour, ...meetings.map(m => m.end)) + 0.5
+            Math.max(endHour, ...meetings.map(m => m.end))
         );
 
         getConflictGroups(meetings).forEach((conflict) => {
