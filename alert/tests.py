@@ -2,7 +2,7 @@ import json
 import base64
 from unittest.mock import Mock, patch
 
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 
 from . import tasks
@@ -18,6 +18,7 @@ def contains_all(l1, l2):
 
 @patch('alert.models.Text.send_alert')
 @patch('alert.models.Email.send_alert')
+@override_settings(SWITCHBOARD_TEST_APP='pca')
 class SendAlertTestCase(TestCase):
     def setUp(self):
         course, section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
@@ -50,6 +51,7 @@ class SendAlertTestCase(TestCase):
         self.assertTrue(mock_text.called)
 
 
+@override_settings(SWITCHBOARD_TEST_APP='pca')
 class RegisterTestCase(TestCase):
     def setUp(self):
         self.sections = []
@@ -111,6 +113,7 @@ class RegisterTestCase(TestCase):
         self.assertEqual(0, len(Registration.objects.all()))
 
 
+@override_settings(SWITCHBOARD_TEST_APP='pca')
 class ResubscribeTestCase(TestCase):
     def setUp(self):
         _, self.section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
@@ -178,6 +181,7 @@ class ResubscribeTestCase(TestCase):
         self.assertEqual(result, reg3)
 
 
+@override_settings(SWITCHBOARD_TEST_APP='pca')
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
         _, self.section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
@@ -227,6 +231,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
 
 
 @patch('alert.views.alert_for_course')
+@override_settings(SWITCHBOARD_TEST_APP='pca')
 class WebhookViewTestCase(TestCase):
     def setUp(self):
         self.client = Client()
@@ -246,7 +251,7 @@ class WebhookViewTestCase(TestCase):
 
     def test_alert_called_and_sent(self, mock_alert):
         res = self.client.post(
-            reverse('webhook'),
+            reverse('webhook', urlconf='alert.urls'),
             data=json.dumps(self.body),
             content_type='application/json',
             **self.headers)
@@ -262,7 +267,7 @@ class WebhookViewTestCase(TestCase):
 
     def test_alert_bad_json(self, mock_alert):
         res = self.client.post(
-            reverse('webhook'),
+            reverse('webhook', urlconf='alert.urls'),
             data='blah',
             content_type='application/json',
             **self.headers)
@@ -275,7 +280,7 @@ class WebhookViewTestCase(TestCase):
         self.body['status'] = 'C'
         self.body['status_code_normalized'] = 'Closed'
         res = self.client.post(
-            reverse('webhook'),
+            reverse('webhook', urlconf='alert.urls'),
             data=json.dumps(self.body),
             content_type='application/json',
             **self.headers)
@@ -290,7 +295,7 @@ class WebhookViewTestCase(TestCase):
     def test_alert_called_wrong_sem(self, mock_alert):
         self.body['term'] = 'NOTRM'
         res = self.client.post(
-            reverse('webhook'),
+            reverse('webhook', urlconf='alert.urls'),
             data=json.dumps(self.body),
             content_type='application/json',
             **self.headers)
@@ -305,7 +310,7 @@ class WebhookViewTestCase(TestCase):
     def test_alert_called_alerts_off(self, mock_alert):
         Option.objects.update_or_create(key='SEND_FROM_WEBHOOK', value_type='BOOL', defaults={'value': 'FALSE'})
         res = self.client.post(
-            reverse('webhook'),
+            reverse('webhook', urlconf='alert.urls'),
             data=json.dumps(self.body),
             content_type='application/json',
             **self.headers)
@@ -320,7 +325,7 @@ class WebhookViewTestCase(TestCase):
     def test_bad_format(self, mock_alert):
         self.body = {'hello': 'world'}
         res = self.client.post(
-            reverse('webhook'),
+            reverse('webhook', urlconf='alert.urls'),
             data=json.dumps({
                 "hello": "world"
             }),
@@ -332,7 +337,7 @@ class WebhookViewTestCase(TestCase):
 
     def test_no_status(self, mock_alert):
         res = self.client.post(
-            reverse('webhook'),
+            reverse('webhook', urlconf='alert.urls'),
             data=json.dumps({
                 "course_section": "ANTH361401",
                 "previous_status": "X",
@@ -346,13 +351,13 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(0, CourseUpdate.objects.count())
 
     def test_wrong_method(self, mock_alert):
-        res = self.client.get(reverse('webhook'), **self.headers)
+        res = self.client.get(reverse('webhook', urlconf='alert.urls'), **self.headers)
         self.assertEqual(405, res.status_code)
         self.assertFalse(mock_alert.called)
         self.assertEqual(0, CourseUpdate.objects.count())
 
     def test_wrong_content(self, mock_alert):
-        res = self.client.post(reverse('webhook'),
+        res = self.client.post(reverse('webhook', urlconf='alert.urls'),
                                **self.headers)
         self.assertEqual(415, res.status_code)
         self.assertFalse(mock_alert.called)
@@ -361,7 +366,7 @@ class WebhookViewTestCase(TestCase):
     def test_wrong_password(self, mock_alert):
         self.headers['Authorization'] = 'Basic ' + base64.standard_b64encode('webhook:abc123'.encode('ascii')).decode()
         res = self.client.post(
-            reverse('webhook'),
+            reverse('webhook', urlconf='alert.urls'),
             data=json.dumps(self.body),
             content_type='application/json',
             **self.headers)
@@ -372,7 +377,7 @@ class WebhookViewTestCase(TestCase):
     def test_wrong_user(self, mock_alert):
         self.headers['Authorization'] = 'Basic ' + base64.standard_b64encode('baduser:password'.encode('ascii')).decode()
         res = self.client.post(
-            reverse('webhook'),
+            reverse('webhook', urlconf='alert.urls'),
             data=json.dumps(self.body),
             content_type='application/json',
             **self.headers)
@@ -381,6 +386,7 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(0, CourseUpdate.objects.count())
 
 
+@override_settings(SWITCHBOARD_TEST_APP='pca')
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
         self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)

@@ -73,7 +73,9 @@ class Registration(models.Model):
     @property
     def resub_url(self):
         """Get the resubscribe URL associated with this registration"""
-        full_url = '%s%s' % (settings.PCA_URL, urls.reverse('resubscribe', kwargs={'id_': self.id}))
+        full_url = '%s%s' % (settings.PCA_URL, urls.reverse('resubscribe',
+                                                            kwargs={'id_': self.id},
+                                                            urlconf='alert.urls'))
         return Url.objects.get_or_create(full_url).shortened
 
     def alert(self, forced=False, sent_by=''):

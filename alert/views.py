@@ -43,7 +43,7 @@ def index(request):
 
 def register(request):
     if not get_bool('REGISTRATION_OPEN', True):
-        return HttpResponseRedirect(reverse('index'))
+        return HttpResponseRedirect(reverse('index', urlconf='alert.urls'))
 
     if request.method == 'POST':
         course_code = request.POST.get('course', None)
