@@ -138,6 +138,21 @@ API_KEY = os.environ.get('API_KEY', '')
 API_SECRET = os.environ.get('API_SECRET', '')
 API_URL = 'https://esb.isc-seo.upenn.edu/8091/open_data/course_section_search'
 
+# Penn OpenData Course Status Webhook Auth
+WEBHOOK_USERNAME = os.environ.get('WEBHOOK_USERNAME', 'webhook')
+WEBHOOK_PASSWORD = os.environ.get('WEBHOOK_PASSWORD', 'password')
+
+# Amazon SES Credentials
+SMTP_HOST = os.environ.get('SMTP_HOST', 'email-smtp.us-east-1.amazonaws.com')
+SMTP_PORT = os.environ.get('SMTP_PORT', 587)
+SMTP_USERNAME = os.environ.get('SMTP_USERNAME', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+
+# Twilio Credentials
+TWILIO_SID = os.environ.get('TWILIO_SID', '')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_TOKEN', '')
+TWILIO_NUMBER = os.environ.get('TWILIO_NUMBER', '+12153984277')
+
 # Redis
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 

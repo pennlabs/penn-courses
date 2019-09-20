@@ -13,7 +13,7 @@ class Url(models.Model):
 
     @property
     def shortened(self):
-        return '%s/s/%s' % (settings.BASE_URL, self.short_id)
+        return '%s/s/%s' % (settings.PCA_URL, self.short_id)
 
 
 def shorten(long_url):
