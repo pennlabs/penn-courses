@@ -28,6 +28,9 @@ django-filter = "*"
 coveralls = "*"
 unittest-xml-reporting = "*"
 coverage = "*"
+flake8 = "*"
+flake8-isort = "*"
+flake8-quotes = "*"
 
 [requires]
 python_version = "3.7"
