@@ -10,7 +10,7 @@ class RegistrationAdmin(admin.ModelAdmin):
     autocomplete_fields = ('section', )
 
     def section_link(self, instance):
-        link = reverse('admin:pca_section_change', args=[instance.section.id])
+        link = reverse('admin:courses_section_change', args=[instance.section.id])
         return format_html('<a href="{}">{}</a>', link, instance.section.__str__())
 
 
