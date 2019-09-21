@@ -36,4 +36,7 @@ HOST_TO_APP = {
 if len(ALLOWED_HOSTS) == 0:
     ALLOWED_HOSTS = HOST_TO_APP.keys()
 
+# TODO: This is a BAD HACK. We shouldn't hardcode the base URL into the shortener
+PCA_URL = 'https://penncoursealert.com'
+
 
