@@ -1,6 +1,6 @@
 from django.urls import path
-from . import views
+from shortener.views import RedirectView
 
 urlpatterns = [
-    path('<slug:short>', views.index, name='index'),
+    path('<slug:short>/', RedirectView.as_view(), name='index'),
 ]

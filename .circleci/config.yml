@@ -79,4 +79,4 @@ workflows:
             - build
           filters:
             branches:
-              only: production # branch doesn't exist, we don't want to deploy just yet
+              only: master

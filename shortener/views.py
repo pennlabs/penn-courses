@@ -1,11 +1,9 @@
-from django.shortcuts import render
-from django.http import HttpResponseRedirect, Http404
-from .models import *
+from django.shortcuts import get_object_or_404, redirect
+from django.views.generic.base import View
+from shortener.models import Url
 
 
-def index(request, short):
-    matching_url = Url.objects.filter(short_id=short)
-    if matching_url.exists():
-        return HttpResponseRedirect(matching_url[0].long_url)
-    else:
-        raise Http404("Shortened URL does not exist")
+class RedirectView(View):
+    def get(self, request, short):
+        url = get_object_or_404(Url, short_id=short)
+        return redirect(url.long_url)
