@@ -1,13 +1,10 @@
-import redis
 import logging
 
-from django.conf import settings
-from celery import shared_task
+from courses import registrar
+from courses.models import Course, Department, Requirement
+from courses.util import upsert_course_from_opendata
+from options.models import get_value
 
-from options.models import get_value, get_bool
-from . import registrar
-from .util import upsert_course_from_opendata, get_course
-from .models import Course, Requirement, Department
 
 logger = logging.getLogger(__name__)
 

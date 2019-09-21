@@ -1,5 +1,6 @@
+from django.core.management.base import BaseCommand
+
 from courses.tasks import load_courses
-from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
@@ -10,5 +11,4 @@ class Command(BaseCommand):
         parser.add_argument('--query', nargs='?', default='')
 
     def handle(self, *args, **kwargs):
-        load_courses(query=kwargs["query"], semester=kwargs["semester"])
-
+        load_courses(query=kwargs['query'], semester=kwargs['semester'])

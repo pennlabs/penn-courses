@@ -1,15 +1,16 @@
-import re
 import base64
+import json
 import logging
 
+from django.conf import settings
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
-from django.http import HttpResponseRedirect, JsonResponse, Http404, HttpResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import *
-from .tasks import generate_course_json, send_course_alerts
-from options.models import get_bool
+from alert.models import Registration, RegStatus, record_update, register_for_course, update_course_from_record
+from alert.tasks import generate_course_json, send_course_alerts
+from options.models import get_bool, get_value
 
 
 logger = logging.getLogger(__name__)
@@ -129,9 +130,9 @@ def accept_webhook(request):
 
     if username != settings.WEBHOOK_USERNAME or \
             password != settings.WEBHOOK_PASSWORD:
-        return HttpResponse('''Your credentials cannot be verified. 
-        They should be placed in the header as &quot;Authorization-Bearer&quot;,  
-        YOUR_APP_ID and &quot;Authorization-Token&quot; , YOUR_TOKEN"''', status=401)
+        return HttpResponse("""Your credentials cannot be verified.
+        They should be placed in the header as &quot;Authorization-Bearer&quot;,
+        YOUR_APP_ID and &quot;Authorization-Token&quot; , YOUR_TOKEN""", status=401)
 
     if request.method != 'POST':
         return HttpResponse('Methods other than POST are not allowed', status=405)

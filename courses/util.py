@@ -1,7 +1,8 @@
-import re
 import json
+import re
 
-from .models import *
+from courses.models import (Building, Course, Department, Instructor, Meeting,
+                            Requirement, Restriction, Room, Section, StatusUpdate)
 
 
 def separate_course_code(course_code):
@@ -107,18 +108,18 @@ def add_restrictions(section, requirements):
 
 def add_college_requirements(course, college_reqs):
     code_to_name = {
-        "MDS": "Society Sector",
-        "MDH": "History & Tradition Sector",
-        "MDA": "Arts & Letters Sector",
-        "MDO,MDB": "Humanities & Social Science Sector",
-        "MDL": "Living World Sector",
-        "MDP": "Physical World Sector",
-        "MDN,MDB": "Natural Science & Math Sector",
-        "MWC": "Writing Requirement",
-        "MQS": "College Quantitative Data Analysis Req.",
-        "MFR": "Formal Reasoning Course",
-        "MC1": "Cross Cultural Analysis",
-        "MC2": "Cultural Diversity in the US"
+        'MDS': 'Society Sector',
+        'MDH': 'History & Tradition Sector',
+        'MDA': 'Arts & Letters Sector',
+        'MDO,MDB': 'Humanities & Social Science Sector',
+        'MDL': 'Living World Sector',
+        'MDP': 'Physical World Sector',
+        'MDN,MDB': 'Natural Science & Math Sector',
+        'MWC': 'Writing Requirement',
+        'MQS': 'College Quantitative Data Analysis Req.',
+        'MFR': 'Formal Reasoning Course',
+        'MC1': 'Cross Cultural Analysis',
+        'MC2': 'Cultural Diversity in the US'
     }
     name_to_code = dict([(v, k) for k, v in code_to_name.items()])
     for req_name in college_reqs:

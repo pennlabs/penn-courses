@@ -2,8 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
-# Register your models here.
-from .models import *
+from courses.models import Building, Course, Department, Instructor, Meeting, Requirement, Restriction, Room, Section
 
 
 class DepartmentAdmin(admin.ModelAdmin):

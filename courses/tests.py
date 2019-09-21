@@ -1,18 +1,17 @@
 from django.test import TestCase, override_settings
-from django.test import RequestFactory
-
 from rest_framework.test import APIClient
 
-from options.models import *
-from .models import *
-from .util import *
-from .views import *
+from courses.models import Course, Department, Requirement, Section
+from courses.util import (get_course, get_course_and_section, record_update,
+                          separate_course_code, set_crosslistings, update_course_from_record)
+from options.models import Option
+
 
 TEST_SEMESTER = '2019A'
 
 
 def set_semester():
-    Option(key="SEMESTER", value=TEST_SEMESTER, value_type='TXT').save()
+    Option(key='SEMESTER', value=TEST_SEMESTER, value_type='TXT').save()
 
 
 class SepCourseCodeTest(TestCase):
@@ -192,9 +191,9 @@ class MeetingTestCase(TestCase):
         pass
 
 
-'''
+"""
 API Test Cases
-'''
+"""
 
 
 @override_settings(SWITCHBOARD_TEST_APP='api')

@@ -1,13 +1,13 @@
-import redis
 import json
 import logging
+
+import redis
 from celery import shared_task
-
-from .models import *
-
-from options.models import get_value, get_bool
-
 from django.conf import settings
+
+from alert.models import CourseUpdate, Registration, Section, get_course_and_section, update_course_from_record
+from options.models import get_value
+
 
 logger = logging.getLogger(__name__)
 r = redis.Redis.from_url(settings.REDIS_URL)

@@ -1,13 +1,13 @@
-from abc import ABC, abstractmethod
-from smtplib import SMTP, SMTPRecipientsRefused
-from email.mime.text import MIMEText
 import logging
+from abc import ABC, abstractmethod
+from email.mime.text import MIMEText
+from smtplib import SMTP, SMTPRecipientsRefused
 
-from django.template import loader
 from django.conf import settings
-
-from twilio.rest import Client
+from django.template import loader
 from twilio.base.exceptions import TwilioRestException
+from twilio.rest import Client
+
 
 logger = logging.getLogger(__name__)
 

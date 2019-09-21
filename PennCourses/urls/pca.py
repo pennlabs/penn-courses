@@ -1,6 +1,8 @@
-from django.urls import path, include
+from django.urls import include, path
 
-from .base import *
-import alert.urls
+from PennCourses.urls.base import urlpatterns
 
-urlpatterns = alert.urls.urlpatterns + urlpatterns
+
+urlpatterns = [
+    path('', include('alert.urls')),
+] + urlpatterns

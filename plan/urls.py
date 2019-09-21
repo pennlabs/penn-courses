@@ -1,7 +1,9 @@
 from django.urls import path
 
-from .views import CourseListSearch, CourseDetailSearch
 from courses.views import RequirementList
+
+from .views import CourseDetailSearch, CourseListSearch
+
 
 urlpatterns = [
     # omit semester parameter, since PCP only cares about the current semester.

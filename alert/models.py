@@ -1,22 +1,16 @@
-import json
-from enum import Enum, auto
-from urllib.parse import urlencode
 import logging
-from smtplib import SMTPRecipientsRefused
-import re
-
-from django.db import models
-from django.conf import settings
-from django.utils import timezone
-from django import urls
-
-from .alerts import Email, Text
-from shortener.models import Url
-from courses.models import Section, get_current_semester
-from courses.util import get_course_and_section
-from options.models import get_value, get_bool
+from enum import Enum, auto
 
 import phonenumbers  # library for parsing and formatting phone numbers.
+from django import urls
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
+from shortener.models import Url
+
+from alert.alerts import Email, Text
+from courses.models import Section, get_current_semester
+from courses.util import get_course_and_section
 
 
 class RegStatus(Enum):
@@ -104,7 +98,7 @@ class Registration(models.Model):
         :return: Registration object for the resubscription
         """
         most_recent_reg = self
-        while hasattr(most_recent_reg, 'resubscribed_to'):  # follow the chain of resubscriptions to the most recent one.
+        while hasattr(most_recent_reg, 'resubscribed_to'):  # follow the chain of resubscriptions to the most recent one
             most_recent_reg = most_recent_reg.resubscribed_to
 
         if not most_recent_reg.notification_sent:  # if a notification hasn't been sent on this recent one,
@@ -173,4 +167,3 @@ def update_course_from_record(update):
         section = update.section
         section.status = update.new_status
         section.save()
-

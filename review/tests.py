@@ -1,8 +1,9 @@
 from django.test import TestCase
 
-from .models import Review, ReviewBit
-from courses.util import get_course_and_section
 from courses.models import Instructor
+from courses.util import get_course_and_section
+
+from .models import Review, ReviewBit
 
 
 class ReviewTestCase(TestCase):
