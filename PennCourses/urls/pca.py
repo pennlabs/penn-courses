@@ -1,9 +1,6 @@
 from django.urls import path, include
 
 from .base import *
-from alert.views import index
+import alert.urls
 
-urlpatterns = [
-    path('', index),
-    path('s/', include('shortener.urls')),
-] + urlpatterns
+urlpatterns = alert.urls.urlpatterns + urlpatterns
