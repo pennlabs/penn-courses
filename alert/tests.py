@@ -16,11 +16,16 @@ def contains_all(l1, l2):
     return len(l1) == len(l2) and sorted(l1) == sorted(l2)
 
 
+def set_semester():
+    Option(key="SEMESTER", value=TEST_SEMESTER, value_type='TXT').save()
+
+
 @patch('alert.models.Text.send_alert')
 @patch('alert.models.Email.send_alert')
 @override_settings(SWITCHBOARD_TEST_APP='pca')
 class SendAlertTestCase(TestCase):
     def setUp(self):
+        set_semester()
         course, section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
         self.r = Registration(email='yo@example.com',
                               phone='+15555555555',
@@ -54,6 +59,7 @@ class SendAlertTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pca')
 class RegisterTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.sections = []
         self.sections.append(get_course_and_section('CIS-160-001', TEST_SEMESTER)[1])
         self.sections.append(get_course_and_section('CIS-160-002', TEST_SEMESTER)[1])
@@ -116,6 +122,7 @@ class RegisterTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pca')
 class ResubscribeTestCase(TestCase):
     def setUp(self):
+        set_semester()
         _, self.section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
         self.base_reg = Registration(email='e@example.com', phone='+15555555555', section=self.section)
         self.base_reg.save()
@@ -184,6 +191,7 @@ class ResubscribeTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pca')
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
+        set_semester()
         _, self.section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
         self.r1 = Registration(email='e@example.com', phone='+15555555555', section=self.section)
         self.r2 = Registration(email='f@example.com', phone='+15555555556', section=self.section)
@@ -234,6 +242,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pca')
 class WebhookViewTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.client = Client()
         auth = base64.standard_b64encode('webhook:password'.encode('ascii'))
         self.headers = {
@@ -389,6 +398,7 @@ class WebhookViewTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pca')
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
 
     def test_update_status(self):
