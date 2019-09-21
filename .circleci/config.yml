@@ -7,9 +7,7 @@ jobs:
   build:
     working_directory: ~/penncourses
     docker:
-      # specify the version you desire here
-      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.7.1
+      - image: circleci/python:3.7
         environment:
           PIPENV_VENV_IN_PROJECT: true
           DATABASE_URL: mysql://root:password@127.0.0.1:3306/circle_test
@@ -59,7 +57,7 @@ jobs:
   deploy:
     working_directory: ~/penncourses
     docker:
-      - image: circleci/python:3.7.1
+      - image: circleci/python:3.7
     steps:
       - checkout
       - run:
