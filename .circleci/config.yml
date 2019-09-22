@@ -49,7 +49,7 @@ jobs:
       - run:
           name: Run tests
           command: |
-            pipenv run python manage.py test --settings=PennCourses.settings.test
+            pipenv run coverage run manage.py test --settings=PennCourses.settings.test
       - run:
           name: Upload code coverage
           command: |
