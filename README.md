@@ -4,6 +4,7 @@ This is the (eventual) unified home of all Penn Courses products.
 Currently, products contained in here include:
 - Penn Courses API
 - Penn Course Plan
+- Penn Course Alert
 
 ## Installation
 Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
