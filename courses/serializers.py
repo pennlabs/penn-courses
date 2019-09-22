@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import *
-from review.models import Review
+
+from courses.models import Course, Meeting, Requirement, Section
 
 
 class MeetingSerializer(serializers.ModelSerializer):

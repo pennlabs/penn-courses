@@ -1,17 +1,18 @@
-from django.test import TestCase, RequestFactory, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 
-from .search import TypedSearchBackend
-from courses.models import *
-from courses.util import *
-from review.models import *
+from courses.models import Instructor, Requirement
+from courses.util import get_course_and_section
 from options.models import Option
+from plan.search import TypedSearchBackend
+from review.models import Review
+
 
 TEST_SEMESTER = '2019A'
 
 
 def set_semester():
-    Option(key="SEMESTER", value=TEST_SEMESTER, value_type='TXT').save()
+    Option(key='SEMESTER', value=TEST_SEMESTER, value_type='TXT').save()
 
 
 class TypedSearchBackendTestCase(TestCase):
@@ -108,7 +109,7 @@ class CourseReviewAverageTestCase(TestCase):
     def setUp(self):
         self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
         _, self.section2 = get_course_and_section('CIS-120-002', TEST_SEMESTER)
-        self.instructor = Instructor(name="Person1")
+        self.instructor = Instructor(name='Person1')
         self.instructor.save()
         self.rev1 = Review(section=get_course_and_section('CIS-120-003', '2005C')[1], instructor=self.instructor)
         self.rev1.save()
@@ -117,7 +118,7 @@ class CourseReviewAverageTestCase(TestCase):
             'instructor_quality': 4,
             'difficulty': 4,
         })
-        self.instructor2 = Instructor(name="Person2")
+        self.instructor2 = Instructor(name='Person2')
         self.instructor2.save()
         self.rev2 = Review(section=get_course_and_section('CIS-120-002', '2015A')[1], instructor=self.instructor2)
         self.rev2.instructor = self.instructor2

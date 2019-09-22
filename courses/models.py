@@ -184,7 +184,7 @@ class StatusUpdate(models.Model):
 Schedule Models
 ===============
 
-The next section of models store information related to scheduling and location. 
+The next section of models store information related to scheduling and location.
 """
 
 
@@ -207,7 +207,7 @@ class Room(models.Model):
 
     class Meta:
         """ To hold uniqueness constraint """
-        unique_together = (("building", "number"),)
+        unique_together = (('building', 'number'),)
 
     def __str__(self):
         return f'{self.building.code} {self.number}'

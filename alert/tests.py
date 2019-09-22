@@ -1,13 +1,15 @@
-import json
 import base64
-from unittest.mock import Mock, patch
+import json
+from unittest.mock import patch
 
-from django.test import TestCase, Client, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from . import tasks
-from .models import *
-from options.models import *
+from alert import tasks
+from alert.models import (CourseUpdate, Registration, RegStatus, get_course_and_section,
+                          record_update, register_for_course, update_course_from_record)
+from options.models import Option
+
 
 TEST_SEMESTER = '2019A'
 
@@ -17,7 +19,7 @@ def contains_all(l1, l2):
 
 
 def set_semester():
-    Option(key="SEMESTER", value=TEST_SEMESTER, value_type='TXT').save()
+    Option(key='SEMESTER', value=TEST_SEMESTER, value_type='TXT').save()
 
 
 @patch('alert.models.Text.send_alert')
@@ -249,11 +251,11 @@ class WebhookViewTestCase(TestCase):
             'Authorization': f'Basic {auth.decode()}',
         }
         self.body = {
-            "course_section": "ANTH361401",
-            "previous_status": "X",
-            "status": "O",
-            "status_code_normalized": "Open",
-            "term": TEST_SEMESTER
+            'course_section': 'ANTH361401',
+            'previous_status': 'X',
+            'status': 'O',
+            'status_code_normalized': 'Open',
+            'term': TEST_SEMESTER
         }
         Option.objects.update_or_create(key='SEND_FROM_WEBHOOK', value_type='BOOL', defaults={'value': 'TRUE'})
         Option.objects.update_or_create(key='SEMESTER', value_type='TXT', defaults={'value': TEST_SEMESTER})
@@ -336,7 +338,7 @@ class WebhookViewTestCase(TestCase):
         res = self.client.post(
             reverse('webhook', urlconf='alert.urls'),
             data=json.dumps({
-                "hello": "world"
+                'hello': 'world'
             }),
             content_type='application/json',
             **self.headers)
@@ -348,10 +350,10 @@ class WebhookViewTestCase(TestCase):
         res = self.client.post(
             reverse('webhook', urlconf='alert.urls'),
             data=json.dumps({
-                "course_section": "ANTH361401",
-                "previous_status": "X",
-                "status_code_normalized": "Open",
-                "term": "2019A"
+                'course_section': 'ANTH361401',
+                'previous_status': 'X',
+                'status_code_normalized': 'Open',
+                'term': '2019A'
             }),
             content_type='application/json',
             **self.headers)
@@ -384,7 +386,9 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(0, CourseUpdate.objects.count())
 
     def test_wrong_user(self, mock_alert):
-        self.headers['Authorization'] = 'Basic ' + base64.standard_b64encode('baduser:password'.encode('ascii')).decode()
+        self.headers['Authorization'] = (
+            'Basic ' + base64.standard_b64encode('baduser:password'.encode('ascii')).decode()
+        )
         res = self.client.post(
             reverse('webhook', urlconf='alert.urls'),
             data=json.dumps(self.body),

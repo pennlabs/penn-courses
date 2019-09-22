@@ -1,7 +1,9 @@
-from .base import *
 import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
+
+from .base import *
+
 
 DEBUG = False
 
@@ -38,5 +40,3 @@ if len(ALLOWED_HOSTS) == 0:
 
 # TODO: This is a BAD HACK. We shouldn't hardcode the base URL into the shortener
 PCA_URL = 'https://penncoursealert.com'
-
-

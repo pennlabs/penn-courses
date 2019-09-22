@@ -1,10 +1,10 @@
 from django.db.models import Q
 
-from courses.views import CourseList, CourseDetail
-from .search import TypedSearchBackend
-
 from courses.models import Requirement
-from .serializers import CourseListWithReviewSerializer, CourseDetailWithReviewSerializer
+from courses.views import CourseDetail, CourseList
+
+from .search import TypedSearchBackend
+from .serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer
 
 
 class CourseListSearch(CourseList):

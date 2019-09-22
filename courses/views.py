@@ -1,9 +1,9 @@
 from django.http import HttpResponse
 from rest_framework import generics
 
-from .serializers import *
-from .models import *
-
+from courses.models import Course, Requirement, Section
+from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
+                                 RequirementListSerializer, SectionSerializer)
 from options.models import get_value
 
 

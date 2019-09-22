@@ -1,15 +1,9 @@
-# Python CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-python/ for more details
-#
 version: 2
 jobs:
   build:
     working_directory: ~/penncourses
     docker:
-      # specify the version you desire here
-      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.7.1
+      - image: circleci/python:3.7
         environment:
           PIPENV_VENV_IN_PROJECT: true
           DATABASE_URL: mysql://root:password@127.0.0.1:3306/circle_test
@@ -27,7 +21,7 @@ jobs:
             git submodule update --remote
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - restore_cache:  # ensure this step occurs *before* installing dependencies
+      - restore_cache:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
       - run:
           name: install dockerize
@@ -36,9 +30,9 @@ jobs:
             DOCKERIZE_VERSION: v0.3.0
       - run:
           name: Install dependencies
-          command: |  # use pipenv to install dependencies
+          command: |
             sudo pip install pipenv
-            pipenv install
+            pipenv install -d
       - run:
           name: Wait for db
           command: dockerize -wait tcp://localhost:3306 -timeout 1m
@@ -49,8 +43,17 @@ jobs:
             - "/usr/local/bin"
             - "/usr/local/lib/python3.7/site-packages"
       - run:
+          name: Lint
+          command: |
+            pipenv run flake8 .
+      - run:
+          name: Run tests
           command: |
             pipenv run python manage.py test --settings=PennCourses.settings.test
+      - run:
+          name: Upload code coverage
+          command: |
+            pipenv run coveralls
       - store_test_results:
           path: test-results
       - store_artifacts:
@@ -59,7 +62,7 @@ jobs:
   deploy:
     working_directory: ~/penncourses
     docker:
-      - image: circleci/python:3.7.1
+      - image: circleci/python:3.7
     steps:
       - checkout
       - run:

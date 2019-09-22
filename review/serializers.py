@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import *
+
 from courses.serializers import SectionIdField
+from review.models import Review, ReviewBit
 
 
 class ReviewBitSerializer(serializers.ModelSerializer):
@@ -27,4 +28,3 @@ class ReviewSerializer(serializers.ModelSerializer):
             'section',
             'instructor'
         )
-
