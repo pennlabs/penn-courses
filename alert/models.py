@@ -21,9 +21,25 @@ class RegStatus(Enum):
     NO_CONTACT_INFO = auto()
 
 
+SOURCE_PCA = 'PCA'
+SOURCE_API = 'API'
+
+
 class Registration(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    SOURCE_CHOICES = (
+        ('PCA', 'Penn Course Alert'),
+        ('API', '3rd Party Integration'),
+        ('PCP', 'Penn Course Plan'),
+        ('PCR', 'Penn Course Review'),
+        ('PM', 'Penn Mobile')
+    )
+
+    # Where did the registration come from?
+    source = models.CharField(max_length=16, choices=SOURCE_CHOICES)
+    api_key = models.ForeignKey('courses.APIKey', blank=True, null=True, on_delete=models.CASCADE)
 
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(blank=True, null=True, max_length=100)
@@ -112,11 +128,11 @@ class Registration(models.Model):
         return new_registration
 
 
-def register_for_course(course_code, email_address, phone):
+def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, api_key=None):
     if not email_address and not phone:
         return RegStatus.NO_CONTACT_INFO
     course, section = get_course_and_section(course_code, get_current_semester())
-    registration = Registration(section=section, email=email_address, phone=phone)
+    registration = Registration(section=section, email=email_address, phone=phone, source=source)
     registration.validate_phone()
 
     if Registration.objects.filter(section=section,
@@ -125,6 +141,7 @@ def register_for_course(course_code, email_address, phone):
                                    notification_sent=False).exists():
         return RegStatus.OPEN_REG_EXISTS
 
+    registration.api_key = api_key
     registration.save()
     return RegStatus.SUCCESS
 

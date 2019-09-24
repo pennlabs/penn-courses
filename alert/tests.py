@@ -6,8 +6,9 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from alert import tasks
-from alert.models import (CourseUpdate, Registration, RegStatus, get_course_and_section,
+from alert.models import (SOURCE_API, SOURCE_PCA, CourseUpdate, Registration, RegStatus, get_course_and_section,
                           record_update, register_for_course, update_course_from_record)
+from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course
 from options.models import Option
 
 
@@ -76,6 +77,8 @@ class RegisterTestCase(TestCase):
         self.assertEqual('e@example.com', r.email)
         self.assertEqual('+15555555555', r.phone)
         self.assertFalse(r.notification_sent)
+        self.assertEqual(SOURCE_PCA, r.source)
+        self.assertIsNone(r.api_key)
 
     def test_duplicate_registration(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
@@ -397,6 +400,95 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(401, res.status_code)
         self.assertFalse(mock_alert.called)
         self.assertEqual(0, CourseUpdate.objects.count())
+
+
+@override_settings(SWITCHBOARD_TEST_APP='pca')
+class APIRegisterTestCase(TestCase):
+    def setUp(self):
+        set_semester()
+        self.client = Client()
+        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.permission = APIPrivilege.objects.create(code=PCA_REGISTRATION)
+        self.key = APIKey.objects.get_or_create(email='contact@penncoursenotify.com')[0]
+        self.key.privileges.add(self.permission)
+        self.headers = {
+            'Authorization': 'Bearer ' + str(self.key.code)
+        }
+
+    def test_successful_registration(self):
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+            **self.headers
+        )
+        self.assertEqual(200, res.status_code)
+        self.assertEqual(1, Registration.objects.count())
+        self.assertEqual(1, Course.objects.count())
+        self.assertEqual(SOURCE_API, Registration.objects.get().source)
+        self.assertEqual(self.key, Registration.objects.get().api_key)
+
+    def test_invalid_api_key(self):
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+            **{'Authorization': 'Bearer blargh'}
+        )
+        self.assertEqual(401, res.status_code)
+        self.assertEqual(0, Registration.objects.count())
+
+    def test_no_api_key(self):
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+        )
+        self.assertEqual(401, res.status_code)
+        self.assertEqual(0, Registration.objects.count())
+
+    def test_inactive_key(self):
+        self.key.active = False
+        self.key.save()
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+            **self.headers
+        )
+        self.assertEqual(401, res.status_code)
+        self.assertEqual(0, Registration.objects.count())
+
+    def test_no_permission(self):
+        self.key.privileges.clear()
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+            **self.headers
+        )
+        self.assertEqual(401, res.status_code)
+        self.assertEqual(0, Registration.objects.count())
 
 
 @override_settings(SWITCHBOARD_TEST_APP='pca')
