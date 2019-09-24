@@ -1,4 +1,5 @@
 import math
+import uuid
 
 from django.db import models
 from django.db.models import Q
@@ -287,3 +288,30 @@ class Requirement(models.Model):
         return Course.objects.all()\
             .exclude(id__in=self.overrides.all())\
             .filter(Q(department__in=self.departments.all(), semester=self.semester) | Q(id__in=self.courses.all()))
+
+
+"""
+3rd-Party API
+"""
+
+PCA_REGISTRATION = 'PCA_REGISTRATION'
+
+
+class APIPrivilege(models.Model):
+    """
+    Describes a type of access privelege that an API key can have.
+    """
+    code = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+
+
+class APIKey(models.Model):
+    """
+    An API Key is linked with an email address for contact purposes. May link with a user @ Penn if we wanted to
+    restrict that.
+    """
+    email = models.EmailField()
+    code = models.CharField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
+    active = models.BooleanField(blank=True, default=True)
+
+    privileges = models.ManyToManyField(APIPrivilege, related_name='key_set')

@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
-from courses.models import Building, Course, Department, Instructor, Meeting, Requirement, Restriction, Room, Section
+from courses.models import (APIKey, Building, Course, Department, Instructor,
+                            Meeting, Requirement, Restriction, Room, Section)
 
 
 class DepartmentAdmin(admin.ModelAdmin):
@@ -57,6 +58,7 @@ class RequirementAdmin(admin.ModelAdmin):
     autocomplete_fields = ('departments', 'courses', 'overrides')
 
 
+admin.site.register(APIKey)
 admin.site.register(Department, DepartmentAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Section, SectionAdmin)

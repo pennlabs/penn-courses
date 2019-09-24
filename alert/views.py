@@ -8,8 +8,10 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from alert.models import Registration, RegStatus, record_update, register_for_course, update_course_from_record
+from alert.models import (SOURCE_API, Registration, RegStatus, record_update,
+                          register_for_course, update_course_from_record)
 from alert.tasks import generate_course_json, send_course_alerts
+from courses.models import PCA_REGISTRATION, APIKey
 from options.models import get_bool, get_value
 
 
@@ -42,33 +44,36 @@ def index(request):
     return render_homepage(request, [])
 
 
+def do_register(course_code, email_address, phone, source, make_response, api_key=None):
+    res = register_for_course(course_code, email_address, phone, source, api_key)
+
+    if res == RegStatus.SUCCESS:
+        return make_response('success',
+                             'Your registration for %s was successful!' % course_code)
+    elif res == RegStatus.OPEN_REG_EXISTS:
+        return make_response('warning',
+                             "You've already registered to get alerts for %s!" % course_code)
+    elif res == RegStatus.NO_CONTACT_INFO:
+        return make_response('danger',
+                             'Please enter either a phone number or an email address.')
+    else:
+        return make_response('warning',
+                             'There was an error on our end. Please try again!')
+
+
 def register(request):
     if not get_bool('REGISTRATION_OPEN', True):
         return HttpResponseRedirect(reverse('index', urlconf='alert.urls'))
+
+    def build_homepage(style, msg):
+        return homepage_with_msg(request, style, msg)
 
     if request.method == 'POST':
         course_code = request.POST.get('course', None)
         email_address = request.POST.get('email', None)
         phone = request.POST.get('phone', None)
 
-        res = register_for_course(course_code, email_address, phone)
-
-        if res == RegStatus.SUCCESS:
-            return homepage_with_msg(request,
-                                     'success',
-                                     'Your registration for %s was successful!' % course_code)
-        elif res == RegStatus.OPEN_REG_EXISTS:
-            return homepage_with_msg(request,
-                                     'warning',
-                                     "You've already registered to get alerts for %s!" % course_code)
-        elif res == RegStatus.NO_CONTACT_INFO:
-            return homepage_with_msg(request,
-                                     'danger',
-                                     'Please enter either a phone number or an email address.')
-        else:
-            return homepage_with_msg(request,
-                                     'warning',
-                                     'There was an error on our end. Please try again!')
+        return do_register(course_code, email_address, phone, 'PCA', build_homepage)
     else:
         raise Http404('GET not accepted')
 
@@ -107,6 +112,13 @@ def extract_basic_auth(auth_header):
     if len(auth_parts) < 2:
         return None, None
     return auth_parts[0].decode(), auth_parts[1].decode()
+
+
+def extract_bearer_auth(auth_header):
+    parts = auth_header.split(' ')
+    if parts[0] != 'Bearer':
+        return None
+    return parts[1]
 
 
 def extract_update_data(update):
@@ -182,3 +194,42 @@ def accept_webhook(request):
 
     else:
         return JsonResponse({'message': 'webhook recieved'})
+
+
+@csrf_exempt
+def third_party_register(request):
+    auth_header = request.META.get('Authorization', request.META.get('HTTP_AUTHORIZATION', ''))
+    key_code = extract_bearer_auth(auth_header)
+
+    if key_code is None:
+        return JsonResponse({'message': 'No API key provided.'}, status=401)
+    try:
+        key = APIKey.objects.get(code=key_code)
+    except APIKey.DoesNotExist:
+        return JsonResponse({'message': 'API key is not registered.'}, status=401)
+
+    if not key.active:
+        return JsonResponse({'message': 'API key has been deactivated.'}, status=401)
+
+    if not key.privileges.filter(code=PCA_REGISTRATION).exists():
+        return JsonResponse({'message': 'API key does not have permission to register on PCA.'}, status=401)
+
+    if not get_bool('REGISTRATION_OPEN', True):
+        return JsonResponse({'message': 'Registration is not open.'}, status=503)
+
+    def send_json(style, msg):
+        return JsonResponse({'message': msg, 'status': style})
+
+    if request.method == 'POST':
+        if 'json' in request.content_type.lower():
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+
+        course_code = data.get('course', None)
+        email_address = data.get('email', None)
+        phone = data.get('phone', None)
+
+        return do_register(course_code, email_address, phone, SOURCE_API, send_json, key)
+    else:
+        raise Http404('Only POST requests are accepted.')
