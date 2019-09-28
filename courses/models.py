@@ -314,4 +314,4 @@ class APIKey(models.Model):
     code = models.CharField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
     active = models.BooleanField(blank=True, default=True)
 
-    privileges = models.ManyToManyField(APIPrivilege, related_name='key_set')
+    privileges = models.ManyToManyField(APIPrivilege, related_name='key_set', blank=True)

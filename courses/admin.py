@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
-from courses.models import (APIKey, Building, Course, Department, Instructor,
+from courses.models import (APIKey, APIPrivilege, Building, Course, Department, Instructor,
                             Meeting, Requirement, Restriction, Room, Section)
 
 
@@ -59,6 +59,7 @@ class RequirementAdmin(admin.ModelAdmin):
 
 
 admin.site.register(APIKey)
+admin.site.register(APIPrivilege)
 admin.site.register(Department, DepartmentAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Section, SectionAdmin)
