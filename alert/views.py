@@ -8,10 +8,10 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from alert.models import (SOURCE_API, Registration, RegStatus, record_update,
-                          register_for_course, update_course_from_record)
+from alert.models import SOURCE_API, Registration, RegStatus, register_for_course
 from alert.tasks import generate_course_json, send_course_alerts
 from courses.models import PCA_REGISTRATION, APIKey
+from courses.util import record_update, update_course_from_record
 from options.models import get_bool, get_value
 
 

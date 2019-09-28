@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from alert.models import CourseUpdate, Registration
+from alert.models import Registration
 
 
 class RegistrationAdmin(admin.ModelAdmin):
@@ -15,10 +15,4 @@ class RegistrationAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', link, instance.section.__str__())
 
 
-class CourseUpdateAdmin(admin.ModelAdmin):
-    autocomplete_fields = ('section', )
-    readonly_fields = ('created_at', )
-
-
 admin.site.register(Registration, RegistrationAdmin)
-admin.site.register(CourseUpdate, CourseUpdateAdmin)

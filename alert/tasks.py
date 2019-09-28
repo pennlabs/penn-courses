@@ -5,7 +5,9 @@ import redis
 from celery import shared_task
 from django.conf import settings
 
-from alert.models import CourseUpdate, Registration, Section, get_course_and_section, update_course_from_record
+from alert.models import Registration, Section, get_course_and_section
+from courses.models import StatusUpdate
+from courses.util import update_course_from_record
 from options.models import get_value
 
 
@@ -61,9 +63,9 @@ def demo_task():
 @shared_task(name='pca.tasks.run_course_updates')
 def run_course_updates(semester=None):
     if semester is None:
-        updates = CourseUpdate.objects.all()
+        updates = StatusUpdate.objects.all()
     else:
-        updates = CourseUpdate.objects.filter(section__course__semester=semester)
+        updates = StatusUpdate.objects.filter(section__course__semester=semester)
     for u in updates:
         update_course_from_record(u)
     return {'result': 'executed', 'name': 'pca.tasks.run_course_updates'}
