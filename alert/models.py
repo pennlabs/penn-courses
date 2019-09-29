@@ -1,22 +1,16 @@
-import json
-from enum import Enum, auto
-from urllib.parse import urlencode
 import logging
-from smtplib import SMTPRecipientsRefused
-import re
-
-from django.db import models
-from django.conf import settings
-from django.utils import timezone
-from django import urls
-
-from .alerts import Email, Text
-from shortener.models import Url
-from courses.models import Section, get_current_semester
-from courses.util import get_course_and_section
-from options.models import get_value, get_bool
+from enum import Enum, auto
 
 import phonenumbers  # library for parsing and formatting phone numbers.
+from django import urls
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
+from shortener.models import Url
+
+from alert.alerts import Email, Text
+from courses.models import Section, get_current_semester
+from courses.util import get_course_and_section
 
 
 class RegStatus(Enum):
@@ -27,9 +21,25 @@ class RegStatus(Enum):
     NO_CONTACT_INFO = auto()
 
 
+SOURCE_PCA = 'PCA'
+SOURCE_API = 'API'
+
+
 class Registration(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    SOURCE_CHOICES = (
+        ('PCA', 'Penn Course Alert'),
+        ('API', '3rd Party Integration'),
+        ('PCP', 'Penn Course Plan'),
+        ('PCR', 'Penn Course Review'),
+        ('PM', 'Penn Mobile')
+    )
+
+    # Where did the registration come from?
+    source = models.CharField(max_length=16, choices=SOURCE_CHOICES)
+    api_key = models.ForeignKey('courses.APIKey', blank=True, null=True, on_delete=models.CASCADE)
 
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(blank=True, null=True, max_length=100)
@@ -104,7 +114,7 @@ class Registration(models.Model):
         :return: Registration object for the resubscription
         """
         most_recent_reg = self
-        while hasattr(most_recent_reg, 'resubscribed_to'):  # follow the chain of resubscriptions to the most recent one.
+        while hasattr(most_recent_reg, 'resubscribed_to'):  # follow the chain of resubscriptions to the most recent one
             most_recent_reg = most_recent_reg.resubscribed_to
 
         if not most_recent_reg.notification_sent:  # if a notification hasn't been sent on this recent one,
@@ -118,11 +128,11 @@ class Registration(models.Model):
         return new_registration
 
 
-def register_for_course(course_code, email_address, phone):
+def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, api_key=None):
     if not email_address and not phone:
         return RegStatus.NO_CONTACT_INFO
     course, section = get_course_and_section(course_code, get_current_semester())
-    registration = Registration(section=section, email=email_address, phone=phone)
+    registration = Registration(section=section, email=email_address, phone=phone, source=source)
     registration.validate_phone()
 
     if Registration.objects.filter(section=section,
@@ -131,46 +141,6 @@ def register_for_course(course_code, email_address, phone):
                                    notification_sent=False).exists():
         return RegStatus.OPEN_REG_EXISTS
 
+    registration.api_key = api_key
     registration.save()
     return RegStatus.SUCCESS
-
-
-class CourseUpdate(models.Model):
-    STATUS_CHOICES = (
-        ('O', 'Open'),
-        ('C', 'Closed'),
-        ('X', 'Cancelled'),
-        ('', 'Unlisted')
-    )
-    section = models.ForeignKey(Section, on_delete=models.CASCADE)
-    old_status = models.CharField(max_length=16, choices=STATUS_CHOICES)
-    new_status = models.CharField(max_length=16, choices=STATUS_CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
-    alert_sent = models.BooleanField()
-    request_body = models.TextField()
-
-    def __str__(self):
-        d = dict(self.STATUS_CHOICES)
-        return f'{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}'
-
-
-def record_update(section_id, semester, old_status, new_status, alerted, req):
-    try:
-        _, section = get_course_and_section(section_id, semester)
-    except ValueError:
-        return None
-    u = CourseUpdate(section=section,
-                     old_status=old_status,
-                     new_status=new_status,
-                     alert_sent=alerted,
-                     request_body=req)
-    u.save()
-    return u
-
-
-def update_course_from_record(update):
-    if update is not None:
-        section = update.section
-        section.status = update.new_status
-        section.save()
-

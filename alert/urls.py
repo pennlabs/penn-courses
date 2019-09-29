@@ -1,8 +1,7 @@
-from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
+from django.urls import path
 
-from . import views
+from alert import views
+
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -10,4 +9,5 @@ urlpatterns = [
     path('submitted', views.register, name='register'),
     path('resubscribe/<int:id_>', views.resubscribe, name='resubscribe'),
     path('webhook', views.accept_webhook, name='webhook'),
+    path('api/submit', views.third_party_register, name='api-register')
 ]

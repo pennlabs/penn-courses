@@ -1,13 +1,16 @@
-import json
 import base64
-from unittest.mock import Mock, patch
+import json
+from unittest.mock import patch
 
-from django.test import TestCase, Client, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from . import tasks
-from .models import *
-from options.models import *
+from alert import tasks
+from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, get_course_and_section, register_for_course
+from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
+from courses.util import record_update, update_course_from_record
+from options.models import Option
+
 
 TEST_SEMESTER = '2019A'
 
@@ -17,7 +20,7 @@ def contains_all(l1, l2):
 
 
 def set_semester():
-    Option(key="SEMESTER", value=TEST_SEMESTER, value_type='TXT').save()
+    Option(key='SEMESTER', value=TEST_SEMESTER, value_type='TXT').save()
 
 
 @patch('alert.models.Text.send_alert')
@@ -74,6 +77,8 @@ class RegisterTestCase(TestCase):
         self.assertEqual('e@example.com', r.email)
         self.assertEqual('+15555555555', r.phone)
         self.assertFalse(r.notification_sent)
+        self.assertEqual(SOURCE_PCA, r.source)
+        self.assertIsNone(r.api_key)
 
     def test_duplicate_registration(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
@@ -249,11 +254,11 @@ class WebhookViewTestCase(TestCase):
             'Authorization': f'Basic {auth.decode()}',
         }
         self.body = {
-            "course_section": "ANTH361401",
-            "previous_status": "X",
-            "status": "O",
-            "status_code_normalized": "Open",
-            "term": TEST_SEMESTER
+            'course_section': 'ANTH361401',
+            'previous_status': 'X',
+            'status': 'O',
+            'status_code_normalized': 'Open',
+            'term': TEST_SEMESTER
         }
         Option.objects.update_or_create(key='SEND_FROM_WEBHOOK', value_type='BOOL', defaults={'value': 'TRUE'})
         Option.objects.update_or_create(key='SEMESTER', value_type='TXT', defaults={'value': TEST_SEMESTER})
@@ -270,8 +275,8 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual('ANTH361401', mock_alert.call_args[0][0])
         self.assertEqual('2019A', mock_alert.call_args[1]['semester'])
         self.assertTrue('sent' in json.loads(res.content)['message'])
-        self.assertEqual(1, CourseUpdate.objects.count())
-        u = CourseUpdate.objects.get()
+        self.assertEqual(1, StatusUpdate.objects.count())
+        u = StatusUpdate.objects.get()
         self.assertTrue(u.alert_sent)
 
     def test_alert_bad_json(self, mock_alert):
@@ -283,7 +288,7 @@ class WebhookViewTestCase(TestCase):
 
         self.assertEqual(400, res.status_code)
         self.assertFalse(mock_alert.called)
-        self.assertEqual(0, CourseUpdate.objects.count())
+        self.assertEqual(0, StatusUpdate.objects.count())
 
     def test_alert_called_closed_course(self, mock_alert):
         self.body['status'] = 'C'
@@ -297,8 +302,8 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(200, res.status_code)
         self.assertFalse('sent' in json.loads(res.content)['message'])
         self.assertFalse(mock_alert.called)
-        self.assertEqual(1, CourseUpdate.objects.count())
-        u = CourseUpdate.objects.get()
+        self.assertEqual(1, StatusUpdate.objects.count())
+        u = StatusUpdate.objects.get()
         self.assertFalse(u.alert_sent)
 
     def test_alert_called_wrong_sem(self, mock_alert):
@@ -312,8 +317,8 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(200, res.status_code)
         self.assertFalse('sent' in json.loads(res.content)['message'])
         self.assertFalse(mock_alert.called)
-        self.assertEqual(1, CourseUpdate.objects.count())
-        u = CourseUpdate.objects.get()
+        self.assertEqual(1, StatusUpdate.objects.count())
+        u = StatusUpdate.objects.get()
         self.assertFalse(u.alert_sent)
 
     def test_alert_called_alerts_off(self, mock_alert):
@@ -327,8 +332,8 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(200, res.status_code)
         self.assertFalse('sent' in json.loads(res.content)['message'])
         self.assertFalse(mock_alert.called)
-        self.assertEqual(1, CourseUpdate.objects.count())
-        u = CourseUpdate.objects.get()
+        self.assertEqual(1, StatusUpdate.objects.count())
+        u = StatusUpdate.objects.get()
         self.assertFalse(u.alert_sent)
 
     def test_bad_format(self, mock_alert):
@@ -336,41 +341,41 @@ class WebhookViewTestCase(TestCase):
         res = self.client.post(
             reverse('webhook', urlconf='alert.urls'),
             data=json.dumps({
-                "hello": "world"
+                'hello': 'world'
             }),
             content_type='application/json',
             **self.headers)
         self.assertEqual(400, res.status_code)
         self.assertFalse(mock_alert.called)
-        self.assertEqual(0, CourseUpdate.objects.count())
+        self.assertEqual(0, StatusUpdate.objects.count())
 
     def test_no_status(self, mock_alert):
         res = self.client.post(
             reverse('webhook', urlconf='alert.urls'),
             data=json.dumps({
-                "course_section": "ANTH361401",
-                "previous_status": "X",
-                "status_code_normalized": "Open",
-                "term": "2019A"
+                'course_section': 'ANTH361401',
+                'previous_status': 'X',
+                'status_code_normalized': 'Open',
+                'term': '2019A'
             }),
             content_type='application/json',
             **self.headers)
         self.assertEqual(400, res.status_code)
         self.assertFalse(mock_alert.called)
-        self.assertEqual(0, CourseUpdate.objects.count())
+        self.assertEqual(0, StatusUpdate.objects.count())
 
     def test_wrong_method(self, mock_alert):
         res = self.client.get(reverse('webhook', urlconf='alert.urls'), **self.headers)
         self.assertEqual(405, res.status_code)
         self.assertFalse(mock_alert.called)
-        self.assertEqual(0, CourseUpdate.objects.count())
+        self.assertEqual(0, StatusUpdate.objects.count())
 
     def test_wrong_content(self, mock_alert):
         res = self.client.post(reverse('webhook', urlconf='alert.urls'),
                                **self.headers)
         self.assertEqual(415, res.status_code)
         self.assertFalse(mock_alert.called)
-        self.assertEqual(0, CourseUpdate.objects.count())
+        self.assertEqual(0, StatusUpdate.objects.count())
 
     def test_wrong_password(self, mock_alert):
         self.headers['Authorization'] = 'Basic ' + base64.standard_b64encode('webhook:abc123'.encode('ascii')).decode()
@@ -381,10 +386,12 @@ class WebhookViewTestCase(TestCase):
             **self.headers)
         self.assertEqual(401, res.status_code)
         self.assertFalse(mock_alert.called)
-        self.assertEqual(0, CourseUpdate.objects.count())
+        self.assertEqual(0, StatusUpdate.objects.count())
 
     def test_wrong_user(self, mock_alert):
-        self.headers['Authorization'] = 'Basic ' + base64.standard_b64encode('baduser:password'.encode('ascii')).decode()
+        self.headers['Authorization'] = (
+            'Basic ' + base64.standard_b64encode('baduser:password'.encode('ascii')).decode()
+        )
         res = self.client.post(
             reverse('webhook', urlconf='alert.urls'),
             data=json.dumps(self.body),
@@ -392,7 +399,96 @@ class WebhookViewTestCase(TestCase):
             **self.headers)
         self.assertEqual(401, res.status_code)
         self.assertFalse(mock_alert.called)
-        self.assertEqual(0, CourseUpdate.objects.count())
+        self.assertEqual(0, StatusUpdate.objects.count())
+
+
+@override_settings(SWITCHBOARD_TEST_APP='pca')
+class APIRegisterTestCase(TestCase):
+    def setUp(self):
+        set_semester()
+        self.client = Client()
+        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.permission = APIPrivilege.objects.create(code=PCA_REGISTRATION)
+        self.key = APIKey.objects.get_or_create(email='contact@penncoursenotify.com')[0]
+        self.key.privileges.add(self.permission)
+        self.headers = {
+            'Authorization': 'Bearer ' + str(self.key.code)
+        }
+
+    def test_successful_registration(self):
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+            **self.headers
+        )
+        self.assertEqual(200, res.status_code)
+        self.assertEqual(1, Registration.objects.count())
+        self.assertEqual(1, Course.objects.count())
+        self.assertEqual(SOURCE_API, Registration.objects.get().source)
+        self.assertEqual(self.key, Registration.objects.get().api_key)
+
+    def test_invalid_api_key(self):
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+            **{'Authorization': 'Bearer blargh'}
+        )
+        self.assertEqual(401, res.status_code)
+        self.assertEqual(0, Registration.objects.count())
+
+    def test_no_api_key(self):
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+        )
+        self.assertEqual(401, res.status_code)
+        self.assertEqual(0, Registration.objects.count())
+
+    def test_inactive_key(self):
+        self.key.active = False
+        self.key.save()
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+            **self.headers
+        )
+        self.assertEqual(401, res.status_code)
+        self.assertEqual(0, Registration.objects.count())
+
+    def test_no_permission(self):
+        self.key.privileges.clear()
+        body = {
+            'email': 'student@example.com',
+            'course': 'CIS 120 001',
+        }
+        res = self.client.post(
+            reverse('api-register', urlconf='alert.urls'),
+            data=json.dumps(body),
+            content_type='application/json',
+            **self.headers
+        )
+        self.assertEqual(401, res.status_code)
+        self.assertEqual(0, Registration.objects.count())
 
 
 @override_settings(SWITCHBOARD_TEST_APP='pca')

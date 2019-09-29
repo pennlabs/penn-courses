@@ -1,4 +1,6 @@
+import os
 from .base import *
+
 
 PCA_URL = 'http://localhost:8000'
 SENTRY_KEY = ''
@@ -10,7 +12,7 @@ This is the app that you want to run locally. While all Penn Courses apps run of
 they operate with different URL schemes since they have different APIs. The app value should correspond to a file
 in PennCourses/urls/. `pca` and `pcp` are two examples.
 '''
-SWITCHBOARD_TEST_APP = 'pca'
+SWITCHBOARD_TEST_APP = os.environ.get('DEVELOPMENT_APP', 'pcp').lower()
 
 DATABASES = {
     'default': {

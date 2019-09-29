@@ -1,14 +1,15 @@
-from django.db.models import Subquery, OuterRef, Avg, FloatField
+from django.db.models import Avg, FloatField, OuterRef, Subquery
 
-from review.models import ReviewBit
 from courses.models import Section
+from review.models import ReviewBit
+
 
 """
 Queryset annotations
 ====================
 
 This file has code which annotates Course and Section querysets with Review information.
-There's some tricky JOINs going on here, through the Subquery objects which you can read about here: 
+There's some tricky JOINs going on here, through the Subquery objects which you can read about here:
 https://docs.djangoproject.com/en/2.2/ref/models/expressions/#subquery-expressions.
 
 This allows us to have the database do all of the work of averaging PCR data, so that we can get all of our Course and

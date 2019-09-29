@@ -2,8 +2,8 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
-# Register your models here.
-from .models import *
+from courses.models import (APIKey, APIPrivilege, Building, Course, Department, Instructor,
+                            Meeting, Requirement, Restriction, Room, Section, StatusUpdate)
 
 
 class DepartmentAdmin(admin.ModelAdmin):
@@ -58,6 +58,13 @@ class RequirementAdmin(admin.ModelAdmin):
     autocomplete_fields = ('departments', 'courses', 'overrides')
 
 
+class StatusUpdateAdmin(admin.ModelAdmin):
+    autocomplete_fields = ('section', )
+    readonly_fields = ('created_at', )
+
+
+admin.site.register(APIKey)
+admin.site.register(APIPrivilege)
 admin.site.register(Department, DepartmentAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Section, SectionAdmin)
@@ -67,3 +74,4 @@ admin.site.register(Requirement, RequirementAdmin)
 admin.site.register(Restriction)
 admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Meeting, MeetingAdmin)
+admin.site.register(StatusUpdate, StatusUpdateAdmin)

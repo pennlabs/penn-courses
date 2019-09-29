@@ -1,13 +1,15 @@
-import redis
 import json
 import logging
+
+import redis
 from celery import shared_task
-
-from .models import *
-
-from options.models import get_value, get_bool
-
 from django.conf import settings
+
+from alert.models import Registration, Section, get_course_and_section
+from courses.models import StatusUpdate
+from courses.util import update_course_from_record
+from options.models import get_value
+
 
 logger = logging.getLogger(__name__)
 r = redis.Redis.from_url(settings.REDIS_URL)
@@ -39,7 +41,7 @@ def generate_course_json(semester=None, use_cache=True):
         })
 
     serialized_sections = json.dumps(sections)
-    r.set('sections', serialized_sections)
+    r.set('sections', serialized_sections, ex=86400)  # refresh at least once per day.
     return sections
 
 
@@ -61,9 +63,9 @@ def demo_task():
 @shared_task(name='pca.tasks.run_course_updates')
 def run_course_updates(semester=None):
     if semester is None:
-        updates = CourseUpdate.objects.all()
+        updates = StatusUpdate.objects.all()
     else:
-        updates = CourseUpdate.objects.filter(section__course__semester=semester)
+        updates = StatusUpdate.objects.filter(section__course__semester=semester)
     for u in updates:
         update_course_from_record(u)
     return {'result': 'executed', 'name': 'pca.tasks.run_course_updates'}

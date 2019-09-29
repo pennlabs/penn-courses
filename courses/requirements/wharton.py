@@ -67,4 +67,3 @@ def get_requirements():
 
 if __name__ == '__main__':
     print(get_requirements())
-

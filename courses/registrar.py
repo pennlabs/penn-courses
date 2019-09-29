@@ -1,8 +1,9 @@
-import requests
-import logging
 import json
+import logging
 
+import requests
 from django.conf import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,3 @@ def get_course(query, semester, primary=True):
     else:
         report_api_error(err)
         return None
-
-
-

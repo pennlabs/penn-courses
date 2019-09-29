@@ -2,8 +2,9 @@ import json
 import re
 
 from courses.models import Instructor
-from .models import Review
 from courses.util import get_course_and_section
+
+from .models import Review
 
 
 def load_data(fname='review/cis-reviews-test.json'):
