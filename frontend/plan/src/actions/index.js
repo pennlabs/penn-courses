@@ -255,9 +255,9 @@ export function courseSearchSuccess(items) {
     };
 }
 
-export const toggleCheck = courseId => {
+export const toggleCheck = course => {
     return {
         type: TOGGLE_CHECK,
-        courseId
+        course
     };
 };

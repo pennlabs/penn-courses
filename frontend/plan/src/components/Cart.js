@@ -16,18 +16,26 @@ class Cart extends Component {
                 boxShadow: "0 0 5px 0 rgba(200, 200, 200, 0.6)"
             }}
         >
-            {this.props.courses.map(({code, name, checked}) =>
-                <CartCourse code={code}
-                            toggleCheck={() => this.props.toggleCheck(code)}
-                            checked={checked}
-                            name={name}/>)}
+            {this.props.courses.map(({section, checked}) => {
+                const {id: code, description: name} = section;
+                return <CartCourse
+                    toggleCheck={() => this.props.toggleCheck(section)}
+                    code={code}
+                    checked={checked}
+                    name={name}/>;
+            })}
         </section>;
     }
 
 }
 
-const mapStateToProps = ({cart: {cartCourses}}) => ({
-    courses: cartCourses.map(({section: {id, name}, checked}) => ({code: id, name: name, checked}))
+const mapStateToProps = ({schedule: {cartCourses, schedules, scheduleSelected}}) => ({
+    courses: cartCourses.map(course =>
+        ({
+            section: course,
+            checked: schedules[scheduleSelected].meetings.reduce(({id}, acc) => acc || id === course.id, false)
+        })
+    )
 });
 
 const mapDispatchToProps = dispatch => ({

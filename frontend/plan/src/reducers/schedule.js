@@ -6,7 +6,7 @@ import {
     REMOVE_SCHED_ITEM,
     RENAME_SCHEDULE,
     DUPLICATE_SCHEDULE,
-    CLEAR_SCHEDULE
+    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM
 } from "../actions";
 
 const DEFAULT_SCHEDULE_NAME = "Schedule";
@@ -27,6 +27,7 @@ const generateDefaultSchedule = () => (
 const initialState = {
     schedules: { [DEFAULT_SCHEDULE_NAME]: generateDefaultSchedule() },
     scheduleSelected: DEFAULT_SCHEDULE_NAME,
+    cartCourses: []
 };
 
 /**
@@ -41,8 +42,22 @@ const removeSchedule = (scheduleKey, initialSchedule) => {
     return newSchedules;
 };
 
+/**
+ * Returns a new schedule where the course is present if it was not previously, and vice-versa
+ * @param course
+ * @param meetings
+ */
+const toggleCourse = (course, meetings) => {
+    if (meetings.reduce(({id}, acc) => acc || id === course.id, false)) {
+        // class already in schedule; remove
+        return meetings.filter(m => m.id !== course.id);
+    } else {
+        return [...meetings, course];
+    }
+};
+
 export const schedule = (state = initialState, action) => {
-    // console.log(action);
+    const {cartCourses} = state;
     switch (action.type) {
         case CLEAR_SCHEDULE:
             return {
@@ -94,15 +109,14 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 scheduleSelected: action.scheduleId,
             };
-        case ADD_SCHED_ITEM:
+        case TOGGLE_CHECK:
             return {
                 ...state,
                 schedules: {
                     ...state.schedules,
                     [state.scheduleSelected]: {
                         ...state[state.scheduleSelected],
-                        meetings: [...state.schedules[state.scheduleSelected].meetings,
-                            action.section],
+                        meetings: toggleCourse(action.course, state.schedules[state.scheduleSelected].meetings),
                     },
                 },
             };
@@ -118,6 +132,9 @@ export const schedule = (state = initialState, action) => {
                     },
                 },
             };
+        case ADD_CART_ITEM:
+            const {section} = action;
+            return {...state, cartCourses: [...cartCourses, section]};
         default:
             return {
                 ...state,
