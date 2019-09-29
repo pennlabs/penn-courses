@@ -1,5 +1,4 @@
 import {
-    ADD_SCHED_ITEM,
     CHANGE_SCHEDULE,
     CREATE_SCHEDULE,
     DELETE_SCHEDULE,
@@ -8,6 +7,7 @@ import {
     DUPLICATE_SCHEDULE,
     CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM
 } from "../actions";
+import {meetingsContainSection} from "../meetUtil";
 
 const DEFAULT_SCHEDULE_NAME = "Schedule";
 
@@ -48,8 +48,7 @@ const removeSchedule = (scheduleKey, initialSchedule) => {
  * @param meetings
  */
 const toggleCourse = (course, meetings) => {
-    if (meetings.reduce(({id}, acc) => acc || id === course.id, false)) {
-        // class already in schedule; remove
+    if (meetingsContainSection(meetings, course)) {
         return meetings.filter(m => m.id !== course.id);
     } else {
         return [...meetings, course];

@@ -5,6 +5,12 @@
  * the format HH.MM.
  */
 
+export const meetingsContainSection = (meetings, section) => {
+    let sectionFound = false;
+    meetings.forEach(({id}) => sectionFound = sectionFound || id === section.id);
+    return sectionFound;
+};
+
 export const meetingsOverlap = (m1, m2) => {
     const start1 = m1.start;
     const start2 = m2.start;

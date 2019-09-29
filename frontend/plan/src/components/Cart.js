@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import CartCourse from "./CartCourse";
 import {connect} from "react-redux";
 import {toggleCheck} from "../actions";
+import {meetingsContainSection} from "../meetUtil";
 
 class Cart extends Component {
 
@@ -33,7 +34,7 @@ const mapStateToProps = ({schedule: {cartCourses, schedules, scheduleSelected}})
     courses: cartCourses.map(course =>
         ({
             section: course,
-            checked: schedules[scheduleSelected].meetings.reduce(({id}, acc) => acc || id === course.id, false)
+            checked: meetingsContainSection(schedules[scheduleSelected].meetings, course)
         })
     )
 });
