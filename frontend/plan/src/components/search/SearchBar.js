@@ -61,8 +61,8 @@ function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch }) {
 
 const mapStateToProps = state => (
     {
-        schoolReq: state.sections.schoolReq,
-        filterSearch: state.sections.filterSearch,
+        schoolReq: state.filters.schoolReq,
+        filterSearch: state.filters.filterSearch,
     }
 );
 
