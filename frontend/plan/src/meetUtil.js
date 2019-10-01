@@ -7,7 +7,7 @@
 
 export const meetingsContainSection = (meetings, section) => {
     let sectionFound = false;
-    meetings.forEach(({id}) => sectionFound = sectionFound || id === section.id);
+    meetings.forEach(({ id }) => sectionFound = sectionFound || id === section.id);
     return sectionFound;
 };
 

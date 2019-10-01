@@ -7,7 +7,7 @@ import {
     DUPLICATE_SCHEDULE,
     CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM
 } from "../actions";
-import {meetingsContainSection} from "../meetUtil";
+import { meetingsContainSection } from "../meetUtil";
 
 const DEFAULT_SCHEDULE_NAME = "Schedule";
 
@@ -27,7 +27,7 @@ const generateDefaultSchedule = () => (
 const initialState = {
     schedules: { [DEFAULT_SCHEDULE_NAME]: generateDefaultSchedule() },
     scheduleSelected: DEFAULT_SCHEDULE_NAME,
-    cartCourses: []
+    cartCourses: [],
 };
 
 /**
@@ -50,13 +50,12 @@ const removeSchedule = (scheduleKey, initialSchedule) => {
 const toggleCourse = (course, meetings) => {
     if (meetingsContainSection(meetings, course)) {
         return meetings.filter(m => m.id !== course.id);
-    } else {
-        return [...meetings, course];
     }
+    return [...meetings, course];
 };
 
 export const schedule = (state = initialState, action) => {
-    const {cartCourses} = state;
+    const { cartCourses } = state;
     switch (action.type) {
         case CLEAR_SCHEDULE:
             return {
@@ -132,8 +131,8 @@ export const schedule = (state = initialState, action) => {
                 },
             };
         case ADD_CART_ITEM:
-            const {section} = action;
-            return {...state, cartCourses: [...cartCourses, section]};
+            const { section } = action;
+            return { ...state, cartCourses: [...cartCourses, section] };
         default:
             return {
                 ...state,

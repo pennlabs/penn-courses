@@ -60,5 +60,5 @@ export function SchoolReq({ filterInfo, schoolReq }) {
                 </ul>
             </div>
         </div>
-    )
+    );
 }

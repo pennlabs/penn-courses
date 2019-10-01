@@ -255,9 +255,7 @@ export function courseSearchSuccess(items) {
     };
 }
 
-export const toggleCheck = course => {
-    return {
-        type: TOGGLE_CHECK,
-        course
-    };
-};
+export const toggleCheck = course => ({
+    type: TOGGLE_CHECK,
+    course,
+});
