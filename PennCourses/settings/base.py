@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'shortener',
     'alert',
     'review',
+    'plan',
 ]
 
 MIDDLEWARE = [
