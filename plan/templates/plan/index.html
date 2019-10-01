@@ -1,0 +1,31 @@
+{% load staticfiles %}
+<!doctype html>
+<html>
+    <head>
+        <title>Penn Course Search</title>
+        <style>
+        body {
+            background-color: #f9f9f9;
+            padding: 30px;
+            padding-top: 80px;
+            text-align: center;
+            font-family: monospace;
+        }
+        img {
+            max-height: 400px;
+            margin-bottom: 20px;
+        }
+        </style>
+    </head>
+    <body>
+        <img src="{% static 'pcp-construction.png' %}" alt="Penn Course Search" style="width:400px"/>
+        <h1>Check back soon!</h1>
+        <p>Penn Course Search is undergoing a major renovation!<p/>
+        <p>
+            In the meantime, check out <br /> <a href="//penncoursereview.com">Penn Course Review</a>
+            to browse courses.
+        </p>
+
+        <p>Made with <span style='color: red'>&hearts;</span> by <a href='https://pennlabs.org'>Penn Labs</a></p>
+    </body>
+</html>
