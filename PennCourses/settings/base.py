@@ -47,12 +47,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'debug_toolbar',
 
+    'alert',
     'courses',
     'options',
-    'shortener',
-    'alert',
-    'review',
     'plan',
+    'review',
+    'shortener',
 ]
 
 MIDDLEWARE = [
