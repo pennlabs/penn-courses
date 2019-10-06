@@ -3,9 +3,11 @@ import { connect } from "react-redux";
 import CartSection from "./CartSection";
 import { toggleCheck } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
+import PropTypes from 'prop-types';
 
 class Cart extends Component {
     render() {
+        const {courses} = this.props;
         return (
             <section
                 style={{
@@ -17,7 +19,7 @@ class Cart extends Component {
                     boxShadow: "0 0 5px 0 rgba(200, 200, 200, 0.6)",
                 }}
             >
-                {this.props.courses.map(({ section, checked }) => {
+                {courses.map(({ section, checked }) => {
                     const { id: code, description: name } = section;
                     return (
                         <CartSection
@@ -32,6 +34,11 @@ class Cart extends Component {
         );
     }
 }
+
+Cart.propTypes = {
+    courses: PropTypes.array.isRequired,
+    toggleCheck: PropTypes.func.isRequired
+};
 
 const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
     courses: cartSections.map(course => ({
