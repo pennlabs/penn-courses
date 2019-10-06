@@ -6,8 +6,8 @@ import Section from "./Section";
 import { addCartItem, addSchedItem, removeSchedItem } from "../../actions";
 
 
-function SectionList({ sections, scheduleSections, manageSchedule }) {
-    const isInSchedule = ({ id }) => scheduleSections.indexOf(id) !== -1;
+function SectionList({ sections, cartSections, manageSchedule }) {
+    const isInCart = ({ id }) => cartSections.indexOf(id) !== -1;
     return (
         [
             <div className="section-row segment">
@@ -21,7 +21,7 @@ function SectionList({ sections, scheduleSections, manageSchedule }) {
                     <Section
                         section={s}
                         schedule={manageSchedule(s)}
-                        inSchedule={isInSchedule(s)}
+                        inSchedule={isInCart(s)}
                     />
                 ))}
             </ul>
@@ -36,8 +36,7 @@ SectionList.propTypes = {
 const mapStateToProps = (state, ownProps) => (
     {
         ...ownProps,
-        scheduleSections: state.schedule.schedules[state.schedule.scheduleSelected].meetings
-            .map(sec => sec.id),
+        cartSections: state.schedule.cartCourses.map(sec => sec.id),
     }
 );
 
