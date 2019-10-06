@@ -33,8 +33,8 @@ class Cart extends Component {
     }
 }
 
-const mapStateToProps = ({ schedule: { cartCourses, schedules, scheduleSelected } }) => ({
-    courses: cartCourses.map(course => ({
+const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
+    courses: cartSections.map(course => ({
         section: course,
         checked: meetingsContainSection(schedules[scheduleSelected].meetings, course),
     })),

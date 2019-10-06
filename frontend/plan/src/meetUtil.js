@@ -5,6 +5,12 @@
  * the format HH.MM.
  */
 
+/**
+ *  Returns whether the given section object is contained within the meetings list
+ * @param meetings A meetings list in the same format as in the redux state
+ * @param section A section object
+ * @returns {boolean} Whether section is in the list of meetings (based on id)
+ */
 export const meetingsContainSection = (meetings, section) => {
     let sectionFound = false;
     meetings.forEach(({ id }) => sectionFound = sectionFound || id === section.id);

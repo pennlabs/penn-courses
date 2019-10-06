@@ -27,7 +27,7 @@ const generateDefaultSchedule = () => (
 const initialState = {
     schedules: { [DEFAULT_SCHEDULE_NAME]: generateDefaultSchedule() },
     scheduleSelected: DEFAULT_SCHEDULE_NAME,
-    cartCourses: [],
+    cartSections: [],
 };
 
 /**
@@ -56,7 +56,7 @@ const toggleSection = (meetings, section) => {
 
 
 export const schedule = (state = initialState, action) => {
-    const { cartCourses } = state;
+    const { cartSections } = state;
     switch (action.type) {
         case CLEAR_SCHEDULE:
             return {
@@ -133,10 +133,10 @@ export const schedule = (state = initialState, action) => {
             };
         case ADD_CART_ITEM:
             const { section } = action;
-            return { ...state, cartCourses: [...cartCourses, section] };
+            return { ...state, cartSections: [...cartSections, section] };
         case REMOVE_CART_ITEM:
             const { sectionId } = action;
-            return { ...state, cartCourses: state.cartCourses.filter(({id}) => id !== sectionId)};
+            return { ...state, cartSections: state.cartSections.filter(({id}) => id !== sectionId)};
         default:
             return {
                 ...state,

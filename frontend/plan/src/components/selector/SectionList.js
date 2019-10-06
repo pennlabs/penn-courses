@@ -36,7 +36,7 @@ SectionList.propTypes = {
 const mapStateToProps = (state, ownProps) => (
     {
         ...ownProps,
-        cartSections: state.schedule.cartCourses.map(sec => sec.id),
+        cartSections: state.schedule.cartSections.map(sec => sec.id),
     }
 );
 
