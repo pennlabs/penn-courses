@@ -5,7 +5,7 @@ import {
     REMOVE_SCHED_ITEM,
     RENAME_SCHEDULE,
     DUPLICATE_SCHEDULE,
-    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM
+    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM, REMOVE_CART_ITEM
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 
@@ -27,7 +27,7 @@ const generateDefaultSchedule = () => (
 const initialState = {
     schedules: { [DEFAULT_SCHEDULE_NAME]: generateDefaultSchedule() },
     scheduleSelected: DEFAULT_SCHEDULE_NAME,
-    cartCourses: [],
+    cartSections: [],
 };
 
 /**
@@ -43,19 +43,20 @@ const removeSchedule = (scheduleKey, initialSchedule) => {
 };
 
 /**
- * Returns a new schedule where the course is present if it was not previously, and vice-versa
- * @param course
+ * Returns a new schedule where the section is present if it was not previously, and vice-versa
  * @param meetings
+ * @param section
  */
-const toggleCourse = (course, meetings) => {
-    if (meetingsContainSection(meetings, course)) {
-        return meetings.filter(m => m.id !== course.id);
+const toggleSection = (meetings, section) => {
+    if (meetingsContainSection(meetings, section)) {
+        return meetings.filter(m => m.id !== section.id);
     }
-    return [...meetings, course];
+    return [...meetings, section];
 };
 
+
 export const schedule = (state = initialState, action) => {
-    const { cartCourses } = state;
+    const { cartSections } = state;
     switch (action.type) {
         case CLEAR_SCHEDULE:
             return {
@@ -114,7 +115,7 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [state.scheduleSelected]: {
                         ...state[state.scheduleSelected],
-                        meetings: toggleCourse(action.course, state.schedules[state.scheduleSelected].meetings),
+                        meetings: toggleSection(state.schedules[state.scheduleSelected].meetings, action.course),
                     },
                 },
             };
@@ -132,7 +133,10 @@ export const schedule = (state = initialState, action) => {
             };
         case ADD_CART_ITEM:
             const { section } = action;
-            return { ...state, cartCourses: [...cartCourses, section] };
+            return { ...state, cartSections: [...cartSections, section] };
+        case REMOVE_CART_ITEM:
+            const { sectionId } = action;
+            return { ...state, cartSections: state.cartSections.filter(({id}) => id !== sectionId)};
         default:
             return {
                 ...state,

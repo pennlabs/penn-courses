@@ -2,10 +2,7 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import "../styles/course-cart.css";
 
-class CartCourse extends Component {
-    constructor(props) {
-        super(props);
-    }
+class CartSection extends Component {
 
     toggleCheck = () => {
         this.props.toggleCheck();
@@ -19,6 +16,9 @@ class CartCourse extends Component {
             backgroundColor: "white",
             border: "1px solid grey",
         };
+
+        const {checked, code, name} = this.props;
+
         return (
             <div
                 className="course-cart-item"
@@ -31,6 +31,7 @@ class CartCourse extends Component {
                         borderBottom: "1px solid rgb(200, 200, 200)",
                     }}
                 onClick={this.toggleCheck}
+                role={"checkbox"}
             >
                 <div style={{
                     flexGrow: "2",
@@ -41,8 +42,8 @@ class CartCourse extends Component {
                     alignItems: "left",
                 }}
                 >
-                    <h4>{this.props.code}</h4>
-                    <div style={{ fontSize: "0.6rem" }}>{this.props.name}</div>
+                    <h4>{code}</h4>
+                    <div style={{ fontSize: "0.6rem" }}>{name}</div>
                 </div>
                 <div style={{
                     flexGrow: "0",
@@ -52,7 +53,7 @@ class CartCourse extends Component {
                     display: "flex",
                 }}
                 >
-                    {this.props.checked
+                    {checked
                         ? (
                             <i
                                 className="fas fa-check-circle"
@@ -72,10 +73,11 @@ class CartCourse extends Component {
     }
 }
 
-CartCourse.propTypes = {
+CartSection.propTypes = {
     name: PropTypes.string.isRequired,
     code: PropTypes.string.isRequired,
     checked: PropTypes.bool,
+    toggleCheck: PropTypes.func.isRequired
 };
 
-export default CartCourse;
+export default CartSection;

@@ -6,10 +6,10 @@ import Badge from "../Badge";
 
 import { getTimeString } from "../../meetUtil";
 
-export default function Section({ section, schedule, inSchedule }) {
+export default function Section({ section, cart, inCart }) {
     return (
         // eslint-disable-next-line
-        <li className="selector-row section-row" onClick={inSchedule ? schedule.remove : schedule.add}>
+        <li className="selector-row section-row" onClick={inCart ? cart.remove : cart.add}>
             <div>
                 {section.id.split("-").pop()}
             </div>
@@ -31,7 +31,7 @@ export default function Section({ section, schedule, inSchedule }) {
                 </div>
             </div>
             <div>
-                {inSchedule ? <i className="fas fa-times" /> : <i className="fas fa-plus" />}
+                {inCart ? <i className="fas fa-times" /> : <i className="fas fa-plus" />}
             </div>
         </li>
     );
@@ -41,5 +41,5 @@ Section.propTypes = {
     // eslint-disable-next-line
     section: PropTypes.object.isRequired,
     schedule: PropTypes.objectOf(PropTypes.func),
-    inSchedule: PropTypes.bool,
+    inCart: PropTypes.bool,
 };

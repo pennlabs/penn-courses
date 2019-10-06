@@ -32,6 +32,7 @@ export const SECTION_INFO_SEARCH_SUCCESS = "SECTION_INFO_SEARCH_SUCCESS";
 export const TOGGLE_CHECK = "TOGGLE_CHECK";
 
 export const ADD_CART_ITEM = "ADD_CART_ITEM";
+export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
 
 
 export const duplicateSchedule = scheduleName => (
@@ -258,4 +259,9 @@ export function courseSearchSuccess(items) {
 export const toggleCheck = course => ({
     type: TOGGLE_CHECK,
     course,
+});
+
+export const removeCartItem = sectionId => ({
+    type: REMOVE_CART_ITEM,
+    sectionId,
 });

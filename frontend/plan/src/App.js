@@ -13,8 +13,6 @@ import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
-import sampleCartCourses from "./sample_data/cart_courses";
-
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
 const previousState = localStorage.getItem("coursePlanSchedules");
