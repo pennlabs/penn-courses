@@ -43,15 +43,15 @@ const removeSchedule = (scheduleKey, initialSchedule) => {
 };
 
 /**
- * Returns a new schedule where the course is present if it was not previously, and vice-versa
- * @param course
+ * Returns a new schedule where the section is present if it was not previously, and vice-versa
  * @param meetings
+ * @param section
  */
-const toggleCourse = (course, meetings) => {
-    if (meetingsContainSection(meetings, course)) {
-        return meetings.filter(m => m.id !== course.id);
+const toggleSection = (meetings, section) => {
+    if (meetingsContainSection(meetings, section)) {
+        return meetings.filter(m => m.id !== section.id);
     }
-    return [...meetings, course];
+    return [...meetings, section];
 };
 
 
@@ -115,7 +115,7 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [state.scheduleSelected]: {
                         ...state[state.scheduleSelected],
-                        meetings: toggleCourse(action.course, state.schedules[state.scheduleSelected].meetings),
+                        meetings: toggleSection(state.schedules[state.scheduleSelected].meetings, action.course),
                     },
                 },
             };
