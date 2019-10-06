@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 import "../styles/course-cart.css";
 
 class CartSection extends Component {
-
     toggleCheck = () => {
         this.props.toggleCheck();
     };
@@ -17,7 +16,7 @@ class CartSection extends Component {
             border: "1px solid grey",
         };
 
-        const {checked, code, name} = this.props;
+        const { checked, code, name } = this.props;
 
         return (
             <div
@@ -31,7 +30,7 @@ class CartSection extends Component {
                         borderBottom: "1px solid rgb(200, 200, 200)",
                     }}
                 onClick={this.toggleCheck}
-                role={"checkbox"}
+                role="checkbox"
             >
                 <div style={{
                     flexGrow: "2",
@@ -77,7 +76,7 @@ CartSection.propTypes = {
     name: PropTypes.string.isRequired,
     code: PropTypes.string.isRequired,
     checked: PropTypes.bool,
-    toggleCheck: PropTypes.func.isRequired
+    toggleCheck: PropTypes.func.isRequired,
 };
 
 export default CartSection;
