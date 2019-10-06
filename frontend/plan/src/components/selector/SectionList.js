@@ -3,10 +3,10 @@ import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 
 import Section from "./Section";
-import { addCartItem, addSchedItem, removeSchedItem } from "../../actions";
+import {addCartItem, addSchedItem, removeCartItem, removeSchedItem} from "../../actions";
 
 
-function SectionList({ sections, cartSections, manageSchedule }) {
+function SectionList({ sections, cartSections, manageCart }) {
     const isInCart = ({ id }) => cartSections.indexOf(id) !== -1;
     return (
         [
@@ -20,8 +20,8 @@ function SectionList({ sections, cartSections, manageSchedule }) {
                 {sections.map(s => (
                     <Section
                         section={s}
-                        schedule={manageSchedule(s)}
-                        inSchedule={isInCart(s)}
+                        cart={manageCart(s)}
+                        inCart={isInCart(s)}
                     />
                 ))}
             </ul>
@@ -43,9 +43,9 @@ const mapStateToProps = (state, ownProps) => (
 
 const mapDispatchToProps = dispatch => (
     {
-        manageSchedule: section => ({
+        manageCart: section => ({
             add: () => dispatch(addCartItem(section)),
-            remove: () => dispatch(removeSchedItem(section.id)),
+            remove: () => dispatch(removeCartItem(section.id)),
         }),
     }
 );

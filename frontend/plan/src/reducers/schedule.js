@@ -5,7 +5,7 @@ import {
     REMOVE_SCHED_ITEM,
     RENAME_SCHEDULE,
     DUPLICATE_SCHEDULE,
-    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM
+    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM, REMOVE_CART_ITEM
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 
@@ -53,6 +53,7 @@ const toggleCourse = (course, meetings) => {
     }
     return [...meetings, course];
 };
+
 
 export const schedule = (state = initialState, action) => {
     const { cartCourses } = state;
@@ -133,6 +134,9 @@ export const schedule = (state = initialState, action) => {
         case ADD_CART_ITEM:
             const { section } = action;
             return { ...state, cartCourses: [...cartCourses, section] };
+        case REMOVE_CART_ITEM:
+            const { sectionId } = action;
+            return { ...state, cartCourses: state.cartCourses.filter(({id}) => id !== sectionId)};
         default:
             return {
                 ...state,
