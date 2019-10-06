@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import CartCourse from "./CartCourse";
+import CartSection from "./CartSection";
 import { toggleCheck } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 
@@ -20,7 +20,7 @@ class Cart extends Component {
                 {this.props.courses.map(({ section, checked }) => {
                     const { id: code, description: name } = section;
                     return (
-                        <CartCourse
+                        <CartSection
                             toggleCheck={() => this.props.toggleCheck(section)}
                             code={code}
                             checked={checked}

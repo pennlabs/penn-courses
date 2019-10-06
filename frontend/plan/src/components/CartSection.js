@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import "../styles/course-cart.css";
 
-class CartCourse extends Component {
+class CartSection extends Component {
     constructor(props) {
         super(props);
     }
@@ -72,10 +72,10 @@ class CartCourse extends Component {
     }
 }
 
-CartCourse.propTypes = {
+CartSection.propTypes = {
     name: PropTypes.string.isRequired,
     code: PropTypes.string.isRequired,
     checked: PropTypes.bool,
 };
 
-export default CartCourse;
+export default CartSection;
