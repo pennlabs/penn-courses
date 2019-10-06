@@ -29,8 +29,12 @@ HOST_TO_APP = {
     'penncourses.apps.pennlabs.org': 'pca',
     'penncoursealert.com': 'pca',
     'www.penncoursealert.com': 'pca',
+
     'penncourseplan.com': 'pcp',
     'www.penncourseplan.com': 'pcp',
+    'penncoursesearch.com': 'pcp',
+    'www.penncoursesearch.com': 'pcp',
+
     'penncoursereview.com': 'pcr',
     'www.penncoursereview.com': 'pcr'
 }
