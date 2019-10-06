@@ -53,7 +53,7 @@ jobs:
       - run:
           name: PCP JS Lint
           command: |
-            ./frontend/plan/node_modules/.bin/eslint frontend/plan/src
+            cd frontend/plan && npm run lint
       - run:
           name: Run tests
           command: |
