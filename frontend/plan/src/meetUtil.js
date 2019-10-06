@@ -13,7 +13,9 @@
  */
 export const meetingsContainSection = (meetings, section) => {
     let sectionFound = false;
-    meetings.forEach(({ id }) => sectionFound = sectionFound || id === section.id);
+    meetings.forEach(({ id }) => {
+        sectionFound = sectionFound || id === section.id;
+    });
     return sectionFound;
 };
 
@@ -58,11 +60,12 @@ export const getConflictGroups = (meetings) => {
     }
 
     // remove sets of size 1 from the results; they're not conflicting with anything.
-    Object.keys(conflicts).forEach((key) => {
-        if (conflicts[key].size <= 1) {
-            delete conflicts[key];
-        }
-    });
+    Object.keys(conflicts)
+        .forEach((key) => {
+            if (conflicts[key].size <= 1) {
+                delete conflicts[key];
+            }
+        });
     // use a Set to remove duplicates, so we get only unique conflict sets.
     return Array.from(new Set(Object.values(conflicts)).values());
 };
