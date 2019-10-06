@@ -3,37 +3,34 @@ import { connect } from "react-redux";
 import CartSection from "./CartSection";
 import { toggleCheck } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
-class Cart extends Component {
-    render() {
-        const {courses} = this.props;
-        return (
-            <section
-                style={{
-                    background: "white",
-                    display: "flex",
-                    flexGrow: "1",
-                    flexDirection: "column",
-                    borderRadius: "6px",
-                    boxShadow: "0 0 5px 0 rgba(200, 200, 200, 0.6)",
-                }}
-            >
-                {courses.map(({ section, checked }) => {
-                    const { id: code, description: name } = section;
-                    return (
-                        <CartSection
-                            toggleCheck={() => this.props.toggleCheck(section)}
-                            code={code}
-                            checked={checked}
-                            name={name}
-                        />
-                    );
-                })}
-            </section>
-        );
-    }
-}
+const Cart = ({ courses, toggleCheck }) => {
+    return (
+        <section
+            style={{
+                background: "white",
+                display: "flex",
+                flexGrow: "1",
+                flexDirection: "column",
+                borderRadius: "6px",
+                boxShadow: "0 0 5px 0 rgba(200, 200, 200, 0.6)",
+            }}
+        >
+            {courses.map(({ section, checked }) => {
+                const { id: code, description: name } = section;
+                return (
+                    <CartSection
+                        toggleCheck={() => toggleCheck(section)}
+                        code={code}
+                        checked={checked}
+                        name={name}
+                    />
+                );
+            })}
+        </section>
+    );
+};
 
 Cart.propTypes = {
     courses: PropTypes.array.isRequired,
