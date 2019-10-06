@@ -65,17 +65,19 @@ def get_room(building_code, room_number):
     return room
 
 
-def add_meetings(section, meetings):
+def set_meetings(section, meetings):
+    for meeting in section.meetings.all():
+        meeting.delete()
     for meeting in meetings:
         room = get_room(meeting['building_code'], meeting['room_number'])
         start_time = meeting['start_time_24']
         end_time = meeting['end_time_24']
         for day in list(meeting['meeting_days']):
-            m, _ = Meeting.objects.get_or_create(section=section,
-                                                 day=day,
-                                                 start=start_time,
-                                                 end=end_time,
-                                                 room=room)
+            m, _ = Meeting.objects.update_or_create(section=section,
+                                                    day=day,
+                                                    start=start_time,
+                                                    end=end_time,
+                                                    defaults={'room': room})
 
 
 def add_associated_sections(section, info):
@@ -162,7 +164,7 @@ def upsert_course_from_opendata(info, semester):
                                         + meeting['end_time'] for meeting in info['meetings']])
 
     add_instructors(section, [instructor['name'] for instructor in info['instructors']])
-    add_meetings(section, info['meetings'])
+    set_meetings(section, info['meetings'])
     add_associated_sections(section, info)
     add_restrictions(section, info['requirements'])
     add_college_requirements(section.course, info['fulfills_college_requirements'])
