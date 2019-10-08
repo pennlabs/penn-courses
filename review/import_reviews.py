@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 import requests
@@ -6,7 +7,6 @@ from django.conf import settings
 
 from courses.models import Instructor
 from courses.util import get_course_and_section
-
 from review.models import Review
 
 
@@ -63,16 +63,35 @@ def get_reviews_for_department(dept):
         print(r.text)
 
 
-def load_reviews_for_department(dept):
-    save_reviews(get_reviews_for_department(dept))
+def save_reviews_for_department(dept, filename):
+    dept_reviews = get_reviews_for_department(dept)
+    with open(filename, 'w') as f:
+        json.dump(dept_reviews, f)
 
 
-def load_all_reviews():
-    reviews = []
+def load_reviews_for_department(filename):
+    with open(filename) as f:
+        save_reviews(json.load(f))
+
+
+def save_all_reviews(directory):
     depts = get_depts()
     i = 0
     for dept in depts:
         i += 1
         print(f'loading {dept} reviews... ({i} / {len(depts)})')
-        reviews.extend(get_reviews_for_department(dept))
+        save_reviews_for_department(dept, os.path.join(directory, f'{dept}.json'))
+
+
+def load_all_reviews(directory):
+    reviews = []
+    i = 0
+    for root, dirs, files in os.walk(directory):
+        for name in files:
+            if name.endswith('.json'):
+                i += 1
+                print(f'loading reviews from {name}... ({i} / {len(files)})')
+                full_path = os.path.join(directory, name)
+                with open(full_path) as f:
+                    reviews.extend(json.load(f))
     save_reviews(reviews)
