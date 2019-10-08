@@ -9,7 +9,7 @@ class Command(BaseCommand):
     help = 'Save all review data from PCR to a directory.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--out', nargs='?', type=str, default='pcr')
+        parser.add_argument('--out', nargs='?', type=str, default='pcr-backup')
         parser.add_argument('--dept', nargs='?', type=str, default=None)
 
     def handle(self, *args, **kwargs):

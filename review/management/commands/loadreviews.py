@@ -9,7 +9,7 @@ class Command(BaseCommand):
     help = 'Load reviews from JSON files into the database.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--src', nargs='?', type=str, default='pcr')
+        parser.add_argument('--src', nargs='?', type=str, default='pcr-backup')
 
     def handle(self, *args, **kwargs):
         directory = os.path.abspath(kwargs['out'])
