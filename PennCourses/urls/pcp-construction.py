@@ -1,4 +1,4 @@
-from django.urls import include, path
+from django.urls import path
 from django.views.generic import TemplateView
 
 from PennCourses.urls.base import urlpatterns
