@@ -176,14 +176,18 @@ def accept_webhook(request):
     should_send_alert = get_bool('SEND_FROM_WEBHOOK', False) and \
         course_status == 'O' and get_value('SEMESTER') == course_term
 
-    u = record_update(course_id,
-                      course_term,
-                      prev_status,
-                      course_status,
-                      should_send_alert,
-                      request.body)
+    try:
+        u = record_update(course_id,
+                          course_term,
+                          prev_status,
+                          course_status,
+                          should_send_alert,
+                          request.body)
 
-    update_course_from_record(u)
+        update_course_from_record(u)
+    except ValueError as e:
+        logger.error(e)
+        return HttpResponse('We got an error but webhook should ignore it', status=200)
 
     if should_send_alert:
         try:
