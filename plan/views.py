@@ -1,11 +1,8 @@
-from django.db.models import Q
-
-from courses.models import Requirement
 from courses.views import CourseDetail, CourseList
 
+from .filters import bound_filter, requirement_filter
 from .search import TypedSearchBackend
 from .serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer
-from .filters import requirement_filter
 
 
 class CourseListSearch(CourseList):
@@ -16,11 +13,20 @@ class CourseListSearch(CourseList):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        req_ids = self.request.query_params.get('requirements')
-        if req_ids is not None:
-            queryset = requirement_filter(queryset, req_ids, self.get_semester())
+        filters = {
+            'requirements': requirement_filter,
+            'cu': bound_filter('sections__credits'),
+            'course_quality': bound_filter('course_quality'),
+            'instructor_quality': bound_filter('instructor_quality'),
+            'difficulty': bound_filter('difficulty')
+        }
 
-        return queryset
+        for field, filter_func in filters.items():
+            param = self.request.query_params.get(field)
+            if param is not None:
+                queryset = filter_func(queryset, param, self.get_semester())
+
+        return queryset.distinct()
 
 
 class CourseDetailSearch(CourseDetail):

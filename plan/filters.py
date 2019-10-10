@@ -15,3 +15,14 @@ def requirement_filter(queryset, req_ids, semester):
     queryset = queryset.filter(query)
 
     return queryset
+
+
+def bound_filter(field):
+    def filter_bounds(queryset, bounds, semester=None):
+        lower_bound, upper_bound = bounds.split('-')
+        lower_bound = float(lower_bound)
+        upper_bound = float(upper_bound)
+
+        return queryset.filter(Q(**{f'{field}__gt': lower_bound}) & Q(**{f'{field}__lte': upper_bound}))
+
+    return filter_bounds

@@ -73,6 +73,29 @@ class CourseSearchTestCase(TestCase):
 
 
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
+class CreditUnitFilterTestCase(TestCase):
+    def setUp(self):
+        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        _, self.section2 = get_course_and_section('CIS-120-201', TEST_SEMESTER)
+        self.section.credits = 1.0
+        self.section2.credits = 0.0
+        self.section.save()
+        self.section2.save()
+        self.client = APIClient()
+        set_semester()
+
+    def test_include_course(self):
+        response = self.client.get('/courses/', {'cu': '0.5-1'})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+
+    def test_exclude_course(self):
+        response = self.client.get('/courses/', {'cu': '.25-.75'})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(0, len(response.data))
+
+
+@override_settings(SWITCHBOARD_TEST_APP='pcp')
 class RequirementFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
