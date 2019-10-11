@@ -8,8 +8,8 @@ from courses.models import (Building, Course, Department, Instructor, Meeting,
 def separate_course_code(course_code):
     """return (dept, course, section) ID tuple given a course code in any possible format"""
     course_regexes = [
-        re.compile(r'([A-Za-z]+) *(\d{3})(\d{3})'),
-        re.compile(r'([A-Za-z]+) *-(\d{3})-(\d{3})'),
+        re.compile(r'([A-Za-z]+) *(\d{3}|[A-Z]{3})(\d{3})'),
+        re.compile(r'([A-Za-z]+) *-(\d{3}|[A-Z]{3})-(\d{3})'),
     ]
 
     course_code = course_code.replace(' ', '').upper()

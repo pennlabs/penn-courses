@@ -23,6 +23,7 @@ djangorestframework = "*"
 unidecode = "*"
 coreapi = "*"
 django-filter = "*"
+shortener = "*"
 
 [dev-packages]
 coveralls = "*"

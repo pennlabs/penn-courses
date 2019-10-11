@@ -263,6 +263,28 @@ class WebhookViewTestCase(TestCase):
         Option.objects.update_or_create(key='SEND_FROM_WEBHOOK', value_type='BOOL', defaults={'value': 'TRUE'})
         Option.objects.update_or_create(key='SEMESTER', value_type='TXT', defaults={'value': TEST_SEMESTER})
 
+    def test_alert_called_and_sent_intl(self, mock_alert):
+        res = self.client.post(
+            reverse('webhook', urlconf='alert.urls'),
+            data=json.dumps({
+                'course_section': 'INTLBUL001',
+                'previous_status': 'X',
+                'status': 'O',
+                'status_code_normalized': 'Open',
+                'term': TEST_SEMESTER
+            }),
+            content_type='application/json',
+            **self.headers)
+
+        self.assertEqual(200, res.status_code)
+        self.assertTrue(mock_alert.called)
+        self.assertEqual('INTLBUL001', mock_alert.call_args[0][0])
+        self.assertEqual('2019A', mock_alert.call_args[1]['semester'])
+        self.assertTrue('sent' in json.loads(res.content)['message'])
+        self.assertEqual(1, StatusUpdate.objects.count())
+        u = StatusUpdate.objects.get()
+        self.assertTrue(u.alert_sent)
+
     def test_alert_called_and_sent(self, mock_alert):
         res = self.client.post(
             reverse('webhook', urlconf='alert.urls'),
