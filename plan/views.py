@@ -1,8 +1,7 @@
 from courses.views import CourseDetail, CourseList
-
-from .filters import bound_filter, requirement_filter
-from .search import TypedSearchBackend
-from .serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer
+from plan.filters import bound_filter, requirement_filter
+from plan.search import TypedSearchBackend
+from plan.serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer
 
 
 class CourseListSearch(CourseList):
