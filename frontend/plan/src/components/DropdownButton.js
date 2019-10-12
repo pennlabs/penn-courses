@@ -47,3 +47,8 @@ export function DropdownButton({ title, children }) {
         </div>
     );
 }
+
+DropdownButton.propTypes = {
+    title: PropTypes.string,
+    children: PropTypes.arrayOf(PropTypes.object),
+};
