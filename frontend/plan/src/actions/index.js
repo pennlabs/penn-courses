@@ -195,7 +195,7 @@ function buildCourseSearchUrl(searchData, filterData) {
     if (reqs.length > 0) {
         queryString += `&requirement=${reqs[0]}`;
         for (let i = 1; i < reqs.length; i += 1) {
-            queryString += `+${reqs[i]}`;
+            queryString += `,${reqs[i]}`;
         }
     }
 
