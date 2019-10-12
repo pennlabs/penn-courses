@@ -40,6 +40,6 @@ export default function Section({ section, cart, inCart }) {
 Section.propTypes = {
     // eslint-disable-next-line
     section: PropTypes.object.isRequired,
-    schedule: PropTypes.objectOf(PropTypes.func),
+    cart: PropTypes.objectOf(PropTypes.func),
     inCart: PropTypes.bool,
 };

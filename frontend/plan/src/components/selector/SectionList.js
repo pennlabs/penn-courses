@@ -4,7 +4,7 @@ import connect from "react-redux/es/connect/connect";
 
 import Section from "./Section";
 import {
-    addCartItem, addSchedItem, removeCartItem, removeSchedItem
+    addCartItem, removeCartItem
 } from "../../actions";
 
 
