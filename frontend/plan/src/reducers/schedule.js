@@ -136,7 +136,7 @@ export const schedule = (state = initialState, action) => {
             return { ...state, cartSections: [...cartSections, section] };
         case REMOVE_CART_ITEM:
             const { sectionId } = action;
-            return { ...state, cartSections: state.cartSections.filter(({id}) => id !== sectionId)};
+            return { ...state, cartSections: state.cartSections.filter(({ id }) => id !== sectionId) };
         default:
             return {
                 ...state,

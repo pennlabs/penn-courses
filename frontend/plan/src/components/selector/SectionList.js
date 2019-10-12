@@ -3,7 +3,9 @@ import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 
 import Section from "./Section";
-import {addCartItem, addSchedItem, removeCartItem, removeSchedItem} from "../../actions";
+import {
+    addCartItem, addSchedItem, removeCartItem, removeSchedItem
+} from "../../actions";
 
 
 function SectionList({ sections, cartSections, manageCart }) {
