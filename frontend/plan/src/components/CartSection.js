@@ -33,6 +33,7 @@ const CourseCheckbox = ({ checked }) => {
     };
     return (
         <div
+            aria-checked="false"
             role="checkbox"
             style={{
                 flexGrow: "0",
@@ -66,7 +67,7 @@ CourseCheckbox.propTypes = {
 
 const CourseTrashCan = ({ visible, remove }) => (
     <div
-        role={"button"}
+        role="button"
         onClick={remove}
         className="cart-delete-course"
     >
@@ -89,6 +90,8 @@ const CartSection = ({
 
     return (
         <div
+            role="switch"
+            aria-checked="false"
             className="course-cart-item"
             style={
                 {
