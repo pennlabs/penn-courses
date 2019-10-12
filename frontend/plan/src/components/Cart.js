@@ -2,10 +2,10 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import CartSection from "./CartSection";
-import { removeCartItem, toggleCheck } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
+import { removeCartItem, toggleCheck } from "../actions";
 
-const Cart = ({ courses, toggleCheck }) => (
+const Cart = ({ courses, toggleCheck, removeItem }) => (
     <section
         style={{
             background: "white",
@@ -24,7 +24,7 @@ const Cart = ({ courses, toggleCheck }) => (
                     code={code}
                     checked={checked}
                     name={name}
-                    remove={() => removeCartItem(section.id)}
+                    remove={() => removeItem(code)}
                 />
             );
         })}
@@ -45,6 +45,7 @@ const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected
 
 const mapDispatchToProps = dispatch => ({
     toggleCheck: courseId => dispatch(toggleCheck(courseId)),
+    removeItem: courseId => dispatch(removeCartItem(courseId))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Cart);

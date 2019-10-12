@@ -31,13 +31,15 @@ const CourseCheckbox = ({ checked }) => {
         backgroundColor: "white",
         border: "1px solid grey",
     };
-    return <div style={{
-        flexGrow: "0",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        display: "flex",
-    }}
+    return <div
+        role="checkbox"
+        style={{
+            flexGrow: "0",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            display: "flex",
+        }}
     >
         {checked
             ? (
@@ -61,26 +63,12 @@ CourseCheckbox.propTypes = {
 };
 
 const CourseTrashCan = ({ visible, remove }) => {
-    return <div style={{
-        flexGrow: "0",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        display: "flex",
-    }}
-    >
+    return <div
+        onClick={remove}
+        className={"cart-delete-course"}>
         <i
             className="fas fa-trash"
-            style={
-                {
-                    width: "1rem",
-                    height: "1rem",
-                    opacity: visible ? 1 : 0,
-                    transition: "250ms ease opacity",
-                    border: "none",
-                    color: "#d3d3d8",
-                }
-            }
+            style={{ opacity: visible ? 1 : 0 }}
         />
     </div>;
 };
@@ -104,10 +92,14 @@ const CartSection = ({ toggleCheck, checked, code, name, remove }) => {
                     padding: "0.8rem",
                     borderBottom: "1px solid rgb(200, 200, 200)",
                 }}
-            onClick={toggleCheck}
+            onClick={e => {
+                // ensure that it's not the trash can being clicked
+                if (e.target.parentElement.getAttribute("class") !== "cart-delete-course") {
+                    toggleCheck();
+                }
+            }}
             onMouseOver={() => setIsHovered(true)}
             onMouseOut={() => setIsHovered(false)}
-            role="checkbox"
         >
             <CourseCheckbox checked={checked}/>
             <CourseDetails name={name} code={code}/>
