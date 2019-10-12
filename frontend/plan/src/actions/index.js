@@ -192,24 +192,15 @@ function buildCourseSearchUrl(searchData, filterData) {
                 reqs.push(key);
             }
         }
-<<<<<<< Updated upstream
-    }
 
-    if (reqs.length > 0) {
-        queryString += `&requirement=${reqs[0]}`;
-        for (let i = 1; i < reqs.length; i += 1) {
-            queryString += `,${reqs[i]}`;
-=======
-    
         if (reqs.length > 0) {
             queryString += `&requirements=${reqs[0]}`;
             for (let i = 1; i < reqs.length; i += 1) {
-                queryString += `+${reqs[i]}`;
+                queryString += `,${reqs[i]}`;
             }
->>>>>>> Stashed changes
         }
     }
-    
+
 
     return queryString;
 }
