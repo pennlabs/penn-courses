@@ -5,7 +5,7 @@ import CartSection from "./CartSection";
 import { meetingsContainSection } from "../meetUtil";
 import { removeCartItem, toggleCheck } from "../actions";
 
-const Cart = ({ courses, toggleCheck, removeItem }) => (
+const Cart = ({ courses, toggleCourse, removeItem }) => (
     <section
         style={{
             background: "white",
@@ -20,7 +20,7 @@ const Cart = ({ courses, toggleCheck, removeItem }) => (
             const { id: code, description: name } = section;
             return (
                 <CartSection
-                    toggleCheck={() => toggleCheck(section)}
+                    toggleCheck={() => toggleCourse(section)}
                     code={code}
                     checked={checked}
                     name={name}
@@ -32,8 +32,9 @@ const Cart = ({ courses, toggleCheck, removeItem }) => (
 );
 
 Cart.propTypes = {
-    courses: PropTypes.array.isRequired,
-    toggleCheck: PropTypes.func.isRequired,
+    courses: PropTypes.arrayOf(PropTypes.object).isRequired,
+    toggleCourse: PropTypes.func.isRequired,
+    removeItem: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
@@ -44,7 +45,7 @@ const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected
 });
 
 const mapDispatchToProps = dispatch => ({
-    toggleCheck: courseId => dispatch(toggleCheck(courseId)),
+    toggleCourse: courseId => dispatch(toggleCheck(courseId)),
     removeItem: courseId => dispatch(removeCartItem(courseId)),
 });
 

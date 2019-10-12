@@ -66,6 +66,7 @@ CourseCheckbox.propTypes = {
 
 const CourseTrashCan = ({ visible, remove }) => (
     <div
+        role={"button"}
         onClick={remove}
         className="cart-delete-course"
     >
@@ -105,6 +106,8 @@ const CartSection = ({
             }}
             onMouseOver={() => setIsHovered(true)}
             onMouseOut={() => setIsHovered(false)}
+            onFocus={() => setIsHovered(true)}
+            onBlur={() => setIsHovered(false)}
         >
             <CourseCheckbox checked={checked} />
             <CourseDetails name={name} code={code} />
@@ -118,6 +121,7 @@ CartSection.propTypes = {
     code: PropTypes.string.isRequired,
     checked: PropTypes.bool,
     toggleCheck: PropTypes.func.isRequired,
+    remove: PropTypes.func.isRequired,
 };
 
 export default CartSection;

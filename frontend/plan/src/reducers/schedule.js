@@ -37,8 +37,11 @@ const initialState = {
  */
 const removeSchedule = (scheduleKey, initialSchedule) => {
     const newSchedules = {};
-    Object.keys(initialSchedule).filter(schedName => schedName !== scheduleKey)
-        .forEach((schedName) => { newSchedules[schedName] = initialSchedule[schedName]; });
+    Object.keys(initialSchedule)
+        .filter(schedName => schedName !== scheduleKey)
+        .forEach((schedName) => {
+            newSchedules[schedName] = initialSchedule[schedName];
+        });
     return newSchedules;
 };
 
@@ -115,7 +118,8 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [state.scheduleSelected]: {
                         ...state[state.scheduleSelected],
-                        meetings: toggleSection(state.schedules[state.scheduleSelected].meetings, action.course),
+                        meetings: toggleSection(state.schedules[state.scheduleSelected].meetings,
+                            action.course),
                     },
                 },
             };
@@ -132,11 +136,15 @@ export const schedule = (state = initialState, action) => {
                 },
             };
         case ADD_CART_ITEM:
-            const { section } = action;
-            return { ...state, cartSections: [...cartSections, section] };
+            return {
+                ...state,
+                cartSections: [...cartSections, action.section],
+            };
         case REMOVE_CART_ITEM:
-            const { sectionId } = action;
-            return { ...state, cartSections: state.cartSections.filter(({ id }) => id !== sectionId) };
+            return {
+                ...state,
+                cartSections: state.cartSections.filter(({ id }) => id !== action.sectionId),
+            };
         default:
             return {
                 ...state,
