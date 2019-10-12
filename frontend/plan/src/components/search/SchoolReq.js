@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-export function SchoolReq({ filterInfo, schoolReq }) {
+export function SchoolReq({ filterInfo, schoolReq, addSchoolReq, remSchoolReq }) {
     const schools = ["College", "Engineering", "Nursing", "Wharton"];
     const [selSchool, setSelSchool] = useState("College");
 
@@ -49,7 +49,11 @@ export function SchoolReq({ filterInfo, schoolReq }) {
                                 value={req.id}
                                 checked={filterInfo[req.id] === 1}
                                 onChange={() => {
-
+                                    if (filterInfo[req.id] === 1) {
+                                        remSchoolReq(req.id);
+                                    } else {
+                                        addSchoolReq(req.id);
+                                    }
                                 }}
                             />
                             { /* eslint-disable-next-line jsx-a11y/label-has-for */ }

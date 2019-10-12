@@ -8,11 +8,13 @@ import { RangeFilter } from "./RangeFilter";
 import { SearchField } from "./SearchField";
 import {
     fetchCourseSearch,
-    loadRequirements
+    loadRequirements,
+    addSchoolReq,
+    remSchoolReq,
 } from "../../actions";
 
 // eslint-disable-next-line no-shadow
-function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch }) {
+function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch, addSchoolReq, remSchoolReq }) {
     useEffect(() => {
         loadRequirements();
     }, [loadRequirements]);
@@ -20,7 +22,7 @@ function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch }) {
         <nav className="bar level">
             <div className="level-left">
                 <div className="level-item" id="searchdiv">
-                    <SearchField startSearch={startSearch} />
+                    <SearchField startSearch={startSearch(filterSearch)} />
                 </div>
 
                 <div className="level-item" id="filterdiv">
@@ -29,7 +31,12 @@ function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch }) {
                     </span>
                     <p> Filter by</p>
                     <DropdownButton title="School Req">
-                        <SchoolReq schoolReq={schoolReq} filterInfo={filterSearch.selectedReq} />
+                        <SchoolReq
+                            schoolReq={schoolReq}
+                            filterInfo={filterSearch.selectedReq}
+                            addSchoolReq={addSchoolReq}
+                            remSchoolReq={remSchoolReq}
+                        />
                     </DropdownButton>
                     <DropdownButton title="Difficulty">
                         <RangeFilter filterInfo={filterSearch.difficulty} />
@@ -68,6 +75,8 @@ const mapStateToProps = state => (
 
 const mapDispatchToProps = dispatch => ({
     loadRequirements: () => dispatch(loadRequirements()),
-    startSearch: searchObj => dispatch(fetchCourseSearch(searchObj)),
+    startSearch: filterSearch => searchObj => dispatch(fetchCourseSearch(searchObj, filterSearch)),
+    addSchoolReq: reqID => dispatch(addSchoolReq(reqID)),
+    remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

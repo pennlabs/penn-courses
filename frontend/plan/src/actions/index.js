@@ -24,6 +24,8 @@ export const COURSE_SEARCH_LOADING = "COURSE_SEARCH_LOADING";
 export const COURSE_SEARCH_SUCCESS = "COURSE_SEARCH_SUCCESS";
 
 export const LOAD_REQUIREMENTS = "LOAD_REQUIREMENTS";
+export const ADD_SCHOOL_REQ = "ADD_SCHOOL_REQ";
+export const REM_SCHOOL_REQ = "REM_SCHOOL_REQ";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
@@ -167,8 +169,25 @@ export const loadRequirements = () => (
     )
 );
 
-function buildCourseSearchUrl(searchData) {
-    return `/courses/?search=${searchData.param}`;
+function buildCourseSearchUrl(searchData, filterData) {
+    let queryString = `/courses/?search=${searchData.param}`;
+
+    // Requirements filter
+    const reqs = [];
+    for (const key of Object.keys(filterData.selectedReq)) {
+        if (filterData.selectedReq[key] === 1) {
+            reqs.push(key);
+        }
+    }
+
+    if (reqs.length > 0) {
+        queryString += `&requirement=${reqs[0]}`;
+        for (let i = 1; i < reqs.length; i += 1) {
+            queryString += `+${reqs[i]}`;
+        }
+    }
+
+    return queryString;
 }
 
 function buildSectionInfoSearchUrl(searchData) {
@@ -190,9 +209,9 @@ export function sectionInfoSearchError(error) {
     };
 }
 
-export function fetchCourseSearch(searchData) {
+export function fetchCourseSearch(searchData, filterData) {
     return dispatch => (
-        fetch(buildCourseSearchUrl(searchData)).then(
+        fetch(buildCourseSearchUrl(searchData, filterData)).then(
             response => response.json().then(
                 json => dispatch(updateSearch(json)),
                 error => dispatch(courseSearchError(error)),
@@ -201,6 +220,21 @@ export function fetchCourseSearch(searchData) {
         )
     );
 }
+
+export function addSchoolReq(reqID) {
+    return {
+        type: ADD_SCHOOL_REQ,
+        reqID,
+    };
+}
+
+export function remSchoolReq(reqID) {
+    return {
+        type: REM_SCHOOL_REQ,
+        reqID,
+    }
+}
+
 
 export function fetchCourseDetails(courseId) {
     return dispatch => (
