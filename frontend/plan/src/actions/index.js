@@ -186,18 +186,30 @@ function buildCourseSearchUrl(searchData, filterData) {
 
     // Requirements filter
     const reqs = [];
-    for (const key of Object.keys(filterData.selectedReq)) {
-        if (filterData.selectedReq[key] === 1) {
-            reqs.push(key);
+    if (filterData.selectedReq) {
+        for (const key of Object.keys(filterData.selectedReq)) {
+            if (filterData.selectedReq[key] === 1) {
+                reqs.push(key);
+            }
         }
+<<<<<<< Updated upstream
     }
 
     if (reqs.length > 0) {
         queryString += `&requirement=${reqs[0]}`;
         for (let i = 1; i < reqs.length; i += 1) {
             queryString += `,${reqs[i]}`;
+=======
+    
+        if (reqs.length > 0) {
+            queryString += `&requirements=${reqs[0]}`;
+            for (let i = 1; i < reqs.length; i += 1) {
+                queryString += `+${reqs[i]}`;
+            }
+>>>>>>> Stashed changes
         }
     }
+    
 
     return queryString;
 }
