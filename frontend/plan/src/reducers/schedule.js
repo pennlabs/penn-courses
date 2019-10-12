@@ -1,13 +1,13 @@
 import {
-    ADD_SCHED_ITEM,
     CHANGE_SCHEDULE,
     CREATE_SCHEDULE,
     DELETE_SCHEDULE,
     REMOVE_SCHED_ITEM,
     RENAME_SCHEDULE,
     DUPLICATE_SCHEDULE,
-    CLEAR_SCHEDULE
+    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM, REMOVE_CART_ITEM
 } from "../actions";
+import { meetingsContainSection } from "../meetUtil";
 
 const DEFAULT_SCHEDULE_NAME = "Schedule";
 
@@ -27,6 +27,7 @@ const generateDefaultSchedule = () => (
 const initialState = {
     schedules: { [DEFAULT_SCHEDULE_NAME]: generateDefaultSchedule() },
     scheduleSelected: DEFAULT_SCHEDULE_NAME,
+    cartSections: [],
 };
 
 /**
@@ -36,13 +37,29 @@ const initialState = {
  */
 const removeSchedule = (scheduleKey, initialSchedule) => {
     const newSchedules = {};
-    Object.keys(initialSchedule).filter(schedName => schedName !== scheduleKey)
-        .forEach((schedName) => { newSchedules[schedName] = initialSchedule[schedName]; });
+    Object.keys(initialSchedule)
+        .filter(schedName => schedName !== scheduleKey)
+        .forEach((schedName) => {
+            newSchedules[schedName] = initialSchedule[schedName];
+        });
     return newSchedules;
 };
 
+/**
+ * Returns a new schedule where the section is present if it was not previously, and vice-versa
+ * @param meetings
+ * @param section
+ */
+const toggleSection = (meetings, section) => {
+    if (meetingsContainSection(meetings, section)) {
+        return meetings.filter(m => m.id !== section.id);
+    }
+    return [...meetings, section];
+};
+
+
 export const schedule = (state = initialState, action) => {
-    // console.log(action);
+    const { cartSections } = state;
     switch (action.type) {
         case CLEAR_SCHEDULE:
             return {
@@ -94,15 +111,15 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 scheduleSelected: action.scheduleId,
             };
-        case ADD_SCHED_ITEM:
+        case TOGGLE_CHECK:
             return {
                 ...state,
                 schedules: {
                     ...state.schedules,
                     [state.scheduleSelected]: {
                         ...state[state.scheduleSelected],
-                        meetings: [...state.schedules[state.scheduleSelected].meetings,
-                            action.section],
+                        meetings: toggleSection(state.schedules[state.scheduleSelected].meetings,
+                            action.course),
                     },
                 },
             };
@@ -117,6 +134,16 @@ export const schedule = (state = initialState, action) => {
                             .filter(m => m.id !== action.id),
                     },
                 },
+            };
+        case ADD_CART_ITEM:
+            return {
+                ...state,
+                cartSections: [...cartSections, action.section],
+            };
+        case REMOVE_CART_ITEM:
+            return {
+                ...state,
+                cartSections: state.cartSections.filter(({ id }) => id !== action.sectionId),
             };
         default:
             return {

@@ -44,7 +44,7 @@ export const sections = (state = initialState, action) => {
                 searchResults: action.searchResults,
                 sections: undefined,
             };
-        
+
         case COURSE_SEARCH_ERROR:
             // console.log(action.error);
             return state;

@@ -44,15 +44,9 @@ function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch, add
                     <DropdownButton title="Quality">
                         <RangeFilter filterInfo={filterSearch.quality} />
                     </DropdownButton>
-                    <DropdownButton title="Time">
-                        
-                    </DropdownButton>
-                    <DropdownButton title="Type">
-                        
-                    </DropdownButton>
-                    <DropdownButton title="CU">
-                        
-                    </DropdownButton>
+                    <DropdownButton title="Time" />
+                    <DropdownButton title="Type" />
+                    <DropdownButton title="CU" />
                 </div>
             </div>
             <div className="level-right">

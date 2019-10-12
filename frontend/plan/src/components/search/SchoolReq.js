@@ -64,5 +64,5 @@ export function SchoolReq({ filterInfo, schoolReq, addSchoolReq, remSchoolReq })
                 </ul>
             </div>
         </div>
-    )
+    );
 }

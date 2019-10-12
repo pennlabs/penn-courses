@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
+
 export function SearchField({ startSearch }) {
     const [searchValue, setSearchValue] = useState("");
     const [searchTimeout, setSearchTimeout] = useState();

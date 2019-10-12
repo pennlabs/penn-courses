@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useOnClickOutside } from "./useOnClickOutside";
 import PropTypes from "prop-types";
+import { useOnClickOutside } from "./useOnClickOutside";
 
 export function DropdownButton({ title, children }) {
     const [isActive, setIsActive] = useState(false);
@@ -45,5 +45,5 @@ export function DropdownButton({ title, children }) {
                 </div>
             </div>
         </div>
-    )
+    );
 }
