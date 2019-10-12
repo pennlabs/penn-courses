@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import "../styles/course-cart.css";
 
@@ -60,7 +60,39 @@ CourseCheckbox.propTypes = {
     checked: PropTypes.bool
 };
 
-const CartSection = ({ toggleCheck, checked, code, name }) => {
+const CourseTrashCan = ({ visible, remove }) => {
+    return <div style={{
+        flexGrow: "0",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        display: "flex",
+    }}
+    >
+        <i
+            className="fas fa-trash"
+            style={
+                {
+                    width: "1rem",
+                    height: "1rem",
+                    opacity: visible ? 1 : 0,
+                    transition: "250ms ease opacity",
+                    border: "none",
+                    color: "#d3d3d8",
+                }
+            }
+        />
+    </div>;
+};
+
+CourseTrashCan.propTypes = {
+    visible: PropTypes.bool,
+    remove: PropTypes.func.isRequired
+};
+
+const CartSection = ({ toggleCheck, checked, code, name, remove }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
     return (
         <div
             className="course-cart-item"
@@ -73,10 +105,13 @@ const CartSection = ({ toggleCheck, checked, code, name }) => {
                     borderBottom: "1px solid rgb(200, 200, 200)",
                 }}
             onClick={toggleCheck}
+            onMouseOver={() => setIsHovered(true)}
+            onMouseOut={() => setIsHovered(false)}
             role="checkbox"
         >
-            <CourseDetails name={name} code={code}/>
             <CourseCheckbox checked={checked}/>
+            <CourseDetails name={name} code={code}/>
+            <CourseTrashCan remove={remove} visible={isHovered}/>
         </div>
     );
 };

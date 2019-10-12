@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import CartSection from "./CartSection";
-import { toggleCheck } from "../actions";
+import { removeCartItem, toggleCheck } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 
 const Cart = ({ courses, toggleCheck }) => (
@@ -24,6 +24,7 @@ const Cart = ({ courses, toggleCheck }) => (
                     code={code}
                     checked={checked}
                     name={name}
+                    remove={() => removeCartItem(section.id)}
                 />
             );
         })}
