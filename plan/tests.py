@@ -100,7 +100,7 @@ class RequirementFilterTestCase(TestCase):
         req2.save()
         req2.courses.add(course3)
 
-        response = self.client.get('/courses/', {'requirements': 'REQ@SAS+REQ2@SEAS'})
+        response = self.client.get('/courses/', {'requirements': 'REQ@SAS,REQ2@SEAS'})
         self.assertEqual(2, len(response.data))
 
 

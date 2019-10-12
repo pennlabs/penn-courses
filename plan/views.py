@@ -18,7 +18,8 @@ class CourseListSearch(CourseList):
         req_ids = self.request.query_params.get('requirements')
         if req_ids is not None:
             query = Q()
-            for req_id in req_ids.split('+'):
+            for req_id in req_ids.split(','):
+                print(req_id)
                 code, school = req_id.split('@')
                 try:
                     requirement = Requirement.objects.get(semester=self.get_semester(), code=code, school=school)
