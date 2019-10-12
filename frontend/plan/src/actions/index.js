@@ -29,6 +29,11 @@ export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
 export const SECTION_INFO_SEARCH_SUCCESS = "SECTION_INFO_SEARCH_SUCCESS";
 
+export const TOGGLE_CHECK = "TOGGLE_CHECK";
+
+export const ADD_CART_ITEM = "ADD_CART_ITEM";
+export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
+
 
 export const duplicateSchedule = scheduleName => (
     {
@@ -60,6 +65,13 @@ export const changeSchedule = scheduleId => (
 export const addSchedItem = section => (
     {
         type: ADD_SCHED_ITEM,
+        section,
+    }
+);
+
+export const addCartItem = section => (
+    {
+        type: ADD_CART_ITEM,
         section,
     }
 );
@@ -243,3 +255,13 @@ export function courseSearchSuccess(items) {
         items,
     };
 }
+
+export const toggleCheck = course => ({
+    type: TOGGLE_CHECK,
+    course,
+});
+
+export const removeCartItem = sectionId => ({
+    type: REMOVE_CART_ITEM,
+    sectionId,
+});

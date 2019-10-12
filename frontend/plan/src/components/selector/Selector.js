@@ -8,7 +8,9 @@ import "../../styles/selector.css";
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
 
-import { fetchCourseDetails, updateCourseInfo, addSchedItem, removeSchedItem } from "../../actions";
+import {
+    fetchCourseDetails, updateCourseInfo, addSchedItem, removeSchedItem
+} from "../../actions";
 
 function Selector(props) {
     const {
