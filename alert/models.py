@@ -86,7 +86,8 @@ class Registration(models.Model):
         full_url = '%s%s' % (settings.PCA_URL, urls.reverse('resubscribe',
                                                             kwargs={'id_': self.id},
                                                             urlconf='alert.urls'))
-        return Url.objects.get_or_create(full_url).shortened
+        url, _ = Url.objects.get_or_create(full_url)
+        return '{}/s/{}'.format(settings.PCA_URL, url.short_id)
 
     def alert(self, forced=False, sent_by=''):
         if forced or not self.notification_sent:

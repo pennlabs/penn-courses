@@ -47,10 +47,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'debug_toolbar',
 
+    'shortener',
+
+    'alert',
     'courses',
     'options',
-    'shortener',
-    'alert',
+    'plan',
     'review',
 ]
 
