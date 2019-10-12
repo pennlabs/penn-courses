@@ -45,7 +45,7 @@ const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected
 
 const mapDispatchToProps = dispatch => ({
     toggleCheck: courseId => dispatch(toggleCheck(courseId)),
-    removeItem: courseId => dispatch(removeCartItem(courseId))
+    removeItem: courseId => dispatch(removeCartItem(courseId)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Cart);
