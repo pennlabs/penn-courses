@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/penncourses
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python:3.7-node
         environment:
           PIPENV_VENV_IN_PROJECT: true
           DATABASE_URL: mysql://root:password@127.0.0.1:3306/circle_test
@@ -34,6 +34,10 @@ jobs:
             sudo pip install pipenv
             pipenv install -d
       - run:
+          name: Install PCP dependencies
+          command: |
+            cd frontend/plan && npm install
+      - run:
           name: Wait for db
           command: dockerize -wait tcp://localhost:3306 -timeout 1m
       - save_cache:
@@ -46,6 +50,10 @@ jobs:
           name: Lint
           command: |
             pipenv run flake8 .
+      - run:
+          name: PCP JS Lint
+          command: |
+            cd frontend/plan && npm run lint
       - run:
           name: Run tests
           command: |

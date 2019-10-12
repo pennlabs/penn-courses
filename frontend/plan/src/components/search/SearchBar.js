@@ -12,7 +12,9 @@ import {
 } from "../../actions";
 
 // eslint-disable-next-line no-shadow
-function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch }) {
+function SearchBar({
+    startSearch, loadRequirements, schoolReq, filterSearch,
+}) {
     useEffect(() => {
         loadRequirements();
     }, [loadRequirements]);
@@ -37,15 +39,9 @@ function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch }) {
                     <DropdownButton title="Quality">
                         <RangeFilter filterInfo={filterSearch.quality} />
                     </DropdownButton>
-                    <DropdownButton title="Time">
-                        
-                    </DropdownButton>
-                    <DropdownButton title="Type">
-                        
-                    </DropdownButton>
-                    <DropdownButton title="CU">
-                        
-                    </DropdownButton>
+                    <DropdownButton title="Time" />
+                    <DropdownButton title="Type" />
+                    <DropdownButton title="CU" />
                 </div>
             </div>
             <div className="level-right">

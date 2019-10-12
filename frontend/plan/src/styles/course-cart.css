@@ -1,0 +1,41 @@
+.course-cart-item {
+    background: white;
+    transition: 250ms ease background;
+    cursor: pointer;
+}
+
+.course-cart-item, .course-cart-item * {
+    user-select: none;
+}
+
+.course-cart-item:hover {
+    background: rgb(240, 240, 240);
+}
+
+.course-cart-item:active {
+    background: rgb(230, 230, 230);
+}
+
+.cart-delete-course {
+    flex-grow: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+}
+
+.cart-delete-course i {
+    width: 1rem;
+    height: 1rem;
+    transition: 250ms ease all;
+    border: none;
+    color: #d3d3d800;
+}
+
+.course-cart-item:hover .cart-delete-course i {
+    color: #d3d3d8;
+}
+
+.cart-delete-course i:hover {
+    color: #67676a!important;
+}
