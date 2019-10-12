@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 export function RangeFilter({ setIsActive }) {
     return (
@@ -21,3 +22,7 @@ export function RangeFilter({ setIsActive }) {
         </div>
     );
 }
+
+RangeFilter.propTypes = {
+    setIsActive: PropTypes.func,
+};
