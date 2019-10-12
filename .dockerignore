@@ -1,0 +1,19 @@
+# Docker
+Dockerfile
+.dockerignore
+
+# git
+.circleci
+.git
+.gitignore
+.gitmodules
+**/*.md
+
+# Frontend
+frontend/plan/node_modules/
+frontend/plan/.eslintignore
+frontend/plan/.eslintrc.json
+
+# Misc
+**/__pycache__/
+tests/
