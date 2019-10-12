@@ -29,6 +29,10 @@
     height: 1rem;
     transition: 250ms ease all;
     border: none;
+    color: #d3d3d800;
+}
+
+.course-cart-item:hover .cart-delete-course i {
     color: #d3d3d8;
 }
 

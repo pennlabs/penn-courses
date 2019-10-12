@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import PropTypes from "prop-types";
 import "../styles/course-cart.css";
 
@@ -65,59 +65,47 @@ CourseCheckbox.propTypes = {
     checked: PropTypes.bool,
 };
 
-const CourseTrashCan = ({ visible, remove }) => (
+const CourseTrashCan = ({ remove }) => (
     <div
         role="button"
         onClick={remove}
         className="cart-delete-course"
     >
-        <i
-            className="fas fa-trash"
-            style={{ opacity: visible ? 1 : 0 }}
-        />
+        <i className="fas fa-trash" />
     </div>
 );
 
 CourseTrashCan.propTypes = {
-    visible: PropTypes.bool,
     remove: PropTypes.func.isRequired,
 };
 
 const CartSection = ({
     toggleCheck, checked, code, name, remove,
-}) => {
-    const [isHovered, setIsHovered] = useState(false);
-
-    return (
-        <div
-            role="switch"
-            aria-checked="false"
-            className="course-cart-item"
-            style={
-                {
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "space-around",
-                    padding: "0.8rem",
-                    borderBottom: "1px solid rgb(200, 200, 200)",
-                }}
-            onClick={(e) => {
-                // ensure that it's not the trash can being clicked
-                if (e.target.parentElement.getAttribute("class") !== "cart-delete-course") {
-                    toggleCheck();
-                }
+}) => (
+    <div
+        role="switch"
+        aria-checked="false"
+        className="course-cart-item"
+        style={
+            {
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-around",
+                padding: "0.8rem",
+                borderBottom: "1px solid rgb(200, 200, 200)",
             }}
-            onMouseOver={() => setIsHovered(true)}
-            onMouseOut={() => setIsHovered(false)}
-            onFocus={() => setIsHovered(true)}
-            onBlur={() => setIsHovered(false)}
-        >
-            <CourseCheckbox checked={checked} />
-            <CourseDetails name={name} code={code} />
-            <CourseTrashCan remove={remove} visible={isHovered} />
-        </div>
-    );
-};
+        onClick={(e) => {
+            // ensure that it's not the trash can being clicked
+            if (e.target.parentElement.getAttribute("class") !== "cart-delete-course") {
+                toggleCheck();
+            }
+        }}
+    >
+        <CourseCheckbox checked={checked} />
+        <CourseDetails name={name} code={code} />
+        <CourseTrashCan remove={remove} />
+    </div>
+);
 
 CartSection.propTypes = {
     name: PropTypes.string.isRequired,
