@@ -11,18 +11,46 @@ import {
     loadRequirements,
     addSchoolReq,
     remSchoolReq,
+    updateSearchText
 } from "../../actions";
 
+function shouldSearch(filterData) {
+    const searchString = filterData.searchString.length >= 3;
+    let selectedReq = false;
+    if (filterData.selectedReq) {
+        for (const key of Object.keys(filterData.selectedReq)) {
+            if (filterData.selectedReq[key] === 1) {
+                selectedReq = true;
+                break;
+            }
+        }
+    }
+    return searchString || selectedReq;
+}
+
 // eslint-disable-next-line no-shadow
-function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch, addSchoolReq, remSchoolReq }) {
+function SearchBar({
+    startSearch, loadRequirements, schoolReq, filterData, addSchoolReq, remSchoolReq, updateSearchText 
+}) {
     useEffect(() => {
         loadRequirements();
     }, [loadRequirements]);
+
+    const conditionalStartSearch = (filterInfo) => {
+        if (shouldSearch(filterInfo)) {
+            startSearch(filterInfo);
+        }
+    };
+
     return (
         <nav className="bar level">
             <div className="level-left">
                 <div className="level-item" id="searchdiv">
-                    <SearchField startSearch={startSearch(filterSearch)} />
+                    <SearchField
+                        startSearch={conditionalStartSearch}
+                        filterData={filterData}
+                        updateSearchText={updateSearchText}
+                    />
                 </div>
 
                 <div className="level-item" id="filterdiv">
@@ -32,17 +60,18 @@ function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch, add
                     <p> Filter by</p>
                     <DropdownButton title="School Req">
                         <SchoolReq
+                            startSearch={conditionalStartSearch}
                             schoolReq={schoolReq}
-                            filterInfo={filterSearch.selectedReq}
+                            filterData={filterData}
                             addSchoolReq={addSchoolReq}
                             remSchoolReq={remSchoolReq}
                         />
                     </DropdownButton>
                     <DropdownButton title="Difficulty">
-                        <RangeFilter filterInfo={filterSearch.difficulty} />
+                        <RangeFilter filterInfo={filterData.difficulty} />
                     </DropdownButton>
                     <DropdownButton title="Quality">
-                        <RangeFilter filterInfo={filterSearch.quality} />
+                        <RangeFilter filterInfo={filterData.quality} />
                     </DropdownButton>
                     <DropdownButton title="Time" />
                     <DropdownButton title="Type" />
@@ -63,14 +92,15 @@ function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch, add
 const mapStateToProps = state => (
     {
         schoolReq: state.filters.schoolReq,
-        filterSearch: state.filters.filterSearch,
+        filterData: state.filters.filterData,
     }
 );
 
 const mapDispatchToProps = dispatch => ({
     loadRequirements: () => dispatch(loadRequirements()),
-    startSearch: filterSearch => searchObj => dispatch(fetchCourseSearch(searchObj, filterSearch)),
+    startSearch: filterData => dispatch(fetchCourseSearch(filterData)),
     addSchoolReq: reqID => dispatch(addSchoolReq(reqID)),
     remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
+    updateSearchText: s => dispatch(updateSearchText(s)),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

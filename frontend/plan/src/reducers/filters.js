@@ -1,5 +1,5 @@
 import {
-    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ
+    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT
 } from "../actions";
 
 const initialState = {
@@ -9,7 +9,9 @@ const initialState = {
         NURS: [],
         WH: [],
     },
-    filterSearch: {
+    filterData: {
+        searchString: "",
+        searchType: "courseIDSearch",
         selectedReq: null,
         difficulty: null,
         quality: null,
@@ -25,19 +27,28 @@ export const filters = (state = initialState, action) => {
             return {
                 ...state,
                 schoolReq: action.obj,
-                filterSearch: {
-                    ...state.filterSearch,
+                filterData: {
+                    ...state.filterData,
                     selectedReq: action.selObj,
                 },
             };
+        
+        case UPDATE_SEARCH_TEXT:
+            return {
+                ...state,
+                filterData: {
+                    ...state.filterData,
+                    searchString: action.s,
+                }
+            }
 
         case ADD_SCHOOL_REQ:
             return {
                 ...state,
-                filterSearch: {
-                    ...state.filterSearch,
+                filterData: {
+                    ...state.filterData,
                     selectedReq: {
-                        ...state.filterSearch.selectedReq,
+                        ...state.filterData.selectedReq,
                         [action.reqID]: 1,
                     },
                 },
@@ -46,10 +57,10 @@ export const filters = (state = initialState, action) => {
         case REM_SCHOOL_REQ:
             return {
                 ...state,
-                filterSearch: {
-                    ...state.filterSearch,
+                filterData: {
+                    ...state.filterData,
                     selectedReq: {
-                        ...state.filterSearch.selectedReq,
+                        ...state.filterData.selectedReq,
                         [action.reqID]: 0,
                     },
                 },

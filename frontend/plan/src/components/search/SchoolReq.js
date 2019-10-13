@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-export function SchoolReq({ filterInfo, schoolReq, addSchoolReq, remSchoolReq }) {
+export function SchoolReq({ startSearch, filterData, schoolReq, addSchoolReq, remSchoolReq }) {
     const schools = ["College", "Engineering", "Nursing", "Wharton"];
     const [selSchool, setSelSchool] = useState("College");
 
@@ -47,13 +47,22 @@ export function SchoolReq({ filterInfo, schoolReq, addSchoolReq, remSchoolReq })
                                 id={req.id}
                                 type="checkbox"
                                 value={req.id}
-                                checked={filterInfo[req.id] === 1}
+                                checked={filterData.selectedReq[req.id] === 1}
                                 onChange={() => {
-                                    if (filterInfo[req.id] === 1) {
+                                    const toggleState = filterData.selectedReq[req.id]
+                                        === 1 ? 0 : 1;
+                                    if (filterData.selectedReq[req.id] === 1) {
                                         remSchoolReq(req.id);
                                     } else {
                                         addSchoolReq(req.id);
                                     }
+                                    startSearch({
+                                        ...filterData,
+                                        selectedReq: {
+                                            ...filterData.selectedReq,
+                                            [req.id]: toggleState,
+                                        },
+                                    });
                                 }}
                             />
                             { /* eslint-disable-next-line jsx-a11y/label-has-for */ }

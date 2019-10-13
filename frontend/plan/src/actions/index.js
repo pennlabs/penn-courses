@@ -26,6 +26,7 @@ export const COURSE_SEARCH_SUCCESS = "COURSE_SEARCH_SUCCESS";
 export const LOAD_REQUIREMENTS = "LOAD_REQUIREMENTS";
 export const ADD_SCHOOL_REQ = "ADD_SCHOOL_REQ";
 export const REM_SCHOOL_REQ = "REM_SCHOOL_REQ";
+export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
@@ -181,8 +182,8 @@ export const loadRequirements = () => (
     )
 );
 
-function buildCourseSearchUrl(searchData, filterData) {
-    let queryString = `/courses/?search=${searchData.param}`;
+function buildCourseSearchUrl(filterData) {
+    let queryString = `/courses/?search=${filterData.searchString}`;
 
     // Requirements filter
     const reqs = [];
@@ -205,6 +206,25 @@ function buildCourseSearchUrl(searchData, filterData) {
     return queryString;
 }
 
+export function fetchCourseSearch(filterData) {
+    return dispatch => (
+        fetch(buildCourseSearchUrl(filterData)).then(
+            response => response.json().then(
+                json => dispatch(updateSearch(json)),
+                error => dispatch(courseSearchError(error)),
+            ),
+            error => dispatch(courseSearchError(error)),
+        )
+    );
+}
+
+export function updateSearchText(s) {
+    return {
+        type: UPDATE_SEARCH_TEXT,
+        s,
+    };
+}
+
 function buildSectionInfoSearchUrl(searchData) {
     return `/courses/${searchData.param}`;
 }
@@ -222,18 +242,6 @@ export function sectionInfoSearchError(error) {
         type: SECTION_INFO_SEARCH_ERROR,
         error,
     };
-}
-
-export function fetchCourseSearch(searchData, filterData) {
-    return dispatch => (
-        fetch(buildCourseSearchUrl(searchData, filterData)).then(
-            response => response.json().then(
-                json => dispatch(updateSearch(json)),
-                error => dispatch(courseSearchError(error)),
-            ),
-            error => dispatch(courseSearchError(error)),
-        )
-    );
 }
 
 export function addSchoolReq(reqID) {
