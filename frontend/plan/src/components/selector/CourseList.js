@@ -6,11 +6,11 @@ export default function CourseList({ courses, getCourse }) {
     return (
         <div className="scroll-container">
             <div className="columns segment">
+                <div className="column header is-three-fifths" style={{ overflow: "hidden", paddingLeft: "2em" }}>
+                    COURSE
+                </div>
                 <div className="column header">QUAL</div>
                 <div className="column header">DIFF</div>
-                <div className="column header is-two-thirds" style={{ overflow: "hidden" }}>
-                    TITLE
-                </div>
             </div>
             <ul className="scrollable course-list">
                 {

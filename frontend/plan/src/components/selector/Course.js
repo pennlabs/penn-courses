@@ -7,8 +7,16 @@ export default function Course({ course, onClick }) {
     return (
         // eslint-disable-next-line
         <li className="selector-row">
-            <div onClick={onClick} className="columns" role="button">
-                <div className="column header">
+            <div onClick={onClick} className="columns" role="button" style={{ paddingLeft: "2em" }}>
+                <div className="column header is-three-fifths" style={{ overflow: "hidden" }}>
+                    <h3 className="title is-6" style={{ marginBottom: 0 }}>{course.id}</h3>
+                    <span>
+                        {course.title}
+                    </span>
+                </div>
+                <div
+                    className="column header"
+                >
                     <Badge
                         baseColor={[45, 160, 240]}
                         value={course.course_quality}
@@ -19,9 +27,6 @@ export default function Course({ course, onClick }) {
                         baseColor={[231, 76, 60]}
                         value={course.difficulty}
                     />
-                </div>
-                <div className="column header is-two-thirds" style={{ overflow: "hidden" }}>
-                    {`${course.id} ${course.title}`}
                 </div>
             </div>
         </li>
