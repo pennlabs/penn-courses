@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
@@ -21,10 +21,6 @@ function Selector(props) {
         addToSchedule,
         removeFromSchedule,
     } = props;
-
-    useEffect(() => {
-        getCourse("CIS-120"); // For courses pane debug, always load a course on page load
-    }, [getCourse]);
 
     let element = <CourseList courses={courses} getCourse={getCourse} />;
 
