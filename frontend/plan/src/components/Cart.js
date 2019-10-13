@@ -18,15 +18,7 @@ const Cart = ({ courses, toggleCourse, removeItem }) => (
         }}
     >
         {courses
-            .sort((a, b) => {
-                if (b.checked && !a.checked) {
-                    return 1;
-                }
-                if (a.checked && !b.checked) {
-                    return -1;
-                }
-                return a.section.id.localeCompare(b.section.id);
-            })
+            .sort((a, b) => a.section.id.localeCompare(b.section.id))
             .map(({ section, checked }) => {
                 const { id: code, description: name } = section;
                 return (
