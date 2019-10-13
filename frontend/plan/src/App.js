@@ -13,6 +13,7 @@ import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
+
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
 const previousState = localStorage.getItem("coursePlanSchedules");
@@ -54,7 +55,12 @@ function App() {
                                 }
                             }
                         >
-                            <h3 style={{ display: "flex", fontWeight: "bold", marginBottom: "0.5rem" }}>
+                            <h3 style={{
+                                display: "flex",
+                                fontWeight: "bold",
+                                marginBottom: "0.5rem",
+                            }}
+                            >
                                 Cart
                             </h3>
                             <Cart />
