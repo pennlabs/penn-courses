@@ -28,7 +28,7 @@ export const ADD_SCHOOL_REQ = "ADD_SCHOOL_REQ";
 export const REM_SCHOOL_REQ = "REM_SCHOOL_REQ";
 export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
-export const UPDATE_DIFF_FILTER = "UPDATE_DIFF_FILTER";
+export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
@@ -204,13 +204,16 @@ function buildCourseSearchUrl(filterData) {
         }
     }
 
-    // Difficulty filter
-    if (filterData.difficulty) {
-        const diffRange = filterData.difficulty;
-        queryString += `&difficulty=${diffRange[0]}-${diffRange[1]}`;
+    // Range filters
+    const filterFields = ["difficulty", "course_quality", "instructor_quality", "cu"];
+
+    for (let i = 0; i < filterFields.length; i += 1) {
+        if (filterData[filterFields[i]]) {
+            const filterRange = filterData[filterFields[i]];
+            queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
+        }
     }
-
-
+    
     return queryString;
 }
 
@@ -266,11 +269,11 @@ export function remSchoolReq(reqID) {
     };
 }
 
-export function updateDiffFilter(lo, hi) {
+export function updateRangeFilter(field, values) {
     return {
-        type: UPDATE_DIFF_FILTER,
-        lo,
-        hi,
+        type: UPDATE_RANGE_FILTER,
+        field,
+        values,
     };
 }
 

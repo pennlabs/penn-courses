@@ -3,7 +3,7 @@ import { Range } from "rc-slider";
 import "rc-slider/assets/index.css";
 
 export function RangeFilter({ 
-    setIsActive, minRange, maxRange, filterData, updateDiffFilter, startSearch, rangeProperty 
+    setIsActive, minRange, maxRange, filterData, updateRangeFilter, startSearch, rangeProperty, step 
 }) {
     const [minValue, setminValue] = useState(minRange);
     const [maxValue, setmaxValue] = useState(maxRange);
@@ -19,7 +19,7 @@ export function RangeFilter({
             ...filterData,
             [rangeProperty]: [minValue, maxValue],
         });
-        updateDiffFilter(minValue, maxValue);
+        updateRangeFilter([minValue, maxValue]);
     };
 
     return (
@@ -33,9 +33,9 @@ export function RangeFilter({
             <div className="column is-full">
                 <Range
                     defaultValue={[minRange, maxRange]}
-                    min={0}
-                    max={4}
-                    step={0.01}
+                    min={minRange}
+                    max={maxRange}
+                    step={step}
                     allowCross={false}
                     onChange={onSliderChange}
                 />
