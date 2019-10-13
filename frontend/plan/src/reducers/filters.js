@@ -1,5 +1,5 @@
 import {
-    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT
+    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT, UPDATE_DIFF_FILTER
 } from "../actions";
 
 const initialState = {
@@ -13,7 +13,7 @@ const initialState = {
         searchString: "",
         searchType: "courseIDSearch",
         selectedReq: null,
-        difficulty: null,
+        difficulty: [0, 4],
         quality: null,
         time: null,
         type: null,
@@ -63,6 +63,15 @@ export const filters = (state = initialState, action) => {
                         ...state.filterData.selectedReq,
                         [action.reqID]: 0,
                     },
+                },
+            };
+
+        case UPDATE_DIFF_FILTER:
+            return {
+                ...state,
+                filterData: {
+                    ...state.filterData, 
+                    difficulty: [action.lo, action.hi],
                 },
             };
 

@@ -23,7 +23,7 @@ function Selector(props) {
     } = props;
 
     useEffect(() => {
-        getCourse("CIS-120"); // For courses pane debug, always load a course on page load
+        // getCourse("CIS-120"); // For courses pane debug, always load a course on page load
     }, [getCourse]);
 
     let element = <CourseList courses={courses} getCourse={getCourse} />;

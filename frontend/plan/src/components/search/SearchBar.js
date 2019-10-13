@@ -11,7 +11,8 @@ import {
     loadRequirements,
     addSchoolReq,
     remSchoolReq,
-    updateSearchText
+    updateSearchText,
+    updateDiffFilter
 } from "../../actions";
 
 function shouldSearch(filterData) {
@@ -30,7 +31,8 @@ function shouldSearch(filterData) {
 
 // eslint-disable-next-line no-shadow
 function SearchBar({
-    startSearch, loadRequirements, schoolReq, filterData, addSchoolReq, remSchoolReq, updateSearchText 
+    startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
+    remSchoolReq, updateSearchText, updateDiffFilter 
 }) {
     useEffect(() => {
         loadRequirements();
@@ -68,7 +70,14 @@ function SearchBar({
                         />
                     </DropdownButton>
                     <DropdownButton title="Difficulty">
-                        <RangeFilter filterInfo={filterData.difficulty} />
+                        <RangeFilter
+                            minRange={0}
+                            maxRange={4}
+                            filterData={filterData}
+                            updateDiffFilter={updateDiffFilter}
+                            startSearch={conditionalStartSearch}
+                            rangeProperty="difficulty"
+                        />
                     </DropdownButton>
                     <DropdownButton title="Quality">
                         <RangeFilter filterInfo={filterData.quality} />
@@ -102,5 +111,6 @@ const mapDispatchToProps = dispatch => ({
     addSchoolReq: reqID => dispatch(addSchoolReq(reqID)),
     remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
     updateSearchText: s => dispatch(updateSearchText(s)),
+    updateDiffFilter: (lo, hi) => dispatch(updateDiffFilter(lo, hi)),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

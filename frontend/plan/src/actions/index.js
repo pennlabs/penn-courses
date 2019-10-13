@@ -28,6 +28,8 @@ export const ADD_SCHOOL_REQ = "ADD_SCHOOL_REQ";
 export const REM_SCHOOL_REQ = "REM_SCHOOL_REQ";
 export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
+export const UPDATE_DIFF_FILTER = "UPDATE_DIFF_FILTER";
+
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
 export const SECTION_INFO_SEARCH_SUCCESS = "SECTION_INFO_SEARCH_SUCCESS";
@@ -202,6 +204,12 @@ function buildCourseSearchUrl(filterData) {
         }
     }
 
+    // Difficulty filter
+    if (filterData.difficulty) {
+        const diffRange = filterData.difficulty;
+        queryString += `&difficulty=${diffRange[0]}-${diffRange[1]}`;
+    }
+
 
     return queryString;
 }
@@ -255,9 +263,16 @@ export function remSchoolReq(reqID) {
     return {
         type: REM_SCHOOL_REQ,
         reqID,
-    }
+    };
 }
 
+export function updateDiffFilter(lo, hi) {
+    return {
+        type: UPDATE_DIFF_FILTER,
+        lo,
+        hi,
+    };
+}
 
 export function fetchCourseDetails(courseId) {
     return dispatch => (
