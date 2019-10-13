@@ -37,3 +37,7 @@ export function SearchField({ startSearch, updateSearchText, filterData }) {
         </div>
     );
 }
+
+SearchField.propTypes = {
+    startSearch: PropTypes.func,
+};

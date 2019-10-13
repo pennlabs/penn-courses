@@ -33,7 +33,7 @@ function shouldSearch(filterData) {
 // eslint-disable-next-line no-shadow
 function SearchBar({
     startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
-    remSchoolReq, updateSearchText, updateRangeFilter, clearAll 
+    remSchoolReq, updateSearchText, updateRangeFilter, clearAll
 }) {
     useEffect(() => {
         loadRequirements();
@@ -129,6 +129,13 @@ function SearchBar({
         </nav>
     );
 }
+
+SearchBar.propTypes = {
+    startSearch: PropTypes.func,
+    loadRequirements: PropTypes.func,
+    schoolReq: PropTypes.objectOf(PropTypes.array),
+    filterSearch: PropTypes.objectOf(PropTypes.any),
+};
 
 const mapStateToProps = state => (
     {

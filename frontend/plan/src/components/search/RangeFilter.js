@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Range } from "rc-slider";
 import "rc-slider/assets/index.css";
+import PropTypes from "prop-types";
 
-export function RangeFilter({ 
-    setIsActive, minRange, maxRange, filterData, 
+export function RangeFilter({
+    setIsActive, minRange, maxRange, filterData,
     updateRangeFilter, startSearch, rangeProperty, step
 }) {
 
@@ -42,3 +43,7 @@ export function RangeFilter({
         </div>
     );
 }
+
+RangeFilter.propTypes = {
+    setIsActive: PropTypes.func,
+};
