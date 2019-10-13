@@ -35,8 +35,10 @@ def save_reviews(revs, print_every=20):
     total = len(revs)
     i = 0
     for rev in revs:
-        instr, _ = Instructor.objects.get_or_create(name__contains=rev['instructor'],
-                                                    defaults={'name': rev['instructor'].title()})
+        if Instructor.objects.filter(name__icontains=rev['instructor']).exists():
+            instr = Instructor.objects.get(name__icontains=rev['instructor'])
+        else:
+            instr = Instructor.objects.create(name=rev['instructor'].title())
         _, sec = get_course_and_section(rev['section'], rev['semester'])
         sec.instructors.add(instr)
         review, _ = Review.objects.get_or_create(instructor=instr,
