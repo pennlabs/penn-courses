@@ -12,7 +12,8 @@ import {
     addSchoolReq,
     remSchoolReq,
     updateSearchText,
-    updateRangeFilter
+    updateRangeFilter,
+    clearAll
 } from "../../actions";
 
 function shouldSearch(filterData) {
@@ -32,7 +33,7 @@ function shouldSearch(filterData) {
 // eslint-disable-next-line no-shadow
 function SearchBar({
     startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
-    remSchoolReq, updateSearchText, updateRangeFilter 
+    remSchoolReq, updateSearchText, updateRangeFilter, clearAll 
 }) {
     useEffect(() => {
         loadRequirements();
@@ -120,7 +121,7 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <button className="button is-white" type="button">
+                    <button className="button is-white" type="button" onClick={clearAll(filterData)}>
                         Clear all
                     </button>
                 </div>
@@ -143,5 +144,6 @@ const mapDispatchToProps = dispatch => ({
     remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
     updateSearchText: s => dispatch(updateSearchText(s)),
     updateRangeFilter: field => values => dispatch(updateRangeFilter(field, values)),
+    clearAll: filterData => () => dispatch(clearAll(filterData)),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

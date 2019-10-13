@@ -3,45 +3,41 @@ import { Range } from "rc-slider";
 import "rc-slider/assets/index.css";
 
 export function RangeFilter({ 
-    setIsActive, minRange, maxRange, filterData, updateRangeFilter, startSearch, rangeProperty, step 
+    setIsActive, minRange, maxRange, filterData, 
+    updateRangeFilter, startSearch, rangeProperty, step
 }) {
-    const [minValue, setminValue] = useState(minRange);
-    const [maxValue, setmaxValue] = useState(maxRange);
 
+    const [searchTimeout, setSearchTimeout] = useState();
     const onSliderChange = (value) => {
-        setminValue(value[0]);
-        setmaxValue(value[1]);
-    };
-
-    const onClick = () => {
-        setIsActive(false);
-        startSearch({
-            ...filterData,
-            [rangeProperty]: [minValue, maxValue],
-        });
-        updateRangeFilter([minValue, maxValue]);
+        updateRangeFilter(value);
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        setSearchTimeout(setTimeout(() => {
+            startSearch({
+                ...filterData,
+                [rangeProperty]: value,
+            });
+        }, 200));
     };
 
     return (
         <div className="columns contained is-multiline is-centered">
             <div className="column is-half">
-                <p> {minValue} </p>
+                <p> {filterData[rangeProperty][0]} </p>
             </div>
             <div className="column is-half">
-                <p> {maxValue} </p>
+                <p> {filterData[rangeProperty][1]} </p>
             </div>
             <div className="column is-full">
                 <Range
-                    defaultValue={[minRange, maxRange]}
                     min={minRange}
                     max={maxRange}
+                    value={filterData[rangeProperty]}
                     step={step}
                     allowCross={false}
                     onChange={onSliderChange}
                 />
-            </div>
-            <div className="column is-half rating-btn">
-                <button className="button" type="button" onClick={onClick}>Submit</button>
             </div>
         </div>
     );

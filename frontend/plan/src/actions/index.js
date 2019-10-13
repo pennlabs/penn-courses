@@ -29,6 +29,7 @@ export const REM_SCHOOL_REQ = "REM_SCHOOL_REQ";
 export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
 export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
+export const CLEAR_ALL = "CLEAR_ALL";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
@@ -213,7 +214,7 @@ function buildCourseSearchUrl(filterData) {
             queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
         }
     }
-    
+
     return queryString;
 }
 
@@ -274,6 +275,21 @@ export function updateRangeFilter(field, values) {
         type: UPDATE_RANGE_FILTER,
         field,
         values,
+    };
+}
+
+export function clearAll(filterData) {
+    const clearedFilter = filterData;
+    clearedFilter.difficulty = [0, 4];
+    clearedFilter.course_quality = [0, 4];
+    clearedFilter.instructor_quality = [0, 4];
+    clearedFilter.cu = [0.5, 2];
+    for (const key of Object.keys(clearedFilter.selectedReq)) {
+        clearedFilter.selectedReq[key] = 0;
+    }
+    return {
+        type: CLEAR_ALL,
+        clearedFilter,
     };
 }
 

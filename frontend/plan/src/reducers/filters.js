@@ -1,5 +1,5 @@
 import {
-    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT, UPDATE_RANGE_FILTER
+    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT, UPDATE_RANGE_FILTER, CLEAR_ALL
 } from "../actions";
 
 const initialState = {
@@ -74,6 +74,12 @@ export const filters = (state = initialState, action) => {
                     ...state.filterData, 
                     [action.field]: action.values,
                 },
+            };
+
+        case CLEAR_ALL:
+            return {
+                ...state,
+                filterData: action.clearedFilter,
             };
 
         default:
