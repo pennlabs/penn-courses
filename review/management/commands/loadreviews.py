@@ -12,7 +12,7 @@ class Command(BaseCommand):
         parser.add_argument('--src', nargs='?', type=str, default='pcr-backup')
 
     def handle(self, *args, **kwargs):
-        directory = os.path.abspath(kwargs['out'])
+        directory = os.path.abspath(kwargs['src'])
         if not os.path.exists(directory):
             print('Source directory does not exist.')
             return -1
