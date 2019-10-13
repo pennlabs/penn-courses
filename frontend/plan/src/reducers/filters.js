@@ -18,7 +18,7 @@ const initialState = {
         instructor_quality: [0, 4],
         time: null,
         type: null,
-        cu: [1, 2],
+        cu: [0.5, 2],
     },
 };
 

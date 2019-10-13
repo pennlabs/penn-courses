@@ -107,7 +107,7 @@ function SearchBar({
                     <DropdownButton title="Type" />
                     <DropdownButton title="CU">
                         <RangeFilter
-                            minRange={1}
+                            minRange={0.5}
                             maxRange={2}
                             step={0.5}
                             filterData={filterData}
