@@ -12,3 +12,4 @@ frontend/*/build/
 *.sqlite3
 *-test.json
 celerybeat-schedule
+pcr-backup
