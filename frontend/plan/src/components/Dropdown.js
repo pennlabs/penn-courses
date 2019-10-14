@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
 const Dropdown = ({ defActive, defText, contents }) => {
-    const [isActive, setIsActive] = useState(defActive);
-    const [activeItem, setActiveItem] = useState(0);
+    const [isActive, setIsActive] = useState(false);
+    const [activeItem, setActiveItem] = useState(defActive);
     const [labelText, setLabelText] = useState(defText);
     const [ref, setRef] = useState(null);
 
@@ -22,7 +22,7 @@ const Dropdown = ({ defActive, defText, contents }) => {
         <div
             ref={node => setRef(node)}
             className={`dropdown${isActive
-                ? "is-active" : ""}`}
+                ? " is-active" : ""}`}
         >
             <div
                 className="dropdown-trigger"
@@ -48,6 +48,7 @@ const Dropdown = ({ defActive, defText, contents }) => {
                     {Array.from(contents.entries())
                         .map(([index, { onClick, text }]) => (
                             <button
+                                key={index}
                                 onClick={() => {
                                     if (onClick) {
                                         onClick();
@@ -57,12 +58,11 @@ const Dropdown = ({ defActive, defText, contents }) => {
                                 }}
                                 type="button"
                                 className={`dropdown-item${activeItem === index
-                                    ? "is-active" : ""} button`}
+                                    ? " is-active" : ""} button`}
                                 style={{
                                     border: "none",
                                     marginBottom: "0.2em",
                                 }}
-                                key={index}
                             >
                                 {text}
                             </button>
