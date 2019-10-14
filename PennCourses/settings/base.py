@@ -47,12 +47,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'debug_toolbar',
 
+    'shortener',
+
     'alert',
     'courses',
     'options',
     'plan',
     'review',
-    'shortener',
 ]
 
 MIDDLEWARE = [
@@ -69,10 +70,15 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'PennCourses.urls.base'
 
+FRONTEND_DIR = os.path.abspath(
+    os.path.join(BASE_DIR, '..', 'frontend'))
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            FRONTEND_DIR
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -84,6 +90,8 @@ TEMPLATES = [
         },
     },
 ]
+
+STATICFILES_DIRS = [os.path.join(FRONTEND_DIR, 'plan', 'build', 'static')]
 
 WSGI_APPLICATION = 'PennCourses.wsgi.application'
 
@@ -155,6 +163,9 @@ SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
 TWILIO_SID = os.environ.get('TWILIO_SID', '')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_TOKEN', '')
 TWILIO_NUMBER = os.environ.get('TWILIO_NUMBER', '+12153984277')
+
+# Penn Course Review API
+PCR_TOKEN = os.environ.get('PCR_TOKEN', '')
 
 # Redis
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')

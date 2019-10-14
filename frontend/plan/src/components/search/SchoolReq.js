@@ -60,5 +60,10 @@ export function SchoolReq({ filterInfo, schoolReq }) {
                 </ul>
             </div>
         </div>
-    )
+    );
 }
+
+SchoolReq.propTypes = {
+    filterInfo: PropTypes.objectOf(PropTypes.any),
+    schoolReq: PropTypes.arrayOf(PropTypes.object),
+};

@@ -3,11 +3,13 @@ import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 
 import Section from "./Section";
-import { addSchedItem, removeSchedItem } from "../../actions";
+import {
+    addCartItem, removeCartItem
+} from "../../actions";
 
 
-function SectionList({ sections, scheduleSections, manageSchedule }) {
-    const isInSchedule = ({ id }) => scheduleSections.indexOf(id) !== -1;
+function SectionList({ sections, cartSections, manageCart }) {
+    const isInCart = ({ id }) => cartSections.indexOf(id) !== -1;
     return (
         [
             <div className="section-row segment">
@@ -20,8 +22,8 @@ function SectionList({ sections, scheduleSections, manageSchedule }) {
                 {sections.map(s => (
                     <Section
                         section={s}
-                        schedule={manageSchedule(s)}
-                        inSchedule={isInSchedule(s)}
+                        cart={manageCart(s)}
+                        inCart={isInCart(s)}
                     />
                 ))}
             </ul>
@@ -36,17 +38,16 @@ SectionList.propTypes = {
 const mapStateToProps = (state, ownProps) => (
     {
         ...ownProps,
-        scheduleSections: state.schedule.schedules[state.schedule.scheduleSelected].meetings
-            .map(sec => sec.id),
+        cartSections: state.schedule.cartSections.map(sec => sec.id),
     }
 );
 
 
 const mapDispatchToProps = dispatch => (
     {
-        manageSchedule: section => ({
-            add: () => dispatch(addSchedItem(section)),
-            remove: () => dispatch(removeSchedItem(section.id)),
+        manageCart: section => ({
+            add: () => dispatch(addCartItem(section)),
+            remove: () => dispatch(removeCartItem(section.id)),
         }),
     }
 );

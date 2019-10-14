@@ -206,7 +206,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(Schedule);
 
 const EmptySchedule = () => (
     <div style={{ height: "100%" }}>
-        <p style={{ fontSize: "1.5em", marginTop: "7em", display: "block" }}>
+        <p style={{ fontSize: "1.5em", paddingTop: "7em", display: "block" }}>
             Search for courses above
             <br />
             then click a section&#39;s + icon to add it to the schedule.
