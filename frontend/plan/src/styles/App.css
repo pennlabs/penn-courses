@@ -1,14 +1,13 @@
 html {
   font-size: calc(100vw/90);
   width: 100%;
-  height: 100%;
+  height: 95vh;
+  background-color: #f1eff9;
 }
 body {
   width: 100%;
   min-width: 1000px;
-  background-color: #f1eff9;
   height:100%;
-  margin: 0;
 }
 
 .button{
@@ -455,7 +454,7 @@ ul {
 .box{
   /*border-radius:3px;*/
   /*background:white;*/
-  /*border: 1px solid lightgrey;*/
+  /* border: 1px solid lightgrey; */
   /*margin: 10px;*/
 }
 

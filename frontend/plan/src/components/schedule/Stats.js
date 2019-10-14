@@ -22,7 +22,7 @@ class Stats extends Component{
           }
         }
     }
-    
+
     render() {
         var meetingData = this.props.schedData["meetings"];
         let startTimes = [];
@@ -104,10 +104,10 @@ class Stats extends Component{
                   <div style={{display:"flex",alignItems:"center"}}> <div style={{maxWidth:"50px"}}><MyCircularProgressBar value={avgWorkload}/></div> <div style={{width:"50px",marginLeft:"10px"}}>Workload</div> </div>
                 </div>
                 <div style={{display:"grid", gridTemplateRows:"25% 25% 25% 25%"}}>
-                  <div style={{display:"flex", alignItems:"center"}}> <div style={{color:"#7874CF", fontWeight:"bold", fontSize:"20px", textAlign:"right", minWidth:"40px",paddingRight:"10px"}}> {minHoursADay}</div> <div style={{fontSize:"14px"}}>min hours in a day</div> </div>
-                  <div style={{display:"flex", alignItems:"center"}}> <div style={{color:"#7874CF", fontWeight:"bold", fontSize:"20px", textAlign:"right", minWidth:"40px",paddingRight:"10px"}}> {maxHoursADay}</div> <div style={{fontSize:"14px"}}>max hours in a day</div> </div>
-                  <div style={{display:"flex", alignItems:"center"}}> <div style={{color:"#7874CF", fontWeight:"bold", fontSize:"20px", textAlign:"right",minWidth:"40px",paddingRight:"10px"}}> {totalHours/5}</div> <div style={{fontSize:"14px"}}>avg. hours a day</div> </div>
-                  <div style={{display:"flex", alignItems:"center"}}> <div style={{color:"#7874CF", fontWeight:"bold", fontSize:"20px", textAlign:"right", minWidth:"40px",paddingRight:"10px"}}> {totalHours}</div> <div style={{fontSize:"14px"}}>total hours of class</div> </div>
+                  <div style={{display:"flex", alignItems:"center"}}> <div style={{color:"#7874CF", fontWeight:"bold", fontSize:"20px", textAlign:"right", minWidth:"40px",paddingRight:"10px"}}> {minHoursADay}</div> <div style={{fontSize:"0.8em"}}>min hours in a day</div> </div>
+                  <div style={{display:"flex", alignItems:"center"}}> <div style={{color:"#7874CF", fontWeight:"bold", fontSize:"20px", textAlign:"right", minWidth:"40px",paddingRight:"10px"}}> {maxHoursADay}</div> <div style={{fontSize:"0.8em"}}>max hours in a day</div> </div>
+                  <div style={{display:"flex", alignItems:"center"}}> <div style={{color:"#7874CF", fontWeight:"bold", fontSize:"20px", textAlign:"right",minWidth:"40px",paddingRight:"10px"}}> {totalHours/5}</div> <div style={{fontSize:"0.8em"}}>avg. hours a day</div> </div>
+                  <div style={{display:"flex", alignItems:"center"}}> <div style={{color:"#7874CF", fontWeight:"bold", fontSize:"20px", textAlign:"right", minWidth:"40px",paddingRight:"10px"}}> {totalHours}</div> <div style={{fontSize:"0.8em"}}>total hours of class</div> </div>
                 </div>
                 <div style={{padding:"10px",display:"flex", flexDirection:"column", justifyContent:"space-evenly", alignItems:"flex-start"}}>
                   <div> <div style={{color:"#7874CF", fontSize:"20px", fontWeight:"bold"}}>{this.parseTime(earliestStart)}</div> <div>earliest start time</div></div>
