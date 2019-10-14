@@ -32,8 +32,8 @@ HOST_TO_APP = {
 
     'penncourseplan.com': 'pcp',
     'www.penncourseplan.com': 'pcp',
-    'penncoursesearch.com': 'pcp',
-    'www.penncoursesearch.com': 'pcp',
+    'penncoursesearch.com': 'pcp-construction',
+    'www.penncoursesearch.com': 'pcp-construction',
 
     'penncoursereview.com': 'pcr',
     'www.penncoursereview.com': 'pcr'
