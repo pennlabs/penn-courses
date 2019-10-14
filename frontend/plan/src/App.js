@@ -50,13 +50,7 @@ function App() {
                             </h3>
                             <Cart/>
                         </div>
-                        <div className="column box vertical-section">
-                            <h3 className="section-header">
-                                <Dropdown defText={"Mock Schedule"} defActive={0}
-                                          contents={[{ text: "A" }, { text: "B" }]}/>
-                            </h3>
-                            <Schedule/>
-                        </div>
+                        <Schedule/>
                     </div>
                 </div>
             </div>

@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
 
-import { removeSchedItem, fetchCourseDetails } from "../../actions";
+import { removeSchedItem, fetchCourseDetails, changeSchedule } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
 import "./schedule.css";
@@ -11,6 +11,7 @@ import Days from "./Days";
 import Times from "./Times";
 import Block from "./Block";
 import GridLines from "./GridLines";
+import Dropdown from "../Dropdown";
 
 // Used for box coloring, from StackOverflow:
 // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
@@ -33,11 +34,13 @@ const transformTime = (t) => {
 
 class Schedule extends Component {
     render() {
-        const { schedData, removeSection, focusSection } = this.props;
+        const {
+            schedData, removeSection, focusSection, scheduleNames, switchSchedule
+        } = this.props;
         const sections = schedData.meetings || [];
 
         if (sections.length < 1) {
-            return <EmptySchedule />;
+            return <EmptySchedule/>;
         }
 
         let startHour = 10.5;
@@ -110,19 +113,20 @@ class Schedule extends Component {
             Math.max(endHour, ...meetings.map(m => m.end))
         );
 
-        getConflictGroups(meetings).forEach((conflict) => {
-            // for every conflict of size k, make the meetings in that conflict
-            // take up (100/k) % of the square, and use `left` to place them
-            // next to each other.
-            const group = Array.from(conflict.values());
-            const w = 100 / group.length;
-            for (let j = 0; j < group.length; j += 1) {
-                group[j].style = {
-                    width: `${w}%`,
-                    left: `${w * j}%`,
-                };
-            }
-        });
+        getConflictGroups(meetings)
+            .forEach((conflict) => {
+                // for every conflict of size k, make the meetings in that conflict
+                // take up (100/k) % of the square, and use `left` to place them
+                // next to each other.
+                const group = Array.from(conflict.values());
+                const w = 100 / group.length;
+                for (let j = 0; j < group.length; j += 1) {
+                    group[j].style = {
+                        width: `${w}%`,
+                        left: `${w * j}%`,
+                    };
+                }
+            });
         // generate actual block components.
         // position in grid is determined by the block given the meeting info and grid offsets.
         const blocks = meetings.map(meeting => (
@@ -150,21 +154,39 @@ class Schedule extends Component {
             padding: "1rem",
         };
 
-        return (
-            <div className="schedule vertical-section-contents" style={dims}>
-                <Days offset={colOffset} weekend={showWeekend} />
-                <Times
-                    startTime={startHour}
-                    endTime={endHour}
-                    numRow={getNumRows()}
-                    offset={rowOffset}
+        const scheduleSelectorContents = scheduleNames.map(scheduleName => ({
+            text: scheduleName,
+            onClick: () => switchSchedule(scheduleName)
+        }));
+        scheduleSelectorContents.push({
+            isCategory: false,
+            text: "Add schedule",
+            onClick: () => {
+            }
+        });
 
-                />
-                <GridLines
-                    numRow={getNumRows()}
-                    numCol={getNumCol()}
-                />
-                {blocks}
+        return (
+            <div className="column box vertical-section">
+                <h3 className="section-header">
+                    <Dropdown defText={"Mock Schedule"} defActive={0}
+                              contents={scheduleSelectorContents}
+                              modifyLabel={false}/>
+                </h3>
+                <div className="schedule vertical-section-contents" style={dims}>
+                    <Days offset={colOffset} weekend={showWeekend}/>
+                    <Times
+                        startTime={startHour}
+                        endTime={endHour}
+                        numRow={getNumRows()}
+                        offset={rowOffset}
+
+                    />
+                    <GridLines
+                        numRow={getNumRows()}
+                        numCol={getNumCol()}
+                    />
+                    {blocks}
+                </div>
             </div>
         );
     }
@@ -176,11 +198,14 @@ Schedule.propTypes = {
     }),
     removeSection: PropTypes.func,
     focusSection: PropTypes.func,
+    scheduleNames: PropTypes.arrayOf(PropTypes.string),
+    switchSchedule: PropTypes.func,
 };
 
 const mapStateToProps = state => (
     {
         schedData: state.schedule.schedules[state.schedule.scheduleSelected],
+        scheduleNames: Object.keys(state.schedule.schedules),
     }
 );
 
@@ -189,6 +214,7 @@ const mapDispatchToProps = dispatch => (
     {
         removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
         focusSection: id => dispatch(fetchCourseDetails(id)),
+        switchSchedule: scheduleName => dispatch(changeSchedule(scheduleName))
     }
 );
 
@@ -196,14 +222,18 @@ export default connect(mapStateToProps, mapDispatchToProps)(Schedule);
 
 const EmptySchedule = () => (
     <div style={{ height: "100%" }}>
-        <p style={{ fontSize: "1.5em", paddingTop: "7em", display: "block" }}>
+        <p style={{
+            fontSize: "1.5em",
+            paddingTop: "7em",
+            display: "block"
+        }}>
             Search for courses above
-            <br />
+            <br/>
             then click a section&#39;s + icon to add it to the schedule.
         </p>
         <p style={{ fontSize: "1em" }}>
             These are mock schedules.
-            <br />
+            <br/>
             You still need to register for your classes on Penn InTouch.
         </p>
     </div>

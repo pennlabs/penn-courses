@@ -1,7 +1,48 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
-const Dropdown = ({ defActive, defText, contents }) => {
+const DropdownButton = ({
+    index, activeItem, modifyLabel, text,
+    setLabelText, onClick, setActiveItem,
+    isCategory
+}) => {
+    return <button
+        key={index}
+        onClick={() => {
+            if (onClick) {
+                onClick();
+            }
+            if (isCategory) {
+                setActiveItem(index);
+                if (modifyLabel) {
+                    setLabelText(text);
+                }
+            }
+        }}
+        type="button"
+        className={`dropdown-item${activeItem === index
+            ? " is-active" : ""} button`}
+        style={{
+            border: "none",
+            marginBottom: "0.2em",
+        }}
+    >
+        {text}
+    </button>;
+};
+
+DropdownButton.propTypes = {
+    index: PropTypes.number.isRequired,
+    activeItem: PropTypes.number.isRequired,
+    modifyLabel: PropTypes.bool,
+    text: PropTypes.string,
+    setLabelText: PropTypes.func,
+    onClick: PropTypes.func,
+    setActiveItem: PropTypes.func,
+    isCategory: PropTypes.bool,
+};
+
+const Dropdown = ({ defActive, defText, contents, modifyLabel }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
     const [labelText, setLabelText] = useState(defText);
@@ -38,7 +79,7 @@ const Dropdown = ({ defActive, defText, contents }) => {
                     <span>
                         <span className="selected_name">{labelText}</span>
                         <span className="icon is-small">
-                            <i className="fa fa-angle-down" aria-hidden="true" />
+                            <i className="fa fa-angle-down" aria-hidden="true"/>
                         </span>
                     </span>
                 </button>
@@ -46,27 +87,15 @@ const Dropdown = ({ defActive, defText, contents }) => {
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content">
                     {Array.from(contents.entries())
-                        .map(([index, { onClick, text }]) => (
-                            <button
-                                key={index}
-                                onClick={() => {
-                                    if (onClick) {
-                                        onClick();
-                                    }
-                                    setActiveItem(index);
-                                    setLabelText(text);
-                                }}
-                                type="button"
-                                className={`dropdown-item${activeItem === index
-                                    ? " is-active" : ""} button`}
-                                style={{
-                                    border: "none",
-                                    marginBottom: "0.2em",
-                                }}
-                            >
-                                {text}
-                            </button>
-                        ))}
+                        .map(([index, { onClick, text, isCategory }]) =>
+                            <DropdownButton index={index}
+                                            activeItem={activeItem}
+                                            modifyLabel={modifyLabel}
+                                            setLabelText={setLabelText}
+                                            setActiveItem={setActiveItem}
+                                            isCategory={isCategory}
+                                            onClick={onClick}
+                                            text={text}/>)}
                 </div>
             </div>
         </div>
@@ -77,6 +106,7 @@ Dropdown.propTypes = {
     defActive: PropTypes.bool,
     defText: PropTypes.string.isRequired,
     contents: PropTypes.arrayOf(PropTypes.object).isRequired,
+    modifyLabel: PropTypes.bool,
 };
 
 
