@@ -147,10 +147,11 @@ class Schedule extends Component {
         const dims = {
             gridTemplateColumns: `.4fr repeat(${getNumCol() - 1}, 1fr)`,
             gridTemplateRows: `repeat(${getNumRows()}, 1fr)`,
+            padding: "1rem",
         };
 
         return (
-            <div className="schedule" style={dims}>
+            <div className="schedule vertical-section-contents" style={dims}>
                 <Days offset={colOffset} weekend={showWeekend} />
                 <Times
                     startTime={startHour}

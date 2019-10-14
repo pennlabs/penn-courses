@@ -6,17 +6,7 @@ import { meetingsContainSection } from "../meetUtil";
 import { removeCartItem, toggleCheck } from "../actions";
 
 const Cart = ({ courses, toggleCourse, removeItem }) => (
-    <section
-        style={{
-            background: "white",
-            display: "flex",
-            flexGrow: "1",
-            overflow: "auto",
-            flexDirection: "column",
-            borderRadius: "6px",
-            boxShadow: "0 0 5px 0 rgba(200, 200, 200, 0.6)",
-        }}
-    >
+    <section className="vertical-section-contents">
         {courses.map(({ section, checked }) => {
             const { id: code, description: name } = section;
             return (

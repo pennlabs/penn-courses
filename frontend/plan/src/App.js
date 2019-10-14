@@ -43,29 +43,16 @@ function App() {
                         <div className="column is-one-quarter box">
                             <Selector />
                         </div>
-                        <div
-                            className="column is-one-fifth box"
-                            style={
-                                {
-                                    background: "transparent",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    border: "0",
-                                    boxShadow: "none",
-                                }
-                            }
-                        >
-                            <h3 style={{
-                                display: "flex",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
-                            }}
-                            >
+                        <div className="column is-one-fifth box vertical-section">
+                            <h3 className={"section-header"}>
                                 Cart
                             </h3>
                             <Cart />
                         </div>
-                        <div className="column box">
+                        <div className="column box vertical-section">
+                            <h3 className={"section-header"}>
+                                Mock Schedule
+                            </h3>
                             <Schedule />
                         </div>
                     </div>
