@@ -1,33 +1,31 @@
-from django.db.models import Q
-
-from courses.models import Requirement
 from courses.views import CourseDetail, CourseList
-
-from .search import TypedSearchBackend
-from .serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer
+from plan.filters import bound_filter, requirement_filter
+from plan.search import TypedSearchBackend
+from plan.serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer
 
 
 class CourseListSearch(CourseList):
-    filter_backends = (TypedSearchBackend, )
+    filter_backends = [TypedSearchBackend]
     search_fields = ('full_code', 'title', 'sections__instructors__name')
     serializer_class = CourseListWithReviewSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        req_ids = self.request.query_params.get('requirements')
-        if req_ids is not None:
-            query = Q()
-            for req_id in req_ids.split('+'):
-                code, school = req_id.split('@')
-                try:
-                    requirement = Requirement.objects.get(semester=self.get_semester(), code=code, school=school)
-                except Requirement.DoesNotExist:
-                    continue
-                query |= Q(id__in=requirement.satisfying_courses.all())
-            queryset = queryset.filter(query)
+        filters = {
+            'requirements': requirement_filter,
+            'cu': bound_filter('sections__credits'),
+            'course_quality': bound_filter('course_quality'),
+            'instructor_quality': bound_filter('instructor_quality'),
+            'difficulty': bound_filter('difficulty')
+        }
 
-        return queryset
+        for field, filter_func in filters.items():
+            param = self.request.query_params.get(field)
+            if param is not None:
+                queryset = filter_func(queryset, param, self.get_semester())
+
+        return queryset.distinct()
 
 
 class CourseDetailSearch(CourseDetail):

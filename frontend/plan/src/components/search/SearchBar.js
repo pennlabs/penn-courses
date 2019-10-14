@@ -12,10 +12,12 @@ import {
 } from "../../actions";
 
 // eslint-disable-next-line no-shadow
-function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch }) {
+function SearchBar({
+    startSearch, doLoadRequirements, schoolReq, filterSearch,
+}) {
     useEffect(() => {
-        loadRequirements();
-    }, [loadRequirements]);
+        doLoadRequirements();
+    }, [doLoadRequirements]);
     return (
         <nav className="bar level">
             <div className="level-left">
@@ -37,15 +39,9 @@ function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch }) {
                     <DropdownButton title="Quality">
                         <RangeFilter filterInfo={filterSearch.quality} />
                     </DropdownButton>
-                    <DropdownButton title="Time">
-                        
-                    </DropdownButton>
-                    <DropdownButton title="Type">
-                        
-                    </DropdownButton>
-                    <DropdownButton title="CU">
-                        
-                    </DropdownButton>
+                    <DropdownButton title="Time" />
+                    <DropdownButton title="Type" />
+                    <DropdownButton title="CU" />
                 </div>
             </div>
             <div className="level-right">
@@ -59,6 +55,13 @@ function SearchBar({ startSearch, loadRequirements, schoolReq, filterSearch }) {
     );
 }
 
+SearchBar.propTypes = {
+    startSearch: PropTypes.func,
+    doLoadRequirements: PropTypes.func,
+    schoolReq: PropTypes.objectOf(PropTypes.array),
+    filterSearch: PropTypes.objectOf(PropTypes.any),
+};
+
 const mapStateToProps = state => (
     {
         schoolReq: state.sections.schoolReq,
@@ -67,7 +70,7 @@ const mapStateToProps = state => (
 );
 
 const mapDispatchToProps = dispatch => ({
-    loadRequirements: () => dispatch(loadRequirements()),
+    doLoadRequirements: () => dispatch(loadRequirements()),
     startSearch: searchObj => dispatch(fetchCourseSearch(searchObj)),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

@@ -5,6 +5,20 @@
  * the format HH.MM.
  */
 
+/**
+ *  Returns whether the given section object is contained within the meetings list
+ * @param meetings A meetings list in the same format as in the redux state
+ * @param section A section object
+ * @returns {boolean} Whether section is in the list of meetings (based on id)
+ */
+export const meetingsContainSection = (meetings, section) => {
+    let sectionFound = false;
+    meetings.forEach(({ id }) => {
+        sectionFound = sectionFound || id === section.id;
+    });
+    return sectionFound;
+};
+
 export const meetingsOverlap = (m1, m2) => {
     const start1 = m1.start;
     const start2 = m2.start;
@@ -46,11 +60,12 @@ export const getConflictGroups = (meetings) => {
     }
 
     // remove sets of size 1 from the results; they're not conflicting with anything.
-    Object.keys(conflicts).forEach((key) => {
-        if (conflicts[key].size <= 1) {
-            delete conflicts[key];
-        }
-    });
+    Object.keys(conflicts)
+        .forEach((key) => {
+            if (conflicts[key].size <= 1) {
+                delete conflicts[key];
+            }
+        });
     // use a Set to remove duplicates, so we get only unique conflict sets.
     return Array.from(new Set(Object.values(conflicts)).values());
 };
