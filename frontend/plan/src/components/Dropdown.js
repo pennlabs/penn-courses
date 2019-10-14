@@ -4,9 +4,9 @@ import PropTypes from "prop-types";
 const DropdownButton = ({
     index, activeItem, modifyLabel, text,
     setLabelText, onClick, setActiveItem,
-    isCategory
-}) => {
-    return <button
+    isCategory,
+}) => (
+    <button
         key={index}
         onClick={() => {
             if (onClick) {
@@ -28,8 +28,8 @@ const DropdownButton = ({
         }}
     >
         {text}
-    </button>;
-};
+    </button>
+);
 
 DropdownButton.propTypes = {
     index: PropTypes.number.isRequired,
@@ -42,7 +42,9 @@ DropdownButton.propTypes = {
     isCategory: PropTypes.bool,
 };
 
-const Dropdown = ({ defActive, defText, contents, modifyLabel }) => {
+const Dropdown = ({
+    defActive, defText, contents, modifyLabel,
+}) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
     const [labelText, setLabelText] = useState(defText);
@@ -79,7 +81,7 @@ const Dropdown = ({ defActive, defText, contents, modifyLabel }) => {
                     <span>
                         <span className="selected_name">{labelText}</span>
                         <span className="icon is-small">
-                            <i className="fa fa-angle-down" aria-hidden="true"/>
+                            <i className="fa fa-angle-down" aria-hidden="true" />
                         </span>
                     </span>
                 </button>
@@ -87,15 +89,18 @@ const Dropdown = ({ defActive, defText, contents, modifyLabel }) => {
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content">
                     {Array.from(contents.entries())
-                        .map(([index, { onClick, text, isCategory }]) =>
-                            <DropdownButton index={index}
-                                            activeItem={activeItem}
-                                            modifyLabel={modifyLabel}
-                                            setLabelText={setLabelText}
-                                            setActiveItem={setActiveItem}
-                                            isCategory={isCategory}
-                                            onClick={onClick}
-                                            text={text}/>)}
+                        .map(([index, { onClick, text, isCategory }]) => (
+                            <DropdownButton
+                                index={index}
+                                activeItem={activeItem}
+                                modifyLabel={modifyLabel}
+                                setLabelText={setLabelText}
+                                setActiveItem={setActiveItem}
+                                isCategory={isCategory}
+                                onClick={onClick}
+                                text={text}
+                            />
+                        ))}
                 </div>
             </div>
         </div>

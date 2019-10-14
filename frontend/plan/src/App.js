@@ -13,7 +13,6 @@ import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
-import Dropdown from "./components/Dropdown";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -38,19 +37,19 @@ function App() {
     return (
         <Provider store={store}>
             <div>
-                <SearchBar/>
+                <SearchBar />
                 <div className="App">
                     <div className="columns main" style={{ height: "90vh" }}>
                         <div className="column is-one-quarter box">
-                            <Selector/>
+                            <Selector />
                         </div>
                         <div className="column is-one-fifth box vertical-section">
                             <h3 className="section-header">
                                 Cart
                             </h3>
-                            <Cart/>
+                            <Cart />
                         </div>
-                        <Schedule/>
+                        <Schedule />
                     </div>
                 </div>
             </div>

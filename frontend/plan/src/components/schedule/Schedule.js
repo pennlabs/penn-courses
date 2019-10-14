@@ -35,12 +35,12 @@ const transformTime = (t) => {
 class Schedule extends Component {
     render() {
         const {
-            schedData, removeSection, focusSection, scheduleNames, switchSchedule
+            schedData, removeSection, focusSection, scheduleNames, switchSchedule,
         } = this.props;
         const sections = schedData.meetings || [];
 
         if (sections.length < 1) {
-            return <EmptySchedule/>;
+            return <EmptySchedule />;
         }
 
         let startHour = 10.5;
@@ -156,24 +156,27 @@ class Schedule extends Component {
 
         const scheduleSelectorContents = scheduleNames.map(scheduleName => ({
             text: scheduleName,
-            onClick: () => switchSchedule(scheduleName)
+            onClick: () => switchSchedule(scheduleName),
         }));
         scheduleSelectorContents.push({
             isCategory: false,
             text: "Add schedule",
             onClick: () => {
-            }
+            },
         });
 
         return (
             <div className="column box vertical-section">
                 <h3 className="section-header">
-                    <Dropdown defText={"Mock Schedule"} defActive={0}
-                              contents={scheduleSelectorContents}
-                              modifyLabel={false}/>
+                    <Dropdown
+                        defText="Mock Schedule"
+                        defActive={0}
+                        contents={scheduleSelectorContents}
+                        modifyLabel={false}
+                    />
                 </h3>
                 <div className="schedule vertical-section-contents" style={dims}>
-                    <Days offset={colOffset} weekend={showWeekend}/>
+                    <Days offset={colOffset} weekend={showWeekend} />
                     <Times
                         startTime={startHour}
                         endTime={endHour}
@@ -214,7 +217,7 @@ const mapDispatchToProps = dispatch => (
     {
         removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
         focusSection: id => dispatch(fetchCourseDetails(id)),
-        switchSchedule: scheduleName => dispatch(changeSchedule(scheduleName))
+        switchSchedule: scheduleName => dispatch(changeSchedule(scheduleName)),
     }
 );
 
@@ -225,15 +228,16 @@ const EmptySchedule = () => (
         <p style={{
             fontSize: "1.5em",
             paddingTop: "7em",
-            display: "block"
-        }}>
+            display: "block",
+        }}
+        >
             Search for courses above
-            <br/>
+            <br />
             then click a section&#39;s + icon to add it to the schedule.
         </p>
         <p style={{ fontSize: "1em" }}>
             These are mock schedules.
-            <br/>
+            <br />
             You still need to register for your classes on Penn InTouch.
         </p>
     </div>
