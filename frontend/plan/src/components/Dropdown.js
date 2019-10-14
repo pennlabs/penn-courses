@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 const DropdownButton = ({
     index, activeItem, modifyLabel, text,
     setLabelText, onClick, setActiveItem,
-    isCategory,
+    isCategory, colorClass
 }) => (
     <button
         key={index}
@@ -21,11 +21,7 @@ const DropdownButton = ({
         }}
         type="button"
         className={`dropdown-item${activeItem === index
-            ? " is-active" : ""} button`}
-        style={{
-            border: "none",
-            marginBottom: "0.2em",
-        }}
+            ? " is-active" : ""} button ${colorClass ? colorClass : ""}`}
     >
         {text}
     </button>
@@ -40,6 +36,7 @@ DropdownButton.propTypes = {
     onClick: PropTypes.func,
     setActiveItem: PropTypes.func,
     isCategory: PropTypes.bool,
+    colorClass: PropTypes.string,
 };
 
 const Dropdown = ({
@@ -64,9 +61,10 @@ const Dropdown = ({
     return (
         <div
             ref={node => setRef(node)}
-            className={`dropdown${isActive
+            className={`classic dropdown${isActive
                 ? " is-active" : ""}`}
         >
+            <span className="selected_name">{labelText}</span>
             <div
                 className="dropdown-trigger"
                 onClick={() => setIsActive(!isActive)}
@@ -79,9 +77,8 @@ const Dropdown = ({
                     type="button"
                 >
                     <span>
-                        <span className="selected_name">{labelText}</span>
                         <span className="icon is-small">
-                            <i className="fa fa-angle-down" aria-hidden="true" />
+                            <i className="fa fa-angle-down" aria-hidden="true"/>
                         </span>
                     </span>
                 </button>
@@ -89,8 +86,9 @@ const Dropdown = ({
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content">
                     {Array.from(contents.entries())
-                        .map(([index, { onClick, text, isCategory }]) => (
+                        .map(([index, { onClick, text, isCategory, color }]) => (
                             <DropdownButton
+                                colorClass={color}
                                 index={index}
                                 activeItem={activeItem}
                                 modifyLabel={modifyLabel}

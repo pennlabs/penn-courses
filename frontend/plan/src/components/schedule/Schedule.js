@@ -160,7 +160,8 @@ class Schedule extends Component {
         }));
         scheduleSelectorContents.push({
             isCategory: false,
-            text: "Add schedule",
+            color: "light-blue",
+            text: "+ Add new schedule",
             onClick: () => {
             },
         });
