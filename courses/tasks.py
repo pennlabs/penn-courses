@@ -16,11 +16,17 @@ def load_courses(query='', semester=None):
     if semester is None:
         semester = get_value('SEMESTER')
 
-    logger.info('load in courses with prefix %s from %s' % (query, semester))
+    logger.setLevel(logging.DEBUG)
+    print('load in courses with prefix %s from %s' % (query, semester))
     results = registrar.get_courses(query, semester)
 
+    num_courses = len(results)
+    i = 0
     for course in results:
+        if i % 100 == 0:
+            print(f'loading in course {i} / {num_courses}')
         upsert_course_from_opendata(course, semester)
+        i += 1
 
     return {'result': 'succeeded', 'name': 'courses.tasks.load_courses'}
 
