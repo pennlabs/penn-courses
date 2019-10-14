@@ -44,13 +44,13 @@ function App() {
                             <Selector />
                         </div>
                         <div className="column is-one-fifth box vertical-section">
-                            <h3 className={"section-header"}>
+                            <h3 className="section-header">
                                 Cart
                             </h3>
                             <Cart />
                         </div>
                         <div className="column box vertical-section">
-                            <h3 className={"section-header"}>
+                            <h3 className="section-header">
                                 Mock Schedule
                             </h3>
                             <Schedule />
