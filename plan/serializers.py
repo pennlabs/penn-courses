@@ -75,7 +75,8 @@ class CourseListWithReviewSerializer(CourseListSerializer):
             'semester',
             'course_quality',
             'instructor_quality',
-            'difficulty'
+            'difficulty',
+            'num_sections',
         ]
 
 

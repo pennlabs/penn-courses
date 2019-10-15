@@ -215,8 +215,8 @@ class CourseListTestCase(TestCase):
         self.assertEqual(len(response.data), 2)
         course_codes = [d['id'] for d in response.data]
         self.assertTrue('CIS-120' in course_codes and 'MATH-114' in course_codes)
-        self.assertTrue(1, len(response.data[0]['sections']))
-        self.assertTrue(1, len(response.data[1]['sections']))
+        self.assertTrue(1, response.data[0]['num_sections'])
+        self.assertTrue(1, response.data[1]['num_sections'])
 
     def test_semester_setting(self):
         new_sem = TEST_SEMESTER[:-1] + 'Z'
@@ -246,7 +246,7 @@ class CourseListTestCase(TestCase):
         self.math1.status = 'X'
         self.math1.save()
         response = self.client.get('/all/courses/')
-        self.assertEqual(len(response.data[1]['sections']), 0, response.data)
+        self.assertEqual(response.data[1]['num_sections'], 0, response.data)
 
 
 @override_settings(SWITCHBOARD_TEST_APP='api')

@@ -138,7 +138,10 @@ class RequirementDetailSerializer(RequirementListSerializer):
 
 class CourseListSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='course_id')
-    # sections = MiniSectionSerializer(many=True)
+    num_sections = serializers.SerializerMethodField()
+
+    def get_num_sections(self, obj):
+        return obj.sections.count()
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -158,7 +161,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'semester',
-            # 'sections',
+            'num_sections',
         ]
 
 
