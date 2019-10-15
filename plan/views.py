@@ -1,3 +1,5 @@
+from django.db.models import Prefetch
+
 from courses.views import CourseDetail, CourseList
 from plan.filters import bound_filter, requirement_filter
 from plan.search import TypedSearchBackend
@@ -10,7 +12,7 @@ class CourseListSearch(CourseList):
     serializer_class = CourseListWithReviewSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().prefetch_related(Prefetch('sections'))
 
         filters = {
             'requirements': requirement_filter,

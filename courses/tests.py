@@ -249,16 +249,52 @@ class SectionListTestCase(TestCase):
 class CourseDetailTestCase(TestCase):
     def setUp(self):
         self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.section.credits = 1
+        self.section.status = 'O'
+        self.section.save()
         self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
+        self.math1.credits = 1
+        self.math1.status = 'C'
+        self.math1.save()
         self.client = APIClient()
         set_semester()
 
     def test_get_course(self):
         course, section = get_course_and_section('CIS-120-201', TEST_SEMESTER)
+        section.credits = 1
+        section.status = 'O'
+        section.save()
         response = self.client.get('/all/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['id'], 'CIS-120')
         self.assertEqual(len(response.data['sections']), 2)
+
+    def test_section_cancelled(self):
+        course, section = get_course_and_section('CIS-120-201', TEST_SEMESTER)
+        section.credits = 1
+        section.status = 'X'
+        section.save()
+        response = self.client.get('/all/courses/CIS-120/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['id'], 'CIS-120')
+        self.assertEqual(len(response.data['sections']), 1)
+
+    def test_section_no_credits(self):
+        course, section = get_course_and_section('CIS-120-201', TEST_SEMESTER)
+        section.status = 'O'
+        section.save()
+        response = self.client.get('/all/courses/CIS-120/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['id'], 'CIS-120')
+        self.assertEqual(len(response.data['sections']), 1)
+
+    def test_course_no_good_sections(self):
+        self.section.status = 'X'
+        self.section.save()
+        response = self.client.get('/all/courses/CIS-120/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['id'], 'CIS-120')
+        self.assertEqual(len(response.data['sections']), 0)
 
     def test_not_get_course(self):
         response = self.client.get('/all/courses/CIS-160/')
