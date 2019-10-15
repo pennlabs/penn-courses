@@ -1,5 +1,7 @@
 import logging
 
+from celery import shared_task
+
 from courses import registrar
 from courses.models import Course, Department, Requirement
 from courses.util import upsert_course_from_opendata
@@ -9,16 +11,22 @@ from options.models import get_value
 logger = logging.getLogger(__name__)
 
 
-# @shared_task(name='courses.tasks.load_courses')
+@shared_task(name='courses.tasks.load_courses')
 def load_courses(query='', semester=None):
     if semester is None:
         semester = get_value('SEMESTER')
 
-    logger.info('load in courses with prefix %s from %s' % (query, semester))
+    logger.setLevel(logging.DEBUG)
+    print('load in courses with prefix %s from %s' % (query, semester))
     results = registrar.get_courses(query, semester)
 
+    num_courses = len(results)
+    i = 0
     for course in results:
+        if i % 100 == 0:
+            print(f'loading in course {i} / {num_courses}')
         upsert_course_from_opendata(course, semester)
+        i += 1
 
     return {'result': 'succeeded', 'name': 'courses.tasks.load_courses'}
 
@@ -80,3 +88,10 @@ def load_requirements(school=None, semester=None, requirements=None):
                     requirement.courses.add(course)
                 else:
                     requirement.overrides.add(course)
+
+
+@shared_task(name='courses.tasks.semester_sync')
+def semester_sync(query='', semester=None):
+    load_courses(query=query, semester=semester)
+    load_requirements(school='SEAS', semester=semester)
+    load_requirements(school='WH', semester=semester)
