@@ -17,18 +17,20 @@ const Cart = ({ courses, toggleCourse, removeItem }) => (
             boxShadow: "0 0 5px 0 rgba(200, 200, 200, 0.6)",
         }}
     >
-        {courses.map(({ section, checked }) => {
-            const { id: code, description: name } = section;
-            return (
-                <CartSection
-                    toggleCheck={() => toggleCourse(section)}
-                    code={code}
-                    checked={checked}
-                    name={name}
-                    remove={() => removeItem(code)}
-                />
-            );
-        })}
+        {courses
+            .sort((a, b) => a.section.id.localeCompare(b.section.id))
+            .map(({ section, checked }) => {
+                const { id: code, description: name } = section;
+                return (
+                    <CartSection
+                        toggleCheck={() => toggleCourse(section)}
+                        code={code}
+                        checked={checked}
+                        name={name}
+                        remove={() => removeItem(code)}
+                    />
+                );
+            })}
     </section>
 );
 
