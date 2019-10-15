@@ -1,7 +1,7 @@
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
-from courses.models import Course, Department, Requirement, Section
+from courses.models import Course, Department, Instructor, Requirement, Section
 from courses.util import (create_mock_data, get_course, get_course_and_section, record_update,
                           separate_course_code, set_crosslistings, update_course_from_record)
 from options.models import Option
@@ -262,6 +262,9 @@ class SectionListTestCase(TestCase):
 class CourseDetailTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        i = Instructor(name='Test Instructor')
+        i.save()
+        self.section.instructors.add(i)
         self.math, self.math1 = create_mock_data('MATH-114-001', TEST_SEMESTER)
         self.client = APIClient()
         set_semester()
@@ -272,6 +275,7 @@ class CourseDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['id'], 'CIS-120')
         self.assertEqual(len(response.data['sections']), 2)
+        self.assertEqual('Test Instructor', response.data['sections'][0]['instructors'][0])
 
     def test_section_cancelled(self):
         course, section = create_mock_data('CIS-120-201', TEST_SEMESTER)
