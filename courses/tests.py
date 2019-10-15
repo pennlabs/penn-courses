@@ -200,7 +200,13 @@ API Test Cases
 class CourseListTestCase(TestCase):
     def setUp(self):
         self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.section.status = 'O'
+        self.section.credits = 1
+        self.section.save()
         self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
+        self.math1.status = 'O'
+        self.math1.credits = 1
+        self.math1.save()
         self.client = APIClient()
         set_semester()
 
@@ -209,6 +215,8 @@ class CourseListTestCase(TestCase):
         self.assertEqual(len(response.data), 2)
         course_codes = [d['id'] for d in response.data]
         self.assertTrue('CIS-120' in course_codes and 'MATH-114' in course_codes)
+        self.assertTrue(1, len(response.data[0]['sections']))
+        self.assertTrue(1, len(response.data[1]['sections']))
 
     def test_semester_setting(self):
         new_sem = TEST_SEMESTER[:-1] + 'Z'
@@ -231,10 +239,14 @@ class CourseListTestCase(TestCase):
 
     def test_course_with_no_sections_not_in_list(self):
         self.math.sections.all().delete()
-        print(self.math.sections.all())
-        print(Course.objects.filter(sections__isnull=False))
         response = self.client.get('/all/courses/')
         self.assertEqual(len(response.data), 1, response.data)
+
+    def test_course_with_cancelled_sections_not_in_list(self):
+        self.math1.status = 'X'
+        self.math1.save()
+        response = self.client.get('/all/courses/')
+        self.assertEqual(len(response.data[1]['sections']), 0, response.data)
 
 
 @override_settings(SWITCHBOARD_TEST_APP='api')

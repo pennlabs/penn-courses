@@ -31,6 +31,25 @@ class SectionIdField(serializers.RelatedField):
         }
 
 
+class MiniSectionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Section
+        fields = [
+            'id',
+            'status',
+            'activity',
+        ]
+
+    @staticmethod
+    def get_semester(obj):
+        return obj.course.semester
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        return queryset
+
+
 class SectionSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='normalized')
     semester = serializers.SerializerMethodField()
@@ -119,6 +138,7 @@ class RequirementDetailSerializer(RequirementListSerializer):
 
 class CourseListSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='course_id')
+    # sections = MiniSectionSerializer(many=True)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -138,6 +158,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'semester',
+            # 'sections',
         ]
 
 

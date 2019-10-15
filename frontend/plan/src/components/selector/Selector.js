@@ -48,7 +48,7 @@ Selector.propTypes = {
 
 const mapStateToProps = state => (
     {
-        courses: state.sections.searchResults,
+        courses: state.sections.searchResults.filter(course => course.sections.length > 0),
         course: state.sections.course,
     }
 );
