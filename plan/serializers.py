@@ -1,4 +1,4 @@
-from django.db.models import Manager, OuterRef, Prefetch
+from django.db.models import Manager, OuterRef, Prefetch, Q
 from rest_framework import serializers
 
 from courses.models import Course, Section
@@ -62,6 +62,11 @@ class CourseListWithReviewSerializer(CourseListSerializer):
         queryset = annotations.review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
+                                             Prefetch('sections',
+                                                      queryset=annotations.sections_with_reviews()
+                                                      .filter(meetings__isnull=False)
+                                                      .filter(credits__isnull=False)
+                                                      .filter(Q(status='O') | Q(status='C')).distinct()),
                                              'sections__review_set__reviewbit_set'
                                              )
         return queryset
@@ -115,7 +120,11 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
         queryset = annotations.review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
         queryset = queryset.prefetch_related(
             # prefetch sections using the annotated queryset, so we get review averages along with the sections.
-            Prefetch('sections', queryset=annotations.sections_with_reviews()),
+            Prefetch('sections',
+                     queryset=annotations.sections_with_reviews()
+                     .filter(meetings__isnull=False)
+                     .filter(credits__isnull=False)
+                     .filter(Q(status='O') | Q(status='C')).distinct()),
             'primary_listing__listing_set__department',
             'department',
             'sections__course__department',

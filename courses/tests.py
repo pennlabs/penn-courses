@@ -2,7 +2,7 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from courses.models import Course, Department, Requirement, Section
-from courses.util import (get_course, get_course_and_section, record_update,
+from courses.util import (create_mock_data, get_course, get_course_and_section, record_update,
                           separate_course_code, set_crosslistings, update_course_from_record)
 from options.models import Option
 
@@ -79,7 +79,7 @@ class GetCourseSectionTest(TestCase):
 
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
 
     def test_update_status(self):
         self.section.status = 'C'
@@ -92,14 +92,14 @@ class CourseStatusUpdateTestCase(TestCase):
                            'JSON')
         up.save()
         update_course_from_record(up)
-        _, section = get_course_and_section(self.section.normalized, TEST_SEMESTER)
+        _, section = create_mock_data(self.section.normalized, TEST_SEMESTER)
         self.assertEqual('O', section.status)
 
 
 class CrosslistingTestCase(TestCase):
     def setUp(self):
-        self.anch, _ = get_course_and_section('ANCH-027-401', TEST_SEMESTER)
-        self.clst, _ = get_course_and_section('CLST-027-401', TEST_SEMESTER)
+        self.anch, _ = create_mock_data('ANCH-027-401', TEST_SEMESTER)
+        self.clst, _ = create_mock_data('CLST-027-401', TEST_SEMESTER)
 
     def test_add_primary_listing(self):
         set_crosslistings(self.anch, '')
@@ -109,8 +109,8 @@ class CrosslistingTestCase(TestCase):
     def test_add_existing_class(self):
         set_crosslistings(self.clst, 'ANCH-027-401')
         self.clst.save()
-        clst, _ = get_course_and_section('CLST-027-401', TEST_SEMESTER)
-        anch, _ = get_course_and_section('ANCH-027-401', TEST_SEMESTER)
+        clst, _ = create_mock_data('CLST-027-401', TEST_SEMESTER)
+        anch, _ = create_mock_data('ANCH-027-401', TEST_SEMESTER)
         self.assertEqual(self.anch, clst.primary_listing)
         self.assertEqual(2, Course.objects.count())
 
@@ -199,14 +199,8 @@ API Test Cases
 @override_settings(SWITCHBOARD_TEST_APP='api')
 class CourseListTestCase(TestCase):
     def setUp(self):
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
-        self.section.status = 'O'
-        self.section.credits = 1
-        self.section.save()
-        self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
-        self.math1.status = 'O'
-        self.math1.credits = 1
-        self.math1.save()
+        self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        self.math, self.math1 = create_mock_data('MATH-114-001', TEST_SEMESTER)
         self.client = APIClient()
         set_semester()
 
@@ -220,7 +214,7 @@ class CourseListTestCase(TestCase):
 
     def test_semester_setting(self):
         new_sem = TEST_SEMESTER[:-1] + 'Z'
-        get_course_and_section('MATH-104-001', new_sem)
+        create_mock_data('MATH-104-001', new_sem)
 
         response = self.client.get(f'/{TEST_SEMESTER}/courses/')
         self.assertEqual(len(response.data), 2)
@@ -233,7 +227,7 @@ class CourseListTestCase(TestCase):
 
     def test_current_semester(self):
         new_sem = TEST_SEMESTER[:-1] + 'Z'
-        get_course_and_section('MATH-104-001', new_sem)
+        create_mock_data('MATH-104-001', new_sem)
         response = self.client.get(f'/current/courses/')
         self.assertEqual(len(response.data), 2)
 
@@ -252,8 +246,8 @@ class CourseListTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='api')
 class SectionListTestCase(TestCase):
     def setUp(self):
-        self.course1, self.section1 = get_course_and_section('CIS-120-001', TEST_SEMESTER)
-        self.course2, self.section2 = get_course_and_section('CIS-120-002', TEST_SEMESTER)
+        self.course1, self.section1 = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        self.course2, self.section2 = create_mock_data('CIS-120-002', TEST_SEMESTER)
         self.client = APIClient()
         set_semester()
 
@@ -267,45 +261,36 @@ class SectionListTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='api')
 class CourseDetailTestCase(TestCase):
     def setUp(self):
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
-        self.section.credits = 1
-        self.section.status = 'O'
-        self.section.save()
-        self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
-        self.math1.credits = 1
-        self.math1.status = 'C'
-        self.math1.save()
+        self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        self.math, self.math1 = create_mock_data('MATH-114-001', TEST_SEMESTER)
         self.client = APIClient()
         set_semester()
 
     def test_get_course(self):
-        course, section = get_course_and_section('CIS-120-201', TEST_SEMESTER)
-        section.credits = 1
-        section.status = 'O'
-        section.save()
+        course, section = create_mock_data('CIS-120-201', TEST_SEMESTER)
         response = self.client.get('/all/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['id'], 'CIS-120')
         self.assertEqual(len(response.data['sections']), 2)
 
     def test_section_cancelled(self):
-        course, section = get_course_and_section('CIS-120-201', TEST_SEMESTER)
+        course, section = create_mock_data('CIS-120-201', TEST_SEMESTER)
         section.credits = 1
         section.status = 'X'
         section.save()
         response = self.client.get('/all/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['id'], 'CIS-120')
-        self.assertEqual(len(response.data['sections']), 1)
+        self.assertEqual(len(response.data['sections']), 1, response.data['sections'])
 
     def test_section_no_credits(self):
-        course, section = get_course_and_section('CIS-120-201', TEST_SEMESTER)
-        section.status = 'O'
+        course, section = create_mock_data('CIS-120-201', TEST_SEMESTER)
+        section.credits = None
         section.save()
         response = self.client.get('/all/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['id'], 'CIS-120')
-        self.assertEqual(len(response.data['sections']), 1)
+        self.assertEqual(len(response.data['sections']), 1, response.data['sections'])
 
     def test_course_no_good_sections(self):
         self.section.status = 'X'

@@ -148,8 +148,10 @@ class CourseListSerializer(serializers.ModelSerializer):
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
                                              Prefetch('sections',
-                                                      Section.objects.filter(credits__isnull=False)
-                                                      .filter(Q(status='O') | Q(status='C'))),
+                                                      Section.objects
+                                                      .filter(meetings__isnull=False)
+                                                      .filter(credits__isnull=False)
+                                                      .filter(Q(status='O') | Q(status='C')).distinct()),
                                              'sections__review_set__reviewbit_set'
                                              )
         return queryset
@@ -175,8 +177,10 @@ class CourseDetailSerializer(CourseListSerializer):
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
                                              Prefetch('sections',
-                                                      Section.objects.filter(credits__isnull=False)
-                                                      .filter(Q(status='O') | Q(status='C'))),
+                                                      Section.objects
+                                                      .filter(meetings__isnull=False)
+                                                      .filter(credits__isnull=False)
+                                                      .filter(Q(status='O') | Q(status='C')).distinct()),
                                              'sections__course__department',
                                              'sections__meetings__room__building',
                                              'sections__associated_sections__course__department',
