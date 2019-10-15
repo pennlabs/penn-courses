@@ -103,6 +103,7 @@ class SectionDetailWithReviewSerializer(SectionDetailSerializer):
             'instructor_quality',
             'difficulty',
             'meetings',
+            'instructors',
         ] + [
             'associated_sections',
         ]
@@ -145,7 +146,7 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
              'semester',
              'course_quality',
              'instructor_quality',
-             'difficulty'
+             'difficulty',
          ] + [
              'crosslistings',
              'requirements',
