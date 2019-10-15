@@ -54,6 +54,7 @@ class SectionSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='normalized')
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
+    instructors = serializers.StringRelatedField(many=True)
 
     @staticmethod
     def get_semester(obj):
@@ -74,7 +75,8 @@ class SectionSerializer(serializers.ModelSerializer):
             'activity',
             'credits',
             'semester',
-            'meetings'
+            'meetings',
+            'instructors',
         ]
 
 
@@ -90,6 +92,7 @@ class SectionDetailSerializer(SectionSerializer):
             'credits',
             'semester',
             'meetings',
+            'instructors',
         ] + [
             'associated_sections',
         ]
