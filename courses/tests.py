@@ -229,6 +229,13 @@ class CourseListTestCase(TestCase):
         response = self.client.get(f'/current/courses/')
         self.assertEqual(len(response.data), 2)
 
+    def test_course_with_no_sections_not_in_list(self):
+        self.math.sections.all().delete()
+        print(self.math.sections.all())
+        print(Course.objects.filter(sections__isnull=False))
+        response = self.client.get('/all/courses/')
+        self.assertEqual(len(response.data), 1, response.data)
+
 
 @override_settings(SWITCHBOARD_TEST_APP='api')
 class SectionListTestCase(TestCase):
