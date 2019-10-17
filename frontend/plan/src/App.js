@@ -37,39 +37,37 @@ store.subscribe(() => {
 function App() {
     return (
         <Provider store={store}>
-            <div>
-                <NavBar style={{ height: "5vh" }} />
-                <SearchBar style={{ height: "5vh" }} />
-                <div className="App" style={{ height: "85vh" }}>
-                    <div className="columns main" style={{ height: "100%" }}>
-                        <div className="column is-one-quarter box">
-                            <Selector />
-                        </div>
-                        <div
-                            className="column is-one-fifth box"
-                            style={
-                                {
-                                    background: "transparent",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    border: "0",
-                                    boxShadow: "none",
-                                }
-                            }
-                        >
-                            <h3 style={{
+            <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+                <NavBar style={{ flexGrow: 0 }} />
+                <SearchBar style={{ flexGrow: 0 }} />
+                <div className="App" className="columns main" style={{ flexGrow: 1, maxHeight: "80vh" }}>
+                    <div className="column is-one-quarter box">
+                        <Selector />
+                    </div>
+                    <div
+                        className="column is-one-fifth box"
+                        style={
+                            {
+                                background: "transparent",
                                 display: "flex",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
-                            }}
-                            >
-                                Cart
-                            </h3>
-                            <Cart />
-                        </div>
-                        <div className="column box">
-                            <Schedule />
-                        </div>
+                                flexDirection: "column",
+                                border: "0",
+                                boxShadow: "none",
+                            }
+                        }
+                    >
+                        <h3 style={{
+                            display: "flex",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
+                        }}
+                        >
+                            Cart
+                        </h3>
+                        <Cart />
+                    </div>
+                    <div className="column box">
+                        <Schedule />
                     </div>
                 </div>
             </div>
