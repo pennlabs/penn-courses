@@ -20,6 +20,7 @@ const initialState = {
         type: null,
         cu: [0.5, 2],
     },
+    defaultReqs: null,
 };
 
 export const filters = (state = initialState, action) => {
@@ -32,6 +33,7 @@ export const filters = (state = initialState, action) => {
                     ...state.filterData,
                     selectedReq: action.selObj,
                 },
+                defaultReqs: action.selObj,
             };
         
         case UPDATE_SEARCH_TEXT:

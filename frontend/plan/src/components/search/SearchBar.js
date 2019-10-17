@@ -33,7 +33,7 @@ function shouldSearch(filterData) {
 // eslint-disable-next-line no-shadow
 function SearchBar({
     startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
-    remSchoolReq, updateSearchText, updateRangeFilter, clearAll
+    remSchoolReq, updateSearchText, updateRangeFilter, clearAll, defaultReqs
 }) {
     useEffect(() => {
         loadRequirements();
@@ -44,7 +44,6 @@ function SearchBar({
             startSearch(filterInfo);
         }
     };
-
     return (
         <nav className="bar level">
             <div className="level-left">
@@ -61,7 +60,7 @@ function SearchBar({
                         <i className="fas fa-filter" />
                     </span>
                     <p> Filter by</p>
-                    <DropdownButton title="School Req">
+                    <DropdownButton title="School Req" filterData={filterData.selectedReq} defaultFilter={defaultReqs}>
                         <SchoolReq
                             startSearch={conditionalStartSearch}
                             schoolReq={schoolReq}
@@ -70,7 +69,7 @@ function SearchBar({
                             remSchoolReq={remSchoolReq}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Difficulty">
+                    <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={[0, 4]}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -81,7 +80,7 @@ function SearchBar({
                             rangeProperty="difficulty"
                         />
                     </DropdownButton>
-                    <DropdownButton title="Course Quality">
+                    <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={[0, 4]}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -92,7 +91,7 @@ function SearchBar({
                             rangeProperty="course_quality"
                         />
                     </DropdownButton>
-                    <DropdownButton title="Instructor Quality">
+                    <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={[0, 4]}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -106,7 +105,7 @@ function SearchBar({
 
                     <DropdownButton title="Time" />
                     <DropdownButton title="Type" />
-                    <DropdownButton title="CU">
+                    <DropdownButton title="CU" filterData={filterData.cu} defaultFilter={[0.5, 2]}>
                         <RangeFilter
                             minRange={0.5}
                             maxRange={2}
@@ -134,13 +133,13 @@ SearchBar.propTypes = {
     startSearch: PropTypes.func,
     loadRequirements: PropTypes.func,
     schoolReq: PropTypes.objectOf(PropTypes.array),
-    filterSearch: PropTypes.objectOf(PropTypes.any),
 };
 
 const mapStateToProps = state => (
     {
         schoolReq: state.filters.schoolReq,
         filterData: state.filters.filterData,
+        defaultReqs: state.filters.defaultReqs,
     }
 );
 
