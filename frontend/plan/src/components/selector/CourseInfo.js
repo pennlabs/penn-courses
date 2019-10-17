@@ -27,4 +27,5 @@ export default function CourseInfo({ course, back, getCourse }) {
 CourseInfo.propTypes = {
     course: PropTypes.objectOf(PropTypes.any).isRequired,
     back: PropTypes.func,
+    getCourse: PropTypes.func,
 };

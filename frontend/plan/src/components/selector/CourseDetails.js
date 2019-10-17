@@ -31,4 +31,5 @@ export default function CourseDetails({ course, getCourse }) {
 
 CourseDetails.propTypes = {
     course: PropTypes.objectOf(PropTypes.any).isRequired,
+    getCourse: PropTypes.func,
 };
