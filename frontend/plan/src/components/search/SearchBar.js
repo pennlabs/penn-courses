@@ -13,7 +13,9 @@ import {
     remSchoolReq,
     updateSearchText,
     updateRangeFilter,
-    clearAll
+    clearAll,
+    clearSchoolReq,
+    clearRangeReq
 } from "../../actions";
 
 function shouldSearch(filterData) {
@@ -33,7 +35,8 @@ function shouldSearch(filterData) {
 // eslint-disable-next-line no-shadow
 function SearchBar({
     startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
-    remSchoolReq, updateSearchText, updateRangeFilter, clearAll, defaultReqs
+    remSchoolReq, updateSearchText, updateRangeFilter, clearAll, defaultReqs, clearSchoolReq,
+    clearRangeReq
 }) {
     useEffect(() => {
         loadRequirements();
@@ -44,6 +47,7 @@ function SearchBar({
             startSearch(filterInfo);
         }
     };
+    console.log(filterData);
     return (
         <nav className="bar level">
             <div className="level-left">
@@ -60,7 +64,7 @@ function SearchBar({
                         <i className="fas fa-filter" />
                     </span>
                     <p> Filter by</p>
-                    <DropdownButton title="School Req" filterData={filterData.selectedReq} defaultFilter={defaultReqs}>
+                    <DropdownButton title="School Req" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearSchoolReq(filterData)}>
                         <SchoolReq
                             startSearch={conditionalStartSearch}
                             schoolReq={schoolReq}
@@ -69,7 +73,7 @@ function SearchBar({
                             remSchoolReq={remSchoolReq}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={[0, 4]}>
+                    <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={[0, 4]} clearFilter={clearRangeReq(filterData, "difficulty", 0, 4)}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -80,7 +84,7 @@ function SearchBar({
                             rangeProperty="difficulty"
                         />
                     </DropdownButton>
-                    <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={[0, 4]}>
+                    <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={[0, 4]} clearFilter={clearRangeReq(filterData, "course_quality", 0, 4)}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -91,7 +95,7 @@ function SearchBar({
                             rangeProperty="course_quality"
                         />
                     </DropdownButton>
-                    <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={[0, 4]}>
+                    <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={[0, 4]} clearFilter={clearRangeReq(filterData, "instructor_quality", 0, 4)}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -105,7 +109,7 @@ function SearchBar({
 
                     <DropdownButton title="Time" />
                     <DropdownButton title="Type" />
-                    <DropdownButton title="CU" filterData={filterData.cu} defaultFilter={[0.5, 2]}>
+                    <DropdownButton title="CU" filterData={filterData.cu} defaultFilter={[0.5, 2]} clearFilter={clearRangeReq(filterData, "cu", 0.5, 2)}>
                         <RangeFilter
                             minRange={0.5}
                             maxRange={2}
@@ -151,5 +155,7 @@ const mapDispatchToProps = dispatch => ({
     updateSearchText: s => dispatch(updateSearchText(s)),
     updateRangeFilter: field => values => dispatch(updateRangeFilter(field, values)),
     clearAll: filterData => () => dispatch(clearAll(filterData)),
+    clearSchoolReq: filterData => () => dispatch(clearSchoolReq(filterData)),
+    clearRangeReq: (filterData, filterName, defaultL, defaultR) => () => dispatch(clearRangeReq(filterData, filterName, defaultL, defaultR)),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

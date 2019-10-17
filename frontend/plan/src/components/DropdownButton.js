@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "./useOnClickOutside";
 
-export function DropdownButton({ title, children, filterData, defaultFilter }) {
+export function DropdownButton({ title, children, filterData, defaultFilter, clearFilter }) {
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
@@ -38,7 +38,9 @@ export function DropdownButton({ title, children, filterData, defaultFilter }) {
                             <i
                                 className="delete is-small"
                                 onClick={(e) => {
+                                    clearFilter();
                                     e.stopPropagation();
+                                    
                                 }}
                                 role="button"
                             />
