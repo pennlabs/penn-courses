@@ -13,7 +13,7 @@ const CourseDetails = ({ meetings, code }) => (
         alignItems: "left",
     }}
     >
-        <b>{code}</b>
+        <b>{code.replace(/-/g, " ")}</b>
         <div style={{ fontSize: "0.8rem" }}>{getTimeString(meetings)}</div>
     </div>
 );

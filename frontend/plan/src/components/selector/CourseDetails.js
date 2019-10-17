@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import TagList from "./TagList";
 
 
-export default function CourseDetails({ course }) {
+export default function CourseDetails({ course, getCourse }) {
     const requirements = course.requirements || [];
     const crosslistings = course.crosslistings || [];
     return (
@@ -21,7 +21,7 @@ export default function CourseDetails({ course }) {
                         <i className="fas fa-random" />
                     </span>
                     &nbsp; Crosslisted as: &nbsp;
-                    { <TagList elements={crosslistings} limit={2} /> }
+                    { <TagList elements={crosslistings.map(e => e.replace(/-/g, " "))} limit={2} onClick={getCourse} /> }
                 </li>
             ) : null
             }
