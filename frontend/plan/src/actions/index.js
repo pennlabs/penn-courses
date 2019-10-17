@@ -207,9 +207,10 @@ function buildCourseSearchUrl(filterData) {
 
     // Range filters
     const filterFields = ["difficulty", "course_quality", "instructor_quality", "cu"];
-
+    const defaultFilters = [[0, 4], [0, 4], [0, 4], [0.5, 2]];
     for (let i = 0; i < filterFields.length; i += 1) {
-        if (filterData[filterFields[i]]) {
+        if (filterData[filterFields[i]]
+            && JSON.stringify(filterData[filterFields[i]]) !== JSON.stringify(defaultFilters[i])) {
             const filterRange = filterData[filterFields[i]];
             queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
         }
