@@ -11,6 +11,7 @@ import Schedule from "./components/schedule/Schedule";
 
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
+import NavBar from "./NavBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 
@@ -37,9 +38,10 @@ function App() {
     return (
         <Provider store={store}>
             <div>
-                <SearchBar />
-                <div className="App">
-                    <div className="columns main" style={{ height: "90vh" }}>
+                <NavBar style={{ height: "5vh" }} />
+                <SearchBar style={{ height: "5vh" }} />
+                <div className="App" style={{ height: "85vh" }}>
+                    <div className="columns main" style={{ height: "100%" }}>
                         <div className="column is-one-quarter box">
                             <Selector />
                         </div>

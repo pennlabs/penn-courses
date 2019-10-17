@@ -5,7 +5,9 @@ import CartSection from "./CartSection";
 import { meetingsContainSection } from "../meetUtil";
 import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
 
-const Cart = ({ courses, toggleCourse, removeItem, courseInfo }) => (
+const Cart = ({
+    courses, toggleCourse, removeItem, courseInfo,
+}) => (
     <section
         style={{
             background: "white",

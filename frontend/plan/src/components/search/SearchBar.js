@@ -13,13 +13,13 @@ import {
 
 // eslint-disable-next-line no-shadow
 function SearchBar({
-    startSearch, doLoadRequirements, schoolReq, filterSearch,
+    startSearch, doLoadRequirements, schoolReq, filterSearch, style,
 }) {
     useEffect(() => {
         doLoadRequirements();
     }, [doLoadRequirements]);
     return (
-        <nav className="bar level">
+        <nav className="bar level" style={style}>
             <div className="level-left">
                 <div className="level-item" id="searchdiv">
                     <SearchField startSearch={startSearch} />
@@ -60,6 +60,7 @@ SearchBar.propTypes = {
     doLoadRequirements: PropTypes.func,
     schoolReq: PropTypes.objectOf(PropTypes.array),
     filterSearch: PropTypes.objectOf(PropTypes.any),
+    style: PropTypes.objectOf(PropTypes.string),
 };
 
 const mapStateToProps = state => (

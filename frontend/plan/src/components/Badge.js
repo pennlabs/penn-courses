@@ -26,6 +26,5 @@ export default function Badge(props) {
 }
 
 Badge.propTypes = {
-    baseColor: PropTypes.arrayOf(PropTypes.number).isRequired,
     value: PropTypes.number.isRequired,
 };
