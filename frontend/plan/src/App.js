@@ -41,18 +41,25 @@ function App() {
                 <NavBar style={{ flexGrow: 0 }} />
                 <SearchBar style={{ flexGrow: 0 }} />
                 <div className="App" className="columns main" style={{ flexGrow: 1, maxHeight: "80vh" }}>
-                    <div className="column is-one-quarter box">
-                        <Selector />
+                    <div className="column is-one-quarter">
+                        <h3 style={{
+                            display: "flex",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
+                        }}
+                        >
+                            Search Results
+                        </h3>
+                        <div className="box" style={{ height: "100%", paddingLeft: 0, paddingRight: 0 }}>
+                            <Selector />
+                        </div>
                     </div>
                     <div
-                        className="column is-one-fifth box"
+                        className="column is-one-fifth"
                         style={
                             {
-                                background: "transparent",
                                 display: "flex",
                                 flexDirection: "column",
-                                border: "0",
-                                boxShadow: "none",
                             }
                         }
                     >

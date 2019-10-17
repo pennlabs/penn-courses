@@ -10,14 +10,13 @@ const Cart = ({
 }) => (
     <section
         style={{
-            background: "white",
             display: "flex",
             flexGrow: "1",
             overflow: "auto",
             flexDirection: "column",
-            borderRadius: "6px",
-            boxShadow: "0 0 5px 0 rgba(200, 200, 200, 0.6)",
+            padding: 0,
         }}
+        className="box"
     >
         {courses
             .sort((a, b) => a.section.id.localeCompare(b.section.id))
