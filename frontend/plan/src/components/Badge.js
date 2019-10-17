@@ -2,21 +2,25 @@ import React from "react";
 import PropTypes from "prop-types";
 
 export default function Badge(props) {
-    const range = 4;
-    const { baseColor, value } = props;
-    const frac = value ? value / range : 1;
-    const opacity = (frac ** 3) * 2;
-    const textColor = frac < 0.5 ? "black" : "white";
+    const { value } = props;
+    let color = [];
+    if (value < 2 && value >= 0) {
+        color = [255, 193, 7];
+    } else if (value < 3) {
+        color = [98, 116, 241];
+    } else if (value <= 4) {
+        color = [118, 191, 150];
+    }
 
     return (
         <span
             className="tag is-rounded"
             style={{
-                background: `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${opacity})`,
-                color: textColor,
+                background: `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.2)`,
+                color: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
             }}
         >
-            {value ? value.toFixed(1) : "n/a"}
+            <b>{value ? value.toFixed(1) : "n/a"}</b>
         </span>
     );
 }
