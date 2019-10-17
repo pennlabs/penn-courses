@@ -1,10 +1,11 @@
 import React from "react";
 import PropTypes from "prop-types";
 import "../styles/course-cart.css";
+import { getTimeString } from "../meetUtil";
 
-const CourseDetails = ({ name, code }) => (
+const CourseDetails = ({ meetings, code }) => (
     <div style={{
-        flexGrow: "2",
+        flexGrow: "0",
         display: "flex",
         flexDirection: "column",
         maxWidth: "70%",
@@ -12,13 +13,13 @@ const CourseDetails = ({ name, code }) => (
         alignItems: "left",
     }}
     >
-        <h4>{code}</h4>
-        <div style={{ fontSize: "0.6rem" }}>{name}</div>
+        <b>{code}</b>
+        <div style={{ fontSize: "0.8rem" }}>{getTimeString(meetings)}</div>
     </div>
 );
 
 CourseDetails.propTypes = {
-    name: PropTypes.string.isRequired,
+    meetings: PropTypes.arrayOf(PropTypes.object).isRequired,
     code: PropTypes.string.isRequired,
 };
 
@@ -27,9 +28,8 @@ const CourseCheckbox = ({ checked }) => {
     const checkStyle = {
         width: "1rem",
         height: "1rem",
-        borderRadius: "1rem",
-        backgroundColor: "white",
-        border: "1px solid grey",
+        border: "none",
+        color: "#878ED8",
     };
     return (
         <div
@@ -41,28 +41,33 @@ const CourseCheckbox = ({ checked }) => {
                 alignItems: "center",
                 justifyContent: "center",
                 display: "flex",
+                fontSize: "18px",
             }}
         >
-            {checked
-                ? (
-                    <i
-                        className="fas fa-check-circle"
-                        style={
-                            {
-                                ...checkStyle,
-                                border: "none",
-                                color: "#878ED8",
-                            }
-                        }
-                    />
-                )
-                : <div style={checkStyle} />}
+            <i
+                className={`${checked ? "fas fa-check-square" : "far fa-square"}`}
+                style={checkStyle}
+            />
         </div>
     );
 };
 
 CourseCheckbox.propTypes = {
     checked: PropTypes.bool,
+};
+
+const CourseInfoButton = ({ courseInfo }) => (
+    <div
+        role="button"
+        onClick={courseInfo}
+        className="cart-delete-course"
+    >
+        <i className="fa fa-info-circle" />
+    </div>
+);
+
+CourseInfoButton.propTypes = {
+    courseInfo: PropTypes.func.isRequired,
 };
 
 const CourseTrashCan = ({ remove }) => (
@@ -80,7 +85,7 @@ CourseTrashCan.propTypes = {
 };
 
 const CartSection = ({
-    toggleCheck, checked, code, name, remove,
+    toggleCheck, checked, code, meetings, remove, courseInfo,
 }) => (
     <div
         role="switch"
@@ -102,17 +107,19 @@ const CartSection = ({
         }}
     >
         <CourseCheckbox checked={checked} />
-        <CourseDetails name={name} code={code} />
+        <CourseDetails meetings={meetings} code={code} />
+        <CourseInfoButton courseInfo={courseInfo} />
         <CourseTrashCan remove={remove} />
     </div>
 );
 
 CartSection.propTypes = {
-    name: PropTypes.string.isRequired,
+    meetings: PropTypes.arrayOf(PropTypes.object).isRequired,
     code: PropTypes.string.isRequired,
     checked: PropTypes.bool,
     toggleCheck: PropTypes.func.isRequired,
     remove: PropTypes.func.isRequired,
+    courseInfo: PropTypes.func.isRequired,
 };
 
 export default CartSection;
