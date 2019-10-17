@@ -68,6 +68,7 @@ export const sections = (state = initialState, action) => {
                 ...state,
                 searchResults: action.searchResults,
                 sections: undefined,
+                course: null,
             };
 
         case COURSE_SEARCH_ERROR:
