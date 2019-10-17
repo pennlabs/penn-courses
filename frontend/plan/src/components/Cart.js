@@ -2,7 +2,7 @@ import React from "react";
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import CartSection from "./CartSection";
-import { meetingsContainSection } from "../meetUtil";
+import { meetingsContainSection, meetingSetsIntersect } from "../meetUtil";
 import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
 
 const Cart = ({
@@ -21,7 +21,7 @@ const Cart = ({
     >
         {courses
             .sort((a, b) => a.section.id.localeCompare(b.section.id))
-            .map(({ section, checked }) => {
+            .map(({ section, checked, overlaps }) => {
                 const { id: code, description: name, meetings } = section;
                 return (
                     <CartSection
@@ -31,6 +31,7 @@ const Cart = ({
                         name={name}
                         meetings={meetings}
                         remove={() => removeItem(code)}
+                        overlaps={overlaps}
                         courseInfo={() => {
                             const codeParts = code.split("-");
                             courseInfo(`${codeParts[0]}-${codeParts[1]}`);
@@ -52,6 +53,9 @@ const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected
     courses: cartSections.map(course => ({
         section: course,
         checked: meetingsContainSection(schedules[scheduleSelected].meetings, course),
+        overlaps: meetingSetsIntersect(course.meetings, schedules[scheduleSelected].meetings
+            .filter(s => s.id !== course.id)
+            .map(s => s.meetings).flat()),
     })),
 });
 

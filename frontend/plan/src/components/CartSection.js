@@ -85,7 +85,7 @@ CourseTrashCan.propTypes = {
 };
 
 const CartSection = ({
-    toggleCheck, checked, code, meetings, remove, courseInfo,
+    toggleCheck, checked, code, meetings, remove, courseInfo, overlaps,
 }) => (
     <div
         role="switch"
@@ -98,6 +98,7 @@ const CartSection = ({
                 justifyContent: "space-around",
                 padding: "0.8rem",
                 borderBottom: "1px solid rgb(200, 200, 200)",
+                opacity: overlaps ? 0.5 : 1.0,
             }}
         onClick={(e) => {
             // ensure that it's not the trash can being clicked
@@ -117,6 +118,7 @@ CartSection.propTypes = {
     meetings: PropTypes.arrayOf(PropTypes.object).isRequired,
     code: PropTypes.string.isRequired,
     checked: PropTypes.bool,
+    overlaps: PropTypes.bool,
     toggleCheck: PropTypes.func.isRequired,
     remove: PropTypes.func.isRequired,
     courseInfo: PropTypes.func.isRequired,
