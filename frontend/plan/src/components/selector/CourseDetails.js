@@ -24,13 +24,17 @@ export default function CourseDetails({ course }) {
                     value={course.difficulty}
                 />
             </li>
+            {requirements.length > 0
+                ? (
             <li>
                 <span className="icon is-small">
                     <i className="far fa-check-circle" />
                 </span>
                 &nbsp; Fulfills: &nbsp;
-                { <TagList elements={requirements.map(({ school, name }) => `${school.charAt(0)}: ${name}`)} limit={1} /> }
+                        {<TagList elements={requirements.map(({ school, name }) => `${school.charAt(0)}: ${name}`)} limit={1} />}
             </li>
+                ) : null
+            }
             {crosslistings.length > 0 ? (
                 <li>
                     <span className="icon is-small">
