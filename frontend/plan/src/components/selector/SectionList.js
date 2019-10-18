@@ -10,8 +10,7 @@ import {
 
 function SectionList({ sections, cartSections, manageCart }) {
     const isInCart = ({ id }) => cartSections.indexOf(id) !== -1;
-    return (
-        [
+    return <>
             <div className="section-row segment">
                 <div className="header">SECT</div>
                 <div className="header">TYPE</div>
@@ -19,16 +18,16 @@ function SectionList({ sections, cartSections, manageCart }) {
                 <div className="header">INSTR</div>
             </div>,
             <ul className="scrollable">
-                {sections.map(s => (
+                {sections.map((s, i) => (
                     <Section
+                        key={`${i}-${s}`}
                         section={s}
                         cart={manageCart(s)}
                         inCart={isInCart(s)}
                     />
                 ))}
             </ul>
-        ]
-    );
+        </>;
 }
 
 SectionList.propTypes = {

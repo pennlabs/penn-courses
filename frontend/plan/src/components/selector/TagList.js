@@ -15,14 +15,14 @@ export default function TagList({ elements, limit = 1, select = null }) {
                     <Tag>{`+${hiddenTags.length}`}</Tag>
                 </span>
                 <span className="popover-content">
-                    {hiddenTags.map(elt => <Tag>{elt}</Tag>)}
+                    {hiddenTags.map((elt, ind) => <Tag key={`${ind}-${elt}`}>{elt}</Tag>)}
                 </span>
             </span>
         );
     }
     return (
         <span>
-            {visibleTags.map(elt => <Tag>{elt}</Tag>)}
+            {visibleTags.map((elt, ind) => <Tag key={`${ind}-${elt}`}>{elt}</Tag>)}
             {tagPopover}
         </span>
     );
