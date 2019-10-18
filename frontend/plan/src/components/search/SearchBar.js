@@ -141,7 +141,15 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <button className="button is-white" type="button" onClick={clearAll}>
+                    <button className="button is-white" type="button" onClick={() => {
+                        conditionalStartSearch({
+                            ...defaultFilters.filterData,
+                            searchString: filterData.searchString,
+                            selectedReq: defaultReqs,
+                        });
+                        clearAll();
+                    }}
+                    >
                         Clear all
                     </button>
                 </div>
