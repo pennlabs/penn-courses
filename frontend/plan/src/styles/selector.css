@@ -20,6 +20,14 @@
     /*font-size: 0.8em;*/
 }
 
+.fa, .fas, .far .grey-text {
+    color: #a0a0a0;
+}
+
+.back-button {
+    border-color: transparent;
+}
+
 .segment {
     border-bottom: solid gray 1px;
 }
