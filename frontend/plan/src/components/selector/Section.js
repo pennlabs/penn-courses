@@ -14,13 +14,7 @@ export default function Section({ section, cart, inCart }) {
                 {section.id.split("-").pop()}
             </div>
             <div>
-                { section.activity }
-            </div>
-            <div>
-                { getTimeString(section.meetings) }
-            </div>
-            <div>
-                <div className="popover is-popover-left">
+                <div className="popover is-popover-right">
                     <Badge
                         baseColor={[43, 236, 56]}
                         value={section.instructor_quality}
@@ -31,7 +25,10 @@ export default function Section({ section, cart, inCart }) {
                 </div>
             </div>
             <div>
-                {inCart ? <i className="fas fa-times" /> : <i className="fas fa-plus" />}
+                { section.activity }
+            </div>
+            <div>
+                { getTimeString(section.meetings) }
             </div>
         </li>
     );

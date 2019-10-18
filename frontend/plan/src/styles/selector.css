@@ -67,7 +67,7 @@
 
 .section-row {
     display: grid;
-    grid-template-columns: 3em 3em 1fr 4em 2em;
+    grid-template-columns: 3em 3em 3em 3em 1fr;
     text-align: center;
     height: 2em;
     padding-top: .3em;
