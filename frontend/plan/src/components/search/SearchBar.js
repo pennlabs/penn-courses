@@ -6,6 +6,7 @@ import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { SearchField } from "./SearchField";
+import { initialState as defaultFilters } from "../../reducers/filters";
 import {
     fetchCourseSearch,
     loadRequirements,
@@ -14,8 +15,8 @@ import {
     updateSearchText,
     updateRangeFilter,
     clearAll,
-    clearSchoolReq,
-    clearRangeReq
+    clearFilter,
+    updateSearch
 } from "../../actions";
 
 function shouldSearch(filterData) {
@@ -35,8 +36,7 @@ function shouldSearch(filterData) {
 // eslint-disable-next-line no-shadow
 function SearchBar({
     startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
-    remSchoolReq, updateSearchText, updateRangeFilter, clearAll, defaultReqs, clearSchoolReq,
-    clearRangeReq
+    remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter, defaultReqs, clearSearchResults
 }) {
     useEffect(() => {
         loadRequirements();
@@ -45,9 +45,26 @@ function SearchBar({
     const conditionalStartSearch = (filterInfo) => {
         if (shouldSearch(filterInfo)) {
             startSearch(filterInfo);
+        } else {
+            clearSearchResults();
         }
     };
-    console.log(filterData);
+
+    const clearFilterSearch = property => () => {
+        clearFilter(property);
+        if (property === "selectedReq") {
+            conditionalStartSearch({
+                ...filterData,
+                selectedReq: defaultReqs,
+            });
+        } else {
+            conditionalStartSearch({
+                ...filterData,
+                [property]: defaultFilters.filterData[property],
+            });
+        }
+    };
+
     return (
         <nav className="bar level">
             <div className="level-left">
@@ -64,7 +81,7 @@ function SearchBar({
                         <i className="fas fa-filter" />
                     </span>
                     <p> Filter by</p>
-                    <DropdownButton title="School Req" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearSchoolReq(filterData)}>
+                    <DropdownButton title="School Req" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")}>
                         <SchoolReq
                             startSearch={conditionalStartSearch}
                             schoolReq={schoolReq}
@@ -73,7 +90,7 @@ function SearchBar({
                             remSchoolReq={remSchoolReq}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={[0, 4]} clearFilter={clearRangeReq(filterData, "difficulty", 0, 4)}>
+                    <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -84,7 +101,7 @@ function SearchBar({
                             rangeProperty="difficulty"
                         />
                     </DropdownButton>
-                    <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={[0, 4]} clearFilter={clearRangeReq(filterData, "course_quality", 0, 4)}>
+                    <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -95,7 +112,7 @@ function SearchBar({
                             rangeProperty="course_quality"
                         />
                     </DropdownButton>
-                    <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={[0, 4]} clearFilter={clearRangeReq(filterData, "instructor_quality", 0, 4)}>
+                    <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -107,9 +124,9 @@ function SearchBar({
                         />
                     </DropdownButton>
 
-                    <DropdownButton title="Time" />
-                    <DropdownButton title="Type" />
-                    <DropdownButton title="CU" filterData={filterData.cu} defaultFilter={[0.5, 2]} clearFilter={clearRangeReq(filterData, "cu", 0.5, 2)}>
+                    {/* <DropdownButton title="Time" />
+                    <DropdownButton title="Type" /> */}
+                    <DropdownButton title="CU" filterData={filterData.cu} defaultFilter={defaultFilters.filterData.cu} clearFilter={clearFilterSearch("cu")}>
                         <RangeFilter
                             minRange={0.5}
                             maxRange={2}
@@ -124,7 +141,7 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <button className="button is-white" type="button" onClick={clearAll(filterData)}>
+                    <button className="button is-white" type="button" onClick={clearAll}>
                         Clear all
                     </button>
                 </div>
@@ -154,8 +171,8 @@ const mapDispatchToProps = dispatch => ({
     remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
     updateSearchText: s => dispatch(updateSearchText(s)),
     updateRangeFilter: field => values => dispatch(updateRangeFilter(field, values)),
-    clearAll: filterData => () => dispatch(clearAll(filterData)),
-    clearSchoolReq: filterData => () => dispatch(clearSchoolReq(filterData)),
-    clearRangeReq: (filterData, filterName, defaultL, defaultR) => () => dispatch(clearRangeReq(filterData, filterName, defaultL, defaultR)),
+    clearAll: () => dispatch(clearAll()),
+    clearFilter: propertyName => dispatch(clearFilter(propertyName)),
+    clearSearchResults: () => dispatch(updateSearch([])),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

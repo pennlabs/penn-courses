@@ -30,6 +30,7 @@ export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
 export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
 export const CLEAR_FILTER = "CLEAR_FILTER";
+export const CLEAR_ALL = "CLEAR_ALL";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
@@ -279,46 +280,17 @@ export function updateRangeFilter(field, values) {
     };
 }
 
-export function clearSchoolReq(filterData) {
-    const clearedFilter = {};
-    Object.assign(clearedFilter, filterData);
-    clearedFilter.selectedReq = {};
-    for (const key of Object.keys(filterData.selectedReq)) {
-        clearedFilter.selectedReq[key] = 0;
-    }
-
+export function clearFilter(propertyName) {
     return {
         type: CLEAR_FILTER,
-        clearedFilter,
+        propertyName,
     };
 }
 
-export function clearRangeReq(filterData, filterName, defaultL, defaultR) {
-    const clearedFilter = {};
-    Object.assign(clearedFilter, filterData);
-    clearedFilter[filterName] = [defaultL, defaultR];
 
+export function clearAll() {
     return {
-        type: CLEAR_FILTER,
-        clearedFilter,
-    }
-}
-
-
-export function clearAll(filterData) {
-    const clearedFilter = {};
-    clearedFilter.searchString = filterData.searchString;
-    clearedFilter.difficulty = [0, 4];
-    clearedFilter.course_quality = [0, 4];
-    clearedFilter.instructor_quality = [0, 4];
-    clearedFilter.cu = [0.5, 2];
-    clearedFilter.selectedReq = {};
-    for (const key of Object.keys(filterData.selectedReq)) {
-        clearedFilter.selectedReq[key] = 0;
-    }
-    return {
-        type: CLEAR_FILTER,
-        clearedFilter,
+        type: CLEAR_ALL,
     };
 }
 

@@ -1,8 +1,8 @@
 import {
-    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT, UPDATE_RANGE_FILTER, CLEAR_FILTER
+    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT, UPDATE_RANGE_FILTER, CLEAR_FILTER, CLEAR_ALL
 } from "../actions";
 
-const initialState = {
+export const initialState = {
     schoolReq: {
         SAS: [],
         SEAS: [],
@@ -79,11 +79,31 @@ export const filters = (state = initialState, action) => {
             };
 
         case CLEAR_FILTER:
+            if (action.propertyName === "selectedReq") {
+                return {
+                    ...state,
+                    filterData: {
+                        ...state.filterData,
+                        selectedReq: state.defaultReqs,
+                    },
+                };
+            }
             return {
                 ...state,
-                filterData: action.clearedFilter,
+                filterData: {
+                    ...state.filterData,
+                    [action.propertyName]: initialState.filterData[action.propertyName],
+                },
             };
 
+        case CLEAR_ALL:
+            return {
+                ...initialState,
+                filterData: {
+                    ...initialState.filterData,
+                    selectedReq: initialState.defaultReqs,
+                },
+            };
         default:
             return state;
     }

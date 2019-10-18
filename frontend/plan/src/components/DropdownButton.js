@@ -12,8 +12,6 @@ export function DropdownButton({ title, children, filterData, defaultFilter, cle
             setIsActive(true);
         }
     };
-    // console.log(filterData);
-    // console.log(defaultFilter);
     const ref = useOnClickOutside(toggleButton, !isActive);
 
     return (
