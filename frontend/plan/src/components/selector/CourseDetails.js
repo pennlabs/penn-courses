@@ -31,7 +31,7 @@ export default function CourseDetails({ course }) {
                 &nbsp; Fulfills: &nbsp;
                 { <TagList elements={requirements.map(req => `${req.school}: ${req.name}`)} limit={1} /> }
             </li>
-            {course.crosslistings.length !== 0 ? (
+            {crosslistings.length > 0 ? (
                 <li>
                     <span className="icon is-small">
                         <i className="fas fa-random" />

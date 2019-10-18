@@ -17,7 +17,6 @@ function SectionList({ sections, cartSections, manageCart }) {
                 <div className="header">INSTR</div>
                 <div className="header">TYPE</div>
                 <div className="header">TIME</div>
-                <div className="header">INSTR</div>
             </div>,
             <ul className="scrollable">
                 {sections.map((s, i) => (
