@@ -62,27 +62,43 @@
   position: absolute;
 }
 
-.badge {
+.course-info {
+    margin: ".5em .5em .5em 2em";
+    max-height: "40%";
+}
 
+.course-details li {
+    margin-bottom: .25em;
 }
 
 .course-list {
     font-size: .7em;
 }
 
-.selector-row {
-    /*display: block;*/
+.section-details-title {
+    margin-bottom: 0 !important;
+    font-weight: normal;
+}
+
+.section-details-title b {
+    font-weight: bold;
 }
 
 .section-row {
     display: grid;
-    grid-template-columns: 3em 3em 3em 3em 1fr;
+    grid-template-columns: 2em 3em 3em 3em 1fr;
     text-align: center;
     height: 2em;
     padding-top: .3em;
     padding-bottom: .3em;
+    color: #363636;
 }
 
+.section-row:hover {
+    color: #3273dc; 
+}
+
+.selector-row-selected, 
 .selector-row:hover {
     background-color: #dcdcdc;
     cursor: pointer;
