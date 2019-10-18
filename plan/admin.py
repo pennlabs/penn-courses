@@ -1,4 +1,11 @@
-# from django.contrib import admin
+from django.contrib import admin
+
+from plan.models import Schedule
 
 
-# Register your models here.
+class ScheduleAdmin(admin.ModelAdmin):
+    search_fields = ('person', )
+    autocomplete_fields = ('person', 'sections' )
+
+
+admin.site.register(Schedule, ScheduleAdmin)

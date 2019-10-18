@@ -1,9 +1,11 @@
+from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 
 from courses.models import Instructor, Requirement
 from courses.util import create_mock_data
 from options.models import Option
+from plan.models import Schedule
 from plan.search import TypedSearchBackend
 from review.models import Review
 
@@ -193,3 +195,39 @@ class CourseReviewAverageTestCase(TestCase):
         response = self.client.get('/courses/', {'difficulty': '0-2'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+
+@override_settings(SWITCHBOARD_TEST_APP='pcp')
+class ScheduleTest(TestCase):
+    def setUp(self):
+        _, section = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        self.s = Schedule(person=User.objects.create_user(username='jacob',
+                                                          email='jacob@example.com',
+                                                          password='top_secret'),
+                          semester=TEST_SEMESTER,
+                          name='My Test Schedule',
+                          )
+        self.s.save()
+        self.s.sections.set([section])
+        self.client = APIClient()
+        self.client.login(username='jacob', password='top_secret')
+
+    def test_get_schedule(self):
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'My Test Schedule')
+        self.assertEqual(len(response.data[0]['sections']), 1)
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-120-001')
+
+    def create_schedule(self):
+        _, newsection121 = create_mock_data('CIS-121-001', TEST_SEMESTER)
+        _, newsection160 = create_mock_data('CIS-160-001', TEST_SEMESTER)
+        response= self.client.post('/schedules', {semester: TEST_SEMESTER, name: "New Test Schedule", sections: [newsection121, newsection160]})
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(response.data[1]['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data[1]['sections']), 2)
+        self.assertEqual(response.data[1]['sections'][0]['id'], 'CIS-121-001')
