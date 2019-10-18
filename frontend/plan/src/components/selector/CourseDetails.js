@@ -29,7 +29,7 @@ export default function CourseDetails({ course }) {
                     <i className="far fa-check-circle" />
                 </span>
                 &nbsp; Fulfills: &nbsp;
-                { <TagList elements={requirements.map(req => `${req.school}: ${req.name}`)} limit={1} /> }
+                { <TagList elements={requirements.map(({ school, name }) => `${school.charAt(0)}: ${name}`)} limit={1} /> }
             </li>
             {crosslistings.length > 0 ? (
                 <li>
