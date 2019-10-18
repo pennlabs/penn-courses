@@ -2,8 +2,9 @@ from django.db.models import Manager, OuterRef, Prefetch, Q
 from rest_framework import serializers
 
 from courses.models import Course, Section
-from courses.serializers import CourseDetailSerializer, CourseListSerializer, SectionDetailSerializer
+from courses.serializers import CourseDetailSerializer, CourseListSerializer, SectionDetailSerializer, SectionSerializer
 from plan import annotations
+from plan.models import Schedule
 
 
 def unique(lst):
@@ -158,3 +159,12 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
              'requirements',
              'sections',
          ]
+
+
+class ScheduleSerializer(serializers.ModelSerializer):
+    sections = SectionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Schedule
+        fields = ['__all__']
+        exclude = ['person']

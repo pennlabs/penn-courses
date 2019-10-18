@@ -1,9 +1,12 @@
 from django.db.models import Prefetch
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 
 from courses.views import CourseDetail, CourseList
 from plan.filters import bound_filter, requirement_filter
+from plan.models import Schedule
 from plan.search import TypedSearchBackend
-from plan.serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer
+from plan.serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer, ScheduleSerializer
 
 
 class CourseListSearch(CourseList):
@@ -32,3 +35,12 @@ class CourseListSearch(CourseList):
 
 class CourseDetailSearch(CourseDetail):
     serializer_class = CourseDetailWithReviewSerializer
+
+
+class ScheduleViewSet(viewsets.ModelViewSet):
+    serializer_class = ScheduleSerializer
+    http_method_names = ['get', 'post', 'delete']
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Schedule.objects.filter(person=self.request.user)

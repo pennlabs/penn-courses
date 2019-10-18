@@ -1,9 +1,11 @@
+from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 
-from courses.models import Instructor, Requirement
+from courses.models import Instructor, Requirement, Section
 from courses.util import create_mock_data
 from options.models import Option
+from plan.models import Schedule
 from plan.search import TypedSearchBackend
 from review.models import Review
 
@@ -193,3 +195,14 @@ class CourseReviewAverageTestCase(TestCase):
         response = self.client.get('/courses/', {'difficulty': '0-2'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+
+@override_settings(SWITCHBOARD_TEST_APP='pcp')
+class GetScheduleTest(TestCase):
+    def setUp(self):
+        self.s = Schedule(person=User.objects.create_user(username='jacob', email='jacob@…', password='top_secret'),
+                          section=Section(),
+                          semester=TEST_SEMESTER,
+                          name='My Test Schedule',
+                          )
+        self.s.save()
