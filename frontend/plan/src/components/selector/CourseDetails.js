@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import TagList from "./TagList";
+import Badge from "../Badge";
 
 
 export default function CourseDetails({ course }) {
@@ -8,6 +9,21 @@ export default function CourseDetails({ course }) {
     const crosslistings = course.crosslistings || [];
     return (
         <ul style={{ fontSize: ".8em" }}>
+            <li>
+                <span className="icon is-small">
+                    <i className="far fa-chart-bar" />
+                </span>
+                &nbsp; Quality: &nbsp; 
+                <Badge
+                    baseColor={[43, 236, 56]}
+                    value={course.course_quality}
+                />
+                &nbsp; Difficulty: &nbsp;
+                <Badge
+                    baseColor={[43, 236, 56]}
+                    value={course.difficulty}
+                />
+            </li>
             <li>
                 <span className="icon is-small">
                     <i className="far fa-check-circle" />
