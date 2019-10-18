@@ -9,7 +9,13 @@ import { getTimeString } from "../../meetUtil";
 export default function Section({ section, cart, inCart }) {
     return (
         // eslint-disable-next-line
-        <li className="selector-row section-row" onClick={inCart ? cart.remove : cart.add}>
+        <li className="selector-row section-row">
+            <div onClick={inCart ? cart.remove : cart.add}>
+                {inCart ? <div className="hover-switch">
+                    <i className="fas fa-check" />
+                    <i className="fas fa-times" />
+                </div> : <i className="fas fa-plus" />}
+            </div>
             <div>
                 {section.id.split("-").pop()}
             </div>
