@@ -19,9 +19,8 @@ function SectionList({ sections, cartSections, manageCart }) {
                 <div className="header">TIME</div>
             </div>,
             <ul className="scrollable">
-                {sections.map((s, i) => (
+                {sections.map(s => (
                     <Section
-                        key={`${i}-${s}`}
                         section={s}
                         cart={manageCart(s)}
                         inCart={isInCart(s)}
