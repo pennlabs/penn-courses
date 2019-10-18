@@ -13,7 +13,7 @@ export default function CourseDetails({ course }) {
                 <span className="icon is-small">
                     <i className="far fa-chart-bar" />
                 </span>
-                &nbsp; Quality: &nbsp; 
+                &nbsp; Quality: &nbsp;
                 <Badge
                     baseColor={[43, 236, 56]}
                     value={course.course_quality}
@@ -26,13 +26,13 @@ export default function CourseDetails({ course }) {
             </li>
             {requirements.length > 0
                 ? (
-            <li>
-                <span className="icon is-small">
-                    <i className="far fa-check-circle" />
-                </span>
-                &nbsp; Fulfills: &nbsp;
+                    <li>
+                        <span className="icon is-small">
+                            <i className="far fa-check-circle" />
+                        </span>
+                    &nbsp; Fulfills: &nbsp;
                         {<TagList elements={requirements.map(({ school, name }) => `${school.charAt(0)}: ${name}`)} limit={1} />}
-            </li>
+                    </li>
                 ) : null
             }
             {crosslistings.length > 0 ? (
@@ -41,7 +41,7 @@ export default function CourseDetails({ course }) {
                         <i className="fas fa-random" />
                     </span>
                     &nbsp; Crosslisted as: &nbsp;
-                    { <TagList elements={crosslistings} limit={2} /> }
+                    {<TagList elements={crosslistings} limit={2} />}
                 </li>
             ) : null
             }
