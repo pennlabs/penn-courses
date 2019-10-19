@@ -10,7 +10,6 @@ export const CREATE_SCHEDULE = "CREATE_SCHEDULE";
 
 export const OPEN_MODAL = "OPEN_MODAL";
 export const CLOSE_MODAL = "CLOSE_MODAL";
-export const ACTION_BUTTON_PRESSED = "ACTION_BUTTON_PRESSED";
 
 export const ADD_SCHED_ITEM = "ADD_SCHED_ITEM";
 export const REMOVE_SCHED_ITEM = "REMOVE_SCHED_ITEM";
@@ -49,9 +48,10 @@ export const duplicateSchedule = scheduleName => (
     }
 );
 
-export const deleteSchedule = () => (
+export const deleteSchedule = scheduleName => (
     {
         type: DELETE_SCHEDULE,
+        scheduleName,
     }
 );
 
@@ -125,10 +125,10 @@ export const createSchedule = scheduleName => (
     }
 );
 
-export const openModal = modalShown => (
+export const openModal = modal => (
     {
         type: OPEN_MODAL,
-        modalShown,
+        modal,
     }
 );
 
@@ -136,13 +136,6 @@ export const openModal = modalShown => (
 export const closeModal = () => (
     {
         type: CLOSE_MODAL,
-    }
-);
-
-export const triggerModalAction = modalAction => (
-    {
-        type: ACTION_BUTTON_PRESSED,
-        modalAction,
     }
 );
 

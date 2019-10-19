@@ -3,7 +3,12 @@ import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
 
-import { removeSchedItem, fetchCourseDetails } from "../../actions";
+import {
+    removeSchedItem,
+    fetchCourseDetails,
+    changeSchedule,
+    duplicateSchedule, deleteSchedule
+} from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
 import "./schedule.css";
@@ -11,6 +16,7 @@ import Days from "./Days";
 import Times from "./Times";
 import Block from "./Block";
 import GridLines from "./GridLines";
+import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
 
 // Used for box coloring, from StackOverflow:
 // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
@@ -33,12 +39,13 @@ const transformTime = (t) => {
 
 class Schedule extends Component {
     render() {
-        const { schedData, removeSection, focusSection } = this.props;
+        const {
+            schedData, removeSection, focusSection,
+            scheduleNames, switchSchedule, schedulesMutator,
+        } = this.props;
         const sections = schedData.meetings || [];
 
-        if (sections.length < 1) {
-            return <EmptySchedule />;
-        }
+        const notEmpty = sections.length > 0;
 
         let startHour = 10.5;
         let endHour = 16;
@@ -110,19 +117,20 @@ class Schedule extends Component {
             Math.max(endHour, ...meetings.map(m => m.end))
         );
 
-        getConflictGroups(meetings).forEach((conflict) => {
-            // for every conflict of size k, make the meetings in that conflict
-            // take up (100/k) % of the square, and use `left` to place them
-            // next to each other.
-            const group = Array.from(conflict.values());
-            const w = 100 / group.length;
-            for (let j = 0; j < group.length; j += 1) {
-                group[j].style = {
-                    width: `${w}%`,
-                    left: `${w * j}%`,
-                };
-            }
-        });
+        getConflictGroups(meetings)
+            .forEach((conflict) => {
+                // for every conflict of size k, make the meetings in that conflict
+                // take up (100/k) % of the square, and use `left` to place them
+                // next to each other.
+                const group = Array.from(conflict.values());
+                const w = 100 / group.length;
+                for (let j = 0; j < group.length; j += 1) {
+                    group[j].style = {
+                        width: `${w}%`,
+                        left: `${w * j}%`,
+                    };
+                }
+            });
         // generate actual block components.
         // position in grid is determined by the block given the meeting info and grid offsets.
         const blocks = meetings.map(meeting => (
@@ -147,23 +155,46 @@ class Schedule extends Component {
         const dims = {
             gridTemplateColumns: `.4fr repeat(${getNumCol() - 1}, 1fr)`,
             gridTemplateRows: `repeat(${getNumRows()}, 1fr)`,
+            padding: "1rem",
         };
 
         return (
-            <div className="schedule" style={dims}>
-                <Days offset={colOffset} weekend={showWeekend} />
-                <Times
-                    startTime={startHour}
-                    endTime={endHour}
-                    numRow={getNumRows()}
-                    offset={rowOffset}
+            <div className="column box vertical-section">
+                <h3 className="section-header">
+                    <ScheduleSelectorDropdown
+                        defText="Mock Schedule"
+                        defActive={0}
+                        contents={scheduleNames.map(scheduleName => ({
+                            text: scheduleName,
+                            onClick: () => switchSchedule(scheduleName),
+                        }))}
+                        modifyLabel={false}
+                        mutators={schedulesMutator}
+                    />
+                </h3>
+                <div
+                    className="schedule vertical-section-contents"
+                    style={notEmpty ? dims : { padding: "1rem" }}
+                >
+                    {notEmpty && <Days offset={colOffset} weekend={showWeekend} />}
+                    {notEmpty && (
+                        <Times
+                            startTime={startHour}
+                            endTime={endHour}
+                            numRow={getNumRows()}
+                            offset={rowOffset}
 
-                />
-                <GridLines
-                    numRow={getNumRows()}
-                    numCol={getNumCol()}
-                />
-                {blocks}
+                        />
+                    )}
+                    {notEmpty && (
+                        <GridLines
+                            numRow={getNumRows()}
+                            numCol={getNumCol()}
+                        />
+                    )}
+                    {notEmpty && blocks}
+                    {!notEmpty && <EmptySchedule />}
+                </div>
             </div>
         );
     }
@@ -175,11 +206,18 @@ Schedule.propTypes = {
     }),
     removeSection: PropTypes.func,
     focusSection: PropTypes.func,
+    scheduleNames: PropTypes.arrayOf(PropTypes.string),
+    switchSchedule: PropTypes.func,
+    schedulesMutator: PropTypes.shape({
+        copy: PropTypes.func.isRequired,
+        remove: PropTypes.func.isRequired,
+    }),
 };
 
 const mapStateToProps = state => (
     {
         schedData: state.schedule.schedules[state.schedule.scheduleSelected],
+        scheduleNames: Object.keys(state.schedule.schedules),
     }
 );
 
@@ -188,14 +226,22 @@ const mapDispatchToProps = dispatch => (
     {
         removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
         focusSection: id => dispatch(fetchCourseDetails(id)),
+        switchSchedule: scheduleName => dispatch(changeSchedule(scheduleName)),
+        schedulesMutator: {
+            copy: scheduleName => dispatch(duplicateSchedule(scheduleName)),
+            remove: scheduleName => dispatch(deleteSchedule(scheduleName)),
+        },
     }
 );
 
-export default connect(mapStateToProps, mapDispatchToProps)(Schedule);
-
 const EmptySchedule = () => (
     <div style={{ height: "100%" }}>
-        <p style={{ fontSize: "1.5em", paddingTop: "7em", display: "block" }}>
+        <p style={{
+            fontSize: "1.5em",
+            paddingTop: "7em",
+            display: "block",
+        }}
+        >
             Search for courses above
             <br />
             then click a section&#39;s + icon to add it to the schedule.
@@ -207,3 +253,5 @@ const EmptySchedule = () => (
         </p>
     </div>
 );
+
+export default connect(mapStateToProps, mapDispatchToProps)(Schedule);

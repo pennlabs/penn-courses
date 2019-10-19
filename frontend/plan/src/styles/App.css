@@ -3,6 +3,30 @@ html {
   width: 100%;
   height: 100%;
 }
+.section-header {
+  display: flex;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.vertical-section {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  box-shadow: none;
+}
+
+.vertical-section-contents {
+  background: white;
+  display: flex;
+  flex-grow: 1;
+  overflow: auto;
+  flex-direction: column;
+  border-radius: 6px;
+  box-shadow: 0 0 5px 0 rgba(200, 200, 200, 0.6);
+}
+
 body {
   width: 100%;
   min-width: 1000px;
@@ -103,14 +127,6 @@ form > input[type="text"] {
 
 #searchbar button{
   min-width:8rem;
-}
-
-.is-active i.fa.fa-angle-down::before{
-  content:"\f106"!important;
-}
-
-footer:hover i.fa.fa-angle-up::before{
-  content:"\f107"!important;
 }
 
 /*#loaderWrap {height: 30px; width: 30px; display: inline-block; vertical-align: middle;}

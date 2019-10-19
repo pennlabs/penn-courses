@@ -3,6 +3,7 @@ import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
 import "./styles/App.css";
+import "./styles/dropdown.css";
 import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
@@ -43,31 +44,13 @@ function App() {
                         <div className="column is-one-quarter box">
                             <Selector />
                         </div>
-                        <div
-                            className="column is-one-fifth box"
-                            style={
-                                {
-                                    background: "transparent",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    border: "0",
-                                    boxShadow: "none",
-                                }
-                            }
-                        >
-                            <h3 style={{
-                                display: "flex",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
-                            }}
-                            >
+                        <div className="column is-one-fifth box vertical-section">
+                            <h3 className="section-header">
                                 Cart
                             </h3>
                             <Cart />
                         </div>
-                        <div className="column box">
-                            <Schedule />
-                        </div>
+                        <Schedule />
                     </div>
                 </div>
             </div>
