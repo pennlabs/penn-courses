@@ -16,7 +16,7 @@ export default function Section({ section, cart, inCart }) {
             <div>
                 { section.activity }
             </div>
-            <div>
+            <div style={{ whiteSpace: "nowrap" }}>
                 { getTimeString(section.meetings) }
             </div>
             <div>

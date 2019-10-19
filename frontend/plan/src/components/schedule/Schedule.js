@@ -11,6 +11,7 @@ import Days from "./Days";
 import Times from "./Times";
 import Block from "./Block";
 import GridLines from "./GridLines";
+import Stats from "./Stats";
 
 // Used for box coloring, from StackOverflow:
 // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
@@ -149,21 +150,31 @@ class Schedule extends Component {
             gridTemplateRows: `repeat(${getNumRows()}, 1fr)`,
         };
 
-        return (
-            <div className="schedule" style={dims}>
-                <Days offset={colOffset} weekend={showWeekend} />
-                <Times
-                    startTime={startHour}
-                    endTime={endHour}
-                    numRow={getNumRows()}
-                    offset={rowOffset}
+        const outerFlex = {
+            overflowY: "scroll",
+            height: "100%",
+        };
 
-                />
-                <GridLines
-                    numRow={getNumRows()}
-                    numCol={getNumCol()}
-                />
-                {blocks}
+        return (
+            <div style={outerFlex}>
+                <div className="schedule" style={dims}>
+                    <Days offset={colOffset} weekend={showWeekend} />
+                    <Times
+                        startTime={startHour}
+                        endTime={endHour}
+                        numRow={getNumRows()}
+                        offset={rowOffset}
+
+                    />
+                    <GridLines
+                        numRow={getNumRows()}
+                        numCol={getNumCol()}
+                    />
+                    {blocks}
+                </div>
+                <div className="scheduleStats">
+                    <Stats schedData={this.props.schedData} />
+                </div>
             </div>
         );
     }

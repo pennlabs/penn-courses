@@ -4,7 +4,13 @@
 }
 
 .bar {
+    margin-top: 1rem;
+    margin-left: 1.5rem;
+    margin-right: 1.5rem;
+    margin-bottom: 1rem;
     background-color: white;
+    border-radius: 6px;
+    box-shadow:0 1px 3px 0 lightgrey;
     height: 3rem;
 }
 
@@ -61,6 +67,3 @@
 #schoolreq {
     min-width: 27rem;
 }
-
-
-
