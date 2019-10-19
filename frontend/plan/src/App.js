@@ -74,7 +74,7 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div className="column box">
+                    <div className="column">
                         <Schedule />
                     </div>
                 </div>
