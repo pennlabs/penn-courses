@@ -9,7 +9,7 @@ export default function Course({ course, onClick }) {
         <li className="selector-row">
             <div onClick={onClick} className="columns" role="button" style={{ paddingLeft: "2.85em" }}>
                 <div className="column header is-three-fifths" style={{ overflow: "hidden" }}>
-                    <h3 className="title is-6" style={{ marginBottom: 0 }}>{course.id}</h3>
+                    <h3 className="title is-6" style={{ marginBottom: 0 }}>{course.id.replace(/-/g, " ")}</h3>
                     <span>
                         {course.title}
                     </span>
