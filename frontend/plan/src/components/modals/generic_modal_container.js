@@ -21,6 +21,7 @@ const ModalContainer = ({
                 <section className="modal-card-body">
                     {modalKey && React.Children.map(children, child =>
                         React.cloneElement(child, {
+                            close,
                             ...modalProps,
                             ...generateModalActions(dispatch, modalKey, modalProps),
                         }))}
