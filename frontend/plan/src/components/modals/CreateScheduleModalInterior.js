@@ -5,19 +5,31 @@ import { validateScheduleName } from "../schedule/schedule_name_validation";
 const CreateScheduleModalInterior = ({ usedScheduleNames, createSchedule, close }) => {
     const [inputRef, setInputRef] = useState(null);
     const [userInput, setUserInput] = useState("");
-    const {error, message: errorMessage} = validateScheduleName(userInput, usedScheduleNames);
-    return <div>
-        <input type={"text"} ref={ref => setInputRef(ref)}
-               onChange={() => setUserInput(inputRef.value)}/>
-        <p className={"error_message"}>{errorMessage}</p>
-        <button className={"button is-link"}  role={"button"} onClick={() => {
-            const scheduleName = inputRef.value;
-            if (!error) {
-                createSchedule(scheduleName);
-                close();
-            }
-        }}>Create</button>
-    </div>;
+    const { error, message: errorMessage } = validateScheduleName(userInput, usedScheduleNames);
+    return (
+        <div>
+            <input
+                type="text"
+                ref={ref => setInputRef(ref)}
+                onChange={() => setUserInput(inputRef.value)}
+            />
+            <p className="error_message">{errorMessage}</p>
+            <button
+                type="button"
+                className="button is-link"
+                role="button"
+                onClick={() => {
+                    const scheduleName = inputRef.value;
+                    if (!error) {
+                        createSchedule(scheduleName);
+                        close();
+                    }
+                }}
+            >
+Create
+            </button>
+        </div>
+    );
 };
 
 CreateScheduleModalInterior.propTypes = {

@@ -8,16 +8,16 @@ const illegalCharacters = /[^a-zA-Z\d\s-_]/;
  */
 export const validateScheduleName = (scheduleName, existingScheduleNames) => {
     if (scheduleName === "") {
-        return {message: "Name cannot be empty", error: true}
+        return { message: "Name cannot be empty", error: true };
     }
     if (scheduleName.match(illegalCharacters)) {
-        return {message: "Name can only contain spaces, underscores, dashes, letters, and numbers", error: true}
+        return { message: "Name can only contain spaces, underscores, dashes, letters, and numbers", error: true };
     }
     if (scheduleName.length > 25) {
-        return {message: "Name is too long", error: true}
+        return { message: "Name is too long", error: true };
     }
     if (existingScheduleNames.indexOf(scheduleName) !== -1) {
-        return {message: "Schedule with this name already exists", error: true};
+        return { message: "Schedule with this name already exists", error: true };
     }
-    return {error: false, message: null};
+    return { error: false, message: null };
 };

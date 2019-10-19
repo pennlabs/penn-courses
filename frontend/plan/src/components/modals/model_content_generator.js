@@ -13,14 +13,20 @@ import CreateScheduleModalInterior from "./CreateScheduleModalInterior";
  * @param reduxState
  * @returns A component
  */
-export const generateModalInterior = reduxState => {
+export const generateModalInterior = (reduxState) => {
     switch (reduxState.modals.modalKey) {
         case "RENAME_SCHEDULE":
-            return <RenameScheduleModalInterior
-                usedScheduleNames={Object.keys(reduxState.schedule.schedules)}/>;
+            return (
+                <RenameScheduleModalInterior
+                    usedScheduleNames={Object.keys(reduxState.schedule.schedules)}
+                />
+            );
         case "CREATE_SCHEDULE":
-            return <CreateScheduleModalInterior
-                usedScheduleNames={Object.keys(reduxState.schedule.schedules)}/>;
+            return (
+                <CreateScheduleModalInterior
+                    usedScheduleNames={Object.keys(reduxState.schedule.schedules)}
+                />
+            );
         default:
             return null;
     }
@@ -35,13 +41,16 @@ export const generateModalInterior = reduxState => {
 export const generateModalActions = (dispatch, modalKey, modalProps) => {
     switch (modalKey) {
         case "RENAME_SCHEDULE":
-            return { renameSchedule: (newName) =>
-                    dispatch(renameSchedule(modalProps.scheduleName, newName)), };
+            return {
+                renameSchedule: newName => dispatch(
+                    renameSchedule(modalProps.scheduleName, newName)
+                ),
+            };
         case "CREATE_SCHEDULE":
-            return { createSchedule: (newName) =>
-                    dispatch(createSchedule(newName)), };
+            return {
+                createSchedule: newName => dispatch(createSchedule(newName)),
+            };
         default:
             return {};
-
     }
 };

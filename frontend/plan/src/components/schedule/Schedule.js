@@ -7,7 +7,7 @@ import {
     removeSchedItem,
     fetchCourseDetails,
     changeSchedule,
-    duplicateSchedule, deleteSchedule, renameSchedule, openModal
+    duplicateSchedule, deleteSchedule, openModal
 } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
@@ -254,12 +254,12 @@ const EmptySchedule = () => (
         }}
         >
             Search for courses above
-            <br/>
+            <br />
             then click a section&#39;s + icon to add it to the schedule.
         </p>
         <p style={{ fontSize: "1em" }}>
             These are mock schedules.
-            <br/>
+            <br />
             You still need to register for your classes on Penn InTouch.
         </p>
     </div>

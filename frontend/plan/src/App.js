@@ -81,7 +81,7 @@ function App() {
                     </div>
                 </div>
             </div>
-            <ModalContainer/>
+            <ModalContainer />
         </Provider>
     );
 }

@@ -8,39 +8,40 @@ import { generateModalInterior, generateModalActions } from "./model_content_gen
  * A generic container for modals
  * */
 const ModalContainer = ({
-    children, title, close, dispatch, modalKey, modalProps
-}) => {
-    console.log(children, modalKey);
-    return (<div className={`modal ${title ? "is-active" : ""}`}>
-            <div className="modal-background"/>
-            <div className="modal-card">
-                <header className="modal-card-head">
-                    <header className="modal-card-title">{title}</header>
-                    <div role={"button"} aria-label="close" onClick={close}
-                         style={{ cursor: "pointer" }}>
-                        <span className={"icon is-small"}>
-                            <i className={"fa fa-times"} style={{ color: "rgba(0, 0, 0, 0.2)" }}/>
-                        </span>
-                    </div>
-                </header>
-                <section className="modal-card-body">
-                    {modalKey && React.Children.map(children, child =>
-                        React.cloneElement(child, {
-                            close,
-                            ...modalProps,
-                            ...generateModalActions(dispatch, modalKey, modalProps),
-                        }))}
-                </section>
-            </div>
+    children, title, close, dispatch, modalKey, modalProps,
+}) => (
+    <div className={`modal ${title ? "is-active" : ""}`}>
+        <div className="modal-background" />
+        <div className="modal-card">
+            <header className="modal-card-head">
+                <header className="modal-card-title">{title}</header>
+                <div
+                    role="button"
+                    aria-label="close"
+                    onClick={close}
+                    style={{ cursor: "pointer" }}
+                >
+                    <span className="icon is-small">
+                        <i className="fa fa-times" style={{ color: "rgba(0, 0, 0, 0.2)" }} />
+                    </span>
+                </div>
+            </header>
+            <section className="modal-card-body">
+                {modalKey && React.Children.map(children, child => React.cloneElement(child, {
+                    close,
+                    ...modalProps,
+                    ...generateModalActions(dispatch, modalKey, modalProps),
+                }))}
+            </section>
         </div>
-    );
-};
+    </div>
+);
 
 ModalContainer.propTypes = {
     title: PropTypes.string.isRequired,
     close: PropTypes.func.isRequired,
     dispatch: PropTypes.func.isRequired,
-    modalProps: PropTypes.object,
+    modalProps: PropTypes.objectOf(PropTypes.any),
     children: PropTypes.oneOfType([
         PropTypes.arrayOf(PropTypes.node),
         PropTypes.node

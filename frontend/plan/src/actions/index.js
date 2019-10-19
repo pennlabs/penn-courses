@@ -131,7 +131,7 @@ export const openModal = (modalKey, modalProps, modalTitle) => (
         type: OPEN_MODAL,
         modalKey,
         modalProps,
-        modalTitle
+        modalTitle,
     }
 );
 

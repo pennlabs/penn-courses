@@ -31,7 +31,7 @@ const DropdownButton = ({
                 role="button"
             >
                 <span className="icon is-small">
-                    <i className="far fa-edit" aria-hidden="true"/>
+                    <i className="far fa-edit" aria-hidden="true" />
                 </span>
             </div>
             <div
@@ -40,7 +40,7 @@ const DropdownButton = ({
                 role="button"
             >
                 <span className="icon is-small">
-                    <i className="far fa-copy" aria-hidden="true"/>
+                    <i className="far fa-copy" aria-hidden="true" />
                 </span>
             </div>
             <div
@@ -49,7 +49,7 @@ const DropdownButton = ({
                 role="button"
             >
                 <span className="icon is-small">
-                    <i className="fa fa-trash" aria-hidden="true"/>
+                    <i className="fa fa-trash" aria-hidden="true" />
                 </span>
             </div>
         </div>
@@ -69,7 +69,9 @@ DropdownButton.propTypes = {
 };
 
 const ScheduleSelectorDropdown = ({
-    defActive, contents, mutators: { copy, remove, rename, create },
+    defActive, contents, mutators: {
+        copy, remove, rename, create,
+    },
 }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
@@ -103,7 +105,7 @@ const ScheduleSelectorDropdown = ({
                     aria-controls="dropdown-menu"
                 >
                     <span className="icon is-small">
-                        <i className="fa fa-chevron-down" aria-hidden="true"/>
+                        <i className="fa fa-chevron-down" aria-hidden="true" />
                     </span>
                 </div>
             </div>
@@ -134,7 +136,7 @@ const ScheduleSelectorDropdown = ({
                         href="#"
                     >
                         <span className="icon is-small">
-                            <i className="fa fa-plus" aria-hidden="true"/>
+                            <i className="fa fa-plus" aria-hidden="true" />
                         </span>
                         <span> Add new schedule </span>
                     </a>
