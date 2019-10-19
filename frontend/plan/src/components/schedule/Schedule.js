@@ -173,7 +173,7 @@ class Schedule extends Component {
                     {blocks}
                 </div>
                 <div className="scheduleStats">
-                    <Stats schedData={this.props.schedData} />
+                    <Stats meetings={schedData.meetings} />
                 </div>
             </div>
         );
