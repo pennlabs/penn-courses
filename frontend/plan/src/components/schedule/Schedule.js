@@ -45,9 +45,7 @@ class Schedule extends Component {
         } = this.props;
         const sections = schedData.meetings || [];
 
-        if (sections.length < 1) {
-            return <EmptySchedule/>;
-        }
+        const notEmpty = sections.length > 0;
 
         let startHour = 10.5;
         let endHour = 16;
@@ -174,20 +172,22 @@ class Schedule extends Component {
                         mutators={schedulesMutator}
                     />
                 </h3>
-                <div className="schedule vertical-section-contents" style={dims}>
-                    <Days offset={colOffset} weekend={showWeekend}/>
-                    <Times
+                <div className="schedule vertical-section-contents"
+                     style={notEmpty ? dims : { padding: "1rem" }}>
+                    {notEmpty && <Days offset={colOffset} weekend={showWeekend}/>}
+                    {notEmpty && <Times
                         startTime={startHour}
                         endTime={endHour}
                         numRow={getNumRows()}
                         offset={rowOffset}
 
-                    />
-                    <GridLines
+                    />}
+                    {notEmpty && <GridLines
                         numRow={getNumRows()}
                         numCol={getNumCol()}
-                    />
-                    {blocks}
+                    />}
+                    {notEmpty && blocks}
+                    {!notEmpty && <EmptySchedule/>}
                 </div>
             </div>
         );
@@ -225,10 +225,8 @@ const mapDispatchToProps = dispatch => (
     }
 );
 
-export default connect(mapStateToProps, mapDispatchToProps)(Schedule);
-
-const EmptySchedule = () => (
-    <div style={{ height: "100%" }}>
+const EmptySchedule = () => {
+    return <div style={{ height: "100%" }}>
         <p style={{
             fontSize: "1.5em",
             paddingTop: "7em",
@@ -244,5 +242,7 @@ const EmptySchedule = () => (
             <br/>
             You still need to register for your classes on Penn InTouch.
         </p>
-    </div>
-);
+    </div>;
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Schedule);

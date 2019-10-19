@@ -91,7 +91,10 @@ const ScheduleSelectorDropdown = ({ defActive, defText, contents, mutators: { co
                             <DropdownButton
                                 key={index}
                                 isActive={activeItem === index}
-                                makeActive={() => setActiveItem(index)}
+                                makeActive={() => {
+                                    setActiveItem(index);
+                                    setIsActive(false);
+                                }}
                                 onClick={onClick}
                                 text={text}
                                 mutators={{
