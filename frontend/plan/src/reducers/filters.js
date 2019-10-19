@@ -103,8 +103,10 @@ export const filters = (state = initialState, action) => {
                 filterData: {
                     searchString: state.filterData.searchString,
                     ...initialState.filterData,
-                    selectedReq: initialState.defaultReqs,
+                    selectedReq: state.defaultReqs,
                 },
+                defaultReqs: state.defaultReqs,
+                schoolReq: state.schoolReq,
             };
         default:
             return state;
