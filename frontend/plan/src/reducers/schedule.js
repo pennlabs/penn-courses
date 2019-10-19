@@ -65,20 +65,23 @@ const toggleSection = (meetings, section) => {
  */
 const nextAvailable = (scheduleName, used) => {
     let newScheduleName = scheduleName;
-    let lastDigit = 0;
+    // compute the current number at the end of the string (if it exists)
+    let endNum = 0;
+    let numDigits = 0;
+    let selectionIndex = newScheduleName.length - 1;
+    while (selectionIndex >=0 && newScheduleName.charAt(selectionIndex) >= "0" &&
+    newScheduleName.charAt(selectionIndex) <= 9 ) {
+        endNum += Math.pow(10, numDigits) * parseInt(newScheduleName.charAt(selectionIndex));
+        numDigits += 1;
+        selectionIndex--;
+    }
+    // prevent double arithmetic issues
+    endNum = Math.round(endNum);
+    // search for the next available number
+    const baseName = newScheduleName.substring(0, newScheduleName.length - numDigits);
     while (used[newScheduleName]) {
-        if (!lastDigit) {
-            const lastDigitChar = newScheduleName.charAt(newScheduleName.length - 1);
-            if (lastDigitChar >= "0" && lastDigitChar <= "9") {
-                lastDigit = parseInt(lastDigitChar);
-            }
-        }
-        lastDigit += 1;
-        if (lastDigit < 2) {
-            newScheduleName += lastDigit;
-        } else {
-            newScheduleName = newScheduleName.substring(0, newScheduleName.length - 1) + lastDigit;
-        }
+        endNum += 1;
+        newScheduleName = baseName + endNum;
     }
     return newScheduleName;
 };
