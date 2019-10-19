@@ -163,7 +163,6 @@ class Schedule extends Component {
             <div className="column vertical-section">
                 <h3 className="section-header">
                     <ScheduleSelectorDropdown
-                        defText="Mock Schedule"
                         defActive={0}
                         contents={scheduleNames.map(scheduleName => ({
                             text: scheduleName,

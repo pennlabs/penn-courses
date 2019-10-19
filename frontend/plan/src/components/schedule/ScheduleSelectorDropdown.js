@@ -69,7 +69,7 @@ DropdownButton.propTypes = {
 };
 
 const ScheduleSelectorDropdown = ({
-    defActive, defText, contents, mutators: { copy, remove, rename, create },
+    defActive, contents, mutators: { copy, remove, rename, create },
 }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
@@ -92,7 +92,7 @@ const ScheduleSelectorDropdown = ({
             className={`classic dropdown${isActive
                 ? " is-active" : ""}`}
         >
-            <span className="selected_name">{defText}</span>
+            <span className="selected_name">{contents[activeItem].text}</span>
             <div
                 className="classic-dropdown-trigger"
                 onClick={() => setIsActive(!isActive)}
@@ -146,7 +146,6 @@ const ScheduleSelectorDropdown = ({
 
 ScheduleSelectorDropdown.propTypes = {
     defActive: PropTypes.bool,
-    defText: PropTypes.string.isRequired,
     contents: PropTypes.arrayOf(PropTypes.object).isRequired,
     mutators: PropTypes.shape({
         copy: PropTypes.func.isRequired,
