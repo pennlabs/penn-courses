@@ -69,7 +69,7 @@ DropdownButton.propTypes = {
 };
 
 const ScheduleSelectorDropdown = ({
-    defActive, defText, contents, mutators: { copy, remove, rename },
+    defActive, defText, contents, mutators: { copy, remove, rename, create },
 }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
@@ -128,8 +128,7 @@ const ScheduleSelectorDropdown = ({
                             />
                         ))}
                     <a
-                        onClick={() => {
-                        }}
+                        onClick={create}
                         role="button"
                         className="dropdown-item add-schedule"
                     >
@@ -151,6 +150,7 @@ ScheduleSelectorDropdown.propTypes = {
     mutators: PropTypes.shape({
         copy: PropTypes.func.isRequired,
         remove: PropTypes.func.isRequired,
+        create: PropTypes.func.isRequired,
     }),
 };
 

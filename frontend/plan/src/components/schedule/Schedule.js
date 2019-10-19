@@ -233,6 +233,9 @@ const mapDispatchToProps = dispatch => (
             rename: oldName => dispatch(openModal("RENAME_SCHEDULE",
                 { scheduleName: oldName },
                 "Rename Schedule")),
+            create: () => dispatch(openModal("CREATE_SCHEDULE",
+                {},
+                "Create Schedule")),
         },
     }
 );

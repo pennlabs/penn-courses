@@ -1,6 +1,7 @@
 import React from "react";
-import { renameSchedule } from "../../actions";
+import { createSchedule, renameSchedule } from "../../actions";
 import RenameScheduleModalInterior from "./RenameScheduleModalInterior";
+import CreateScheduleModalInterior from "./CreateScheduleModalInterior";
 
 /**
  * Generates a modal interior component based on the redux state.
@@ -16,6 +17,9 @@ export const generateModalInterior = reduxState => {
     switch (reduxState.modals.modalKey) {
         case "RENAME_SCHEDULE":
             return <RenameScheduleModalInterior
+                usedScheduleNames={Object.keys(reduxState.schedule.schedules)}/>;
+        case "CREATE_SCHEDULE":
+            return <CreateScheduleModalInterior
                 usedScheduleNames={Object.keys(reduxState.schedule.schedules)}/>;
         default:
             return null;
@@ -33,6 +37,9 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
         case "RENAME_SCHEDULE":
             return { renameSchedule: (newName) =>
                     dispatch(renameSchedule(modalProps.scheduleName, newName)), };
+        case "CREATE_SCHEDULE":
+            return { createSchedule: (newName) =>
+                    dispatch(createSchedule(newName)), };
         default:
             return {};
 
