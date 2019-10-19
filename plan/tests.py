@@ -2,7 +2,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 
 from courses.models import Instructor, Requirement
-from courses.util import get_course_and_section
+from courses.util import create_mock_data
 from options.models import Option
 from plan.search import TypedSearchBackend
 from review.models import Review
@@ -48,8 +48,8 @@ class TypedSearchBackendTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
 class CourseSearchTestCase(TestCase):
     def setUp(self):
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
-        self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
+        self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        self.math, self.math1 = create_mock_data('MATH-114-001', TEST_SEMESTER)
         self.client = APIClient()
         set_semester()
 
@@ -75,8 +75,8 @@ class CourseSearchTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
 class CreditUnitFilterTestCase(TestCase):
     def setUp(self):
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
-        _, self.section2 = get_course_and_section('CIS-120-201', TEST_SEMESTER)
+        self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        _, self.section2 = create_mock_data('CIS-120-201', TEST_SEMESTER)
         self.section.credits = 1.0
         self.section2.credits = 0.0
         self.section.save()
@@ -98,8 +98,8 @@ class CreditUnitFilterTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
 class RequirementFilterTestCase(TestCase):
     def setUp(self):
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
-        self.math, self.math1 = get_course_and_section('MATH-114-001', TEST_SEMESTER)
+        self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        self.math, self.math1 = create_mock_data('MATH-114-001', TEST_SEMESTER)
         self.req = Requirement(semester=TEST_SEMESTER, code='REQ', school='SAS')
         self.req.save()
         self.req.courses.add(self.math)
@@ -118,7 +118,7 @@ class RequirementFilterTestCase(TestCase):
         self.assertEqual('MATH-114', response.data[0]['id'])
 
     def test_multi_req(self):
-        course3, section3 = get_course_and_section('CIS-240-001', TEST_SEMESTER)
+        course3, section3 = create_mock_data('CIS-240-001', TEST_SEMESTER)
         req2 = Requirement(semester=TEST_SEMESTER, code='REQ2', school='SEAS')
         req2.save()
         req2.courses.add(course3)
@@ -130,11 +130,11 @@ class RequirementFilterTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
 class CourseReviewAverageTestCase(TestCase):
     def setUp(self):
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
-        _, self.section2 = get_course_and_section('CIS-120-002', TEST_SEMESTER)
+        self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        _, self.section2 = create_mock_data('CIS-120-002', TEST_SEMESTER)
         self.instructor = Instructor(name='Person1')
         self.instructor.save()
-        self.rev1 = Review(section=get_course_and_section('CIS-120-003', '2005C')[1], instructor=self.instructor)
+        self.rev1 = Review(section=create_mock_data('CIS-120-003', '2005C')[1], instructor=self.instructor)
         self.rev1.save()
         self.rev1.set_scores({
             'course_quality': 4,
@@ -143,7 +143,7 @@ class CourseReviewAverageTestCase(TestCase):
         })
         self.instructor2 = Instructor(name='Person2')
         self.instructor2.save()
-        self.rev2 = Review(section=get_course_and_section('CIS-120-002', '2015A')[1], instructor=self.instructor2)
+        self.rev2 = Review(section=create_mock_data('CIS-120-002', '2015A')[1], instructor=self.instructor2)
         self.rev2.instructor = self.instructor2
         self.rev2.save()
         self.rev2.set_scores({
