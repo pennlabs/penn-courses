@@ -57,7 +57,7 @@ DropdownButton.propTypes = {
     makeActive: PropTypes.func,
     mutators: PropTypes.shape({
         copy: PropTypes.func.isRequired,
-        remove: PropTypes.func.isRequired
+        remove: PropTypes.func.isRequired,
     }),
 };
 
@@ -122,7 +122,7 @@ const ScheduleSelectorDropdown = ({
                     <a
                         onClick={() => {
                         }}
-                        role={"button"}
+                        role="button"
                         className="dropdown-item add-schedule"
                     >
                         <span className="icon is-small">
