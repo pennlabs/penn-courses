@@ -27,6 +27,7 @@ function Selector(props) {
     if (course) {
         element = (
             <CourseInfo
+                getCourse={getCourse}
                 course={course}
                 back={clearCourse}
                 manage={{ addToSchedule, removeFromSchedule }}

@@ -70,7 +70,7 @@ function SearchBar({
     };
 
     return (
-        <nav className="bar level">
+        <nav className="bar level" style={{}}>
             <div className="level-left">
                 <div className="level-item" id="searchdiv">
                     <SearchField

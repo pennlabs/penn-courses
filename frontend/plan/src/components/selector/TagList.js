@@ -4,7 +4,9 @@ import Tag from "./Tag";
 
 import "bulma-popover/css/bulma-popver.min.css";
 
-export default function TagList({ elements, limit = 1, select = null }) {
+export default function TagList({
+    elements, onClick = null, limit = 1, select = null,
+}) {
     const visibleTags = elements.slice(0, limit);
     const hiddenTags = elements.slice(limit);
     let tagPopover = null;
@@ -22,7 +24,7 @@ export default function TagList({ elements, limit = 1, select = null }) {
     }
     return (
         <span>
-            {visibleTags.map(elt => <Tag>{elt}</Tag>)}
+            {visibleTags.map(elt => <Tag onClick={onClick ? () => onClick(elt.replace(/ /g, "-")) : null}>{elt}</Tag>)}
             {tagPopover}
         </span>
     );
@@ -32,4 +34,5 @@ TagList.propTypes = {
     elements: PropTypes.arrayOf(PropTypes.any),
     limit: PropTypes.number,
     select: PropTypes.func,
+    onClick: PropTypes.func,
 };
