@@ -17,7 +17,7 @@
 .header {
     color: #a0a0a0;
     padding-left: 0;
-    /*font-size: 0.8em;*/
+    font-weight: bold;
 }
 
 .hover-switch:hover .fa-check,
@@ -30,7 +30,7 @@
 }
 
 .fa, .fas, .far .grey-text {
-    color: #a0a0a0;
+    color: #c6c6c6;
 }
 
 .back-button {
@@ -63,7 +63,7 @@
 }
 
 .course-info {
-    margin: ".5em .5em .5em 2em";
+    margin: ".5em 2em .5em 2em";
     max-height: "40%";
 }
 
@@ -78,6 +78,16 @@
 .section-details-title {
     margin-bottom: 0 !important;
     font-weight: normal;
+}
+
+.pcr-svg {
+    color: #C6C6C6;
+    width: 3em;
+    float: right;
+}
+
+.pcr-svg:hover {
+    color: #8e8e8e;
 }
 
 .section-details-title b {
@@ -95,10 +105,9 @@
 }
 
 .section-row:hover {
-    color: #3273dc; 
+    color: #6975f4; 
 }
 
-.selector-row-selected, 
 .selector-row:hover {
     background-color: #dcdcdc;
     cursor: pointer;
