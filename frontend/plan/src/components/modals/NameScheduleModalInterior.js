@@ -20,7 +20,7 @@ const NameScheduleModalInterior = ({
             <input
                 type="text"
                 ref={ref => setInputRef(ref)}
-                style={{backgroundColor: error ? "#f9dcda" : "white"}}
+                style={{ backgroundColor: error ? "#f9dcda" : "white" }}
                 onChange={() => setUserInput(inputRef.value)}
                 onKeyUp={(e) => {
                     if (e.keyCode === 13) {
