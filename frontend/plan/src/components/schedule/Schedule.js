@@ -7,7 +7,7 @@ import {
     removeSchedItem,
     fetchCourseDetails,
     changeSchedule,
-    duplicateSchedule
+    duplicateSchedule, deleteSchedule
 } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
@@ -41,12 +41,12 @@ class Schedule extends Component {
     render() {
         const {
             schedData, removeSection, focusSection,
-            scheduleNames, switchSchedule, copySavedSchedule,
+            scheduleNames, switchSchedule, schedulesMutator,
         } = this.props;
         const sections = schedData.meetings || [];
 
         if (sections.length < 1) {
-            return <EmptySchedule />;
+            return <EmptySchedule/>;
         }
 
         let startHour = 10.5;
@@ -171,11 +171,11 @@ class Schedule extends Component {
                             onClick: () => switchSchedule(scheduleName),
                         }))}
                         modifyLabel={false}
-                        copy={copySavedSchedule}
+                        mutators={schedulesMutator}
                     />
                 </h3>
                 <div className="schedule vertical-section-contents" style={dims}>
-                    <Days offset={colOffset} weekend={showWeekend} />
+                    <Days offset={colOffset} weekend={showWeekend}/>
                     <Times
                         startTime={startHour}
                         endTime={endHour}
@@ -202,7 +202,7 @@ Schedule.propTypes = {
     focusSection: PropTypes.func,
     scheduleNames: PropTypes.arrayOf(PropTypes.string),
     switchSchedule: PropTypes.func,
-    copySavedSchedule: PropTypes.func,
+    schedulesMutator: PropTypes.object.isRequired,
 };
 
 const mapStateToProps = state => (
@@ -218,7 +218,10 @@ const mapDispatchToProps = dispatch => (
         removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
         focusSection: id => dispatch(fetchCourseDetails(id)),
         switchSchedule: scheduleName => dispatch(changeSchedule(scheduleName)),
-        copySavedSchedule: scheduleName => dispatch(duplicateSchedule(scheduleName))
+        schedulesMutator: {
+            copy: scheduleName => dispatch(duplicateSchedule(scheduleName)),
+            remove: scheduleName => dispatch(deleteSchedule(scheduleName)),
+        },
     }
 );
 
@@ -233,12 +236,12 @@ const EmptySchedule = () => (
         }}
         >
             Search for courses above
-            <br />
+            <br/>
             then click a section&#39;s + icon to add it to the schedule.
         </p>
         <p style={{ fontSize: "1em" }}>
             These are mock schedules.
-            <br />
+            <br/>
             You still need to register for your classes on Penn InTouch.
         </p>
     </div>

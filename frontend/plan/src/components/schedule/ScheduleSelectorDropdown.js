@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
-const DropdownButton = ({ isActive, text, onClick, makeActive, copy }) => (
+const DropdownButton = ({ isActive, text, onClick, makeActive, mutators: { copy, remove } }) => (
     <div
         onClick={e => {
             const targetClass = e.target.getAttribute("class");
@@ -30,9 +30,11 @@ const DropdownButton = ({ isActive, text, onClick, makeActive, copy }) => (
                     <i className="far fa-copy" aria-hidden="true"/>
                 </span>
             </div>
-            <span className="icon is-small">
-                <i className="fa fa-trash" aria-hidden="true"/>
-            </span>
+            <div onClick={remove} className={"s-option-copy"}>
+                <span className="icon is-small">
+                    <i className="fa fa-trash" aria-hidden="true"/>
+                </span>
+            </div>
         </div>
     </div>
 );
@@ -42,10 +44,10 @@ DropdownButton.propTypes = {
     text: PropTypes.string,
     onClick: PropTypes.func,
     makeActive: PropTypes.func,
-    copy: PropTypes.func.isRequired,
+    mutators: PropTypes.object.isRequired,
 };
 
-const ScheduleSelectorDropdown = ({ defActive, defText, contents, copy }) => {
+const ScheduleSelectorDropdown = ({ defActive, defText, contents, mutators: { copy, remove } }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
     const [ref, setRef] = useState(null);
@@ -96,7 +98,10 @@ const ScheduleSelectorDropdown = ({ defActive, defText, contents, copy }) => {
                                 makeActive={() => setActiveItem(index)}
                                 onClick={onClick}
                                 text={text}
-                                copy={() => copy(text)}
+                                mutators={{
+                                    copy: () => copy(text),
+                                    remove: () => remove(text),
+                                }}
                             />
                         ))}
                     <button
@@ -117,7 +122,7 @@ ScheduleSelectorDropdown.propTypes = {
     defActive: PropTypes.bool,
     defText: PropTypes.string.isRequired,
     contents: PropTypes.arrayOf(PropTypes.object).isRequired,
-    copy: PropTypes.func.isRequired,
+    mutators: PropTypes.object.isRequired,
 };
 
 

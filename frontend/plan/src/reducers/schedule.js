@@ -57,6 +57,31 @@ const toggleSection = (meetings, section) => {
     return [...meetings, section];
 };
 
+/**
+ * Returns the next available schedule name that is similar to the given schedule name
+ * Used for duplication
+ * @param scheduleName: current schedule name
+ * @param used: used schedule names stored in an object
+ */
+const nextAvailable = (scheduleName, used) => {
+    let newScheduleName = scheduleName;
+    let lastDigit = 0;
+    while (used[newScheduleName]) {
+        if (!lastDigit) {
+            const lastDigitChar = newScheduleName.charAt(newScheduleName.length - 1);
+            if (lastDigitChar >= "0" && lastDigitChar <= "9") {
+                lastDigit = parseInt(lastDigitChar);
+            }
+        }
+        lastDigit += 1;
+        if (lastDigit < 2) {
+            newScheduleName += lastDigit;
+        } else {
+            newScheduleName = newScheduleName.substring(0, newScheduleName.length - 1) + lastDigit;
+        }
+    }
+    return newScheduleName;
+};
 
 export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
@@ -86,7 +111,8 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 schedules: {
                     ...state.schedules,
-                    [action.scheduleName + "(1)"]: state.schedules[action.scheduleName],
+                    [nextAvailable(action.scheduleName, state.schedules)]:
+                        state.schedules[action.scheduleName],
                 },
             };
         case CREATE_SCHEDULE:
@@ -99,11 +125,12 @@ export const schedule = (state = initialState, action) => {
                 scheduleSelected: action.scheduleName,
             };
         case DELETE_SCHEDULE: {
-            const newSchedule = removeSchedule(state.scheduleSelected, state.schedules);
+            const newSchedules = removeSchedule(action.scheduleName, state.schedules);
             return {
                 ...state,
-                schedules: removeSchedule(state.scheduleSelected, state.schedules),
-                scheduleSelected: Object.keys(newSchedule)[0],
+                schedules: newSchedules,
+                scheduleSelected: action.scheduleName === state.scheduleSelected ?
+                    Object.keys(newSchedules)[0] : state.scheduleSelected,
             };
         }
         case CHANGE_SCHEDULE:
