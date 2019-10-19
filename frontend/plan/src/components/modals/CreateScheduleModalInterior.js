@@ -6,12 +6,24 @@ const CreateScheduleModalInterior = ({ usedScheduleNames, createSchedule, close 
     const [inputRef, setInputRef] = useState(null);
     const [userInput, setUserInput] = useState("");
     const { error, message: errorMessage } = validateScheduleName(userInput, usedScheduleNames);
+    const submit = () => {
+        const scheduleName = inputRef.value;
+        if (!error) {
+            createSchedule(scheduleName);
+            close();
+        }
+    };
     return (
         <div>
             <input
                 type="text"
                 ref={ref => setInputRef(ref)}
                 onChange={() => setUserInput(inputRef.value)}
+                onKeyUp={(e) => {
+                    if (e.keyCode === 13) {
+                        submit();
+                    }
+                }}
             />
             <p className="error_message">{errorMessage}</p>
             <button
@@ -19,11 +31,7 @@ const CreateScheduleModalInterior = ({ usedScheduleNames, createSchedule, close 
                 className="button is-link"
                 role="button"
                 onClick={() => {
-                    const scheduleName = inputRef.value;
-                    if (!error) {
-                        createSchedule(scheduleName);
-                        close();
-                    }
+                    submit();
                 }}
             >
 Create

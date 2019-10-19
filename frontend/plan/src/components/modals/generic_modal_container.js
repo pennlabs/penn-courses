@@ -22,7 +22,7 @@ const ModalContainer = ({
                     style={{ cursor: "pointer" }}
                 >
                     <span className="icon is-small">
-                        <i className="fa fa-times" style={{ color: "rgba(0, 0, 0, 0.2)" }} />
+                        <i className="fa fa-times" />
                     </span>
                 </div>
             </header>
