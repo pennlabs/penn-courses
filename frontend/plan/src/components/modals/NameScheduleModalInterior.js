@@ -2,14 +2,16 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { validateScheduleName } from "../schedule/schedule_name_validation";
 
-const RenameScheduleModalInterior = ({ usedScheduleNames, renameSchedule, close }) => {
+const NameScheduleModalInterior = ({
+    usedScheduleNames, namingFunction, close, buttonName,
+}) => {
     const [inputRef, setInputRef] = useState(null);
     const [userInput, setUserInput] = useState("");
     const { error, message: errorMessage } = validateScheduleName(userInput, usedScheduleNames);
     const submit = () => {
         const scheduleName = inputRef.value;
         if (!error) {
-            renameSchedule(scheduleName);
+            namingFunction(scheduleName);
             close();
         }
     };
@@ -34,16 +36,17 @@ const RenameScheduleModalInterior = ({ usedScheduleNames, renameSchedule, close 
                     submit();
                 }}
             >
-            Rename
+                {buttonName}
             </button>
         </div>
     );
 };
 
-RenameScheduleModalInterior.propTypes = {
+NameScheduleModalInterior.propTypes = {
     usedScheduleNames: PropTypes.arrayOf(PropTypes.string).isRequired,
-    renameSchedule: PropTypes.func,
+    namingFunction: PropTypes.func,
     close: PropTypes.func,
+    buttonName: PropTypes.string,
 };
 
-export default RenameScheduleModalInterior;
+export default NameScheduleModalInterior;
