@@ -23,6 +23,13 @@ export const COURSE_SEARCH_LOADING = "COURSE_SEARCH_LOADING";
 export const COURSE_SEARCH_SUCCESS = "COURSE_SEARCH_SUCCESS";
 
 export const LOAD_REQUIREMENTS = "LOAD_REQUIREMENTS";
+export const ADD_SCHOOL_REQ = "ADD_SCHOOL_REQ";
+export const REM_SCHOOL_REQ = "REM_SCHOOL_REQ";
+export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
+
+export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
+export const CLEAR_FILTER = "CLEAR_FILTER";
+export const CLEAR_ALL = "CLEAR_ALL";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
@@ -175,8 +182,57 @@ export const loadRequirements = () => (
     )
 );
 
-function buildCourseSearchUrl(searchData) {
-    return `/courses/?search=${searchData.param}`;
+function buildCourseSearchUrl(filterData) {
+    let queryString = `/courses/?search=${filterData.searchString}`;
+
+    // Requirements filter
+    const reqs = [];
+    if (filterData.selectedReq) {
+        for (const key of Object.keys(filterData.selectedReq)) {
+            if (filterData.selectedReq[key] === 1) {
+                reqs.push(key);
+            }
+        }
+
+        if (reqs.length > 0) {
+            queryString += `&requirements=${reqs[0]}`;
+            for (let i = 1; i < reqs.length; i += 1) {
+                queryString += `,${reqs[i]}`;
+            }
+        }
+    }
+
+    // Range filters
+    const filterFields = ["difficulty", "course_quality", "instructor_quality", "cu"];
+    const defaultFilters = [[0, 4], [0, 4], [0, 4], [0.5, 2]];
+    for (let i = 0; i < filterFields.length; i += 1) {
+        if (filterData[filterFields[i]]
+            && JSON.stringify(filterData[filterFields[i]]) !== JSON.stringify(defaultFilters[i])) {
+            const filterRange = filterData[filterFields[i]];
+            queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
+        }
+    }
+
+    return queryString;
+}
+
+export function fetchCourseSearch(filterData) {
+    return dispatch => (
+        fetch(buildCourseSearchUrl(filterData)).then(
+            response => response.json().then(
+                json => dispatch(updateSearch(json)),
+                error => dispatch(courseSearchError(error)),
+            ),
+            error => dispatch(courseSearchError(error)),
+        )
+    );
+}
+
+export function updateSearchText(s) {
+    return {
+        type: UPDATE_SEARCH_TEXT,
+        s,
+    };
 }
 
 function buildSectionInfoSearchUrl(searchData) {
@@ -198,16 +254,40 @@ export function sectionInfoSearchError(error) {
     };
 }
 
-export function fetchCourseSearch(searchData) {
-    return dispatch => (
-        fetch(buildCourseSearchUrl(searchData)).then(
-            response => response.json().then(
-                json => dispatch(updateSearch(json)),
-                error => dispatch(courseSearchError(error)),
-            ),
-            error => dispatch(courseSearchError(error)),
-        )
-    );
+export function addSchoolReq(reqID) {
+    return {
+        type: ADD_SCHOOL_REQ,
+        reqID,
+    };
+}
+
+export function remSchoolReq(reqID) {
+    return {
+        type: REM_SCHOOL_REQ,
+        reqID,
+    };
+}
+
+export function updateRangeFilter(field, values) {
+    return {
+        type: UPDATE_RANGE_FILTER,
+        field,
+        values,
+    };
+}
+
+export function clearFilter(propertyName) {
+    return {
+        type: CLEAR_FILTER,
+        propertyName,
+    };
+}
+
+
+export function clearAll() {
+    return {
+        type: CLEAR_ALL,
+    };
 }
 
 export function fetchCourseDetails(courseId) {
