@@ -1,5 +1,6 @@
 import {
-    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT, UPDATE_RANGE_FILTER, CLEAR_FILTER, CLEAR_ALL
+    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT,
+    UPDATE_RANGE_FILTER, CLEAR_FILTER, CLEAR_ALL
 } from "../actions";
 
 export const initialState = {
@@ -35,15 +36,15 @@ export const filters = (state = initialState, action) => {
                 },
                 defaultReqs: action.selObj,
             };
-        
+
         case UPDATE_SEARCH_TEXT:
             return {
                 ...state,
                 filterData: {
                     ...state.filterData,
                     searchString: action.s,
-                }
-            }
+                },
+            };
 
         case ADD_SCHOOL_REQ:
             return {
@@ -73,7 +74,7 @@ export const filters = (state = initialState, action) => {
             return {
                 ...state,
                 filterData: {
-                    ...state.filterData, 
+                    ...state.filterData,
                     [action.field]: action.values,
                 },
             };
@@ -108,4 +109,4 @@ export const filters = (state = initialState, action) => {
         default:
             return state;
     }
-}
+};

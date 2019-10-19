@@ -33,10 +33,14 @@ function shouldSearch(filterData) {
     return searchString || selectedReq;
 }
 
-// eslint-disable-next-line no-shadow
+
 function SearchBar({
+    // eslint-disable-next-line no-shadow
     startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
-    remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter, defaultReqs, clearSearchResults
+    // eslint-disable-next-line no-shadow
+    remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
+    // eslint-disable-next-line no-shadow
+    defaultReqs, clearSearchResults,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -141,14 +145,17 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <button className="button is-white" type="button" onClick={() => {
-                        conditionalStartSearch({
-                            ...defaultFilters.filterData,
-                            searchString: filterData.searchString,
-                            selectedReq: defaultReqs,
-                        });
-                        clearAll();
-                    }}
+                    <button
+                        className="button is-white"
+                        type="button"
+                        onClick={() => {
+                            conditionalStartSearch({
+                                ...defaultFilters.filterData,
+                                searchString: filterData.searchString,
+                                selectedReq: defaultReqs,
+                            });
+                            clearAll();
+                        }}
                     >
                         Clear all
                     </button>
@@ -162,6 +169,16 @@ SearchBar.propTypes = {
     startSearch: PropTypes.func,
     loadRequirements: PropTypes.func,
     schoolReq: PropTypes.objectOf(PropTypes.array),
+    addSchoolReq: PropTypes.func,
+    remSchoolReq: PropTypes.func,
+    updateSearchText: PropTypes.func,
+    updateRangeFilter: PropTypes.func,
+    clearAll: PropTypes.func,
+    clearFilter: PropTypes.func,
+    clearSearchResults: PropTypes.func,
+    // eslint-disable-next-line react/forbid-prop-types
+    filterData: PropTypes.object,
+    defaultReqs: PropTypes.objectOf(PropTypes.number),
 };
 
 const mapStateToProps = state => (

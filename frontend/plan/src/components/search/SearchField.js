@@ -40,4 +40,7 @@ export function SearchField({ startSearch, updateSearchText, filterData }) {
 
 SearchField.propTypes = {
     startSearch: PropTypes.func,
+    updateSearchText: PropTypes.func,
+    // eslint-disable-next-line react/forbid-prop-types
+    filterData: PropTypes.object,
 };

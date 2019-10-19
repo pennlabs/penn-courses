@@ -5,9 +5,8 @@ import PropTypes from "prop-types";
 
 export function RangeFilter({
     setIsActive, minRange, maxRange, filterData,
-    updateRangeFilter, startSearch, rangeProperty, step
+    updateRangeFilter, startSearch, rangeProperty, step,
 }) {
-
     const [searchTimeout, setSearchTimeout] = useState();
     const onSliderChange = (value) => {
         updateRangeFilter(value);
@@ -25,10 +24,18 @@ export function RangeFilter({
     return (
         <div className="columns contained is-multiline is-centered">
             <div className="column is-half">
-                <p> {filterData[rangeProperty][0]} </p>
+                <p>
+                    {" "}
+                    {filterData[rangeProperty][0]}
+                    {" "}
+                </p>
             </div>
             <div className="column is-half">
-                <p> {filterData[rangeProperty][1]} </p>
+                <p>
+                    {" "}
+                    {filterData[rangeProperty][1]}
+                    {" "}
+                </p>
             </div>
             <div className="column is-full">
                 <Range
@@ -46,4 +53,12 @@ export function RangeFilter({
 
 RangeFilter.propTypes = {
     setIsActive: PropTypes.func,
+    minRange: PropTypes.number,
+    maxRange: PropTypes.number,
+    startSearch: PropTypes.func,
+    updateRangeFilter: PropTypes.func,
+    rangeProperty: PropTypes.string,
+    step: PropTypes.number,
+    // eslint-disable-next-line react/forbid-prop-types
+    filterData: PropTypes.object,
 };

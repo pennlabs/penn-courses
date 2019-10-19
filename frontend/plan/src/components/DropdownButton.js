@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "./useOnClickOutside";
 
-export function DropdownButton({ title, children, filterData, defaultFilter, clearFilter }) {
+export function DropdownButton({
+    title, children, filterData, defaultFilter, clearFilter,
+}) {
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
@@ -38,14 +40,13 @@ export function DropdownButton({ title, children, filterData, defaultFilter, cle
                                 onClick={(e) => {
                                     clearFilter();
                                     e.stopPropagation();
-                                    
                                 }}
                                 role="button"
                             />
                         </span>
                     )}
                 </button>
-            </div> 
+            </div>
             <div className="dropdown-menu" id="dropdown-menu" role="menu">
                 <div className="dropdown-content">
                     {/* This injects the setIsActive method to allow children */}
@@ -63,5 +64,14 @@ export function DropdownButton({ title, children, filterData, defaultFilter, cle
 
 DropdownButton.propTypes = {
     title: PropTypes.string,
-    children: PropTypes.arrayOf(PropTypes.object),
+    children: PropTypes.node,
+    filterData: PropTypes.oneOfType([
+        PropTypes.array,
+        PropTypes.object
+    ]),
+    defaultFilter: PropTypes.oneOfType([
+        PropTypes.array,
+        PropTypes.object
+    ]),
+    clearFilter: PropTypes.func,
 };

@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-export function SchoolReq({ startSearch, filterData, schoolReq, addSchoolReq, remSchoolReq }) {
+export function SchoolReq({
+    startSearch, filterData, schoolReq, addSchoolReq, remSchoolReq,
+}) {
     const schools = ["College", "Engineering", "Nursing", "Wharton"];
     const [selSchool, setSelSchool] = useState("College");
 
@@ -77,6 +79,9 @@ export function SchoolReq({ startSearch, filterData, schoolReq, addSchoolReq, re
 }
 
 SchoolReq.propTypes = {
-    filterInfo: PropTypes.objectOf(PropTypes.any),
-    schoolReq: PropTypes.arrayOf(PropTypes.object),
+    schoolReq: PropTypes.objectOf(PropTypes.array),
+    addSchoolReq: PropTypes.func,
+    remSchoolReq: PropTypes.func,
+    startSearch: PropTypes.func,
+    filterData: PropTypes.objectOf(PropTypes.number),
 };
