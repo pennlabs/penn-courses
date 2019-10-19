@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
-import { Dropdown } from "../../Dropdown";
+import { ScheduleSelectorDropdown } from "../../schedule/ScheduleSelectorDropdown";
 import SummaryDropdown from "./summary";
 import {
     changeSchedule, fetchCourseSearch, openModal, toggleSearchFilterShown

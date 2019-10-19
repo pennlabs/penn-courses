@@ -1,6 +1,6 @@
 import React from "react";
 import connect from "react-redux/es/connect/connect";
-import { OutClickable } from "../../Dropdown";
+import { OutClickable } from "../../schedule/ScheduleSelectorDropdown";
 // import { toggleSearchFilterShown } from "../../../actions";
 
 class SearchFilter extends OutClickable {

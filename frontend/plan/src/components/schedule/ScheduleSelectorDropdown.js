@@ -1,50 +1,53 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
-const DropdownButton = ({
-    index, activeItem, modifyLabel, text,
-    setLabelText, onClick, setActiveItem,
-    isCategory, colorClass
-}) => (
-    <button
-        key={index}
-        onClick={() => {
+const DropdownButton = ({ isActive, text, onClick, makeActive, copy }) => (
+    <div
+        onClick={e => {
+            const targetClass = e.target.getAttribute("class");
+            if (targetClass && (targetClass.indexOf("s-option") !== -1)) {
+                // one of the icons has been clicked
+                return;
+            }
             if (onClick) {
                 onClick();
             }
-            if (isCategory) {
-                setActiveItem(index);
-                if (modifyLabel) {
-                    setLabelText(text);
-                }
+            if (makeActive) {
+                makeActive();
             }
         }}
-        type="button"
-        className={`dropdown-item${activeItem === index
-            ? " is-active" : ""} button ${colorClass ? colorClass : ""}`}
+        className={`dropdown-item${isActive ? " is-active" : ""} button`}
     >
-        {text}
-    </button>
+        <div className={"schedule-name-container"}>
+            {text}
+        </div>
+        <div className={"schedule-options-container"}>
+            <span className="icon is-small">
+                <i className="far fa-edit" aria-hidden="true"/>
+            </span>
+            <div onClick={copy} className={"s-option-copy"}>
+                <span className="icon is-small">
+                    <i className="far fa-copy" aria-hidden="true"/>
+                </span>
+            </div>
+            <span className="icon is-small">
+                <i className="fa fa-trash" aria-hidden="true"/>
+            </span>
+        </div>
+    </div>
 );
 
 DropdownButton.propTypes = {
-    index: PropTypes.number.isRequired,
-    activeItem: PropTypes.number.isRequired,
-    modifyLabel: PropTypes.bool,
+    isActive: PropTypes.bool,
     text: PropTypes.string,
-    setLabelText: PropTypes.func,
     onClick: PropTypes.func,
-    setActiveItem: PropTypes.func,
-    isCategory: PropTypes.bool,
-    colorClass: PropTypes.string,
+    makeActive: PropTypes.func,
+    copy: PropTypes.func.isRequired,
 };
 
-const Dropdown = ({
-    defActive, defText, contents, modifyLabel,
-}) => {
+const ScheduleSelectorDropdown = ({ defActive, defText, contents, copy }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
-    const [labelText, setLabelText] = useState(defText);
     const [ref, setRef] = useState(null);
 
     useEffect(() => {
@@ -64,7 +67,7 @@ const Dropdown = ({
             className={`classic dropdown${isActive
                 ? " is-active" : ""}`}
         >
-            <span className="selected_name">{labelText}</span>
+            <span className="selected_name">{defText}</span>
             <div
                 className="dropdown-trigger"
                 onClick={() => setIsActive(!isActive)}
@@ -86,31 +89,36 @@ const Dropdown = ({
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content">
                     {Array.from(contents.entries())
-                        .map(([index, { onClick, text, isCategory, color }]) => (
+                        .map(([index, { onClick, text }]) => (
                             <DropdownButton
-                                colorClass={color}
-                                index={index}
-                                activeItem={activeItem}
-                                modifyLabel={modifyLabel}
-                                setLabelText={setLabelText}
-                                setActiveItem={setActiveItem}
-                                isCategory={isCategory}
+                                key={index}
+                                isActive={activeItem === index}
+                                makeActive={() => setActiveItem(index)}
                                 onClick={onClick}
                                 text={text}
+                                copy={() => copy(text)}
                             />
                         ))}
+                    <button
+                        onClick={() => {
+                        }}
+                        type="button"
+                        className="dropdown-item button light-blue"
+                    >
+                        + Add new schedule
+                    </button>
                 </div>
             </div>
         </div>
     );
 };
 
-Dropdown.propTypes = {
+ScheduleSelectorDropdown.propTypes = {
     defActive: PropTypes.bool,
     defText: PropTypes.string.isRequired,
     contents: PropTypes.arrayOf(PropTypes.object).isRequired,
-    modifyLabel: PropTypes.bool,
+    copy: PropTypes.func.isRequired,
 };
 
 
-export default Dropdown;
+export default ScheduleSelectorDropdown;

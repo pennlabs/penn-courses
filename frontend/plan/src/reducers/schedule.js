@@ -86,7 +86,7 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 schedules: {
                     ...state.schedules,
-                    [action.scheduleName]: state.schedules[state.scheduleSelected],
+                    [action.scheduleName + "(1)"]: state.schedules[action.scheduleName],
                 },
             };
         case CREATE_SCHEDULE:

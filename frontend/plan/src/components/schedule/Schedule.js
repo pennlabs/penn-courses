@@ -3,7 +3,12 @@ import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
 
-import { removeSchedItem, fetchCourseDetails, changeSchedule } from "../../actions";
+import {
+    removeSchedItem,
+    fetchCourseDetails,
+    changeSchedule,
+    duplicateSchedule
+} from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
 import "./schedule.css";
@@ -11,7 +16,7 @@ import Days from "./Days";
 import Times from "./Times";
 import Block from "./Block";
 import GridLines from "./GridLines";
-import Dropdown from "../Dropdown";
+import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
 
 // Used for box coloring, from StackOverflow:
 // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
@@ -35,7 +40,8 @@ const transformTime = (t) => {
 class Schedule extends Component {
     render() {
         const {
-            schedData, removeSection, focusSection, scheduleNames, switchSchedule,
+            schedData, removeSection, focusSection,
+            scheduleNames, switchSchedule, copySavedSchedule,
         } = this.props;
         const sections = schedData.meetings || [];
 
@@ -154,26 +160,18 @@ class Schedule extends Component {
             padding: "1rem",
         };
 
-        const scheduleSelectorContents = scheduleNames.map(scheduleName => ({
-            text: scheduleName,
-            onClick: () => switchSchedule(scheduleName),
-        }));
-        scheduleSelectorContents.push({
-            isCategory: false,
-            color: "light-blue",
-            text: "+ Add new schedule",
-            onClick: () => {
-            },
-        });
-
         return (
             <div className="column box vertical-section">
                 <h3 className="section-header">
-                    <Dropdown
+                    <ScheduleSelectorDropdown
                         defText="Mock Schedule"
                         defActive={0}
-                        contents={scheduleSelectorContents}
+                        contents={scheduleNames.map(scheduleName => ({
+                            text: scheduleName,
+                            onClick: () => switchSchedule(scheduleName),
+                        }))}
                         modifyLabel={false}
+                        copy={copySavedSchedule}
                     />
                 </h3>
                 <div className="schedule vertical-section-contents" style={dims}>
@@ -204,6 +202,7 @@ Schedule.propTypes = {
     focusSection: PropTypes.func,
     scheduleNames: PropTypes.arrayOf(PropTypes.string),
     switchSchedule: PropTypes.func,
+    copySavedSchedule: PropTypes.func,
 };
 
 const mapStateToProps = state => (
@@ -219,6 +218,7 @@ const mapDispatchToProps = dispatch => (
         removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
         focusSection: id => dispatch(fetchCourseDetails(id)),
         switchSchedule: scheduleName => dispatch(changeSchedule(scheduleName)),
+        copySavedSchedule: scheduleName => dispatch(duplicateSchedule(scheduleName))
     }
 );
 
