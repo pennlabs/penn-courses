@@ -151,9 +151,9 @@ class Schedule extends Component {
         };
 
         const outerFlex = {
-            overflowY:"scroll",
-            height:"100%"
-        }
+            overflowY: "scroll",
+            height: "100%",
+        };
 
         return (
             <div style={outerFlex}>
@@ -173,7 +173,7 @@ class Schedule extends Component {
                     {blocks}
                 </div>
                 <div className="scheduleStats">
-                    <Stats schedData={this.props.schedData}/>
+                    <Stats schedData={this.props.schedData} />
                 </div>
             </div>
         );

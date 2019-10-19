@@ -1,13 +1,11 @@
 html {
-  font-size: calc(100vw/90);
+  font-size: calc(100vw/95);
   width: 100%;
-  height: 95vh;
+  height: 100vh;
   background-color: #f1eff9;
 }
 body {
   width: 100%;
-  min-width: 1000px;
-  height:100%;
 }
 
 .button{
@@ -455,7 +453,7 @@ ul {
   /*border-radius:3px;*/
   /*background:white;*/
   /* border: 1px solid lightgrey; */
-  /*margin: 10px;*/
+  margin: 10px 5px;
 }
 
 .box.column{
