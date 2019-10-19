@@ -14,13 +14,14 @@ export default function CourseList({ courses, getCourse }) {
             </div>
             <ul className="scrollable course-list">
                 {
-                    courses.map(course => (
-                        <Course
-                            key={course.id}
-                            course={course}
-                            onClick={() => getCourse(course.id)}
-                        />
-                    ))
+                    courses
+                        .map(course => (
+                            <Course
+                                key={course.id}
+                                course={course}
+                                onClick={() => getCourse(course.id)}
+                            />
+                        ))
                 }
             </ul>
         </div>

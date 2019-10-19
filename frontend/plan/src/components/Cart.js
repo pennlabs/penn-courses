@@ -6,19 +6,23 @@ import { meetingsContainSection } from "../meetUtil";
 import { removeCartItem, toggleCheck } from "../actions";
 
 const Cart = ({ courses, toggleCourse, removeItem }) => (
-    <section className="vertical-section-contents">
-        {courses.map(({ section, checked }) => {
-            const { id: code, description: name } = section;
-            return (
-                <CartSection
-                    toggleCheck={() => toggleCourse(section)}
-                    code={code}
-                    checked={checked}
-                    name={name}
-                    remove={() => removeItem(code)}
-                />
-            );
-        })}
+    <section
+        className="vertical-section-contents"
+    >
+        {courses
+            .sort((a, b) => a.section.id.localeCompare(b.section.id))
+            .map(({ section, checked }) => {
+                const { id: code, description: name } = section;
+                return (
+                    <CartSection
+                        toggleCheck={() => toggleCourse(section)}
+                        code={code}
+                        checked={checked}
+                        name={name}
+                        remove={() => removeItem(code)}
+                    />
+                );
+            })}
     </section>
 );
 

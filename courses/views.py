@@ -41,7 +41,7 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = CourseListSerializer
-    queryset = Course.objects.all()
+    queryset = Course.objects.filter(sections__isnull=False)
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
