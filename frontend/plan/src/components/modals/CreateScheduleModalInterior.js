@@ -9,14 +9,14 @@ const CreateScheduleModalInterior = ({ usedScheduleNames, createSchedule, close 
     return <div>
         <input type={"text"} ref={ref => setInputRef(ref)}
                onChange={() => setUserInput(inputRef.value)}/>
-        <p>{errorMessage}</p>
-        <div role={"button"} onClick={() => {
+        <p className={"error_message"}>{errorMessage}</p>
+        <button className={"button is-link"}  role={"button"} onClick={() => {
             const scheduleName = inputRef.value;
             if (!error) {
                 createSchedule(scheduleName);
                 close();
             }
-        }}>Create</div>
+        }}>Create</button>
     </div>;
 };
 

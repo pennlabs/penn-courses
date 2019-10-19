@@ -11,12 +11,17 @@ const ModalContainer = ({
     children, title, close, dispatch, modalKey, modalProps
 }) => {
     console.log(children, modalKey);
-    return ( <div className={`modal ${title ? "is-active" : ""}`}>
+    return (<div className={`modal ${title ? "is-active" : ""}`}>
             <div className="modal-background"/>
             <div className="modal-card">
                 <header className="modal-card-head">
-                    <p className="modal-card-title">{title}</p>
-                    <button className="delete" aria-label="close" onClick={close} type="button"/>
+                    <header className="modal-card-title">{title}</header>
+                    <div role={"button"} aria-label="close" onClick={close}
+                         style={{ cursor: "pointer" }}>
+                        <span className={"icon is-small"}>
+                            <i className={"fa fa-times"} style={{ color: "rgba(0, 0, 0, 0.2)" }}/>
+                        </span>
+                    </div>
                 </header>
                 <section className="modal-card-body">
                     {modalKey && React.Children.map(children, child =>

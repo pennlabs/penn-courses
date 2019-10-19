@@ -1,0 +1,61 @@
+.modal header, .modal footer{
+    background-color: white;
+}
+
+.modal-card{
+    border-radius:9px;
+    max-width: 400px!important;
+    max-height: 250px!important;
+}
+
+.modal-card-body{
+    padding-bottom: 1.5rem;
+}
+
+
+.modal-card-body .button, .modal-card-body input{
+    display:block;
+    margin: 1.5rem auto auto;
+}
+
+.modal-background{
+    background-color:#707070;
+    opacity:0.75;
+}
+
+.modal-card-head {
+    border-bottom: none!important;
+    background-color: white!important;
+    font-weight: bold;
+}
+
+.modal-card-head, .modal-card-body {
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+.modal-card input {
+    background-color: #f4f4f4;
+    border-radius: 0.5rem;
+    padding: 0.35rem;
+    width: 100%;
+    margin-top:0;
+    border: none;
+    outline: none;
+}
+
+.modal-card button {
+    float: right;
+}
+
+.modal-card button.is-link {
+    background: #7b84e6;
+}
+
+.modal-card button.is-link:hover {
+    background: #6e76cd;
+}
+
+.modal-card button.is-link:active {
+    background: #5d64ad;
+}
