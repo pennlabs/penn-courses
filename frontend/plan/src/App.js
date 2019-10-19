@@ -50,7 +50,7 @@ function App() {
                         >
                             Search Results
                         </h3>
-                        <div className="box" style={{ height: "100%", paddingLeft: 0, paddingRight: 0 }}>
+                        <div className="box" style={{ height: "95%", paddingLeft: 0, paddingRight: 0 }}>
                             <Selector />
                         </div>
                     </div>
