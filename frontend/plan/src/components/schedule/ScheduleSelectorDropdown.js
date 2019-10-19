@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
-const DropdownButton = ({ isActive, text, onClick, makeActive, mutators: { copy, remove } }) => (
+const DropdownButton = ({
+    isActive, text, onClick, makeActive, mutators: { copy, remove },
+}) => (
     <div
-        onClick={e => {
+        role="button"
+        onClick={(e) => {
             const targetClass = e.target.getAttribute("class");
             if (targetClass && (targetClass.indexOf("s-option") !== -1)) {
                 // one of the icons has been clicked
@@ -18,21 +21,29 @@ const DropdownButton = ({ isActive, text, onClick, makeActive, mutators: { copy,
         }}
         className={`dropdown-item${isActive ? " is-active" : ""}`}
     >
-        <div className={"schedule-name-container"}>
+        <div className="schedule-name-container">
             {text}
         </div>
-        <div className={"schedule-options-container"}>
+        <div className="schedule-options-container">
             <span className="icon is-small">
-                <i className="far fa-edit" aria-hidden="true"/>
+                <i className="far fa-edit" aria-hidden="true" />
             </span>
-            <div onClick={copy} className={"s-option-copy"}>
+            <div
+                onClick={copy}
+                className="s-option-copy"
+                role="button"
+            >
                 <span className="icon is-small">
-                    <i className="far fa-copy" aria-hidden="true"/>
+                    <i className="far fa-copy" aria-hidden="true" />
                 </span>
             </div>
-            <div onClick={remove} className={"s-option-copy"}>
+            <div
+                onClick={remove}
+                className="s-option-copy"
+                role="button"
+            >
                 <span className="icon is-small">
-                    <i className="fa fa-trash" aria-hidden="true"/>
+                    <i className="fa fa-trash" aria-hidden="true" />
                 </span>
             </div>
         </div>
@@ -44,10 +55,15 @@ DropdownButton.propTypes = {
     text: PropTypes.string,
     onClick: PropTypes.func,
     makeActive: PropTypes.func,
-    mutators: PropTypes.object.isRequired,
+    mutators: PropTypes.shape({
+        copy: PropTypes.func.isRequired,
+        remove: PropTypes.func.isRequired
+    }),
 };
 
-const ScheduleSelectorDropdown = ({ defActive, defText, contents, mutators: { copy, remove } }) => {
+const ScheduleSelectorDropdown = ({
+    defActive, defText, contents, mutators: { copy, remove },
+}) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
     const [ref, setRef] = useState(null);
@@ -71,7 +87,7 @@ const ScheduleSelectorDropdown = ({ defActive, defText, contents, mutators: { co
         >
             <span className="selected_name">{defText}</span>
             <div
-                className={"classic-dropdown-trigger"}
+                className="classic-dropdown-trigger"
                 onClick={() => setIsActive(!isActive)}
                 role="button"
             >
@@ -80,7 +96,7 @@ const ScheduleSelectorDropdown = ({ defActive, defText, contents, mutators: { co
                     aria-controls="dropdown-menu"
                 >
                     <span className="icon is-small">
-                        <i className="fa fa-chevron-down" aria-hidden="true"/>
+                        <i className="fa fa-chevron-down" aria-hidden="true" />
                     </span>
                 </div>
             </div>
@@ -106,10 +122,11 @@ const ScheduleSelectorDropdown = ({ defActive, defText, contents, mutators: { co
                     <a
                         onClick={() => {
                         }}
+                        role={"button"}
                         className="dropdown-item add-schedule"
                     >
-                        <span className={"icon is-small"}>
-                            <i className="fa fa-plus" aria-hidden="true"/>
+                        <span className="icon is-small">
+                            <i className="fa fa-plus" aria-hidden="true" />
                         </span>
                         <span> Add new schedule </span>
                     </a>
@@ -123,7 +140,10 @@ ScheduleSelectorDropdown.propTypes = {
     defActive: PropTypes.bool,
     defText: PropTypes.string.isRequired,
     contents: PropTypes.arrayOf(PropTypes.object).isRequired,
-    mutators: PropTypes.object.isRequired,
+    mutators: PropTypes.shape({
+        copy: PropTypes.func.isRequired,
+        remove: PropTypes.func.isRequired,
+    }),
 };
 
 

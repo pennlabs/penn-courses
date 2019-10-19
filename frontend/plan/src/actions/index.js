@@ -42,7 +42,7 @@ export const duplicateSchedule = scheduleName => (
     }
 );
 
-export const deleteSchedule = scheduleName=> (
+export const deleteSchedule = scheduleName => (
     {
         type: DELETE_SCHEDULE,
         scheduleName,

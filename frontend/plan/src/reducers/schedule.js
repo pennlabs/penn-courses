@@ -69,11 +69,11 @@ const nextAvailable = (scheduleName, used) => {
     let endNum = 0;
     let numDigits = 0;
     let selectionIndex = newScheduleName.length - 1;
-    while (selectionIndex >=0 && newScheduleName.charAt(selectionIndex) >= "0" &&
-    newScheduleName.charAt(selectionIndex) <= 9 ) {
-        endNum += Math.pow(10, numDigits) * parseInt(newScheduleName.charAt(selectionIndex));
+    while (selectionIndex >= 0 && newScheduleName.charAt(selectionIndex) >= "0"
+    && newScheduleName.charAt(selectionIndex) <= 9) {
+        endNum += Math.pow(10, numDigits) * parseInt(newScheduleName.charAt(selectionIndex), 10);
         numDigits += 1;
-        selectionIndex--;
+        selectionIndex -= 1;
     }
     // prevent double arithmetic issues
     endNum = Math.round(endNum);
@@ -132,8 +132,8 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
                 schedules: newSchedules,
-                scheduleSelected: action.scheduleName === state.scheduleSelected ?
-                    Object.keys(newSchedules)[0] : state.scheduleSelected,
+                scheduleSelected: action.scheduleName === state.scheduleSelected
+                    ? Object.keys(newSchedules)[0] : state.scheduleSelected,
             };
         }
         case CHANGE_SCHEDULE:

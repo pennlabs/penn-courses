@@ -172,22 +172,28 @@ class Schedule extends Component {
                         mutators={schedulesMutator}
                     />
                 </h3>
-                <div className="schedule vertical-section-contents"
-                     style={notEmpty ? dims : { padding: "1rem" }}>
-                    {notEmpty && <Days offset={colOffset} weekend={showWeekend}/>}
-                    {notEmpty && <Times
-                        startTime={startHour}
-                        endTime={endHour}
-                        numRow={getNumRows()}
-                        offset={rowOffset}
+                <div
+                    className="schedule vertical-section-contents"
+                    style={notEmpty ? dims : { padding: "1rem" }}
+                >
+                    {notEmpty && <Days offset={colOffset} weekend={showWeekend} />}
+                    {notEmpty && (
+                        <Times
+                            startTime={startHour}
+                            endTime={endHour}
+                            numRow={getNumRows()}
+                            offset={rowOffset}
 
-                    />}
-                    {notEmpty && <GridLines
-                        numRow={getNumRows()}
-                        numCol={getNumCol()}
-                    />}
+                        />
+                    )}
+                    {notEmpty && (
+                        <GridLines
+                            numRow={getNumRows()}
+                            numCol={getNumCol()}
+                        />
+                    )}
                     {notEmpty && blocks}
-                    {!notEmpty && <EmptySchedule/>}
+                    {!notEmpty && <EmptySchedule />}
                 </div>
             </div>
         );
@@ -202,7 +208,10 @@ Schedule.propTypes = {
     focusSection: PropTypes.func,
     scheduleNames: PropTypes.arrayOf(PropTypes.string),
     switchSchedule: PropTypes.func,
-    schedulesMutator: PropTypes.object.isRequired,
+    schedulesMutator: PropTypes.shape({
+        copy: PropTypes.func.isRequired,
+        remove: PropTypes.func.isRequired,
+    }),
 };
 
 const mapStateToProps = state => (
@@ -225,8 +234,8 @@ const mapDispatchToProps = dispatch => (
     }
 );
 
-const EmptySchedule = () => {
-    return <div style={{ height: "100%" }}>
+const EmptySchedule = () => (
+    <div style={{ height: "100%" }}>
         <p style={{
             fontSize: "1.5em",
             paddingTop: "7em",
@@ -234,15 +243,15 @@ const EmptySchedule = () => {
         }}
         >
             Search for courses above
-            <br/>
+            <br />
             then click a section&#39;s + icon to add it to the schedule.
         </p>
         <p style={{ fontSize: "1em" }}>
             These are mock schedules.
-            <br/>
+            <br />
             You still need to register for your classes on Penn InTouch.
         </p>
-    </div>;
-};
+    </div>
+);
 
 export default connect(mapStateToProps, mapDispatchToProps)(Schedule);
