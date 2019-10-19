@@ -9,6 +9,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 frontend/*/build/
+PennCourses/settings/static/
 *.sqlite3
 *-test.json
 celerybeat-schedule

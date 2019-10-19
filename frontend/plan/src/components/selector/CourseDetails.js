@@ -4,7 +4,7 @@ import TagList from "./TagList";
 import Badge from "../Badge";
 
 
-export default function CourseDetails({ course }) {
+export default function CourseDetails({ course, getCourse }) {
     const requirements = course.requirements || [];
     const crosslistings = course.crosslistings || [];
     return (
@@ -41,7 +41,7 @@ export default function CourseDetails({ course }) {
                         <i className="fas fa-random" />
                     </span>
                     &nbsp; Crosslisted as: &nbsp;
-                    {<TagList elements={crosslistings} limit={2} />}
+                    { <TagList elements={crosslistings.map(e => e.replace(/-/g, " "))} limit={2} onClick={getCourse} /> }
                 </li>
             ) : null
             }
@@ -51,4 +51,5 @@ export default function CourseDetails({ course }) {
 
 CourseDetails.propTypes = {
     course: PropTypes.objectOf(PropTypes.any).isRequired,
+    getCourse: PropTypes.func,
 };

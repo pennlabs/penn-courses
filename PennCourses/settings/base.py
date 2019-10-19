@@ -91,7 +91,8 @@ TEMPLATES = [
     },
 ]
 
-STATICFILES_DIRS = [os.path.join(FRONTEND_DIR, 'plan', 'build', 'static')]
+STATICFILES_DIRS = [os.path.join(FRONTEND_DIR, 'plan', 'build', 'static'),
+                    os.path.join(FRONTEND_DIR, 'plan', 'build', 'icons')]
 
 WSGI_APPLICATION = 'PennCourses.wsgi.application'
 

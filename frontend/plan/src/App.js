@@ -11,6 +11,7 @@ import Schedule from "./components/schedule/Schedule";
 
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
+import NavBar from "./NavBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 
@@ -36,38 +37,44 @@ store.subscribe(() => {
 function App() {
     return (
         <Provider store={store}>
-            <div>
-                <SearchBar />
-                <div className="App">
-                    <div className="columns main" style={{ height: "90vh" }}>
-                        <div className="column is-one-quarter box">
+            <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+                <NavBar style={{ flexGrow: 0 }} />
+                <SearchBar style={{ flexGrow: 0 }} />
+                <div className="App" className="columns main" style={{ flexGrow: 1, maxHeight: "80vh" }}>
+                    <div className="column is-one-quarter">
+                        <h3 style={{
+                            display: "flex",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
+                        }}
+                        >
+                            Search Results
+                        </h3>
+                        <div className="box" style={{ height: "100%", paddingLeft: 0, paddingRight: 0 }}>
                             <Selector />
                         </div>
-                        <div
-                            className="column is-one-fifth box"
-                            style={
-                                {
-                                    background: "transparent",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    border: "0",
-                                    boxShadow: "none",
-                                }
-                            }
-                        >
-                            <h3 style={{
+                    </div>
+                    <div
+                        className="column is-one-fifth"
+                        style={
+                            {
                                 display: "flex",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
-                            }}
-                            >
-                                Cart
-                            </h3>
-                            <Cart />
-                        </div>
-                        <div className="column box">
-                            <Schedule />
-                        </div>
+                                flexDirection: "column",
+                            }
+                        }
+                    >
+                        <h3 style={{
+                            display: "flex",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
+                        }}
+                        >
+                            Cart
+                        </h3>
+                        <Cart />
+                    </div>
+                    <div className="column box">
+                        <Schedule />
                     </div>
                 </div>
             </div>
