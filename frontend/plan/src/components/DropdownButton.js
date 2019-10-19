@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "./useOnClickOutside";
 
-export function DropdownButton({ title, children }) {
+export function DropdownButton({
+    title, children, filterData, defaultFilter, clearFilter,
+}) {
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
@@ -12,7 +14,6 @@ export function DropdownButton({ title, children }) {
             setIsActive(true);
         }
     };
-
     const ref = useOnClickOutside(toggleButton, !isActive);
 
     return (
@@ -31,6 +32,19 @@ export function DropdownButton({ title, children }) {
                     <span>
                         {title}
                     </span>
+                    {JSON.stringify(filterData) !== JSON.stringify(defaultFilter)
+                    && (
+                        <span>
+                            <i
+                                className="delete is-small"
+                                onClick={(e) => {
+                                    clearFilter();
+                                    e.stopPropagation();
+                                }}
+                                role="button"
+                            />
+                        </span>
+                    )}
                 </button>
             </div>
             <div className="dropdown-menu" id="dropdown-menu" role="menu">
@@ -50,5 +64,14 @@ export function DropdownButton({ title, children }) {
 
 DropdownButton.propTypes = {
     title: PropTypes.string,
-    children: PropTypes.arrayOf(PropTypes.object),
+    children: PropTypes.node,
+    filterData: PropTypes.oneOfType([
+        PropTypes.array,
+        PropTypes.object
+    ]),
+    defaultFilter: PropTypes.oneOfType([
+        PropTypes.array,
+        PropTypes.object
+    ]),
+    clearFilter: PropTypes.func,
 };

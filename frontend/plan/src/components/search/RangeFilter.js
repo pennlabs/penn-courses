@@ -1,23 +1,51 @@
-import React from "react";
+import React, { useState } from "react";
+import { Range } from "rc-slider";
+import "rc-slider/assets/index.css";
 import PropTypes from "prop-types";
 
-export function RangeFilter({ setIsActive }) {
+export function RangeFilter({
+    setIsActive, minRange, maxRange, filterData,
+    updateRangeFilter, startSearch, rangeProperty, step,
+}) {
+    const [searchTimeout, setSearchTimeout] = useState();
+    const onSliderChange = (value) => {
+        updateRangeFilter(value);
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        setSearchTimeout(setTimeout(() => {
+            startSearch({
+                ...filterData,
+                [rangeProperty]: value,
+            });
+        }, 200));
+    };
+
     return (
         <div className="columns contained is-multiline is-centered">
             <div className="column is-half">
-                <p>Low</p>
-                <div className="rating-box">
-                    <input className="input is-small" type="text" placeholder="0.00" />
-                </div>
+                <p>
+                    {" "}
+                    {filterData[rangeProperty][0]}
+                    {" "}
+                </p>
             </div>
             <div className="column is-half">
-                <p>High</p>
-                <div className="rating-box">
-                    <input className="input is-small" type="text" placeholder="4.00" />
-                </div>
+                <p>
+                    {" "}
+                    {filterData[rangeProperty][1]}
+                    {" "}
+                </p>
             </div>
-            <div className="column is-half rating-btn">
-                <button className="button" type="button" onClick={() => setIsActive(false)}>Submit</button>
+            <div className="column is-full">
+                <Range
+                    min={minRange}
+                    max={maxRange}
+                    value={filterData[rangeProperty]}
+                    step={step}
+                    allowCross={false}
+                    onChange={onSliderChange}
+                />
             </div>
         </div>
     );
@@ -25,4 +53,12 @@ export function RangeFilter({ setIsActive }) {
 
 RangeFilter.propTypes = {
     setIsActive: PropTypes.func,
+    minRange: PropTypes.number,
+    maxRange: PropTypes.number,
+    startSearch: PropTypes.func,
+    updateRangeFilter: PropTypes.func,
+    rangeProperty: PropTypes.string,
+    step: PropTypes.number,
+    // eslint-disable-next-line react/forbid-prop-types
+    filterData: PropTypes.object,
 };

@@ -3,8 +3,7 @@ import {
     OPEN_SECTION_INFO,
     UPDATE_SEARCH,
     UPDATE_SECTIONS,
-    UPDATE_COURSE_INFO,
-    LOAD_REQUIREMENTS
+    UPDATE_COURSE_INFO
 } from "../actions";
 
 // This file contains the reducers for everything related to sections and courses
@@ -20,33 +19,10 @@ const initialState = {
     sections: [],
     searchResults: [],
     sectionInfo: undefined,
-    schoolReq: {
-        SAS: [],
-        SEAS: [],
-        NURS: [],
-        WH: [],
-    },
-    filterSearch: {
-        selectedReq: null,
-        difficulty: null,
-        quality: null,
-        time: null,
-        type: null,
-        cu: null,
-    },
 };
 
 export const sections = (state = initialState, action) => {
     switch (action.type) {
-        case LOAD_REQUIREMENTS:
-            return {
-                ...state,
-                schoolReq: action.obj,
-                filterSearch: {
-                    ...state.filterSearch,
-                    selectedReq: action.selObj,
-                },
-            };
         case UPDATE_COURSE_INFO:
             return {
                 ...state,
@@ -63,7 +39,6 @@ export const sections = (state = initialState, action) => {
                 sections: action.sections,
             };
         case UPDATE_SEARCH:
-            // console.log("UPDATING SEARCH");
             return {
                 ...state,
                 searchResults: action.searchResults,

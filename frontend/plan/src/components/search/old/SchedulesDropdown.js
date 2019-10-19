@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Dropdown } from "../../old/dropdown";
+import { ScheduleSelectorDropdown } from "../../schedule/ScheduleSelectorDropdown";
 
 export default function SchedulesDropdown({ scheduleNames, changeSchedule, scheduleSelected }) {
     return (

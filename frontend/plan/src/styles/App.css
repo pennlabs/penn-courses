@@ -4,6 +4,24 @@ html {
   height: 100vh;
   background-color: #f1eff9;
 }
+.section-header {
+  display: flex;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.vertical-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.vertical-section-contents {
+  display: flex;
+  flex-grow: 1;
+  overflow: auto;
+  flex-direction: column;
+}
+
 body {
   width: 100%;
 }
@@ -100,14 +118,6 @@ form > input[type="text"] {
 
 #searchbar button{
   min-width:8rem;
-}
-
-.is-active i.fa.fa-angle-down::before{
-  content:"\f106"!important;
-}
-
-footer:hover i.fa.fa-angle-up::before{
-  content:"\f107"!important;
 }
 
 /*#loaderWrap {height: 30px; width: 30px; display: inline-block; vertical-align: middle;}

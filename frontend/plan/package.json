@@ -9,6 +9,7 @@
     "bulma-popover": "^1.0.0",
     "cross-fetch": "^3.0.2",
     "prop-types": "^15.7.2",
+    "rc-slider": "^8.7.1",
     "react": "^16.8.6",
     "react-circular-progressbar": "^2.0.2",
     "react-dom": "^16.6.3",
