@@ -14,30 +14,37 @@ export default function SectionDetails({ section, isOpen }) {
     return (
         <li style={{ display: isOpen ? "block" : "none" }}>
             <div style={{ margin: ".5em .5em .5em 3.25em", maxHeight: "40%", fontSize: ".75em", display: "block" }}>
-                <h3 className="title is-6 section-details-title">
-                    <b>{`${getSectionId(id)}`}</b>
-                    &nbsp;&nbsp;
-                    <p>
+                <div style={{display: "flex", justifyContent: "flex-start"}}>
+                    <h3 className="title is-6 section-details-title" style={{
+                        marginRight: "1em"
+                    }}>
+                        <b>{`${getSectionId(id)}`}</b>
+                    </h3>
+                    <h3 className="title is-6 section-details-title">
                         {instructors.map((elem, ind) => <>
                             {ind !== 0 ? <br /> : null}
                             {ind !== instructors.length - 1 ? `${elem},` : elem}
                         </>)}
-                    </p>
-                </h3>
-                <span className="popover is-popover-right">
-                    <span className="popover-trigger">
-                        <a
-                            href={`https://penncoursereview.com/course/${getClassCode(id)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            <img className="pcr-svg" src="https://danxtao.com/assets/pcr.svg" />
-                        </a>
-                    </span>
-                    <span className="popover-content">
-                        View course on Penn Course Review
-                    </span>
-                </span>
+                    </h3>
+                    <a
+                        style={{
+                            marginLeft: "auto",
+                            marginRight: "2em"
+                        }}
+                        className="popover is-popover-left"
+                        href={`https://penncoursereview.com/course/${getClassCode(id)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <img
+                            className="popover-trigger pcr-svg"
+                            src="https://danxtao.com/assets/pcr.svg"
+                        />
+                        <span className="popover-content">
+                            View course on Penn Course Review
+                        </span>
+                    </a>
+                </div>
                 <br />
                 <i className="far fa-clock grey-text" />
                 &nbsp;
