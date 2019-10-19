@@ -124,6 +124,7 @@ const ScheduleSelectorDropdown = ({
                         }}
                         role="button"
                         className="dropdown-item add-schedule"
+                        href="#"
                     >
                         <span className="icon is-small">
                             <i className="fa fa-plus" aria-hidden="true" />
