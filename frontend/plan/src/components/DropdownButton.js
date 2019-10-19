@@ -23,7 +23,7 @@ export function DropdownButton({
         >
             <div className="dropdown-trigger">
                 <button
-                    className="button is-rounded"
+                    className="filterButton button is-rounded"
                     aria-haspopup="true"
                     aria-controls="dropdown-menu"
                     onClick={toggleButton}

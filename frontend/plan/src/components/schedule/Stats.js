@@ -9,7 +9,7 @@ const purpleTimeStats = {
     textAlign: "right",
     minWidth: "40px",
     paddingRight: "10px",
-}
+};
 
 class Stats extends Component {
     parseTime = (time) => {
