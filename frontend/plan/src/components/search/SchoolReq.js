@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-export function SchoolReq({ filterInfo, schoolReq }) {
+export function SchoolReq({
+    startSearch, filterData, schoolReq, addSchoolReq, remSchoolReq,
+}) {
     const schools = ["College", "Engineering", "Nursing", "Wharton"];
     const [selSchool, setSelSchool] = useState("College");
 
@@ -47,9 +49,22 @@ export function SchoolReq({ filterInfo, schoolReq }) {
                                 id={req.id}
                                 type="checkbox"
                                 value={req.id}
-                                checked={filterInfo[req.id] === 1}
+                                checked={filterData.selectedReq[req.id] === 1}
                                 onChange={() => {
-
+                                    const toggleState = filterData.selectedReq[req.id]
+                                        === 1 ? 0 : 1;
+                                    if (filterData.selectedReq[req.id] === 1) {
+                                        remSchoolReq(req.id);
+                                    } else {
+                                        addSchoolReq(req.id);
+                                    }
+                                    startSearch({
+                                        ...filterData,
+                                        selectedReq: {
+                                            ...filterData.selectedReq,
+                                            [req.id]: toggleState,
+                                        },
+                                    });
                                 }}
                             />
                             { /* eslint-disable-next-line jsx-a11y/label-has-for */ }
@@ -64,6 +79,9 @@ export function SchoolReq({ filterInfo, schoolReq }) {
 }
 
 SchoolReq.propTypes = {
-    filterInfo: PropTypes.objectOf(PropTypes.any),
-    schoolReq: PropTypes.arrayOf(PropTypes.object),
+    schoolReq: PropTypes.objectOf(PropTypes.array),
+    addSchoolReq: PropTypes.func,
+    remSchoolReq: PropTypes.func,
+    startSearch: PropTypes.func,
+    filterData: PropTypes.objectOf(PropTypes.number),
 };
