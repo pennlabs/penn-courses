@@ -155,7 +155,7 @@ class Schedule extends Component {
 
         const dims = {
             gridTemplateColumns: `.4fr repeat(${getNumCol() - 1}, 1fr)`,
-            gridTemplateRows: `repeat(${getNumRows()}, 1fr)`,
+            gridTemplateRows: `repeat(${getNumRows()-2}, 1fr)`,
             padding: "1rem",
         };
 
@@ -197,9 +197,7 @@ class Schedule extends Component {
                         {notEmpty && blocks}
                         {!notEmpty && <EmptySchedule />}
                     </div>
-                    <div className="scheduleStats">
-                        <Stats meetings={schedData.meetings} />
-                    </div>
+                    <Stats meetings={schedData.meetings} />
                 </div>
             </div>
         );
