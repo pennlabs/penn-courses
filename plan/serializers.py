@@ -162,7 +162,7 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
-    sections = SectionSerializer(many=True, read_only=True)
+    sections = SectionDetailWithReviewSerializer(many=True, read_only=True)
 
     class Meta:
         model = Schedule

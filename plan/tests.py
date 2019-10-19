@@ -200,9 +200,8 @@ class CourseReviewAverageTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
 class GetScheduleTest(TestCase):
     def setUp(self):
-        self.s = Schedule(person=User.objects.create_user(username='jacob', email='jacob@…', password='top_secret'),
+        self.s = Schedule(person=User.objects.create_user(username='jacob', email='jacob@example.com', password='top_secret'),
                           section=Section(),
                           semester=TEST_SEMESTER,
-                          name='My Test Schedule',
-                          )
+                          name='My Test Schedule')
         self.s.save()
