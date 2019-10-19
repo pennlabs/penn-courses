@@ -159,11 +159,6 @@ class Schedule extends Component {
             padding: "1rem",
         };
 
-        const outerFlex = {
-            overflowY: "scroll",
-            height: "100%",
-        };
-
         return (
             <div className="column vertical-section">
                 <h3 className="section-header">
