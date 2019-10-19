@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
 const DropdownButton = ({
-    isActive, text, onClick, makeActive, mutators: { copy, remove },
+    isActive, text, onClick, makeActive, mutators: { copy, remove, rename },
 }) => (
     <div
         role="button"
@@ -25,16 +25,22 @@ const DropdownButton = ({
             {text}
         </div>
         <div className="schedule-options-container">
-            <span className="icon is-small">
-                <i className="far fa-edit" aria-hidden="true" />
-            </span>
+            <div
+                onClick={rename}
+                className="s-option-copy"
+                role="button"
+            >
+                <span className="icon is-small">
+                    <i className="far fa-edit" aria-hidden="true"/>
+                </span>
+            </div>
             <div
                 onClick={copy}
                 className="s-option-copy"
                 role="button"
             >
                 <span className="icon is-small">
-                    <i className="far fa-copy" aria-hidden="true" />
+                    <i className="far fa-copy" aria-hidden="true"/>
                 </span>
             </div>
             <div
@@ -43,7 +49,7 @@ const DropdownButton = ({
                 role="button"
             >
                 <span className="icon is-small">
-                    <i className="fa fa-trash" aria-hidden="true" />
+                    <i className="fa fa-trash" aria-hidden="true"/>
                 </span>
             </div>
         </div>
@@ -58,11 +64,12 @@ DropdownButton.propTypes = {
     mutators: PropTypes.shape({
         copy: PropTypes.func.isRequired,
         remove: PropTypes.func.isRequired,
+        rename: PropTypes.func.isRequired,
     }),
 };
 
 const ScheduleSelectorDropdown = ({
-    defActive, defText, contents, mutators: { copy, remove },
+    defActive, defText, contents, mutators: { copy, remove, rename },
 }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
@@ -96,14 +103,14 @@ const ScheduleSelectorDropdown = ({
                     aria-controls="dropdown-menu"
                 >
                     <span className="icon is-small">
-                        <i className="fa fa-chevron-down" aria-hidden="true" />
+                        <i className="fa fa-chevron-down" aria-hidden="true"/>
                     </span>
                 </div>
             </div>
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content">
                     {Array.from(contents.entries())
-                        .map(([index, { onClick, text }]) => (
+                        .map(([index, { onClick, text: scheduleName }]) => (
                             <DropdownButton
                                 key={index}
                                 isActive={activeItem === index}
@@ -112,10 +119,11 @@ const ScheduleSelectorDropdown = ({
                                     setIsActive(false);
                                 }}
                                 onClick={onClick}
-                                text={text}
+                                text={scheduleName}
                                 mutators={{
-                                    copy: () => copy(text),
-                                    remove: () => remove(text),
+                                    copy: () => copy(scheduleName),
+                                    remove: () => remove(scheduleName),
+                                    rename: (newName) => rename(scheduleName, newName),
                                 }}
                             />
                         ))}
@@ -126,7 +134,7 @@ const ScheduleSelectorDropdown = ({
                         className="dropdown-item add-schedule"
                     >
                         <span className="icon is-small">
-                            <i className="fa fa-plus" aria-hidden="true" />
+                            <i className="fa fa-plus" aria-hidden="true"/>
                         </span>
                         <span> Add new schedule </span>
                     </a>

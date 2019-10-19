@@ -104,10 +104,9 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
                 schedules: {
-                    ...removeSchedule(state.scheduleSelected, state.schedules),
-                    [action.scheduleName]: state.schedules[state.scheduleSelected],
+                    ...removeSchedule(action.oldName, state.schedules),
+                    [action.newName]: state.schedules[action.oldName],
                 },
-                scheduleSelected: action.scheduleName,
             };
         case DUPLICATE_SCHEDULE:
             return {

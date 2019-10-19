@@ -48,10 +48,11 @@ export const deleteSchedule = scheduleName => (
     }
 );
 
-export const renameSchedule = scheduleName => (
+export const renameSchedule = (oldName, newName) => (
     {
         type: RENAME_SCHEDULE,
-        scheduleName,
+        oldName,
+        newName,
     }
 );
 
@@ -118,10 +119,12 @@ export const createSchedule = scheduleName => (
     }
 );
 
-export const openModal = modal => (
+export const openModal = (modalKey, modalProps, modalTitle) => (
     {
         type: OPEN_MODAL,
-        modal,
+        modalKey,
+        modalProps,
+        modalTitle
     }
 );
 

@@ -7,7 +7,7 @@ import {
     removeSchedItem,
     fetchCourseDetails,
     changeSchedule,
-    duplicateSchedule, deleteSchedule
+    duplicateSchedule, deleteSchedule, renameSchedule, openModal
 } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
@@ -176,7 +176,7 @@ class Schedule extends Component {
                     className="schedule vertical-section-contents"
                     style={notEmpty ? dims : { padding: "1rem" }}
                 >
-                    {notEmpty && <Days offset={colOffset} weekend={showWeekend} />}
+                    {notEmpty && <Days offset={colOffset} weekend={showWeekend}/>}
                     {notEmpty && (
                         <Times
                             startTime={startHour}
@@ -193,7 +193,7 @@ class Schedule extends Component {
                         />
                     )}
                     {notEmpty && blocks}
-                    {!notEmpty && <EmptySchedule />}
+                    {!notEmpty && <EmptySchedule/>}
                 </div>
             </div>
         );
@@ -230,6 +230,9 @@ const mapDispatchToProps = dispatch => (
         schedulesMutator: {
             copy: scheduleName => dispatch(duplicateSchedule(scheduleName)),
             remove: scheduleName => dispatch(deleteSchedule(scheduleName)),
+            rename: oldName => dispatch(openModal("RENAME_SCHEDULE",
+                { scheduleName: oldName },
+                "Rename Schedule")),
         },
     }
 );
@@ -243,12 +246,12 @@ const EmptySchedule = () => (
         }}
         >
             Search for courses above
-            <br />
+            <br/>
             then click a section&#39;s + icon to add it to the schedule.
         </p>
         <p style={{ fontSize: "1em" }}>
             These are mock schedules.
-            <br />
+            <br/>
             You still need to register for your classes on Penn InTouch.
         </p>
     </div>

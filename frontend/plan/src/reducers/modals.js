@@ -2,10 +2,10 @@ import { CLOSE_MODAL, OPEN_MODAL } from "../actions";
 
 // this file contains the reducers for modals
 
-/* the modal state contains the contents of the modal
- being shown (as an object with a modal name and a title) or null */
 const initialState = {
-    modal: null,
+    modalTitle: null,
+    modalKey: null,
+    modalProps: null,
 };
 
 export const modals = (state = initialState, action) => {
@@ -13,12 +13,16 @@ export const modals = (state = initialState, action) => {
         case OPEN_MODAL:
             return {
                 ...state,
-                modal: action.modal,
+                modalTitle: action.modalTitle,
+                modalKey: action.modalKey,
+                modalProps: action.modalProps,
             };
         case CLOSE_MODAL:
             return {
                 ...state,
                 modal: null,
+                modalKey: null,
+                modalProps: null,
             };
         default:
             return state;
