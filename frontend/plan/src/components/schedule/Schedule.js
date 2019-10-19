@@ -165,7 +165,7 @@ class Schedule extends Component {
         };
 
         return (
-            <div className="column box vertical-section">
+            <div className="column vertical-section">
                 <h3 className="section-header">
                     <ScheduleSelectorDropdown
                         defText="Mock Schedule"
@@ -178,30 +178,33 @@ class Schedule extends Component {
                         mutators={schedulesMutator}
                     />
                 </h3>
-                <div
-                    className="schedule vertical-section-contents"
-                    style={notEmpty ? dims : { padding: "1rem" }}
-                >
-                    {notEmpty && <Days offset={colOffset} weekend={showWeekend} />}
-                    {notEmpty && (
-                        <Times
-                            startTime={startHour}
-                            endTime={endHour}
-                            numRow={getNumRows()}
-                            offset={rowOffset}
+                <div className="box">
+                    <div
+                        className="schedule vertical-section-contents"
+                        style={notEmpty ? dims : { padding: "1rem" }}
+                    >
+                        {notEmpty && <Days offset={colOffset} weekend={showWeekend} />}
+                        {notEmpty && (
+                            <Times
+                                startTime={startHour}
+                                endTime={endHour}
+                                numRow={getNumRows()}
+                                offset={rowOffset}
 
-                        />
-                    )}
-                    {notEmpty && (
-                        <GridLines
-                            numRow={getNumRows()}
-                            numCol={getNumCol()}
-                        />
-                    )}
-                    {notEmpty && blocks}
-                    {!notEmpty && <EmptySchedule />}
-                <div className="scheduleStats">
-                  <Stats meetings={schedData.meetings} />                  
+                            />
+                        )}
+                        {notEmpty && (
+                            <GridLines
+                                numRow={getNumRows()}
+                                numCol={getNumCol()}
+                            />
+                        )}
+                        {notEmpty && blocks}
+                        {!notEmpty && <EmptySchedule />}
+                    </div>
+                    <div className="scheduleStats">
+                        <Stats meetings={schedData.meetings} />
+                    </div>
                 </div>
             </div>
         );
