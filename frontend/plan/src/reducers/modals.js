@@ -20,7 +20,7 @@ export const modals = (state = initialState, action) => {
         case CLOSE_MODAL:
             return {
                 ...state,
-                modal: null,
+                modalTitle: null,
                 modalKey: null,
                 modalProps: null,
             };
