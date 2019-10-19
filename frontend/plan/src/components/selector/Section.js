@@ -15,7 +15,7 @@ export default function Section({ section, cart, inCart }) {
                 {
                     // eslint-disable-next-line
                     <a
-                        className={`${isOpen ? "selector-row-selected" : ""} selector-row section-row`}
+                        className="selector-row section-row"
                         onClick={() => toggleOpen(!isOpen)}
                     >
                         <div onClick={inCart ? cart.remove : cart.add}>
