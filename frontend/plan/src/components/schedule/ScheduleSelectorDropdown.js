@@ -123,7 +123,7 @@ const ScheduleSelectorDropdown = ({
                                 mutators={{
                                     copy: () => copy(scheduleName),
                                     remove: () => remove(scheduleName),
-                                    rename: (newName) => rename(scheduleName, newName),
+                                    rename: () => rename(scheduleName),
                                 }}
                             />
                         ))}

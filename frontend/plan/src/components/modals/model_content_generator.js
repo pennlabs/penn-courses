@@ -13,7 +13,6 @@ import RenameScheduleModalInterior from "./RenameScheduleModalInterior";
  * @returns A component
  */
 export const generateModalInterior = reduxState => {
-    console.log(reduxState);
     switch (reduxState.modals.modalKey) {
         case "RENAME_SCHEDULE":
             return <RenameScheduleModalInterior

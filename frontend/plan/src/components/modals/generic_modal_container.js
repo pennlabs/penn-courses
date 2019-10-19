@@ -9,24 +9,26 @@ import { generateModalInterior, generateModalActions } from "./model_content_gen
  * */
 const ModalContainer = ({
     children, title, close, dispatch, modalKey, modalProps
-}) => (
-    <div className={`modal ${title ? "is-active" : ""}`}>
-        <div className="modal-background"/>
-        <div className="modal-card">
-            <header className="modal-card-head">
-                <p className="modal-card-title">{title}</p>
-                <button className="delete" aria-label="close" onClick={close} type="button"/>
-            </header>
-            <section className="modal-card-body">
-                {modalKey && React.children.map(children, child =>
-                    React.cloneElement(child, {
-                        ...modalProps,
-                        ... generateModalActions(dispatch, modalKey, modalProps),
-                    }))}
-            </section>
+}) => {
+    console.log(children, modalKey);
+    return ( <div className={`modal ${title ? "is-active" : ""}`}>
+            <div className="modal-background"/>
+            <div className="modal-card">
+                <header className="modal-card-head">
+                    <p className="modal-card-title">{title}</p>
+                    <button className="delete" aria-label="close" onClick={close} type="button"/>
+                </header>
+                <section className="modal-card-body">
+                    {modalKey && React.Children.map(children, child =>
+                        React.cloneElement(child, {
+                            ...modalProps,
+                            ...generateModalActions(dispatch, modalKey, modalProps),
+                        }))}
+                </section>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 ModalContainer.propTypes = {
     title: PropTypes.string.isRequired,
@@ -43,7 +45,7 @@ ModalContainer.propTypes = {
 const mapStateToProps = state => ({
     children: generateModalInterior(state),
     title: state.modals.modalTitle,
-    key: state.modals.modalKey,
+    modalKey: state.modals.modalKey,
     modalProps: state.modals.modalProps,
 });
 
