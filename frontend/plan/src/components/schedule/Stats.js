@@ -4,19 +4,19 @@ import MyCircularProgressBar from "./MyCircularProgressBar";
 
 class Stats extends Component {
     parseTime = (time) => {
-        if (time >= 13) {
+        if (time >= 12) {
             if (time - Math.floor(time) === 0) {
                 return `${time - 12}:00 PM`;
             }
 
-            return `${(time - 12) + (60 * (time - Math.floor(time)))}PM`;
+            return `${(time - 12) + Math.round(60 * (time - Math.floor(time)))}PM`;
         }
 
         if (time - Math.floor(time) === 0) {
             return `${time}:00 AM`;
         }
 
-        return `${(time) + (60 * (time - Math.floor(time)))}AM`;
+        return `${(time) + Math.round(60 * (time - Math.floor(time)))}AM`;
     }
 
     render() {
