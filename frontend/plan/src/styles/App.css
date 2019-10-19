@@ -129,14 +129,6 @@ form > input[type="text"] {
   min-width:8rem;
 }
 
-.is-active i.fa.fa-angle-down::before{
-  content:"\f106"!important;
-}
-
-footer:hover i.fa.fa-angle-up::before{
-  content:"\f107"!important;
-}
-
 /*#loaderWrap {height: 30px; width: 30px; display: inline-block; vertical-align: middle;}
 .loader {
 	height: 30px;

@@ -16,7 +16,7 @@ const DropdownButton = ({ isActive, text, onClick, makeActive, mutators: { copy,
                 makeActive();
             }
         }}
-        className={`dropdown-item${isActive ? " is-active" : ""} button`}
+        className={`dropdown-item${isActive ? " is-active" : ""}`}
     >
         <div className={"schedule-name-container"}>
             {text}
@@ -71,22 +71,18 @@ const ScheduleSelectorDropdown = ({ defActive, defText, contents, mutators: { co
         >
             <span className="selected_name">{defText}</span>
             <div
-                className="dropdown-trigger"
+                className={"classic-dropdown-trigger"}
                 onClick={() => setIsActive(!isActive)}
                 role="button"
             >
-                <button
-                    className="button"
+                <div
                     aria-haspopup={true}
                     aria-controls="dropdown-menu"
-                    type="button"
                 >
-                    <span>
-                        <span className="icon is-small">
-                            <i className="fa fa-angle-down" aria-hidden="true"/>
-                        </span>
+                    <span className="icon is-small">
+                        <i className="fa fa-chevron-down" aria-hidden="true"/>
                     </span>
-                </button>
+                </div>
             </div>
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content">
@@ -104,14 +100,16 @@ const ScheduleSelectorDropdown = ({ defActive, defText, contents, mutators: { co
                                 }}
                             />
                         ))}
-                    <button
+                    <a
                         onClick={() => {
                         }}
-                        type="button"
-                        className="dropdown-item button light-blue"
+                        className="dropdown-item add-schedule"
                     >
-                        + Add new schedule
-                    </button>
+                        <span className={"icon is-small"}>
+                            <i className="fa fa-plus" aria-hidden="true"/>
+                        </span>
+                        <span> Add new schedule </span>
+                    </a>
                 </div>
             </div>
         </div>

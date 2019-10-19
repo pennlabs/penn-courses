@@ -1,54 +1,71 @@
 
-.classic, .classic *{
+.classic, .classic * {
     border: 0;
     outline: none;
 }
 
 .classic .dropdown-item {
-    border-radius: 0!important;
+    border-radius: 0 !important;
+    cursor: pointer;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    transition: 100ms ease background;
 }
 
 .classic .dropdown-item, .classic .dropdown-item * {
     font-size: 0.75rem;
-    color: black;
+    color: #4a4a4a;
 }
 
-.classic .dropdown-item.light-blue {
-    color: #63b6ff!important;
-}
-
-.classic .dropdown-trigger {
+.classic-dropdown-trigger {
     margin-left: 0.75rem;
-    outline: none!important;
-    border: none!important;
+    outline: none !important;
+    border: none !important;
     background: transparent;
 }
 
-.classic .dropdown-trigger button {
-    border-radius: 0!important;
+.classic-dropdown-trigger div {
+    border-radius: 0 !important;
     height: 1.5rem;
     width: 1.5rem;
-    padding: 0!important;
-    outline: none!important;
-    border: none!important;
+    text-align: center;
+    cursor: pointer;
+    padding: 0 !important;
+    outline: none !important;
+    border: none !important;
     background: transparent;
-    transition: 250ms ease background;
+    transition: 150ms ease background;
 }
 
-.classic .dropdown-trigger button:hover, .classic.is-active .dropdown-trigger button {
-    background: #a2b4ed;
+.classic-dropdown-trigger div span i {
+    margin-bottom: 0.25rem;
 }
 
-.classic .button.dropdown-item.is-active {
+.classic-dropdown-trigger div:hover {
+    background: rgba(175, 194, 255, 0.27);
+}
+
+.classic.is-active .classic-dropdown-trigger div {
+    background: rgba(162, 180, 237, 0.38);
+}
+
+.classic .dropdown-item.is-active, .add-schedule:active {
     background: #e9e9e9;
 }
 
+.classic .dropdown-item.is-active:hover {
+    background: #dadada;
+}
+
 .classic .dropdown-menu {
-    margin-top: 0.1rem!important;
+    margin-top: 0.1rem !important;
+}
+
+.classic .dropdown-item:hover {
+    background: #f4f4f4;
 }
 
 .classic .dropdown-content {
-    padding: 0!important;
+    padding: 0 !important;
 
 }
 
@@ -56,7 +73,7 @@
     border-radius: 0.5rem;
 }
 
-.classic .dropdown-item{
+.classic .dropdown-item {
     display: flex;
     flex-direction: row;
 }
@@ -76,9 +93,23 @@
 }
 
 .schedule-options-container i {
-    color: #CCCCCC!important;
+    color: #c0c0c0 !important;
 }
 
 .schedule-options-container i:hover {
-    color: #aeaeae!important;
+    color: #aeaeae !important;
+}
+
+.is-active i.fa.fa-chevron-down::before {
+    content: "\f077" !important;
+}
+
+.add-schedule {
+    text-align: left;
+}
+
+.add-schedule span, .add-schedule span i {
+    float: left;
+    text-align: left;
+    color: #669afb!important;
 }
