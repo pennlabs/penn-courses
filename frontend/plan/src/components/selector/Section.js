@@ -33,15 +33,22 @@ export default function Section({ section, cart, inCart }) {
                         {section.id.split("-").pop()}
                     </div>
                     <div>
-                        <div className="popover is-popover-right">
+                        {instructors.length > 0 ? (
+                            <div className="popover is-popover-right">
+                                <Badge
+                                    baseColor={[43, 236, 56]}
+                                    value={section.instructor_quality}
+                                />
+                                <span className="popover-content">
+                                    {instructors.length > 1 ? `${instructors[0]}, and ${instructors.length - 1} other(s)` : instructors[0]}
+                                </span>
+                            </div>
+                        ) : (
                             <Badge
                                 baseColor={[43, 236, 56]}
                                 value={section.instructor_quality}
                             />
-                            <span className="popover-content">
-                                {instructors.length > 1 ? `${instructors[0]}, and ${instructors.length - 1} other(s)` : instructors[0]}
-                            </span>
-                        </div>
+                        )}
                     </div>
                     <div>
                         {section.activity}
