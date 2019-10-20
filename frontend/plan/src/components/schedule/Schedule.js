@@ -7,7 +7,7 @@ import {
     removeSchedItem,
     fetchCourseDetails,
     changeSchedule,
-    duplicateSchedule, deleteSchedule
+    duplicateSchedule, deleteSchedule, openModal
 } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
@@ -163,7 +163,6 @@ class Schedule extends Component {
             <div className="column vertical-section">
                 <h3 className="section-header">
                     <ScheduleSelectorDropdown
-                        defText="Mock Schedule"
                         defActive={0}
                         contents={scheduleNames.map(scheduleName => ({
                             text: scheduleName,
@@ -236,6 +235,12 @@ const mapDispatchToProps = dispatch => (
         schedulesMutator: {
             copy: scheduleName => dispatch(duplicateSchedule(scheduleName)),
             remove: scheduleName => dispatch(deleteSchedule(scheduleName)),
+            rename: oldName => dispatch(openModal("RENAME_SCHEDULE",
+                { scheduleName: oldName },
+                "Rename Schedule")),
+            create: () => dispatch(openModal("CREATE_SCHEDULE",
+                {},
+                "Create Schedule")),
         },
     }
 );
