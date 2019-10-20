@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 const WelcomeModalInterior = ({ close }) => (
     <div>
@@ -18,7 +19,7 @@ const WelcomeModalInterior = ({ close }) => (
     </div>
 );
 
-WelcomeModalInterior.PropTypes = {
+WelcomeModalInterior.propTypes = {
     close: PropTypes.func,
 };
 
