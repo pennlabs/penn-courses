@@ -11,9 +11,9 @@ import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import Schedule from "./components/schedule/Schedule";
 
+import { initGA, logPageView, analyticsMiddleware } from "./analytics";
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
-import NavBar from "./NavBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
@@ -31,7 +31,8 @@ const store = createStore(
     { schedule: previousStateJSON },
     applyMiddleware(
         thunkMiddleware,
-        loggerMiddleware
+        loggerMiddleware,
+        analyticsMiddleware,
     )
 );
 
@@ -42,6 +43,8 @@ store.subscribe(() => {
 function App() {
     return (
         <Provider store={store}>
+            {initGA()}
+            {logPageView()}
             <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
                 <NavBar style={{ flexGrow: 0 }} />
                 <SearchBar style={{ flexGrow: 0 }} />

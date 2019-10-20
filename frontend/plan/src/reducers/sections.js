@@ -3,7 +3,10 @@ import {
     OPEN_SECTION_INFO,
     UPDATE_SEARCH,
     UPDATE_SECTIONS,
-    UPDATE_COURSE_INFO, CHANGE_SORT_TYPE
+    UPDATE_COURSE_INFO_SUCCESS,
+    UPDATE_COURSE_INFO_REQUEST,
+    UPDATE_SEARCH_REQUEST,
+    CHANGE_SORT_TYPE
 } from "../actions";
 
 // This file contains the reducers for everything related to sections and courses
@@ -19,6 +22,8 @@ const initialState = {
     sections: [],
     searchResults: [],
     sectionInfo: undefined,
+    courseInfoLoading: false,
+    searchInfoLoading: false,
     sortType: "Name",
 };
 
@@ -29,10 +34,21 @@ export const sections = (state = initialState, action) => {
                 ...state,
                 sortType: action.sortType,
             };
-        case UPDATE_COURSE_INFO:
+        case UPDATE_COURSE_INFO_SUCCESS:
             return {
                 ...state,
                 course: action.course,
+                courseInfoLoading: false,
+            };
+        case UPDATE_COURSE_INFO_REQUEST:
+            return {
+                ...state,
+                courseInfoLoading: true,
+            };
+        case UPDATE_SEARCH_REQUEST:
+            return {
+                ...state,
+                searchInfoLoading: true,
             };
         case OPEN_SECTION_INFO:
             return {
@@ -50,6 +66,7 @@ export const sections = (state = initialState, action) => {
                 searchResults: action.searchResults,
                 sections: undefined,
                 course: null,
+                searchInfoLoading: false,
             };
 
         case COURSE_SEARCH_ERROR:
