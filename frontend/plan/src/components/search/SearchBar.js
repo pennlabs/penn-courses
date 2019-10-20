@@ -74,6 +74,9 @@ function SearchBar({
     return (
         <div className="bar level" style={{}}>
             <div className="level-left">
+                <div className="level-item">
+                    <img src="/static/favicon.ico" alt="" />
+                </div>
                 <div className="level-item" id="searchdiv">
                     <SearchField
                         startSearch={conditionalStartSearch}

@@ -24,14 +24,14 @@ export function RangeFilter({
     return (
         <div className="columns contained is-multiline is-centered">
             <div className="column is-half">
-                <p>
+                <p style={{ textAlign: "center" }}>
                     {" "}
                     {filterData[rangeProperty][0]}
                     {" "}
                 </p>
             </div>
             <div className="column is-half">
-                <p style={{ textAlign: "right" }}>
+                <p style={{ textAlign: "center" }}>
                     {" "}
                     {filterData[rangeProperty][1]}
                     {" "}
