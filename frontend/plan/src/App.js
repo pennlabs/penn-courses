@@ -10,7 +10,7 @@ import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import Schedule from "./components/schedule/Schedule";
 
-import { initGA, logPageView } from "./analytics";
+import { initGA, logPageView, analyticsMiddleware } from "./analytics";
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
 import NavBar from "./NavBar";
@@ -28,7 +28,8 @@ const store = createStore(
     { schedule: previousStateJSON },
     applyMiddleware(
         thunkMiddleware,
-        loggerMiddleware
+        loggerMiddleware,
+        analyticsMiddleware,
     )
 );
 

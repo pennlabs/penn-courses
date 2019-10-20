@@ -29,7 +29,7 @@ export const logException = (description = "", fatal = false) => {
 const filterActions = [ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_RANGE_FILTER];
 const schedActions = [CHANGE_SCHEDULE, CREATE_SCHEDULE, DELETE_SCHEDULE, RENAME_SCHEDULE];
 
-const analyticsMiddleware = store => next => (action) => {
+export const analyticsMiddleware = store => next => (action) => {
     if (filterActions.includes(action.type)) {
         logEvent("filter", action.type, JSON.stringify(action));
     } else if (schedActions.includes(action.type)) {
@@ -39,4 +39,4 @@ const analyticsMiddleware = store => next => (action) => {
     }
 
     return next(action);
-}; export default analyticsMiddleware;
+};
