@@ -1,6 +1,7 @@
 import React from "react";
 import { createSchedule, renameSchedule } from "../../actions";
 import NameScheduleModalInterior from "./NameScheduleModalInterior";
+import WelcomeModalInterior from "./WelcomeModalInterior";
 
 /**
  * Generates a modal interior component based on the redux state.
@@ -27,6 +28,10 @@ export const generateModalInterior = (reduxState) => {
                     buttonName="Create"
                     usedScheduleNames={Object.keys(reduxState.schedule.schedules)}
                 />
+            );
+        case "WELCOME":
+            return (
+                <WelcomeModalInterior />
             );
         default:
             return null;
