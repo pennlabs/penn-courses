@@ -75,7 +75,7 @@ function SearchBar({
         <div className="bar level" style={{}}>
             <div className="level-left">
                 <div className="level-item">
-                    <img src="/static/favicon.ico" alt="" />
+                    <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", paddingLeft: "1.5rem" }} />
                 </div>
                 <div className="level-item" id="searchdiv">
                     <SearchField
@@ -91,7 +91,7 @@ function SearchBar({
                         <i className="fas fa-filter" />
                     </span>
                     <p> Filter by</p>
-                    <DropdownButton title="School Req" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")} isDisabled={isLoading}>
+                    <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")} isDisabled={isLoading}>
                         <SchoolReq
                             startSearch={conditionalStartSearch}
                             schoolReq={schoolReq}
