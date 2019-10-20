@@ -9,19 +9,20 @@
 
 .filterButton {
     transition-duration: 0.2s;
-    margin-left: 0.5rem;
-    margin: auto;
-    flex-grow:1
+    border: solid 1px #e1e1e1;
 }
 
 .filterButton:hover {
-    background-color: #fbfaff;
+    border: solid 1px #e1e1e1;
+    background-color: #f0f0f0;
 }
 
 .filterButton:active {
-    box-shadow: 0 0 3px #7b84e6;
+    border: solid 1px #7b84e6;
     position:relative;
-    background-color: #e3e6ff;
+    top:-1px;
+    left:-1px;
+    background-color: #ffffff;
 }
 
 .filterButton:focus {
