@@ -35,6 +35,8 @@ function SectionList({ sections, cartSections, manageCart }) {
 
 SectionList.propTypes = {
     sections: PropTypes.arrayOf(PropTypes.object).isRequired,
+    cartSections: PropTypes.arrayOf(PropTypes.String).isRequired,
+    manageCart: PropTypes.func,
 };
 
 const mapStateToProps = (state, ownProps) => (
