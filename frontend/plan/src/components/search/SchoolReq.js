@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 export function SchoolReq({
-    startSearch, filterData, schoolReq, addSchoolReq, remSchoolReq,
+    startSearch, filterData, schoolReq, addSchoolReq, remSchoolReq, isDisabled,
 }) {
     const schools = ["College", "Engineering", "Nursing", "Wharton"];
     const [selSchool, setSelSchool] = useState("College");
@@ -50,6 +50,7 @@ export function SchoolReq({
                                 type="checkbox"
                                 value={req.id}
                                 checked={filterData.selectedReq[req.id] === 1}
+                                disabled={isDisabled ? "disabled" : false}
                                 onChange={() => {
                                     const toggleState = filterData.selectedReq[req.id]
                                         === 1 ? 0 : 1;
@@ -83,5 +84,6 @@ SchoolReq.propTypes = {
     addSchoolReq: PropTypes.func,
     remSchoolReq: PropTypes.func,
     startSearch: PropTypes.func,
+    isDisabled: PropTypes.bool,
     filterData: PropTypes.objectOf(PropTypes.number),
 };

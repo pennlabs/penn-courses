@@ -360,7 +360,7 @@ export const removeCartItem = sectionId => ({
     sectionId,
 });
 
-export const changeSortType = sortType => ({
+export const changeSortType = sortMode => ({
     type: CHANGE_SORT_TYPE,
-    sortType,
+    sortMode,
 });
