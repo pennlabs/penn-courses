@@ -13,7 +13,6 @@ import Schedule from "./components/schedule/Schedule";
 
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
-import NavBar from "./NavBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
@@ -40,11 +39,10 @@ store.subscribe(() => {
 function App() {
     return (
         <Provider store={store}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-                <NavBar style={{ flexGrow: 0 }} />
-                <SearchBar style={{ flexGrow: 0 }} />
-                <div className="App columns main" style={{ flexGrow: 1, maxHeight: "80vh" }}>
-                    <div className="column is-one-quarter">
+            <div style={{ height: "100vh" }}>
+                <SearchBar />
+                <div className="App columns main">
+                    <div style={{ marginLeft: "25px" }} className="column is-one-quarter">
                         <h3 style={{
                             display: "flex",
                             fontWeight: "bold",
@@ -53,7 +51,7 @@ function App() {
                         >
                             Search Results
                         </h3>
-                        <div className="box" style={{ height: "95%", paddingLeft: 0, paddingRight: 0 }}>
+                        <div className="box" style={{ paddingLeft: 0, paddingRight: 0 }}>
                             <Selector />
                         </div>
                     </div>

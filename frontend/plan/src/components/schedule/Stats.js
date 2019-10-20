@@ -2,21 +2,30 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import MyCircularProgressBar from "./MyCircularProgressBar";
 
+const purpleTimeStats = {
+    color: "#7874CF",
+    fontWeight: "bold",
+    fontSize: "1.3rem",
+    textAlign: "right",
+    minWidth: "40px",
+    paddingRight: "10px",
+};
+
 class Stats extends Component {
     parseTime = (time) => {
-        if (time >= 13) {
+        if (time >= 12) {
             if (time - Math.floor(time) === 0) {
                 return `${time - 12}:00 PM`;
             }
 
-            return `${(time - 12) + (60 * (time - Math.floor(time)))}PM`;
+            return `${(time - 12) + Math.round(60 * (time - Math.floor(time)))}PM`;
         }
 
         if (time - Math.floor(time) === 0) {
             return `${time}:00 AM`;
         }
 
-        return `${(time) + (60 * (time - Math.floor(time)))}AM`;
+        return `${(time) + Math.round(60 * (time - Math.floor(time)))}AM`;
     }
 
     render() {
@@ -46,7 +55,8 @@ class Stats extends Component {
                 const course = str.substring(0, str.indexOf("-", str.indexOf("-") + 1)); // finds course (irrespective of section)
                 if (course in courseDifficulties) {
                     courseDifficulties[course] += (section.difficulty ? section.difficulty : 2.5);
-                    courseWorkloads[course] += (section.workload ? section.workload : 2.5);
+                    courseWorkloads[course] += (section.work_required
+                        ? section.work_required : 2.5);
                     courseInstructorQualities[course] += (section.instructor_quality
                         ? section.instructor_quality : 2.5);
                     courseQualities[course] += (section.course_quality
@@ -55,7 +65,7 @@ class Stats extends Component {
                     courseRepeats[course] += 1;
                 } else {
                     courseDifficulties[course] = (section.difficulty ? section.difficulty : 2.5);
-                    courseWorkloads[course] = (section.workload ? section.workload : 2.5);
+                    courseWorkloads[course] = (section.work_required ? section.work_required : 2.5);
                     courseInstructorQualities[course] = (section.instructor_quality
                         ? section.instructor_quality : 2.5);
                     courseQualities[course] = (section.course_quality
@@ -99,10 +109,7 @@ class Stats extends Component {
         const avgInstructorQuality = (instructorQualities.reduce((a, b) => a + b, 0)) / totalCUs;
 
         return (
-            <div style={{
-                width: "100%", height: "150px", padding: "0px 20px", display: "grid", gridTemplateColumns: "50% 28% 22%",
-            }}
-            >
+            <div className="statsStyles">
                 <div style={{ display: "grid", gridTemplateRows: "50% 50%", gridTemplateColumns: "50% 50%" }}>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         {" "}
@@ -129,62 +136,34 @@ class Stats extends Component {
                         {" "}
                         <div style={{ maxWidth: "50px" }}><MyCircularProgressBar value={parseFloat(avgWorkload.toFixed(2))} /></div>
                         {" "}
-                        <div style={{ width: "50px", marginLeft: "10px" }}>Workload</div>
+                        <div style={{ width: "50px", marginLeft: "10px" }}>Work Required</div>
                         {" "}
                     </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
                     <div style={{ display: "flex", alignItems: "center" }}>
-                        {" "}
-                        <div style={{
-                            color: "#7874CF", fontWeight: "bold", fontSize: "20px", textAlign: "right", minWidth: "40px", paddingRight: "10px",
-                        }}
-                        >
-                            {" "}
+                        <div style={purpleTimeStats}>
                             {parseFloat(minHoursADay.toFixed(2))}
                         </div>
-                        {" "}
                         <div style={{ fontSize: "0.8em" }}>min hours in a day</div>
-                        {" "}
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
-                        {" "}
-                        <div style={{
-                            color: "#7874CF", fontWeight: "bold", fontSize: "20px", textAlign: "right", minWidth: "40px", paddingRight: "10px",
-                        }}
-                        >
-                            {" "}
+                        <div style={purpleTimeStats}>
                             {parseFloat(maxHoursADay.toFixed(2))}
                         </div>
-                        {" "}
                         <div style={{ fontSize: "0.8em" }}>max hours in a day</div>
-                        {" "}
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
-                        {" "}
-                        <div style={{
-                            color: "#7874CF", fontWeight: "bold", fontSize: "20px", textAlign: "right", minWidth: "40px", paddingRight: "10px",
-                        }}
-                        >
-                            {" "}
+                        <div style={purpleTimeStats}>
                             {parseFloat((totalHours / 5).toFixed(2))}
                         </div>
-                        {" "}
                         <div style={{ fontSize: "0.8em" }}>avg. hours a day</div>
-                        {" "}
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
-                        {" "}
-                        <div style={{
-                            color: "#7874CF", fontWeight: "bold", fontSize: "20px", textAlign: "right", minWidth: "40px", paddingRight: "10px",
-                        }}
-                        >
-                            {" "}
+                        <div style={purpleTimeStats}>
                             {parseFloat(totalHours.toFixed(2))}
                         </div>
-                        {" "}
                         <div style={{ fontSize: "0.8em" }}>total hours of class</div>
-                        {" "}
                     </div>
                 </div>
                 <div style={{
@@ -192,15 +171,11 @@ class Stats extends Component {
                 }}
                 >
                     <div>
-                        {" "}
-                        <div style={{ color: "#7874CF", fontSize: "20px", fontWeight: "bold" }}>{this.parseTime(earliestStart)}</div>
-                        {" "}
+                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{this.parseTime(earliestStart)}</div>
                         <div>earliest start time</div>
                     </div>
                     <div>
-                        {" "}
-                        <div style={{ color: "#7874CF", fontSize: "20px", fontWeight: "bold" }}>{this.parseTime(latestEnd)}</div>
-                        {" "}
+                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{this.parseTime(latestEnd)}</div>
                         <div>latest end time</div>
                     </div>
                 </div>
