@@ -29,7 +29,7 @@ DropdownButton.propTypes = {
     makeActive: PropTypes.func,
 };
 
-const contents = ["Name", "Quality", "Difficulty"];
+const contents = ["Name", "Quality", "Difficulty", "Good & Easy"];
 
 const SearchSortDropdown = ({ updateSort }) => {
     const [isActive, setIsActive] = useState(false);
