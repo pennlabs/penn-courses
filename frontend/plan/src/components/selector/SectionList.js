@@ -19,7 +19,7 @@ function SectionList({ sections, cartSections, manageCart }) {
                 <div className="header">TYPE</div>
                 <div className="header">TIME</div>
             </div>
-,
+
             <ul>
                 {sections.map(s => (
                     <Section
