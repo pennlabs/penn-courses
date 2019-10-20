@@ -10,6 +10,7 @@ import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import Schedule from "./components/schedule/Schedule";
 
+import { initGA, logPageView } from "./analytics";
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
 import NavBar from "./NavBar";
@@ -38,6 +39,8 @@ store.subscribe(() => {
 function App() {
     return (
         <Provider store={store}>
+            {initGA()}
+            {logPageView()}
             <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
                 <NavBar style={{ flexGrow: 0 }} />
                 <SearchBar style={{ flexGrow: 0 }} />
