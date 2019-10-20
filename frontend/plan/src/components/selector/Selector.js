@@ -24,22 +24,25 @@ function Selector(props) {
         isSearchingCourseInfo,
         sortMode,
     } = props;
-    let element = <div style={{
-        fontSize: "0.8em",
-        textAlign: "center",
-        marginTop: "5vh",
-    }}>
-        <img src="/static/empty-state-search.svg" />
-        <h3 style={{
-            fontWeight: "bold",
-            marginBottom: "0.5rem",
+    let element = (
+        <div style={{
+            fontSize: "0.8em",
+            textAlign: "center",
+            marginTop: "5vh",
         }}
         >
+            <img src="/static/empty-state-search.svg" />
+            <h3 style={{
+                fontWeight: "bold",
+                marginBottom: "0.5rem",
+            }}
+            >
             No result found
-        </h3>
+            </h3>
         Search for courses, departments, or instructors above.
         Looking for something specific? Try using the filters!
-    </div>
+        </div>
+    );
 
     if (courses.length > 0) {
         element = (

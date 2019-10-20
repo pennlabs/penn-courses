@@ -5,11 +5,13 @@ import CartSection from "./CartSection";
 import { meetingsContainSection, meetingSetsIntersect } from "../meetUtil";
 import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
 
-const CartEmpty = () => <div style={{
+const CartEmpty = () => (
+    <div style={{
         fontSize: "0.8em",
         textAlign: "center",
-        marginTop: "5vh"
-    }}>
+        marginTop: "5vh",
+    }}
+    >
         <h3 style={{
             fontWeight: "bold",
             marginBottom: "0.5rem",
@@ -17,10 +19,11 @@ const CartEmpty = () => <div style={{
         >
             Your cart is empty
         </h3>
-        Click a course section's + icon to add it to the schedule.
+        Click a course section&apos;s + icon to add it to the schedule.
         <br />
-        <img style={{height: "60%"}}src="/static/empty-state-cart.svg" />
-</div>;
+        <img style={{ height: "60%" }} src="/static/empty-state-cart.svg" />
+    </div>
+);
 
 const Cart = ({
     courses, toggleCourse, removeItem, courseInfo, courseInfoLoading,

@@ -20,7 +20,7 @@ export default function Badge(props) {
                 color: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
             } : {
                 background: "transparent",
-                color: '#838383',
+                color: "#838383",
             }}
         >
             <b>{value ? value.toFixed(1) : "—"}</b>

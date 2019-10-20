@@ -246,20 +246,24 @@ const mapDispatchToProps = dispatch => (
     }
 );
 
-const EmptySchedule = () => <div style={{
+const EmptySchedule = () => (
+    <div style={{
         fontSize: "0.8em",
         textAlign: "center",
-        marginTop: "5vh"
-    }}>
+        marginTop: "5vh",
+    }}
+    >
         <img style={{ width: "65%" }} src="/static/empty-state-cal.svg" />
         <h3 style={{
             fontWeight: "bold",
             marginBottom: "0.5rem",
-        }}>
+        }}
+        >
             No courses added
         </h3>
             Select courses from the cart to add them to the calendar
-            <br />
-    </div>;
+        <br />
+    </div>
+);
 
 export default connect(mapStateToProps, mapDispatchToProps)(Schedule);
