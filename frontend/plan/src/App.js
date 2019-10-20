@@ -64,9 +64,7 @@ function App() {
                                 Search Results
                             </h3>
                             <div style={{ float: "right", display: "flex" }}>
-                                <SearchSortDropdown
-                                    updateSort={sort => store.dispatch(changeSortType(sort))}
-                                />
+                                <SearchSortDropdown/>
                             </div>
                         </span>
                         <div className="box" style={{ paddingLeft: 0, paddingRight: 0 }}>
