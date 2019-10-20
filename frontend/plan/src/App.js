@@ -47,7 +47,7 @@ function App() {
     if (!hasVisited) {
         store.dispatch(openModal("WELCOME",
             {},
-            "Welcome to Penn Course Plan!"));
+            "Welcome to Penn Course Plan ✨"));
     }
     return (
         <Provider store={store}>
