@@ -8,18 +8,19 @@
     "bulma-extensions": "^6.2.7",
     "bulma-popover": "^1.0.0",
     "cross-fetch": "^3.0.2",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-react": "^7.12.4",
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
     "react-dom": "^16.6.3",
     "react-redux": "^6.0.0",
     "react-scripts": "3.0.1",
+    "react-show-more-text": "^1.2.3",
     "redux": "^4.0.1",
     "redux-logger": "^3.0.6",
-    "redux-thunk": "^2.3.0",
-    "eslint-config-airbnb": "^17.1.0",
-    "eslint-plugin-import": "^2.16.0",
-    "eslint-plugin-jsx-a11y": "^6.2.1",
-    "eslint-plugin-react": "^7.12.4"
+    "redux-thunk": "^2.3.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -38,7 +39,5 @@
     "not ie <= 11",
     "not op_mini all"
   ],
-  "devDependencies": {
-
-  }
+  "devDependencies": {}
 }
