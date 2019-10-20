@@ -2,6 +2,9 @@ import React from "react";
 import PropTypes from "prop-types";
 import Course from "./Course";
 
+const goodEasy = ({ difficulty, course_quality: courseQuality }) => Math.pow(courseQuality + 0.5,
+    1.5) / (difficulty + 1);
+
 /**
  * Sorts courses by the given sort mode
  * @param courses A list of course objects
@@ -16,6 +19,8 @@ const courseSort = (courses, sortMode) => {
                 return courseB.course_quality - courseA.course_quality;
             case "difficulty":
                 return courseA.difficulty - courseB.difficulty;
+            case "good & easy":
+                return goodEasy(courseB) - goodEasy(courseA);
             default:
                 return courseA.id.localeCompare(courseB.id);
         }
