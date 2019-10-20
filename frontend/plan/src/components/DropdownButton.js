@@ -35,7 +35,7 @@ export function DropdownButton({
                     </span>
                     {JSON.stringify(filterData) !== JSON.stringify(defaultFilter)
                     && (
-                        <span>
+                        <span style={{ paddingLeft: "0.5em" }}>
                             <button
                                 type="button"
                                 className="delete is-small"
