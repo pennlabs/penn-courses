@@ -24,7 +24,13 @@ function Selector(props) {
         isSearchingCourseInfo,
     } = props;
 
-    let element = <CourseList courses={courses} getCourse={getCourse} isLoading={isLoadingCourseInfo} />;
+    let element = (
+        <CourseList
+            courses={courses}
+            getCourse={getCourse}
+            isLoading={isLoadingCourseInfo}
+        />
+    );
 
     if (course) {
         element = (
@@ -37,16 +43,19 @@ function Selector(props) {
         );
     }
 
-    let isLoading = isLoadingCourseInfo || isSearchingCourseInfo;
+    const isLoading = isLoadingCourseInfo || isSearchingCourseInfo;
 
     return (
         <>
-            {isLoading && <div
+            {isLoading && (
+                <div
                     className="button is-loading"
                     style={{
                         height: "100%", width: "100%", border: "none", fontSize: "3rem",
                     }}
-                />}
+                />
+            )
+            }
             {!isLoading && element}
         </>
     );
@@ -58,6 +67,9 @@ Selector.propTypes = {
     getCourse: PropTypes.func.isRequired,
     clearCourse: PropTypes.func,
     addToSchedule: PropTypes.func,
+    removeFromSchedule: PropTypes.func,
+    isLoadingCourseInfo: PropTypes.bool,
+    isSearchingCourseInfo: PropTypes.bool,
 };
 
 const mapStateToProps = state => (

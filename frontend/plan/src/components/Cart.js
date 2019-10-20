@@ -48,6 +48,7 @@ Cart.propTypes = {
     toggleCourse: PropTypes.func.isRequired,
     removeItem: PropTypes.func.isRequired,
     courseInfo: PropTypes.func.isRequired,
+    courseInfoLoading: PropTypes.bool,
 };
 
 // const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
