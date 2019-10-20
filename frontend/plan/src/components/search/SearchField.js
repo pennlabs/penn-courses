@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-export function SearchField({ startSearch, updateSearchText, filterData }) {
+export function SearchField({ startSearch, updateSearchText, filterData, isDisabled }) {
     const [searchValue, setSearchValue] = useState("");
     const [searchTimeout, setSearchTimeout] = useState();
 
@@ -30,6 +30,7 @@ export function SearchField({ startSearch, updateSearchText, filterData }) {
                 className="input is-small is-rounded"
                 autoComplete="off"
                 placeholder="Search"
+                disabled={isDisabled ? "disabled" : false}
             />
             <span className="icon is-small is-left">
                 <i className="fas fa-search" />

@@ -40,7 +40,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
-    defaultReqs, clearSearchResults,
+    defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo
 }) {
     useEffect(() => {
         loadRequirements();
@@ -53,6 +53,8 @@ function SearchBar({
             clearSearchResults();
         }
     };
+
+    const isLoading = isLoadingCourseInfo || isSearchingCourseInfo;
 
     const clearFilterSearch = property => () => {
         clearFilter(property);
@@ -77,6 +79,7 @@ function SearchBar({
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
+                        isDisabled={isLoading}
                     />
                 </div>
 
@@ -85,7 +88,7 @@ function SearchBar({
                         <i className="fas fa-filter" />
                     </span>
                     <p> Filter by</p>
-                    <DropdownButton title="School Req" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")}>
+                    <DropdownButton title="School Req" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")} isDisabled={isLoading}>
                         <SchoolReq
                             startSearch={conditionalStartSearch}
                             schoolReq={schoolReq}
@@ -94,7 +97,7 @@ function SearchBar({
                             remSchoolReq={remSchoolReq}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")}>
+                    <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")} isDisabled={isLoading}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -105,7 +108,7 @@ function SearchBar({
                             rangeProperty="difficulty"
                         />
                     </DropdownButton>
-                    <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")}>
+                    <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")} isDisabled={isLoading}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -116,7 +119,7 @@ function SearchBar({
                             rangeProperty="course_quality"
                         />
                     </DropdownButton>
-                    <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")}>
+                    <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")} isDisabled={isLoading}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -130,7 +133,7 @@ function SearchBar({
 
                     {/* <DropdownButton title="Time" />
                     <DropdownButton title="Type" /> */}
-                    <DropdownButton title="CU" filterData={filterData.cu} defaultFilter={defaultFilters.filterData.cu} clearFilter={clearFilterSearch("cu")}>
+                    <DropdownButton title="CU" filterData={filterData.cu} defaultFilter={defaultFilters.filterData.cu} clearFilter={clearFilterSearch("cu")} isDisabled={isLoading}>
                         <RangeFilter
                             minRange={0.5}
                             maxRange={2}
@@ -186,6 +189,8 @@ const mapStateToProps = state => (
         schoolReq: state.filters.schoolReq,
         filterData: state.filters.filterData,
         defaultReqs: state.filters.defaultReqs,
+        isLoadingCourseInfo: state.sections.courseInfoLoading,
+        isSearchingCourseInfo: state.sections.searchInfoLoading,
     }
 );
 
