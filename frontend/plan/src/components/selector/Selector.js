@@ -20,11 +20,16 @@ function Selector(props) {
         clearCourse,
         addToSchedule,
         removeFromSchedule,
-        sortMode
+        sortMode,
     } = props;
 
-    let element = <CourseList sortMode={sortMode}
-                              courses={courses} getCourse={getCourse}/>;
+    let element = (
+        <CourseList
+            sortMode={sortMode}
+            courses={courses}
+            getCourse={getCourse}
+        />
+    );
 
     if (course) {
         element = (
@@ -34,7 +39,7 @@ function Selector(props) {
                 back={clearCourse}
                 manage={{
                     addToSchedule,
-                    removeFromSchedule
+                    removeFromSchedule,
                 }}
             />
         );
