@@ -82,7 +82,7 @@ const mapStateToProps = state => (
     {
         courses: state.sections.searchResults.filter(course => course.num_sections > 0),
         course: state.sections.course,
-        sortMode: state.sortMode,
+        sortMode: state.sections.sortMode,
         isLoadingCourseInfo: state.sections.courseInfoLoading,
         isSearchingCourseInfo: state.sections.searchInfoLoading,
     }
