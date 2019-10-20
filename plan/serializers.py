@@ -55,6 +55,7 @@ class CourseListWithReviewSerializer(CourseListSerializer):
     course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
     difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
     instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
+    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -81,6 +82,7 @@ class CourseListWithReviewSerializer(CourseListSerializer):
             'course_quality',
             'instructor_quality',
             'difficulty',
+            'work_required',
             'num_sections',
         ]
 
@@ -89,6 +91,7 @@ class SectionDetailWithReviewSerializer(SectionDetailSerializer):
     course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
     difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
     instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
+    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
 
     class Meta:
         model = Section
@@ -102,6 +105,7 @@ class SectionDetailWithReviewSerializer(SectionDetailSerializer):
             'course_quality',
             'instructor_quality',
             'difficulty',
+            'work_required',
             'meetings',
             'instructors',
         ] + [
@@ -113,6 +117,7 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
     course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
     difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
     instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
+    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
 
     sections = SectionDetailWithReviewSerializer(many=True)
 
@@ -147,6 +152,7 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
              'course_quality',
              'instructor_quality',
              'difficulty',
+             'work_required',
          ] + [
              'crosslistings',
              'requirements',

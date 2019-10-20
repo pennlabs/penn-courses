@@ -1,12 +1,12 @@
 /* eslint-disable react/prop-types */
 import React, { Component } from "react";
-import GenericModal from "./generic_modal_container";
-import { validateScheduleName } from "../schedule/schedule_name_validation";
+import GenericModal from "../generic_modal_container";
+import { validateScheduleName } from "../../schedule/schedule_name_validation";
 
-export const NEW_SCHEDULE_MODAL_NAME = "new_schedule_modal";
+export const RENAME_SCHEDULE_MODAL_NAME = "rename_schedule_modal";
 
 
-class NewScheduleModalInterior extends Component {
+class RenameScheduleModalInterior extends Component {
     constructor(props) {
         super(props);
         this.state = { currentName: "" };
@@ -20,11 +20,10 @@ class NewScheduleModalInterior extends Component {
         const {
             existingScheduleNames,
             modalActionState,
-            createNewSchedule,
+            renameSchedule,
             close,
             triggerModalAction,
         } = this.props;
-
         let newScheduleNameInput = null;
         const storeInputRef = (ref) => {
             newScheduleNameInput = ref;
@@ -32,7 +31,7 @@ class NewScheduleModalInterior extends Component {
         const feedbackString = validateScheduleName(currentName, existingScheduleNames);
         if (modalActionState === "success") {
             if (feedbackString.length === 0) {
-                createNewSchedule(currentName);
+                renameSchedule(currentName);
                 close();
             } else {
                 triggerModalAction(null);
@@ -58,12 +57,12 @@ class NewScheduleModalInterior extends Component {
     }
 }
 
-export default function NewScheduleModal() {
+export default function RenameScheduleModal() {
     return (
         <GenericModal
-            modalName="new_schedule_modal"
-            title="New Schedule"
-            containedContent={[<NewScheduleModalInterior />]}
+            modalName={RENAME_SCHEDULE_MODAL_NAME}
+            title="Rename Schedule"
+            containedContent={[<RenameScheduleModalInterior />]}
             successButton="Ok"
         />
     );

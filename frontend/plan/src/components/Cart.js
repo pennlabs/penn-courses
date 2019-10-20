@@ -6,12 +6,11 @@ import { meetingsContainSection, meetingSetsIntersect } from "../meetUtil";
 import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
 
 const Cart = ({
-    courses, toggleCourse, removeItem, courseInfo,
+    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading,
 }) => (
     <section
         style={{
             display: "flex",
-            flexGrow: "1",
             overflow: "auto",
             flexDirection: "column",
             padding: 0,
@@ -33,7 +32,9 @@ const Cart = ({
                         overlaps={overlaps}
                         courseInfo={() => {
                             const codeParts = code.split("-");
-                            courseInfo(`${codeParts[0]}-${codeParts[1]}`);
+                            if (!courseInfoLoading) {
+                                courseInfo(`${codeParts[0]}-${codeParts[1]}`);
+                            }
                         }}
                     />
                 );
@@ -46,17 +47,23 @@ Cart.propTypes = {
     toggleCourse: PropTypes.func.isRequired,
     removeItem: PropTypes.func.isRequired,
     courseInfo: PropTypes.func.isRequired,
+    courseInfoLoading: PropTypes.bool,
 };
 
-const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
-    courses: cartSections.map(course => ({
-        section: course,
-        checked: meetingsContainSection(schedules[scheduleSelected].meetings, course),
-        overlaps: meetingSetsIntersect(course.meetings, schedules[scheduleSelected].meetings
-            .filter(s => s.id !== course.id)
-            .map(s => s.meetings).flat()),
-    })),
-});
+// const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
+const mapStateToProps = (state) => {
+    const { schedule: { cartSections, schedules, scheduleSelected } } = state;
+    return {
+        courseInfoLoading: state.sections.courseInfoLoading,
+        courses: cartSections.map(course => ({
+            section: course,
+            checked: meetingsContainSection(schedules[scheduleSelected].meetings, course),
+            overlaps: meetingSetsIntersect(course.meetings, schedules[scheduleSelected].meetings
+                .filter(s => s.id !== course.id)
+                .map(s => s.meetings).flat()),
+        })),
+    };
+};
 
 const mapDispatchToProps = dispatch => ({
     toggleCourse: courseId => dispatch(toggleCheck(courseId)),

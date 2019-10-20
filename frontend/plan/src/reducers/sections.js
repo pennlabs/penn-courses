@@ -3,8 +3,10 @@ import {
     OPEN_SECTION_INFO,
     UPDATE_SEARCH,
     UPDATE_SECTIONS,
-    UPDATE_COURSE_INFO,
-    LOAD_REQUIREMENTS
+    UPDATE_COURSE_INFO_SUCCESS,
+    UPDATE_COURSE_INFO_REQUEST,
+    UPDATE_SEARCH_REQUEST,
+    CHANGE_SORT_TYPE
 } from "../actions";
 
 // This file contains the reducers for everything related to sections and courses
@@ -20,37 +22,33 @@ const initialState = {
     sections: [],
     searchResults: [],
     sectionInfo: undefined,
-    schoolReq: {
-        SAS: [],
-        SEAS: [],
-        NURS: [],
-        WH: [],
-    },
-    filterSearch: {
-        selectedReq: null,
-        difficulty: null,
-        quality: null,
-        time: null,
-        type: null,
-        cu: null,
-    },
+    courseInfoLoading: false,
+    searchInfoLoading: false,
+    sortType: "Name",
 };
 
 export const sections = (state = initialState, action) => {
     switch (action.type) {
-        case LOAD_REQUIREMENTS:
+        case CHANGE_SORT_TYPE:
             return {
                 ...state,
-                schoolReq: action.obj,
-                filterSearch: {
-                    ...state.filterSearch,
-                    selectedReq: action.selObj,
-                },
+                sortType: action.sortType,
             };
-        case UPDATE_COURSE_INFO:
+        case UPDATE_COURSE_INFO_SUCCESS:
             return {
                 ...state,
                 course: action.course,
+                courseInfoLoading: false,
+            };
+        case UPDATE_COURSE_INFO_REQUEST:
+            return {
+                ...state,
+                courseInfoLoading: true,
+            };
+        case UPDATE_SEARCH_REQUEST:
+            return {
+                ...state,
+                searchInfoLoading: true,
             };
         case OPEN_SECTION_INFO:
             return {
@@ -63,12 +61,12 @@ export const sections = (state = initialState, action) => {
                 sections: action.sections,
             };
         case UPDATE_SEARCH:
-            // console.log("UPDATING SEARCH");
             return {
                 ...state,
                 searchResults: action.searchResults,
                 sections: undefined,
                 course: null,
+                searchInfoLoading: false,
             };
 
         case COURSE_SEARCH_ERROR:
