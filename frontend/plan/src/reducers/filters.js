@@ -101,8 +101,8 @@ export const filters = (state = initialState, action) => {
             return {
                 ...initialState,
                 filterData: {
-                    searchString: state.filterData.searchString,
                     ...initialState.filterData,
+                    searchString: state.filterData.searchString,
                     selectedReq: state.defaultReqs,
                 },
                 defaultReqs: state.defaultReqs,
