@@ -111,7 +111,8 @@
 
 .schedule-options-container {
     flex-grow: 0.5;
-    justify-content: space-around;
+    justify-content: flex-end;
+    width: 25%;
 }
 
 .schedule-options-container i {
