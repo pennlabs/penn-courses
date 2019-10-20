@@ -42,6 +42,10 @@ export function SchoolReq({
             <div className="column">
                 <p><strong>{`${selSchool} Requirements`}</strong></p>
                 <ul className="field">
+                    {
+                        selSchool === "Nursing"
+                        && <p> Nursing requirements are coming soon!</p>
+                    }
                     {schoolReq[schoolCode.get(selSchool)].map(req => (
                         <li>
                             <input
