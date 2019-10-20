@@ -36,13 +36,14 @@ export function DropdownButton({
                     {JSON.stringify(filterData) !== JSON.stringify(defaultFilter)
                     && (
                         <span>
-                            <i
+                            <button
+                                type="button"
                                 className="delete is-small"
                                 onClick={(e) => {
                                     clearFilter();
                                     e.stopPropagation();
                                 }}
-                                role="button"
+                                disabled={isDisabled ? "disabled" : false}
                             />
                         </span>
                     )}
