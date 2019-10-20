@@ -14,7 +14,6 @@ import Schedule from "./components/schedule/Schedule";
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
-import NavBar from "./NavBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
