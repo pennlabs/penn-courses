@@ -24,7 +24,7 @@ def bound_filter(field):
         upper_bound = float(upper_bound)
 
         return queryset.filter(Q(**{
-            f'{field}__gt': lower_bound,
+            f'{field}__gte': lower_bound,
             f'{field}__lte': upper_bound,
 
         }) | Q(**{f'{field}__isnull': True}))

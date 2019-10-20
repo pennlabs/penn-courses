@@ -247,22 +247,22 @@ const mapDispatchToProps = dispatch => (
 );
 
 const EmptySchedule = () => (
-    <div style={{ height: "100%" }}>
-        <p style={{
-            fontSize: "1.5em",
-            paddingTop: "7em",
-            display: "block",
+    <div style={{
+        fontSize: "0.8em",
+        textAlign: "center",
+        marginTop: "5vh",
+    }}
+    >
+        <img style={{ width: "65%" }} src="/static/empty-state-cal.svg" />
+        <h3 style={{
+            fontWeight: "bold",
+            marginBottom: "0.5rem",
         }}
         >
-            Search for courses above
-            <br />
-            then click a section&#39;s + icon to add it to the schedule.
-        </p>
-        <p style={{ fontSize: "1em" }}>
-            These are mock schedules.
-            <br />
-            You still need to register for your classes on Penn InTouch.
-        </p>
+            No courses added
+        </h3>
+            Select courses from the cart to add them to the calendar
+        <br />
     </div>
 );
 
