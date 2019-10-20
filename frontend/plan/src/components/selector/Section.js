@@ -15,7 +15,7 @@ export default function Section({ section, cart, inCart }) {
             <li>
                 <a
                     role="button"
-                    className="selector-row section-row"
+                    className={`${isOpen ? "section-row-selected" : ""} selector-row section-row`}
                     onClick={() => toggleOpen(!isOpen)}
                 >
                     <div
