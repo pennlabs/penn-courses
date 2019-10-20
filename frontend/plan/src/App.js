@@ -4,6 +4,7 @@ import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
 import "./styles/App.css";
 import "./styles/modal.css";
+import "./styles/slider.css";
 import "./styles/dropdown.css";
 import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
@@ -46,13 +47,13 @@ function App() {
     if (!hasVisited) {
         store.dispatch(openModal("WELCOME",
             {},
-            "Welcome to Penn Course Plan!"));
+            "Welcome to Penn Course Plan ✨"));
     }
     return (
         <Provider store={store}>
             {initGA()}
             {logPageView()}
-            <div style={{ height: "100vh" }}>
+            <div style={{ height: "calc(100vh - 4em)" }}>
                 <SearchBar style={{ flexGrow: 0 }} />
                 <div className="App columns main">
                     <div style={{ marginLeft: "25px" }} className="column is-one-quarter">
@@ -111,6 +112,30 @@ function App() {
                         <Schedule />
                     </div>
                 </div>
+            </div>
+            <div
+                className="has-text-centered"
+                style={{
+                    backgroundColor: "#ffffff", height: "4rem", paddingTop: ".25em", paddingBottom: ".25em",
+                }}
+            >
+                <p style={{ fontSize: "0.8rem", color: "black" }}>
+                    Made with
+                    {" "}
+                    <span className="icon is-small"><i className="fa fa-heart" style={{ color: "red" }} /></span>
+                    {" "}
+                    by
+                    {" "}
+                    <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
+                    {" "}
+                    and
+                    {" "}
+                    <a href="https://github.com/benb116" target="_blank">Ben Bernstein</a>
+                    <br />
+                    Have feedback about Penn Course Plan? Let us know
+                    {" "}
+                    <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
+                </p>
             </div>
             <ModalContainer />
         </Provider>
