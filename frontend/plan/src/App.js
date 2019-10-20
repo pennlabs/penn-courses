@@ -46,7 +46,6 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-                <NavBar style={{ flexGrow: 0 }} />
                 <SearchBar style={{ flexGrow: 0 }} />
                 <div className="App columns main" style={{ flexGrow: 1, maxHeight: "80vh" }}>
                     <div className="column is-one-quarter">
