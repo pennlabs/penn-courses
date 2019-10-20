@@ -166,6 +166,7 @@ function SearchBar({
                             });
                             clearAll();
                         }}
+                        disabled={isLoading ? "disabled" : false}
                     >
                         Clear all
                     </button>
