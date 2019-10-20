@@ -90,4 +90,4 @@ workflows:
             - build
           filters:
             branches:
-              only: no-branch
+              only: master
