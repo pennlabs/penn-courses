@@ -33,25 +33,6 @@ export default function SectionDetails({ section, isOpen }) {
                             </>
                         ))}
                     </h3>
-                    <a
-                        style={{
-                            marginLeft: "auto",
-                            marginRight: "2em",
-                        }}
-                        className="popover is-popover-left"
-                        href={`https://penncoursereview.com/course/${getClassCode(id)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <img
-                            className="popover-trigger pcr-svg"
-                            alt="PCR"
-                            src="/static/pcr.svg"
-                        />
-                        <span className="popover-content">
-                            View course on Penn Course Review
-                        </span>
-                    </a>
                 </div>
                 <br />
                 <i className="far fa-clock grey-text" />
@@ -69,7 +50,22 @@ export default function SectionDetails({ section, isOpen }) {
                         })(meetings).join(", ")}
                     </>
                 ) : null}
+                <br />
+                <a
+                    className="button is-small pcr-svg"
+                    type="button"
+                    href={`https://penncoursereview.com/course/${getClassCode(id)}`}
+                    style={{
+                        fontWeight: "700",
+                        fontSize: "12px",
+                        color: "#8F8F8F",
+                        textAlign: "center",
+                    }}
+                >
+                    View on PCR
+                </a>
             </div>
+
         </li>
     );
 }
