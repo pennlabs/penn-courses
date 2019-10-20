@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import TagList from "./TagList";
 import Badge from "../Badge";
 
+const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
 
 export default function CourseDetails({ course, getCourse }) {
     const requirements = course.requirements || [];
@@ -33,7 +34,7 @@ export default function CourseDetails({ course, getCourse }) {
                             <i className="far fa-check-circle" />
                         </span>
                         &nbsp; Fulfills: &nbsp;
-                        {<TagList elements={requirements.map(({ school, name }) => `${school.charAt(0)}: ${name}`)} limit={1} />}
+                        <TagList elements={requirements.map(({ school, name }) => getReqCode(school, name))} limit={1} />
                     </li>
                 ) : null
             }
