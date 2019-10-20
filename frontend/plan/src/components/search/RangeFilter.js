@@ -31,7 +31,7 @@ export function RangeFilter({
                 </p>
             </div>
             <div className="column is-half">
-                <p>
+                <p style={{ textAlign: "right" }}>
                     {" "}
                     {filterData[rangeProperty][1]}
                     {" "}
