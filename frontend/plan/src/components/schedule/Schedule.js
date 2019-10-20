@@ -7,7 +7,7 @@ import {
     removeSchedItem,
     fetchCourseDetails,
     changeSchedule,
-    duplicateSchedule, deleteSchedule
+    duplicateSchedule, deleteSchedule, openModal
 } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
@@ -155,7 +155,7 @@ class Schedule extends Component {
 
         const dims = {
             gridTemplateColumns: `.4fr repeat(${getNumCol() - 1}, 1fr)`,
-            gridTemplateRows: `repeat(${getNumRows()}, 1fr)`,
+            gridTemplateRows: `repeat(${getNumRows() - 2}, 1fr)`,
             padding: "1rem",
         };
 
@@ -163,7 +163,6 @@ class Schedule extends Component {
             <div className="column vertical-section">
                 <h3 className="section-header">
                     <ScheduleSelectorDropdown
-                        defText="Mock Schedule"
                         defActive={0}
                         contents={scheduleNames.map(scheduleName => ({
                             text: scheduleName,
@@ -197,9 +196,7 @@ class Schedule extends Component {
                         {notEmpty && blocks}
                         {!notEmpty && <EmptySchedule />}
                     </div>
-                    <div className="scheduleStats">
-                        <Stats meetings={schedData.meetings} />
-                    </div>
+                    <Stats meetings={schedData.meetings} />
                 </div>
             </div>
         );
@@ -236,6 +233,12 @@ const mapDispatchToProps = dispatch => (
         schedulesMutator: {
             copy: scheduleName => dispatch(duplicateSchedule(scheduleName)),
             remove: scheduleName => dispatch(deleteSchedule(scheduleName)),
+            rename: oldName => dispatch(openModal("RENAME_SCHEDULE",
+                { scheduleName: oldName },
+                "Rename Schedule")),
+            create: () => dispatch(openModal("CREATE_SCHEDULE",
+                {},
+                "Create Schedule")),
         },
     }
 );

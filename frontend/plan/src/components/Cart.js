@@ -11,7 +11,6 @@ const Cart = ({
     <section
         style={{
             display: "flex",
-            flexGrow: "1",
             overflow: "auto",
             flexDirection: "column",
             padding: 0,

@@ -1,12 +1,12 @@
 /* eslint-disable react/prop-types */
 import React, { Component } from "react";
-import GenericModal from "./generic_modal_container";
-import { validateScheduleName } from "../schedule/schedule_name_validation";
+import GenericModal from "../generic_modal_container";
+import { validateScheduleName } from "../../schedule/schedule_name_validation";
 
-export const RENAME_SCHEDULE_MODAL_NAME = "rename_schedule_modal";
+export const DUPLICATE_SCHEDULE_MODAL_NAME = "duplicate_schedule_modal";
 
 
-class RenameScheduleModalInterior extends Component {
+class DuplicateScheduleModalInterior extends Component {
     constructor(props) {
         super(props);
         this.state = { currentName: "" };
@@ -20,10 +20,11 @@ class RenameScheduleModalInterior extends Component {
         const {
             existingScheduleNames,
             modalActionState,
-            renameSchedule,
             close,
+            duplicateSchedule,
             triggerModalAction,
         } = this.props;
+
         let newScheduleNameInput = null;
         const storeInputRef = (ref) => {
             newScheduleNameInput = ref;
@@ -31,7 +32,7 @@ class RenameScheduleModalInterior extends Component {
         const feedbackString = validateScheduleName(currentName, existingScheduleNames);
         if (modalActionState === "success") {
             if (feedbackString.length === 0) {
-                renameSchedule(currentName);
+                duplicateSchedule(currentName);
                 close();
             } else {
                 triggerModalAction(null);
@@ -57,12 +58,12 @@ class RenameScheduleModalInterior extends Component {
     }
 }
 
-export default function RenameScheduleModal() {
+export default function DuplicateScheduleModal() {
     return (
         <GenericModal
-            modalName={RENAME_SCHEDULE_MODAL_NAME}
-            title="Rename Schedule"
-            containedContent={[<RenameScheduleModalInterior />]}
+            modalName={DUPLICATE_SCHEDULE_MODAL_NAME}
+            title="Duplicate Schedule"
+            containedContent={[<DuplicateScheduleModalInterior />]}
             successButton="Ok"
         />
     );

@@ -1,3 +1,25 @@
+.filterButton {
+    transition-duration: 0.2s;
+}
+
+.filterButton:hover {
+    background-color: #fbfaff;
+}
+
+.filterButton:active {
+    border: solid 2px #7b84e6;
+    position:relative;
+    top:-1px;
+    left:-1px;
+    background-color: #e3e6ff;
+}
+
+.filterButton:focus {
+    border: solid 2px #7b84e6;
+    top:-1px;
+    left:-1px;
+    padding-left:-2px;
+}
 
 .classic, .classic * {
     border: 0;
