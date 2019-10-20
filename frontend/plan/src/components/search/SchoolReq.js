@@ -34,13 +34,17 @@ export function SchoolReq({
                                 onChange={schoolHandleChange}
                             />
                             { /* eslint-disable-next-line jsx-a11y/label-has-for */}
-                            <label style={{ display: "table-cell" }}
-                                   htmlFor={school}>{school}</label>
+                            <label
+                                style={{ display: "table-cell" }}
+                                htmlFor={school}
+                            >
+                                {school}
+                            </label>
                         </li>
                     ))}
                 </ul>
             </div>
-            <div className="is-divider-vertical"/>
+            <div className="is-divider-vertical" />
             <div className="column">
                 <p><strong>{`${selSchool} Requirements`}</strong></p>
                 <ul className="field">
