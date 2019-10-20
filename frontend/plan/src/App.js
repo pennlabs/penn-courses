@@ -52,7 +52,7 @@ function App() {
         <Provider store={store}>
             {initGA()}
             {logPageView()}
-            <div style={{ height: "100vh" }}>
+            <div style={{ height: "calc(100vh - 4em)" }}>
                 <SearchBar style={{ flexGrow: 0 }} />
                 <div className="App columns main">
                     <div style={{ marginLeft: "25px" }} className="column is-one-quarter">
@@ -111,6 +111,30 @@ function App() {
                         <Schedule />
                     </div>
                 </div>
+            </div>
+            <div
+                className="has-text-centered"
+                style={{
+                    backgroundColor: "#ffffff", height: "4rem", paddingTop: ".25em", paddingBottom: ".25em",
+                }}
+            >
+                <p style={{ fontSize: "0.8rem", color: "black" }}>
+                    Made with
+                    {" "}
+                    <span className="icon is-small"><i className="fa fa-heart" style={{ color: "red" }} /></span>
+                    {" "}
+                    by
+                    {" "}
+                    <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
+                    {" "}
+                    and
+                    {" "}
+                    <a href="https://github.com/benb116" target="_blank">Ben Bernstein</a>
+                    <br />
+                    Have feedback about Penn Course Plan? Let us know
+                    {" "}
+                    <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
+                </p>
             </div>
             <ModalContainer />
         </Provider>
