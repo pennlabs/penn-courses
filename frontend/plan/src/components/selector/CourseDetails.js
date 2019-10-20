@@ -53,6 +53,20 @@ export default function CourseDetails({ course, getCourse }) {
                 </li>
             ) : null
             }
+            <a
+                target="_blank"
+                className="button is-small pcr-svg"
+                type="button"
+                href={`https://penncoursereview.com/course/${(course.id)}`}
+                style={{
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "#8F8F8F",
+                    textAlign: "center",
+                }}
+            >
+                 View on Penn Course Review
+            </a>
             {description ? (
                 <li style={{
                     marginTop: "2em",

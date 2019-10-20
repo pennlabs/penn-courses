@@ -83,12 +83,13 @@
 }
 
 .pcr-svg {
-    color: #C6C6C6;
-    width: 3em;
+    border: 2px solid #EEEEEE;
+    border-radius: 4px;
 }
 
 .pcr-svg:hover {
-    color: #8e8e8e;
+    border: 2px solid #CBCBCB;
+    border-radius: 4px;
 }
 
 .section-details-title b {
@@ -106,7 +107,7 @@
 }
 
 .section-row:hover {
-    color: #6975f4; 
+    color: #6975f4;
 }
 
 .selector-row:hover {
