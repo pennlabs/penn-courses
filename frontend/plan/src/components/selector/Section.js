@@ -14,10 +14,14 @@ export default function Section({ section, cart, inCart }) {
         <>
             <li>
                 <a
+                    role="button"
                     className="selector-row section-row"
                     onClick={() => toggleOpen(!isOpen)}
                 >
-                    <div onClick={inCart ? cart.remove : cart.add}>
+                    <div
+                        role="button"
+                        onClick={inCart ? cart.remove : cart.add}
+                    >
                         {inCart ? (
                             <div className="hover-switch">
                                 <i className="fas fa-check" />

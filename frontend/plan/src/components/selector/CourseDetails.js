@@ -34,7 +34,12 @@ export default function CourseDetails({ course, getCourse }) {
                             <i className="far fa-check-circle" />
                         </span>
                         &nbsp; Fulfills: &nbsp;
-                        <TagList elements={requirements.map(({ school, name }) => getReqCode(school, name))} limit={1} />
+                        <TagList
+                            elements={requirements.map(
+                                ({ school, name }) => getReqCode(school, name)
+                            )}
+                            limit={1}
+                        />
                     </li>
                 ) : null
             }
