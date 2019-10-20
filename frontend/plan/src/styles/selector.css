@@ -20,6 +20,10 @@
     font-weight: bold;
 }
 
+.hover-switch .fa-check {
+    color: #3daa6d;
+}
+
 .hover-switch:hover .fa-check,
 .hover-switch .fa-times {
     display: none;
@@ -110,4 +114,8 @@
 .selector-row:hover {
     background-color: #dcdcdc;
     cursor: pointer;
+}
+
+.badges-list li {
+    margin-bottom: .5em;
 }
