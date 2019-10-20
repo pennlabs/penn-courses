@@ -151,6 +151,7 @@ ScheduleSelectorDropdown.propTypes = {
         copy: PropTypes.func.isRequired,
         remove: PropTypes.func.isRequired,
         create: PropTypes.func.isRequired,
+        rename: PropTypes.func.isRequired,
     }),
 };
 

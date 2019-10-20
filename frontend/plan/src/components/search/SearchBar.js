@@ -102,7 +102,7 @@ function SearchBar({
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
-                            step={0.01}
+                            step={0.25}
                             filterData={filterData}
                             updateRangeFilter={updateRangeFilter("difficulty")}
                             startSearch={conditionalStartSearch}
@@ -114,7 +114,7 @@ function SearchBar({
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
-                            step={0.01}
+                            step={0.25}
                             filterData={filterData}
                             updateRangeFilter={updateRangeFilter("course_quality")}
                             startSearch={conditionalStartSearch}
@@ -126,7 +126,7 @@ function SearchBar({
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
-                            step={0.01}
+                            step={0.25}
                             filterData={filterData}
                             updateRangeFilter={updateRangeFilter("instructor_quality")}
                             startSearch={conditionalStartSearch}
@@ -137,7 +137,9 @@ function SearchBar({
 
                     {/* <DropdownButton title="Time" />
                     <DropdownButton title="Type" /> */}
-                    <DropdownButton title="CU" filterData={filterData.cu} defaultFilter={defaultFilters.filterData.cu} clearFilter={clearFilterSearch("cu")} isDisabled={isLoading}>
+                    {/* <DropdownButton title="CU" filterData={filterData.cu}
+                    defaultFilter={defaultFilters.filterData.cu}
+                    clearFilter={clearFilterSearch("cu")} isDisabled={isLoading}>
                         <RangeFilter
                             minRange={0.5}
                             maxRange={2}
@@ -148,7 +150,7 @@ function SearchBar({
                             rangeProperty="cu"
                             isDisabled={isLoading}
                         />
-                    </DropdownButton>
+                    </DropdownButton> */}
                 </div>
             </div>
             <div className="level-right">
