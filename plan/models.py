@@ -21,6 +21,9 @@ class Schedule(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = (('name', 'semester', 'person'), )
+
     def clean(self):
         for s in self.sections.all():
             if self.semester != s.course.semester:

@@ -2,8 +2,8 @@ from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 
-from courses.models import Instructor, Requirement, Section
-from courses.util import create_mock_data
+from courses.models import Instructor, Requirement
+from courses.util import create_mock_data, get_course_and_section
 from options.models import Option
 from plan.models import Schedule
 from plan.search import TypedSearchBackend
@@ -198,10 +198,26 @@ class CourseReviewAverageTestCase(TestCase):
 
 
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
-class GetScheduleTest(TestCase):
+class ScheduleTest(TestCase):
     def setUp(self):
-        self.s = Schedule(person=User.objects.create_user(username='jacob', email='jacob@example.com', password='top_secret'),
-                          section=Section(),
+        _, section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.s = Schedule(person=User.objects.create_user(username='jacob',
+                                                          email='jacob@example.com',
+                                                          password='top_secret'),
                           semester=TEST_SEMESTER,
-                          name='My Test Schedule')
+                          name='My Test Schedule',
+                          id='120837210387',)
+        self.s.sections.set([section])
         self.s.save()
+        self.client = APIClient()
+        self.client.login(username='jacob', password='top_secret')
+
+    def test_get_schedule(self):
+        course, section = create_mock_data('CIS-120-201', TEST_SEMESTER)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['name'], 'My Test Schedule')
+        self.assertEqual(len(response.data['sections']), 1)
+        self.assertEqual(response.data['person'].username, 'username')
+        self.assertEqual(response.data['sections'][0].course, 'CIS-120')
+        self.assertEqual(response.data['sections'][0].code, '001')

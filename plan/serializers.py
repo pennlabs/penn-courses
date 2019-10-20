@@ -2,7 +2,8 @@ from django.db.models import Manager, OuterRef, Prefetch, Q
 from rest_framework import serializers
 
 from courses.models import Course, Section
-from courses.serializers import CourseDetailSerializer, CourseListSerializer, SectionDetailSerializer, SectionSerializer
+from courses.serializers import CourseDetailSerializer, CourseListSerializer, SectionDetailSerializer
+from courses.util import get_course_and_section
 from plan import annotations
 from plan.models import Schedule
 
@@ -166,5 +167,28 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Schedule
-        fields = ['__all__']
         exclude = ['person']
+
+    def create(self, validated_data):
+        """
+        Manual create method because DRF does not support writable nested fields by default.
+        """
+
+        sections = None
+
+        if 'meetings' in validated_data:
+            sections = []
+            for section in validated_data.pop('meetings'):
+                _, section = get_course_and_section(section.get('id'), section.get('semester'))
+                sections.append(section)
+
+        # Note: it's important that all nested fields are POPPED from the validated data at this point. Otherwise,
+        # DRF will throw an error calling create on the superclass.
+        obj = super().create(validated_data)
+
+        if sections is not None:
+            obj.sections.set(sections)
+
+        obj.person = self.context['request'].user
+
+        return obj
