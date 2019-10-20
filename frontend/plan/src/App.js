@@ -12,7 +12,6 @@ import Schedule from "./components/schedule/Schedule";
 
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
-import NavBar from "./NavBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 
