@@ -130,6 +130,9 @@ export const schedule = (state = initialState, action) => {
             };
         case DELETE_SCHEDULE: {
             const newSchedules = removeSchedule(action.scheduleName, state.schedules);
+            if (Object.keys(newSchedules).length === 0) {
+                newSchedules["Empty Schedule"] = generateDefaultSchedule();
+            }
             return {
                 ...state,
                 schedules: newSchedules,

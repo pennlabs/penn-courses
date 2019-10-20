@@ -43,6 +43,7 @@ class Schedule extends Component {
         const {
             schedData, removeSection, focusSection,
             scheduleNames, switchSchedule, schedulesMutator,
+            activeScheduleName,
         } = this.props;
         const sections = schedData.meetings || [];
 
@@ -163,7 +164,7 @@ class Schedule extends Component {
             <div className="column vertical-section">
                 <h3 className="section-header">
                     <ScheduleSelectorDropdown
-                        defActive={0}
+                        activeName={activeScheduleName}
                         contents={scheduleNames.map(scheduleName => ({
                             text: scheduleName,
                             onClick: () => switchSchedule(scheduleName),
@@ -221,6 +222,7 @@ const mapStateToProps = state => (
     {
         schedData: state.schedule.schedules[state.schedule.scheduleSelected],
         scheduleNames: Object.keys(state.schedule.schedules),
+        activeScheduleName: state.schedule.scheduleSelected,
     }
 );
 

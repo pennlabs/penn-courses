@@ -31,7 +31,7 @@ const DropdownButton = ({
                 role="button"
             >
                 <span className="icon is-small">
-                    <i className="far fa-edit" aria-hidden="true" />
+                    <i className="far fa-edit" aria-hidden="true"/>
                 </span>
             </div>
             <div
@@ -40,7 +40,7 @@ const DropdownButton = ({
                 role="button"
             >
                 <span className="icon is-small">
-                    <i className="far fa-copy" aria-hidden="true" />
+                    <i className="far fa-copy" aria-hidden="true"/>
                 </span>
             </div>
             <div
@@ -49,7 +49,7 @@ const DropdownButton = ({
                 role="button"
             >
                 <span className="icon is-small">
-                    <i className="fa fa-trash" aria-hidden="true" />
+                    <i className="fa fa-trash" aria-hidden="true"/>
                 </span>
             </div>
         </div>
@@ -69,12 +69,11 @@ DropdownButton.propTypes = {
 };
 
 const ScheduleSelectorDropdown = ({
-    defActive, contents, mutators: {
+    activeName, contents, mutators: {
         copy, remove, rename, create,
     },
 }) => {
     const [isActive, setIsActive] = useState(false);
-    const [activeItem, setActiveItem] = useState(defActive);
     const [ref, setRef] = useState(null);
 
     useEffect(() => {
@@ -94,7 +93,7 @@ const ScheduleSelectorDropdown = ({
             className={`classic dropdown${isActive
                 ? " is-active" : ""}`}
         >
-            <span className="selected_name">{contents[activeItem].text}</span>
+            <span className="selected_name">{activeName}</span>
             <div
                 className="classic-dropdown-trigger"
                 onClick={() => setIsActive(!isActive)}
@@ -105,7 +104,7 @@ const ScheduleSelectorDropdown = ({
                     aria-controls="dropdown-menu"
                 >
                     <span className="icon is-small">
-                        <i className="fa fa-chevron-down" aria-hidden="true" />
+                        <i className="fa fa-chevron-down" aria-hidden="true"/>
                     </span>
                 </div>
             </div>
@@ -115,9 +114,8 @@ const ScheduleSelectorDropdown = ({
                         .map(([index, { onClick, text: scheduleName }]) => (
                             <DropdownButton
                                 key={index}
-                                isActive={activeItem === index}
+                                isActive={scheduleName === activeName}
                                 makeActive={() => {
-                                    setActiveItem(index);
                                     setIsActive(false);
                                 }}
                                 onClick={onClick}
@@ -136,7 +134,7 @@ const ScheduleSelectorDropdown = ({
                         href="#"
                     >
                         <span className="icon is-small">
-                            <i className="fa fa-plus" aria-hidden="true" />
+                            <i className="fa fa-plus" aria-hidden="true"/>
                         </span>
                         <span> Add new schedule </span>
                     </a>
@@ -147,7 +145,7 @@ const ScheduleSelectorDropdown = ({
 };
 
 ScheduleSelectorDropdown.propTypes = {
-    defActive: PropTypes.bool,
+    activeName: PropTypes.string,
     contents: PropTypes.arrayOf(PropTypes.object).isRequired,
     mutators: PropTypes.shape({
         copy: PropTypes.func.isRequired,
