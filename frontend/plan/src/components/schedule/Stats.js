@@ -13,6 +13,9 @@ const purpleTimeStats = {
 
 class Stats extends Component {
     parseTime = (time) => {
+        if (isNaN(time) || time === "NaN") {
+            return "N/A";
+        }
         if (time >= 12) {
             if (time - Math.floor(time) === 0) {
                 return `${time - 12}:00 PM`;
@@ -96,8 +99,8 @@ class Stats extends Component {
 
         // final computation of stats
 
-        const earliestStart = Math.min(...startTimes);
-        const latestEnd = Math.max(...endTimes);
+        const earliestStart = startTimes ? Math.min(...startTimes) : NaN;
+        const latestEnd = endTimes ? Math.max(...endTimes) : NaN;
 
         const minHoursADay = Math.min(...hoursPerDay);
         const maxHoursADay = Math.max(...hoursPerDay);
@@ -140,45 +143,49 @@ class Stats extends Component {
                         {" "}
                     </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={purpleTimeStats}>
-                            {parseFloat(minHoursADay.toFixed(2))}
+                {meetings.length > 0
+                    ? [
+                        <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                                <div style={purpleTimeStats}>
+                                    {parseFloat(minHoursADay.toFixed(2))}
+                                </div>
+                                <div style={{ fontSize: "0.8em" }}>min hours in a day</div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                                <div style={purpleTimeStats}>
+                                    {parseFloat(maxHoursADay.toFixed(2))}
+                                </div>
+                                <div style={{ fontSize: "0.8em" }}>max hours in a day</div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                                <div style={purpleTimeStats}>
+                                    {parseFloat((totalHours / 5).toFixed(2))}
+                                </div>
+                                <div style={{ fontSize: "0.8em" }}>avg. hours a day</div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                                <div style={purpleTimeStats}>
+                                    {parseFloat(totalHours.toFixed(2))}
+                                </div>
+                                <div style={{ fontSize: "0.8em" }}>total hours of class</div>
+                            </div>
+                        </div>,
+                        <div style={{
+                            padding: "10px", display: "flex", flexDirection: "column", justifyContent: "space-evenly", alignItems: "flex-start",
+                        }}
+                        >
+                            <div>
+                                <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{this.parseTime(earliestStart)}</div>
+                                <div>earliest start time</div>
+                            </div>
+                            <div>
+                                <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{this.parseTime(latestEnd)}</div>
+                                <div>latest end time</div>
+                            </div>
                         </div>
-                        <div style={{ fontSize: "0.8em" }}>min hours in a day</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={purpleTimeStats}>
-                            {parseFloat(maxHoursADay.toFixed(2))}
-                        </div>
-                        <div style={{ fontSize: "0.8em" }}>max hours in a day</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={purpleTimeStats}>
-                            {parseFloat((totalHours / 5).toFixed(2))}
-                        </div>
-                        <div style={{ fontSize: "0.8em" }}>avg. hours a day</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={purpleTimeStats}>
-                            {parseFloat(totalHours.toFixed(2))}
-                        </div>
-                        <div style={{ fontSize: "0.8em" }}>total hours of class</div>
-                    </div>
-                </div>
-                <div style={{
-                    padding: "10px", display: "flex", flexDirection: "column", justifyContent: "space-evenly", alignItems: "flex-start",
-                }}
-                >
-                    <div>
-                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{this.parseTime(earliestStart)}</div>
-                        <div>earliest start time</div>
-                    </div>
-                    <div>
-                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{this.parseTime(latestEnd)}</div>
-                        <div>latest end time</div>
-                    </div>
-                </div>
+                    ]
+                    : <span />}
             </div>
         );
     }
