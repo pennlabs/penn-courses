@@ -20,7 +20,7 @@ function SectionList({ sections, cartSections, manageCart }) {
                 <div className="header">TIME</div>
             </div>
 ,
-            <ul className="scrollable">
+            <ul>
                 {sections.map(s => (
                     <Section
                         section={s}
