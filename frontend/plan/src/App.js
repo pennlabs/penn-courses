@@ -3,6 +3,7 @@ import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
 import "./styles/App.css";
+import "./styles/modal.css";
 import "./styles/dropdown.css";
 import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
@@ -16,6 +17,7 @@ import SearchBar from "./components/search/SearchBar";
 import NavBar from "./NavBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
+import ModalContainer from "./components/modals/generic_modal_container";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -83,6 +85,7 @@ function App() {
                     </div>
                 </div>
             </div>
+            <ModalContainer />
         </Provider>
     );
 }

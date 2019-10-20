@@ -6,12 +6,12 @@ import SummaryDropdown from "./summary";
 import {
     changeSchedule, fetchCourseSearch, openModal, toggleSearchFilterShown
 } from "../../../actions";
-import { NEW_SCHEDULE_MODAL_NAME } from "../../modals/new_schedule_modal";
+import { NEW_SCHEDULE_MODAL_NAME } from "../../modals/old/new_schedule_modal";
 import SchedulesDropdown from "./SchedulesDropdown";
-import { DELETE_SCHEDULE_MODAL_NAME } from "../../modals/delete_schedule_modal";
-import { RENAME_SCHEDULE_MODAL_NAME } from "../../modals/rename_schedule_modal_container";
-import { DUPLICATE_SCHEDULE_MODAL_NAME } from "../../modals/duplicate_schedule_modal_container";
-import { CLEAR_SCHEDULE_MODAL_NAME } from "../../modals/clear_schedule_modal";
+import { DELETE_SCHEDULE_MODAL_NAME } from "../../modals/old/delete_schedule_modal";
+import { RENAME_SCHEDULE_MODAL_NAME } from "../../modals/old/rename_schedule_modal_container";
+import { DUPLICATE_SCHEDULE_MODAL_NAME } from "../../modals/old/duplicate_schedule_modal_container";
+import { CLEAR_SCHEDULE_MODAL_NAME } from "../../modals/old/clear_schedule_modal";
 
 class SearchBar extends Component {
     constructor(props) {
