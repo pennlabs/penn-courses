@@ -7,6 +7,9 @@ export default function MyCircularProgressBar(props) {
     let color;
     const { value } = props;
     switch (true) {
+        case isNaN(value):
+            color = "#f1f1f1";
+            break;
         case value < 1:
             color = "#df5d56";
             break;
@@ -21,9 +24,9 @@ export default function MyCircularProgressBar(props) {
     }
     return (
         <CircularProgressbar
-            value={value / 4 * 100}
+            value={value ? value / 4 * 100 : 100}
             strokeWidth="14"
-            text={`${value}`}
+            text={isNaN(value) ? "N/A" : value}
             styles={buildStyles({
             // Rotation of path and trail, in number of turns (0-1)
                 rotation: 0,
