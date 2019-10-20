@@ -1,8 +1,11 @@
 import fetch from "cross-fetch";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
+export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
 
-export const UPDATE_COURSE_INFO = "UPDATE_COURSE_INFO";
+export const UPDATE_COURSE_INFO_SUCCESS = "UPDATE_COURSE_INFO_SUCCESS";
+export const UPDATE_COURSE_INFO_REQUEST = "UPDATE_COURSE_INFO_REQUEST";
+
 export const UPDATE_SECTIONS = "UPDATE_SECTIONS";
 export const OPEN_SECTION_INFO = "OPEN_SECTION_INFO";
 export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
@@ -98,6 +101,12 @@ export const updateSearch = searchResults => (
     }
 );
 
+const updateSearchRequest = () => (
+    {
+        type: UPDATE_SEARCH_REQUEST,
+    }
+);
+
 export const updateSections = sections => (
     {
         type: UPDATE_SECTIONS,
@@ -112,9 +121,15 @@ export const updateSectionInfo = sectionInfo => (
     }
 );
 
+const updateCourseInfoRequest = () => (
+    {
+        type: UPDATE_COURSE_INFO_REQUEST,
+    }
+);
+
 export const updateCourseInfo = course => (
     {
-        type: UPDATE_COURSE_INFO,
+        type: UPDATE_COURSE_INFO_SUCCESS,
         course,
     }
 );
@@ -217,15 +232,16 @@ function buildCourseSearchUrl(filterData) {
 }
 
 export function fetchCourseSearch(filterData) {
-    return dispatch => (
+    return (dispatch) => {
+        dispatch(updateSearchRequest());
         fetch(buildCourseSearchUrl(filterData)).then(
             response => response.json().then(
                 json => dispatch(updateSearch(json)),
                 error => dispatch(courseSearchError(error)),
             ),
             error => dispatch(courseSearchError(error)),
-        )
-    );
+        );
+    };
 }
 
 export function updateSearchText(s) {
@@ -291,12 +307,13 @@ export function clearAll() {
 }
 
 export function fetchCourseDetails(courseId) {
-    return dispatch => (
+    return (dispatch) => {
+        dispatch(updateCourseInfoRequest());
         fetch(`/courses/${courseId}`)
             .then(res => res.json())
             .then(course => dispatch(updateCourseInfo(course)))
-            .catch(error => dispatch(sectionInfoSearchError(error)))
-    );
+            .catch(error => dispatch(sectionInfoSearchError(error)));
+    };
 }
 
 export function fetchSectionInfo(searchData) {
