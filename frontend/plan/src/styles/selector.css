@@ -106,8 +106,10 @@
     color: #363636;
 }
 
-.section-row:hover {
+.section-row-selected,
+.section-row-selected:hover {
     color: #6975f4;
+    font-weight: bold;
 }
 
 .selector-row:hover {
