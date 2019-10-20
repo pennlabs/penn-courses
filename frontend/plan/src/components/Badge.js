@@ -23,7 +23,6 @@ export default function Badge(props) {
             }}
         >
             <b>{value ? value.toFixed(1) : "—"}</b>
-
         </span>
     );
 }

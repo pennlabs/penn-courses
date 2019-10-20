@@ -1,8 +1,11 @@
 import fetch from "cross-fetch";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
+export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
 
-export const UPDATE_COURSE_INFO = "UPDATE_COURSE_INFO";
+export const UPDATE_COURSE_INFO_SUCCESS = "UPDATE_COURSE_INFO_SUCCESS";
+export const UPDATE_COURSE_INFO_REQUEST = "UPDATE_COURSE_INFO_REQUEST";
+
 export const UPDATE_SECTIONS = "UPDATE_SECTIONS";
 export const OPEN_SECTION_INFO = "OPEN_SECTION_INFO";
 export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
@@ -10,7 +13,6 @@ export const CREATE_SCHEDULE = "CREATE_SCHEDULE";
 
 export const OPEN_MODAL = "OPEN_MODAL";
 export const CLOSE_MODAL = "CLOSE_MODAL";
-export const ACTION_BUTTON_PRESSED = "ACTION_BUTTON_PRESSED";
 
 export const ADD_SCHED_ITEM = "ADD_SCHED_ITEM";
 export const REMOVE_SCHED_ITEM = "REMOVE_SCHED_ITEM";
@@ -24,6 +26,13 @@ export const COURSE_SEARCH_LOADING = "COURSE_SEARCH_LOADING";
 export const COURSE_SEARCH_SUCCESS = "COURSE_SEARCH_SUCCESS";
 
 export const LOAD_REQUIREMENTS = "LOAD_REQUIREMENTS";
+export const ADD_SCHOOL_REQ = "ADD_SCHOOL_REQ";
+export const REM_SCHOOL_REQ = "REM_SCHOOL_REQ";
+export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
+
+export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
+export const CLEAR_FILTER = "CLEAR_FILTER";
+export const CLEAR_ALL = "CLEAR_ALL";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
@@ -33,6 +42,7 @@ export const TOGGLE_CHECK = "TOGGLE_CHECK";
 
 export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
+export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
 
 export const duplicateSchedule = scheduleName => (
@@ -42,16 +52,18 @@ export const duplicateSchedule = scheduleName => (
     }
 );
 
-export const deleteSchedule = () => (
+export const deleteSchedule = scheduleName => (
     {
         type: DELETE_SCHEDULE,
+        scheduleName,
     }
 );
 
-export const renameSchedule = scheduleName => (
+export const renameSchedule = (oldName, newName) => (
     {
         type: RENAME_SCHEDULE,
-        scheduleName,
+        oldName,
+        newName,
     }
 );
 
@@ -90,6 +102,12 @@ export const updateSearch = searchResults => (
     }
 );
 
+const updateSearchRequest = () => (
+    {
+        type: UPDATE_SEARCH_REQUEST,
+    }
+);
+
 export const updateSections = sections => (
     {
         type: UPDATE_SECTIONS,
@@ -104,9 +122,15 @@ export const updateSectionInfo = sectionInfo => (
     }
 );
 
+const updateCourseInfoRequest = () => (
+    {
+        type: UPDATE_COURSE_INFO_REQUEST,
+    }
+);
+
 export const updateCourseInfo = course => (
     {
-        type: UPDATE_COURSE_INFO,
+        type: UPDATE_COURSE_INFO_SUCCESS,
         course,
     }
 );
@@ -118,10 +142,12 @@ export const createSchedule = scheduleName => (
     }
 );
 
-export const openModal = modalShown => (
+export const openModal = (modalKey, modalProps, modalTitle) => (
     {
         type: OPEN_MODAL,
-        modalShown,
+        modalKey,
+        modalProps,
+        modalTitle,
     }
 );
 
@@ -129,13 +155,6 @@ export const openModal = modalShown => (
 export const closeModal = () => (
     {
         type: CLOSE_MODAL,
-    }
-);
-
-export const triggerModalAction = modalAction => (
-    {
-        type: ACTION_BUTTON_PRESSED,
-        modalAction,
     }
 );
 
@@ -179,8 +198,58 @@ export const loadRequirements = () => (
     )
 );
 
-function buildCourseSearchUrl(searchData) {
-    return `/courses/?search=${searchData.param}`;
+function buildCourseSearchUrl(filterData) {
+    let queryString = `/courses/?search=${filterData.searchString}`;
+
+    // Requirements filter
+    const reqs = [];
+    if (filterData.selectedReq) {
+        for (const key of Object.keys(filterData.selectedReq)) {
+            if (filterData.selectedReq[key] === 1) {
+                reqs.push(key);
+            }
+        }
+
+        if (reqs.length > 0) {
+            queryString += `&requirements=${reqs[0]}`;
+            for (let i = 1; i < reqs.length; i += 1) {
+                queryString += `,${reqs[i]}`;
+            }
+        }
+    }
+
+    // Range filters
+    const filterFields = ["difficulty", "course_quality", "instructor_quality", "cu"];
+    const defaultFilters = [[0, 4], [0, 4], [0, 4], [0.5, 2]];
+    for (let i = 0; i < filterFields.length; i += 1) {
+        if (filterData[filterFields[i]]
+            && JSON.stringify(filterData[filterFields[i]]) !== JSON.stringify(defaultFilters[i])) {
+            const filterRange = filterData[filterFields[i]];
+            queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
+        }
+    }
+
+    return queryString;
+}
+
+export function fetchCourseSearch(filterData) {
+    return (dispatch) => {
+        dispatch(updateSearchRequest());
+        fetch(buildCourseSearchUrl(filterData)).then(
+            response => response.json().then(
+                json => dispatch(updateSearch(json)),
+                error => dispatch(courseSearchError(error)),
+            ),
+            error => dispatch(courseSearchError(error)),
+        );
+    };
+}
+
+export function updateSearchText(s) {
+    return {
+        type: UPDATE_SEARCH_TEXT,
+        s,
+    };
 }
 
 function buildSectionInfoSearchUrl(searchData) {
@@ -202,25 +271,50 @@ export function sectionInfoSearchError(error) {
     };
 }
 
-export function fetchCourseSearch(searchData) {
-    return dispatch => (
-        fetch(buildCourseSearchUrl(searchData)).then(
-            response => response.json().then(
-                json => dispatch(updateSearch(json)),
-                error => dispatch(courseSearchError(error)),
-            ),
-            error => dispatch(courseSearchError(error)),
-        )
-    );
+export function addSchoolReq(reqID) {
+    return {
+        type: ADD_SCHOOL_REQ,
+        reqID,
+    };
+}
+
+export function remSchoolReq(reqID) {
+    return {
+        type: REM_SCHOOL_REQ,
+        reqID,
+    };
+}
+
+export function updateRangeFilter(field, values) {
+    return {
+        type: UPDATE_RANGE_FILTER,
+        field,
+        values,
+    };
+}
+
+export function clearFilter(propertyName) {
+    return {
+        type: CLEAR_FILTER,
+        propertyName,
+    };
+}
+
+
+export function clearAll() {
+    return {
+        type: CLEAR_ALL,
+    };
 }
 
 export function fetchCourseDetails(courseId) {
-    return dispatch => (
+    return (dispatch) => {
+        dispatch(updateCourseInfoRequest());
         fetch(`/courses/${courseId}`)
             .then(res => res.json())
             .then(course => dispatch(updateCourseInfo(course)))
-            .catch(error => dispatch(sectionInfoSearchError(error)))
-    );
+            .catch(error => dispatch(sectionInfoSearchError(error)));
+    };
 }
 
 export function fetchSectionInfo(searchData) {
@@ -264,4 +358,9 @@ export const toggleCheck = course => ({
 export const removeCartItem = sectionId => ({
     type: REMOVE_CART_ITEM,
     sectionId,
+});
+
+export const changeSortType = sortType => ({
+    type: CHANGE_SORT_TYPE,
+    sortType,
 });

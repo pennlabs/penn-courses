@@ -1,6 +1,6 @@
 .schedule {
     display: grid;
-    height: 100%;
+    height: calc(100% - 160px);
     margin-right: 20px;
     column-gap: 0;
     position: relative;
@@ -89,4 +89,21 @@ span.verticalLine-last {
     border-right: 1px solid gray;
     opacity: .5;
     /*right: -5px;*/
+}
+.statsStyles{
+  width: 100%;
+  height: 150px;
+  padding: 0px 20px;
+  display: grid;
+  grid-template-columns: 50% 28% 22%;
+}
+@media only screen and (max-height: 600px) {
+  .statsStyles{
+      height: 0px;
+      display:none
+  }
+
+  .schedule{
+    height:100%;
+  }
 }

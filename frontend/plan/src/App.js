@@ -3,17 +3,23 @@ import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
 import "./styles/App.css";
+import "./styles/modal.css";
+import "./styles/dropdown.css";
 import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import Schedule from "./components/schedule/Schedule";
 
+import { initGA, logPageView, analyticsMiddleware } from "./analytics";
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
 import NavBar from "./NavBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
+import ModalContainer from "./components/modals/generic_modal_container";
+import SearchSortDropdown from "./components/search/SearchSortDropdown";
+import { changeSortType } from "./actions";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -26,7 +32,8 @@ const store = createStore(
     { schedule: previousStateJSON },
     applyMiddleware(
         thunkMiddleware,
-        loggerMiddleware
+        loggerMiddleware,
+        analyticsMiddleware,
     )
 );
 
@@ -37,20 +44,33 @@ store.subscribe(() => {
 function App() {
     return (
         <Provider store={store}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-                <NavBar style={{ flexGrow: 0 }} />
+            {initGA()}
+            {logPageView()}
+            <div style={{ height: "100vh" }}>
                 <SearchBar style={{ flexGrow: 0 }} />
-                <div className="App columns main" style={{ flexGrow: 1, maxHeight: "80vh" }}>
-                    <div className="column is-one-quarter">
-                        <h3 style={{
+                <div className="App columns main">
+                    <div style={{ marginLeft: "25px" }} className="column is-one-quarter">
+                        <span style={{
                             display: "flex",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
+                            flexDirection: "row",
+                            justifyContent: "space-between",
                         }}
                         >
-                            Search Results
-                        </h3>
-                        <div className="box" style={{ height: "100%", paddingLeft: 0, paddingRight: 0 }}>
+                            <h3 style={{
+                                display: "flex",
+                                fontWeight: "bold",
+                                marginBottom: "0.5rem",
+                            }}
+                            >
+                                Search Results
+                            </h3>
+                            <div style={{ float: "right", display: "flex" }}>
+                                <SearchSortDropdown
+                                    updateSort={sort => store.dispatch(changeSortType(sort))}
+                                />
+                            </div>
+                        </span>
+                        <div className="box" style={{ paddingLeft: 0, paddingRight: 0 }}>
                             <Selector />
                         </div>
                     </div>
@@ -73,11 +93,12 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div className="column box">
+                    <div className="column">
                         <Schedule />
                     </div>
                 </div>
             </div>
+            <ModalContainer />
         </Provider>
     );
 }
