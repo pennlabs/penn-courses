@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
 const DropdownButton = ({
-    isActive, text, onClick, makeActive, mutators: { copy, remove },
+    isActive, text, onClick, makeActive, mutators: { copy, remove, rename },
 }) => (
     <div
         role="button"
@@ -25,9 +25,15 @@ const DropdownButton = ({
             {text}
         </div>
         <div className="schedule-options-container">
-            <span className="icon is-small">
-                <i className="far fa-edit" aria-hidden="true" />
-            </span>
+            <div
+                onClick={rename}
+                className="s-option-copy"
+                role="button"
+            >
+                <span className="icon is-small">
+                    <i className="far fa-edit" aria-hidden="true" />
+                </span>
+            </div>
             <div
                 onClick={copy}
                 className="s-option-copy"
@@ -58,11 +64,14 @@ DropdownButton.propTypes = {
     mutators: PropTypes.shape({
         copy: PropTypes.func.isRequired,
         remove: PropTypes.func.isRequired,
+        rename: PropTypes.func.isRequired,
     }),
 };
 
 const ScheduleSelectorDropdown = ({
-    defActive, defText, contents, mutators: { copy, remove },
+    defActive, contents, mutators: {
+        copy, remove, rename, create,
+    },
 }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(defActive);
@@ -85,7 +94,7 @@ const ScheduleSelectorDropdown = ({
             className={`classic dropdown${isActive
                 ? " is-active" : ""}`}
         >
-            <span className="selected_name">{defText}</span>
+            <span className="selected_name">{contents[activeItem].text}</span>
             <div
                 className="classic-dropdown-trigger"
                 onClick={() => setIsActive(!isActive)}
@@ -103,7 +112,7 @@ const ScheduleSelectorDropdown = ({
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content">
                     {Array.from(contents.entries())
-                        .map(([index, { onClick, text }]) => (
+                        .map(([index, { onClick, text: scheduleName }]) => (
                             <DropdownButton
                                 key={index}
                                 isActive={activeItem === index}
@@ -112,16 +121,16 @@ const ScheduleSelectorDropdown = ({
                                     setIsActive(false);
                                 }}
                                 onClick={onClick}
-                                text={text}
+                                text={scheduleName}
                                 mutators={{
-                                    copy: () => copy(text),
-                                    remove: () => remove(text),
+                                    copy: () => copy(scheduleName),
+                                    remove: () => remove(scheduleName),
+                                    rename: () => rename(scheduleName),
                                 }}
                             />
                         ))}
                     <a
-                        onClick={() => {
-                        }}
+                        onClick={create}
                         role="button"
                         className="dropdown-item add-schedule"
                         href="#"
@@ -139,11 +148,11 @@ const ScheduleSelectorDropdown = ({
 
 ScheduleSelectorDropdown.propTypes = {
     defActive: PropTypes.bool,
-    defText: PropTypes.string.isRequired,
     contents: PropTypes.arrayOf(PropTypes.object).isRequired,
     mutators: PropTypes.shape({
         copy: PropTypes.func.isRequired,
         remove: PropTypes.func.isRequired,
+        create: PropTypes.func.isRequired,
     }),
 };
 

@@ -28,7 +28,7 @@ body {
   width: 100%;
 }
 
-.button{
+.button:not(modal .button){
   border-radius: 30px!important;
 }
 
@@ -698,11 +698,6 @@ ul {
   text-decoration: none;
 }
 
-.modal-card-body .button, .modal-card-body input{
-  display:block;
-  margin: 1.5rem auto auto;
-}
-
 .Modal h2 {
   font-size:initial!important;
   line-height: 0.5em;
@@ -815,29 +810,9 @@ ul {
   padding:0;
 }
 
-.modal-content *{
-  color:white;
-}
-
-.modal header, .modal footer{
-  background-color:#3273dc;
-}
-
-.modal header *, .modal footer *{
-  color:white;
-}
-
 img.small{
   width:1.5rem;
   display:inline;
-}
-
-.modal-card{
-  border-radius:9px;
-}
-
-.modal-card-body{
-  padding-bottom: 1.5rem;
 }
 
 #NotificationModal .modal-card-body *:not(a){
@@ -859,11 +834,6 @@ img.small{
   display:contents;
 }
 
-.modal-background{
-  background-color:#707070;
-  opacity:0.75;
-}
-
 #feedback_button{
   width:3rem;
   height:3rem;
@@ -880,4 +850,13 @@ img.small{
 
 .level .button {
   font-size: 0.75rem !important;
+}
+
+*[role=button] .fa-times {
+  color: rgba(0, 0, 0, 0.2);
+  transition: 200ms ease color;
+}
+
+*[role=button]:hover .fa-times {
+  color: rgba(0, 0, 0, 0.33);
 }
