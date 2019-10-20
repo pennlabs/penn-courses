@@ -54,22 +54,22 @@ class Stats extends Component {
             if (str) {
                 const course = str.substring(0, str.indexOf("-", str.indexOf("-") + 1)); // finds course (irrespective of section)
                 if (course in courseDifficulties) {
-                    courseDifficulties[course] += (section.difficulty ? section.difficulty : 2.5);
+                    courseDifficulties[course] += (section.difficulty ? section.difficulty : 2.0);
                     courseWorkloads[course] += (section.work_required
-                        ? section.work_required : 2.5);
+                        ? section.work_required : 2.0);
                     courseInstructorQualities[course] += (section.instructor_quality
-                        ? section.instructor_quality : 2.5);
+                        ? section.instructor_quality : 2.0);
                     courseQualities[course] += (section.course_quality
-                        ? section.course_quality : 2.5);
+                        ? section.course_quality : 2.0);
                     courseCUs[course] += (section.credits ? section.credits : 1);
                     courseRepeats[course] += 1;
                 } else {
-                    courseDifficulties[course] = (section.difficulty ? section.difficulty : 2.5);
-                    courseWorkloads[course] = (section.work_required ? section.work_required : 2.5);
+                    courseDifficulties[course] = (section.difficulty ? section.difficulty : 2.0);
+                    courseWorkloads[course] = (section.work_required ? section.work_required : 2.0);
                     courseInstructorQualities[course] = (section.instructor_quality
-                        ? section.instructor_quality : 2.5);
+                        ? section.instructor_quality : 2.0);
                     courseQualities[course] = (section.course_quality
-                        ? section.course_quality : 2.5);
+                        ? section.course_quality : 2.0);
                     courseCUs[course] = (section.credits ? section.credits : 1);
                     courseRepeats[course] = 1;
                 }
