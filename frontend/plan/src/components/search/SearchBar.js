@@ -107,7 +107,7 @@ function SearchBar({
                             updateRangeFilter={updateRangeFilter("difficulty")}
                             startSearch={conditionalStartSearch}
                             rangeProperty="difficulty"
-                            disabled={isLoading ? "disabled" : false}
+                            isDisabled={isLoading}
                         />
                     </DropdownButton>
                     <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")} isDisabled={isLoading}>
@@ -119,7 +119,7 @@ function SearchBar({
                             updateRangeFilter={updateRangeFilter("course_quality")}
                             startSearch={conditionalStartSearch}
                             rangeProperty="course_quality"
-                            disabled={isLoading ? "disabled" : false}
+                            isDisabled={isLoading}
                         />
                     </DropdownButton>
                     <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")} isDisabled={isLoading}>
@@ -131,7 +131,7 @@ function SearchBar({
                             updateRangeFilter={updateRangeFilter("instructor_quality")}
                             startSearch={conditionalStartSearch}
                             rangeProperty="instructor_quality"
-                            disabled={isLoading ? "disabled" : false}
+                            isDisabled={isLoading}
                         />
                     </DropdownButton>
 
@@ -146,7 +146,7 @@ function SearchBar({
                             updateRangeFilter={updateRangeFilter("cu")}
                             startSearch={conditionalStartSearch}
                             rangeProperty="cu"
-                            disabled={isLoading ? "disabled" : false}
+                            isDisabled={isLoading}
                         />
                     </DropdownButton>
                 </div>
