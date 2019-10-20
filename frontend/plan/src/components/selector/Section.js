@@ -11,7 +11,6 @@ export default function Section({ section, cart, inCart }) {
     const [isOpen, toggleOpen] = useState(false);
     const { instructors } = section;
     return (
-<<<<<<< HEAD
         <>
             <li>
                 <a
@@ -54,34 +53,6 @@ export default function Section({ section, cart, inCart }) {
             </li>
             <SectionDetails section={section} isOpen={isOpen} />
         </>
-=======
-        // eslint-disable-next-line
-        <li className="selector-row section-row" onClick={inCart ? cart.remove : cart.add}>
-            <div>
-                {section.id.split("-").pop()}
-            </div>
-            <div>
-                { section.activity }
-            </div>
-            <div style={{ whiteSpace: "nowrap" }}>
-                { getTimeString(section.meetings) }
-            </div>
-            <div>
-                <div className="popover is-popover-left">
-                    <Badge
-                        baseColor={[43, 236, 56]}
-                        value={section.instructor_quality}
-                    />
-                    <span className="popover-content">
-                        Instructor Name
-                    </span>
-                </div>
-            </div>
-            <div>
-                {inCart ? <i className="fas fa-times" /> : <i className="fas fa-plus" />}
-            </div>
-        </li>
->>>>>>> master
     );
 }
 

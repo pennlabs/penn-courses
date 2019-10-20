@@ -47,15 +47,9 @@ function App() {
             {logPageView()}
             <div style={{ height: "100vh" }}>
                 <SearchBar style={{ flexGrow: 0 }} />
-<<<<<<< HEAD
-                <div className="App columns main" style={{ flexGrow: 1, maxHeight: "80vh" }}>
-                    <div className="column is-one-quarter">
-                        <h3 style={{
-=======
                 <div className="App columns main">
                     <div style={{ marginLeft: "25px" }} className="column is-one-quarter">
                         <span style={{
->>>>>>> master
                             display: "flex",
                             flexDirection: "row",
                             justifyContent: "space-between",
