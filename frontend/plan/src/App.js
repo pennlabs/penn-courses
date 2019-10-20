@@ -11,6 +11,7 @@ import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import Schedule from "./components/schedule/Schedule";
 
+import { initGA, logPageView, analyticsMiddleware } from "./analytics";
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
 import Selector from "./components/selector/Selector";
@@ -28,7 +29,8 @@ const store = createStore(
     { schedule: previousStateJSON },
     applyMiddleware(
         thunkMiddleware,
-        loggerMiddleware
+        loggerMiddleware,
+        analyticsMiddleware,
     )
 );
 
@@ -39,6 +41,8 @@ store.subscribe(() => {
 function App() {
     return (
         <Provider store={store}>
+            {initGA()}
+            {logPageView()}
             <div style={{ height: "100vh" }}>
                 <SearchBar />
                 <div className="App columns main">
