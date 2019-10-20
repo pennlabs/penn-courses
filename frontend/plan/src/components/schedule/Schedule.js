@@ -216,6 +216,7 @@ Schedule.propTypes = {
         copy: PropTypes.func.isRequired,
         remove: PropTypes.func.isRequired,
     }),
+    activeScheduleName: PropTypes.string,
 };
 
 const mapStateToProps = state => (
