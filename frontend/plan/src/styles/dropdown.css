@@ -98,6 +98,7 @@
 .classic .dropdown-item {
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
 }
 
 .schedule-name-container, .schedule-options-container {
@@ -107,6 +108,10 @@
 .schedule-name-container {
     flex-grow: 1;
     font-weight: 400;
+    max-width: 50%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .schedule-options-container {
