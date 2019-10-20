@@ -20,6 +20,7 @@
     "react-ga": "^2.7.0",
     "react-redux": "^6.0.0",
     "react-scripts": "3.0.1",
+    "react-show-more-text": "^1.2.3",
     "redux": "^4.0.1",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0"
