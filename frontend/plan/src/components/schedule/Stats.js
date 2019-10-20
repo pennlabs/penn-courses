@@ -143,7 +143,7 @@ class Stats extends Component {
                         {" "}
                     </div>
                 </div>
-                {meetings.length > 0
+                { false
                     ? [
                         <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
                             <div style={{ display: "flex", alignItems: "center" }}>
