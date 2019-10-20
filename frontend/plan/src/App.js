@@ -18,6 +18,7 @@ import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
+import { openModal } from "./actions";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -40,12 +41,19 @@ store.subscribe(() => {
 });
 
 function App() {
+    const hasVisited = localStorage.hasVisited;
+    localStorage.hasVisited = true;
+    if (!hasVisited) {
+        store.dispatch(openModal("WELCOME",
+            {},
+            "Welcome to Penn Course Plan!"));
+    }
     return (
         <Provider store={store}>
             {initGA()}
             {logPageView()}
             <div style={{ height: "100vh" }}>
-                <SearchBar style={{ flexGrow: 0 }} />
+                <SearchBar style={{ flexGrow: 0 }}/>
                 <div className="App columns main">
                     <div style={{ marginLeft: "25px" }} className="column is-one-quarter">
                         <span style={{
@@ -62,12 +70,18 @@ function App() {
                             >
                                 Search Results
                             </h3>
-                            <div style={{ float: "right", display: "flex" }}>
-                                <SearchSortDropdown />
+                            <div style={{
+                                float: "right",
+                                display: "flex"
+                            }}>
+                                <SearchSortDropdown/>
                             </div>
                         </span>
-                        <div className="box" style={{ paddingLeft: 0, paddingRight: 0 }}>
-                            <Selector />
+                        <div className="box" style={{
+                            paddingLeft: 0,
+                            paddingRight: 0
+                        }}>
+                            <Selector/>
                         </div>
                     </div>
                     <div
@@ -87,14 +101,14 @@ function App() {
                         >
                             Cart
                         </h3>
-                        <Cart />
+                        <Cart/>
                     </div>
                     <div className="column">
-                        <Schedule />
+                        <Schedule/>
                     </div>
                 </div>
             </div>
-            <ModalContainer />
+            <ModalContainer/>
         </Provider>
     );
 }
