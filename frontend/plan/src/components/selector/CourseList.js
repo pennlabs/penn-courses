@@ -2,9 +2,8 @@ import React from "react";
 import PropTypes from "prop-types";
 import Course from "./Course";
 
-const goodEasy = ({difficulty, course_quality}) => {
-    return Math.pow(course_quality +  0.5, 1.5) / (difficulty + 1);
-};
+const goodEasy = ({ difficulty, course_quality: courseQuality }) => Math.pow(courseQuality + 0.5,
+    1.5) / (difficulty + 1);
 
 /**
  * Sorts courses by the given sort mode
