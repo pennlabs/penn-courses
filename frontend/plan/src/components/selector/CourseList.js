@@ -11,11 +11,10 @@ import Course from "./Course";
 const courseSort = (courses, sortMode) => {
     const sorted = [...courses];
     sorted.sort((courseA, courseB) => {
-        console.log(courseA, courseB);
-        switch (sortMode) {
-            case "Quality":
+        switch (sortMode && sortMode.toLowerCase()) {
+            case "quality":
                 return courseB.course_quality - courseA.course_quality;
-            case "Difficulty":
+            case "difficulty":
                 return courseA.difficulty - courseB.difficulty;
             default:
                 return courseA.id.localeCompare(courseB.id);
@@ -53,5 +52,5 @@ export default function CourseList({ courses, getCourse, sortMode }) {
 CourseList.propTypes = {
     courses: PropTypes.arrayOf(PropTypes.object).isRequired,
     getCourse: PropTypes.func.isRequired,
-    sortMode: PropTypes.string,
+    sortMode: PropTypes.string.isRequired,
 };
