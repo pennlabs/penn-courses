@@ -18,7 +18,6 @@ import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
-import { changeSortType } from "./actions";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -64,9 +63,7 @@ function App() {
                                 Search Results
                             </h3>
                             <div style={{ float: "right", display: "flex" }}>
-                                <SearchSortDropdown
-                                    updateSort={sort => store.dispatch(changeSortType(sort))}
-                                />
+                                <SearchSortDropdown />
                             </div>
                         </span>
                         <div className="box" style={{ paddingLeft: 0, paddingRight: 0 }}>
