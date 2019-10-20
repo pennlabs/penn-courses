@@ -26,85 +26,111 @@ class Stats extends Component {
 
     render() {
         const { meetings } = this.props;
-        console.log(meetings);
-        const startTimes = [];
-        const endTimes = [];
-        const hoursPerDay = [0, 0, 0, 0, 0];
-        const mapDays = {
-            M: 0, T: 1, W: 2, R: 3, F: 4,
-        };
+        let earliestStart;
+        let latestEnd;
+        let minHoursADay;
+        let maxHoursADay;
+        let totalHours;
+        let averageHours;
+        let avgDifficulty;
+        let avgWorkload;
+        let avgQuality;
+        let avgInstructorQuality;
+        if (meetings.length === 0) {
+            earliestStart = "—";
+            latestEnd = "—";
+            minHoursADay = "—";
+            maxHoursADay = "—";
+            totalHours = "—";
+            averageHours = "—";
+            avgQuality = 0;
+            avgWorkload = 0;
+            avgDifficulty = 0;
+            avgInstructorQuality = 0;
+        } else {
+            const startTimes = [];
+            const endTimes = [];
+            const hoursPerDay = [0, 0, 0, 0, 0];
+            const mapDays = {
+                M: 0, T: 1, W: 2, R: 3, F: 4,
+            };
 
-        const courseDifficulties = {};
-        const courseWorkloads = {};
-        const courseInstructorQualities = {};
-        const courseQualities = {};
-        const courseRepeats = {};
-        const courseCUs = {};
+            const courseDifficulties = {};
+            const courseWorkloads = {};
+            const courseInstructorQualities = {};
+            const courseQualities = {};
+            const courseRepeats = {};
+            const courseCUs = {};
 
-        meetings.forEach((section) => {
-            section.meetings.forEach((meeting) => {
-                startTimes.push(meeting.start);
-                endTimes.push(meeting.end);
-                hoursPerDay[mapDays[meeting.day]] += (meeting.end - meeting.start);
+            meetings.forEach((section) => {
+                section.meetings.forEach((meeting) => {
+                    startTimes.push(meeting.start);
+                    endTimes.push(meeting.end);
+                    hoursPerDay[mapDays[meeting.day]] += (meeting.end - meeting.start);
+                });
+                const str = section.id;
+                if (str) {
+                    const course = str.substring(0, str.indexOf("-", str.indexOf("-") + 1)); // finds course (irrespective of section)
+                    if (course in courseDifficulties) {
+                        courseDifficulties[course] += (section.difficulty
+                            ? section.difficulty : 2.5);
+                        courseWorkloads[course] += (section.work_required
+                            ? section.work_required : 2.5);
+                        courseInstructorQualities[course] += (section.instructor_quality
+                            ? section.instructor_quality : 2.5);
+                        courseQualities[course] += (section.course_quality
+                            ? section.course_quality : 2.5);
+                        courseCUs[course] += (section.credits ? section.credits : 1);
+                        courseRepeats[course] += 1;
+                    } else {
+                        courseDifficulties[course] = (section.difficulty
+                            ? section.difficulty : 2.5);
+                        courseWorkloads[course] = (section.work_required
+                            ? section.work_required : 2.5);
+                        courseInstructorQualities[course] = (section.instructor_quality
+                            ? section.instructor_quality : 2.5);
+                        courseQualities[course] = (section.course_quality
+                            ? section.course_quality : 2.5);
+                        courseCUs[course] = (section.credits ? section.credits : 1);
+                        courseRepeats[course] = 1;
+                    }
+                }
             });
-            const str = section.id;
-            if (str) {
-                const course = str.substring(0, str.indexOf("-", str.indexOf("-") + 1)); // finds course (irrespective of section)
-                if (course in courseDifficulties) {
-                    courseDifficulties[course] += (section.difficulty ? section.difficulty : 2.5);
-                    courseWorkloads[course] += (section.work_required
-                        ? section.work_required : 2.5);
-                    courseInstructorQualities[course] += (section.instructor_quality
-                        ? section.instructor_quality : 2.5);
-                    courseQualities[course] += (section.course_quality
-                        ? section.course_quality : 2.5);
-                    courseCUs[course] += (section.credits ? section.credits : 1);
-                    courseRepeats[course] += 1;
-                } else {
-                    courseDifficulties[course] = (section.difficulty ? section.difficulty : 2.5);
-                    courseWorkloads[course] = (section.work_required ? section.work_required : 2.5);
-                    courseInstructorQualities[course] = (section.instructor_quality
-                        ? section.instructor_quality : 2.5);
-                    courseQualities[course] = (section.course_quality
-                        ? section.course_quality : 2.5);
-                    courseCUs[course] = (section.credits ? section.credits : 1);
-                    courseRepeats[course] = 1;
+            const difficulties = [];
+            const qualities = [];
+            const instructorQualities = [];
+            const workloads = [];
+            let totalCUs = 0;
+            for (const course in courseDifficulties) {
+                if (Object.prototype.hasOwnProperty.call(courseDifficulties, course)) {
+                    difficulties.push(courseDifficulties[course]
+                          / courseRepeats[course] * courseCUs[course]);
+                    qualities.push(courseQualities[course]
+                          / courseRepeats[course] * courseCUs[course]);
+                    instructorQualities.push(courseInstructorQualities[course]
+                          / courseRepeats[course] * courseCUs[course]);
+                    workloads.push(courseWorkloads[course]
+                          / courseRepeats[course] * courseCUs[course]);
+                    totalCUs += courseCUs[course];
                 }
             }
-        });
-        const difficulties = [];
-        const qualities = [];
-        const instructorQualities = [];
-        const workloads = [];
-        let totalCUs = 0;
-        for (const course in courseDifficulties) {
-            if (Object.prototype.hasOwnProperty.call(courseDifficulties, course)) {
-                difficulties.push(courseDifficulties[course]
-                      / courseRepeats[course] * courseCUs[course]);
-                qualities.push(courseQualities[course]
-                      / courseRepeats[course] * courseCUs[course]);
-                instructorQualities.push(courseInstructorQualities[course]
-                      / courseRepeats[course] * courseCUs[course]);
-                workloads.push(courseWorkloads[course]
-                      / courseRepeats[course] * courseCUs[course]);
-                totalCUs += courseCUs[course];
-            }
+
+            // final computation of stats
+
+            earliestStart = this.parseTime(Math.min(...startTimes));
+            latestEnd = this.parseTime(Math.max(...endTimes));
+
+            minHoursADay = parseFloat(Math.min(...hoursPerDay).toFixed(1));
+            maxHoursADay = parseFloat(Math.max(...hoursPerDay).toFixed(1));
+            totalHours = (hoursPerDay.reduce((a, b) => a + b, 0));
+            averageHours = parseFloat(totalHours / 5).toFixed(1);
+            totalHours = parseFloat(totalHours.toFixed(1));
+
+            avgDifficulty = (difficulties.reduce((a, b) => a + b, 0)) / totalCUs;
+            avgWorkload = (workloads.reduce((a, b) => a + b, 0)) / totalCUs;
+            avgQuality = (qualities.reduce((a, b) => a + b, 0)) / totalCUs;
+            avgInstructorQuality = (instructorQualities.reduce((a, b) => a + b, 0)) / totalCUs;
         }
-
-        // final computation of stats
-
-        const earliestStart = Math.min(...startTimes);
-        const latestEnd = Math.max(...endTimes);
-
-        const minHoursADay = Math.min(...hoursPerDay);
-        const maxHoursADay = Math.max(...hoursPerDay);
-        const totalHours = (hoursPerDay.reduce((a, b) => a + b, 0));
-
-        const avgDifficulty = (difficulties.reduce((a, b) => a + b, 0)) / totalCUs;
-        const avgWorkload = (workloads.reduce((a, b) => a + b, 0)) / totalCUs;
-        const avgQuality = (qualities.reduce((a, b) => a + b, 0)) / totalCUs;
-        const avgInstructorQuality = (instructorQualities.reduce((a, b) => a + b, 0)) / totalCUs;
-
         return (
             <div className="statsStyles">
                 <div style={{ display: "grid", gridTemplateRows: "50% 50%", gridTemplateColumns: "50% 50%" }}>
@@ -140,25 +166,25 @@ class Stats extends Component {
                 <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <div style={purpleTimeStats}>
-                            {parseFloat(minHoursADay.toFixed(1))}
+                            {minHoursADay}
                         </div>
                         <div style={{ fontSize: "0.8em" }}>min hours in a day</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <div style={purpleTimeStats}>
-                            {parseFloat(maxHoursADay.toFixed(1))}
+                            {maxHoursADay}
                         </div>
                         <div style={{ fontSize: "0.8em" }}>max hours in a day</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <div style={purpleTimeStats}>
-                            {parseFloat((totalHours / 5).toFixed(1))}
+                            {averageHours}
                         </div>
                         <div style={{ fontSize: "0.8em" }}>avg. hours a day</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <div style={purpleTimeStats}>
-                            {parseFloat(totalHours.toFixed(1))}
+                            {totalHours}
                         </div>
                         <div style={{ fontSize: "0.8em" }}>total hours of class</div>
                     </div>
@@ -168,11 +194,11 @@ class Stats extends Component {
                 }}
                 >
                     <div>
-                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{this.parseTime(earliestStart)}</div>
+                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{earliestStart}</div>
                         <div>earliest start time</div>
                     </div>
                     <div>
-                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{this.parseTime(latestEnd)}</div>
+                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{latestEnd}</div>
                         <div>latest end time</div>
                     </div>
                 </div>
