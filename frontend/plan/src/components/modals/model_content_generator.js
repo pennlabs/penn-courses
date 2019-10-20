@@ -31,7 +31,7 @@ export const generateModalInterior = (reduxState) => {
             );
         case "WELCOME":
             return (
-                <WelcomeModalInterior/>
+                <WelcomeModalInterior />
             );
         default:
             return null;

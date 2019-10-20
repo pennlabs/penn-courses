@@ -11,7 +11,7 @@ const ModalContainer = ({
     children, title, close, dispatch, modalKey, modalProps, isBig,
 }) => (
     <div className={`modal ${title ? "is-active" : ""}`}>
-        <div className="modal-background"/>
+        <div className="modal-background" />
         <div className={`modal-card ${isBig ? " big" : ""}`}>
             <header className="modal-card-head">
                 <header className="modal-card-title">{title}</header>
@@ -22,7 +22,7 @@ const ModalContainer = ({
                     style={{ cursor: "pointer" }}
                 >
                     <span className="icon is-small">
-                        <i className="fa fa-times"/>
+                        <i className="fa fa-times" />
                     </span>
                 </div>
             </header>
@@ -37,7 +37,7 @@ const ModalContainer = ({
     </div>
 );
 
-const bigModals = { "WELCOME": true };
+const bigModals = { WELCOME: true };
 
 ModalContainer.propTypes = {
     title: PropTypes.string.isRequired,

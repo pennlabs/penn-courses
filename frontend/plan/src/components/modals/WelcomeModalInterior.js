@@ -1,8 +1,12 @@
 import React from "react";
 
-const WelcomeModalInterior = ({ close }) => {
-    return <div><
-        p> Welcome to the new Penn Course Plan! </p>
+const WelcomeModalInterior = ({ close }) => (
+    <div>
+        <p>
+            {" "}
+            Welcome to the new Penn Course Plan!
+            {" "}
+        </p>
         <button
             className="button is-link"
             role="button"
@@ -11,7 +15,11 @@ const WelcomeModalInterior = ({ close }) => {
         >
             Continue
         </button>
-    </div>;
+    </div>
+);
+
+WelcomeModalInterior.PropTypes = {
+    close: PropTypes.func,
 };
 
 export default WelcomeModalInterior;
