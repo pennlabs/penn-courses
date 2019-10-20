@@ -17,6 +17,8 @@ import SearchBar from "./components/search/SearchBar";
 import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
+import SearchSortDropdown from "./components/search/SearchSortDropdown";
+import { changeSortType } from "./actions";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -44,17 +46,29 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ height: "100vh" }}>
-                <SearchBar />
+                <SearchBar style={{ flexGrow: 0 }} />
                 <div className="App columns main">
                     <div style={{ marginLeft: "25px" }} className="column is-one-quarter">
-                        <h3 style={{
+                        <span style={{
                             display: "flex",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
+                            flexDirection: "row",
+                            justifyContent: "space-between",
                         }}
                         >
-                            Search Results
-                        </h3>
+                            <h3 style={{
+                                display: "flex",
+                                fontWeight: "bold",
+                                marginBottom: "0.5rem",
+                            }}
+                            >
+                                Search Results
+                            </h3>
+                            <div style={{ float: "right", display: "flex" }}>
+                                <SearchSortDropdown
+                                    updateSort={sort => store.dispatch(changeSortType(sort))}
+                                />
+                            </div>
+                        </span>
                         <div className="box" style={{ paddingLeft: 0, paddingRight: 0 }}>
                             <Selector />
                         </div>

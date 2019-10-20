@@ -22,13 +22,15 @@ function Selector(props) {
         removeFromSchedule,
         isLoadingCourseInfo,
         isSearchingCourseInfo,
+        sortMode,
     } = props;
 
     let element = (
         <CourseList
+            sortMode={sortMode}
+            isLoading={isLoadingCourseInfo}
             courses={courses}
             getCourse={getCourse}
-            isLoading={isLoadingCourseInfo}
         />
     );
 
@@ -38,7 +40,10 @@ function Selector(props) {
                 getCourse={getCourse}
                 course={course}
                 back={clearCourse}
-                manage={{ addToSchedule, removeFromSchedule }}
+                manage={{
+                    addToSchedule,
+                    removeFromSchedule,
+                }}
             />
         );
     }
@@ -67,6 +72,7 @@ Selector.propTypes = {
     getCourse: PropTypes.func.isRequired,
     clearCourse: PropTypes.func,
     addToSchedule: PropTypes.func,
+    sortMode: PropTypes.string,
     removeFromSchedule: PropTypes.func,
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
@@ -76,6 +82,7 @@ const mapStateToProps = state => (
     {
         courses: state.sections.searchResults.filter(course => course.num_sections > 0),
         course: state.sections.course,
+        sortMode: state.sortMode,
         isLoadingCourseInfo: state.sections.courseInfoLoading,
         isSearchingCourseInfo: state.sections.searchInfoLoading,
     }
