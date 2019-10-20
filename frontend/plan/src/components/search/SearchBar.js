@@ -40,7 +40,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
-    defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo
+    defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -182,6 +182,8 @@ SearchBar.propTypes = {
     // eslint-disable-next-line react/forbid-prop-types
     filterData: PropTypes.object,
     defaultReqs: PropTypes.objectOf(PropTypes.number),
+    isLoadingCourseInfo: PropTypes.bool,
+    isSearchingCourseInfo: PropTypes.bool,
 };
 
 const mapStateToProps = state => (

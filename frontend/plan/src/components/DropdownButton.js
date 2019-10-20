@@ -75,4 +75,5 @@ DropdownButton.propTypes = {
         PropTypes.object
     ]),
     clearFilter: PropTypes.func,
+    isDisabled: PropTypes.bool,
 };
