@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { changeSortType } from "../../actions";
 import connect from "react-redux/es/connect/connect";
+import { changeSortType } from "../../actions";
 
 const DropdownButton = ({
     isActive, text, onClick, makeActive,
@@ -95,7 +95,7 @@ SearchSortDropdown.propTypes = {
 
 const mapStateToProps = () => ({});
 const mapDispatchToProps = dispatch => ({
-    updateSort: sortMode => dispatch(changeSortType(sortMode))
+    updateSort: sortMode => dispatch(changeSortType(sortMode)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(SearchSortDropdown);
