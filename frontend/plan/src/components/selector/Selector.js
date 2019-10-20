@@ -24,15 +24,33 @@ function Selector(props) {
         isSearchingCourseInfo,
         sortMode,
     } = props;
+    let element = <div style={{
+        fontSize: "0.8em",
+        textAlign: "center",
+        marginTop: "5vh",
+    }}>
+        <img src="/static/empty-state-search.svg" />
+        <h3 style={{
+            fontWeight: "bold",
+            marginBottom: "0.5rem",
+        }}
+        >
+            No result found
+        </h3>
+        Search for courses, departments, or instructors above.
+        Looking for something specific? Try using the filters!
+    </div>
 
-    let element = (
-        <CourseList
-            sortMode={sortMode}
-            isLoading={isLoadingCourseInfo}
-            courses={courses}
-            getCourse={getCourse}
-        />
-    );
+    if (courses.length > 0) {
+        element = (
+            <CourseList
+                sortMode={sortMode}
+                isLoading={isLoadingCourseInfo}
+                courses={courses}
+                getCourse={getCourse}
+            />
+        );
+    }
 
     if (course) {
         element = (
