@@ -102,7 +102,7 @@ function SearchBar({
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
-                            step={0.01}
+                            step={0.25}
                             filterData={filterData}
                             updateRangeFilter={updateRangeFilter("difficulty")}
                             startSearch={conditionalStartSearch}
@@ -114,7 +114,7 @@ function SearchBar({
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
-                            step={0.01}
+                            step={0.25}
                             filterData={filterData}
                             updateRangeFilter={updateRangeFilter("course_quality")}
                             startSearch={conditionalStartSearch}
@@ -126,7 +126,7 @@ function SearchBar({
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
-                            step={0.01}
+                            step={0.25}
                             filterData={filterData}
                             updateRangeFilter={updateRangeFilter("instructor_quality")}
                             startSearch={conditionalStartSearch}
