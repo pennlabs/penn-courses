@@ -3,7 +3,7 @@ import {
     OPEN_SECTION_INFO,
     UPDATE_SEARCH,
     UPDATE_SECTIONS,
-    UPDATE_COURSE_INFO
+    UPDATE_COURSE_INFO, CHANGE_SORT_TYPE
 } from "../actions";
 
 // This file contains the reducers for everything related to sections and courses
@@ -19,10 +19,16 @@ const initialState = {
     sections: [],
     searchResults: [],
     sectionInfo: undefined,
+    sortType: "Name",
 };
 
 export const sections = (state = initialState, action) => {
     switch (action.type) {
+        case CHANGE_SORT_TYPE:
+            return {
+                ...state,
+                sortType: action.sortType,
+            };
         case UPDATE_COURSE_INFO:
             return {
                 ...state,
