@@ -183,7 +183,7 @@ class Schedule extends Component {
                             <Times
                                 startTime={startHour}
                                 endTime={endHour}
-                                numRow={getNumRows()}
+                                numRow={getNumRows() - 2}
                                 offset={rowOffset}
 
                             />
