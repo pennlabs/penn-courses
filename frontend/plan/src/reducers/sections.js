@@ -24,7 +24,7 @@ const initialState = {
     sectionInfo: undefined,
     courseInfoLoading: false,
     searchInfoLoading: false,
-    sortType: "Name",
+    sortMode: "Name",
 };
 
 export const sections = (state = initialState, action) => {
@@ -32,7 +32,7 @@ export const sections = (state = initialState, action) => {
         case CHANGE_SORT_TYPE:
             return {
                 ...state,
-                sortType: action.sortType,
+                sortMode: action.sortMode,
             };
         case UPDATE_COURSE_INFO_SUCCESS:
             return {

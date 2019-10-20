@@ -18,7 +18,7 @@ import Selector from "./components/selector/Selector";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
-import { changeSortType } from "./actions";
+import { openModal } from "./actions";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -41,6 +41,13 @@ store.subscribe(() => {
 });
 
 function App() {
+    const { hasVisited } = localStorage;
+    localStorage.hasVisited = true;
+    if (!hasVisited) {
+        store.dispatch(openModal("WELCOME",
+            {},
+            "Welcome to Penn Course Plan!"));
+    }
     return (
         <Provider store={store}>
             {initGA()}
@@ -63,13 +70,21 @@ function App() {
                             >
                                 Search Results
                             </h3>
-                            <div style={{ float: "right", display: "flex" }}>
-                                <SearchSortDropdown
-                                    updateSort={sort => store.dispatch(changeSortType(sort))}
-                                />
+                            <div style={{
+                                float: "right",
+                                display: "flex",
+                            }}
+                            >
+                                <SearchSortDropdown />
                             </div>
                         </span>
-                        <div className="box" style={{ paddingLeft: 0, paddingRight: 0 }}>
+                        <div
+                            className="box"
+                            style={{
+                                paddingLeft: 0,
+                                paddingRight: 0,
+                            }}
+                        >
                             <Selector />
                         </div>
                     </div>

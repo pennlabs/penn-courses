@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { useOnClickOutside } from "./useOnClickOutside";
 
 export function DropdownButton({
-    title, children, filterData, defaultFilter, clearFilter,
+    title, children, filterData, defaultFilter, clearFilter, isDisabled,
 }) {
     const [isActive, setIsActive] = useState(false);
 
@@ -24,6 +24,7 @@ export function DropdownButton({
             <div className="dropdown-trigger">
                 <button
                     className="filterButton button is-rounded"
+                    disabled={isDisabled ? "disabled" : false}
                     aria-haspopup="true"
                     aria-controls="dropdown-menu"
                     onClick={toggleButton}
@@ -35,13 +36,14 @@ export function DropdownButton({
                     {JSON.stringify(filterData) !== JSON.stringify(defaultFilter)
                     && (
                         <span>
-                            <i
+                            <button
+                                type="button"
                                 className="delete is-small"
                                 onClick={(e) => {
                                     clearFilter();
                                     e.stopPropagation();
                                 }}
-                                role="button"
+                                disabled={isDisabled ? "disabled" : false}
                             />
                         </span>
                     )}
@@ -74,4 +76,5 @@ DropdownButton.propTypes = {
         PropTypes.object
     ]),
     clearFilter: PropTypes.func,
+    isDisabled: PropTypes.bool,
 };

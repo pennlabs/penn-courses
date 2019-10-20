@@ -6,7 +6,6 @@ import "bulma-popover/css/bulma-popver.min.css";
 import { getTimeString } from "../../meetUtil";
 
 const getSectionId = id => (tokens => tokens[tokens.length - 1])(id.split("-"));
-const getClassCode = id => (tokens => tokens.slice(0, tokens.length - 1).join("-"))(id.split("-"));
 
 export default function SectionDetails({ section, isOpen }) {
     const { id, instructors, meetings } = section;
@@ -33,25 +32,6 @@ export default function SectionDetails({ section, isOpen }) {
                             </>
                         ))}
                     </h3>
-                    <a
-                        style={{
-                            marginLeft: "auto",
-                            marginRight: "2em",
-                        }}
-                        className="popover is-popover-left"
-                        href={`https://penncoursereview.com/course/${getClassCode(id)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <img
-                            className="popover-trigger pcr-svg"
-                            alt="PCR"
-                            src="/static/pcr.svg"
-                        />
-                        <span className="popover-content">
-                            View course on Penn Course Review
-                        </span>
-                    </a>
                 </div>
                 <br />
                 <i className="far fa-clock grey-text" />
@@ -69,7 +49,9 @@ export default function SectionDetails({ section, isOpen }) {
                         })(meetings).join(", ")}
                     </>
                 ) : null}
+                <br />
             </div>
+
         </li>
     );
 }
