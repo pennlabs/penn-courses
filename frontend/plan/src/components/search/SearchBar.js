@@ -137,7 +137,9 @@ function SearchBar({
 
                     {/* <DropdownButton title="Time" />
                     <DropdownButton title="Type" /> */}
-                    <DropdownButton title="CU" filterData={filterData.cu} defaultFilter={defaultFilters.filterData.cu} clearFilter={clearFilterSearch("cu")} isDisabled={isLoading}>
+                    {/* <DropdownButton title="CU" filterData={filterData.cu}
+                    defaultFilter={defaultFilters.filterData.cu}
+                    clearFilter={clearFilterSearch("cu")} isDisabled={isLoading}>
                         <RangeFilter
                             minRange={0.5}
                             maxRange={2}
@@ -148,7 +150,7 @@ function SearchBar({
                             rangeProperty="cu"
                             isDisabled={isLoading}
                         />
-                    </DropdownButton>
+                    </DropdownButton> */}
                 </div>
             </div>
             <div className="level-right">
