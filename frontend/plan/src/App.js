@@ -116,10 +116,10 @@ function App() {
             <div
                 className="has-text-centered"
                 style={{
-                    backgroundColor: "#ffffff", height: "4rem", paddingTop: ".25em", paddingBottom: ".25em",
+                    height: "4rem", paddingBottom: ".25em",
                 }}
             >
-                <p style={{ fontSize: "0.8rem", color: "black" }}>
+                <p style={{ fontSize: "0.8rem", color: "#888888" }}>
                     Made with
                     {" "}
                     <span className="icon is-small"><i className="fa fa-heart" style={{ color: "red" }} /></span>

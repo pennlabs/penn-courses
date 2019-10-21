@@ -1,6 +1,7 @@
 .schedule {
     display: grid;
-    height: calc(100% - 160px);
+    height: calc(100% - 155px);
+    margin-bottom: 5px;
     margin-right: 20px;
     column-gap: 0;
     position: relative;
