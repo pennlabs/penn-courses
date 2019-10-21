@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import MyCircularProgressBar from "./MyCircularProgressBar";
+import Meter from "./Meter";
 
 const purpleTimeStats = {
     color: "#7874CF",
@@ -23,6 +23,10 @@ class Stats extends Component {
         }
         return `${hour}:${min} ${t >= 12 ? "PM" : "AM"}`;
     }
+
+    getMeetingLength = meeting => Math.floor(meeting.end) - Math.floor(meeting.start)
+        + 100 * ((meeting.end % 1) - (meeting.start % 1)) / 60;
+
 
     render() {
         const { meetings } = this.props;
@@ -55,61 +59,52 @@ class Stats extends Component {
                 M: 0, T: 1, W: 2, R: 3, F: 4,
             };
 
-            const courseDifficulties = {};
-            const courseWorkloads = {};
-            const courseInstructorQualities = {};
-            const courseQualities = {};
+            const courseStats = {};
+            const statTypes = ["difficulty", "work_required", "instructor_quality", "course_quality"];
             const courseRepeats = {};
             const courseCUs = {};
+
 
             meetings.forEach((section) => {
                 section.meetings.forEach((meeting) => {
                     startTimes.push(meeting.start);
                     endTimes.push(meeting.end);
-                    hoursPerDay[mapDays[meeting.day]] += (meeting.end - meeting.start);
+                    hoursPerDay[mapDays[meeting.day]] += this.getMeetingLength(meeting);
                 });
                 const str = section.id;
                 if (str) {
                     const course = str.substring(0, str.indexOf("-", str.indexOf("-") + 1)); // finds course (irrespective of section)
-                    if (course in courseDifficulties) {
-                        courseDifficulties[course] += (section.difficulty
-                            ? section.difficulty : 2.5);
-                        courseWorkloads[course] += (section.work_required
-                            ? section.work_required : 2.5);
-                        courseInstructorQualities[course] += (section.instructor_quality
-                            ? section.instructor_quality : 2.5);
-                        courseQualities[course] += (section.course_quality
-                            ? section.course_quality : 2.5);
+                    if (course in courseStats) {
+                        statTypes.forEach((stat) => {
+                            courseStats[course][stat] += (section[stat] ? section[stat] : 2.5);
+                        });
                         courseCUs[course] += (section.credits ? section.credits : 1);
                         courseRepeats[course] += 1;
                     } else {
-                        courseDifficulties[course] = (section.difficulty
-                            ? section.difficulty : 2.5);
-                        courseWorkloads[course] = (section.work_required
-                            ? section.work_required : 2.5);
-                        courseInstructorQualities[course] = (section.instructor_quality
-                            ? section.instructor_quality : 2.5);
-                        courseQualities[course] = (section.course_quality
-                            ? section.course_quality : 2.5);
+                        courseStats[course] = {};
+                        statTypes.forEach((stat) => {
+                            courseStats[course][stat] = (section[stat] ? section[stat] : 2.5);
+                        });
                         courseCUs[course] = (section.credits ? section.credits : 1);
                         courseRepeats[course] = 1;
                     }
                 }
             });
+            console.log(courseStats);
             const difficulties = [];
             const qualities = [];
             const instructorQualities = [];
             const workloads = [];
             let totalCUs = 0;
-            for (const course in courseDifficulties) {
-                if (Object.prototype.hasOwnProperty.call(courseDifficulties, course)) {
-                    difficulties.push(courseDifficulties[course]
+            for (const course in courseStats) {
+                if (Object.prototype.hasOwnProperty.call(courseStats, course)) {
+                    difficulties.push(courseStats[course].difficulty
                           / courseRepeats[course] * courseCUs[course]);
-                    qualities.push(courseQualities[course]
+                    qualities.push(courseStats[course].course_quality
                           / courseRepeats[course] * courseCUs[course]);
-                    instructorQualities.push(courseInstructorQualities[course]
+                    instructorQualities.push(courseStats[course].instructor_quality
                           / courseRepeats[course] * courseCUs[course]);
-                    workloads.push(courseWorkloads[course]
+                    workloads.push(courseStats[course].work_required
                           / courseRepeats[course] * courseCUs[course]);
                     totalCUs += courseCUs[course];
                 }
@@ -134,34 +129,10 @@ class Stats extends Component {
         return (
             <div className="statsStyles">
                 <div style={{ display: "grid", gridTemplateRows: "50% 50%", gridTemplateColumns: "50% 50%" }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        {" "}
-                        <div style={{ maxWidth: "50px" }}><MyCircularProgressBar value={parseFloat(avgQuality.toFixed(2))} /></div>
-                        {" "}
-                        <div style={{ width: "50px", marginLeft: "10px" }}>Course Quality</div>
-                        {" "}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        {" "}
-                        <div style={{ maxWidth: "50px" }}><MyCircularProgressBar value={parseFloat(avgInstructorQuality.toFixed(2))} /></div>
-                        {" "}
-                        <div style={{ width: "50px", marginLeft: "10px" }}>Instructor Quality</div>
-                        {" "}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        {" "}
-                        <div style={{ maxWidth: "50px" }}><MyCircularProgressBar value={parseFloat(avgDifficulty.toFixed(2))} /></div>
-                        {" "}
-                        <div style={{ width: "50px", marginLeft: "10px" }}>Course Difficulty</div>
-                        {" "}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        {" "}
-                        <div style={{ maxWidth: "50px" }}><MyCircularProgressBar value={parseFloat(avgWorkload.toFixed(2))} /></div>
-                        {" "}
-                        <div style={{ width: "50px", marginLeft: "10px" }}>Work Required</div>
-                        {" "}
-                    </div>
+                    <Meter value={avgQuality} name="Course Quality" />
+                    <Meter value={avgInstructorQuality} name="Instructor Quality" />
+                    <Meter value={avgDifficulty} name="Course Difficulty" />
+                    <Meter value={avgWorkload} name="Work Required" />
                 </div>
                 <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
                     <div style={{ display: "flex", alignItems: "center" }}>
