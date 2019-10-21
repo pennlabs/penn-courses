@@ -17,12 +17,12 @@ html {
   padding: 0px;
 }
 
-.vertical-section-contents {
+/* .vertical-section-contents {
   display: flex;
   flex-grow: 1;
   overflow: auto;
   flex-direction: column;
-}
+} */
 
 body {
   width: 100%;
