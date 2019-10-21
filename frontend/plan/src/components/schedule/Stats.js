@@ -36,10 +36,7 @@ class Stats extends Component {
         let maxHoursADay;
         let totalHours;
         let averageHours;
-        let avgDifficulty;
-        let avgWorkload;
-        let avgQuality;
-        let avgInstructorQuality;
+        let avgs = {};
         if (meetings.length === 0) {
             earliestStart = "—";
             latestEnd = "—";
@@ -47,10 +44,12 @@ class Stats extends Component {
             maxHoursADay = "—";
             totalHours = "—";
             averageHours = "—";
-            avgQuality = 0;
-            avgWorkload = 0;
-            avgDifficulty = 0;
-            avgInstructorQuality = 0;
+            avgs = {
+                difficulty: 0,
+                work_required: 0,
+                instructor_quality: 0,
+                course_quality: 0,
+            };
         } else {
             const startTimes = [];
             const endTimes = [];
@@ -90,22 +89,13 @@ class Stats extends Component {
                     }
                 }
             });
-            console.log(courseStats);
-            const difficulties = [];
-            const qualities = [];
-            const instructorQualities = [];
-            const workloads = [];
+            const sums = {};
+            statTypes.forEach((stat) => { sums[stat] = []; });
+
             let totalCUs = 0;
             for (const course in courseStats) {
                 if (Object.prototype.hasOwnProperty.call(courseStats, course)) {
-                    difficulties.push(courseStats[course].difficulty
-                          / courseRepeats[course] * courseCUs[course]);
-                    qualities.push(courseStats[course].course_quality
-                          / courseRepeats[course] * courseCUs[course]);
-                    instructorQualities.push(courseStats[course].instructor_quality
-                          / courseRepeats[course] * courseCUs[course]);
-                    workloads.push(courseStats[course].work_required
-                          / courseRepeats[course] * courseCUs[course]);
+                    statTypes.forEach((stat) => { sums[stat].push(courseStats[course][stat]); });
                     totalCUs += courseCUs[course];
                 }
             }
@@ -121,18 +111,17 @@ class Stats extends Component {
             averageHours = parseFloat(totalHours / 5).toFixed(1);
             totalHours = parseFloat(totalHours.toFixed(1));
 
-            avgDifficulty = (difficulties.reduce((a, b) => a + b, 0)) / totalCUs;
-            avgWorkload = (workloads.reduce((a, b) => a + b, 0)) / totalCUs;
-            avgQuality = (qualities.reduce((a, b) => a + b, 0)) / totalCUs;
-            avgInstructorQuality = (instructorQualities.reduce((a, b) => a + b, 0)) / totalCUs;
+            statTypes.forEach((stat) => {
+                avgs[stat] = sums[stat].reduce((a, b) => a + b, 0) / totalCUs;
+            });
         }
         return (
             <div className="statsStyles">
                 <div style={{ display: "grid", gridTemplateRows: "50% 50%", gridTemplateColumns: "50% 50%" }}>
-                    <Meter value={avgQuality} name="Course Quality" />
-                    <Meter value={avgInstructorQuality} name="Instructor Quality" />
-                    <Meter value={avgDifficulty} name="Course Difficulty" />
-                    <Meter value={avgWorkload} name="Work Required" />
+                    <Meter value={avgs.course_quality} name="Course Quality" />
+                    <Meter value={avgs.instructor_quality} name="Instructor Quality" />
+                    <Meter value={avgs.difficulty} name="Course Difficulty" />
+                    <Meter value={avgs.work_required} name="Work Required" />
                 </div>
                 <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
                     <div style={{ display: "flex", alignItems: "center" }}>
