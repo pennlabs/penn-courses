@@ -95,7 +95,11 @@ class Stats extends Component {
             let totalCUs = 0;
             for (const course in courseStats) {
                 if (Object.prototype.hasOwnProperty.call(courseStats, course)) {
-                    statTypes.forEach((stat) => { sums[stat].push(courseStats[course][stat]); });
+                    statTypes.forEach((stat) => {
+                        sums[stat].push(
+                            courseStats[course][stat] / courseRepeats[course] * courseCUs[course]
+                        );
+                    });
                     totalCUs += courseCUs[course];
                 }
             }
