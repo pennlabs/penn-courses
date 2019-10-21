@@ -7,18 +7,13 @@
 }
 
 .filterButton:active {
-    border: solid 2px #7b84e6;
+    box-shadow: 0 0 3px #7b84e6;
     position:relative;
-    top:-1px;
-    left:-1px;
     background-color: #e3e6ff;
 }
 
 .filterButton:focus {
-    border: solid 2px #7b84e6;
-    top:-1px;
-    left:-1px;
-    padding-left:-2px;
+    box-shadow: 0 0 3px #7b84e6;
 }
 
 .classic, .classic * {
