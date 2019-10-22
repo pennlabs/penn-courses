@@ -32,7 +32,7 @@ class Stats extends Component {
         const { meetings } = this.props;
         let earliestStart;
         let latestEnd;
-        let minHoursADay;
+        let totalCUs;
         let maxHoursADay;
         let totalHours;
         let averageHours;
@@ -40,7 +40,7 @@ class Stats extends Component {
         if (meetings.length === 0) {
             earliestStart = "—";
             latestEnd = "—";
-            minHoursADay = "—";
+            totalCUs = "–";
             maxHoursADay = "—";
             totalHours = "—";
             averageHours = "—";
@@ -92,7 +92,7 @@ class Stats extends Component {
             const sums = {};
             statTypes.forEach((stat) => { sums[stat] = []; });
 
-            let totalCUs = 0;
+            totalCUs = 0;
             for (const course in courseStats) {
                 if (Object.prototype.hasOwnProperty.call(courseStats, course)) {
                     statTypes.forEach((stat) => {
@@ -109,7 +109,6 @@ class Stats extends Component {
             earliestStart = this.parseTime(Math.min(...startTimes));
             latestEnd = this.parseTime(Math.max(...endTimes));
 
-            minHoursADay = parseFloat(Math.min(...hoursPerDay).toFixed(1));
             maxHoursADay = parseFloat(Math.max(...hoursPerDay).toFixed(1));
             totalHours = (hoursPerDay.reduce((a, b) => a + b, 0));
             averageHours = parseFloat(totalHours / 5).toFixed(1);
@@ -118,6 +117,8 @@ class Stats extends Component {
             statTypes.forEach((stat) => {
                 avgs[stat] = sums[stat].reduce((a, b) => a + b, 0) / totalCUs;
             });
+
+            totalCUs = parseFloat(totalCUs.toFixed(1));
         }
         return (
             <div className="statsStyles">
@@ -130,9 +131,9 @@ class Stats extends Component {
                 <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <div style={purpleTimeStats}>
-                            {minHoursADay}
+                            {totalCUs}
                         </div>
-                        <div style={{ fontSize: "0.8em" }}>min hours in a day</div>
+                        <div style={{ fontSize: "0.8em" }}>total credits</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <div style={purpleTimeStats}>
