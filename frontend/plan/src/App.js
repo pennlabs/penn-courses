@@ -62,7 +62,7 @@ function App() {
                 alignItems: "center",
             }}
             >
-                <img width="30%" src="/icons/favicon-196x196.png" />
+                <img width="30%" src="/static/favicon-196x196.png" />
                 <div style={{ fontSize: "20px", textAlign: "center", padding: "30px" }}>
                     <span style={{ color: "#7b84e6" }}> Penn Course Plan </span>
                     is made for desktop.
