@@ -10,6 +10,7 @@ import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
+import { isMobile } from "react-device-detect";
 import Schedule from "./components/schedule/Schedule";
 
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
@@ -49,6 +50,30 @@ function App() {
             {},
             "Welcome to Penn Course Plan ✨"));
     }
+
+    if (isMobile) { // Mobile version
+        return (
+            <div style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "80vh",
+                justifyContent: "center",
+                alignItems: "center",
+            }}
+            >
+                <img width="30%" src="/icons/favicon-196x196.png" />
+                <div style={{ fontSize: "20px", textAlign: "center", padding: "30px" }}>
+                    <span style={{ color: "#7b84e6" }}> Penn Course Plan </span>
+                    is made for desktop.
+                     This allows us to give you the best experience
+                     when searching for courses and creating mock schedules.
+                     See you soon!
+                </div>
+            </div>
+        );
+    }
+
+
     return (
         <Provider store={store}>
             {initGA()}
