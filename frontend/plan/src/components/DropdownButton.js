@@ -26,16 +26,17 @@ export function DropdownButton({
                     className="filterButton button is-rounded"
                     disabled={isDisabled ? "disabled" : false}
                     aria-haspopup="true"
+                    style={{ display: "flex", alignItems: "start" }}
                     aria-controls="dropdown-menu"
                     onClick={toggleButton}
                     type="button"
                 >
-                    <span>
+                    <div>
                         {title}
-                    </span>
+                    </div>
                     {JSON.stringify(filterData) !== JSON.stringify(defaultFilter)
                     && (
-                        <span style={{ paddingLeft: "0.5em" }}>
+                        <div style={{ paddingLeft: "0.5em", paddingTop: "0.1em", marginRight: "-0.5em" }}>
                             <button
                                 type="button"
                                 className="delete is-small"
@@ -45,7 +46,7 @@ export function DropdownButton({
                                 }}
                                 disabled={isDisabled ? "disabled" : false}
                             />
-                        </span>
+                        </div>
                     )}
                 </button>
             </div>
