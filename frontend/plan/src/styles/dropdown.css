@@ -1,5 +1,17 @@
+.filterContainer {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.5em 0em;
+    justify-content: flex-start;
+    max-width: calc(100% - 17rem);
+    margin-left:0rem;
+}
+
 .filterButton {
     transition-duration: 0.2s;
+    margin-left: 0.5rem;
+    margin: auto;
+    flex-grow:1
 }
 
 .filterButton:hover {
