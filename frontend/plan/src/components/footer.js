@@ -2,26 +2,29 @@ import React from "react";
 
 export default function Footer() {
     return (
-        <footer className="footer">
-            <span className="arrow_container"><i className="fa fa-angle-up" /></span>
-            <div className="container">
-                <div className="content has-text-centered">
-                    <p style={{ fontSize: "0.8rem" }}>
-                        Made&nbsp;with&nbsp;
-                        <span className="icon is-small" style={{ color: "#F56F71" }}>
-                            <i className="fa fa-heart" />
-                        </span>
-                        &nbsp;by&nbsp;
-                        <a href="https://github.com/benb116">
-                            Ben Bernstein&nbsp;
-                        </a>
-                        and&nbsp;
-                        <a href="http://pennlabs.org" target="_blank" rel="noopener noreferrer">
-                            Penn Labs
-                        </a>
-                    </p>
-                </div>
-            </div>
-        </footer>
+        <div
+            className="has-text-centered"
+        >
+            <p style={{
+                marginTop: "1rem", marginBottom: "0.5rem", fontSize: "0.8rem", color: "#888888",
+            }}
+            >
+                Made with
+                {" "}
+                <span className="icon is-small"><i className="fa fa-heart" style={{ color: "red" }} /></span>
+                {" "}
+                by
+                {" "}
+                <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
+                {" "}
+                and
+                {" "}
+                <a href="https://github.com/benb116" target="_blank">Ben Bernstein</a>
+                <br />
+                Have feedback about Penn Course Plan? Let us know
+                {" "}
+                <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
+            </p>
+        </div>
     );
 }

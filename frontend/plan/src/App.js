@@ -10,12 +10,14 @@ import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
+import { isMobileOnly } from "react-device-detect";
 import Schedule from "./components/schedule/Schedule";
 
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
 import Selector from "./components/selector/Selector";
+import Footer from "./components/footer";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
@@ -49,14 +51,37 @@ function App() {
             {},
             "Welcome to Penn Course Plan ✨"));
     }
+
+    if (isMobileOnly) { // Mobile version
+        return (
+            <div style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "80vh",
+                justifyContent: "center",
+                alignItems: "center",
+            }}
+            >
+                <img width="30%" src="/icons/favicon-196x196.png" />
+                <div style={{ fontSize: "20px", textAlign: "center", padding: "30px" }}>
+                    <span style={{ color: "#7b84e6" }}> Penn Course Plan </span>
+                    is made for desktop.
+                     This allows us to give you the best experience
+                     when searching for courses and creating mock schedules.
+                     See you soon!
+                </div>
+            </div>
+        );
+    }
+
     return (
         <Provider store={store}>
             {initGA()}
             {logPageView()}
-            <div style={{ height: "calc(100vh - 4em)" }}>
+            <div style={{ padding: "0px 0px 0px 30px" }}>
                 <SearchBar style={{ flexGrow: 0 }} />
-                <div className="App columns main">
-                    <div style={{ marginLeft: "25px" }} className="column is-one-quarter">
+                <div className="App columns is-mobile is-multiline main">
+                    <div className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop">
                         <span style={{
                             display: "flex",
                             flexDirection: "row",
@@ -90,7 +115,7 @@ function App() {
                         </div>
                     </div>
                     <div
-                        className="column is-one-fifth"
+                        className="column is-one-fourth-mobile is-one-fifth-tablet is-one-fifth-desktop"
                         style={
                             {
                                 display: "flex",
@@ -108,35 +133,12 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div className="column">
+                    <div className="column" style={{ paddingRight: "0.5em" }}>
                         <Schedule />
                     </div>
                 </div>
             </div>
-            <div
-                className="has-text-centered"
-                style={{
-                    backgroundColor: "#ffffff", height: "4rem", paddingTop: ".25em", paddingBottom: ".25em",
-                }}
-            >
-                <p style={{ fontSize: "0.8rem", color: "black" }}>
-                    Made with
-                    {" "}
-                    <span className="icon is-small"><i className="fa fa-heart" style={{ color: "red" }} /></span>
-                    {" "}
-                    by
-                    {" "}
-                    <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
-                    {" "}
-                    and
-                    {" "}
-                    <a href="https://github.com/benb116" target="_blank">Ben Bernstein</a>
-                    <br />
-                    Have feedback about Penn Course Plan? Let us know
-                    {" "}
-                    <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
-                </p>
-            </div>
+            <Footer />
             <ModalContainer />
         </Provider>
     );
