@@ -77,14 +77,14 @@ class Stats extends Component {
                         statTypes.forEach((stat) => {
                             courseStats[course][stat] += (section[stat] ? section[stat] : 2.5);
                         });
-                        courseCUs[course] += (section.credits ? section.credits : 1);
+                        courseCUs[course] += section.credits;
                         courseRepeats[course] += 1;
                     } else {
                         courseStats[course] = {};
                         statTypes.forEach((stat) => {
                             courseStats[course][stat] = (section[stat] ? section[stat] : 2.5);
                         });
-                        courseCUs[course] = (section.credits ? section.credits : 1);
+                        courseCUs[course] = section.credits;
                         courseRepeats[course] = 1;
                     }
                 }
