@@ -10,7 +10,7 @@ import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
-import { isMobile } from "react-device-detect";
+import { isMobileOnly } from "react-device-detect";
 import Schedule from "./components/schedule/Schedule";
 
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
@@ -52,7 +52,7 @@ function App() {
             "Welcome to Penn Course Plan ✨"));
     }
 
-    if (isMobile) { // Mobile version
+    if (isMobileOnly) { // Mobile version
         return (
             <div style={{
                 display: "flex",
