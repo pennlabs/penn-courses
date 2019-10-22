@@ -72,8 +72,8 @@ function SearchBar({
     };
 
     return (
-        <div className="bar level" style={{}}>
-            <div className="level-left">
+        <div className="bar level is-mobile" style={{ height: "auto" }}>
+            <div className="level-left" style={{ maxWidth: "80vw" }}>
                 <div className="level-item">
                     <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", paddingLeft: "1.5rem" }} />
                 </div>
@@ -86,7 +86,7 @@ function SearchBar({
                     />
                 </div>
 
-                <div className="level-item" id="filterdiv">
+                <div className="level-item filterContainer" id="filterdiv">
                     <span className="icon">
                         <i className="fas fa-filter" />
                     </span>
@@ -156,7 +156,7 @@ function SearchBar({
                     </DropdownButton> */}
                 </div>
             </div>
-            <div className="level-right">
+            <div className="level-right is-hidden-mobile">
                 <div className="level-item">
                     <button
                         className="button is-white"
