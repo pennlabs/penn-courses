@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
+import { isMobile } from "react-device-detect";
 import "bulma-popover/css/bulma-popver.min.css";
 
 import Badge from "../Badge";
@@ -18,17 +19,19 @@ export default function Section({ section, cart, inCart }) {
                     className={`${isOpen ? "section-row-selected" : ""} selector-row section-row`}
                     onClick={() => toggleOpen(!isOpen)}
                 >
-                    <div
-                        role="button"
-                        onClick={inCart ? cart.remove : cart.add}
-                    >
-                        {inCart ? (
-                            <div className="hover-switch">
-                                <i className="fas fa-check" />
-                                <i className="fas fa-times" />
-                            </div>
-                        ) : <i className="fas fa-plus" />}
-                    </div>
+                    {!isMobile ? (
+                        <div
+                            role="button"
+                            onClick={inCart ? cart.remove : cart.add}
+                        >
+                            {inCart ? (
+                                <div className="hover-switch">
+                                    <i className="fas fa-check" />
+                                    <i className="fas fa-times" />
+                                </div>
+                            ) : <i className="fas fa-plus" />}
+                        </div>
+                    ) : <div />}
                     <div>
                         {section.id.split("-").pop()}
                     </div>

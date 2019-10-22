@@ -475,6 +475,15 @@ ul {
   }
 }
 
+@media all and (max-width: 400px){
+  .box{
+    height: 500px;
+  }
+  html{
+    font-size: 15px;
+  }
+}
+
 .box.column{
   /*styles the columns for lists of sections and lists of courses*/
 }

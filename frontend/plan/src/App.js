@@ -52,25 +52,71 @@ function App() {
             "Welcome to Penn Course Plan ✨"));
     }
 
-    if (isMobile) { // Mobile version
+    // if (isMobile) { // Mobile version
+    //     return (
+    //         <div style={{
+    //             display: "flex",
+    //             flexDirection: "column",
+    //             height: "80vh",
+    //             justifyContent: "center",
+    //             alignItems: "center",
+    //         }}
+    //         >
+    //             <img width="30%" src="/icons/favicon-196x196.png" />
+    //             <div style={{ fontSize: "20px", textAlign: "center", padding: "30px" }}>
+    //                 <span style={{ color: "#7b84e6" }}> Penn Course Plan </span>
+    //                 is made for desktop.
+    //                  This allows us to give you the best experience
+    //                  when searching for courses and creating mock schedules.
+    //                  See you soon!
+    //             </div>
+    //         </div>
+    //     );
+
+    if (isMobile) {
         return (
-            <div style={{
-                display: "flex",
-                flexDirection: "column",
-                height: "80vh",
-                justifyContent: "center",
-                alignItems: "center",
-            }}
-            >
-                <img width="30%" src="/icons/favicon-196x196.png" />
-                <div style={{ fontSize: "20px", textAlign: "center", padding: "30px" }}>
-                    <span style={{ color: "#7b84e6" }}> Penn Course Plan </span>
-                    is made for desktop.
-                     This allows us to give you the best experience
-                     when searching for courses and creating mock schedules.
-                     See you soon!
+            <Provider store={store}>
+                {initGA()}
+                {logPageView()}
+                <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                    <SearchBar style={{ flexGrow: 0 }} />
+                    <div>
+                        <span style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                        }}
+                        >
+                            <h3 style={{
+                                display: "flex",
+                                fontWeight: "bold",
+                                marginBottom: "0.5rem",
+                            }}
+                            >
+                                Search Results
+                            </h3>
+                            <div style={{
+                                float: "right",
+                                display: "flex",
+                            }}
+                            >
+                                <SearchSortDropdown />
+                            </div>
+                        </span>
+                        <div
+                            className="box"
+                            style={{
+                                paddingLeft: 0,
+                                paddingRight: 0,
+                            }}
+                        >
+                            <Selector />
+                        </div>
+                    </div>
                 </div>
-            </div>
+                <Footer />
+                <ModalContainer />
+            </Provider>
         );
     }
 

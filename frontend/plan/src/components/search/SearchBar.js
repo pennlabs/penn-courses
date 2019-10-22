@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import PropTypes from "prop-types";
+import { isMobile } from "react-device-detect";
 import connect from "react-redux/es/connect/connect";
 import "./Search.css";
 import { DropdownButton } from "../DropdownButton";
@@ -70,6 +71,22 @@ function SearchBar({
             });
         }
     };
+
+    if (isMobile) {
+        return (
+            <div style={{
+                background: "white", padding: "10px", margin: "10px 0px", borderRadius: "6px",
+            }}
+            >
+                <SearchField
+                    startSearch={conditionalStartSearch}
+                    filterData={filterData}
+                    updateSearchText={updateSearchText}
+                    isDisabled={isLoading}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="bar level is-mobile" style={{ height: "auto" }}>
