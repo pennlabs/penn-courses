@@ -40,7 +40,7 @@ class Stats extends Component {
         if (meetings.length === 0) {
             earliestStart = "—";
             latestEnd = "—";
-            totalCUs = "–";
+            totalCUs = "—";
             maxHoursADay = "—";
             totalHours = "—";
             averageHours = "—";
