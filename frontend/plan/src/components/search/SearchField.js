@@ -19,7 +19,7 @@ export function SearchField({
                 ...filterData,
                 searchString: searchText,
             });
-        }, 200));
+        }, 1000));
     };
 
     return (

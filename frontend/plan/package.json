@@ -16,6 +16,7 @@
     "rc-slider": "^8.7.1",
     "react": "^16.8.6",
     "react-circular-progressbar": "^2.0.2",
+    "react-device-detect": "^1.9.10",
     "react-dom": "^16.6.3",
     "react-ga": "^2.7.0",
     "react-redux": "^6.0.0",
