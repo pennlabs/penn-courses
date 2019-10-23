@@ -75,7 +75,7 @@ function SearchBar({
         <div className="bar level is-mobile" style={{ height: "auto" }}>
             <div className="level-left" style={{ maxWidth: "80vw" }}>
                 <div className="level-item">
-                    <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", paddingLeft: "1.5rem" }} />
+                    <img src="/static/favicon.ico" alt="" style={{ height: "2rem", paddingLeft: "1.5rem" }} />
                 </div>
                 <div className="level-item" id="searchdiv">
                     <SearchField
