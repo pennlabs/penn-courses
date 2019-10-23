@@ -17,10 +17,26 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 ROOT_URLCONF = os.environ.get('ROOT_URLCONF', None)
 
+# Share cookie with frontend
+SESSION_COOKIE_DOMAIN = 'api.penncourses.org'
+CSRF_COOKIE_DOMAIN = 'api.penncourses.org'
+CSRF_COOKIE_SAMESITE = None
+
 ALLOWED_HOSTS = [
     'api.penncourses.org'
     'penncoursealert.com'
     'www.penncoursealert.com'
+]
+
+# Django CORS Settings
+CORS_ORIGIN_REGEX_WHITELIST = [
+    r'^https://[\w-]+.penncourseplan.com$',
+    r'^https://penncourseplan.com$'
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    '.penncourseplan.com',
+    'penncourseplan.com',
 ]
 
 # TODO: This is a BAD HACK. We shouldn't hardcode the base URL into the shortener

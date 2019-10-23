@@ -23,6 +23,7 @@ coreapi = "*"
 django-filter = "*"
 shortener = "*"
 uwsgi = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 coveralls = "*"
