@@ -14,6 +14,10 @@ import os
 
 import dj_database_url
 
+# Two options right now for the root urlconf: Either PennCourses.urls.api for the full API
+# or PennCourses.urls.alert for the PCA site. These two will run in separate processes in production.
+# must be set as an environment variable to work properly.
+ROOT_URLCONF = None
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -57,7 +61,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'PennCourses.middleware.SwitchboardMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -67,8 +70,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-ROOT_URLCONF = 'PennCourses.urls.base'
 
 FRONTEND_DIR = os.path.abspath(
     os.path.join(BASE_DIR, '..', 'frontend'))

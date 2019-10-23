@@ -2,8 +2,10 @@ from PennCourses.settings.base import *
 
 
 SENTRY_KEY = ''
-SWITCHBOARD_TEST_APP = None
 PCA_URL = 'http://localhost:8000'
+
+# TODO: Change tests to set this setting per-test
+ROOT_URLCONF = None
 
 DATABASES = {
     'default': {

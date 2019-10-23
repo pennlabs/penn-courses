@@ -45,7 +45,7 @@ class TypedSearchBackendTestCase(TestCase):
             self.assertEqual(['title', 'sections__instructors__name'], terms, f'search:{kw}')
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pcp')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class CourseSearchTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -54,7 +54,7 @@ class CourseSearchTestCase(TestCase):
         set_semester()
 
     def test_search_by_dept(self):
-        response = self.client.get('/courses/', {'search': 'math', 'type': 'auto'})
+        response = self.client.get('/plan/courses/', {'search': 'math', 'type': 'auto'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(len(response.data), 1)
         course_codes = [d['id'] for d in response.data]
@@ -65,14 +65,14 @@ class CourseSearchTestCase(TestCase):
         self.math1.instructors.add(Instructor.objects.get_or_create(name='Josh Doman')[0])
         searches = ['Tiffany', 'Chang']
         for search in searches:
-            response = self.client.get('/courses/', {'search': search, 'type': 'auto'})
+            response = self.client.get('/plan/courses/', {'search': search, 'type': 'auto'})
             self.assertEqual(200, response.status_code)
             self.assertEqual(len(response.data), 1)
             course_codes = [d['id'] for d in response.data]
             self.assertTrue('CIS-120' in course_codes and 'MATH-114' not in course_codes, f'search:{search}')
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pcp')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class CreditUnitFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -85,17 +85,17 @@ class CreditUnitFilterTestCase(TestCase):
         set_semester()
 
     def test_include_course(self):
-        response = self.client.get('/courses/', {'cu': '0.5-1'})
+        response = self.client.get('/plan/courses/', {'cu': '0.5-1'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_exclude_course(self):
-        response = self.client.get('/courses/', {'cu': '.25-.75'})
+        response = self.client.get('/plan/courses/', {'cu': '.25-.75'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pcp')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class RequirementFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -107,12 +107,12 @@ class RequirementFilterTestCase(TestCase):
         set_semester()
 
     def test_return_all_courses(self):
-        response = self.client.get('/courses/')
+        response = self.client.get('/plan/courses/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
 
     def test_filter_for_req(self):
-        response = self.client.get('/courses/', {'requirements': 'REQ@SAS'})
+        response = self.client.get('/plan/courses/', {'requirements': 'REQ@SAS'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual('MATH-114', response.data[0]['id'])
@@ -123,11 +123,11 @@ class RequirementFilterTestCase(TestCase):
         req2.save()
         req2.courses.add(course3)
 
-        response = self.client.get('/courses/', {'requirements': 'REQ@SAS+REQ2@SEAS'})
+        response = self.client.get('/plan/courses/', {'requirements': 'REQ@SAS+REQ2@SEAS'})
         self.assertEqual(2, len(response.data))
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pcp')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class CourseReviewAverageTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -158,14 +158,14 @@ class CourseReviewAverageTestCase(TestCase):
         set_semester()
 
     def test_course_average(self):
-        response = self.client.get('/courses/CIS-120/')
+        response = self.client.get('/plan/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, response.data['course_quality'])
         self.assertEqual(3, response.data['instructor_quality'])
         self.assertEqual(3, response.data['difficulty'])
 
     def test_section_reviews(self):
-        response = self.client.get('/courses/CIS-120/')
+        response = self.client.get('/plan/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data['sections']))
 
@@ -180,16 +180,16 @@ class CourseReviewAverageTestCase(TestCase):
             'difficulty': 1,
         })
         self.section2.instructors.add(instructor3)
-        response = self.client.get('/courses/CIS-120/')
+        response = self.client.get('/plan/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data['sections']))
 
     def test_filter_courses_by_review_included(self):
-        response = self.client.get('/courses/', {'difficulty': '2.5-3.5'})
+        response = self.client.get('/plan/courses/', {'difficulty': '2.5-3.5'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_filter_courses_by_review_excluded(self):
-        response = self.client.get('/courses/', {'difficulty': '0-2'})
+        response = self.client.get('/plan/courses/', {'difficulty': '0-2'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))

@@ -15,25 +15,13 @@ sentry_sdk.init(
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Domain Routing Middleware
-# Define URL schemes for each domain.
-SWITCHBOARD_TEST_APP = None
-HOST_TO_APP = {
-    'penncourses.apps.pennlabs.org': 'pca',
-    'penncoursealert.com': 'pca',
-    'www.penncoursealert.com': 'pca',
+ROOT_URLCONF = os.environ.get('ROOT_URLCONF', None)
 
-    'penncourseplan.com': 'pcp',
-    'www.penncourseplan.com': 'pcp',
-    'penncoursesearch.com': 'pcp-construction',
-    'www.penncoursesearch.com': 'pcp-construction',
-
-    'penncoursereview.com': 'pcr',
-    'www.penncoursereview.com': 'pcr'
-}
-
-if len(ALLOWED_HOSTS) == 0:
-    ALLOWED_HOSTS = HOST_TO_APP.keys()
+ALLOWED_HOSTS = [
+    'api.penncourses.org'
+    'penncoursealert.com'
+    'www.penncoursealert.com'
+]
 
 # TODO: This is a BAD HACK. We shouldn't hardcode the base URL into the shortener
 PCA_URL = 'https://penncoursealert.com'
