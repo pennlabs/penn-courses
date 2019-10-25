@@ -12,8 +12,14 @@ export default function TagList({
     const hiddenTags = elements.slice(limit);
     let tagPopover = null;
     const sign = expanded ? "-" : "+";
-    const adder = <Tag isAdder
-                       onClick={() => setExpanded(!expanded)}>{`${sign}${hiddenTags.length}`}</Tag>;
+    const adder = (
+        <Tag
+            isAdder
+            onClick={() => setExpanded(!expanded)}
+        >
+            {`${sign}${hiddenTags.length}`}
+        </Tag>
+    );
     if (hiddenTags.length > 0) {
         tagPopover = (
             <span>
@@ -27,8 +33,13 @@ export default function TagList({
     }
     return (
         <span>
-            {visibleTags.map(elt => <Tag
-                onClick={onClick ? () => onClick(elt.replace(/ /g, "-")) : null}>{elt}</Tag>)}
+            {visibleTags.map(elt => (
+                <Tag
+                    onClick={onClick ? () => onClick(elt.replace(/ /g, "-")) : null}
+                >
+                    {elt}
+                </Tag>
+            ))}
             {tagPopover}
         </span>
     );
