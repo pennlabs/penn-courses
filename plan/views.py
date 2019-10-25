@@ -43,4 +43,6 @@ class ScheduleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Schedule.objects.filter(person=self.request.user)
+        queryset = Schedule.objects.filter(person=self.request.user)
+        queryset = super().get_serializer_class().setup_eager_loading(queryset)
+        return queryset
