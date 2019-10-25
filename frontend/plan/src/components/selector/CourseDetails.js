@@ -60,7 +60,7 @@ export default function CourseDetails({ course, getCourse }) {
                 href={`https://penncoursereview.com/course/${(course.id)}`}
                 style={{
                     fontWeight: "700",
-                    fontSize: "12px",
+                    fontSize: "0.8 em",
                     color: "#8F8F8F",
                     textAlign: "center",
                 }}
