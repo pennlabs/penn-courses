@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { useOnClickOutside } from "./useOnClickOutside";
 
 export function DropdownButton({
-    title, children, filterData, defaultFilter, clearFilter,
+    title, children, filterData, defaultFilter, clearFilter, isDisabled,
 }) {
     const [isActive, setIsActive] = useState(false);
 
@@ -23,27 +23,30 @@ export function DropdownButton({
         >
             <div className="dropdown-trigger">
                 <button
-                    className="button is-rounded"
+                    className="filterButton button is-rounded"
+                    disabled={isDisabled ? "disabled" : false}
                     aria-haspopup="true"
+                    style={{ display: "flex", alignItems: "center", height: "100%" }}
                     aria-controls="dropdown-menu"
                     onClick={toggleButton}
                     type="button"
                 >
-                    <span>
+                    <div>
                         {title}
-                    </span>
+                    </div>
                     {JSON.stringify(filterData) !== JSON.stringify(defaultFilter)
                     && (
-                        <span>
-                            <i
+                        <div style={{ paddingLeft: "0.5em", marginRight: "-0.5em", height: "16px" }}>
+                            <button
+                                type="button"
                                 className="delete is-small"
                                 onClick={(e) => {
                                     clearFilter();
                                     e.stopPropagation();
                                 }}
-                                role="button"
+                                disabled={isDisabled ? "disabled" : false}
                             />
-                        </span>
+                        </div>
                     )}
                 </button>
             </div>
@@ -74,4 +77,5 @@ DropdownButton.propTypes = {
         PropTypes.object
     ]),
     clearFilter: PropTypes.func,
+    isDisabled: PropTypes.bool,
 };

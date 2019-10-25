@@ -142,7 +142,7 @@ class Section(models.Model):
 
     instructors = models.ManyToManyField(Instructor)
     associated_sections = models.ManyToManyField('Section')
-    restrictions = models.ManyToManyField(Restriction)
+    restrictions = models.ManyToManyField(Restriction, blank=True)
 
     credits = models.DecimalField(max_digits=3,  # some course for 2019C is 14 CR...
                                   decimal_places=2,
@@ -268,14 +268,14 @@ class Requirement(models.Model):
     name = models.CharField(max_length=255)
 
     # Departments which satisfy this requirement
-    departments = models.ManyToManyField(Department, related_name='requirements')
+    departments = models.ManyToManyField(Department, related_name='requirements', blank=True)
     # Courses which satisfy this requirement
-    courses = models.ManyToManyField(Course, related_name='requirement_set')
+    courses = models.ManyToManyField(Course, related_name='requirement_set', blank=True)
 
     # Courses which do not satisfy this requirement.
     # For example, CIS classes are Engineering courses, but CIS-125 is NOT an engineering class, so for the ENG
     # requirement, CIS-125 would go into the overrides set.
-    overrides = models.ManyToManyField(Course, related_name='nonrequirement_set')
+    overrides = models.ManyToManyField(Course, related_name='nonrequirement_set', blank=True)
 
     class Meta:
         unique_together = (('semester', 'code', 'school'), )

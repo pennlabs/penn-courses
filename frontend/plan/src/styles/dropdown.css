@@ -1,3 +1,33 @@
+.filterContainer {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.5em 0em;
+    justify-content: flex-start;
+    max-width: calc(100% - 17rem);
+    margin-left:0rem;
+}
+
+.filterButton {
+    transition-duration: 0.2s;
+    border: solid 1px #e1e1e1;
+}
+
+.filterButton:hover {
+    border: solid 1px #e1e1e1;
+    background-color: #f0f0f0;
+}
+
+.filterButton:active {
+    border: solid 1px #7b84e6;
+    position:relative;
+    top:-1px;
+    left:-1px;
+    background-color: #ffffff;
+}
+
+.filterButton:focus {
+    box-shadow: 0 0 3px #7b84e6;
+}
 
 .classic, .classic * {
     border: 0;
@@ -76,6 +106,7 @@
 .classic .dropdown-item {
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
 }
 
 .schedule-name-container, .schedule-options-container {
@@ -85,11 +116,16 @@
 .schedule-name-container {
     flex-grow: 1;
     font-weight: 400;
+    max-width: 50%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .schedule-options-container {
     flex-grow: 0.5;
-    justify-content: space-around;
+    justify-content: flex-end;
+    width: 25%;
 }
 
 .schedule-options-container i {

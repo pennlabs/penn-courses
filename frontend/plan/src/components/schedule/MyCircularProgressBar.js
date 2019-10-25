@@ -7,6 +7,9 @@ export default function MyCircularProgressBar(props) {
     let color;
     const { value } = props;
     switch (true) {
+        case value === 0:
+            color = "#f1f1f1";
+            break;
         case value < 1:
             color = "#df5d56";
             break;
@@ -23,7 +26,7 @@ export default function MyCircularProgressBar(props) {
         <CircularProgressbar
             value={value / 4 * 100}
             strokeWidth="14"
-            text={`${value}`}
+            text={value === 0 ? "N/A" : `${parseFloat(value.toFixed(2))}`}
             styles={buildStyles({
             // Rotation of path and trail, in number of turns (0-1)
                 rotation: 0,

@@ -12,7 +12,7 @@ export default function TagList({
     let tagPopover = null;
     if (hiddenTags.length > 0) {
         tagPopover = (
-            <span className="popover is-popover-right">
+            <span className="popover is-popover-left">
                 <span className="popover-trigger">
                     <Tag>{`+${hiddenTags.length}`}</Tag>
                 </span>

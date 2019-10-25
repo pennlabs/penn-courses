@@ -1,9 +1,9 @@
 html {
   font-size: calc(100vw/95);
   width: 100%;
-  height: 100vh;
   background-color: #f1eff9;
 }
+
 .section-header {
   display: flex;
   font-weight: bold;
@@ -13,20 +13,21 @@ html {
 .vertical-section {
   display: flex;
   flex-direction: column;
+  padding: 0px;
 }
 
-.vertical-section-contents {
+/* .vertical-section-contents {
   display: flex;
   flex-grow: 1;
   overflow: auto;
   flex-direction: column;
-}
+} */
 
 body {
   width: 100%;
 }
 
-.button{
+.button:not(modal .button){
   border-radius: 30px!important;
 }
 
@@ -460,10 +461,18 @@ ul {
 
 
 .box{
-  /*border-radius:3px;*/
-  /*background:white;*/
-  /* border: 1px solid lightgrey; */
-  margin: 10px 5px;
+  height: calc(100vh - 9em - 2.5em);
+  border-radius: 4px;
+  box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.09);
+}
+
+@media all and (max-width: 768px){
+  .box{
+    height: 500px;
+  }
+  html{
+    font-size: calc(200vw/95);
+  }
 }
 
 .box.column{
@@ -699,11 +708,6 @@ ul {
   text-decoration: none;
 }
 
-.modal-card-body .button, .modal-card-body input{
-  display:block;
-  margin: 1.5rem auto auto;
-}
-
 .Modal h2 {
   font-size:initial!important;
   line-height: 0.5em;
@@ -816,29 +820,9 @@ ul {
   padding:0;
 }
 
-.modal-content *{
-  color:white;
-}
-
-.modal header, .modal footer{
-  background-color:#3273dc;
-}
-
-.modal header *, .modal footer *{
-  color:white;
-}
-
 img.small{
   width:1.5rem;
   display:inline;
-}
-
-.modal-card{
-  border-radius:9px;
-}
-
-.modal-card-body{
-  padding-bottom: 1.5rem;
 }
 
 #NotificationModal .modal-card-body *:not(a){
@@ -851,6 +835,13 @@ img.small{
   max-width:60%;
 }
 
+.put-at-bottom {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 3rem;            /* Footer height */
+}
+
 #NotificationModal .modal-card-body img.small{
   display:inline-block;
   max-height:1.5rem;
@@ -858,11 +849,6 @@ img.small{
 
 #NotificationModal a{
   display:contents;
-}
-
-.modal-background{
-  background-color:#707070;
-  opacity:0.75;
 }
 
 #feedback_button{
@@ -878,7 +864,15 @@ img.small{
   box-shadow: 0 0 0.7rem rgba(100,100,100,0.6);
 }
 
-
 .level .button {
   font-size: 0.75rem !important;
+}
+
+*[role=button] .fa-times {
+  color: rgba(0, 0, 0, 0.2);
+  transition: 200ms ease color;
+}
+
+*[role=button]:hover .fa-times {
+  color: rgba(0, 0, 0, 0.33);
 }

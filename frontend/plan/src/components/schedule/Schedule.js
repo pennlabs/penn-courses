@@ -7,7 +7,7 @@ import {
     removeSchedItem,
     fetchCourseDetails,
     changeSchedule,
-    duplicateSchedule, deleteSchedule
+    duplicateSchedule, deleteSchedule, openModal
 } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
@@ -43,6 +43,7 @@ class Schedule extends Component {
         const {
             schedData, removeSection, focusSection,
             scheduleNames, switchSchedule, schedulesMutator,
+            activeScheduleName,
         } = this.props;
         const sections = schedData.meetings || [];
 
@@ -155,7 +156,7 @@ class Schedule extends Component {
 
         const dims = {
             gridTemplateColumns: `.4fr repeat(${getNumCol() - 1}, 1fr)`,
-            gridTemplateRows: `repeat(${getNumRows()}, 1fr)`,
+            gridTemplateRows: `repeat(${getNumRows() - 2}, 1fr)`,
             padding: "1rem",
         };
 
@@ -163,8 +164,7 @@ class Schedule extends Component {
             <div className="column vertical-section">
                 <h3 className="section-header">
                     <ScheduleSelectorDropdown
-                        defText="Mock Schedule"
-                        defActive={0}
+                        activeName={activeScheduleName}
                         contents={scheduleNames.map(scheduleName => ({
                             text: scheduleName,
                             onClick: () => switchSchedule(scheduleName),
@@ -183,7 +183,7 @@ class Schedule extends Component {
                             <Times
                                 startTime={startHour}
                                 endTime={endHour}
-                                numRow={getNumRows()}
+                                numRow={getNumRows() - 2}
                                 offset={rowOffset}
 
                             />
@@ -197,9 +197,7 @@ class Schedule extends Component {
                         {notEmpty && blocks}
                         {!notEmpty && <EmptySchedule />}
                     </div>
-                    <div className="scheduleStats">
-                        <Stats meetings={schedData.meetings} />
-                    </div>
+                    <Stats meetings={schedData.meetings} />
                 </div>
             </div>
         );
@@ -218,12 +216,14 @@ Schedule.propTypes = {
         copy: PropTypes.func.isRequired,
         remove: PropTypes.func.isRequired,
     }),
+    activeScheduleName: PropTypes.string,
 };
 
 const mapStateToProps = state => (
     {
         schedData: state.schedule.schedules[state.schedule.scheduleSelected],
         scheduleNames: Object.keys(state.schedule.schedules),
+        activeScheduleName: state.schedule.scheduleSelected,
     }
 );
 
@@ -236,27 +236,33 @@ const mapDispatchToProps = dispatch => (
         schedulesMutator: {
             copy: scheduleName => dispatch(duplicateSchedule(scheduleName)),
             remove: scheduleName => dispatch(deleteSchedule(scheduleName)),
+            rename: oldName => dispatch(openModal("RENAME_SCHEDULE",
+                { scheduleName: oldName },
+                "Rename Schedule")),
+            create: () => dispatch(openModal("CREATE_SCHEDULE",
+                {},
+                "Create Schedule")),
         },
     }
 );
 
 const EmptySchedule = () => (
-    <div style={{ height: "100%" }}>
-        <p style={{
-            fontSize: "1.5em",
-            paddingTop: "7em",
-            display: "block",
+    <div style={{
+        fontSize: "0.8em",
+        textAlign: "center",
+        marginTop: "5vh",
+    }}
+    >
+        <img style={{ width: "65%" }} src="/static/empty-state-cal.svg" />
+        <h3 style={{
+            fontWeight: "bold",
+            marginBottom: "0.5rem",
         }}
         >
-            Search for courses above
-            <br />
-            then click a section&#39;s + icon to add it to the schedule.
-        </p>
-        <p style={{ fontSize: "1em" }}>
-            These are mock schedules.
-            <br />
-            You still need to register for your classes on Penn InTouch.
-        </p>
+            No courses added
+        </h3>
+            Select courses from the cart to add them to the calendar
+        <br />
     </div>
 );
 

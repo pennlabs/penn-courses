@@ -104,10 +104,11 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
                 schedules: {
-                    ...removeSchedule(state.scheduleSelected, state.schedules),
-                    [action.scheduleName]: state.schedules[state.scheduleSelected],
+                    ...removeSchedule(action.oldName, state.schedules),
+                    [action.newName]: state.schedules[action.oldName],
                 },
-                scheduleSelected: action.scheduleName,
+                scheduleSelected: state.scheduleSelected === action.oldName
+                    ? action.newName : state.scheduleSelected,
             };
         case DUPLICATE_SCHEDULE:
             return {
@@ -129,6 +130,9 @@ export const schedule = (state = initialState, action) => {
             };
         case DELETE_SCHEDULE: {
             const newSchedules = removeSchedule(action.scheduleName, state.schedules);
+            if (Object.keys(newSchedules).length === 0) {
+                newSchedules["Empty Schedule"] = generateDefaultSchedule();
+            }
             return {
                 ...state,
                 schedules: newSchedules,

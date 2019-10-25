@@ -1,8 +1,11 @@
 import fetch from "cross-fetch";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
+export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
 
-export const UPDATE_COURSE_INFO = "UPDATE_COURSE_INFO";
+export const UPDATE_COURSE_INFO_SUCCESS = "UPDATE_COURSE_INFO_SUCCESS";
+export const UPDATE_COURSE_INFO_REQUEST = "UPDATE_COURSE_INFO_REQUEST";
+
 export const UPDATE_SECTIONS = "UPDATE_SECTIONS";
 export const OPEN_SECTION_INFO = "OPEN_SECTION_INFO";
 export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
@@ -39,6 +42,7 @@ export const TOGGLE_CHECK = "TOGGLE_CHECK";
 
 export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
+export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
 
 export const duplicateSchedule = scheduleName => (
@@ -55,10 +59,11 @@ export const deleteSchedule = scheduleName => (
     }
 );
 
-export const renameSchedule = scheduleName => (
+export const renameSchedule = (oldName, newName) => (
     {
         type: RENAME_SCHEDULE,
-        scheduleName,
+        oldName,
+        newName,
     }
 );
 
@@ -97,6 +102,12 @@ export const updateSearch = searchResults => (
     }
 );
 
+const updateSearchRequest = () => (
+    {
+        type: UPDATE_SEARCH_REQUEST,
+    }
+);
+
 export const updateSections = sections => (
     {
         type: UPDATE_SECTIONS,
@@ -111,9 +122,15 @@ export const updateSectionInfo = sectionInfo => (
     }
 );
 
+const updateCourseInfoRequest = () => (
+    {
+        type: UPDATE_COURSE_INFO_REQUEST,
+    }
+);
+
 export const updateCourseInfo = course => (
     {
-        type: UPDATE_COURSE_INFO,
+        type: UPDATE_COURSE_INFO_SUCCESS,
         course,
     }
 );
@@ -125,10 +142,12 @@ export const createSchedule = scheduleName => (
     }
 );
 
-export const openModal = modal => (
+export const openModal = (modalKey, modalProps, modalTitle) => (
     {
         type: OPEN_MODAL,
-        modal,
+        modalKey,
+        modalProps,
+        modalTitle,
     }
 );
 
@@ -214,15 +233,16 @@ function buildCourseSearchUrl(filterData) {
 }
 
 export function fetchCourseSearch(filterData) {
-    return dispatch => (
+    return (dispatch) => {
+        dispatch(updateSearchRequest());
         fetch(buildCourseSearchUrl(filterData)).then(
             response => response.json().then(
                 json => dispatch(updateSearch(json)),
                 error => dispatch(courseSearchError(error)),
             ),
             error => dispatch(courseSearchError(error)),
-        )
-    );
+        );
+    };
 }
 
 export function updateSearchText(s) {
@@ -288,12 +308,13 @@ export function clearAll() {
 }
 
 export function fetchCourseDetails(courseId) {
-    return dispatch => (
+    return (dispatch) => {
+        dispatch(updateCourseInfoRequest());
         fetch(`/courses/${courseId}`)
             .then(res => res.json())
             .then(course => dispatch(updateCourseInfo(course)))
-            .catch(error => dispatch(sectionInfoSearchError(error)))
-    );
+            .catch(error => dispatch(sectionInfoSearchError(error)));
+    };
 }
 
 export function fetchSectionInfo(searchData) {
@@ -337,4 +358,9 @@ export const toggleCheck = course => ({
 export const removeCartItem = sectionId => ({
     type: REMOVE_CART_ITEM,
     sectionId,
+});
+
+export const changeSortType = sortMode => ({
+    type: CHANGE_SORT_TYPE,
+    sortMode,
 });
