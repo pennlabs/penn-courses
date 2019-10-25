@@ -11,23 +11,25 @@ export default function TagList({
     const visibleTags = elements.slice(0, limit);
     const hiddenTags = elements.slice(limit);
     let tagPopover = null;
-    const sign = expanded ? "-" : "+";
-    const adder = (
-        <Tag
-            isAdder
-            onClick={() => setExpanded(!expanded)}
-        >
-            {`${sign}${hiddenTags.length}`}
-        </Tag>
-    );
     if (hiddenTags.length > 0) {
         tagPopover = (
             <span>
-                {!expanded && adder}
+                {!expanded && (
+                    <Tag
+                        isAdder
+                        onClick={() => setExpanded(true)}
+                    >
+                        {expanded ? "Hide requirements" : `+${hiddenTags.length}`}
+                    </Tag>
+                )}
                 <span className="taglist" style={{ height: expanded ? "auto" : 0 }}>
                     {hiddenTags.map(elt => <Tag>{elt}</Tag>)}
                 </span>
-                {expanded && adder}
+                {expanded && (
+                    <a role="button" onClick={() => setExpanded(false)}>
+                    Hide requirements
+                    </a>
+                )}
             </span>
         );
     }
