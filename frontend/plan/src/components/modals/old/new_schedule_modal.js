@@ -1,12 +1,12 @@
 /* eslint-disable react/prop-types */
 import React, { Component } from "react";
-import GenericModal from "./generic_modal_container";
-import { validateScheduleName } from "../schedule/schedule_name_validation";
+import GenericModal from "../generic_modal_container";
+import { validateScheduleName } from "../../schedule/schedule_name_validation";
 
-export const DUPLICATE_SCHEDULE_MODAL_NAME = "duplicate_schedule_modal";
+export const NEW_SCHEDULE_MODAL_NAME = "new_schedule_modal";
 
 
-class DuplicateScheduleModalInterior extends Component {
+class NewScheduleModalInterior extends Component {
     constructor(props) {
         super(props);
         this.state = { currentName: "" };
@@ -20,8 +20,8 @@ class DuplicateScheduleModalInterior extends Component {
         const {
             existingScheduleNames,
             modalActionState,
+            createNewSchedule,
             close,
-            duplicateSchedule,
             triggerModalAction,
         } = this.props;
 
@@ -32,7 +32,7 @@ class DuplicateScheduleModalInterior extends Component {
         const feedbackString = validateScheduleName(currentName, existingScheduleNames);
         if (modalActionState === "success") {
             if (feedbackString.length === 0) {
-                duplicateSchedule(currentName);
+                createNewSchedule(currentName);
                 close();
             } else {
                 triggerModalAction(null);
@@ -58,12 +58,12 @@ class DuplicateScheduleModalInterior extends Component {
     }
 }
 
-export default function DuplicateScheduleModal() {
+export default function NewScheduleModal() {
     return (
         <GenericModal
-            modalName={DUPLICATE_SCHEDULE_MODAL_NAME}
-            title="Duplicate Schedule"
-            containedContent={[<DuplicateScheduleModalInterior />]}
+            modalName="new_schedule_modal"
+            title="New Schedule"
+            containedContent={[<NewScheduleModalInterior />]}
             successButton="Ok"
         />
     );

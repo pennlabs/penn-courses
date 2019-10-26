@@ -11,14 +11,16 @@ import {
 function SectionList({ sections, cartSections, manageCart }) {
     const isInCart = ({ id }) => cartSections.indexOf(id) !== -1;
     return (
-        [
+        <>
             <div className="section-row segment">
+                <div className="header" />
                 <div className="header">SECT</div>
+                <div className="header">INSTR</div>
                 <div className="header">TYPE</div>
                 <div className="header">TIME</div>
-                <div className="header">INSTR</div>
-            </div>,
-            <ul className="scrollable">
+            </div>
+
+            <ul>
                 {sections.map(s => (
                     <Section
                         section={s}
@@ -27,12 +29,14 @@ function SectionList({ sections, cartSections, manageCart }) {
                     />
                 ))}
             </ul>
-        ]
+        </>
     );
 }
 
 SectionList.propTypes = {
     sections: PropTypes.arrayOf(PropTypes.object).isRequired,
+    cartSections: PropTypes.arrayOf(PropTypes.String).isRequired,
+    manageCart: PropTypes.func,
 };
 
 const mapStateToProps = (state, ownProps) => (

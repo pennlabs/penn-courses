@@ -19,7 +19,7 @@ Section data in two queries.
 
 # Annotations are basically the same for Course and Section, save a few of the subfilters, so generalize it out.
 def review_averages(queryset, subfilters):
-    fields = ['course_quality', 'difficulty', 'instructor_quality']
+    fields = ['course_quality', 'difficulty', 'instructor_quality', 'work_required']
     return queryset.annotate(**{
         field: Subquery(
             ReviewBit.objects.filter(field=field, **subfilters)
