@@ -240,7 +240,7 @@ const mapDispatchToProps = dispatch => (
                 { scheduleName: oldName, defaultValue: oldName },
                 "Rename Schedule")),
             create: () => dispatch(openModal("CREATE_SCHEDULE",
-                {defaultValue: "Schedule name", overwriteDefault: true},
+                { defaultValue: "Schedule name", overwriteDefault: true },
                 "Create Schedule")),
         },
     }
