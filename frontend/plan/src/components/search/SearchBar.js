@@ -75,7 +75,10 @@ function SearchBar({
         <div className="bar level is-mobile" style={{ height: "auto" }}>
             <div className="level-left" style={{ maxWidth: "80vw" }}>
                 <div className="level-item">
-                    <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", paddingLeft: "1.5rem" }} />
+                    <img src="/static/favicon.ico" alt="" style={{
+                        height: "2.5rem",
+                        paddingLeft: "1.5rem"
+                    }}/>
                 </div>
                 <div className="level-item" id="searchdiv">
                     <SearchField
@@ -88,10 +91,13 @@ function SearchBar({
 
                 <div className="level-item filterContainer" id="filterdiv">
                     <span className="icon">
-                        <i className="fas fa-filter" />
+                        <i className="fas fa-filter"/>
                     </span>
                     <p> Filter by</p>
-                    <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")} isDisabled={isLoading}>
+                    <DropdownButton title="Requirements" filterData={filterData.selectedReq}
+                                    defaultFilter={defaultReqs}
+                                    clearFilter={clearFilterSearch("selectedReq")}
+                                    isDisabled={isLoading}>
                         <SchoolReq
                             startSearch={conditionalStartSearch}
                             schoolReq={schoolReq}
@@ -101,7 +107,10 @@ function SearchBar({
                             isDisabled={isLoading}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")} isDisabled={isLoading}>
+                    <DropdownButton title="Difficulty" filterData={filterData.difficulty}
+                                    defaultFilter={defaultFilters.filterData.difficulty}
+                                    clearFilter={clearFilterSearch("difficulty")}
+                                    isDisabled={isLoading}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -113,7 +122,10 @@ function SearchBar({
                             isDisabled={isLoading}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")} isDisabled={isLoading}>
+                    <DropdownButton title="Course Quality" filterData={filterData.course_quality}
+                                    defaultFilter={defaultFilters.filterData.course_quality}
+                                    clearFilter={clearFilterSearch("course_quality")}
+                                    isDisabled={isLoading}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -125,7 +137,11 @@ function SearchBar({
                             isDisabled={isLoading}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")} isDisabled={isLoading}>
+                    <DropdownButton title="Instructor Quality"
+                                    filterData={filterData.instructor_quality}
+                                    defaultFilter={defaultFilters.filterData.instructor_quality}
+                                    clearFilter={clearFilterSearch("instructor_quality")}
+                                    isDisabled={isLoading}>
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -173,6 +189,17 @@ function SearchBar({
                     >
                         Clear all
                     </button>
+                </div>
+            </div>
+            <div className="level-right">
+                <div className="level-item">
+                    <div
+                        role={"button"}
+                        id={"user-selector"}
+                        onClick={() => {
+                        }}>
+                        <span> D </span>
+                    </div>
                 </div>
             </div>
         </div>
