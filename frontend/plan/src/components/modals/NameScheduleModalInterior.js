@@ -32,7 +32,7 @@ const NameScheduleModalInterior = ({
                 value={userInput}
                 type="text"
                 ref={ref => setInputRef(ref)}
-                style={{ backgroundColor: error ? "#f9dcda" : "white" }}
+                style={{ backgroundColor: error ? "#f9dcda" : "#f1f1f1" }}
                 onChange={() => setUserInput(inputRef.value)}
                 onClick={() => {
                     if (overwriteDefault && userInput === defaultValue) {
