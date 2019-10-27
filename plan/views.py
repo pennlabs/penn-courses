@@ -39,7 +39,7 @@ class CourseDetailSearch(CourseDetail):
 
 class ScheduleViewSet(viewsets.ModelViewSet):
     serializer_class = ScheduleSerializer
-    http_method_names = ['get', 'post', 'delete']
+    http_method_names = ['get', 'post', 'delete', 'put']
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):

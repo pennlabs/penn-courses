@@ -223,7 +223,10 @@ class ScheduleTest(TestCase):
     def create_schedule(self):
         _, newsection121 = create_mock_data('CIS-121-001', TEST_SEMESTER)
         _, newsection160 = create_mock_data('CIS-160-001', TEST_SEMESTER)
-        response= self.client.post('/schedules', {semester: TEST_SEMESTER, name: "New Test Schedule", sections: [newsection121, newsection160]})
+        response = self.client.post('/schedules',
+                                    {'semester': TEST_SEMESTER,
+                                     'name': 'New Test Schedule',
+                                     'sections': [newsection121, newsection160]})
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/schedules/')
         self.assertEqual(200, response.status_code)
