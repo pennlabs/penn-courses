@@ -160,6 +160,7 @@ function SearchBar({
                 <div className="level-item">
                     <button
                         className="button is-white"
+                        style={{ marginRight: "1em", color: "#7e7e7e" }}
                         type="button"
                         onClick={() => {
                             conditionalStartSearch({
