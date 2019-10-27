@@ -44,13 +44,13 @@ def get_sections(data):
     sections = None
     if 'meetings' in data:
         sections = []
-        for section in data.get('meetings'):
-            _, section = get_course_and_section(section.get('id'), section.get('semester'))
+        for s in data.get('meetings'):
+            _, section = get_course_and_section(s.get('id'), s.get('semester'))
             sections.append(section)
     elif 'sections' in data:
         sections = []
-        for section in data.get('sections'):
-            _, section = get_course_and_section(section.get('id'), section.get('semester'))
+        for s in data.get('sections'):
+            _, section = get_course_and_section(s.get('id'), s.get('semester'))
             sections.append(section)
     return sections
 
@@ -62,7 +62,6 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
     def update(self, request, pk=None):
         existing_obs = Schedule.objects.filter(id=pk)
-        print(len(existing_obs))
         if (len(existing_obs) == 0):
             return Response({'error': 'No schedule with key: '+pk+' exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -80,10 +79,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         existing_obs = Schedule.objects.filter(id=request.data.get('id'))
-        print(request.data.get('id'))
-        print(existing_obs)
         if len(existing_obs) > 0:
-            print(request.data.get('id'))
             return self.update(request, request.data.get('id'))
 
         try:

@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
@@ -221,13 +223,13 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-120-001')
 
     def test_create_schedule(self):
-        _, newsection121 = create_mock_data('CIS-121-001', TEST_SEMESTER)
-        _, newsection160 = create_mock_data('CIS-160-001', TEST_SEMESTER)
         response = self.client.post('/schedules/',
-                                    {'semester': TEST_SEMESTER,
-                                     'name': 'New Test Schedule',
-                                     'sections': [newsection121, newsection160]})
-        self.assertEqual(response.status_code, 200)
+                                    json.dumps({'semester': TEST_SEMESTER,
+                                                'name': 'New Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 201)
         response = self.client.get('/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
@@ -235,4 +237,15 @@ class ScheduleTest(TestCase):
         self.assertEqual(len(response.data[1]['sections']), 2)
         self.assertEqual(response.data[1]['sections'][0]['id'], 'CIS-121-001')
 
-    # update, delete
+    # vvv implement below tests
+
+    def test_update_schedule_specific(self):
+        1+1
+
+    def test_update_schedule_general(self):
+        1+1
+
+    def test_delete(self):
+        1+1
+
+    # test fails
