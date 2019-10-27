@@ -79,4 +79,14 @@
     flex-direction: column;
     justify-content: center;
     user-select: none;
+    transition: 150ms ease background;
+    margin-right: 0.85rem;
+}
+
+#user-selector:hover {
+    background: #9399DB;
+}
+
+#user-selector.user-selector-selected {
+    background: #6B73D0;
 }

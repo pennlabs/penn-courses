@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 import "./Search.css";
@@ -33,6 +33,35 @@ function shouldSearch(filterData) {
     return searchString || selectedReq;
 }
 
+
+const UserSelector = () => {
+    const [selected, setSelected] = useState(false);
+    const [ref, setRef]= useState(null);
+    useEffect(() => {
+        const listener = (event) => {
+            if (ref && !ref.contains(event.target)) {
+                setSelected(false);
+            }
+        };
+        document.addEventListener("click", listener);
+        return () => {
+            document.removeEventListener("click", listener);
+        };
+    });
+    return <div className={`dropdown${selected ? " is-active" : ""}`}
+                ref={setRef}>
+        <div
+            className={`dropdown-trigger${selected ? " user-selector-selected" : ""}`}
+            role={"button"}
+            id={"user-selector"}
+            onClick={() => setSelected(!selected)}>
+            <span> D </span>
+        </div>
+        <div className="dropdown-menu">
+            Logout
+        </div>
+    </div>;
+};
 
 function SearchBar({
     // eslint-disable-next-line no-shadow
@@ -193,13 +222,7 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <div
-                        role={"button"}
-                        id={"user-selector"}
-                        onClick={() => {
-                        }}>
-                        <span> D </span>
-                    </div>
+                    <UserSelector/>
                 </div>
             </div>
         </div>
