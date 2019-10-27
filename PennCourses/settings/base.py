@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
 
     'shortener',
+    'accounts.apps.AccountsConfig',
 
     'alert',
     'courses',
@@ -55,6 +56,18 @@ INSTALLED_APPS = [
     'plan',
     'review',
 ]
+
+# From labs-accounts
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.LabsUserBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# From labs-accounts
+PLATFORM_ACCOUNTS = {
+    'REDIRECT_URI': os.environ.get('LABS_REDIRECT_URI', 'https://api.penncourses.org/accounts/callback/'),
+    'ADMIN_PERMISSION': 'courses_admin'
+}
 
 MIDDLEWARE = [
     'PennCourses.middleware.SwitchboardMiddleware',
