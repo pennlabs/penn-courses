@@ -11,6 +11,7 @@ import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import { isMobileOnly } from "react-device-detect";
+import SwipeableViews from "react-swipeable-views";
 import Schedule from "./components/schedule/Schedule";
 
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
@@ -78,42 +79,58 @@ function App() {
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
-                    <SearchBar style={{ flexGrow: 0 }} />
-                    <div>
-                        <span style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                        }}
-                        >
-                            <h3 style={{
+                <SwipeableViews>
+                    <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                        <SearchBar style={{ flexGrow: 0 }} />
+                        <div>
+                            <span style={{
                                 display: "flex",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
+                                flexDirection: "row",
+                                justifyContent: "space-between",
                             }}
                             >
-                                Search Results
-                            </h3>
-                            <div style={{
-                                float: "right",
-                                display: "flex",
-                            }}
+                                <h3 style={{
+                                    display: "flex",
+                                    fontWeight: "bold",
+                                    marginBottom: "0.5rem",
+                                }}
+                                >
+                                    Search Results
+                                </h3>
+                                <div style={{
+                                    float: "right",
+                                    display: "flex",
+                                }}
+                                >
+                                    <SearchSortDropdown />
+                                </div>
+                            </span>
+                            <div
+                                className="box"
+                                style={{
+                                    paddingLeft: 0,
+                                    paddingRight: 0,
+                                }}
                             >
-                                <SearchSortDropdown />
+                                <Selector />
                             </div>
-                        </span>
-                        <div
-                            className="box"
-                            style={{
-                                paddingLeft: 0,
-                                paddingRight: 0,
-                            }}
-                        >
-                            <Selector />
                         </div>
                     </div>
-                </div>
+                    <div style={{ padding: "10px" }}>
+                        <h3 style={{
+                            display: "flex",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
+                        }}
+                        >
+                            Cart
+                        </h3>
+                        <Cart />
+                    </div>
+                    <div style={{ padding: "10px" }}>
+                        <Schedule />
+                    </div>
+                </SwipeableViews>
                 <Footer />
                 <ModalContainer />
             </Provider>

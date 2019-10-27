@@ -75,9 +75,12 @@ function SearchBar({
     if (isMobile) {
         return (
             <div style={{
-                background: "white", padding: "10px", margin: "10px 0px", borderRadius: "6px",
+                display:"flex", alignItems:"center", background: "white", padding: "10px 0px", margin: "10px 0px", borderRadius: "6px",
             }}
             >
+                <div>
+                    <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 1rem" }} />
+                </div>
                 <SearchField
                     startSearch={conditionalStartSearch}
                     filterData={filterData}
@@ -177,6 +180,7 @@ function SearchBar({
                 <div className="level-item">
                     <button
                         className="button is-white"
+                        style={{ marginRight: "1em", color: "#7e7e7e" }}
                         type="button"
                         onClick={() => {
                             conditionalStartSearch({

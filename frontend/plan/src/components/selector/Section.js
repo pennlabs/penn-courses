@@ -19,19 +19,17 @@ export default function Section({ section, cart, inCart }) {
                     className={`${isOpen ? "section-row-selected" : ""} selector-row section-row`}
                     onClick={() => toggleOpen(!isOpen)}
                 >
-                    {!isMobile ? (
-                        <div
-                            role="button"
-                            onClick={inCart ? cart.remove : cart.add}
-                        >
-                            {inCart ? (
-                                <div className="hover-switch">
-                                    <i className="fas fa-check" />
-                                    <i className="fas fa-times" />
-                                </div>
-                            ) : <i className="fas fa-plus" />}
-                        </div>
-                    ) : <div />}
+                    <div
+                        role="button"
+                        onClick={inCart ? cart.remove : cart.add}
+                    >
+                        {inCart ? (
+                            <div className="hover-switch">
+                                <i className="fas fa-check" />
+                                <i className="fas fa-times" />
+                            </div>
+                        ) : <i className="fas fa-plus" />}
+                    </div>
                     <div>
                         {section.id.split("-").pop()}
                     </div>

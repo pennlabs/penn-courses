@@ -4,29 +4,64 @@
     padding: 0.5em 0em;
     justify-content: flex-start;
     max-width: calc(100% - 17rem);
-    margin-left:0rem;
 }
 
 .filterButton {
     transition-duration: 0.2s;
-    border: solid 1px #e1e1e1;
+    margin: auto;
+    font-weight: bold;
+    border: solid 2px #e1e1e1;
+    color: #7e7e7e;
+    flex-grow:1
 }
 
 .filterButton:hover {
-    border: solid 1px #e1e1e1;
     background-color: #f0f0f0;
+    color: #7e7e7e;
 }
 
 .filterButton:active {
     border: solid 1px #7b84e6;
     position:relative;
-    top:-1px;
-    left:-1px;
-    background-color: #ffffff;
+    color: #7e7e7e;
+    background-color: #e3e6ff;
 }
 
 .filterButton:focus {
-    box-shadow: 0 0 3px #7b84e6;
+    color: #7b84e6;
+    border: solid 2px #7b84e6;
+}
+
+.filterButtonActive {
+    font-weight: bold;
+    position:relative;
+    background-color: #e3e6ff;
+    border: 2px solid #7b84e6;
+    color: #7b84e6;
+}
+
+.filterButtonActive:hover {
+    font-weight: bold;
+    position:relative;
+    background-color: #e3e6ff;
+    border: 2px solid #7b84e6;
+    color: #7b84e6;
+}
+
+.filterButtonActive:active {
+    font-weight: bold;
+    position:relative;
+    background-color: #e3e6ff;
+    border: 2px solid #7b84e6;
+    color: #7b84e6;
+}
+
+.filterButtonActive:focus {
+    font-weight: bold;
+    position:relative;
+    background-color: #e3e6ff;
+    border: 2px solid #7b84e6;
+    color: #7b84e6;
 }
 
 .classic, .classic * {
