@@ -112,8 +112,17 @@
     font-weight: bold;
 }
 
+.selector-row{
+    transition: 250ms ease background;
+}
+
 .selector-row:hover {
-    background-color: #dcdcdc;
+    background-color: rgb(240, 240, 240);
+    cursor: pointer;
+}
+
+.selector-row:active {
+    background-color: rgb(230, 230, 230);
     cursor: pointer;
 }
 

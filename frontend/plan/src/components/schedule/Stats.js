@@ -73,19 +73,14 @@ class Stats extends Component {
                 const str = section.id;
                 if (str) {
                     const course = str.substring(0, str.indexOf("-", str.indexOf("-") + 1)); // finds course (irrespective of section)
-                    console.log(course);
                     if (course in courseStats) {
-                        console.log("course in there");
-                        console.log(courseStats[course])
                         statTypes.forEach((stat) => {
-                            courseStats[course][stat] += (section[stat] ? section[stat] : Math.random());
+                            courseStats[course][stat]
+                                 += (section[stat] ? section[stat] : Math.random());
                         });
                         courseCUs[course] += section.credits;
-                        console.log(courseStats[course])
                         courseRepeats[course] += 1;
                     } else {
-                        console.log("course not in there");
-                        console.log(section)
                         courseStats[course] = {};
                         statTypes.forEach((stat) => {
                             courseStats[course][stat] = (section[stat] ? section[stat] : 3);
