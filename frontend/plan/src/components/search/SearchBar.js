@@ -57,8 +57,16 @@ const UserSelector = () => {
             onClick={() => setSelected(!selected)}>
             <span> D </span>
         </div>
-        <div className="dropdown-menu">
-            Logout
+        <div className="logout dropdown-menu">
+            <div id="logout-dropdown-menu-container">
+                <div className="triangle-up"/>
+                <div role="button" id="logout-button">
+                    Logout
+                    <div id="logout-icon-container">
+                        <i className="fas fa-sign-out-alt"/>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>;
 };
