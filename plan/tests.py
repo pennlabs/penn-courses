@@ -220,10 +220,10 @@ class ScheduleTest(TestCase):
         self.assertEqual(len(response.data[0]['sections']), 1)
         self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-120-001')
 
-    def create_schedule(self):
+    def test_create_schedule(self):
         _, newsection121 = create_mock_data('CIS-121-001', TEST_SEMESTER)
         _, newsection160 = create_mock_data('CIS-160-001', TEST_SEMESTER)
-        response = self.client.post('/schedules',
+        response = self.client.post('/schedules/',
                                     {'semester': TEST_SEMESTER,
                                      'name': 'New Test Schedule',
                                      'sections': [newsection121, newsection160]})
@@ -234,3 +234,5 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data[1]['name'], 'New Test Schedule')
         self.assertEqual(len(response.data[1]['sections']), 2)
         self.assertEqual(response.data[1]['sections'][0]['id'], 'CIS-121-001')
+
+    # update, delete

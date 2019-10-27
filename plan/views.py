@@ -1,7 +1,10 @@
+from django.db import IntegrityError
 from django.db.models import Prefetch
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
+from courses.util import get_course_and_section
 from courses.views import CourseDetail, CourseList
 from plan.filters import bound_filter, requirement_filter
 from plan.models import Schedule
@@ -37,10 +40,67 @@ class CourseDetailSearch(CourseDetail):
     serializer_class = CourseDetailWithReviewSerializer
 
 
+def get_sections(data):
+    sections = None
+    if 'meetings' in data:
+        sections = []
+        for section in data.get('meetings'):
+            _, section = get_course_and_section(section.get('id'), section.get('semester'))
+            sections.append(section)
+    elif 'sections' in data:
+        sections = []
+        for section in data.get('sections'):
+            _, section = get_course_and_section(section.get('id'), section.get('semester'))
+            sections.append(section)
+    return sections
+
+
 class ScheduleViewSet(viewsets.ModelViewSet):
     serializer_class = ScheduleSerializer
-    http_method_names = ['get', 'post', 'delete']
+    http_method_names = ['get', 'post', 'delete', 'put']
     permission_classes = [IsAuthenticated]
+
+    def update(self, request, pk=None):
+        existing_obs = Schedule.objects.filter(id=pk)
+        print(len(existing_obs))
+        if (len(existing_obs) == 0):
+            return Response({'error': 'No schedule with key: '+pk+' exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            existing_obs.update(person=request.user,
+                                semester=request.data.get('semester'),
+                                name=request.data.get('name'),
+                                )
+            ob = existing_obs[0]
+            ob.sections.set(get_sections(request.data))
+            s = ScheduleSerializer(ob)
+            return Response(s.data, status=status.HTTP_202_ACCEPTED)
+        except IntegrityError:
+            return Response({'error': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
+
+    def create(self, request, *args, **kwargs):
+        existing_obs = Schedule.objects.filter(id=request.data.get('id'))
+        print(request.data.get('id'))
+        print(existing_obs)
+        if len(existing_obs) > 0:
+            print(request.data.get('id'))
+            return self.update(request, request.data.get('id'))
+
+        try:
+            if request.data.get('id'):
+                ob = Schedule.objects.create(person=request.user,
+                                             semester=request.data.get('semester'),
+                                             name=request.data.get('name'),
+                                             id=request.data.get('id'))
+            else:
+                ob = Schedule.objects.create(person=request.user,
+                                             semester=request.data.get('semester'),
+                                             name=request.data.get('name'))
+            ob.sections.set(get_sections(request.data))
+            s = ScheduleSerializer(ob)
+            return Response(s.data, status=status.HTTP_201_CREATED)
+        except IntegrityError:
+            return Response({'error': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
         queryset = Schedule.objects.filter(person=self.request.user)
