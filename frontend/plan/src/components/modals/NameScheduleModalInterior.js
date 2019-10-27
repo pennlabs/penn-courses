@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { validateScheduleName } from "../schedule/schedule_name_validation";
 
@@ -8,6 +8,17 @@ const NameScheduleModalInterior = ({
     const [inputRef, setInputRef] = useState(null);
     const [userInput, setUserInput] = useState(defaultValue);
     const { error, message: errorMessage } = validateScheduleName(userInput, usedScheduleNames);
+    useEffect(() => {
+        const listener = (event) => {
+            if (!userInput && inputRef && !inputRef.contains(event.target)) {
+                setUserInput(defaultValue);
+            }
+        };
+        document.addEventListener("click", listener);
+        return () => {
+            document.removeEventListener("click", listener);
+        };
+    });
     const submit = () => {
         const scheduleName = inputRef.value;
         if (!error) {
