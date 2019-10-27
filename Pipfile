@@ -25,7 +25,6 @@ coreapi = "*"
 django-filter = "*"
 shortener = "*"
 django-labs-accounts = "*"
-json = "*"
 
 [dev-packages]
 coveralls = "*"
