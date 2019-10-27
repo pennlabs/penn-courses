@@ -76,14 +76,14 @@ class Stats extends Component {
                     if (course in courseStats) {
                         statTypes.forEach((stat) => {
                             courseStats[course][stat]
-                                 += (section[stat] ? section[stat] : Math.random());
+                                 += (section[stat] ? section[stat] : 2.5);
                         });
                         courseCUs[course] += section.credits;
                         courseRepeats[course] += 1;
                     } else {
                         courseStats[course] = {};
                         statTypes.forEach((stat) => {
-                            courseStats[course][stat] = (section[stat] ? section[stat] : 3);
+                            courseStats[course][stat] = (section[stat] ? section[stat] : 2.5);
                         });
                         courseCUs[course] = section.credits;
                         courseRepeats[course] = 1;
