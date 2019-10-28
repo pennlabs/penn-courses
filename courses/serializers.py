@@ -1,4 +1,4 @@
-from django.db.models import Manager, Prefetch, Q
+from django.db.models import Manager, OuterRef, Prefetch, Q
 from rest_framework import serializers
 
 from courses.models import Course, Meeting, Requirement, Section
@@ -181,6 +181,7 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
+        queryset = annotations.review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
                                              Prefetch('sections',
@@ -214,6 +215,7 @@ class CourseDetailSerializer(CourseListSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
+        queryset = annotations.review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
                                              Prefetch('sections',

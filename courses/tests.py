@@ -244,21 +244,6 @@ class CourseListTestCase(TestCase):
 
 
 @override_settings(SWITCHBOARD_TEST_APP='api')
-class SectionListTestCase(TestCase):
-    def setUp(self):
-        self.course1, self.section1 = create_mock_data('CIS-120-001', TEST_SEMESTER)
-        self.course2, self.section2 = create_mock_data('CIS-120-002', TEST_SEMESTER)
-        self.client = APIClient()
-        set_semester()
-
-    def test_get_sections(self):
-        response = self.client.get('/all/sections/')
-        self.assertEqual(len(response.data), 2)
-        codes = [d['id'] for d in response.data]
-        self.assertTrue('CIS-120-001' in codes and 'CIS-120-002' in codes)
-
-
-@override_settings(SWITCHBOARD_TEST_APP='api')
 class CourseDetailTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
