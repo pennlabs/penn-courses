@@ -1,4 +1,4 @@
-from django.db.models import Manager, OuterRef, Prefetch
+from django.db.models import Manager, OuterRef, Prefetch, Q
 from rest_framework import serializers
 
 from courses.models import Course, Section
@@ -55,6 +55,7 @@ class CourseListWithReviewSerializer(CourseListSerializer):
     course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
     difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
     instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
+    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -62,6 +63,11 @@ class CourseListWithReviewSerializer(CourseListSerializer):
         queryset = annotations.review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
+                                             Prefetch('sections',
+                                                      queryset=annotations.sections_with_reviews()
+                                                      .filter(meetings__isnull=False)
+                                                      .filter(credits__isnull=False)
+                                                      .filter(Q(status='O') | Q(status='C')).distinct()),
                                              'sections__review_set__reviewbit_set'
                                              )
         return queryset
@@ -75,7 +81,9 @@ class CourseListWithReviewSerializer(CourseListSerializer):
             'semester',
             'course_quality',
             'instructor_quality',
-            'difficulty'
+            'difficulty',
+            'work_required',
+            'num_sections',
         ]
 
 
@@ -83,6 +91,17 @@ class SectionDetailWithReviewSerializer(SectionDetailSerializer):
     course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
     difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
     instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
+    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        queryset = annotations.sections_with_reviews()
+        queryset = queryset.prefetch_related(
+            'course__department',
+            'meetings__room__building',
+            'associated_sections__course__department',
+        )
+        return queryset
 
     class Meta:
         model = Section
@@ -96,7 +115,9 @@ class SectionDetailWithReviewSerializer(SectionDetailSerializer):
             'course_quality',
             'instructor_quality',
             'difficulty',
+            'work_required',
             'meetings',
+            'instructors',
         ] + [
             'associated_sections',
         ]
@@ -106,6 +127,7 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
     course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
     difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
     instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
+    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
 
     sections = SectionDetailWithReviewSerializer(many=True)
 
@@ -114,7 +136,11 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
         queryset = annotations.review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
         queryset = queryset.prefetch_related(
             # prefetch sections using the annotated queryset, so we get review averages along with the sections.
-            Prefetch('sections', queryset=annotations.sections_with_reviews()),
+            Prefetch('sections',
+                     queryset=annotations.sections_with_reviews()
+                     .filter(meetings__isnull=False)
+                     .filter(credits__isnull=False)
+                     .filter(Q(status='O') | Q(status='C')).distinct()),
             'primary_listing__listing_set__department',
             'department',
             'sections__course__department',
@@ -135,7 +161,8 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
              'semester',
              'course_quality',
              'instructor_quality',
-             'difficulty'
+             'difficulty',
+             'work_required',
          ] + [
              'crosslistings',
              'requirements',

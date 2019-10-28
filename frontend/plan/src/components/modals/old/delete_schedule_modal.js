@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React from "react";
-import GenericModal from "./generic_modal_container";
+import GenericModal from "../generic_modal_container";
 
 export const DELETE_SCHEDULE_MODAL_NAME = "delete_schedule_modal";
 

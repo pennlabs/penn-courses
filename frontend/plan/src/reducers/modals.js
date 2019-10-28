@@ -1,12 +1,11 @@
-import { CLOSE_MODAL, OPEN_MODAL, ACTION_BUTTON_PRESSED } from "../actions";
+import { CLOSE_MODAL, OPEN_MODAL } from "../actions";
 
 // this file contains the reducers for modals
 
-// the modal state contains the name of the modal being shown and a string representing the most
-// recent action triggered by the modal
 const initialState = {
-    modalShown: null,
-    modalAction: null,
+    modalTitle: null,
+    modalKey: null,
+    modalProps: null,
 };
 
 export const modals = (state = initialState, action) => {
@@ -14,18 +13,16 @@ export const modals = (state = initialState, action) => {
         case OPEN_MODAL:
             return {
                 ...state,
-                modalShown: action.modalShown,
+                modalTitle: action.modalTitle,
+                modalKey: action.modalKey,
+                modalProps: action.modalProps,
             };
         case CLOSE_MODAL:
             return {
                 ...state,
-                modalShown: null,
-                modalAction: null,
-            };
-        case ACTION_BUTTON_PRESSED:
-            return {
-                ...state,
-                modalAction: action.modalAction,
+                modalTitle: null,
+                modalKey: null,
+                modalProps: null,
             };
         default:
             return state;

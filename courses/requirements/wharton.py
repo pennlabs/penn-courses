@@ -61,7 +61,7 @@ REQUIREMENTS = {
 def get_requirements():
     return {
         'codes': REQUIREMENTS,
-        'data': _clean_data(_get_requirement_data()[:10])
+        'data': _clean_data(_get_requirement_data())
     }
 
 

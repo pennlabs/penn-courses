@@ -3,16 +3,25 @@ import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
 import "./styles/App.css";
+import "./styles/modal.css";
+import "./styles/slider.css";
+import "./styles/dropdown.css";
 import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
+import { isMobileOnly } from "react-device-detect";
 import Schedule from "./components/schedule/Schedule";
 
+import { initGA, logPageView, analyticsMiddleware } from "./analytics";
 import coursePlanApp from "./reducers";
 import SearchBar from "./components/search/SearchBar";
 import Selector from "./components/selector/Selector";
+import Footer from "./components/footer";
 import Cart from "./components/Cart";
+import ModalContainer from "./components/modals/generic_modal_container";
+import SearchSortDropdown from "./components/search/SearchSortDropdown";
+import { openModal } from "./actions";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -25,7 +34,8 @@ const store = createStore(
     { schedule: previousStateJSON },
     applyMiddleware(
         thunkMiddleware,
-        loggerMiddleware
+        loggerMiddleware,
+        analyticsMiddleware,
     )
 );
 
@@ -34,26 +44,49 @@ store.subscribe(() => {
 });
 
 function App() {
+    const { hasVisited } = localStorage;
+    localStorage.hasVisited = true;
+    if (!hasVisited) {
+        store.dispatch(openModal("WELCOME",
+            {},
+            "Welcome to Penn Course Plan ✨"));
+    }
+
+    if (isMobileOnly) { // Mobile version
+        return (
+            <div style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "80vh",
+                justifyContent: "center",
+                alignItems: "center",
+            }}
+            >
+                <img width="30%" src="/static/favicon-196x196.png" />
+                <div style={{ fontSize: "20px", textAlign: "center", padding: "30px" }}>
+                    <span style={{ color: "#7b84e6" }}> Penn Course Plan </span>
+                    is made for desktop.
+                     This allows us to give you the best experience
+                     when searching for courses and creating mock schedules.
+                     See you soon!
+                </div>
+            </div>
+        );
+    }
+
     return (
         <Provider store={store}>
-            <div>
-                <SearchBar />
-                <div className="App">
-                    <div className="columns main" style={{ height: "90vh" }}>
-                        <div className="column is-one-quarter box">
-                            <Selector />
-                        </div>
-                        <div
-                            className="column is-one-fifth box"
-                            style={
-                                {
-                                    background: "transparent",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    border: "0",
-                                    boxShadow: "none",
-                                }
-                            }
+            {initGA()}
+            {logPageView()}
+            <div style={{ padding: "0px 0px 0px 30px" }}>
+                <SearchBar style={{ flexGrow: 0 }} />
+                <div className="App columns is-mobile is-multiline main">
+                    <div className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop">
+                        <span style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                        }}
                         >
                             <h3 style={{
                                 display: "flex",
@@ -61,16 +94,52 @@ function App() {
                                 marginBottom: "0.5rem",
                             }}
                             >
-                                Cart
+                                Search Results
                             </h3>
-                            <Cart />
+                            <div style={{
+                                float: "right",
+                                display: "flex",
+                            }}
+                            >
+                                <SearchSortDropdown />
+                            </div>
+                        </span>
+                        <div
+                            className="box"
+                            style={{
+                                paddingLeft: 0,
+                                paddingRight: 0,
+                            }}
+                        >
+                            <Selector />
                         </div>
-                        <div className="column box">
-                            <Schedule />
-                        </div>
+                    </div>
+                    <div
+                        className="column is-one-fourth-mobile is-one-fifth-tablet is-one-fifth-desktop"
+                        style={
+                            {
+                                display: "flex",
+                                flexDirection: "column",
+                            }
+                        }
+                    >
+                        <h3 style={{
+                            display: "flex",
+                            fontWeight: "bold",
+                            marginBottom: "0.5rem",
+                        }}
+                        >
+                            Cart
+                        </h3>
+                        <Cart />
+                    </div>
+                    <div className="column" style={{ paddingRight: "0.5em" }}>
+                        <Schedule />
                     </div>
                 </div>
             </div>
+            <Footer />
+            <ModalContainer />
         </Provider>
     );
 }

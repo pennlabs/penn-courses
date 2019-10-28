@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-export function SearchField({ startSearch }) {
+export function SearchField({
+    startSearch, updateSearchText, filterData, isDisabled,
+}) {
     const [searchValue, setSearchValue] = useState("");
     const [searchTimeout, setSearchTimeout] = useState();
 
@@ -11,11 +13,13 @@ export function SearchField({ startSearch }) {
         if (searchTimeout) {
             clearTimeout(searchTimeout);
         }
-        if (searchText.length >= 3) {
-            setSearchTimeout(setTimeout(() => {
-                startSearch({ searchType: "courseIDSearch", param: searchText });
-            }, 200));
-        }
+        setSearchTimeout(setTimeout(() => {
+            updateSearchText(searchText);
+            startSearch({
+                ...filterData,
+                searchString: searchText,
+            });
+        }, 1000));
     };
 
     return (
@@ -28,6 +32,7 @@ export function SearchField({ startSearch }) {
                 className="input is-small is-rounded"
                 autoComplete="off"
                 placeholder="Search"
+                disabled={isDisabled ? "disabled" : false}
             />
             <span className="icon is-small is-left">
                 <i className="fas fa-search" />
@@ -38,4 +43,8 @@ export function SearchField({ startSearch }) {
 
 SearchField.propTypes = {
     startSearch: PropTypes.func,
+    updateSearchText: PropTypes.func,
+    // eslint-disable-next-line react/forbid-prop-types
+    filterData: PropTypes.object,
+    isDisabled: PropTypes.bool,
 };

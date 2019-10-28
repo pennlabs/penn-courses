@@ -20,22 +20,71 @@ function Selector(props) {
         clearCourse,
         addToSchedule,
         removeFromSchedule,
+        isLoadingCourseInfo,
+        isSearchingCourseInfo,
+        sortMode,
     } = props;
+    let element = (
+        <div style={{
+            fontSize: "0.8em",
+            textAlign: "center",
+            marginTop: "5vh",
+        }}
+        >
+            <img src="/static/empty-state-search.svg" />
+            <h3 style={{
+                fontWeight: "bold",
+                marginBottom: "0.5rem",
+            }}
+            >
+            No result found
+            </h3>
+        Search for courses, departments, or instructors above.
+        Looking for something specific? Try using the filters!
+        </div>
+    );
 
-    let element = <CourseList courses={courses} getCourse={getCourse} />;
-
-    if (course) {
+    if (courses.length > 0) {
         element = (
-            <CourseInfo
-                course={course}
-                back={clearCourse}
-                manage={{ addToSchedule, removeFromSchedule }}
+            <CourseList
+                sortMode={sortMode}
+                isLoading={isLoadingCourseInfo}
+                courses={courses}
+                getCourse={getCourse}
             />
         );
     }
 
+    if (course) {
+        element = (
+            <CourseInfo
+                getCourse={getCourse}
+                course={course}
+                back={clearCourse}
+                manage={{
+                    addToSchedule,
+                    removeFromSchedule,
+                }}
+            />
+        );
+    }
 
-    return element;
+    const isLoading = isLoadingCourseInfo || isSearchingCourseInfo;
+
+    return (
+        <>
+            {isLoading && (
+                <div
+                    className="button is-loading"
+                    style={{
+                        height: "100%", width: "100%", border: "none", fontSize: "3rem",
+                    }}
+                />
+            )
+            }
+            {!isLoading && element}
+        </>
+    );
 }
 
 Selector.propTypes = {
@@ -44,12 +93,19 @@ Selector.propTypes = {
     getCourse: PropTypes.func.isRequired,
     clearCourse: PropTypes.func,
     addToSchedule: PropTypes.func,
+    sortMode: PropTypes.string,
+    removeFromSchedule: PropTypes.func,
+    isLoadingCourseInfo: PropTypes.bool,
+    isSearchingCourseInfo: PropTypes.bool,
 };
 
 const mapStateToProps = state => (
     {
-        courses: state.sections.searchResults,
+        courses: state.sections.searchResults.filter(course => course.num_sections > 0),
         course: state.sections.course,
+        sortMode: state.sections.sortMode,
+        isLoadingCourseInfo: state.sections.courseInfoLoading,
+        isSearchingCourseInfo: state.sections.searchInfoLoading,
     }
 );
 

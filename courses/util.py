@@ -66,8 +66,7 @@ def get_room(building_code, room_number):
 
 
 def set_meetings(section, meetings):
-    for meeting in section.meetings.all():
-        meeting.delete()
+    section.meetings.all().delete()
     for meeting in meetings:
         room = get_room(meeting['building_code'], meeting['room_number'])
         start_time = meeting['start_time_24']
@@ -177,3 +176,31 @@ def update_course_from_record(update):
     section = update.section
     section.status = update.new_status
     section.save()
+
+
+def create_mock_data(code, semester):
+    course, section = get_course_and_section(code, semester)
+    section.credits = 1
+    section.status = 'O'
+    section.save()
+    m = [
+        {
+            'building_code': 'LLAB',
+            'building_name': 'Leidy Laboratories of Biology',
+            'end_hour_24': 12,
+            'end_minutes': 0,
+            'end_time': '12:00 PM',
+            'end_time_24': 12.0,
+            'meeting_days': 'MWF',
+            'room_number': '10',
+            'section_id': 'CIS 120001',
+            'section_id_normalized': 'CIS -120-001',
+            'start_hour_24': 11,
+            'start_minutes': 0,
+            'start_time': '11:00 AM',
+            'start_time_24': 11.0,
+            'term': '2019C'
+        }
+    ]
+    set_meetings(section, m)
+    return course, section
