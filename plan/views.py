@@ -1,7 +1,7 @@
 from django.db.models import Prefetch
 
 from courses.views import CourseDetail, CourseList
-from plan.filters import bound_filter, requirement_filter
+from plan.filters import bound_filter, requirement_filter, choice_filter
 from plan.search import TypedSearchBackend
 from plan.serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer
 
@@ -16,7 +16,7 @@ class CourseListSearch(CourseList):
 
         filters = {
             'requirements': requirement_filter,
-            'cu': bound_filter('sections__credits'),
+            'cu': choice_filter('sections__credits'),
             'course_quality': bound_filter('course_quality'),
             'instructor_quality': bound_filter('instructor_quality'),
             'difficulty': bound_filter('difficulty')
