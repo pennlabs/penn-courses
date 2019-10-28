@@ -1,9 +1,8 @@
 from django.http import HttpResponse
 from rest_framework import generics
 
-from courses.models import Course, Requirement, Section
-from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
-                                 RequirementListSerializer, SectionSerializer)
+from courses.models import Course, Requirement
+from courses.serializers import CourseDetailSerializer, CourseListSerializer, RequirementListSerializer
 from options.models import get_value
 
 
@@ -28,15 +27,6 @@ class BaseCourseMixin(generics.GenericAPIView):
         if semester != 'all':
             queryset = queryset.filter(**{self.get_semester_field(): semester})
         return queryset
-
-
-class SectionList(generics.ListAPIView, BaseCourseMixin):
-    serializer_class = SectionSerializer
-    queryset = Section.objects.all()
-
-    @staticmethod
-    def get_semester_field():
-        return 'course__semester'
 
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
