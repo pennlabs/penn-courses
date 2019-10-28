@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
@@ -12,6 +12,8 @@ import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import { isMobileOnly } from "react-device-detect";
 import SwipeableViews from "react-swipeable-views";
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
 import Schedule from "./components/schedule/Schedule";
 
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
@@ -53,6 +55,10 @@ function App() {
             "Welcome to Penn Course Plan ✨"));
     }
 
+    const [tab, setTab] = useState(
+    0
+    );
+
     // if (isMobile) { // Mobile version
     //     return (
     //         <div style={{
@@ -79,9 +85,14 @@ function App() {
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SwipeableViews>
+                <SearchBar style={{ flexGrow: 0 }} />
+                <Tabs value={tab} onChangeIndex={() => setTab(2)}>
+                    <Tab label="Search" />
+                    <Tab label="Cart" />
+                    <Tab label="Schedule" />
+                </Tabs>
+                <SwipeableViews index={tab}>
                     <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
-                        <SearchBar style={{ flexGrow: 0 }} />
                         <div>
                             <span style={{
                                 display: "flex",

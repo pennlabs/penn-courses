@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import PropTypes from "prop-types";
-import { isMobile } from "react-device-detect";
+import { isMobileOnly } from "react-device-detect";
 import connect from "react-redux/es/connect/connect";
 import "./Search.css";
 import { DropdownButton } from "../DropdownButton";
@@ -72,14 +72,14 @@ function SearchBar({
         }
     };
 
-    if (isMobile) {
+    if (isMobileOnly) {
         return (
             <div style={{
                 display:"flex", alignItems:"center", background: "white", padding: "10px 0px", margin: "10px 0px", borderRadius: "6px",
             }}
             >
                 <div>
-                    <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 1rem" }} />
+                    <img src="/achi/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 1rem" }} />
                 </div>
                 <SearchField
                     startSearch={conditionalStartSearch}
