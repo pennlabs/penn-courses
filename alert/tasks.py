@@ -25,7 +25,7 @@ def generate_course_json(semester=None, use_cache=True):
             return json.loads(sections)
 
     sections = []
-    for section in Section.objects.filter(course__semester=semester):
+    for section in Section.objects.filter(course__semester=semester).prefetch_related('course', 'instructors'):
         # {'section_id': section_id, 'course_title': course_title, 'instructors': instructors,
         #  'meeting_days': meeting_days}
         # meetings = json.loads('{"meetings": "%s"}' % section.meeting_times)['meetings']

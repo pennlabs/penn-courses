@@ -254,7 +254,7 @@ class SectionListTestCase(TestCase):
     def test_get_sections(self):
         response = self.client.get('/all/sections/')
         self.assertEqual(len(response.data), 2)
-        codes = [d['id'] for d in response.data]
+        codes = [d['section_id'] for d in response.data]
         self.assertTrue('CIS-120-001' in codes and 'CIS-120-002' in codes)
 
 
