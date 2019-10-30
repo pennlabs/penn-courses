@@ -24,6 +24,7 @@ unidecode = "*"
 coreapi = "*"
 django-filter = "*"
 shortener = "*"
+django-labs-accounts = "*"
 
 [dev-packages]
 coveralls = "*"
