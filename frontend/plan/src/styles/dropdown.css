@@ -21,7 +21,7 @@
 }
 
 .filterButton:active {
-    box-shadow: 0 0 3px #7b84e6;
+    border: solid 1px #7b84e6;
     position:relative;
     color: #7e7e7e;
     background-color: #e3e6ff;
