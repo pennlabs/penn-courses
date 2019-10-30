@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { isMobileOnly } from "react-device-detect";
 import connect from "react-redux/es/connect/connect";
@@ -47,6 +47,8 @@ function SearchBar({
         loadRequirements();
     }, [loadRequirements]);
 
+    const [reqsShown, showHideReqs] = useState(false);
+
     const conditionalStartSearch = (filterInfo) => {
         if (shouldSearch(filterInfo)) {
             startSearch(filterInfo);
@@ -74,19 +76,77 @@ function SearchBar({
 
     if (isMobileOnly) {
         return (
-            <div style={{
-                display:"flex", alignItems:"center", background: "white", padding: "10px 0px", margin: "10px 0px", borderRadius: "6px",
-            }}
-            >
-                <div>
-                    <img src="/achi/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 1rem" }} />
+            <div>
+                <div style={{
+                    display: "flex", alignItems: "center", flexWrap: "wrap", background: "white", padding: "10px 0px", margin: "10px 0px", borderRadius: "6px",
+                }}
+                >
+                    <div>
+                        <img src="/achi/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 1rem" }} />
+                    </div>
+                    <SearchField
+                        startSearch={conditionalStartSearch}
+                        filterData={filterData}
+                        updateSearchText={updateSearchText}
+                        isDisabled={isLoading}
+                    />
+                    <div style={{paddingLeft:"10px"}} role="button" onClick={() => showHideReqs(!reqsShown)}>
+                        <i className="fas fa-filter" />
+                    </div>
                 </div>
-                <SearchField
-                    startSearch={conditionalStartSearch}
-                    filterData={filterData}
-                    updateSearchText={updateSearchText}
-                    isDisabled={isLoading}
-                />
+                {reqsShown && (
+                    <div style={{
+                        zIndex:"100", marginTop:"-20px",marginBottom:"20px", display: "flex", width:"100vw", alignItems: "center", flexWrap: "wrap", background:"white",justifyContent:"flex-start"
+                    }}
+                    >
+                        <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")} isDisabled={isLoading}>
+                            <SchoolReq
+                                startSearch={conditionalStartSearch}
+                                schoolReq={schoolReq}
+                                filterData={filterData}
+                                addSchoolReq={addSchoolReq}
+                                remSchoolReq={remSchoolReq}
+                                isDisabled={isLoading}
+                            />
+                        </DropdownButton>
+                        <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")} isDisabled={isLoading}>
+                            <RangeFilter
+                                minRange={0}
+                                maxRange={4}
+                                step={0.25}
+                                filterData={filterData}
+                                updateRangeFilter={updateRangeFilter("difficulty")}
+                                startSearch={conditionalStartSearch}
+                                rangeProperty="difficulty"
+                                isDisabled={isLoading}
+                            />
+                        </DropdownButton>
+                        <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")} isDisabled={isLoading}>
+                            <RangeFilter
+                                minRange={0}
+                                maxRange={4}
+                                step={0.25}
+                                filterData={filterData}
+                                updateRangeFilter={updateRangeFilter("course_quality")}
+                                startSearch={conditionalStartSearch}
+                                rangeProperty="course_quality"
+                                isDisabled={isLoading}
+                            />
+                        </DropdownButton>
+                        <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")} isDisabled={isLoading}>
+                            <RangeFilter
+                                minRange={0}
+                                maxRange={4}
+                                step={0.25}
+                                filterData={filterData}
+                                updateRangeFilter={updateRangeFilter("instructor_quality")}
+                                startSearch={conditionalStartSearch}
+                                rangeProperty="instructor_quality"
+                                isDisabled={isLoading}
+                            />
+                        </DropdownButton>
+                    </div>
+                )}
             </div>
         );
     }

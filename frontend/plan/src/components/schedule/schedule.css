@@ -106,6 +106,9 @@ span.verticalLine-last {
     padding: 0px 20px;
     display: block;
   }
+  .schedule{
+    height:100%;
+  }
 }
 
 @media only screen and (max-height: 600px) {

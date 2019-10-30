@@ -4,6 +4,27 @@ html {
   background-color: #f1eff9;
 }
 
+.topTabs{
+    background: white;
+    margin-top:-20px;
+    margin-bottom: 10px;
+}
+
+.topTab{
+    text-transform: none !important;
+    background-color: black;
+}
+
+.PrivateTabIndicator-colorSecondary-27 {
+    background-color: #7b84e6 !important;
+}
+
+.MuiTab-wrapper {
+    margin-left: 10px;
+    margin-right: 10px;
+    font-size: 17px;
+}
+
 .section-header {
   display: flex;
   font-weight: bold;
@@ -479,9 +500,22 @@ ul {
   .box{
     min-height: 500px;
     height: 100%;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);
   }
   html{
     font-size: 15px;
+  }
+  .section-header {
+    display: flex;
+    justify-content: space-around;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  .input{
+    font-size: 17px !important;
+  }
+  .icon{
+    font-size: 17px !important;
   }
 }
 

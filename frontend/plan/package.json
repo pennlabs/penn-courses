@@ -4,6 +4,7 @@
   "private": true,
   "proxy": "http://localhost:8000/",
   "dependencies": {
+    "@material-ui/core": "^4.5.1",
     "bulma": "^0.7.2",
     "bulma-extensions": "^6.2.7",
     "bulma-popover": "^1.0.0",

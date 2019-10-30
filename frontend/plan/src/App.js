@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState, useRef } from "react";
 import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
@@ -12,8 +12,9 @@ import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import { isMobileOnly } from "react-device-detect";
 import SwipeableViews from "react-swipeable-views";
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
+import Tabs from "@material-ui/core/Tabs";
+import Tab from "@material-ui/core/Tab";
+import { createMuiTheme } from "@material-ui/core/styles";
 import Schedule from "./components/schedule/Schedule";
 
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
@@ -55,67 +56,37 @@ function App() {
             "Welcome to Penn Course Plan ✨"));
     }
 
-    const [tab, setTab] = useState(
-    0
-    );
+    const [tab, setTab] = useState(0);
 
-    // if (isMobile) { // Mobile version
-    //     return (
-    //         <div style={{
-    //             display: "flex",
-    //             flexDirection: "column",
-    //             height: "80vh",
-    //             justifyContent: "center",
-    //             alignItems: "center",
-    //         }}
-    //         >
-    //             <img width="30%" src="/icons/favicon-196x196.png" />
-    //             <div style={{ fontSize: "20px", textAlign: "center", padding: "30px" }}>
-    //                 <span style={{ color: "#7b84e6" }}> Penn Course Plan </span>
-    //                 is made for desktop.
-    //                  This allows us to give you the best experience
-    //                  when searching for courses and creating mock schedules.
-    //                  See you soon!
-    //             </div>
-    //         </div>
-    //     );
+    const containerRef = useRef();
+
+    const scrollTop = (index, action) => {
+        window.scrollTo(0, 0);
+    };
 
     if (isMobileOnly) {
         return (
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SearchBar style={{ flexGrow: 0 }} />
-                <Tabs value={tab} onChangeIndex={() => setTab(2)}>
-                    <Tab label="Search" />
-                    <Tab label="Cart" />
-                    <Tab label="Schedule" />
+                <SearchBar />
+                <Tabs value={tab} className="topTabs" centered>
+                    <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
+                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
+                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)} />
                 </Tabs>
-                <SwipeableViews index={tab}>
+                <SwipeableViews index={tab} ref={containerRef} enableMouseEvents onSwitching={scrollTop} onChangeIndex={setTab}>
                     <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
                         <div>
-                            <span style={{
+                            <div style={{
                                 display: "flex",
                                 flexDirection: "row",
-                                justifyContent: "space-between",
+                                justifyContent: "space-around",
+                                margin: "10px",
                             }}
                             >
-                                <h3 style={{
-                                    display: "flex",
-                                    fontWeight: "bold",
-                                    marginBottom: "0.5rem",
-                                }}
-                                >
-                                    Search Results
-                                </h3>
-                                <div style={{
-                                    float: "right",
-                                    display: "flex",
-                                }}
-                                >
-                                    <SearchSortDropdown />
-                                </div>
-                            </span>
+                                <SearchSortDropdown />
+                            </div>
                             <div
                                 className="box"
                                 style={{
@@ -128,14 +99,6 @@ function App() {
                         </div>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <h3 style={{
-                            display: "flex",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
-                        }}
-                        >
-                            Cart
-                        </h3>
                         <Cart />
                     </div>
                     <div style={{ padding: "10px" }}>
