@@ -496,7 +496,7 @@ ul {
   }
 }
 
-@media all and (max-width: 400px){
+@media all and (max-width: 480px){
   .box{
     min-height: 500px;
     height: 100%;
