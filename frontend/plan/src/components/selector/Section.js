@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { isMobile } from "react-device-detect";
 import "bulma-popover/css/bulma-popver.min.css";
 
 import Badge from "../Badge";

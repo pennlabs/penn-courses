@@ -14,7 +14,6 @@ import { isMobileOnly } from "react-device-detect";
 import SwipeableViews from "react-swipeable-views";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
-import { createMuiTheme } from "@material-ui/core/styles";
 import Schedule from "./components/schedule/Schedule";
 
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
@@ -75,7 +74,13 @@ function App() {
                     <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
                     <Tab className="topTab" label="Schedule" onClick={() => setTab(2)} />
                 </Tabs>
-                <SwipeableViews index={tab} ref={containerRef} enableMouseEvents onSwitching={scrollTop} onChangeIndex={setTab}>
+                <SwipeableViews
+                    index={tab}
+                    ref={containerRef}
+                    enableMouseEvents
+                    onSwitching={scrollTop}
+                    onChangeIndex={setTab}
+                >
                     <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
                         <div>
                             <div style={{

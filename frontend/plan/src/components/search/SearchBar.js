@@ -90,13 +90,13 @@ function SearchBar({
                         updateSearchText={updateSearchText}
                         isDisabled={isLoading}
                     />
-                    <div style={{paddingLeft:"10px"}} role="button" onClick={() => showHideReqs(!reqsShown)}>
+                    <div style={{ paddingLeft: "10px" }} role="button" onClick={() => showHideReqs(!reqsShown)}>
                         <i className="fas fa-filter" />
                     </div>
                 </div>
                 {reqsShown && (
                     <div style={{
-                        zIndex:"100", marginTop:"-20px",marginBottom:"20px", display: "flex", width:"100vw", alignItems: "center", flexWrap: "wrap", background:"white",justifyContent:"flex-start"
+                        zIndex: "100", marginTop: "-20px", marginBottom: "20px", display: "flex", width: "100vw", alignItems: "center", flexWrap: "wrap", background: "white", justifyContent: "flex-start",
                     }}
                     >
                         <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")} isDisabled={isLoading}>
