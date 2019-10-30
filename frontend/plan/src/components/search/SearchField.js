@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 export function SearchField({
-    startSearch, updateSearchText, filterData, isDisabled,
+    startSearch, updateSearchText, filterData, isDisabled, setTab,
 }) {
     const [searchValue, setSearchValue] = useState("");
     const [searchTimeout, setSearchTimeout] = useState();
@@ -23,7 +23,7 @@ export function SearchField({
     };
 
     return (
-        <div className="control has-icons-left">
+        <div role="button" onClick={() => setTab(0)} className="control has-icons-left">
             <input
                 id="searchbar"
                 type="text"
@@ -47,4 +47,5 @@ SearchField.propTypes = {
     // eslint-disable-next-line react/forbid-prop-types
     filterData: PropTypes.object,
     isDisabled: PropTypes.bool,
+    setTab: PropTypes.func,
 };

@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
+import { isMobileOnly } from "react-device-detect";
 
 import connect from "react-redux/es/connect/connect";
 
@@ -157,7 +158,7 @@ class Schedule extends Component {
         const dims = {
             gridTemplateColumns: `.4fr repeat(${getNumCol() - 1}, 1fr)`,
             gridTemplateRows: `repeat(${getNumRows() - 2}, 1fr)`,
-            padding: "1rem",
+            padding: isMobileOnly ? "0.2rem" : "1rem",
         };
 
         return (

@@ -42,6 +42,7 @@ function SearchBar({
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
+    setTab,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -76,15 +77,16 @@ function SearchBar({
 
     if (isMobileOnly) {
         return (
-            <div>
+            <div style={{ marginTop: "0px" }}>
                 <div style={{
-                    display: "flex", alignItems: "center", flexWrap: "wrap", background: "white", padding: "10px 0px", margin: "10px 0px", borderRadius: "6px",
+                    display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", background: "white", paddingTop: "20px", paddingBottom: "10px", marginBottom: "10px", borderRadius: "6px",
                 }}
                 >
                     <div>
-                        <img src="/achi/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 1rem" }} />
+                        <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 1rem" }} />
                     </div>
                     <SearchField
+                        setTab={setTab}
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
@@ -96,7 +98,7 @@ function SearchBar({
                 </div>
                 {reqsShown && (
                     <div style={{
-                        zIndex: "100", marginTop: "-20px", marginBottom: "20px", display: "flex", width: "100vw", alignItems: "center", flexWrap: "wrap", background: "white", justifyContent: "flex-start",
+                        zIndex: "100", marginTop: "-20px", padding: "10px", marginBottom: "20px", display: "flex", width: "100vw", alignItems: "center", flexWrap: "wrap", background: "white", justifyContent: "flex-start",
                     }}
                     >
                         <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")} isDisabled={isLoading}>
@@ -276,6 +278,7 @@ SearchBar.propTypes = {
     defaultReqs: PropTypes.objectOf(PropTypes.number),
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
+    setTab: PropTypes.func,
 };
 
 const mapStateToProps = state => (
