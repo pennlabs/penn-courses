@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { isMobile } from "react-device-detect";
 
 export default function Block(props) {
     const days = ["M", "T", "W", "R", "F", "S", "U"];
@@ -22,16 +23,19 @@ export default function Block(props) {
                 onClick={focusSection}
             >
                 <div className="inner-block">
-                    <span
-                        role="button"
-                        className="remove"
-                        onClick={(e) => {
-                            remove();
-                            e.stopPropagation();
-                        }}
-                    >
-                        <i className="fas fa-times" />
-                    </span>
+                    {!isMobile && (
+                        <span
+                            role="button"
+                            className="remove"
+                            onClick={(e) => {
+                                remove();
+                                e.stopPropagation();
+                            }}
+                        >
+                            <i className="fas fa-times" />
+                        </span>
+                    )
+                    }
                     <span
                         className={coreqFulfilled ? "hide" : ""}
                         title="Registration is required for an associated section."

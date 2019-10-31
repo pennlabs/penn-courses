@@ -27,7 +27,7 @@ const CartEmpty = () => (
 );
 
 const Cart = ({
-    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab
+    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab,
 }) => (
     <section
         style={{

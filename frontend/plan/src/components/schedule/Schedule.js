@@ -44,7 +44,7 @@ class Schedule extends Component {
         const {
             schedData, removeSection, focusSection,
             scheduleNames, switchSchedule, schedulesMutator,
-            activeScheduleName, setTab
+            activeScheduleName, setTab,
         } = this.props;
         const sections = schedData.meetings || [];
 

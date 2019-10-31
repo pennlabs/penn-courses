@@ -107,7 +107,7 @@ function App() {
                         <Cart setTab={setTab} />
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Schedule setTab={setTab}/>
+                        <Schedule setTab={setTab} />
                     </div>
                 </SwipeableViews>
                 <Footer />
