@@ -491,7 +491,7 @@ ul {
 
 @media all and (max-width: 480px){
   .box{
-    min-height: 500px;
+    min-height: calc(100vh - 8em);
     height: 100%;
     box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);
   }
