@@ -1,7 +1,7 @@
 .filterContainer {
     display: flex;
     flex-wrap: wrap;
-    padding: 0.5em 0em;
+    padding: 0.3em 0em;
     justify-content: flex-start;
     max-width: calc(100% - 17rem);
 }
@@ -62,6 +62,10 @@
     background-color: #e3e6ff;
     border: 2px solid #7b84e6;
     color: #7b84e6;
+}
+
+.dropdown-trigger {
+    margin:0.2em;
 }
 
 .classic, .classic * {
