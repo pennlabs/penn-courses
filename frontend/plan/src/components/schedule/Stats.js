@@ -115,9 +115,15 @@ class Stats extends Component {
             averageHours = parseFloat(totalHours / 5).toFixed(1);
             totalHours = parseFloat(totalHours.toFixed(1));
 
-            statTypes.forEach((stat) => {
-                avgs[stat] = sums[stat].reduce((a, b) => a + b, 0) / totalCUs;
-            });
+            if (totalCUs > 0) {
+                statTypes.forEach((stat) => {
+                    avgs[stat] = sums[stat].reduce((a, b) => a + b, 0) / totalCUs;
+                });
+            } else {
+                statTypes.forEach((stat) => {
+                    avgs[stat] = 0;
+                });
+            }
 
             totalCUs = parseFloat(totalCUs.toFixed(1));
         }
