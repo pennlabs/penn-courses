@@ -44,7 +44,7 @@ class Schedule extends Component {
         const {
             schedData, removeSection, focusSection,
             scheduleNames, switchSchedule, schedulesMutator,
-            activeScheduleName,
+            activeScheduleName, setTab
         } = this.props;
         const sections = schedData.meetings || [];
 
@@ -149,6 +149,9 @@ class Schedule extends Component {
                 key={`${meeting.course.id}-${meeting.day}`}
                 remove={() => removeSection(meeting.course.id)}
                 focusSection={() => {
+                    if (isMobileOnly) {
+                        setTab(0);
+                    }
                     const split = meeting.course.id.split("-");
                     focusSection(`${split[0]}-${split[1]}`);
                 }}
@@ -218,6 +221,7 @@ Schedule.propTypes = {
         remove: PropTypes.func.isRequired,
     }),
     activeScheduleName: PropTypes.string,
+    setTab: PropTypes.func,
 };
 
 const mapStateToProps = state => (
