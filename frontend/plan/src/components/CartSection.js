@@ -2,6 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import "../styles/course-cart.css";
 import { getTimeString } from "../meetUtil";
+import { isMobile } from "react-device-detect";
 
 const CourseDetails = ({ meetings, code }) => (
     <div style={{
@@ -91,7 +92,7 @@ const CartSection = ({
         role="switch"
         aria-checked="false"
         className="course-cart-item"
-        style={
+        style={!isMobile ?
             {
                 display: "flex",
                 flexDirection: "row",
@@ -99,7 +100,13 @@ const CartSection = ({
                 padding: "0.8rem",
                 borderBottom: "1px solid rgb(200, 200, 200)",
                 opacity: overlaps ? 0.5 : 1.0,
-            }}
+            } : {
+                display: "grid",
+                gridTemplateColumns: "20% 50% 15% 15%",
+                padding: "0.8rem",
+                borderBottom: "1px solid rgb(200, 200, 200)",
+                opacity: overlaps ? 0.5 : 1.0,
+            } }
         onClick={(e) => {
             // ensure that it's not the trash can being clicked
             if (e.target.parentElement.getAttribute("class") !== "cart-delete-course") {
