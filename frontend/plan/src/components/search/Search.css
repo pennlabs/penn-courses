@@ -3,6 +3,22 @@
     text-align: left;
 }
 
+@media all and (max-width: 480px){
+  .contained {
+      font-size: 1rem;
+  }
+  .contained p{
+      font-size: 0.8rem;
+  }
+  #schoolreq {
+      min-width: 25rem !important;
+  }
+}
+
+.reqBorder {
+    border-right: 1px solid #C1C1C1;
+}
+
 .bar {
     margin-top: 1rem;
     margin-left: none;

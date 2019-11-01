@@ -32,13 +32,22 @@ class SectionIdField(serializers.RelatedField):
 
 
 class MiniSectionSerializer(serializers.ModelSerializer):
+    section_id = serializers.CharField(source='full_code')
+    instructors = serializers.StringRelatedField(many=True)
+    course_title = serializers.SerializerMethodField()
+
+    def get_course_title(self, obj):
+        return obj.course.title
 
     class Meta:
         model = Section
         fields = [
-            'id',
+            'section_id',
             'status',
             'activity',
+            'meeting_times',
+            'instructors',
+            'course_title',
         ]
 
     @staticmethod
@@ -47,11 +56,12 @@ class MiniSectionSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
+        queryset = queryset.prefetch_related('course', 'course__department', 'instructors')
         return queryset
 
 
 class SectionSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='normalized', read_only=False)
+    id = serializers.CharField(source='full_code')
     semester = serializers.SerializerMethodField(read_only=False)
     meetings = MeetingSerializer(many=True, read_only=True)
     instructors = serializers.StringRelatedField(many=True, read_only=True)

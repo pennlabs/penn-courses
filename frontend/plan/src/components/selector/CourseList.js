@@ -34,12 +34,15 @@ const courseSort = (courses, sortMode) => {
 export default function CourseList({ courses, getCourse, sortMode }) {
     return (
         <div className="scroll-container">
-            <div className="columns" style={{ paddingLeft: "2em" }}>
-                <div className="column header is-three-fifths" style={{ overflow: "hidden" }}>
+            <div style={{
+                display: "flex", flexDirection: "row", paddingBottom: "1em", paddingLeft: "2em",
+            }}
+            >
+                <div className="header" style={{ overflow: "hidden", width: "60%" }}>
                     COURSE
                 </div>
-                <div className="column header">QUAL</div>
-                <div className="column header">DIFF</div>
+                <div className="header" style={{ width: "20%" }}>QUAL</div>
+                <div className="header" style={{ width: "20%" }}>DIFF</div>
             </div>
             <ul className="scrollable course-list">
                 {

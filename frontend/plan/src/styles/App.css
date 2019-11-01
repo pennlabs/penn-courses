@@ -4,6 +4,27 @@ html {
   background-color: #f1eff9;
 }
 
+.topTabs{
+    background: white;
+    margin-top:-20px;
+    margin-bottom: 10px;
+}
+
+.topTab{
+    text-transform: none !important;
+    background-color: black;
+}
+
+.PrivateTabIndicator-colorSecondary-27 {
+    background-color: #7b84e6 !important;
+}
+
+.MuiTab-wrapper {
+    margin-left: 10px;
+    margin-right: 10px;
+    font-size: 17px;
+}
+
 .section-header {
   display: flex;
   font-weight: bold;
@@ -15,13 +36,6 @@ html {
   flex-direction: column;
   padding: 0px;
 }
-
-/* .vertical-section-contents {
-  display: flex;
-  flex-grow: 1;
-  overflow: auto;
-  flex-direction: column;
-} */
 
 body {
   width: 100%;
@@ -472,6 +486,29 @@ ul {
   }
   html{
     font-size: calc(200vw/95);
+  }
+}
+
+@media all and (max-width: 480px){
+  .box{
+    min-height: calc(100vh - 8em);
+    height: 100%;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);
+  }
+  html{
+    font-size: 15px;
+  }
+  .section-header {
+    display: flex;
+    justify-content: space-around;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  .input{
+    font-size: 17px !important;
+  }
+  .icon{
+    font-size: 17px !important;
   }
 }
 
