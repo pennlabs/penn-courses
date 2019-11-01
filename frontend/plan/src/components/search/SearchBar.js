@@ -40,8 +40,7 @@ const LoginButton = () => {
                   fontSize: "1rem!important",
                   paddingRight: "1rem",
                   paddingLeft: "1rem"
-              }}
-              target={"_blank"}>
+              }}>
         Login
     </a>;
 };
