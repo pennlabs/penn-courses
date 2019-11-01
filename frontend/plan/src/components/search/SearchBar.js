@@ -46,7 +46,7 @@ const LoginButton = () => {
     </a>;
 };
 
-const UserSelector = ({ user: { name } }) => {
+const UserSelector = ({ user: { name, email } }) => {
     const [selected, setSelected] = useState(false);
     const [ref, setRef] = useState(null);
     useEffect(() => {
@@ -72,13 +72,17 @@ const UserSelector = ({ user: { name } }) => {
         <div className="logout dropdown-menu">
             <div id="logout-dropdown-menu-container">
                 <div className="triangle-up"/>
-                <div role="button" id="logout-button" onClick={() => {
-                    fetch("/accounts/logout")
-                        .then(() => setSelected(false));
-                }}>
-                    Logout
-                    <div id="logout-icon-container">
-                        <i className="fas fa-sign-out-alt"/>
+                <div id={"logout-dropdown-inner-menu"}>
+                    <p className="name-container"> {name} </p>
+                    <p className="email-container"> {email} </p>
+                    <div role="button" id="logout-button" onClick={() => {
+                        fetch("/accounts/logout")
+                            .then(() => setSelected(false));
+                    }}>
+                        Logout
+                        <div id="logout-icon-container">
+                            <i className="fas fa-sign-out-alt"/>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -284,6 +288,10 @@ const mapStateToProps = state => (
         defaultReqs: state.filters.defaultReqs,
         isLoadingCourseInfo: state.sections.courseInfoLoading,
         isSearchingCourseInfo: state.sections.searchInfoLoading,
+        user: {
+            name: "Daniel Like",
+            email: "dlike@seas.upenn.edu"
+        },
     }
 );
 

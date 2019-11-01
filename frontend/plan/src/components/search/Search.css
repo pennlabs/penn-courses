@@ -91,20 +91,38 @@
     background: #6B73D0;
 }
 
-#logout-button {
+#logout-dropdown-inner-menu {
+    background: white;
+    color: #4a4a4a;
+    border-radius: 4px;
     position: relative;
     right: 61%;
     padding: 0.32rem;
-    border-radius: 4px;
-    color: #4a4a4a;
     font-size: 0.85rem;
-    cursor: pointer;
-    background: white;
-    transition: 200ms ease background;
     box-shadow: 0 0 5px 0 lightgrey;
 }
 
-#logout-dropdown-menu-container:hover #logout-button {
+#logout-dropdown-inner-menu .name-container{
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+#logout-dropdown-inner-menu .email-container{
+    font-size: 0.8rem;
+    color: #828282;
+}
+
+#logout-dropdown-inner-menu p, #logout-button {
+    margin: 0.5rem;
+}
+
+#logout-button {
+    cursor: pointer;
+    background: white;
+    transition: 200ms ease background;
+}
+
+#logout-button:hover {
     background: rgb(245, 245, 245);
 }
 
@@ -115,13 +133,9 @@
     border-right: 5px solid transparent;
     border-bottom: 10px solid white;
     position: relative;
-    left: 16%;
+    left: 11%;
     transition: 200ms ease border;
     z-index: 5;
-}
-
-#logout-dropdown-menu-container:hover .triangle-up {
-    border-bottom: 10px solid rgb(245, 245, 245);
 }
 
 .logout.dropdown-menu {
