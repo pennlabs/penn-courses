@@ -133,6 +133,7 @@ class Section(models.Model):
 
     code = models.CharField(max_length=16)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sections')
+    full_code = models.CharField(max_length=32, blank=True)
 
     status = models.CharField(max_length=4, choices=STATUS_CHOICES)
 
@@ -160,6 +161,10 @@ class Section(models.Model):
     @property
     def is_open(self):
         return self.status == 'O'
+
+    def save(self, *args, **kwargs):
+        self.full_code = f'{self.course.full_code}-{self.code}'
+        super().save(*args, **kwargs)
 
 
 class StatusUpdate(models.Model):

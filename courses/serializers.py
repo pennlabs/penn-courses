@@ -32,7 +32,7 @@ class SectionIdField(serializers.RelatedField):
 
 
 class MiniSectionSerializer(serializers.ModelSerializer):
-    section_id = serializers.ReadOnlyField(source='normalized')
+    section_id = serializers.CharField(source='full_code')
     instructors = serializers.StringRelatedField(many=True)
     course_title = serializers.SerializerMethodField()
 
@@ -61,7 +61,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
 
 
 class SectionSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='normalized')
+    id = serializers.CharField(source='full_code')
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
     instructors = serializers.StringRelatedField(many=True)

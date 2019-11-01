@@ -71,6 +71,7 @@ class GetCourseSectionTest(TestCase):
 
     def test_create_course(self):
         course, section = get_course_and_section('CIS 120 001', TEST_SEMESTER)
+        self.assertEqual('CIS-120-001', section.full_code)
         self.assertEqual(Course.objects.count(), 2)
         self.assertEqual(course.department.code, 'CIS')
         self.assertEqual(course.code, '120')
@@ -256,6 +257,21 @@ class SectionListTestCase(TestCase):
         self.assertEqual(len(response.data), 2)
         codes = [d['section_id'] for d in response.data]
         self.assertTrue('CIS-120-001' in codes and 'CIS-120-002' in codes)
+
+    def test_search_match_all(self):
+        response = self.client.get('/all/sections/', {'search': 'CIS-120'})
+        self.assertEqual(len(response.data), 2)
+        codes = [d['section_id'] for d in response.data]
+        self.assertTrue('CIS-120-001' in codes and 'CIS-120-002' in codes)
+
+    def test_search_one_hit(self):
+        response = self.client.get('/all/sections/', {'search': 'CIS-120-001'})
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual('CIS-120-001', response.data[0]['section_id'])
+
+    def test_search_no_hits(self):
+        response = self.client.get('/all/sections/', {'search': 'CIS-160-001'})
+        self.assertEqual(len(response.data), 0)
 
 
 @override_settings(SWITCHBOARD_TEST_APP='api')
