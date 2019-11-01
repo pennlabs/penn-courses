@@ -8,7 +8,7 @@
     padding: 0.25rem;
     background-color: white;
     border-radius: 6px;
-    box-shadow:0 1px 3px 0 lightgrey;
+    box-shadow: 0 1px 3px 0 lightgrey;
     height: 3rem;
 }
 
@@ -124,13 +124,13 @@
     border-bottom: 10px solid rgb(245, 245, 245);
 }
 
-.logout.dropdown-menu{
-    min-width: 7rem!important;
+.logout.dropdown-menu {
+    min-width: 7rem !important;
     margin-top: 0;
 }
 
 #logout-dropdown-menu-container {
-    min-width: 7rem!important;
+    min-width: 7rem !important;
     vertical-align: center;
 }
 
@@ -138,4 +138,9 @@
     height: 100%;
     float: right;
     margin-right: 0.45rem;
+}
+
+.button.login {
+    font-size: 0.85rem !important;
+    padding: 0 1rem 0 1rem;
 }

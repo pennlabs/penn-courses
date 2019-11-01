@@ -34,7 +34,13 @@ function shouldSearch(filterData) {
 }
 
 const LoginButton = () => {
-    return <a className="button is-link" href={"/accounts/login"}
+    return <a className="button is-link login" href={"/accounts/login"}
+              style={{
+                  padding: "0.5rem",
+                  fontSize: "1rem!important",
+                  paddingRight: "1rem",
+                  paddingLeft: "1rem"
+              }}
               target={"_blank"}>
         Login
     </a>;
