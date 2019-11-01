@@ -33,8 +33,14 @@ function shouldSearch(filterData) {
     return searchString || selectedReq;
 }
 
+const LoginButton = () => {
+    return <a className="button is-link" href={"/accounts/login"}
+              target={"_blank"}>
+        Login
+    </a>;
+};
 
-const UserSelector = () => {
+const UserSelector = ({ user: { name } }) => {
     const [selected, setSelected] = useState(false);
     const [ref, setRef] = useState(null);
     useEffect(() => {
@@ -55,7 +61,7 @@ const UserSelector = () => {
             role={"button"}
             id={"user-selector"}
             onClick={() => setSelected(!selected)}>
-            <span> D </span>
+            <span> {(name && name.charAt(0)) || "U"} </span>
         </div>
         <div className="logout dropdown-menu">
             <div id="logout-dropdown-menu-container">
@@ -74,6 +80,10 @@ const UserSelector = () => {
     </div>;
 };
 
+UserSelector.propTypes = {
+    user: PropTypes.objectOf(PropTypes.any),
+};
+
 function SearchBar({
     // eslint-disable-next-line no-shadow
     startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
@@ -81,6 +91,7 @@ function SearchBar({
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
+    user
 }) {
     useEffect(() => {
         loadRequirements();
@@ -233,7 +244,8 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <UserSelector/>
+                    {user && <UserSelector user={user}/>}
+                    {!user && <LoginButton/>}
                 </div>
             </div>
         </div>
@@ -256,6 +268,7 @@ SearchBar.propTypes = {
     defaultReqs: PropTypes.objectOf(PropTypes.number),
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
+    user: PropTypes.objectOf(PropTypes.any),
 };
 
 const mapStateToProps = state => (
