@@ -240,12 +240,46 @@ class ScheduleTest(TestCase):
     # vvv implement below tests
 
     def test_update_schedule_specific(self):
-        1+1
+        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+                                   json.dumps({'semester': TEST_SEMESTER,
+                                               'name': 'New Test Schedule',
+                                               'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                            {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data[0]['sections']), 2)
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-121-001')
+        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data['sections']), 2)
+        self.assertEqual(response.data['sections'][0]['id'], 'CIS-121-001')
 
     def test_update_schedule_general(self):
-        1+1
+        response = self.client.post('/schedules/',
+                                    json.dumps({'id': str(self.s.id),
+                                                'semester': TEST_SEMESTER,
+                                                'name': 'New Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data[0]['sections']), 2)
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-121-001')
 
     def test_delete(self):
-        1+1
+        response = self.client.delete('/schedules/'+str(self.s.id)+'/')
+        self.assertEqual(response.status_code, 204)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(0, len(response.data))
 
-    # test fails
+    # test fails... semesters not uniform, schedule dne, name already exists...
