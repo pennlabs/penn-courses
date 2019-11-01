@@ -44,6 +44,8 @@ export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
 export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
+export const UPDATE_SCHEDULES = "UPDATE_SCHEDULES";
+
 
 export const duplicateSchedule = scheduleName => (
     {
@@ -191,7 +193,7 @@ export const loadRequirements = () => (
                         console.log(error);
                     }),
                 (error) => {
-                // eslint-disable-next-line no-console
+                    // eslint-disable-next-line no-console
                     console.log(error);
                 }
             )
@@ -235,13 +237,15 @@ function buildCourseSearchUrl(filterData) {
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
         dispatch(updateSearchRequest());
-        fetch(buildCourseSearchUrl(filterData)).then(
-            response => response.json().then(
-                json => dispatch(updateSearch(json)),
+        fetch(buildCourseSearchUrl(filterData))
+            .then(
+                response => response.json()
+                    .then(
+                        json => dispatch(updateSearch(json)),
+                        error => dispatch(courseSearchError(error)),
+                    ),
                 error => dispatch(courseSearchError(error)),
-            ),
-            error => dispatch(courseSearchError(error)),
-        );
+            );
     };
 }
 
@@ -307,6 +311,11 @@ export function clearAll() {
     };
 }
 
+export const updateSchedules = ({ schedules }) => ({
+    type: UPDATE_SCHEDULES,
+    schedules
+});
+
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
@@ -317,23 +326,34 @@ export function fetchCourseDetails(courseId) {
     };
 }
 
+export const fetchSchedules = () => {
+    return dispatch => {
+        fetch("/schedules/")
+            .then(res => res.json())
+            .then(schedules => dispatch(updateSchedules(schedules)))
+            .catch(error => console.log("Not logged in"));
+    };
+};
+
 export function fetchSectionInfo(searchData) {
     return dispatch => (
-        fetch(buildSectionInfoSearchUrl(searchData)).then(
-            response => response.json().then(
-                (json) => {
-                    const info = {
-                        id: json.id,
-                        description: json.description,
-                        crosslistings: json.crosslistings,
-                    };
-                    const { sections } = json;
-                    dispatch(updateCourseInfo(sections, info));
-                },
+        fetch(buildSectionInfoSearchUrl(searchData))
+            .then(
+                response => response.json()
+                    .then(
+                        (json) => {
+                            const info = {
+                                id: json.id,
+                                description: json.description,
+                                crosslistings: json.crosslistings,
+                            };
+                            const { sections } = json;
+                            dispatch(updateCourseInfo(sections, info));
+                        },
+                        error => dispatch(sectionInfoSearchError(error)),
+                    ),
                 error => dispatch(sectionInfoSearchError(error)),
-            ),
-            error => dispatch(sectionInfoSearchError(error)),
-        )
+            )
     );
 }
 

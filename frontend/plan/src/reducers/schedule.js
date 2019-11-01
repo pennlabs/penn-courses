@@ -5,7 +5,7 @@ import {
     REMOVE_SCHED_ITEM,
     RENAME_SCHEDULE,
     DUPLICATE_SCHEDULE,
-    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM, REMOVE_CART_ITEM
+    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM, REMOVE_CART_ITEM, UPDATE_SCHEDULES
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 
@@ -89,6 +89,42 @@ const nextAvailable = (scheduleName, used) => {
 export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
     switch (action.type) {
+        case UPDATE_SCHEDULES:
+            const { schedulesFromBackend } = action;
+            const newSchedules = { ...state.schedules };
+            const newCart = [...state.cartSections];
+            if (schedulesFromBackend) {
+                schedulesFromBackend.forEach(({ title, sections }) => {
+                    if (title === "cart") {
+                        const oldSectionSet = {};
+                        state.cartSections.forEach(({ id }) => {
+                            oldSectionSet[id] = true;
+                        });
+                        sections.forEach(cartSection => {
+                            if (!oldSectionSet[cartSection.id]) {
+                                newCart.push(cartSection);
+                            }
+                        });
+                    } else {
+                        if (state.schedules[title]) {
+                            const oldSectionSet = {};
+                            state.schedules[title].forEach(({ id }) => {
+                                oldSectionSet[id] = true;
+                            });
+                            sections.forEach(section => {
+                                if (!oldSectionSet[section.id]) {
+                                    state.schedules[title].push(section);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+            return {
+                ...state,
+                schedules: newSchedules,
+                cartSections: newCart
+            };
         case CLEAR_SCHEDULE:
             return {
                 ...state,

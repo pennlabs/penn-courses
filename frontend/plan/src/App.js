@@ -21,7 +21,7 @@ import Footer from "./components/footer";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
-import { openModal } from "./actions";
+import { fetchSchedules, openModal } from "./actions";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -51,6 +51,8 @@ function App() {
             {},
             "Welcome to Penn Course Plan ✨"));
     }
+
+    store.dispatch(fetchSchedules());
 
     if (isMobileOnly) { // Mobile version
         return (
