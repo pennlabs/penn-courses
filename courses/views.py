@@ -34,7 +34,7 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = MiniSectionSerializer
     queryset = Section.objects.all()
     filter_backends = [filters.SearchFilter]
-    search_fields = ['full_code']
+    search_fields = ['^full_code']
 
     @staticmethod
     def get_semester_field():
