@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from courses.util import get_course_and_section
 from courses.views import CourseDetail, CourseList
+from options.models import get_value
 from plan.filters import bound_filter, requirement_filter
 from plan.models import Schedule
 from plan.search import TypedSearchBackend
@@ -63,10 +64,13 @@ class ScheduleViewSet(viewsets.ModelViewSet):
     def update(self, request, pk=None):
         existing_obs = Schedule.objects.filter(id=pk)
         if (len(existing_obs) == 0):
-            return Response({'detail': 'No schedule with key: '+pk+' exists.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if 'semester' not in request.data:
+            request.data['semester'] = get_value('SEMESTER', None)
 
         for s in request.data['sections']:
-            if s['semester'] != request.data['semester']:
+            if s.get('semester') != request.data.get('semester'):
                 return Response({'detail': 'Semester uniformity invariant violated.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -87,13 +91,16 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         if len(existing_obs) > 0:
             return self.update(request, request.data.get('id'))
 
+        if 'semester' not in request.data:
+            request.data['semester'] = get_value('SEMESTER', None)
+
         for s in request.data['sections']:
-            if s['semester'] != request.data['semester']:
+            if s.get('semester') != request.data.get('semester'):
                 return Response({'detail': 'Semester uniformity invariant violated.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            if request.data.get('id'):
+            if 'id' in request.data:
                 ob = Schedule.objects.create(person=request.user,
                                              semester=request.data.get('semester'),
                                              name=request.data.get('name'),
