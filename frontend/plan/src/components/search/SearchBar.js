@@ -36,7 +36,7 @@ function shouldSearch(filterData) {
 
 const UserSelector = () => {
     const [selected, setSelected] = useState(false);
-    const [ref, setRef]= useState(null);
+    const [ref, setRef] = useState(null);
     useEffect(() => {
         const listener = (event) => {
             if (ref && !ref.contains(event.target)) {
@@ -60,7 +60,10 @@ const UserSelector = () => {
         <div className="logout dropdown-menu">
             <div id="logout-dropdown-menu-container">
                 <div className="triangle-up"/>
-                <div role="button" id="logout-button">
+                <div role="button" id="logout-button" onClick={() => {
+                    fetch("/accounts/logout")
+                        .then(() => setSelected(false));
+                }}>
                     Logout
                     <div id="logout-icon-container">
                         <i className="fas fa-sign-out-alt"/>
