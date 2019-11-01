@@ -82,6 +82,30 @@
     font-weight: normal;
 }
 
+.taglist {
+    overflow: hidden;
+    display: inline-block;
+}
+
+.tag, .taglist * {
+    user-select: none;
+}
+
+.tag {
+    transition: 200ms ease background;
+    margin-bottom: 0.35rem;
+    margin-right: 0.35rem;
+    cursor: pointer;
+}
+
+.tag.is-adder:hover {
+    background: #9fa4a6;
+}
+
+.tag.is-adder:active {
+    background: #777b7c;
+}
+
 .pcr-svg {
     border: 2px solid #EEEEEE;
     border-radius: 4px;

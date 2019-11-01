@@ -237,10 +237,10 @@ const mapDispatchToProps = dispatch => (
             copy: scheduleName => dispatch(duplicateSchedule(scheduleName)),
             remove: scheduleName => dispatch(deleteSchedule(scheduleName)),
             rename: oldName => dispatch(openModal("RENAME_SCHEDULE",
-                { scheduleName: oldName },
+                { scheduleName: oldName, defaultValue: oldName },
                 "Rename Schedule")),
             create: () => dispatch(openModal("CREATE_SCHEDULE",
-                {},
+                { defaultValue: "Schedule name", overwriteDefault: true },
                 "Create Schedule")),
         },
     }
