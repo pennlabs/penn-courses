@@ -259,7 +259,7 @@ class SectionListTestCase(TestCase):
         self.assertTrue('CIS-120-001' in codes and 'CIS-120-002' in codes)
 
     def test_search_match_all(self):
-        response = self.client.get('/all/sections/', {'search': 'CIS-120'})
+        response = self.client.get('/all/sections/', {'search': 'CIS'})
         self.assertEqual(len(response.data), 2)
         codes = [d['section_id'] for d in response.data]
         self.assertTrue('CIS-120-001' in codes and 'CIS-120-002' in codes)

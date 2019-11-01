@@ -133,7 +133,7 @@ class Section(models.Model):
 
     code = models.CharField(max_length=16)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sections')
-    full_code = models.CharField(max_length=32, blank=True)
+    full_code = models.CharField(max_length=32, blank=True, db_index=True)
 
     status = models.CharField(max_length=4, choices=STATUS_CHOICES)
 
