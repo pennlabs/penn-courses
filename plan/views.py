@@ -63,7 +63,12 @@ class ScheduleViewSet(viewsets.ModelViewSet):
     def update(self, request, pk=None):
         existing_obs = Schedule.objects.filter(id=pk)
         if (len(existing_obs) == 0):
-            return Response({'error': 'No schedule with key: '+pk+' exists.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'No schedule with key: '+pk+' exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        for s in request.data['sections']:
+            if s['semester'] != request.data['semester']:
+                return Response({'detail': 'Semester uniformity invariant violated.'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
         try:
             existing_obs.update(person=request.user,
@@ -75,12 +80,17 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             s = ScheduleSerializer(ob)
             return Response(s.data, status=status.HTTP_202_ACCEPTED)
         except IntegrityError:
-            return Response({'error': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         existing_obs = Schedule.objects.filter(id=request.data.get('id'))
         if len(existing_obs) > 0:
             return self.update(request, request.data.get('id'))
+
+        for s in request.data['sections']:
+            if s['semester'] != request.data['semester']:
+                return Response({'detail': 'Semester uniformity invariant violated.'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
         try:
             if request.data.get('id'):
@@ -96,7 +106,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             s = ScheduleSerializer(ob)
             return Response(s.data, status=status.HTTP_201_CREATED)
         except IntegrityError:
-            return Response({'error': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
         queryset = Schedule.objects.filter(person=self.request.user)

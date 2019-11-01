@@ -282,4 +282,38 @@ class ScheduleTest(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
-    # test fails... semesters not uniform, schedule dne, name already exists...
+    def test_semesters_not_uniform(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'semester': TEST_SEMESTER,
+                                                'name': 'New Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': '1739C'},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], 'Semester uniformity invariant violated.')
+
+    def test_semesters_not_uniform_update(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'id': str(self.s.id),
+                                                'semester': TEST_SEMESTER,
+                                                'name': 'New Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': '1739C'},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], 'Semester uniformity invariant violated.')
+
+    def test_schedule_dne(self):
+        response = self.client.get('/schedules/1000/')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data['detail'], 'Not found.')
+
+    def test_name_already_exists(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'semester': TEST_SEMESTER,
+                                                'name': 'My Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(response.data['detail'], 'Unique constraint violated')
