@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 """
 Unfortunately, SEAS has made it ridiculously hard to scrape their requirements from the student handbook,
