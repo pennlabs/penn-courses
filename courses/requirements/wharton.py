@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import re
 import json
+import re
 
 import requests
 import unidecode
-
 from bs4 import BeautifulSoup
 
 
