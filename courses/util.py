@@ -136,7 +136,7 @@ def add_college_requirements(course, college_reqs):
 
 def relocate_reqs_from_restrictions(rests, reqs, travellers):
     for t in travellers:
-        if any(r.requirement_description == t for r in rests):
+        if any(r['requirement_description'] == t for r in rests):
             reqs.append(t)
 
 
