@@ -64,11 +64,14 @@ def load_requirements(school=None, semester=None, requirements=None):
     data = requirements['data']
 
     for req_id, items in data.items():
+        # if this isn't a requirement we define in codes, then don't update it.
+        if req_id not in codes:
+            continue
         requirement = Requirement.objects.get_or_create(semester=semester,
                                                         school=school,
                                                         code=req_id,
                                                         defaults={
-                                                          'name': codes.get(req_id, '')
+                                                          'name': codes[req_id]
                                                         })[0]
         for item in items:
             dept_id = item.get('department')
