@@ -105,7 +105,7 @@ export const schedule = (state = initialState, action) => {
             // eslint-disable-next-line
             const newCart = [...state.cartSections];
             if (schedulesFromBackend) {
-                schedulesFromBackend.forEach(({ title, sections, semester }) => {
+                schedulesFromBackend.forEach(({ id: scheduleId, title, sections, semester }) => {
                     if (title === "cart") {
                         const oldSectionSet = {};
                         state.cartSections.forEach(({ id }) => {
@@ -117,6 +117,7 @@ export const schedule = (state = initialState, action) => {
                             }
                         });
                     } else if (state.schedules[title]) {
+                        newScheduleObject.schedules[title].id = scheduleId;
                         const oldSectionSet = {};
                         state.schedules[title].meetings.forEach(({ id }) => {
                             oldSectionSet[id] = true;

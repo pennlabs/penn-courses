@@ -52,7 +52,7 @@ function App() {
             "Welcome to Penn Course Plan ✨"));
     }
 
-    store.dispatch(fetchSchedules());
+    fetchSchedules(store.dispatch)();
 
     if (isMobileOnly) { // Mobile version
         return (
