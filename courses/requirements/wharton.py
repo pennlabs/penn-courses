@@ -83,7 +83,7 @@ def _get_curriculum_page(url):
                 res = match.groups()
                 reqs.append({
                     'department': res[0],
-                    'course_id': int(res[1]),
+                    'course_id': res[1],
                     'satisfies': True
                 })
     return reqs
