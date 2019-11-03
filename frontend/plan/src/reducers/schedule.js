@@ -5,7 +5,7 @@ import {
     REMOVE_SCHED_ITEM,
     RENAME_SCHEDULE,
     DUPLICATE_SCHEDULE,
-    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM, REMOVE_CART_ITEM, UPDATE_SCHEDULES
+    CLEAR_SCHEDULE, TOGGLE_CHECK, ADD_CART_ITEM, REMOVE_CART_ITEM, UPDATE_SCHEDULES, SET_SCHEDULE_ID
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 
@@ -89,6 +89,14 @@ const nextAvailable = (scheduleName, used) => {
 export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
     switch (action.type) {
+        case SET_SCHEDULE_ID:
+            return {
+                ...state.schedules,
+                [action.scheduleName]: {
+                    ...state.schedules[action.scheduleName],
+                    id: action.id
+                }
+            };
         case UPDATE_SCHEDULES:
             // eslint-disable-next-line
             const { schedulesFromBackend } = action;
@@ -119,7 +127,10 @@ export const schedule = (state = initialState, action) => {
                             }
                         });
                     } else {
-                        newScheduleObject[title] = { meetings: sections, semester };
+                        newScheduleObject[title] = {
+                            meetings: sections,
+                            semester
+                        };
                     }
                 });
             }

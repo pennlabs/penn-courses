@@ -44,7 +44,9 @@ export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
 export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
+// Backend accounts integration
 export const UPDATE_SCHEDULES = "UPDATE_SCHEDULES";
+export const SET_SCHEDULE_ID = "SET_SCHEDULE_ID";
 
 
 export const duplicateSchedule = scheduleName => (
@@ -331,6 +333,25 @@ export const fetchSchedules = () => (dispatch) => {
         .then(res => res.json())
         .then(schedules => dispatch(updateSchedules(schedules)))
         .catch(error => console.log("Not logged in"));
+};
+
+export const setScheduleId = (title, id) => ({
+    type: SET_SCHEDULE_ID,
+    title,
+    id
+});
+
+export const createScheduleOnBackend = (title, sections, semester) => (dispatch) => {
+    fetch("/schedules/", {
+        body: JSON.stringify({
+            title,
+            sections,
+            semester
+        })
+    })
+        .then(response => response.json())
+        .then(({ id }) => dispatch(setScheduleId(title, id)))
+        .catch(alert);
 };
 
 export function fetchSectionInfo(searchData) {

@@ -43,18 +43,6 @@ store.subscribe(() => {
     localStorage.setItem("coursePlanSchedules", JSON.stringify(store.getState().schedule));
 });
 
-const postSchedule = (title, { term: semester, meetings: sections }) => {
-    fetch("/schedules/", {
-        body: JSON.stringify({
-            title,
-            sections,
-            semester
-        })
-    })
-        .then(() => {
-        });
-};
-
 function App() {
     const { hasVisited } = localStorage;
     localStorage.hasVisited = true;
