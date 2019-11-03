@@ -1,11 +1,10 @@
-import json
 import logging
 
 import redis
 from celery import shared_task
 from django.conf import settings
 
-from alert.models import Registration, Section, get_course_and_section
+from alert.models import Registration, get_course_and_section
 from courses.models import StatusUpdate
 from courses.util import update_course_from_record
 from options.models import get_value
@@ -13,41 +12,6 @@ from options.models import get_value
 
 logger = logging.getLogger(__name__)
 r = redis.Redis.from_url(settings.REDIS_URL)
-
-
-def generate_course_json(semester=None, use_cache=True):
-    if semester is None:
-        semester = get_value('SEMESTER')
-
-    if use_cache:
-        sections = r.get('sections')
-        if sections is not None:
-            return json.loads(sections)
-
-    sections = []
-    for section in Section.objects.filter(course__semester=semester):
-        # {'section_id': section_id, 'course_title': course_title, 'instructors': instructors,
-        #  'meeting_days': meeting_days}
-        # meetings = json.loads('{"meetings": "%s"}' % section.meeting_times)['meetings']
-        if section.meeting_times is not None and len(section.meeting_times) > 0:
-            meetings = json.loads(section.meeting_times)
-        else:
-            meetings = []
-        sections.append({
-            'section_id': section.normalized,
-            'course_title': section.course.title,
-            'instructors': list(map(lambda i: i.name, section.instructors.all())),
-            'meeting_days': meetings
-        })
-
-    serialized_sections = json.dumps(sections)
-    r.set('sections', serialized_sections, ex=86400)  # refresh at least once per day.
-    return sections
-
-
-@shared_task(name='pca.tasks.update_course_json')
-def update_course_json():
-    generate_course_json(use_cache=False)
 
 
 @shared_task(name='pca.tasks.demo_alert')

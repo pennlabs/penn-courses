@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from alert.models import SOURCE_API, Registration, RegStatus, register_for_course
-from alert.tasks import generate_course_json, send_course_alerts
+from alert.tasks import send_course_alerts
 from courses.models import PCA_REGISTRATION, APIKey
 from courses.util import record_update, update_course_from_record
 from options.models import get_bool, get_value
@@ -90,11 +90,6 @@ def resubscribe(request, id_):
                                  'You have been resubscribed for alerts to %s!' % new_reg.section.normalized)
 
 
-def get_sections(request):
-    sections = generate_course_json()
-    return JsonResponse(sections, safe=False)
-
-
 def alert_for_course(c_id, semester, sent_by):
     send_course_alerts.delay(c_id, semester=semester, sent_by=sent_by)
 
@@ -129,10 +124,6 @@ def extract_update_data(update):
         update.get('term', None),
         update.get('previous_status', None),
     )
-
-
-def handle_course_update(update):
-    pass
 
 
 @csrf_exempt

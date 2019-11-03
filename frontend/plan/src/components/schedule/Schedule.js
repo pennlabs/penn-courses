@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
+import { isMobileOnly } from "react-device-detect";
 
 import connect from "react-redux/es/connect/connect";
 
@@ -43,7 +44,7 @@ class Schedule extends Component {
         const {
             schedData, removeSection, focusSection,
             scheduleNames, switchSchedule, schedulesMutator,
-            activeScheduleName,
+            activeScheduleName, setTab,
         } = this.props;
         const sections = schedData.meetings || [];
 
@@ -148,6 +149,9 @@ class Schedule extends Component {
                 key={`${meeting.course.id}-${meeting.day}`}
                 remove={() => removeSection(meeting.course.id)}
                 focusSection={() => {
+                    if (isMobileOnly) {
+                        setTab(0);
+                    }
                     const split = meeting.course.id.split("-");
                     focusSection(`${split[0]}-${split[1]}`);
                 }}
@@ -157,7 +161,7 @@ class Schedule extends Component {
         const dims = {
             gridTemplateColumns: `.4fr repeat(${getNumCol() - 1}, 1fr)`,
             gridTemplateRows: `repeat(${getNumRows() - 2}, 1fr)`,
-            padding: "1rem",
+            padding: isMobileOnly ? "0.2rem" : "1rem",
         };
 
         return (
@@ -217,6 +221,7 @@ Schedule.propTypes = {
         remove: PropTypes.func.isRequired,
     }),
     activeScheduleName: PropTypes.string,
+    setTab: PropTypes.func,
 };
 
 const mapStateToProps = state => (
@@ -237,10 +242,10 @@ const mapDispatchToProps = dispatch => (
             copy: scheduleName => dispatch(duplicateSchedule(scheduleName)),
             remove: scheduleName => dispatch(deleteSchedule(scheduleName)),
             rename: oldName => dispatch(openModal("RENAME_SCHEDULE",
-                { scheduleName: oldName },
+                { scheduleName: oldName, defaultValue: oldName },
                 "Rename Schedule")),
             create: () => dispatch(openModal("CREATE_SCHEDULE",
-                {},
+                { defaultValue: "Schedule name", overwriteDefault: true },
                 "Create Schedule")),
         },
     }
