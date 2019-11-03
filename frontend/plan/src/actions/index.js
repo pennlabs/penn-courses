@@ -1,4 +1,5 @@
 import fetch from "cross-fetch";
+import { applyMiddleware } from "redux";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -231,6 +232,26 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // Checkbox Filters
+    const checkboxFields = ["cu"];
+    const checkboxDefaultFields = [{ 0.5: 0, 1: 0, 1.5: 0 }];
+    for (let i = 0; i < checkboxFields.length; i += 1) {
+        if (filterData[checkboxFields[i]]
+            && JSON.stringify(filterData[checkboxFields[i]])
+            !== JSON.stringify(checkboxDefaultFields[i])) {
+            const applied = [];
+            Object.keys(filterData[checkboxFields[i]]).map((item) => {
+                if (filterData[checkboxFields[i]][item] === 1) {
+                    applied.push(item);
+                }
+            });
+            if (applied.length > 0) {
+                queryString += `&${checkboxFields[i]}=${applied[0]}`;
+                for (let j = 1; j < applied.length; j += 1) {
+                    queryString += `,${applied[j]}`;
+                }
+            }
+        }
+    }
 
     return queryString;
 }
