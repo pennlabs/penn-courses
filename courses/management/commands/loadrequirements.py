@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from courses.tasks import load_courses, load_requirements
+from courses.tasks import load_requirements
 
 
 class Command(BaseCommand):
