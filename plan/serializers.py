@@ -183,8 +183,6 @@ class ScheduleSerializer(serializers.ModelSerializer):
     @staticmethod
     def setup_eager_loading(queryset):
         queryset = queryset.prefetch_related(
-            Prefetch('sections',
-                     queryset=annotations.sections_with_reviews()),
-
+            Prefetch('sections', queryset=annotations.sections_with_reviews()),
         )
         return queryset
