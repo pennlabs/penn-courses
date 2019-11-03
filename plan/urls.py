@@ -2,7 +2,7 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 from rest_framework import routers
 
-from courses.views import RequirementList
+from courses.views import RequirementList, UserDetailView
 
 from .views import CourseDetailSearch, CourseListSearch, ScheduleViewSet
 

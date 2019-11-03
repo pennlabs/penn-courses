@@ -1,7 +1,18 @@
 from django.db.models import Prefetch, Q
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from courses.models import Course, Meeting, Requirement, Section
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = [
+            'username',
+            'first_name',
+            'last_name',
+        ]
 
 
 class MeetingSerializer(serializers.ModelSerializer):

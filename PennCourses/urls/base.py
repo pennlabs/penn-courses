@@ -19,11 +19,13 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.documentation import include_docs_urls
 
+from courses.views import UserDetailView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('documentation/', include_docs_urls(title='API Docs')),
     path('accounts/', include('accounts.urls', namespace='accounts')),
+    path('accounts/me/', UserDetailView.as_view()),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:
