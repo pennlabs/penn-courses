@@ -341,17 +341,34 @@ export const setScheduleId = (title, id) => ({
     id
 });
 
+/**
+ * Given the result of an API call to update a schedule, updates the schedule name in state
+ * @param dispatch
+ * @param title The title of the schedule
+ * @param fetchResult The immediate result of the API call
+ */
+const processScheduleId = (dispatch, title, fetchResult) => {
+    fetchResult.then(response => response.json())
+        .then(({ id }) => dispatch(setScheduleId(title, id)));
+};
+
 export const createScheduleOnBackend = (title, sections, semester) => (dispatch) => {
-    fetch("/schedules/", {
+    processScheduleId(dispatch, title, fetch("/schedules/", {
         body: JSON.stringify({
             title,
             sections,
             semester
         })
-    })
-        .then(response => response.json())
-        .then(({ id }) => dispatch(setScheduleId(title, id)))
-        .catch(alert);
+    })) .catch(alert);
+};
+
+export const updateScheduleOnBackend = (title, schedule) => (dispatch) => {
+    processScheduleId(dispatch, title, fetch(`/schedules/{${schedule.id}/`, {
+        body: JSON.stringify({
+            title,
+            ...schedule
+        })
+    })).catch(alert);
 };
 
 export function fetchSectionInfo(searchData) {
