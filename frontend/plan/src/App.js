@@ -43,6 +43,18 @@ store.subscribe(() => {
     localStorage.setItem("coursePlanSchedules", JSON.stringify(store.getState().schedule));
 });
 
+const postSchedule = (title, { term: semester, meetings: sections }) => {
+    fetch("/schedules/", {
+        body: JSON.stringify({
+            title,
+            sections,
+            semester
+        })
+    })
+        .then(() => {
+        });
+};
+
 function App() {
     const { hasVisited } = localStorage;
     localStorage.hasVisited = true;
@@ -64,13 +76,17 @@ function App() {
                 alignItems: "center",
             }}
             >
-                <img width="30%" src="/static/favicon-196x196.png" />
-                <div style={{ fontSize: "20px", textAlign: "center", padding: "30px" }}>
+                <img width="30%" src="/static/favicon-196x196.png"/>
+                <div style={{
+                    fontSize: "20px",
+                    textAlign: "center",
+                    padding: "30px"
+                }}>
                     <span style={{ color: "#7b84e6" }}> Penn Course Plan </span>
                     is made for desktop.
-                     This allows us to give you the best experience
-                     when searching for courses and creating mock schedules.
-                     See you soon!
+                    This allows us to give you the best experience
+                    when searching for courses and creating mock schedules.
+                    See you soon!
                 </div>
             </div>
         );
@@ -81,9 +97,10 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ padding: "0px 0px 0px 30px" }}>
-                <SearchBar style={{ flexGrow: 0 }} />
+                <SearchBar style={{ flexGrow: 0 }}/>
                 <div className="App columns is-mobile is-multiline main">
-                    <div className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop">
+                    <div
+                        className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop">
                         <span style={{
                             display: "flex",
                             flexDirection: "row",
@@ -103,7 +120,7 @@ function App() {
                                 display: "flex",
                             }}
                             >
-                                <SearchSortDropdown />
+                                <SearchSortDropdown/>
                             </div>
                         </span>
                         <div
@@ -113,7 +130,7 @@ function App() {
                                 paddingRight: 0,
                             }}
                         >
-                            <Selector />
+                            <Selector/>
                         </div>
                     </div>
                     <div
@@ -133,15 +150,15 @@ function App() {
                         >
                             Cart
                         </h3>
-                        <Cart />
+                        <Cart/>
                     </div>
                     <div className="column" style={{ paddingRight: "0.5em" }}>
-                        <Schedule />
+                        <Schedule/>
                     </div>
                 </div>
             </div>
-            <Footer />
-            <ModalContainer />
+            <Footer/>
+            <ModalContainer/>
         </Provider>
     );
 }
