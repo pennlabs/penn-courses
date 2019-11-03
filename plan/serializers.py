@@ -97,11 +97,11 @@ class SectionDetailWithReviewSerializer(SectionDetailSerializer):
     @staticmethod
     def setup_eager_loading(queryset):
         queryset = annotations.sections_with_reviews()
-        # queryset = queryset.prefetch_related(
-        #     'course__department',
-        #     'meetings__room__building',
-        #     'associated_sections__course__department',
-        # )
+        queryset = queryset.prefetch_related(
+            'course__department',
+            'meetings__room__building',
+            'associated_sections__course__department',
+        )
         return queryset
 
     class Meta:

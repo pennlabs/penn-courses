@@ -237,8 +237,6 @@ class ScheduleTest(TestCase):
         self.assertEqual(len(response.data[1]['sections']), 2)
         self.assertEqual(response.data[1]['sections'][0]['id'], 'CIS-121-001')
 
-    # vvv implement below tests
-
     def test_update_schedule_specific(self):
         response = self.client.put('/schedules/' + str(self.s.id) + '/',
                                    json.dumps({'semester': TEST_SEMESTER,

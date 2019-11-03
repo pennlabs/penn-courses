@@ -62,8 +62,9 @@ class ScheduleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def update(self, request, pk=None):
-        existing_obs = Schedule.objects.filter(id=pk)
-        if (len(existing_obs) == 0):
+        try:
+            schedule = Schedule.objects.get(id=pk)
+        except Schedule.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         if 'semester' not in request.data:
@@ -75,43 +76,41 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                                 status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            existing_obs.update(person=request.user,
-                                semester=request.data.get('semester'),
-                                name=request.data.get('name'),
-                                )
-            ob = existing_obs[0]
-            ob.sections.set(get_sections(request.data))
-            s = ScheduleSerializer(ob)
-            return Response(s.data, status=status.HTTP_202_ACCEPTED)
+            schedule.person = request.user
+            schedule.semester = request.data.get('semester')
+            schedule.name = request.data.get('name')
+            schedule.save()
+            schedule.sections.set(get_sections(request.data))
+            serialized_schedule = ScheduleSerializer(schedule)
+            return Response(serialized_schedule.data, status=status.HTTP_202_ACCEPTED)
         except IntegrityError:
             return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
-        existing_obs = Schedule.objects.filter(id=request.data.get('id'))
-        if len(existing_obs) > 0:
+        if Schedule.objects.filter(id=request.data.get('id')).exists():
             return self.update(request, request.data.get('id'))
 
         if 'semester' not in request.data:
             request.data['semester'] = get_value('SEMESTER', None)
 
-        for s in request.data['sections']:
-            if s.get('semester') != request.data.get('semester'):
+        for sec in request.data['sections']:
+            if sec.get('semester') != request.data.get('semester'):
                 return Response({'detail': 'Semester uniformity invariant violated.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            if 'id' in request.data:
-                ob = Schedule.objects.create(person=request.user,
-                                             semester=request.data.get('semester'),
-                                             name=request.data.get('name'),
-                                             id=request.data.get('id'))
+            if 'id' in request.data:  # Also from above we know that this id does not conflict with existing schedules.
+                schedule = Schedule.objects.create(person=request.user,
+                                                   semester=request.data.get('semester'),
+                                                   name=request.data.get('name'),
+                                                   id=request.data.get('id'))
             else:
-                ob = Schedule.objects.create(person=request.user,
-                                             semester=request.data.get('semester'),
-                                             name=request.data.get('name'))
-            ob.sections.set(get_sections(request.data))
-            s = ScheduleSerializer(ob)
-            return Response(s.data, status=status.HTTP_201_CREATED)
+                schedule = Schedule.objects.create(person=request.user,
+                                                   semester=request.data.get('semester'),
+                                                   name=request.data.get('name'))
+            schedule.sections.set(get_sections(request.data))
+            serialized_schedule = ScheduleSerializer(schedule)
+            return Response(serialized_schedule.data, status=status.HTTP_201_CREATED)
         except IntegrityError:
             return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
 
