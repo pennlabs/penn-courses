@@ -33,17 +33,20 @@ function shouldSearch(filterData) {
     return searchString || selectedReq;
 }
 
-const LoginButton = () => {
-    return <a className="button is-link login" href={"/accounts/login"}
-              style={{
-                  padding: "0.5rem",
-                  fontSize: "1rem!important",
-                  paddingRight: "1rem",
-                  paddingLeft: "1rem"
-              }}>
+const LoginButton = () => (
+    <a
+        className="button is-link login"
+        href="/accounts/login"
+        style={{
+            padding: "0.5rem",
+            fontSize: "1rem!important",
+            paddingRight: "1rem",
+            paddingLeft: "1rem",
+        }}
+    >
         Login
-    </a>;
-};
+    </a>
+);
 
 const UserSelector = ({ user: { name, email } }) => {
     const [selected, setSelected] = useState(false);
@@ -59,34 +62,55 @@ const UserSelector = ({ user: { name, email } }) => {
             document.removeEventListener("click", listener);
         };
     });
-    return <div className={`dropdown${selected ? " is-active" : ""}`}
-                ref={setRef}>
+    return (
         <div
-            className={`dropdown-trigger${selected ? " user-selector-selected" : ""}`}
-            role={"button"}
-            id={"user-selector"}
-            onClick={() => setSelected(!selected)}>
-            <span> {(name && name.charAt(0)) || "U"} </span>
-        </div>
-        <div className="logout dropdown-menu">
-            <div id="logout-dropdown-menu-container">
-                <div className="triangle-up"/>
-                <div id={"logout-dropdown-inner-menu"}>
-                    <p className="name-container"> {name} </p>
-                    <p className="email-container"> {email} </p>
-                    <div role="button" id="logout-button" onClick={() => {
-                        fetch("/accounts/logout")
-                            .then(() => setSelected(false));
-                    }}>
+            className={`dropdown${selected ? " is-active" : ""}`}
+            ref={setRef}
+        >
+            <div
+                className={`dropdown-trigger${selected ? " user-selector-selected" : ""}`}
+                role="button"
+                id="user-selector"
+                onClick={() => setSelected(!selected)}
+            >
+                <span>
+                    {" "}
+                    {(name && name.charAt(0)) || "U"}
+                    {" "}
+                </span>
+            </div>
+            <div className="logout dropdown-menu">
+                <div id="logout-dropdown-menu-container">
+                    <div className="triangle-up" />
+                    <div id="logout-dropdown-inner-menu">
+                        <p className="name-container">
+                            {" "}
+                            {name}
+                            {" "}
+                        </p>
+                        <p className="email-container">
+                            {" "}
+                            {email}
+                            {" "}
+                        </p>
+                        <div
+                            role="button"
+                            id="logout-button"
+                            onClick={() => {
+                                fetch("/accounts/logout")
+                                    .then(() => setSelected(false));
+                            }}
+                        >
                         Logout
-                        <div id="logout-icon-container">
-                            <i className="fas fa-sign-out-alt"/>
+                            <div id="logout-icon-container">
+                                <i className="fas fa-sign-out-alt" />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>;
+    );
 };
 
 UserSelector.propTypes = {
@@ -100,7 +124,7 @@ function SearchBar({
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
-    user
+    user,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -135,10 +159,14 @@ function SearchBar({
         <div className="bar level is-mobile" style={{ height: "auto" }}>
             <div className="level-left" style={{ maxWidth: "80vw" }}>
                 <div className="level-item">
-                    <img src="/static/favicon.ico" alt="" style={{
-                        height: "2.5rem",
-                        paddingLeft: "1.5rem"
-                    }}/>
+                    <img
+                        src="/static/favicon.ico"
+                        alt=""
+                        style={{
+                            height: "2.5rem",
+                            paddingLeft: "1.5rem",
+                        }}
+                    />
                 </div>
                 <div className="level-item" id="searchdiv">
                     <SearchField
@@ -151,13 +179,16 @@ function SearchBar({
 
                 <div className="level-item filterContainer" id="filterdiv">
                     <span className="icon">
-                        <i className="fas fa-filter"/>
+                        <i className="fas fa-filter" />
                     </span>
                     <p> Filter by</p>
-                    <DropdownButton title="Requirements" filterData={filterData.selectedReq}
-                                    defaultFilter={defaultReqs}
-                                    clearFilter={clearFilterSearch("selectedReq")}
-                                    isDisabled={isLoading}>
+                    <DropdownButton
+                        title="Requirements"
+                        filterData={filterData.selectedReq}
+                        defaultFilter={defaultReqs}
+                        clearFilter={clearFilterSearch("selectedReq")}
+                        isDisabled={isLoading}
+                    >
                         <SchoolReq
                             startSearch={conditionalStartSearch}
                             schoolReq={schoolReq}
@@ -167,10 +198,13 @@ function SearchBar({
                             isDisabled={isLoading}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Difficulty" filterData={filterData.difficulty}
-                                    defaultFilter={defaultFilters.filterData.difficulty}
-                                    clearFilter={clearFilterSearch("difficulty")}
-                                    isDisabled={isLoading}>
+                    <DropdownButton
+                        title="Difficulty"
+                        filterData={filterData.difficulty}
+                        defaultFilter={defaultFilters.filterData.difficulty}
+                        clearFilter={clearFilterSearch("difficulty")}
+                        isDisabled={isLoading}
+                    >
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -182,10 +216,13 @@ function SearchBar({
                             isDisabled={isLoading}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Course Quality" filterData={filterData.course_quality}
-                                    defaultFilter={defaultFilters.filterData.course_quality}
-                                    clearFilter={clearFilterSearch("course_quality")}
-                                    isDisabled={isLoading}>
+                    <DropdownButton
+                        title="Course Quality"
+                        filterData={filterData.course_quality}
+                        defaultFilter={defaultFilters.filterData.course_quality}
+                        clearFilter={clearFilterSearch("course_quality")}
+                        isDisabled={isLoading}
+                    >
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -197,11 +234,13 @@ function SearchBar({
                             isDisabled={isLoading}
                         />
                     </DropdownButton>
-                    <DropdownButton title="Instructor Quality"
-                                    filterData={filterData.instructor_quality}
-                                    defaultFilter={defaultFilters.filterData.instructor_quality}
-                                    clearFilter={clearFilterSearch("instructor_quality")}
-                                    isDisabled={isLoading}>
+                    <DropdownButton
+                        title="Instructor Quality"
+                        filterData={filterData.instructor_quality}
+                        defaultFilter={defaultFilters.filterData.instructor_quality}
+                        clearFilter={clearFilterSearch("instructor_quality")}
+                        isDisabled={isLoading}
+                    >
                         <RangeFilter
                             minRange={0}
                             maxRange={4}
@@ -253,8 +292,8 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    {user && <UserSelector user={user}/>}
-                    {!user && <LoginButton/>}
+                    {user && <UserSelector user={user} />}
+                    {!user && <LoginButton />}
                 </div>
             </div>
         </div>
@@ -289,7 +328,7 @@ const mapStateToProps = state => (
         isSearchingCourseInfo: state.sections.searchInfoLoading,
         user: {
             name: "Daniel Like",
-            email: "dlike@seas.upenn.edu"
+            email: "dlike@seas.upenn.edu",
         },
     }
 );

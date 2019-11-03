@@ -90,40 +90,43 @@ export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
     switch (action.type) {
         case UPDATE_SCHEDULES:
+            // eslint-disable-next-line
             const { schedulesFromBackend } = action;
-            const newSchedules = { ...state.schedules };
+            // eslint-disable-next-line
+            const newScheduleObject = { ...state.schedules };
+            // eslint-disable-next-line
             const newCart = [...state.cartSections];
             if (schedulesFromBackend) {
-                schedulesFromBackend.forEach(({ title, sections }) => {
+                schedulesFromBackend.forEach(({ title, sections, semester }) => {
                     if (title === "cart") {
                         const oldSectionSet = {};
                         state.cartSections.forEach(({ id }) => {
                             oldSectionSet[id] = true;
                         });
-                        sections.forEach(cartSection => {
+                        sections.forEach((cartSection) => {
                             if (!oldSectionSet[cartSection.id]) {
                                 newCart.push(cartSection);
                             }
                         });
+                    } else if (state.schedules[title]) {
+                        const oldSectionSet = {};
+                        state.schedules[title].meetings.forEach(({ id }) => {
+                            oldSectionSet[id] = true;
+                        });
+                        sections.forEach((section) => {
+                            if (!oldSectionSet[section.id]) {
+                                newScheduleObject[title].meetings.push(section);
+                            }
+                        });
                     } else {
-                        if (state.schedules[title]) {
-                            const oldSectionSet = {};
-                            state.schedules[title].forEach(({ id }) => {
-                                oldSectionSet[id] = true;
-                            });
-                            sections.forEach(section => {
-                                if (!oldSectionSet[section.id]) {
-                                    state.schedules[title].push(section);
-                                }
-                            });
-                        }
+                        newScheduleObject[title] = { meetings: sections, semester };
                     }
                 });
             }
             return {
                 ...state,
-                schedules: newSchedules,
-                cartSections: newCart
+                schedules: newScheduleObject,
+                cartSections: newCart,
             };
         case CLEAR_SCHEDULE:
             return {

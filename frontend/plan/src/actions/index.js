@@ -313,7 +313,7 @@ export function clearAll() {
 
 export const updateSchedules = ({ schedules }) => ({
     type: UPDATE_SCHEDULES,
-    schedules
+    schedules,
 });
 
 export function fetchCourseDetails(courseId) {
@@ -326,13 +326,11 @@ export function fetchCourseDetails(courseId) {
     };
 }
 
-export const fetchSchedules = () => {
-    return dispatch => {
-        fetch("/schedules/")
-            .then(res => res.json())
-            .then(schedules => dispatch(updateSchedules(schedules)))
-            .catch(error => console.log("Not logged in"));
-    };
+export const fetchSchedules = () => (dispatch) => {
+    fetch("/schedules/")
+        .then(res => res.json())
+        .then(schedules => dispatch(updateSchedules(schedules)))
+        .catch(error => console.log("Not logged in"));
 };
 
 export function fetchSectionInfo(searchData) {
