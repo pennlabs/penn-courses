@@ -62,9 +62,9 @@ class MiniSectionSerializer(serializers.ModelSerializer):
 
 class SectionSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source='full_code')
-    semester = serializers.SerializerMethodField()
-    meetings = MeetingSerializer(many=True)
-    instructors = serializers.StringRelatedField(many=True)
+    semester = serializers.SerializerMethodField(read_only=False)
+    meetings = MeetingSerializer(many=True, read_only=True)
+    instructors = serializers.StringRelatedField(many=True, read_only=True)
 
     @staticmethod
     def get_semester(obj):
