@@ -408,3 +408,19 @@ class RelocateReqsRestsTest(TestCase):
                                         ['Random restriction'])
         self.assertEquals(len(self.reqs), 1)
         self.assertTrue('Random restriction' in self.reqs)
+
+    def test_mixed_other_already_populated(self):
+        self.rests.append(self.Rest())
+        self.rests.append(self.Rest())
+        self.rests[0].requirement_description = 'Random restriction'
+        self.rests[1].requirement_description = 'Natural Science & Math Sector'
+        self.rests[2].requirement_description = 'Humanities & Social Science Sector'
+        self.reqs = ['A requirement']
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEquals(len(self.reqs), 3)
+        self.assertTrue('Humanities & Social Science Sector' in self.reqs and
+                        'Natural Science & Math Sector' in self.reqs and
+                        'A requirement' in self.reqs)
