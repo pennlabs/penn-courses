@@ -134,13 +134,10 @@ def add_college_requirements(course, college_reqs):
         req.courses.add(course)
 
 
-def relocate_reqs_from_rests(rests, reqs):
-    if any(r.requirement_description == 'Humanities & Social Science Sector' for r in rests):
-        reqs.append('Humanities & Social Science Sector')
-    if any(r.requirement_description == 'Natural Science & Math Sector' for r in rests):
-        reqs.append('Natural Science & Math Sector')
-    if any(r.requirement_description == 'Benjamin Franklin Seminars' for r in rests):
-        reqs.append('Benjamin Franklin Seminars')
+def relocate_reqs_from_restrictions(rests, reqs, travellers):
+    for t in travellers:
+        if any(r.requirement_description == t for r in rests):
+            reqs.append(t)
 
 
 def upsert_course_from_opendata(info, semester):
@@ -176,8 +173,11 @@ def upsert_course_from_opendata(info, semester):
     set_meetings(section, info['meetings'])
     add_associated_sections(section, info)
     add_restrictions(section, info['requirements'])
-    relocate_reqs_from_rests(info['requirements'],
-                             info['fulfills_college_requirements'].append('Humanities & Social Science Sector'))
+    relocate_reqs_from_restrictions(info['requirements'],
+                                    info['fulfills_college_requirements'],
+                                    ['Humanities & Social Science Sector',
+                                     'Natural Science & Math Sector',
+                                     'Benjamin Franklin Seminars'])
     add_college_requirements(section.course, info['fulfills_college_requirements'])
 
     section.save()
