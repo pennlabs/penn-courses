@@ -112,15 +112,16 @@ def add_college_requirements(course, college_reqs):
         'MDS': 'Society Sector',
         'MDH': 'History & Tradition Sector',
         'MDA': 'Arts & Letters Sector',
-        'MDO,MDB': 'Humanities & Social Science Sector',
+        'MDO': 'Humanities & Social Science Sector',
         'MDL': 'Living World Sector',
         'MDP': 'Physical World Sector',
-        'MDN,MDB': 'Natural Science & Math Sector',
+        'MDN': 'Natural Science & Math Sector',
         'MWC': 'Writing Requirement',
         'MQS': 'College Quantitative Data Analysis Req.',
         'MFR': 'Formal Reasoning Course',
         'MC1': 'Cross Cultural Analysis',
-        'MC2': 'Cultural Diversity in the US'
+        'MC2': 'Cultural Diversity in the US',
+        'MGH': 'Benjamin Franklin Seminars'
     }
     name_to_code = dict([(v, k) for k, v in code_to_name.items()])
     for req_name in college_reqs:
@@ -131,6 +132,12 @@ def add_college_requirements(course, college_reqs):
                                                   'name': req_name
                                                 })[0]
         req.courses.add(course)
+
+
+def relocate_reqs_from_restrictions(rests, reqs, travellers):
+    for t in travellers:
+        if any(r.requirement_description == t for r in rests):
+            reqs.append(t)
 
 
 def upsert_course_from_opendata(info, semester):
@@ -166,6 +173,11 @@ def upsert_course_from_opendata(info, semester):
     set_meetings(section, info['meetings'])
     add_associated_sections(section, info)
     add_restrictions(section, info['requirements'])
+    relocate_reqs_from_restrictions(info['requirements'],
+                                    info['fulfills_college_requirements'],
+                                    ['Humanities & Social Science Sector',
+                                     'Natural Science & Math Sector',
+                                     'Benjamin Franklin Seminars'])
     add_college_requirements(section.course, info['fulfills_college_requirements'])
 
     section.save()

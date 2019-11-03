@@ -2,7 +2,8 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from courses.models import Course, Department, Instructor, Requirement, Section
-from courses.util import (create_mock_data, get_course, get_course_and_section, record_update,
+from courses.util import (create_mock_data, get_course, get_course_and_section,
+                          record_update, relocate_reqs_from_restrictions,
                           separate_course_code, set_crosslistings, update_course_from_record)
 from options.models import Option
 
@@ -323,3 +324,103 @@ class CourseDetailTestCase(TestCase):
     def test_not_get_course(self):
         response = self.client.get('/all/courses/CIS-160/')
         self.assertEqual(response.status_code, 404)
+
+
+@override_settings(SWITCHBOARD_TEST_APP='api')
+class RelocateReqsRestsTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        class Rest:
+            requirement_description = ''
+        self.Rest = Rest
+        self.rests = [Rest()]
+        self.reqs = []
+
+    def test_bfs(self):
+        self.rests[0].requirement_description = 'Benjamin Franklin Seminars'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEqual(self.reqs, ['Benjamin Franklin Seminars'])
+
+    def test_nsm(self):
+        self.rests[0].requirement_description = 'Natural Science & Math Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEqual(self.reqs, ['Natural Science & Math Sector'])
+
+    def test_hss(self):
+        self.rests[0].requirement_description = 'Humanities & Social Science Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEqual(self.reqs, ['Humanities & Social Science Sector'])
+
+    def test_mixed(self):
+        self.rests.append(self.Rest())
+        self.rests.append(self.Rest())
+        self.rests[0].requirement_description = 'Benjamin Franklin Seminars'
+        self.rests[1].requirement_description = 'Natural Science & Math Sector'
+        self.rests[2].requirement_description = 'Humanities & Social Science Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEquals(len(self.reqs), 3)
+        self.assertTrue('Humanities & Social Science Sector' in self.reqs and
+                        'Natural Science & Math Sector' in self.reqs and
+                        'Benjamin Franklin Seminars' in self.reqs)
+
+    def test_none(self):
+        self.rests[0].requirement_description = 'Random restriction'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEquals(len(self.reqs), 0)
+
+    def test_mixed_other(self):
+        self.rests.append(self.Rest())
+        self.rests.append(self.Rest())
+        self.rests[0].requirement_description = 'Random restriction'
+        self.rests[1].requirement_description = 'Natural Science & Math Sector'
+        self.rests[2].requirement_description = 'Humanities & Social Science Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEquals(len(self.reqs), 2)
+        self.assertTrue('Humanities & Social Science Sector' in self.reqs and
+                        'Natural Science & Math Sector' in self.reqs)
+
+    def test_different_rests(self):
+        self.rests.append(self.Rest())
+        self.rests.append(self.Rest())
+        self.rests[0].requirement_description = 'Random restriction'
+        self.rests[1].requirement_description = 'Natural Science & Math Sector'
+        self.rests[2].requirement_description = 'Humanities & Social Science Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Random restriction'])
+        self.assertEquals(len(self.reqs), 1)
+        self.assertTrue('Random restriction' in self.reqs)
+
+    def test_mixed_other_already_populated(self):
+        self.rests.append(self.Rest())
+        self.rests.append(self.Rest())
+        self.rests[0].requirement_description = 'Random restriction'
+        self.rests[1].requirement_description = 'Natural Science & Math Sector'
+        self.rests[2].requirement_description = 'Humanities & Social Science Sector'
+        self.reqs = ['A requirement']
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEquals(len(self.reqs), 3)
+        self.assertTrue('Humanities & Social Science Sector' in self.reqs and
+                        'Natural Science & Math Sector' in self.reqs and
+                        'A requirement' in self.reqs)
