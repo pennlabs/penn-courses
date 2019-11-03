@@ -4,6 +4,7 @@ from rest_framework import serializers
 from courses.models import Course, Section
 from courses.serializers import CourseDetailSerializer, CourseListSerializer, SectionDetailSerializer
 from plan import annotations
+from plan.models import Schedule
 
 
 def unique(lst):
@@ -88,10 +89,10 @@ class CourseListWithReviewSerializer(CourseListSerializer):
 
 
 class SectionDetailWithReviewSerializer(SectionDetailSerializer):
-    course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
-    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
-    instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
-    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
+    course_quality = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True)
+    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True)
+    instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True)
+    work_required = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -108,8 +109,6 @@ class SectionDetailWithReviewSerializer(SectionDetailSerializer):
         list_serializer_class = DeduplicateListSerializer
         fields = [
             'id',
-            'status',
-            'activity',
             'credits',
             'semester',
             'course_quality',
@@ -121,13 +120,17 @@ class SectionDetailWithReviewSerializer(SectionDetailSerializer):
         ] + [
             'associated_sections',
         ]
+        read_only_fields = [
+            'status',
+            'activity',
+        ]
 
 
 class CourseDetailWithReviewSerializer(CourseDetailSerializer):
-    course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
-    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
-    instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
-    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
+    course_quality = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True)
+    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True)
+    instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True)
+    work_required = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True)
 
     sections = SectionDetailWithReviewSerializer(many=True)
 
@@ -168,3 +171,18 @@ class CourseDetailWithReviewSerializer(CourseDetailSerializer):
              'requirements',
              'sections',
          ]
+
+
+class ScheduleSerializer(serializers.ModelSerializer):
+    sections = SectionDetailWithReviewSerializer(many=True, read_only=False)
+
+    class Meta:
+        model = Schedule
+        exclude = ['person']
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        queryset = queryset.prefetch_related(
+            Prefetch('sections', queryset=annotations.sections_with_reviews()),
+        )
+        return queryset
