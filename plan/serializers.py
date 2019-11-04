@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from courses.serializers import SectionDetailSerializer
 from plan.models import Schedule
 
 

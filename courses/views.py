@@ -1,4 +1,3 @@
-from django.http import HttpResponse, Http404
 from django.contrib.auth import get_user_model
 from rest_framework import filters, generics
 from rest_framework.permissions import IsAuthenticated
@@ -6,7 +5,6 @@ from rest_framework.permissions import IsAuthenticated
 from courses.models import Course, Requirement, Section
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
                                  MiniSectionSerializer, RequirementListSerializer, UserSerializer)
-
 from options.models import get_value
 
 
@@ -59,7 +57,7 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = RequirementListSerializer
     queryset = Requirement.objects.all()
 
-    
+
 class UserDetailView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]

@@ -338,7 +338,7 @@ export const fetchSchedules = () => (dispatch) => {
 export const setScheduleId = (title, id) => ({
     type: SET_SCHEDULE_ID,
     title,
-    id
+    id,
 });
 
 /**
@@ -357,17 +357,17 @@ export const createScheduleOnBackend = (title, sections, semester) => (dispatch)
         body: JSON.stringify({
             title,
             sections,
-            semester
-        })
-    })) .catch(alert);
+            semester,
+        }),
+    })).catch(alert);
 };
 
 export const updateScheduleOnBackend = (title, schedule) => (dispatch) => {
     processScheduleId(dispatch, title, fetch(`/schedules/{${schedule.id}/`, {
         body: JSON.stringify({
             title,
-            ...schedule
-        })
+            ...schedule,
+        }),
     })).catch(alert);
 };
 

@@ -1,6 +1,5 @@
-from django.db.models import Prefetch, Q
 from django.contrib.auth import get_user_model
-
+from django.db.models import Manager, Prefetch, Q
 from rest_framework import serializers
 
 from courses.models import Course, Meeting, Requirement, Section

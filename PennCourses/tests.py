@@ -3,7 +3,6 @@ from django.test import TestCase, override_settings
 from django.test.client import RequestFactory
 from rest_framework.test import APIClient
 
-
 from .middleware import SwitchboardMiddleware
 
 
