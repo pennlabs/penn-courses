@@ -18,8 +18,8 @@ export function SchoolReq({
     };
 
     return (
-        <div className="columns contained" id="schoolreq">
-            <div className="column is-one-quarter">
+        <div className="columns is-mobile contained" id="schoolreq">
+            <div className="column is-one-quarter is-one-third-mobile">
                 <p><strong>School</strong></p>
                 <ul className="field" style={{ marginTop: "0.5rem" }}>
                     {schools.map(school => (
@@ -44,7 +44,7 @@ export function SchoolReq({
                     ))}
                 </ul>
             </div>
-            <div className="is-divider-vertical" />
+            <div className="column is-1 reqBorder" />
             <div className="column">
                 <p><strong>{`${selSchool} Requirements`}</strong></p>
                 <ul className="field">

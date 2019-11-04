@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from courses.models import Course, Requirement, Section
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
                                  MiniSectionSerializer, RequirementListSerializer, UserSerializer)
+
 from options.models import get_value
 
 
@@ -35,6 +36,8 @@ class BaseCourseMixin(generics.GenericAPIView):
 class SectionList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = MiniSectionSerializer
     queryset = Section.objects.all()
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['^full_code']
 
     @staticmethod
     def get_semester_field():
@@ -56,7 +59,7 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = RequirementListSerializer
     queryset = Requirement.objects.all()
 
-
+    
 class UserDetailView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]

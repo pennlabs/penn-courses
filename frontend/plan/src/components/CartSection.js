@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import "../styles/course-cart.css";
+import { isMobile } from "react-device-detect";
 import { getTimeString } from "../meetUtil";
 
 const CourseDetails = ({ meetings, code }) => (
@@ -91,11 +92,17 @@ const CartSection = ({
         role="switch"
         aria-checked="false"
         className="course-cart-item"
-        style={
-            {
+        style={!isMobile
+            ? {
                 display: "flex",
                 flexDirection: "row",
                 justifyContent: "space-around",
+                padding: "0.8rem",
+                borderBottom: "1px solid rgb(200, 200, 200)",
+                opacity: overlaps ? 0.5 : 1.0,
+            } : {
+                display: "grid",
+                gridTemplateColumns: "20% 50% 15% 15%",
                 padding: "0.8rem",
                 borderBottom: "1px solid rgb(200, 200, 200)",
                 opacity: overlaps ? 0.5 : 1.0,

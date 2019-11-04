@@ -3,6 +3,22 @@
     text-align: left;
 }
 
+@media all and (max-width: 480px){
+  .contained {
+      font-size: 1rem;
+  }
+  .contained p{
+      font-size: 0.8rem;
+  }
+  #schoolreq {
+      min-width: 25rem !important;
+  }
+}
+
+.reqBorder {
+    border-right: 1px solid #C1C1C1;
+}
+
 .bar {
     margin: 1rem 1.5rem;
     padding: 0.25rem;
@@ -10,6 +26,7 @@
     border-radius: 6px;
     box-shadow: 0 1px 3px 0 lightgrey;
     height: 3rem;
+    width: inherit;
 }
 
 .contained {

@@ -39,3 +39,9 @@
 .cart-delete-course i:hover {
     color: #67676a!important;
 }
+
+@media all and (max-width: 768px){
+  .cart-delete-course i {
+      color: #999999!important;
+  }
+}

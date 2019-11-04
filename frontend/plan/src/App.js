@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
@@ -11,6 +11,9 @@ import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import { isMobileOnly } from "react-device-detect";
+import SwipeableViews from "react-swipeable-views";
+import Tabs from "@material-ui/core/Tabs";
+import Tab from "@material-ui/core/Tab";
 import Schedule from "./components/schedule/Schedule";
 
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
@@ -52,8 +55,6 @@ function App() {
             "Welcome to Penn Course Plan ✨"));
     }
 
-    fetchSchedules(store.dispatch)();
-
     if (isMobileOnly) { // Mobile version
         return (
             <div style={{
@@ -77,6 +78,66 @@ function App() {
                     See you soon!
                 </div>
             </div>
+    fetchSchedules(store.dispatch)();
+
+    const [tab, setTab] = useState(0);
+
+    const containerRef = useRef();
+
+    const scrollTop = (index, action) => {
+        window.scrollTo(0, 0);
+    };
+
+    if (isMobileOnly) {
+        return (
+            <Provider store={store}>
+                {initGA()}
+                {logPageView()}
+                <SearchBar setTab={setTab} />
+                <Tabs value={tab} className="topTabs" centered>
+                    <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
+                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
+                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)} />
+                </Tabs>
+                <SwipeableViews
+                    index={tab}
+                    ref={containerRef}
+                    enableMouseEvents
+                    onSwitching={scrollTop}
+                    onChangeIndex={setTab}
+                >
+                    <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                        <div>
+                            <div style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                justifyContent: "space-around",
+                                margin: "10px",
+                            }}
+                            >
+                                <SearchSortDropdown />
+                            </div>
+                            <div
+                                className="box"
+                                style={{
+                                    paddingLeft: 0,
+                                    paddingRight: 0,
+                                }}
+                            >
+                                <Selector />
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ padding: "10px" }}>
+                        <Cart setTab={setTab} />
+                    </div>
+                    <div style={{ padding: "10px" }}>
+                        <Schedule setTab={setTab} />
+                    </div>
+                </SwipeableViews>
+                <Footer />
+                <ModalContainer />
+            </Provider>
         );
     }
 
