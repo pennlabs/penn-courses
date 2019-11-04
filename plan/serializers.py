@@ -1,7 +1,10 @@
+from django.db.models import Prefetch
 from rest_framework import serializers
 
 from courses.serializers import SectionDetailSerializer
+from courses.models import Section
 from plan.models import Schedule
+
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
@@ -14,6 +17,6 @@ class ScheduleSerializer(serializers.ModelSerializer):
     @staticmethod
     def setup_eager_loading(queryset):
         queryset = queryset.prefetch_related(
-            'sections',
+            Prefetch('sections', Section.with_reviews.all()),
         )
         return queryset
