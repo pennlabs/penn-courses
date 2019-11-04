@@ -1,5 +1,11 @@
+#!/usr/bin/env python3
+
+import json
+import re
+
 import requests
 import unidecode
+from bs4 import BeautifulSoup
 
 
 # Data scraped from https://undergrad-inside.wharton.upenn.edu/course-search-2017/, which gets its
@@ -55,15 +61,47 @@ REQUIREMENTS = {
     'SS': 'Social Science',
     'NSME': 'Natural Sciences, Math, and Engineering',
     'FGE': 'Uncategorized / Flex Gen Ed Only',
+    'TIA': 'Technology, Innovation, and Analytics',
+    'GEBS': 'Global Economy, Business, and Society'
 }
 
 
+GEBS_URL = 'https://undergrad-inside.wharton.upenn.edu/requirements-2017/global-economy-business-society/'
+TIA_URL = 'https://undergrad-inside.wharton.upenn.edu/requirements-2017/technology-innovation-analytics/'
+
+
+def _get_curriculum_page(url):
+    resp = requests.get(url)
+    resp.raise_for_status()
+
+    reqs = []
+    soup = BeautifulSoup(resp.content.decode('utf-8'), features='html.parser')
+    for lst in soup.select('.wpb_wrapper ul.bullet-list'):
+        for item in lst.select('li'):
+            match = re.match(r'([A-Z]{0,4})\s?(\d{3})\s?:', item.text, re.I)
+            if match is not None:
+                res = match.groups()
+                reqs.append({
+                    'department': res[0],
+                    'course_id': res[1],
+                    'satisfies': True
+                })
+    return reqs
+
+
 def get_requirements():
+    data = _clean_data(_get_requirement_data())
+
+    data.update({
+        'GEBS': _get_curriculum_page(GEBS_URL),
+        'TIA': _get_curriculum_page(TIA_URL)
+    })
+
     return {
         'codes': REQUIREMENTS,
-        'data': _clean_data(_get_requirement_data())
+        'data': data
     }
 
 
 if __name__ == '__main__':
-    print(get_requirements())
+    print(json.dumps(get_requirements(), indent=4))
