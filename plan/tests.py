@@ -5,7 +5,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 
 from courses.models import Instructor, Requirement
-from courses.util import create_mock_data, get_course_and_section
+from courses.util import create_mock_data
 from options.models import Option
 from plan.models import Schedule
 from plan.search import TypedSearchBackend

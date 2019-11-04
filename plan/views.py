@@ -1,6 +1,5 @@
 from django.db import IntegrityError
 from django.db.models import Prefetch
-
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -11,8 +10,7 @@ from options.models import get_value
 from plan.filters import bound_filter, requirement_filter
 from plan.models import Schedule
 from plan.search import TypedSearchBackend
-from plan.serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer, ScheduleSerializer
-
+from plan.serializers import ScheduleSerializer
 
 
 class CourseListSearch(CourseList):

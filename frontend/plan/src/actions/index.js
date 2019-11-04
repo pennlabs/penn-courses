@@ -47,7 +47,22 @@ export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 // Backend accounts integration
 export const UPDATE_SCHEDULES = "UPDATE_SCHEDULES";
 export const SET_SCHEDULE_ID = "SET_SCHEDULE_ID";
+export const MARK_SCHEDULE_SYNCED = "MARK_SCHEDULE_SYNCED";
+export const MARK_CART_SYNCED = "MARK_CART_SYNCED";
 
+
+export const markScheduleSynced = scheduleName => (
+    {
+        scheduleName,
+        type: MARK_SCHEDULE_SYNCED,
+    }
+);
+
+export const markCartSynced = () => (
+    {
+        type: MARK_CART_SYNCED,
+    }
+);
 
 export const duplicateSchedule = scheduleName => (
     {
@@ -139,12 +154,17 @@ export const updateCourseInfo = course => (
     }
 );
 
-export const createSchedule = scheduleName => (
+const createScheduleOnFrontend = scheduleName => (
     {
         type: CREATE_SCHEDULE,
         scheduleName,
     }
 );
+
+export const createSchedule = scheduleName => dispatch => {
+    dispatch(createScheduleOnFrontend(scheduleName));
+    dispatch(createScheduleOnBackend(scheduleName, [], "20sp"));
+};
 
 export const openModal = (modalKey, modalProps, modalTitle) => (
     {
@@ -338,7 +358,7 @@ export const fetchSchedules = () => (dispatch) => {
 export const setScheduleId = (title, id) => ({
     type: SET_SCHEDULE_ID,
     title,
-    id
+    id,
 });
 
 /**
@@ -357,17 +377,17 @@ export const createScheduleOnBackend = (title, sections, semester) => (dispatch)
         body: JSON.stringify({
             title,
             sections,
-            semester
-        })
-    })) .catch(alert);
+            semester,
+        }),
+    })).catch(alert);
 };
 
 export const updateScheduleOnBackend = (title, schedule) => (dispatch) => {
     processScheduleId(dispatch, title, fetch(`/schedules/{${schedule.id}/`, {
         body: JSON.stringify({
             title,
-            ...schedule
-        })
+            ...schedule,
+        }),
     })).catch(alert);
 };
 
