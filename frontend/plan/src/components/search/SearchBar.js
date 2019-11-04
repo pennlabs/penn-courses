@@ -128,11 +128,11 @@ function SearchBar({
         return (
             <div style={{ marginTop: "0px" }}>
                 <div style={{
-                    display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", background: "white", paddingTop: "20px", paddingBottom: "10px", marginBottom: "10px", borderRadius: "6px",
+                    display: "flex", justifyContent: "space-evenly", alignItems: "stretch", flexWrap: "wrap", background: "white", paddingTop: "20px", paddingBottom: "10px", marginBottom: "10px", borderRadius: "6px",
                 }}
                 >
                     <div>
-                        <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 1rem" }} />
+                        <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 0.5rem" }} />
                     </div>
                     <SearchField
                         setTab={setTab}
@@ -141,7 +141,7 @@ function SearchBar({
                         updateSearchText={updateSearchText}
                         isDisabled={isLoading}
                     />
-                    <div style={{ paddingLeft: "10px" }} role="button" onClick={() => showHideReqs(!reqsShown)}>
+                    <div style={{ padding: "0.5rem" }} role="button" onClick={() => showHideReqs(!reqsShown)}>
                         <i className="fas fa-filter" />
                     </div>
                 </div>
