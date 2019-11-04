@@ -1,10 +1,9 @@
 from django.db.models import Prefetch
 from rest_framework import serializers
 
-from courses.serializers import SectionDetailSerializer
 from courses.models import Section
+from courses.serializers import SectionDetailSerializer
 from plan.models import Schedule
-
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
