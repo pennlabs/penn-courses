@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models import Q
 
 from options.models import get_value
+from plan.annotations import course_reviews, sections_with_reviews
 
 
 def get_current_semester():
@@ -41,7 +42,14 @@ class Department(models.Model):
         return self.code
 
 
+class CourseManager(models.Manager):
+    def get_queryset(self):
+        return course_reviews(super().get_queryset())
+
+
 class Course(models.Model):
+    objects = CourseManager()
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -103,7 +111,14 @@ class Restriction(models.Model):
         return f'{self.code} - {self.description}'
 
 
+class SectionManager(models.Manager):
+    def get_queryset(self):
+        return sections_with_reviews(super().get_queryset())
+
+
 class Section(models.Model):
+    objects = SectionManager()
+
     STATUS_CHOICES = (
         ('O', 'Open'),
         ('C', 'Closed'),

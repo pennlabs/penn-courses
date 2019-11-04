@@ -1,4 +1,3 @@
-from django.http import HttpResponse
 from rest_framework import filters, generics
 
 from courses.models import Course, Requirement, Section
@@ -55,7 +54,3 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 class RequirementList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = RequirementListSerializer
     queryset = Requirement.objects.all()
-
-
-def index(request):
-    return HttpResponse(f'Hello, {request.site}')

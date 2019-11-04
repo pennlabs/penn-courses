@@ -5,18 +5,17 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.util import get_course_and_section
-from courses.views import CourseDetail, CourseList
+from courses.views import CourseList
 from options.models import get_value
 from plan.filters import bound_filter, requirement_filter
 from plan.models import Schedule
 from plan.search import TypedSearchBackend
-from plan.serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer, ScheduleSerializer
+from plan.serializers import ScheduleSerializer
 
 
 class CourseListSearch(CourseList):
     filter_backends = [TypedSearchBackend]
     search_fields = ('full_code', 'title', 'sections__instructors__name')
-    serializer_class = CourseListWithReviewSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset().prefetch_related(Prefetch('sections'))
@@ -35,10 +34,6 @@ class CourseListSearch(CourseList):
                 queryset = filter_func(queryset, param, self.get_semester())
 
         return queryset.distinct()
-
-
-class CourseDetailSearch(CourseDetail):
-    serializer_class = CourseDetailWithReviewSerializer
 
 
 def get_sections(data):
