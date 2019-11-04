@@ -1,4 +1,5 @@
 # Penn Courses
+[![CircleCI](https://circleci.com/gh/pennlabs/penn-courses.svg?style=shield)](https://circleci.com/gh/pennlabs/penn-courses)
 
 This is the (eventual) unified home of all Penn Courses products.
 Currently, products contained in here include:

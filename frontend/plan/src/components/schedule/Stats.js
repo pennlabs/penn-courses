@@ -75,7 +75,8 @@ class Stats extends Component {
                     const course = str.substring(0, str.indexOf("-", str.indexOf("-") + 1)); // finds course (irrespective of section)
                     if (course in courseStats) {
                         statTypes.forEach((stat) => {
-                            courseStats[course][stat] += (section[stat] ? section[stat] : 2.5);
+                            courseStats[course][stat]
+                                 += (section[stat] || 2.5);
                         });
                         courseCUs[course] += section.credits;
                         courseRepeats[course] += 1;
@@ -114,9 +115,15 @@ class Stats extends Component {
             averageHours = parseFloat(totalHours / 5).toFixed(1);
             totalHours = parseFloat(totalHours.toFixed(1));
 
-            statTypes.forEach((stat) => {
-                avgs[stat] = sums[stat].reduce((a, b) => a + b, 0) / totalCUs;
-            });
+            if (totalCUs > 0) {
+                statTypes.forEach((stat) => {
+                    avgs[stat] = sums[stat].reduce((a, b) => a + b, 0) / totalCUs;
+                });
+            } else {
+                statTypes.forEach((stat) => {
+                    avgs[stat] = 0;
+                });
+            }
 
             totalCUs = parseFloat(totalCUs.toFixed(1));
         }
@@ -128,43 +135,45 @@ class Stats extends Component {
                     <Meter value={avgs.difficulty} name="Course Difficulty" />
                     <Meter value={avgs.work_required} name="Work Required" />
                 </div>
-                <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={purpleTimeStats}>
-                            {totalCUs}
+                <div style={{ display: "grid", gridTemplateColumns: "55% 45%" }}>
+                    <div style={{ display: "grid", gridTemplateRows: "25% 25% 25% 25%" }}>
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                            <div style={purpleTimeStats}>
+                                {totalCUs}
+                            </div>
+                            <div style={{ fontSize: "0.8em" }}>total credits</div>
                         </div>
-                        <div style={{ fontSize: "0.8em" }}>total credits</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={purpleTimeStats}>
-                            {maxHoursADay}
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                            <div style={purpleTimeStats}>
+                                {maxHoursADay}
+                            </div>
+                            <div style={{ fontSize: "0.8em" }}>max hours in a day</div>
                         </div>
-                        <div style={{ fontSize: "0.8em" }}>max hours in a day</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={purpleTimeStats}>
-                            {averageHours}
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                            <div style={purpleTimeStats}>
+                                {averageHours}
+                            </div>
+                            <div style={{ fontSize: "0.8em" }}>avg. hours a day</div>
                         </div>
-                        <div style={{ fontSize: "0.8em" }}>avg. hours a day</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={purpleTimeStats}>
-                            {totalHours}
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                            <div style={purpleTimeStats}>
+                                {totalHours}
+                            </div>
+                            <div style={{ fontSize: "0.8em" }}>total hours of class</div>
                         </div>
-                        <div style={{ fontSize: "0.8em" }}>total hours of class</div>
                     </div>
-                </div>
-                <div style={{
-                    padding: "10px", display: "flex", flexDirection: "column", justifyContent: "space-evenly", alignItems: "flex-start",
-                }}
-                >
-                    <div>
-                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{earliestStart}</div>
-                        <div>earliest start time</div>
-                    </div>
-                    <div>
-                        <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{latestEnd}</div>
-                        <div>latest end time</div>
+                    <div style={{
+                        padding: "10px", display: "flex", flexDirection: "column", justifyContent: "space-evenly", alignItems: "flex-start",
+                    }}
+                    >
+                        <div>
+                            <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{earliestStart}</div>
+                            <div>earliest start time</div>
+                        </div>
+                        <div>
+                            <div style={{ color: "#7874CF", fontSize: "1.3rem", fontWeight: "bold" }}>{latestEnd}</div>
+                            <div>latest end time</div>
+                        </div>
                     </div>
                 </div>
             </div>

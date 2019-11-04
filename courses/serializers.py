@@ -1,8 +1,7 @@
-from django.db.models import Manager, OuterRef, Prefetch, Q
+from django.db.models import Manager, Prefetch, Q
 from rest_framework import serializers
 
 from courses.models import Course, Meeting, Requirement, Section
-from plan import annotations
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -33,12 +32,22 @@ class SectionIdField(serializers.RelatedField):
 
 
 class MiniSectionSerializer(serializers.ModelSerializer):
+    section_id = serializers.CharField(source='full_code')
+    instructors = serializers.StringRelatedField(many=True)
+    course_title = serializers.SerializerMethodField()
+
+    def get_course_title(self, obj):
+        return obj.course.title
+
     class Meta:
         model = Section
         fields = [
-            'id',
+            'section_id',
             'status',
             'activity',
+            'meeting_times',
+            'instructors',
+            'course_title',
         ]
 
     @staticmethod
@@ -47,6 +56,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
+        queryset = queryset.prefetch_related('course', 'course__department', 'instructors')
         return queryset
 
 
@@ -113,7 +123,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        queryset = annotations.sections_with_reviews()
         queryset = queryset.prefetch_related('course__department',
                                              'meetings__room__building',
                                              'associated_sections__course__department',
@@ -181,11 +190,10 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        queryset = annotations.review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
                                              Prefetch('sections',
-                                                      annotations.sections_with_reviews()
+                                                      Section.objects.all()
                                                       .filter(meetings__isnull=False)
                                                       .filter(credits__isnull=False)
                                                       .filter(Q(status='O') | Q(status='C')).distinct()),
@@ -215,11 +223,10 @@ class CourseDetailSerializer(CourseListSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        queryset = annotations.review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
                                              Prefetch('sections',
-                                                      annotations.sections_with_reviews()
+                                                      Section.objects.all()
                                                       .filter(meetings__isnull=False)
                                                       .filter(credits__isnull=False)
                                                       .filter(Q(status='O') | Q(status='C')).distinct()),

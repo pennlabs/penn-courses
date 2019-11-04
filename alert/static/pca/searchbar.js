@@ -32,21 +32,22 @@ $(document).ready(function(){
         return Bloodhound.tokenizers.nonword(word)
       }
     },
-    prefetch: '/courses'
-    // remote: {
-    //   url: '/courses?dept=%QUERY',
-    //   wildcard: '%QUERY'
-    // }
+    // prefetch: '/courses'
+    remote: {
+      url: '/courses?search=%QUERY',
+      wildcard: '%QUERY'
+    }
     });
 
   $('#bloodhound #courseTypeahead').typeahead({
     hint: true,
     highlight: false,
-    minLength: 1,
+    minLength: 3,
   },
   {
     name: 'states',
     source: courses,
+    limit: 100,
     display: 'section_id',
     templates: {
       empty: '<div class="lmk-rec-element card"><div class="card-content">No matching courses found.</div></div>',
@@ -61,7 +62,7 @@ $(document).ready(function(){
           data.section_id + '<br />' +
           '<small>' + data.course_title + '</small><br />' +
           '<small>' + instructors +'</small>'+
-          '<span class="lmk-command-icon">'+getDemandIcon(data.demand)+'</span>' +
+          // '<span class="lmk-command-icon">'+getDemandIcon(data.demand)+'</span>' +
           '</div></div>';
       }
     }

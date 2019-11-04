@@ -1,9 +1,13 @@
+import json
+
+from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 
 from courses.models import Instructor, Requirement
 from courses.util import create_mock_data
 from options.models import Option
+from plan.models import Schedule
 from plan.search import TypedSearchBackend
 from review.models import Review
 
@@ -193,3 +197,157 @@ class CourseReviewAverageTestCase(TestCase):
         response = self.client.get('/courses/', {'difficulty': '0-2'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+
+@override_settings(SWITCHBOARD_TEST_APP='pcp')
+class ScheduleTest(TestCase):
+    def setUp(self):
+        _, section = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        self.s = Schedule(person=User.objects.create_user(username='jacob',
+                                                          email='jacob@example.com',
+                                                          password='top_secret'),
+                          semester=TEST_SEMESTER,
+                          name='My Test Schedule',
+                          )
+        self.s.save()
+        self.s.sections.set([section])
+        self.client = APIClient()
+        self.client.login(username='jacob', password='top_secret')
+
+    def test_get_schedule(self):
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'My Test Schedule')
+        self.assertEqual(len(response.data[0]['sections']), 1)
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-120-001')
+
+    def test_create_schedule(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'semester': TEST_SEMESTER,
+                                                'name': 'New Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(response.data[1]['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data[1]['sections']), 2)
+        self.assertEqual(response.data[1]['sections'][0]['id'], 'CIS-121-001')
+
+    def test_update_schedule_specific(self):
+        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+                                   json.dumps({'semester': TEST_SEMESTER,
+                                               'name': 'New Test Schedule',
+                                               'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                            {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data[0]['sections']), 2)
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-121-001')
+        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data['sections']), 2)
+        self.assertEqual(response.data['sections'][0]['id'], 'CIS-121-001')
+
+    def test_update_schedule_specific_same_name(self):
+        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+                                   json.dumps({'semester': TEST_SEMESTER,
+                                               'name': 'My Test Schedule',
+                                               'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                            {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'My Test Schedule')
+        self.assertEqual(len(response.data[0]['sections']), 2)
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-121-001')
+        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['name'], 'My Test Schedule')
+        self.assertEqual(len(response.data['sections']), 2)
+        self.assertEqual(response.data['sections'][0]['id'], 'CIS-121-001')
+
+    def test_update_schedule_general(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'id': str(self.s.id),
+                                                'semester': TEST_SEMESTER,
+                                                'name': 'New Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data[0]['sections']), 2)
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-121-001')
+
+    def test_update_schedule_general_same_name(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'id': str(self.s.id),
+                                                'semester': TEST_SEMESTER,
+                                                'name': 'My Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'My Test Schedule')
+        self.assertEqual(len(response.data[0]['sections']), 2)
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-121-001')
+
+    def test_delete(self):
+        response = self.client.delete('/schedules/'+str(self.s.id)+'/')
+        self.assertEqual(response.status_code, 204)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(0, len(response.data))
+
+    def test_semesters_not_uniform(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'semester': TEST_SEMESTER,
+                                                'name': 'New Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': '1739C'},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], 'Semester uniformity invariant violated.')
+
+    def test_semesters_not_uniform_update(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'id': str(self.s.id),
+                                                'semester': TEST_SEMESTER,
+                                                'name': 'New Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': '1739C'},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], 'Semester uniformity invariant violated.')
+
+    def test_schedule_dne(self):
+        response = self.client.get('/schedules/1000/')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data['detail'], 'Not found.')
+
+    def test_name_already_exists(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'semester': TEST_SEMESTER,
+                                                'name': 'My Test Schedule',
+                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(response.data['detail'], 'Unique constraint violated')
