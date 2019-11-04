@@ -86,8 +86,6 @@ class Stats extends Component {
                 }
             });
 
-            console.log(courseStats);
-            console.log(courseRepeats);
             const sums = {};
             statTypes.forEach((stat) => { sums[stat] = []; });
 
