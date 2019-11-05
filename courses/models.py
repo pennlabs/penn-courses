@@ -48,7 +48,8 @@ class CourseManager(models.Manager):
 
 
 class Course(models.Model):
-    objects = CourseManager()
+    objects = models.Manager()
+    with_reviews = CourseManager()
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -114,11 +115,12 @@ class Restriction(models.Model):
 
 class SectionManager(models.Manager):
     def get_queryset(self):
-        return sections_with_reviews(super().get_queryset())
+        return sections_with_reviews(super().get_queryset()).distinct()
 
 
 class Section(models.Model):
-    objects = SectionManager()
+    objects = models.Manager()
+    with_reviews = SectionManager()
 
     STATUS_CHOICES = (
         ('O', 'Open'),
