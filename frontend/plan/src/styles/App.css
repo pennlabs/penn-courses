@@ -4,6 +4,18 @@ html {
   background-color: #f1eff9;
 }
 
+.results ul:first-child{
+    border-top: 1px solid rgb(230, 230, 230);
+}
+
+.bell{
+    color:gray;
+}
+
+.bell:hover{
+    color:#669afb;
+}
+
 .topTabs{
     background: white;
     margin-top:-20px;
