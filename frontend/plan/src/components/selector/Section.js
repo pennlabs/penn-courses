@@ -11,7 +11,7 @@ export default function Section({
 }) {
     const { instructors, meetings, status } = section;
     return (
-        <div>
+        <div className="course_section">
             <li style={{
                 display: "flex", alignItems: "center", marginBottom: "0", borderBottom: "1px solid rgb(230, 230, 230)",
             }}
