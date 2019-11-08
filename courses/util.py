@@ -31,12 +31,14 @@ def get_course(dept_code, course_id, semester):
     return course
 
 
-def get_course_and_section(course_code, semester):
+def get_course_and_section(course_code, semester, section_manager=None):
+    if section_manager is None:
+        section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
 
     course = get_course(dept_code, course_id, semester)
 
-    section, _ = Section.objects.get_or_create(course=course, code=section_id)
+    section, _ = section_manager.get_or_create(course=course, code=section_id)
 
     return course, section
 
