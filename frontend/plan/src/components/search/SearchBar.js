@@ -44,6 +44,7 @@ function SearchBar({
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
+    // eslint-disable-next-line no-shadow
     updateCheckboxFilter,
 }) {
     useEffect(() => {
@@ -207,6 +208,7 @@ SearchBar.propTypes = {
     remSchoolReq: PropTypes.func,
     updateSearchText: PropTypes.func,
     updateRangeFilter: PropTypes.func,
+    updateCheckboxFilter: PropTypes.func,
     clearAll: PropTypes.func,
     clearFilter: PropTypes.func,
     clearSearchResults: PropTypes.func,
@@ -234,7 +236,9 @@ const mapDispatchToProps = dispatch => ({
     remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
     updateSearchText: s => dispatch(updateSearchText(s)),
     updateRangeFilter: field => values => dispatch(updateRangeFilter(field, values)),
-    updateCheckboxFilter: (field, value, toggleState) => dispatch(updateCheckboxFilter(field, value, toggleState)),
+    updateCheckboxFilter: (field, value, toggleState) => dispatch(
+        updateCheckboxFilter(field, value, toggleState)
+    ),
     clearAll: () => dispatch(clearAll()),
     clearFilter: propertyName => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),

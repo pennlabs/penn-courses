@@ -2,7 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 
 export function CheckboxFilter({
-    filterData, updateCheckboxFilter, startSearch, isDisabled, checkboxProperty
+    filterData, updateCheckboxFilter, startSearch, isDisabled, checkboxProperty,
 }) {
     return (
         <div className="columns contained">
@@ -12,7 +12,6 @@ export function CheckboxFilter({
                         <input
                             className="is-checkradio is-small"
                             type="checkbox"
-                            
                             id={filterProperty}
                             checked={filterData[checkboxProperty][filterProperty] === 1}
                             disabled={isDisabled ? "disabled" : false}
@@ -39,4 +38,10 @@ export function CheckboxFilter({
 }
 
 CheckboxFilter.propTypes = {
+    isDisabled: PropTypes.bool,
+    startSearch: PropTypes.func,
+    updateCheckboxFilter: PropTypes.func,
+    checkboxProperty: PropTypes.string,
+    // eslint-disable-next-line react/forbid-prop-types
+    filterData: PropTypes.object,
 };

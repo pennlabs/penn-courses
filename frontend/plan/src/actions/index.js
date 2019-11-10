@@ -1,5 +1,4 @@
 import fetch from "cross-fetch";
-import { applyMiddleware } from "redux";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
