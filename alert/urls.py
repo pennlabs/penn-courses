@@ -18,5 +18,5 @@ urlpatterns = [
     path('resubscribe/<int:id_>', views.resubscribe, name='resubscribe'),
     path('webhook', views.accept_webhook, name='webhook'),
     path('api/submit', views.third_party_register, name='api-register'),
-    path('api', include(router.urls)),
+    path('api/', include(router.urls)),
 ]

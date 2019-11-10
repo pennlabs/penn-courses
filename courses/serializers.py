@@ -260,4 +260,4 @@ class CourseDetailSerializer(CourseListSerializer):
 class UserDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserData
-        include = ['email', 'phone']
+        fields = ['email', 'phone']

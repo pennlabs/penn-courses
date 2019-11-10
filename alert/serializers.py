@@ -11,7 +11,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Registration
-        include = ['created_at', 'updated_at', 'section', 'deleted', 'muted', 'auto_mute']
+        fields = ['created_at', 'updated_at', 'section', 'deleted', 'muted', 'auto_mute']
 
     @staticmethod
     def setup_eager_loading(queryset):
