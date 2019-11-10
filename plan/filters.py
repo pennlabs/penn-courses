@@ -30,3 +30,13 @@ def bound_filter(field):
         }) | Q(**{f'{field}__isnull': True}))
 
     return filter_bounds
+
+
+def choice_filter(field):
+    def filter_choices(queryset, choices, semester=None):
+        query = Q()
+        for choice in choices.split(','):
+            query = query | Q(**{field: choice})
+        return queryset.filter(query)
+
+    return filter_choices

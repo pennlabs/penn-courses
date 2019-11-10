@@ -31,6 +31,7 @@ export const REM_SCHOOL_REQ = "REM_SCHOOL_REQ";
 export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
 export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
+export const UPDATE_CHECKBOX_FILTER = "UPDATE_CHECKBOX_FILTER";
 export const CLEAR_FILTER = "CLEAR_FILTER";
 export const CLEAR_ALL = "CLEAR_ALL";
 
@@ -219,13 +220,35 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // Range filters
-    const filterFields = ["difficulty", "course_quality", "instructor_quality", "cu"];
+    const filterFields = ["difficulty", "course_quality", "instructor_quality"];
     const defaultFilters = [[0, 4], [0, 4], [0, 4], [0.5, 2]];
     for (let i = 0; i < filterFields.length; i += 1) {
         if (filterData[filterFields[i]]
             && JSON.stringify(filterData[filterFields[i]]) !== JSON.stringify(defaultFilters[i])) {
             const filterRange = filterData[filterFields[i]];
             queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
+        }
+    }
+
+    // Checkbox Filters
+    const checkboxFields = ["cu"];
+    const checkboxDefaultFields = [{ 0.5: 0, 1: 0, 1.5: 0 }];
+    for (let i = 0; i < checkboxFields.length; i += 1) {
+        if (filterData[checkboxFields[i]]
+            && JSON.stringify(filterData[checkboxFields[i]])
+            !== JSON.stringify(checkboxDefaultFields[i])) {
+            const applied = [];
+            Object.keys(filterData[checkboxFields[i]]).map((item) => {
+                if (filterData[checkboxFields[i]][item] === 1) {
+                    applied.push(item);
+                }
+            });
+            if (applied.length > 0) {
+                queryString += `&${checkboxFields[i]}=${applied[0]}`;
+                for (let j = 1; j < applied.length; j += 1) {
+                    queryString += `,${applied[j]}`;
+                }
+            }
         }
     }
 
@@ -290,6 +313,15 @@ export function updateRangeFilter(field, values) {
         type: UPDATE_RANGE_FILTER,
         field,
         values,
+    };
+}
+
+export function updateCheckboxFilter(field, value, toggleState) {
+    return {
+        type: UPDATE_CHECKBOX_FILTER,
+        field,
+        value,
+        toggleState,
     };
 }
 

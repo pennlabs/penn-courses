@@ -120,9 +120,9 @@ function App() {
         <Provider store={store}>
             {initGA()}
             {logPageView()}
-            <div style={{ padding: "0px 0px 0px 30px" }}>
+            <div style={{ padding: "0px 2em 0px 2em" }}>
                 <SearchBar style={{ flexGrow: 0 }} />
-                <div className="App columns is-mobile is-multiline main">
+                <div className="App columns is-mobile is-multiline main" style={{ padding: 0 }}>
                     <div className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop">
                         <span style={{
                             display: "flex",
@@ -175,7 +175,7 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div className="column" style={{ paddingRight: "0.5em" }}>
+                    <div className="column">
                         <Schedule />
                     </div>
                 </div>

@@ -8,7 +8,7 @@ from courses.models import Section
 from courses.util import get_course_and_section
 from courses.views import CourseList
 from options.models import get_value
-from plan.filters import bound_filter, requirement_filter
+from plan.filters import bound_filter, choice_filter, requirement_filter
 from plan.models import Schedule
 from plan.search import TypedSearchBackend
 from plan.serializers import ScheduleSerializer
@@ -23,7 +23,7 @@ class CourseListSearch(CourseList):
 
         filters = {
             'requirements': requirement_filter,
-            'cu': bound_filter('sections__credits'),
+            'cu': choice_filter('sections__credits'),
             'course_quality': bound_filter('course_quality'),
             'instructor_quality': bound_filter('instructor_quality'),
             'difficulty': bound_filter('difficulty')
