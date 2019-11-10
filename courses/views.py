@@ -1,9 +1,8 @@
-from django.http import HttpResponse
-from rest_framework import generics
+from rest_framework import filters, generics
 
 from courses.models import Course, Requirement, Section
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
-                                 RequirementListSerializer, SectionSerializer)
+                                 MiniSectionSerializer, RequirementListSerializer)
 from options.models import get_value
 
 
@@ -31,8 +30,10 @@ class BaseCourseMixin(generics.GenericAPIView):
 
 
 class SectionList(generics.ListAPIView, BaseCourseMixin):
-    serializer_class = SectionSerializer
-    queryset = Section.objects.all()
+    serializer_class = MiniSectionSerializer
+    queryset = Section.with_reviews.all()
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['^full_code']
 
     @staticmethod
     def get_semester_field():
@@ -41,19 +42,15 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = CourseListSerializer
-    queryset = Course.objects.filter(sections__isnull=False)
+    queryset = Course.with_reviews.filter(sections__isnull=False)
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     serializer_class = CourseDetailSerializer
     lookup_field = 'full_code'
-    queryset = Course.objects.all()
+    queryset = Course.with_reviews.all()
 
 
 class RequirementList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = RequirementListSerializer
     queryset = Requirement.objects.all()
-
-
-def index(request):
-    return HttpResponse(f'Hello, {request.site}')

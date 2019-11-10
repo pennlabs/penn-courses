@@ -10,7 +10,25 @@
     overflow: hidden;
 }
 
+.bell{
+    color:gray;
+}
 
+.bell:hover{
+    color:#669afb;
+}
+
+.course_section{
+    transition: 250ms;
+}
+
+.course_section:hover{
+    background-color: rgba(105, 117, 244, 0.05);
+}
+
+.results ul:first-child{
+    border-top: 1px solid rgb(230, 230, 230);
+}
 
 .header {
     color: #a0a0a0;
@@ -82,6 +100,30 @@
     font-weight: normal;
 }
 
+.taglist {
+    overflow: hidden;
+    display: inline-block;
+}
+
+.tag, .taglist * {
+    user-select: none;
+}
+
+.tag {
+    transition: 200ms ease background;
+    margin-bottom: 0.35rem;
+    margin-right: 0.35rem;
+    cursor: pointer;
+}
+
+.tag.is-adder:hover {
+    background: #9fa4a6;
+}
+
+.tag.is-adder:active {
+    background: #777b7c;
+}
+
 .pcr-svg {
     border: 2px solid #EEEEEE;
     border-radius: 4px;
@@ -112,8 +154,17 @@
     font-weight: bold;
 }
 
+.selector-row{
+    transition: 250ms ease background;
+}
+
 .selector-row:hover {
-    background-color: #dcdcdc;
+    background-color: rgb(240, 240, 240);
+    cursor: pointer;
+}
+
+.selector-row:active {
+    background-color: rgb(230, 230, 230);
     cursor: pointer;
 }
 

@@ -31,12 +31,14 @@ def get_course(dept_code, course_id, semester):
     return course
 
 
-def get_course_and_section(course_code, semester):
+def get_course_and_section(course_code, semester, section_manager=None):
+    if section_manager is None:
+        section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
 
     course = get_course(dept_code, course_id, semester)
 
-    section, _ = Section.objects.get_or_create(course=course, code=section_id)
+    section, _ = section_manager.get_or_create(course=course, code=section_id)
 
     return course, section
 
@@ -65,17 +67,18 @@ def get_room(building_code, room_number):
     return room
 
 
-def add_meetings(section, meetings):
+def set_meetings(section, meetings):
+    section.meetings.all().delete()
     for meeting in meetings:
         room = get_room(meeting['building_code'], meeting['room_number'])
         start_time = meeting['start_time_24']
         end_time = meeting['end_time_24']
         for day in list(meeting['meeting_days']):
-            m, _ = Meeting.objects.get_or_create(section=section,
-                                                 day=day,
-                                                 start=start_time,
-                                                 end=end_time,
-                                                 room=room)
+            m, _ = Meeting.objects.update_or_create(section=section,
+                                                    day=day,
+                                                    start=start_time,
+                                                    end=end_time,
+                                                    defaults={'room': room})
 
 
 def add_associated_sections(section, info):
@@ -111,15 +114,16 @@ def add_college_requirements(course, college_reqs):
         'MDS': 'Society Sector',
         'MDH': 'History & Tradition Sector',
         'MDA': 'Arts & Letters Sector',
-        'MDO,MDB': 'Humanities & Social Science Sector',
+        'MDO': 'Humanities & Social Science Sector',
         'MDL': 'Living World Sector',
         'MDP': 'Physical World Sector',
-        'MDN,MDB': 'Natural Science & Math Sector',
+        'MDN': 'Natural Science & Math Sector',
         'MWC': 'Writing Requirement',
         'MQS': 'College Quantitative Data Analysis Req.',
         'MFR': 'Formal Reasoning Course',
         'MC1': 'Cross Cultural Analysis',
-        'MC2': 'Cultural Diversity in the US'
+        'MC2': 'Cultural Diversity in the US',
+        'MGH': 'Benjamin Franklin Seminars'
     }
     name_to_code = dict([(v, k) for k, v in code_to_name.items()])
     for req_name in college_reqs:
@@ -130,6 +134,12 @@ def add_college_requirements(course, college_reqs):
                                                   'name': req_name
                                                 })[0]
         req.courses.add(course)
+
+
+def relocate_reqs_from_restrictions(rests, reqs, travellers):
+    for t in travellers:
+        if any(r['requirement_description'] == t for r in rests):
+            reqs.append(t)
 
 
 def upsert_course_from_opendata(info, semester):
@@ -162,9 +172,14 @@ def upsert_course_from_opendata(info, semester):
                                         + meeting['end_time'] for meeting in info['meetings']])
 
     add_instructors(section, [instructor['name'] for instructor in info['instructors']])
-    add_meetings(section, info['meetings'])
+    set_meetings(section, info['meetings'])
     add_associated_sections(section, info)
     add_restrictions(section, info['requirements'])
+    relocate_reqs_from_restrictions(info['requirements'],
+                                    info['fulfills_college_requirements'],
+                                    ['Humanities & Social Science Sector',
+                                     'Natural Science & Math Sector',
+                                     'Benjamin Franklin Seminars'])
     add_college_requirements(section.course, info['fulfills_college_requirements'])
 
     section.save()
@@ -201,5 +216,5 @@ def create_mock_data(code, semester):
             'term': '2019C'
         }
     ]
-    add_meetings(section, m)
+    set_meetings(section, m)
     return course, section

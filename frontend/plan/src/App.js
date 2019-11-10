@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
@@ -11,6 +11,9 @@ import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
 import { isMobileOnly } from "react-device-detect";
+import SwipeableViews from "react-swipeable-views";
+import Tabs from "@material-ui/core/Tabs";
+import Tab from "@material-ui/core/Tab";
 import Schedule from "./components/schedule/Schedule";
 
 import { initGA, logPageView, analyticsMiddleware } from "./analytics";
@@ -52,25 +55,64 @@ function App() {
             "Welcome to Penn Course Plan ✨"));
     }
 
-    if (isMobileOnly) { // Mobile version
+    const [tab, setTab] = useState(0);
+
+    const containerRef = useRef();
+
+    const scrollTop = (index, action) => {
+        window.scrollTo(0, 0);
+    };
+
+    if (isMobileOnly) {
         return (
-            <div style={{
-                display: "flex",
-                flexDirection: "column",
-                height: "80vh",
-                justifyContent: "center",
-                alignItems: "center",
-            }}
-            >
-                <img width="30%" src="/static/favicon-196x196.png" />
-                <div style={{ fontSize: "20px", textAlign: "center", padding: "30px" }}>
-                    <span style={{ color: "#7b84e6" }}> Penn Course Plan </span>
-                    is made for desktop.
-                     This allows us to give you the best experience
-                     when searching for courses and creating mock schedules.
-                     See you soon!
-                </div>
-            </div>
+            <Provider store={store}>
+                {initGA()}
+                {logPageView()}
+                <SearchBar setTab={setTab} />
+                <Tabs value={tab} className="topTabs" centered>
+                    <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
+                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
+                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)} />
+                </Tabs>
+                <SwipeableViews
+                    index={tab}
+                    ref={containerRef}
+                    enableMouseEvents
+                    onSwitching={scrollTop}
+                    onChangeIndex={setTab}
+                >
+                    <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                        <div>
+                            <div style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                justifyContent: "space-around",
+                                margin: "10px",
+                            }}
+                            >
+                                <SearchSortDropdown />
+                            </div>
+                            <div
+                                className="box"
+                                style={{
+                                    paddingLeft: 0,
+                                    paddingRight: 0,
+                                }}
+                            >
+                                <Selector />
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ padding: "10px" }}>
+                        <Cart setTab={setTab} />
+                    </div>
+                    <div style={{ padding: "10px" }}>
+                        <Schedule setTab={setTab} />
+                    </div>
+                </SwipeableViews>
+                <Footer />
+                <ModalContainer />
+            </Provider>
         );
     }
 
@@ -78,9 +120,9 @@ function App() {
         <Provider store={store}>
             {initGA()}
             {logPageView()}
-            <div style={{ padding: "0px 0px 0px 30px" }}>
+            <div style={{ padding: "0px 2em 0px 2em" }}>
                 <SearchBar style={{ flexGrow: 0 }} />
-                <div className="App columns is-mobile is-multiline main">
+                <div className="App columns is-mobile is-multiline main" style={{ padding: 0 }}>
                     <div className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop">
                         <span style={{
                             display: "flex",
@@ -133,7 +175,7 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div className="column" style={{ paddingRight: "0.5em" }}>
+                    <div className="column">
                         <Schedule />
                     </div>
                 </div>

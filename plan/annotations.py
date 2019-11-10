@@ -1,6 +1,5 @@
 from django.db.models import Avg, FloatField, OuterRef, Subquery
 
-from courses.models import Section
 from review.models import ReviewBit
 
 
@@ -32,11 +31,15 @@ def review_averages(queryset, subfilters):
     })
 
 
-def sections_with_reviews():
+def sections_with_reviews(queryset):
     return review_averages(
-        Section.objects.all(),
+        queryset,
         {
             'review__section__course__full_code': OuterRef('course__full_code'),
             'review__instructor__in': OuterRef('instructors')
         }
     ).order_by('code')
+
+
+def course_reviews(queryset):
+    return review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})

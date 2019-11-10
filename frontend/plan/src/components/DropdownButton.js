@@ -23,7 +23,8 @@ export function DropdownButton({
         >
             <div className="dropdown-trigger">
                 <button
-                    className="filterButton button is-rounded"
+                    className={`button is-rounded
+                        ${JSON.stringify(filterData) === JSON.stringify(defaultFilter) ? "filterButton" : "filterButtonActive"}`}
                     disabled={isDisabled ? "disabled" : false}
                     aria-haspopup="true"
                     style={{ display: "flex", alignItems: "center", height: "100%" }}

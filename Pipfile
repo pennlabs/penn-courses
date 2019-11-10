@@ -24,6 +24,8 @@ unidecode = "*"
 coreapi = "*"
 django-filter = "*"
 shortener = "*"
+django-labs-accounts = "*"
+"beautifulsoup4" = "*"
 
 [dev-packages]
 coveralls = "*"
@@ -34,4 +36,4 @@ flake8-isort = "*"
 flake8-quotes = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3"

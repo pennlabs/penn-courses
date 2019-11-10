@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models import Q
 
 from options.models import get_value
+from plan.annotations import course_reviews, sections_with_reviews
 
 
 def get_current_semester():
@@ -41,7 +42,15 @@ class Department(models.Model):
         return self.code
 
 
+class CourseManager(models.Manager):
+    def get_queryset(self):
+        return course_reviews(super().get_queryset())
+
+
 class Course(models.Model):
+    objects = models.Manager()
+    with_reviews = CourseManager()
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -103,7 +112,15 @@ class Restriction(models.Model):
         return f'{self.code} - {self.description}'
 
 
+class SectionManager(models.Manager):
+    def get_queryset(self):
+        return sections_with_reviews(super().get_queryset()).distinct()
+
+
 class Section(models.Model):
+    objects = models.Manager()
+    with_reviews = SectionManager()
+
     STATUS_CHOICES = (
         ('O', 'Open'),
         ('C', 'Closed'),
@@ -133,6 +150,7 @@ class Section(models.Model):
 
     code = models.CharField(max_length=16)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sections')
+    full_code = models.CharField(max_length=32, blank=True, db_index=True)
 
     status = models.CharField(max_length=4, choices=STATUS_CHOICES)
 
@@ -160,6 +178,10 @@ class Section(models.Model):
     @property
     def is_open(self):
         return self.status == 'O'
+
+    def save(self, *args, **kwargs):
+        self.full_code = f'{self.course.full_code}-{self.code}'
+        super().save(*args, **kwargs)
 
 
 class StatusUpdate(models.Model):
