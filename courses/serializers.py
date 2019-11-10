@@ -1,7 +1,7 @@
 from django.db.models import Manager, Prefetch, Q
 from rest_framework import serializers
 
-from courses.models import Course, Meeting, Requirement, Section
+from courses.models import Course, Meeting, Requirement, Section, UserData
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -255,3 +255,9 @@ class CourseDetailSerializer(CourseListSerializer):
             'requirements',
             'sections',
         ]
+
+
+class UserDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserData
+        include = ['email', 'phone']

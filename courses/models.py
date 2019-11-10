@@ -1,6 +1,7 @@
 import math
 import uuid
 
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Q
 
@@ -337,3 +338,15 @@ class APIKey(models.Model):
     active = models.BooleanField(blank=True, default=True)
 
     privileges = models.ManyToManyField(APIPrivilege, related_name='key_set', blank=True)
+
+
+class UserData(models.Model):
+    """
+    A model that stores all user data from PCX users
+    """
+    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(blank=True, null=True, max_length=100)
+
+    def __str__(self):
+        return 'Data from User: %s' % (self.person, self.id)

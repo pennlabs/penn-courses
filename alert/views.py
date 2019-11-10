@@ -8,8 +8,11 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonRespons
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 
 from alert.models import SOURCE_API, Registration, RegStatus, register_for_course
+from alert.serializers import RegistrationSerializer
 from alert.tasks import send_course_alerts
 from courses.models import PCA_REGISTRATION, APIKey
 from courses.util import record_update, update_course_from_record
@@ -230,3 +233,14 @@ def third_party_register(request):
         return do_register(course_code, email_address, phone, SOURCE_API, send_json, key)
     else:
         raise Http404('Only POST requests are accepted.')
+
+
+class RegistrationViewSet(viewsets.ModelViewSet):
+    serializer_class = RegistrationSerializer
+    http_method_names = ['get', 'post', 'put']
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Registration.objects.filter(person=self.request.user)
+        queryset = super().get_serializer_class().setup_eager_loading(queryset)
+        return queryset

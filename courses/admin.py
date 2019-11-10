@@ -2,8 +2,8 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
-from courses.models import (APIKey, APIPrivilege, Building, Course, Department, Instructor,
-                            Meeting, Requirement, Restriction, Room, Section, StatusUpdate)
+from courses.models import (APIKey, APIPrivilege, Building, Course, Department, Instructor, Meeting,
+                            Requirement, Restriction, Room, Section, StatusUpdate, UserData)
 
 
 class DepartmentAdmin(admin.ModelAdmin):
@@ -63,6 +63,11 @@ class StatusUpdateAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', )
 
 
+class UserDataAdmin(admin.ModelAdmin):
+    search_fields = ('user', 'email', 'phone', )
+    autocomplete_fields = ('user', )
+
+
 admin.site.register(APIKey)
 admin.site.register(APIPrivilege)
 admin.site.register(Department, DepartmentAdmin)
@@ -75,3 +80,4 @@ admin.site.register(Restriction)
 admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Meeting, MeetingAdmin)
 admin.site.register(StatusUpdate, StatusUpdateAdmin)
+admin.site.register(UserData, UserDataAdmin)

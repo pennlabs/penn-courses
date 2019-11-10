@@ -1,8 +1,9 @@
-from rest_framework import filters, generics
+from rest_framework import filters, generics, viewsets
+from rest_framework.permissions import IsAuthenticated
 
-from courses.models import Course, Requirement, Section
-from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
-                                 MiniSectionSerializer, RequirementListSerializer)
+from courses.models import Course, Requirement, Section, UserData
+from courses.serializers import (CourseDetailSerializer, CourseListSerializer, MiniSectionSerializer,
+                                 RequirementListSerializer, UserDataSerializer)
 from options.models import get_value
 
 
@@ -54,3 +55,12 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 class RequirementList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = RequirementListSerializer
     queryset = Requirement.objects.all()
+
+
+class UserDataViewSet(viewsets.ModelViewSet):
+    serializer_class = UserDataSerializer
+    http_method_names = ['get', 'post', 'put']
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserData.objects.filter(user=self.request.user)

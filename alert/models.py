@@ -4,12 +4,13 @@ from enum import Enum, auto
 import phonenumbers  # library for parsing and formatting phone numbers.
 from django import urls
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
 from shortener.models import Url
 
 from alert.alerts import Email, Text
-from courses.models import Section, get_current_semester
+from courses.models import Section, UserData, get_current_semester
 from courses.util import get_course_and_section
 
 
@@ -41,10 +42,19 @@ class Registration(models.Model):
     source = models.CharField(max_length=16, choices=SOURCE_CHOICES)
     api_key = models.ForeignKey('courses.APIKey', blank=True, null=True, on_delete=models.CASCADE)
 
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(blank=True, null=True, max_length=100)
     # section that the user registered to be notified about
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
+    # changed to True if user deletes notification
+    deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(blank=True, null=True)
+    # changed to True if user mutes notification
+    muted = models.BooleanField(default=False)
+    muted_at = models.DateTimeField(blank=True, null=True)
+    # does the user have auto-mute enabled for this alert?
+    auto_mute = models.BooleanField(default=True)
     # change to True once notification email has been sent out
     notification_sent = models.BooleanField(default=False)
     notification_sent_at = models.DateTimeField(blank=True, null=True)
@@ -79,6 +89,20 @@ class Registration(models.Model):
     def save(self, *args, **kwargs):
         self.validate_phone()
         super().save(*args, **kwargs)
+        if self.user is not None:
+            if self.email is not None:
+                user_data = UserData.get(user=self.user)
+                user_data.email = self.email
+                self.email = None
+            if self.phone is not None:
+                user_data = UserData.get(user=self.user)
+                user_data.phone = self.phone
+                self.phone = None
+
+    @property
+    def is_active(self):
+        """Returns True iff the registration would send a notification when the watched section changes to open"""
+        return not (self.notification_sent or self.muted or self.deleted)
 
     @property
     def resub_url(self):
@@ -90,7 +114,7 @@ class Registration(models.Model):
         return '{}/s/{}'.format(settings.PCA_URL, url.short_id)
 
     def alert(self, forced=False, sent_by=''):
-        if forced or not self.notification_sent:
+        if forced or not (self.notification_sent or self.muted or self.deleted):
             text_result = Text(self).send_alert()
             email_result = Email(self).send_alert()
             logging.debug('NOTIFICATION SENT FOR ' + self.__str__())
@@ -98,6 +122,8 @@ class Registration(models.Model):
             self.notification_sent_at = timezone.now()
             self.notification_sent_by = sent_by
             self.save()
+            if not self.auto_mute:
+                self.resubscribe()
             return email_result is not None and text_result is not None  # True if no error in email/text.
         else:
             return False
@@ -145,3 +171,7 @@ def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, ap
     registration.api_key = api_key
     registration.save()
     return RegStatus.SUCCESS
+
+
+def get_current_undeleted_notifications():  # will return muted and unmuted notifications which are not deleted or sent
+    return Registration.objects.filter(deleted=False, notification_sent=False)
