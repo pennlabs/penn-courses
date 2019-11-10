@@ -378,21 +378,25 @@ const processScheduleId = (dispatch, title, fetchResult) => {
 
 export const createScheduleOnBackend = (title, sections, semester) => (dispatch) => {
     processScheduleId(dispatch, title, fetch("/schedules/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
             title,
             sections,
             semester,
-            method: "POST",
         }),
-    })).catch(alert);
+    }).then(result => alert(JSON.stringify(result))).catch(alert));
 };
 
 export const updateScheduleOnBackend = (title, schedule) => (dispatch) => {
     processScheduleId(dispatch, title, fetch(`/schedules/{${schedule.id}/`, {
+        method: "POST",
         body: JSON.stringify({
             title,
             ...schedule,
-            method: "POST",
         }),
     })).catch(alert);
 };
