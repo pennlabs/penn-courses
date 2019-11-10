@@ -8,10 +8,11 @@ export function CheckboxFilter({
         <div className="columns contained">
             {Object.keys(filterData[checkboxProperty]).sort().map(filterProperty => (
                 <div className="column">
-                    <div className="field">
+                    <div className="field" style={{ display: "table-row" }}>
                         <input
                             className="is-checkradio is-small"
                             type="checkbox"
+                            
                             id={filterProperty}
                             checked={filterData[checkboxProperty][filterProperty] === 1}
                             disabled={isDisabled ? "disabled" : false}
@@ -29,7 +30,7 @@ export function CheckboxFilter({
                             }}
                         />
                         { /* eslint-disable-next-line jsx-a11y/label-has-for */}
-                        <label htmlFor={filterProperty}>{filterProperty}</label>
+                        <label htmlFor={filterProperty} style={{ display: "table-cell" }}>{filterProperty}</label>
                     </div>
                 </div>
             ))}
