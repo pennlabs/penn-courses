@@ -53,6 +53,11 @@ export default function Section({
                         <div>
                             {section.activity}
                         </div>
+                        {/* <div>
+                            (
+                            {section.credits}
+                            cu)
+                        </div> */}
                         <div>
                             {meetings.length > 0 ? (
                                 <div>
