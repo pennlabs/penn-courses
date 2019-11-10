@@ -349,4 +349,4 @@ class UserData(models.Model):
     phone = models.CharField(blank=True, null=True, max_length=100)
 
     def __str__(self):
-        return 'Data from User: %s' % (self.person, self.id)
+        return 'Data from User: %s' % self.user
