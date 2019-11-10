@@ -56,6 +56,7 @@ function App() {
     const { hasVisited } = localStorage;
 
     useEffect(() => {
+        store.dispatch(fetchSchedules());
         window.setInterval(() => {
             const scheduleState = store.getState().schedule;
             if (!scheduleState.cartPushedToBackend) {
@@ -81,8 +82,6 @@ function App() {
             {},
             "Welcome to Penn Course Plan ✨"));
     }
-
-    store.dispatch(fetchSchedules());
 
     const [tab, setTab] = useState(0);
 

@@ -110,7 +110,7 @@ export const schedule = (state = initialState, action) => {
             };
         case MARK_CART_SYNCED:
             return {
-                ...state.schedules,
+                ...state,
                 cartPushedToBackend: true,
             };
         case SET_SCHEDULE_ID:

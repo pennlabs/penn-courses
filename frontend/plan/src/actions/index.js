@@ -351,7 +351,11 @@ export function fetchCourseDetails(courseId) {
 export const fetchSchedules = () => (dispatch) => {
     fetch("/schedules/")
         .then(res => res.json())
-        .then(schedules => dispatch(updateSchedules(schedules)))
+        .then(schedules =>{
+            if(schedules) {
+                dispatch(updateSchedules(schedules));
+            }
+        })
         .catch(error => console.log("Not logged in"));
 };
 
@@ -378,6 +382,7 @@ export const createScheduleOnBackend = (title, sections, semester) => (dispatch)
             title,
             sections,
             semester,
+            method: "POST",
         }),
     })).catch(alert);
 };
@@ -387,6 +392,7 @@ export const updateScheduleOnBackend = (title, schedule) => (dispatch) => {
         body: JSON.stringify({
             title,
             ...schedule,
+            method: "POST",
         }),
     })).catch(alert);
 };

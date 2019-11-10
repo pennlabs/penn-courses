@@ -37,7 +37,7 @@ function shouldSearch(filterData) {
 const LoginButton = () => (
     <a
         className="button is-link login"
-        href="/accounts/login"
+        href={"/accounts/login/?next=" + window.location}
         style={{
             padding: "0.5rem",
             fontSize: "1rem!important",
@@ -49,7 +49,7 @@ const LoginButton = () => (
     </a>
 );
 
-const UserSelector = ({ user: { name, email } }) => {
+const UserSelector = ({ user: { first_name, last_name, username } }) => {
     const [selected, setSelected] = useState(false);
     const [ref, setRef] = useState(null);
     useEffect(() => {
@@ -76,7 +76,7 @@ const UserSelector = ({ user: { name, email } }) => {
             >
                 <span>
                     {" "}
-                    {(name && name.charAt(0)) || "U"}
+                    {(first_name && first_name.charAt(0)) || "U"}
                     {" "}
                 </span>
             </div>
@@ -86,12 +86,14 @@ const UserSelector = ({ user: { name, email } }) => {
                     <div id="logout-dropdown-inner-menu">
                         <p className="name-container">
                             {" "}
-                            {name}
+                            {first_name}
+                            {" "}
+                            {last_name}
                             {" "}
                         </p>
                         <p className="email-container">
                             {" "}
-                            {email}
+                            {username}
                             {" "}
                         </p>
                         <div
@@ -125,9 +127,15 @@ function SearchBar({
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
-    user,
     setTab,
 }) {
+
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        fetch("/accounts/me/").then(result => result.json()).then(newUser => setUser(newUser))
+    }, []);
+
     useEffect(() => {
         loadRequirements();
     }, [loadRequirements]);
@@ -328,10 +336,7 @@ const mapStateToProps = state => (
         defaultReqs: state.filters.defaultReqs,
         isLoadingCourseInfo: state.sections.courseInfoLoading,
         isSearchingCourseInfo: state.sections.searchInfoLoading,
-        user: {
-            name: "Daniel Like",
-            email: "dlike@seas.upenn.edu",
-        },
+        user: null,
     }
 );
 
