@@ -6,6 +6,7 @@ import "./Search.css";
 import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
+import { CheckboxFilter } from "./CheckboxFilter";
 import { SearchField } from "./SearchField";
 import { initialState as defaultFilters } from "../../reducers/filters";
 import {
@@ -15,10 +16,12 @@ import {
     remSchoolReq,
     updateSearchText,
     updateRangeFilter,
+    updateCheckboxFilter,
     clearAll,
     clearFilter,
     updateSearch
 } from "../../actions";
+
 
 function shouldSearch(filterData) {
     const searchString = filterData.searchString.length >= 3;
@@ -42,7 +45,8 @@ function SearchBar({
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
-    setTab,
+    // eslint-disable-next-line no-shadow
+    updateCheckboxFilter, setTab,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -121,6 +125,22 @@ function SearchBar({
                     rangeProperty="instructor_quality"
                     isDisabled={isLoading}
                 />
+            </DropdownButton>
+            <DropdownButton
+                title="CU"
+                filterData={filterData.cu}
+                defaultFilter={defaultFilters.filterData.cu}
+                isDisabled={isLoading}
+                clearFilter={clearFilterSearch("cu")}
+            >
+                <CheckboxFilter
+                    filterData={filterData}
+                    updateCheckboxFilter={updateCheckboxFilter}
+                    isDisabled={isLoading}
+                    checkboxProperty="cu"
+                    startSearch={conditionalStartSearch}
+                />
+
             </DropdownButton>
         </React.Fragment>
     );
@@ -212,6 +232,7 @@ SearchBar.propTypes = {
     remSchoolReq: PropTypes.func,
     updateSearchText: PropTypes.func,
     updateRangeFilter: PropTypes.func,
+    updateCheckboxFilter: PropTypes.func,
     clearAll: PropTypes.func,
     clearFilter: PropTypes.func,
     clearSearchResults: PropTypes.func,
@@ -240,6 +261,9 @@ const mapDispatchToProps = dispatch => ({
     remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
     updateSearchText: s => dispatch(updateSearchText(s)),
     updateRangeFilter: field => values => dispatch(updateRangeFilter(field, values)),
+    updateCheckboxFilter: (field, value, toggleState) => dispatch(
+        updateCheckboxFilter(field, value, toggleState)
+    ),
     clearAll: () => dispatch(clearAll()),
     clearFilter: propertyName => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),

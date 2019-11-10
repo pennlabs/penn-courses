@@ -89,12 +89,17 @@ class CreditUnitFilterTestCase(TestCase):
         set_semester()
 
     def test_include_course(self):
-        response = self.client.get('/courses/', {'cu': '0.5-1'})
+        response = self.client.get('/courses/', {'cu': '1.0'})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+
+    def test_include_multiple(self):
+        response = self.client.get('/courses/', {'cu': '0.5,1.0'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_exclude_course(self):
-        response = self.client.get('/courses/', {'cu': '.25-.75'})
+        response = self.client.get('/courses/', {'cu': '.5,1.5'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
