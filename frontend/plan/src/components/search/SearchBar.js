@@ -100,7 +100,7 @@ const UserSelector = ({ user: { first_name, last_name, username } }) => {
                             role="button"
                             id="logout-button"
                             onClick={() => {
-                                window.open("/accounts/logout/next=" + window.location);
+                                fetch("/accounts/logout").then(console.log);
                             }}
                         >
                             Logout
