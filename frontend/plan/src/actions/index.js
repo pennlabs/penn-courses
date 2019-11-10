@@ -368,7 +368,7 @@ export const setScheduleId = (title, id) => ({
  * @param fetchResult The immediate result of the API call
  */
 const processScheduleId = (dispatch, title, fetchResult) => {
-    fetchResult.then(response => response.json())
+    return fetchResult.then(response => response.json())
         .then(({ id }) => dispatch(setScheduleId(title, id)));
 };
 
