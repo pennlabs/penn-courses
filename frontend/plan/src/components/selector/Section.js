@@ -58,7 +58,7 @@ export default function Section({
                                 <div>
                                     <i className="fas fa-map-marker-alt grey-text" />
                             &nbsp;
-                                    {((l) => {
+                                    {((l) => { // formats location names
                                         const ret = new Set();
                                         l.forEach(({ room }) => ret.add(room.trim()));
                                         return Array.from(ret);
@@ -77,7 +77,7 @@ export default function Section({
                                     value={section.instructor_quality}
                                 />
                                 <span className="popover-content">
-                                    {instructors.length > 1 ? `${instructors[0]}, and ${instructors.length - 1} other(s)` : instructors[0]}
+                                    Instructor Quality
                                 </span>
                             </div>
                         ) : (
