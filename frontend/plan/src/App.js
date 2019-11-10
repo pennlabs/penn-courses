@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
@@ -24,7 +24,13 @@ import Footer from "./components/footer";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
-import { fetchSchedules, openModal } from "./actions";
+import {
+    fetchSchedules,
+    markCartSynced,
+    markScheduleSynced,
+    openModal,
+    updateScheduleOnBackend
+} from "./actions";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -48,6 +54,27 @@ store.subscribe(() => {
 
 function App() {
     const { hasVisited } = localStorage;
+
+    useEffect(() => {
+        window.setInterval(() => {
+            const scheduleState = store.getState().schedule;
+            if (!scheduleState.cartPushedToBackend) {
+                store.dispatch(updateScheduleOnBackend("cart",
+                    { sections: scheduleState.cartSections }));
+                store.dispatch(markCartSynced());
+            }
+            const schedulesState = scheduleState.schedules;
+            Object.keys(schedulesState)
+                .forEach(scheduleName => {
+                    const schedule = schedulesState[scheduleName];
+                    if (!schedule.pushedToBackend) {
+                        store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
+                        store.dispatch(markScheduleSynced(scheduleName));
+                    }
+                });
+        }, 2000);
+    }, []);
+
     localStorage.hasVisited = true;
     if (!hasVisited) {
         store.dispatch(openModal("WELCOME",
@@ -55,7 +82,7 @@ function App() {
             "Welcome to Penn Course Plan ✨"));
     }
 
-    fetchSchedules(store.dispatch)();
+    store.dispatch(fetchSchedules());
 
     const [tab, setTab] = useState(0);
 
@@ -70,11 +97,11 @@ function App() {
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SearchBar setTab={setTab} />
+                <SearchBar setTab={setTab}/>
                 <Tabs value={tab} className="topTabs" centered>
-                    <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
-                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
-                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)} />
+                    <Tab className="topTab" label="Search" onClick={() => setTab(0)}/>
+                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)}/>
+                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)}/>
                 </Tabs>
                 <SwipeableViews
                     index={tab}
@@ -83,7 +110,10 @@ function App() {
                     onSwitching={scrollTop}
                     onChangeIndex={setTab}
                 >
-                    <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                    <div style={{
+                        paddingLeft: "10px",
+                        paddingRight: "10px"
+                    }}>
                         <div>
                             <div style={{
                                 display: "flex",
@@ -92,7 +122,7 @@ function App() {
                                 margin: "10px",
                             }}
                             >
-                                <SearchSortDropdown />
+                                <SearchSortDropdown/>
                             </div>
                             <div
                                 className="box"
@@ -101,19 +131,19 @@ function App() {
                                     paddingRight: 0,
                                 }}
                             >
-                                <Selector />
+                                <Selector/>
                             </div>
                         </div>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Cart setTab={setTab} />
+                        <Cart setTab={setTab}/>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Schedule setTab={setTab} />
+                        <Schedule setTab={setTab}/>
                     </div>
                 </SwipeableViews>
-                <Footer />
-                <ModalContainer />
+                <Footer/>
+                <ModalContainer/>
             </Provider>
         );
     }
@@ -123,7 +153,7 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ padding: "0px 0px 0px 30px" }}>
-                <SearchBar style={{ flexGrow: 0 }} />
+                <SearchBar style={{ flexGrow: 0 }}/>
                 <div className="App columns is-mobile is-multiline main">
                     <div
                         className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop"
@@ -147,7 +177,7 @@ function App() {
                                 display: "flex",
                             }}
                             >
-                                <SearchSortDropdown />
+                                <SearchSortDropdown/>
                             </div>
                         </span>
                         <div
@@ -157,7 +187,7 @@ function App() {
                                 paddingRight: 0,
                             }}
                         >
-                            <Selector />
+                            <Selector/>
                         </div>
                     </div>
                     <div
@@ -177,15 +207,15 @@ function App() {
                         >
                             Cart
                         </h3>
-                        <Cart />
+                        <Cart/>
                     </div>
                     <div className="column" style={{ paddingRight: "0.5em" }}>
-                        <Schedule />
+                        <Schedule/>
                     </div>
                 </div>
             </div>
-            <Footer />
-            <ModalContainer />
+            <Footer/>
+            <ModalContainer/>
         </Provider>
     );
 }
