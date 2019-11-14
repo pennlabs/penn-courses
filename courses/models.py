@@ -93,6 +93,7 @@ class Course(models.Model):
     @property
     def requirements(self):
         return Requirement.objects.exclude(id__in=self.nonrequirement_set.all())\
+            .filter(semester=self.semester)\
             .filter(Q(id__in=self.requirement_set.all()) | Q(id__in=self.department.requirements.all()))
 
     def save(self, *args, **kwargs):
