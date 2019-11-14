@@ -23,14 +23,6 @@
             ],
             "version": "==2.5.2"
         },
-        "appnope": {
-            "hashes": [
-                "sha256:5b26757dc6f79a3b7dc9fab95359328d5747fcb2409d331ea66d0272b90ab2a0",
-                "sha256:8b995ffe925347a2138d7ac0fe77155e4311a0ea6d6da4f5128fe4b3cbe5ed71"
-            ],
-            "markers": "sys_platform == 'darwin'",
-            "version": "==0.1.0"
-        },
         "backcall": {
             "hashes": [
                 "sha256:38ecd85be2c1e78f77fd91700c76e14667dc21e2713b63876c0eb901196e01e4",
@@ -156,11 +148,11 @@
         },
         "django-labs-accounts": {
             "hashes": [
-                "sha256:759096b7af281a1bb707818f1daeba979aa144b17d9e8f69ca1de74da5b50159",
-                "sha256:d95bcd60ab4208a11e452f44ca7c0544a9d9ef892b70257b7dc8c3e224204ce7"
+                "sha256:7804b13d23fc2f0f04998c620734c08925546349cd601c649688321798c76c22",
+                "sha256:aa1aa487c076a2bc6810a32862e2878ac3cac2290c3f8833e43bfce5cfdb4e3f"
             ],
             "index": "pypi",
-            "version": "==0.4.1"
+            "version": "==0.4.2"
         },
         "django-timezone-field": {
             "hashes": [
