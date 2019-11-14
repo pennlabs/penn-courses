@@ -18,6 +18,7 @@ export default function Badge(props) {
             style={value ? {
                 background: `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.2)`,
                 color: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
+                marginRight: "0px",
             } : {
                 background: "transparent",
                 color: "#838383",

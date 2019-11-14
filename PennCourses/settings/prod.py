@@ -14,7 +14,9 @@ sentry_sdk.init(
 
 # Whitenoise Configuration
 MIDDLEWARE.remove('django.middleware.security.SecurityMiddleware')
+MIDDLEWARE.remove('PennCourses.middleware.SwitchboardMiddleware')
 MIDDLEWARE = [
+    'PennCourses.middleware.SwitchboardMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ] + MIDDLEWARE

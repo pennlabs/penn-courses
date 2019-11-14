@@ -5,7 +5,14 @@ from django.db import models
 from courses.models import Section
 
 
+class ScheduleManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(models.Prefetch('sections', Section.with_reviews.all()))
+
+
 class Schedule(models.Model):
+    # objects = ScheduleManager()
+
     """
     Used to save schedules created by users on PCP
     """

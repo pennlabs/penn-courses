@@ -73,33 +73,35 @@ class Stats extends Component {
                 const str = section.id;
                 if (str) {
                     const course = str.substring(0, str.indexOf("-", str.indexOf("-") + 1)); // finds course (irrespective of section)
-                    if (course in courseStats) {
-                        statTypes.forEach((stat) => {
-                            courseStats[course][stat]
-                                 += (section[stat] || 2.5);
-                        });
-                        courseCUs[course] += section.credits;
-                        courseRepeats[course] += 1;
-                    } else {
-                        courseStats[course] = {};
-                        statTypes.forEach((stat) => {
-                            courseStats[course][stat] = (section[stat] ? section[stat] : 2.5);
-                        });
-                        courseCUs[course] = section.credits;
-                        courseRepeats[course] = 1;
-                    }
+                    courseStats[course] = courseStats[course] || {};
+                    courseRepeats[course] = courseRepeats[course] || {};
+                    statTypes.forEach((stat) => {
+                        if (section[stat]) {
+                            courseStats[course][stat] = (courseStats[course][stat] || 0)
+                                + section[stat];
+                            courseRepeats[course][stat] = (courseRepeats[course][stat] || 0) + 1;
+                        }
+                    });
+                    courseCUs[course] = (courseCUs[course] || 0) + section.credits;
                 }
             });
+
             const sums = {};
             statTypes.forEach((stat) => { sums[stat] = []; });
 
             totalCUs = 0;
+            const denominator = {};
             for (const course in courseStats) {
                 if (Object.prototype.hasOwnProperty.call(courseStats, course)) {
                     statTypes.forEach((stat) => {
-                        sums[stat].push(
-                            courseStats[course][stat] / courseRepeats[course] * courseCUs[course]
-                        );
+                        if (courseRepeats[course][stat] > 0) {
+                            sums[stat].push(
+                                courseStats[course][stat]
+                                / courseRepeats[course][stat]
+                                * courseCUs[course]
+                            );
+                            denominator[stat] = (denominator[stat] || 0) + courseCUs[course];
+                        }
                     });
                     totalCUs += courseCUs[course];
                 }
@@ -115,15 +117,10 @@ class Stats extends Component {
             averageHours = parseFloat(totalHours / 5).toFixed(1);
             totalHours = parseFloat(totalHours.toFixed(1));
 
-            if (totalCUs > 0) {
-                statTypes.forEach((stat) => {
-                    avgs[stat] = sums[stat].reduce((a, b) => a + b, 0) / totalCUs;
-                });
-            } else {
-                statTypes.forEach((stat) => {
-                    avgs[stat] = 0;
-                });
-            }
+            statTypes.forEach((stat) => {
+                avgs[stat] = denominator[stat]
+                    ? (sums[stat].reduce((a, b) => a + b, 0) / denominator[stat]) : 0;
+            });
 
             totalCUs = parseFloat(totalCUs.toFixed(1));
         }

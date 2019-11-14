@@ -4,26 +4,26 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from courses.models import Section
 from courses.util import get_course_and_section
-from courses.views import CourseDetail, CourseList
+from courses.views import CourseList
 from options.models import get_value
-from plan.filters import bound_filter, requirement_filter
+from plan.filters import bound_filter, choice_filter, requirement_filter
 from plan.models import Schedule
 from plan.search import TypedSearchBackend
-from plan.serializers import CourseDetailWithReviewSerializer, CourseListWithReviewSerializer, ScheduleSerializer
+from plan.serializers import ScheduleSerializer
 
 
 class CourseListSearch(CourseList):
     filter_backends = [TypedSearchBackend]
     search_fields = ('full_code', 'title', 'sections__instructors__name')
-    serializer_class = CourseListWithReviewSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset().prefetch_related(Prefetch('sections'))
 
         filters = {
             'requirements': requirement_filter,
-            'cu': bound_filter('sections__credits'),
+            'cu': choice_filter('sections__credits'),
             'course_quality': bound_filter('course_quality'),
             'instructor_quality': bound_filter('instructor_quality'),
             'difficulty': bound_filter('difficulty')
@@ -37,21 +37,17 @@ class CourseListSearch(CourseList):
         return queryset.distinct()
 
 
-class CourseDetailSearch(CourseDetail):
-    serializer_class = CourseDetailWithReviewSerializer
-
-
 def get_sections(data):
     sections = None
     if 'meetings' in data:
         sections = []
         for s in data.get('meetings'):
-            _, section = get_course_and_section(s.get('id'), s.get('semester'))
+            _, section = get_course_and_section(s.get('id'), s.get('semester'), section_manager=Section.with_reviews)
             sections.append(section)
     elif 'sections' in data:
         sections = []
         for s in data.get('sections'):
-            _, section = get_course_and_section(s.get('id'), s.get('semester'))
+            _, section = get_course_and_section(s.get('id'), s.get('semester'), section_manager=Section.with_reviews)
             sections.append(section)
     return sections
 
@@ -63,7 +59,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
     def update(self, request, pk=None):
         try:
-            schedule = Schedule.objects.get(id=pk)
+            schedule = self.get_queryset().get(id=pk)
         except Schedule.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -81,13 +77,12 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             schedule.name = request.data.get('name')
             schedule.save()
             schedule.sections.set(get_sections(request.data))
-            serialized_schedule = ScheduleSerializer(schedule)
-            return Response(serialized_schedule.data, status=status.HTTP_202_ACCEPTED)
+            return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_202_ACCEPTED)
         except IntegrityError:
             return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
-        if Schedule.objects.filter(id=request.data.get('id')).exists():
+        if self.get_queryset().filter(id=request.data.get('id')).exists():
             return self.update(request, request.data.get('id'))
 
         if 'semester' not in request.data:
@@ -100,17 +95,16 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
         try:
             if 'id' in request.data:  # Also from above we know that this id does not conflict with existing schedules.
-                schedule = Schedule.objects.create(person=request.user,
-                                                   semester=request.data.get('semester'),
-                                                   name=request.data.get('name'),
-                                                   id=request.data.get('id'))
+                schedule = self.get_queryset().create(person=request.user,
+                                                      semester=request.data.get('semester'),
+                                                      name=request.data.get('name'),
+                                                      id=request.data.get('id'))
             else:
-                schedule = Schedule.objects.create(person=request.user,
-                                                   semester=request.data.get('semester'),
-                                                   name=request.data.get('name'))
+                schedule = self.get_queryset().create(person=request.user,
+                                                      semester=request.data.get('semester'),
+                                                      name=request.data.get('name'))
             schedule.sections.set(get_sections(request.data))
-            serialized_schedule = ScheduleSerializer(schedule)
-            return Response(serialized_schedule.data, status=status.HTTP_201_CREATED)
+            return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_201_CREATED)
         except IntegrityError:
             return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
 

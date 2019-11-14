@@ -2,7 +2,8 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from courses.models import Course, Department, Instructor, Requirement, Section
-from courses.util import (create_mock_data, get_course, get_course_and_section, record_update,
+from courses.util import (create_mock_data, get_course, get_course_and_section,
+                          record_update, relocate_reqs_from_restrictions,
                           separate_course_code, set_crosslistings, update_course_from_record)
 from options.models import Option
 
@@ -129,8 +130,10 @@ class CrosslistingTestCase(TestCase):
         self.assertEqual(3, Course.objects.count())
 
 
+@override_settings(SWITCHBOARD_TEST_APP='api')
 class RequirementTestCase(TestCase):
     def setUp(self):
+        set_semester()
         get_course('CIS', '120', '2012A')  # dummy course to make sure we're filtering by semester
         self.course = get_course('CIS', '120', TEST_SEMESTER)
         self.course2 = get_course('CIS', '125', TEST_SEMESTER)
@@ -140,19 +143,26 @@ class RequirementTestCase(TestCase):
                                 school='SAS',
                                 code='TEST1',
                                 name='Test 1')
-
         self.req2 = Requirement(semester=TEST_SEMESTER,
                                 school='SAS',
                                 code='TEST2',
                                 name='Test 2')
+        self.req3 = Requirement(semester='XXXXX',
+                                school='SAS',
+                                code='TEST1',
+                                name='Test 1+')
 
         self.req1.save()
         self.req2.save()
+        self.req3.save()
 
         self.req1.departments.add(self.department)
+        self.req1.overrides.add(self.course2)
         self.req2.courses.add(self.course)
         self.req2.courses.add(self.course2)
-        self.req1.overrides.add(self.course2)
+        self.req3.departments.add(self.department)
+
+        self.client = APIClient()
 
     def assertCoursesEqual(self, expected, actual):
         def get_codes(x): sorted([f'{c.department.code}-{c.code}' for c in x])
@@ -185,6 +195,16 @@ class RequirementTestCase(TestCase):
         reqs = self.course2.requirements
         self.assertEqual(1, len(reqs))
         self.assertEqual(self.req2, reqs[0])
+
+    def test_requirement_route(self):
+        response = self.client.get(f'/current/requirements/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(2, len(response.data))
+
+    def test_requirement_route_other_sem(self):
+        response = self.client.get(f'/XXXXX/requirements/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(1, len(response.data))
 
 
 class MeetingTestCase(TestCase):
@@ -245,36 +265,6 @@ class CourseListTestCase(TestCase):
 
 
 @override_settings(SWITCHBOARD_TEST_APP='api')
-class SectionListTestCase(TestCase):
-    def setUp(self):
-        self.course1, self.section1 = create_mock_data('CIS-120-001', TEST_SEMESTER)
-        self.course2, self.section2 = create_mock_data('CIS-120-002', TEST_SEMESTER)
-        self.client = APIClient()
-        set_semester()
-
-    def test_get_sections(self):
-        response = self.client.get('/all/sections/')
-        self.assertEqual(len(response.data), 2)
-        codes = [d['section_id'] for d in response.data]
-        self.assertTrue('CIS-120-001' in codes and 'CIS-120-002' in codes)
-
-    def test_search_match_all(self):
-        response = self.client.get('/all/sections/', {'search': 'CIS'})
-        self.assertEqual(len(response.data), 2)
-        codes = [d['section_id'] for d in response.data]
-        self.assertTrue('CIS-120-001' in codes and 'CIS-120-002' in codes)
-
-    def test_search_one_hit(self):
-        response = self.client.get('/all/sections/', {'search': 'CIS-120-001'})
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual('CIS-120-001', response.data[0]['section_id'])
-
-    def test_search_no_hits(self):
-        response = self.client.get('/all/sections/', {'search': 'CIS-160-001'})
-        self.assertEqual(len(response.data), 0)
-
-
-@override_settings(SWITCHBOARD_TEST_APP='api')
 class CourseDetailTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -323,3 +313,100 @@ class CourseDetailTestCase(TestCase):
     def test_not_get_course(self):
         response = self.client.get('/all/courses/CIS-160/')
         self.assertEqual(response.status_code, 404)
+
+
+@override_settings(SWITCHBOARD_TEST_APP='api')
+class RelocateReqsRestsTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        self.rests = [dict()]
+        self.reqs = []
+
+    def test_bfs(self):
+        self.rests[0]['requirement_description'] = 'Benjamin Franklin Seminars'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEqual(self.reqs, ['Benjamin Franklin Seminars'])
+
+    def test_nsm(self):
+        self.rests[0]['requirement_description'] = 'Natural Science & Math Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEqual(self.reqs, ['Natural Science & Math Sector'])
+
+    def test_hss(self):
+        self.rests[0]['requirement_description'] = 'Humanities & Social Science Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEqual(self.reqs, ['Humanities & Social Science Sector'])
+
+    def test_mixed(self):
+        self.rests.append(dict())
+        self.rests.append(dict())
+        self.rests[0]['requirement_description'] = 'Benjamin Franklin Seminars'
+        self.rests[1]['requirement_description'] = 'Natural Science & Math Sector'
+        self.rests[2]['requirement_description'] = 'Humanities & Social Science Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEquals(len(self.reqs), 3)
+        self.assertTrue('Humanities & Social Science Sector' in self.reqs and
+                        'Natural Science & Math Sector' in self.reqs and
+                        'Benjamin Franklin Seminars' in self.reqs)
+
+    def test_none(self):
+        self.rests[0]['requirement_description'] = 'Random restriction'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEquals(len(self.reqs), 0)
+
+    def test_mixed_other(self):
+        self.rests.append(dict())
+        self.rests.append(dict())
+        self.rests[0]['requirement_description'] = 'Random restriction'
+        self.rests[1]['requirement_description'] = 'Natural Science & Math Sector'
+        self.rests[2]['requirement_description'] = 'Humanities & Social Science Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEquals(len(self.reqs), 2)
+        self.assertTrue('Humanities & Social Science Sector' in self.reqs and
+                        'Natural Science & Math Sector' in self.reqs)
+
+    def test_different_rests(self):
+        self.rests.append(dict())
+        self.rests.append(dict())
+        self.rests[0]['requirement_description'] = 'Random restriction'
+        self.rests[1]['requirement_description'] = 'Natural Science & Math Sector'
+        self.rests[2]['requirement_description'] = 'Humanities & Social Science Sector'
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Random restriction'])
+        self.assertEquals(len(self.reqs), 1)
+        self.assertTrue('Random restriction' in self.reqs)
+
+    def test_mixed_other_already_populated(self):
+        self.rests.append(dict())
+        self.rests.append(dict())
+        self.rests[0]['requirement_description'] = 'Random restriction'
+        self.rests[1]['requirement_description'] = 'Natural Science & Math Sector'
+        self.rests[2]['requirement_description'] = 'Humanities & Social Science Sector'
+        self.reqs = ['A requirement']
+        relocate_reqs_from_restrictions(self.rests, self.reqs,
+                                        ['Humanities & Social Science Sector',
+                                         'Natural Science & Math Sector',
+                                         'Benjamin Franklin Seminars'])
+        self.assertEquals(len(self.reqs), 3)
+        self.assertTrue('Humanities & Social Science Sector' in self.reqs and
+                        'Natural Science & Math Sector' in self.reqs and
+                        'A requirement' in self.reqs)
