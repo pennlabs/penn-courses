@@ -29,7 +29,7 @@ django-labs-accounts = "*"
 ipython = "*"
 
 [dev-packages]
-coveralls = "*"
+codecov = "*"
 unittest-xml-reporting = "*"
 coverage = "*"
 flake8 = "*"
