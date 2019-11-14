@@ -134,9 +134,9 @@ export const schedule = (state = initialState, action) => {
             let cartHasChanged = false;
             if (schedulesFromBackend) {
                 schedulesFromBackend.forEach(({
-                    id: scheduleId, title, sections, semester,
+                    id: scheduleId, name, sections, semester,
                 }) => {
-                    if (title === "cart") {
+                    if (name === "cart") {
                         const oldSectionSet = {};
                         state.cartSections.forEach(({ id }) => {
                             oldSectionSet[id] = true;
@@ -147,20 +147,20 @@ export const schedule = (state = initialState, action) => {
                                 cartHasChanged = true;
                             }
                         });
-                    } else if (state.schedules[title]) {
-                        newScheduleObject.schedules[title].pushedToBackend = false;
-                        newScheduleObject.schedules[title].id = scheduleId;
+                    } else if (state.schedules[name]) {
+                        newScheduleObject.schedules[name].pushedToBackend = false;
+                        newScheduleObject.schedules[name].id = scheduleId;
                         const oldSectionSet = {};
-                        state.schedules[title].meetings.forEach(({ id }) => {
+                        state.schedules[name].meetings.forEach(({ id }) => {
                             oldSectionSet[id] = true;
                         });
                         sections.forEach((section) => {
                             if (!oldSectionSet[section.id]) {
-                                newScheduleObject[title].meetings.push(section);
+                                newScheduleObject[name].meetings.push(section);
                             }
                         });
                     } else {
-                        newScheduleObject[title] = {
+                        newScheduleObject[name] = {
                             meetings: sections,
                             semester,
                             pushedToBackend: true,

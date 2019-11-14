@@ -333,9 +333,9 @@ export function clearAll() {
     };
 }
 
-export const updateSchedules = ({ schedules }) => ({
+export const updateSchedules = schedulesFromBackend => ({
     type: UPDATE_SCHEDULES,
-    schedules,
+    schedulesFromBackend,
 });
 
 export function fetchCourseDetails(courseId) {
