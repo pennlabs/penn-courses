@@ -6,6 +6,7 @@ import "./Search.css";
 import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
+import { CheckboxFilter } from "./CheckboxFilter";
 import { SearchField } from "./SearchField";
 import { initialState as defaultFilters } from "../../reducers/filters";
 import {
@@ -15,10 +16,12 @@ import {
     remSchoolReq,
     updateSearchText,
     updateRangeFilter,
+    updateCheckboxFilter,
     clearAll,
     clearFilter,
     updateSearch
 } from "../../actions";
+
 
 function shouldSearch(filterData) {
     const searchString = filterData.searchString.length >= 3;
@@ -42,7 +45,8 @@ function SearchBar({
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
-    setTab,
+    // eslint-disable-next-line no-shadow
+    updateCheckboxFilter, setTab,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -122,17 +126,33 @@ function SearchBar({
                     isDisabled={isLoading}
                 />
             </DropdownButton>
+            <DropdownButton
+                title="CU"
+                filterData={filterData.cu}
+                defaultFilter={defaultFilters.filterData.cu}
+                isDisabled={isLoading}
+                clearFilter={clearFilterSearch("cu")}
+            >
+                <CheckboxFilter
+                    filterData={filterData}
+                    updateCheckboxFilter={updateCheckboxFilter}
+                    isDisabled={isLoading}
+                    checkboxProperty="cu"
+                    startSearch={conditionalStartSearch}
+                />
+
+            </DropdownButton>
         </React.Fragment>
     );
     if (isMobileOnly) {
         return (
             <div style={{ marginTop: "0px" }}>
                 <div style={{
-                    display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", background: "white", paddingTop: "20px", paddingBottom: "10px", marginBottom: "10px", borderRadius: "6px",
+                    display: "flex", justifyContent: "space-evenly", alignItems: "stretch", flexWrap: "wrap", background: "white", paddingTop: "20px", paddingBottom: "10px", marginBottom: "10px", borderRadius: "6px",
                 }}
                 >
                     <div>
-                        <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 1rem" }} />
+                        <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 0.5rem" }} />
                     </div>
                     <SearchField
                         setTab={setTab}
@@ -141,7 +161,7 @@ function SearchBar({
                         updateSearchText={updateSearchText}
                         isDisabled={isLoading}
                     />
-                    <div style={{ paddingLeft: "10px" }} role="button" onClick={() => showHideReqs(!reqsShown)}>
+                    <div style={{ padding: "0.5rem" }} role="button" onClick={() => showHideReqs(!reqsShown)}>
                         <i className="fas fa-filter" />
                     </div>
                 </div>
@@ -212,6 +232,7 @@ SearchBar.propTypes = {
     remSchoolReq: PropTypes.func,
     updateSearchText: PropTypes.func,
     updateRangeFilter: PropTypes.func,
+    updateCheckboxFilter: PropTypes.func,
     clearAll: PropTypes.func,
     clearFilter: PropTypes.func,
     clearSearchResults: PropTypes.func,
@@ -240,6 +261,9 @@ const mapDispatchToProps = dispatch => ({
     remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
     updateSearchText: s => dispatch(updateSearchText(s)),
     updateRangeFilter: field => values => dispatch(updateRangeFilter(field, values)),
+    updateCheckboxFilter: (field, value, toggleState) => dispatch(
+        updateCheckboxFilter(field, value, toggleState)
+    ),
     clearAll: () => dispatch(clearAll()),
     clearFilter: propertyName => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),

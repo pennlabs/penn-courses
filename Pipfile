@@ -26,6 +26,7 @@ django-filter = "*"
 shortener = "*"
 django-labs-accounts = "*"
 "beautifulsoup4" = "*"
+ipython = "*"
 
 [dev-packages]
 coveralls = "*"
