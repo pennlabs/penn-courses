@@ -105,6 +105,7 @@ export const schedule = (state = initialState, action) => {
                     [action.scheduleName]: {
                         ...state.schedules[action.scheduleName],
                         pushedToBackend: true,
+                        oldName: null,
                     }
                 }
             };
@@ -191,7 +192,12 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 schedules: {
                     ...removeSchedule(action.oldName, state.schedules),
-                    [action.newName]: state.schedules[action.oldName],
+                    [action.newName]: {
+                        ...state.schedules[action.oldName],
+                        pushedToBackend: false,
+                        // ensure that the old name is the last name the backend is aware of
+                        oldName: state.schedules[action.oldName].oldName || action.oldName
+                    },
                 },
                 scheduleSelected: state.scheduleSelected === action.oldName
                     ? action.newName : state.scheduleSelected,
