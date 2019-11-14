@@ -148,8 +148,8 @@ export const schedule = (state = initialState, action) => {
                             }
                         });
                     } else if (state.schedules[name]) {
-                        newScheduleObject.schedules[name].pushedToBackend = false;
-                        newScheduleObject.schedules[name].id = scheduleId;
+                        newScheduleObject[name].pushedToBackend = false;
+                        newScheduleObject[name].id = scheduleId;
                         const oldSectionSet = {};
                         state.schedules[name].meetings.forEach(({ id }) => {
                             oldSectionSet[id] = true;
