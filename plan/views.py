@@ -78,8 +78,9 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             schedule.sections.set(get_sections(request.data))
             serialized_schedule = ScheduleSerializer(schedule)
             return Response(serialized_schedule.data, status=status.HTTP_202_ACCEPTED)
-        except IntegrityError:
-            return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError as e:
+            return Response({'detail': 'Probably unique constraint violated... error: ' + e.__cause__},
+                            status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         if Schedule.objects.filter(id=request.data.get('id')).exists():
@@ -106,8 +107,9 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             schedule.sections.set(get_sections(request.data))
             serialized_schedule = ScheduleSerializer(schedule)
             return Response(serialized_schedule.data, status=status.HTTP_201_CREATED)
-        except IntegrityError:
-            return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError as e:
+            return Response({'detail': 'Probably unique constraint violated... error: ' + e.__cause__},
+                            status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
         queryset = Schedule.objects.filter(person=self.request.user)
