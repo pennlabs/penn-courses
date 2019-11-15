@@ -6,7 +6,6 @@ const getCsrf = () => {
         .reduce((acc, cookie) => acc || ((cookie
                 .substring(0, "csrftoken".length + 1) === ("csrftoken=")) &&
             decodeURIComponent(cookie.substring("csrftoken=".length))), null);
-    alert(result);
     return result;
 };
 

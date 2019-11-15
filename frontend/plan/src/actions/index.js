@@ -396,13 +396,22 @@ export const createScheduleOnBackend = (title, sections) => (dispatch) => {
 };
 
 export const updateScheduleOnBackend = (title, schedule) => (dispatch) => {
-    processScheduleId(dispatch, title, fetch(`/schedules/{${schedule.id}/`, {
+    const updatedScheduleObj = {
+        name: title,
+        ...schedule,
+        sections: schedule.meetings,
+    };
+    processScheduleId(dispatch, title, fetch(`/schedules/${schedule.id}/`, {
         method: "PUT",
-        body: JSON.stringify({
-            title,
-            ...schedule,
-        }),
-    })).catch(alert);
+        credentials: "include",
+        mode: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrf()
+        },
+        body: JSON.stringify(updatedScheduleObj),
+    }));
 };
 
 export function fetchSectionInfo(searchData) {
