@@ -197,12 +197,15 @@ export const schedule = (state = initialState, action) => {
                     [action.newName]: {
                         ...state.schedules[action.oldName],
                         pushedToBackend: false,
-                        // ensure that the old name is the last name the backend is aware of
-                        oldName: state.schedules[action.oldName].oldName || action.oldName
+                        isNew: true,
                     },
                 },
                 scheduleSelected: state.scheduleSelected === action.oldName
                     ? action.newName : state.scheduleSelected,
+                deletedSchedules: {
+                    ...(state.deletedSchedules || {}),
+                    [action.oldName]: true
+                },
             };
         case DUPLICATE_SCHEDULE:
             return {
@@ -210,7 +213,10 @@ export const schedule = (state = initialState, action) => {
                 schedules: {
                     ...state.schedules,
                     [nextAvailable(action.scheduleName, state.schedules)]:
-                        state.schedules[action.scheduleName],
+                        {
+                            ...state.schedules[action.scheduleName],
+                            isNew: true
+                        },
                 },
             };
         case CREATE_SCHEDULE:
@@ -261,6 +267,7 @@ export const schedule = (state = initialState, action) => {
                 schedules: {
                     ...state.schedules,
                     [state.scheduleSelected]: {
+                        pushedToBackend: false,
                         ...state[state.scheduleSelected],
                         meetings: state.schedules[state.scheduleSelected].meetings
                             .filter(m => m.id !== action.id),
