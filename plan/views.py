@@ -79,7 +79,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             serialized_schedule = ScheduleSerializer(schedule)
             return Response(serialized_schedule.data, status=status.HTTP_202_ACCEPTED)
         except IntegrityError as e:
-            return Response({'detail': 'Probably unique constraint violated... error: ' + e.__cause__},
+            return Response({'detail': 'Probably unique constraint violated... error: ' + str(e.__cause__)},
                             status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
@@ -108,7 +108,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             serialized_schedule = ScheduleSerializer(schedule)
             return Response(serialized_schedule.data, status=status.HTTP_201_CREATED)
         except IntegrityError as e:
-            return Response({'detail': 'Probably unique constraint violated... error: ' + e.__cause__},
+            return Response({'detail': 'Probably unique constraint violated... error: ' + str(e.__cause__)},
                             status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
