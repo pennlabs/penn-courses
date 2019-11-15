@@ -24,7 +24,8 @@ const generateDefaultSchedule = () => (
         meetings: [],
         colorPalette: [],
         LocAdded: false,
-        pushedToBackend: true,
+        pushedToBackend: false,
+        isNew: false,
     }
 );
 
@@ -106,7 +107,7 @@ export const schedule = (state = initialState, action) => {
                     [action.scheduleName]: {
                         ...state.schedules[action.scheduleName],
                         pushedToBackend: true,
-                        oldName: null,
+                        isNew: false,
                     }
                 }
             };
