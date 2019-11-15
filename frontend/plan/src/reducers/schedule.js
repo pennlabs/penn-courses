@@ -36,6 +36,7 @@ const initialState = {
     scheduleSelected: DEFAULT_SCHEDULE_NAME,
     cartSections: [],
     cartPushedToBackend: false,
+    deletedSchedules: [],
 };
 
 /**
@@ -227,6 +228,10 @@ export const schedule = (state = initialState, action) => {
             }
             return {
                 ...state,
+                deletedSchedules: {
+                    ...(state.deletedSchedules || {}),
+                    scheduleName: action.scheduleName
+                },
                 schedules: newSchedules,
                 scheduleSelected: action.scheduleName === state.scheduleSelected
                     ? Object.keys(newSchedules)[0] : state.scheduleSelected,

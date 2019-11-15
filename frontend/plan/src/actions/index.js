@@ -1,4 +1,5 @@
 import fetch from "cross-fetch";
+import getCsrf from "../csrf";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -163,7 +164,7 @@ const createScheduleOnFrontend = scheduleName => (
 
 export const createSchedule = scheduleName => dispatch => {
     dispatch(createScheduleOnFrontend(scheduleName));
-    dispatch(createScheduleOnBackend(scheduleName, [], "20sp"));
+    dispatch(createScheduleOnBackend(scheduleName, []));
 };
 
 export const openModal = (modalKey, modalProps, modalTitle) => (
@@ -376,17 +377,20 @@ const processScheduleId = (dispatch, title, fetchResult) => {
         .then(({ id }) => dispatch(setScheduleId(title, id)));
 };
 
-export const createScheduleOnBackend = (title, sections, semester) => (dispatch) => {
+export const createScheduleOnBackend = (title, sections) => (dispatch) => {
     processScheduleId(dispatch, title, fetch("/schedules/", {
         method: "POST",
         credentials: "include",
+        mode: 'same-origin',
         headers: {
+            'Accept': 'application/json',
             'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrf()
         },
         body: JSON.stringify({
+            name: title,
             title,
             sections,
-            semester,
         }),
     }).then(result => alert(JSON.stringify(result))).catch(alert));
 };
