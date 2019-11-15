@@ -204,7 +204,7 @@ export const schedule = (state = initialState, action) => {
                     ? action.newName : state.scheduleSelected,
                 deletedSchedules: {
                     ...(state.deletedSchedules || {}),
-                    [action.oldName]: true
+                    [state.schedules[action.oldName].id]: true
                 },
             };
         case DUPLICATE_SCHEDULE:
@@ -237,7 +237,7 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 deletedSchedules: {
                     ...(state.deletedSchedules || {}),
-                    scheduleName: action.scheduleName
+                    [state.schedules[action.scheduleName].id]: true
                 },
                 schedules: newSchedules,
                 scheduleSelected: action.scheduleName === state.scheduleSelected

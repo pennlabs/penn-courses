@@ -25,12 +25,15 @@ import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
 import {
+    createSchedule, createScheduleOnBackend,
     fetchSchedules,
     markCartSynced,
     markScheduleSynced,
     openModal,
     updateScheduleOnBackend
 } from "./actions";
+import fetch from "cross-fetch";
+import getCsrf from "./csrf";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
@@ -69,10 +72,28 @@ function App() {
                 .forEach(scheduleName => {
                     const schedule = schedulesState[scheduleName];
                     if (!schedule.pushedToBackend) {
-                        store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
-                        store.dispatch(markScheduleSynced(scheduleName));
+                        if (schedule.isNew) {
+                            store.dispatch(createScheduleOnBackend(scheduleName, schedule.meetings));
+                        } else {
+                            store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
+                            store.dispatch(markScheduleSynced(scheduleName));
+                        }
                     }
                 });
+            // Delete all schedules that have been deleted
+            Object.keys(scheduleState.deletedSchedules).forEach(deletedScheduleId => {
+                delete scheduleState.deletedSchedules[deletedScheduleId];
+                fetch("/schedules/" + deletedScheduleId + "/", {
+                    method: "POST",
+                    credentials: "include",
+                    mode: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrf(),
+                    },
+                }).then(() => {});
+            });
         }, 2000);
     }, []);
 
