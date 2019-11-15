@@ -37,7 +37,7 @@ const initialState = {
     scheduleSelected: DEFAULT_SCHEDULE_NAME,
     cartSections: [],
     cartPushedToBackend: false,
-    deletedSchedules: [],
+    deletedSchedules: []
 };
 
 /**
@@ -117,16 +117,23 @@ export const schedule = (state = initialState, action) => {
                 cartPushedToBackend: true,
             };
         case SET_SCHEDULE_ID:
-            return {
-                ...state,
-                schedules: {
-                    ...state.schedules,
-                    [action.scheduleName]: {
-                        ...state.schedules[action.scheduleName],
-                        id: action.id,
+            if (action.scheduleName === "cart") {
+                return {
+                    ...state,
+                    cartId: action.id,
+                };
+            } else {
+                return {
+                    ...state,
+                    schedules: {
+                        ...state.schedules,
+                        [action.scheduleName]: {
+                            ...state.schedules[action.scheduleName],
+                            id: action.id,
+                        },
                     },
-                },
-            };
+                };
+            }
         case UPDATE_SCHEDULES:
             // eslint-disable-next-line
             const { schedulesFromBackend } = action;

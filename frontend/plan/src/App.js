@@ -26,7 +26,7 @@ import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
 import {
     createSchedule, createScheduleOnBackend,
-    fetchSchedules,
+    fetchSchedulesAndInitializeCart,
     markCartSynced,
     markScheduleSynced,
     openModal,
@@ -59,12 +59,16 @@ function App() {
     const { hasVisited } = localStorage;
 
     useEffect(() => {
-        store.dispatch(fetchSchedules());
+        const scheduleStateInit = store.getState().schedule;
+        store.dispatch(fetchSchedulesAndInitializeCart(scheduleStateInit.cartSections));
         window.setInterval(() => {
             const scheduleState = store.getState().schedule;
-            if (!scheduleState.cartPushedToBackend) {
+            if (!scheduleState.cartPushedToBackend && ("cartId" in scheduleState)) {
                 store.dispatch(updateScheduleOnBackend("cart",
-                    { sections: scheduleState.cartSections }));
+                    {
+                        id: scheduleState.cartId,
+                        sections: scheduleState.cartSections
+                    }));
                 store.dispatch(markCartSynced());
             }
             const schedulesState = scheduleState.schedules;
@@ -81,19 +85,22 @@ function App() {
                     }
                 });
             // Delete all schedules that have been deleted
-            Object.keys(scheduleState.deletedSchedules).forEach(deletedScheduleId => {
-                delete scheduleState.deletedSchedules[deletedScheduleId];
-                fetch("/schedules/" + deletedScheduleId + "/", {
-                    method: "DELETE",
-                    credentials: "include",
-                    mode: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrf(),
-                    },
-                }).then(() => {});
-            });
+            Object.keys(scheduleState.deletedSchedules)
+                .forEach(deletedScheduleId => {
+                    delete scheduleState.deletedSchedules[deletedScheduleId];
+                    fetch("/schedules/" + deletedScheduleId + "/", {
+                        method: "DELETE",
+                        credentials: "include",
+                        mode: "same-origin",
+                        headers: {
+                            "Accept": "application/json",
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": getCsrf(),
+                        },
+                    })
+                        .then(() => {
+                        });
+                });
         }, 2000);
     }, []);
 

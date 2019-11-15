@@ -349,12 +349,15 @@ export function fetchCourseDetails(courseId) {
     };
 }
 
-export const fetchSchedules = () => (dispatch) => {
+export const fetchSchedulesAndInitializeCart = cart => (dispatch) => {
     fetch("/schedules/")
         .then(res => res.json())
         .then(schedules =>{
             if(schedules) {
                 dispatch(updateSchedules(schedules));
+            }
+            if (!schedules.cart) {
+                dispatch(createScheduleOnBackend("cart", cart));
             }
         })
         .catch(error => console.log("Not logged in"));
