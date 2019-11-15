@@ -392,12 +392,12 @@ export const createScheduleOnBackend = (title, sections) => (dispatch) => {
             title,
             sections,
         }),
-    }).then(result => alert(JSON.stringify(result))).catch(alert));
+    }));
 };
 
 export const updateScheduleOnBackend = (title, schedule) => (dispatch) => {
     processScheduleId(dispatch, title, fetch(`/schedules/{${schedule.id}/`, {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify({
             title,
             ...schedule,

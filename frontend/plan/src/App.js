@@ -76,15 +76,15 @@ function App() {
                             store.dispatch(createScheduleOnBackend(scheduleName, schedule.meetings));
                         } else {
                             store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
-                            store.dispatch(markScheduleSynced(scheduleName));
                         }
+                        store.dispatch(markScheduleSynced(scheduleName));
                     }
                 });
             // Delete all schedules that have been deleted
             Object.keys(scheduleState.deletedSchedules).forEach(deletedScheduleId => {
                 delete scheduleState.deletedSchedules[deletedScheduleId];
                 fetch("/schedules/" + deletedScheduleId + "/", {
-                    method: "POST",
+                    method: "DELETE",
                     credentials: "include",
                     mode: 'same-origin',
                     headers: {
