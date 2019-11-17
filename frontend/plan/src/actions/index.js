@@ -349,6 +349,13 @@ export function fetchCourseDetails(courseId) {
     };
 }
 
+/**
+ * Pulls schedules from the backend
+ * If the cart isn't included, it creates a cart
+ * @param cart The courses in the cart
+ * @param onComplete The function to call when initialization has been completed
+ * @returns {Function}
+ */
 export const fetchSchedulesAndInitializeCart = (cart, onComplete = () => null) => (dispatch) => {
     fetch("/schedules/")
         .then(res => res.json())
@@ -370,6 +377,12 @@ export const setScheduleIdAndMarkSynced = (name, id) => ({
     id,
 });
 
+/**
+ * Creates a schedule on the backend
+ * @param name The name of the schedule
+ * @param sections The list of sections for the schedule
+ * @returns {Function}
+ */
 export const createScheduleOnBackend = (name, sections) => (dispatch) => {
     fetch("/schedules/", {
         method: "POST",
@@ -389,6 +402,13 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
         .then(({ id }) => dispatch(setScheduleIdAndMarkSynced(name, id)));
 };
 
+/**
+ * Updates a schedule on the backend
+ * Skips if the id is not yet initialized for the schedule
+ * Once the schedule has been updated, the schedule is marked as updated locally
+ * @param name The name of the schedule
+ * @param schedule The schedule object
+ */
 export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
     const { id } = schedule;
     if (!id) {
