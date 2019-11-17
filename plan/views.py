@@ -67,8 +67,10 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         if 'semester' not in request.data:
             request.data['semester'] = get_value('SEMESTER', None)
 
-        for s in request.data['sections']:
-            if s.get('semester') != request.data.get('semester'):
+        sections = get_sections(request.data)
+
+        for s in sections:
+            if s.course.semester != request.data.get('semester'):
                 return Response({'detail': 'Semester uniformity invariant violated.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -77,7 +79,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             schedule.semester = request.data.get('semester')
             schedule.name = request.data.get('name')
             schedule.save()
-            schedule.sections.set(get_sections(request.data))
+            schedule.sections.set(sections)
             return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_202_ACCEPTED)
         except IntegrityError as e:
             return Response({'detail': 'IntegrityError encountered while trying to update: ' + str(e.__cause__)},
@@ -90,8 +92,10 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         if 'semester' not in request.data:
             request.data['semester'] = get_value('SEMESTER', None)
 
-        for sec in request.data['sections']:
-            if sec.get('semester') != request.data.get('semester'):
+        sections = get_sections(request.data)
+
+        for sec in sections:
+            if sec.course.semester != request.data.get('semester'):
                 return Response({'detail': 'Semester uniformity invariant violated.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -105,7 +109,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 schedule = self.get_queryset().create(person=request.user,
                                                       semester=request.data.get('semester'),
                                                       name=request.data.get('name'))
-            schedule.sections.set(get_sections(request.data))
+            schedule.sections.set(sections)
             return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_201_CREATED)
         except IntegrityError as e:
             return Response({'detail': 'IntegrityError encountered while trying to create: ' + str(e.__cause__)},
