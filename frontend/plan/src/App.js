@@ -37,8 +37,7 @@ import getCsrf from "./csrf";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";u
 
-//const previousState = localStorage.getItem("coursePlanSchedules");
-const previousState = null;
+const previousState = localStorage.getItem("coursePlanSchedules");
 const previousStateJSON = previousState ? JSON.parse(previousState) : undefined;
 const loggerMiddleware = createLogger();
 
@@ -52,8 +51,35 @@ const store = createStore(
     )
 );
 
+/**
+ * Returns an object with only unsynced schedules
+ */
+const getUnsynced = (schedules) => {
+    const toSave = {};
+    Object.keys(schedules)
+        .forEach(scheduleName => {
+            if (!schedules[scheduleName].pushedToBackend) {
+                toSave[scheduleName] = schedules[scheduleName];
+            }
+        });
+    return toSave;
+};
+
+/**
+ * Limits the schedule information stored in local storage to whatever hasn't been synced
+ */
+const limitScheduleInfo = ({ scheduleSelected, cartPushedToBackend, deletedSchedules, cartSections, schedules }) => {
+    return {
+        scheduleSelected,
+        cartPushedToBackend,
+        deletedSchedules,
+        cartSections: cartPushedToBackend ? [] : (cartSections || []),
+        schedules: getUnsynced(schedules)
+    };
+};
+
 store.subscribe(() => {
-    //localStorage.setItem("coursePlanSchedules", JSON.stringify(store.getState().schedule));
+    localStorage.setItem("coursePlanSchedules", JSON.stringify(limitScheduleInfo(store.getState().schedule)));
 });
 
 function App() {
