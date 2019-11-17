@@ -21,8 +21,9 @@ export default function Section({
                 }}
                 >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ fontSize: "1rem", fontWeight: "bold", marginRight: "1em" }}>
-                            {section.id.split("-").pop()}
+                        <div style={{ fontSize: "1rem", fontWeight: "bold", marginRight: "1em", display: "flex", alignItems: "center" }}>
+                            {`${section.id.split("-").pop()} `}
+                            <span style={{ fontSize: "0.70rem", marginLeft: "0.5em", fontWeight: "normal" }}>{section.activity}</span>
                         </div>
                         <div style={{
                             fontSize: "0.85rem", fontWeight: "bold", textOverflow: "ellipsis", flexGrow: "6",
@@ -51,13 +52,8 @@ export default function Section({
                             {getTimeString(meetings)}
                         </div>
                         <div>
-                            {section.activity}
+                            {`${section.credits} CU`}
                         </div>
-                        {/* <div>
-                            (
-                            {section.credits}
-                            cu)
-                        </div> */}
                         <div>
                             {meetings.length > 0 ? (
                                 <div>
