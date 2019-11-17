@@ -212,15 +212,10 @@ export const schedule = (state = initialState, action) => {
                     [action.newName]: {
                         ...state.schedules[action.oldName],
                         pushedToBackend: false,
-                        isNew: true,
                     },
                 },
                 scheduleSelected: state.scheduleSelected === action.oldName
                     ? action.newName : state.scheduleSelected,
-                deletedSchedules: {
-                    ...(state.deletedSchedules || {}),
-                    [state.schedules[action.oldName].id]: true
-                },
             };
         case DUPLICATE_SCHEDULE:
             return {
