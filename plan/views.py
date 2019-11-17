@@ -69,7 +69,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         sections = get_sections(request.data)
 
         for s in sections:
-            if s.get('semester') != request.data.get('semester'):
+            if s.course.semester != request.data.get('semester'):
                 return Response({'detail': 'Semester uniformity invariant violated.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -94,7 +94,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         sections = get_sections(request.data)
 
         for sec in sections:
-            if sec.get('semester') != request.data.get('semester'):
+            if sec.course.semester != request.data.get('semester'):
                 return Response({'detail': 'Semester uniformity invariant violated.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
