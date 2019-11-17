@@ -402,10 +402,14 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
         .then(response => {
             if (response.ok) {
                 response.json()
-                    .then(({ id }) => dispatch(setScheduleIdAndMarkSynced(name, id)));
+                    .then(({ id }) => {
+                        if (id) {
+                            dispatch(setScheduleIdAndMarkSynced(name, id));
+                        }
+                    });
             }
-        }).
-        catch(ignored => null);
+        })
+        .catch(ignored => null);
 };
 
 /**
