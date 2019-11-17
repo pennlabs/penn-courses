@@ -20,7 +20,6 @@ const DEFAULT_SCHEDULE_NAME = "Schedule";
 // returns the default empty schedule
 const generateDefaultSchedule = () => (
     {
-        term: "2019A",
         meetings: [],
         colorPalette: [],
         LocAdded: false,
@@ -151,6 +150,7 @@ export const schedule = (state = initialState, action) => {
                         state.cartSections.forEach(({ id }) => {
                             oldSectionSet[id] = true;
                         });
+                        state.cartId = scheduleId;
                         sections.forEach((cartSection) => {
                             if (!oldSectionSet[cartSection.id]) {
                                 newCart.push(cartSection);

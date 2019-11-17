@@ -37,7 +37,8 @@ import getCsrf from "./csrf";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";
 
-const previousState = localStorage.getItem("coursePlanSchedules");
+//const previousState = localStorage.getItem("coursePlanSchedules");
+const previousState = null;
 const previousStateJSON = previousState ? JSON.parse(previousState) : undefined;
 const loggerMiddleware = createLogger();
 
@@ -52,7 +53,7 @@ const store = createStore(
 );
 
 store.subscribe(() => {
-    localStorage.setItem("coursePlanSchedules", JSON.stringify(store.getState().schedule));
+    //localStorage.setItem("coursePlanSchedules", JSON.stringify(store.getState().schedule));
 });
 
 function App() {
@@ -67,7 +68,7 @@ function App() {
                 store.dispatch(updateScheduleOnBackend("cart",
                     {
                         id: scheduleState.cartId,
-                        sections: scheduleState.cartSections
+                        meetings: scheduleState.cartSections
                     }));
                 store.dispatch(markCartSynced());
             }
@@ -85,7 +86,7 @@ function App() {
                     }
                 });
             // Delete all schedules that have been deleted
-            Object.keys(scheduleState.deletedSchedules)
+            Object.keys(scheduleState.deletedSchedules || {})
                 .forEach(deletedScheduleId => {
                     delete scheduleState.deletedSchedules[deletedScheduleId];
                     fetch("/schedules/" + deletedScheduleId + "/", {
