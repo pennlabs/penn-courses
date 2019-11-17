@@ -79,8 +79,9 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             schedule.save()
             schedule.sections.set(get_sections(request.data))
             return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_202_ACCEPTED)
-        except IntegrityError:
-            return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError as e:
+            return Response({'detail': 'IntegrityError encountered while trying to update: ' + str(e.__cause__)},
+                            status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         if self.get_queryset().filter(id=request.data.get('id')).exists():
@@ -106,8 +107,9 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                                                       name=request.data.get('name'))
             schedule.sections.set(get_sections(request.data))
             return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_201_CREATED)
-        except IntegrityError:
-            return Response({'detail': 'Unique constraint violated'}, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError as e:
+            return Response({'detail': 'IntegrityError encountered while trying to create: ' + str(e.__cause__)},
+                            status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
         queryset = Schedule.objects.filter(person=self.request.user)
