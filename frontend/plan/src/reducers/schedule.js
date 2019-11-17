@@ -67,6 +67,16 @@ const toggleSection = (meetings, section) => {
 };
 
 /**
+ * Returns a copy of th given schedule without its id
+ * @param schedule
+ */
+const withoutId = schedule => {
+  const newSchedule = {...schedule};
+  delete newSchedule["id"];
+  return newSchedule;
+};
+
+/**
  * Returns the next available schedule name that is similar to the given schedule name
  * Used for duplication
  * @param scheduleName: current schedule name
@@ -224,9 +234,9 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [nextAvailable(action.scheduleName, state.schedules)]:
                         {
-                            ...state.schedules[action.scheduleName],
+                            ...withoutId(state.schedules[action.scheduleName]),
                             pushedToBackend: false,
-                            isNew: true
+                            isNew: true,
                         },
                 },
             };
