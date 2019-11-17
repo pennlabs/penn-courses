@@ -1,9 +1,5 @@
-from rest_framework import filters, generics, viewsets
+from rest_framework import filters, generics
 from rest_framework.permissions import IsAuthenticated
-
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.decorators import api_view
 
 from courses.models import Course, Requirement, Section, UserData
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer, MiniSectionSerializer,
@@ -69,4 +65,5 @@ class UserDetailView(generics.RetrieveAPIView, generics.UpdateAPIView):
         return UserData.objects.all()
 
     def get_object(self):
-        return self.request.user
+        ob, _ = UserData.objects.get_or_create(user=self.request.user)
+        return ob

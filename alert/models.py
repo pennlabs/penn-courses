@@ -88,16 +88,16 @@ class Registration(models.Model):
 
     def save(self, *args, **kwargs):
         self.validate_phone()
-        super().save(*args, **kwargs)
         if self.user is not None:
             if self.email is not None:
-                user_data = UserData.get(user=self.user)
+                user_data, _ = UserData.objects.get_or_create(user=self.user)
                 user_data.email = self.email
                 self.email = None
             if self.phone is not None:
-                user_data = UserData.get(user=self.user)
+                user_data, _ = UserData.objects.get_or_create(user=self.user)
                 user_data.phone = self.phone
                 self.phone = None
+        super().save(*args, **kwargs)
 
     @property
     def is_active(self):

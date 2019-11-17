@@ -1,9 +1,11 @@
+import csv
 import logging
+import os
 
 from celery import shared_task
 
 from courses import registrar
-from courses.models import Course, Department, Requirement
+from courses.models import Course, Department, Requirement, Section, StatusUpdate
 from courses.util import upsert_course_from_opendata
 from options.models import get_value
 
@@ -98,3 +100,23 @@ def semester_sync(query='', semester=None):
     load_courses(query=query, semester=semester)
     load_requirements(school='SEAS', semester=semester)
     load_requirements(school='WH', semester=semester)
+
+
+def load_course_status_history(directory):
+    for root, dirs, files in os.walk(directory):
+        for name in files:
+            if name.endswith('.csv'):
+                full_path = os.path.join(directory, name)
+                with open(full_path, newline='') as history_file:
+                    history_reader = csv.reader(history_file, delimiter=' ', quotechar='|')
+                    i = 0
+                    for row in history_reader:
+                        i += 1
+                        if i % 100 == 0:
+                            print(f'loading status history from {name}... ({i} / {len(history_reader)})')
+                        if Section.objects.filter(full_code=(row[4]+'-'+row[5]+'-'+row[6])).exists():
+                            sec = Section.objects.get(full_code=(row[4]+'-'+row[5]+'-'+row[6]))
+                            status_update = StatusUpdate(section=sec, old_status=row[0], new_status=row[1],
+                                                         alert_sent=row[2], created_at=row[3], request_body='')
+                            status_update.save()
+                print(f'finished loading status history from {name}')

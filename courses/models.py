@@ -344,7 +344,7 @@ class UserData(models.Model):
     """
     A model that stores all user data from PCX users
     """
-    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE)
+    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='user')
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(blank=True, null=True, max_length=100)
 

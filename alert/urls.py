@@ -9,7 +9,6 @@ from courses.views import UserDetailView
 
 router = routers.DefaultRouter()
 router.register(r'registrations', RegistrationViewSet, basename='registrations')
-# router.register(r'settings', UserDataViewSet, basename='settings')
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -18,6 +17,6 @@ urlpatterns = [
     path('resubscribe/<int:id_>', views.resubscribe, name='resubscribe'),
     path('webhook', views.accept_webhook, name='webhook'),
     path('api/submit', views.third_party_register, name='api-register'),
-    path('api/settings/', UserDetailView.as_view(), name="user-data"),
+    path('api/settings/', UserDetailView.as_view(), name='user-data'),
     path('api/', include(router.urls)),
 ]
