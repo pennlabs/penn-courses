@@ -21,7 +21,10 @@ export default function Section({
                 }}
                 >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ fontSize: "1rem", fontWeight: "bold", marginRight: "1em", display: "flex", alignItems: "center" }}>
+                        <div style={{
+                            fontSize: "1rem", fontWeight: "bold", marginRight: "1em", display: "flex", alignItems: "center",
+                        }}
+                        >
                             {`${section.id.split("-").pop()} `}
                             <span style={{ fontSize: "0.70rem", marginLeft: "0.5em", fontWeight: "normal" }}>{section.activity}</span>
                         </div>
