@@ -10,7 +10,7 @@ import {
     ADD_CART_ITEM,
     REMOVE_CART_ITEM,
     UPDATE_SCHEDULES,
-    SET_SCHEDULE_ID,
+    SET_SCHEDULE_ID_MARK_SYNCED,
     MARK_CART_SYNCED, MARK_SCHEDULE_SYNCED
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
@@ -24,7 +24,7 @@ const generateDefaultSchedule = () => (
         colorPalette: [],
         LocAdded: false,
         pushedToBackend: false,
-        isNew: false,
+        isNew: true,
     }
 );
 
@@ -115,20 +115,23 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 cartPushedToBackend: true,
             };
-        case SET_SCHEDULE_ID:
-            if (action.scheduleName === "cart") {
+        case SET_SCHEDULE_ID_MARK_SYNCED:
+            if (action.name === "cart") {
                 return {
                     ...state,
                     cartId: action.id,
+                    cartPushedToBackend: true,
                 };
             } else {
                 return {
                     ...state,
                     schedules: {
                         ...state.schedules,
-                        [action.scheduleName]: {
-                            ...state.schedules[action.scheduleName],
+                        [action.name]: {
+                            ...state.schedules[action.name],
                             id: action.id,
+                            pushedToBackend: true,
+                            isNew: false,
                         },
                     },
                 };
@@ -137,9 +140,9 @@ export const schedule = (state = initialState, action) => {
             // eslint-disable-next-line
             const { schedulesFromBackend } = action;
             // eslint-disable-next-line
-            const newScheduleObject = { ...state.schedules };
+            const newScheduleObject = { ...(state.schedules || {}) };
             // eslint-disable-next-line
-            const newCart = [...state.cartSections];
+            const newCart = [...(state.cartSections || [])];
             let cartHasChanged = false;
             if (schedulesFromBackend) {
                 schedulesFromBackend.forEach(({
@@ -151,28 +154,32 @@ export const schedule = (state = initialState, action) => {
                             oldSectionSet[id] = true;
                         });
                         state.cartId = scheduleId;
-                        sections.forEach((cartSection) => {
+                        sections.forEach(cartSection => {
                             if (!oldSectionSet[cartSection.id]) {
                                 newCart.push(cartSection);
                                 cartHasChanged = true;
                             }
                         });
                     } else if (state.schedules[name]) {
-                        newScheduleObject[name].pushedToBackend = false;
                         newScheduleObject[name].id = scheduleId;
                         const oldSectionSet = {};
                         state.schedules[name].meetings.forEach(({ id }) => {
                             oldSectionSet[id] = true;
                         });
-                        sections.forEach((section) => {
+                        let scheduleHasChanged = false;
+                        sections.forEach(section => {
                             if (!oldSectionSet[section.id]) {
                                 newScheduleObject[name].meetings.push(section);
+                                scheduleHasChanged = true;
                             }
                         });
+                        newScheduleObject[name].pushedToBackend =
+                            newScheduleObject[name].pushedToBackend && !scheduleHasChanged;
                     } else {
                         newScheduleObject[name] = {
                             meetings: sections,
                             semester,
+                            id: scheduleId,
                             pushedToBackend: true,
                         };
                     }
@@ -222,6 +229,7 @@ export const schedule = (state = initialState, action) => {
                     [nextAvailable(action.scheduleName, state.schedules)]:
                         {
                             ...state.schedules[action.scheduleName],
+                            pushedToBackend: false,
                             isNew: true
                         },
                 },
@@ -262,9 +270,10 @@ export const schedule = (state = initialState, action) => {
                 schedules: {
                     ...state.schedules,
                     [state.scheduleSelected]: {
-                        ...state[state.scheduleSelected],
+                        ...state.schedules[state.scheduleSelected],
                         meetings: toggleSection(state.schedules[state.scheduleSelected].meetings,
                             action.course),
+                        pushedToBackend: false,
                     },
                 },
             };

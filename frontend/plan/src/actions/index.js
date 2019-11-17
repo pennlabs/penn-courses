@@ -47,7 +47,7 @@ export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
 // Backend accounts integration
 export const UPDATE_SCHEDULES = "UPDATE_SCHEDULES";
-export const SET_SCHEDULE_ID = "SET_SCHEDULE_ID";
+export const SET_SCHEDULE_ID_MARK_SYNCED = "SET_SCHEDULE_ID_MARK_SYNCED";
 export const MARK_SCHEDULE_SYNCED = "MARK_SCHEDULE_SYNCED";
 export const MARK_CART_SYNCED = "MARK_CART_SYNCED";
 
@@ -363,25 +363,14 @@ export const fetchSchedulesAndInitializeCart = cart => (dispatch) => {
         .catch(error => console.log("Not logged in"));
 };
 
-export const setScheduleId = (title, id) => ({
-    type: SET_SCHEDULE_ID,
-    title,
+export const setScheduleIdAndMarkSynced = (name, id) => ({
+    type: SET_SCHEDULE_ID_MARK_SYNCED,
+    name,
     id,
 });
 
-/**
- * Given the result of an API call to update a schedule, updates the schedule name in state
- * @param dispatch
- * @param title The title of the schedule
- * @param fetchResult The immediate result of the API call
- */
-const processScheduleId = (dispatch, title, fetchResult) => {
-    return fetchResult.then(response => response.json())
-        .then(({ id }) => dispatch(setScheduleId(title, id)));
-};
-
-export const createScheduleOnBackend = (title, sections) => (dispatch) => {
-    processScheduleId(dispatch, title, fetch("/schedules/", {
+export const createScheduleOnBackend = (name, sections) => (dispatch) => {
+    fetch("/schedules/", {
         method: "POST",
         credentials: "include",
         mode: 'same-origin',
@@ -391,30 +380,40 @@ export const createScheduleOnBackend = (title, sections) => (dispatch) => {
             'X-CSRFToken': getCsrf()
         },
         body: JSON.stringify({
-            name: title,
-            title,
+            name,
             sections,
         }),
-    }));
+    }).then(response => response.json())
+        .then(({ id }) => dispatch(setScheduleIdAndMarkSynced(name, id)));
 };
 
-export const updateScheduleOnBackend = (title, schedule) => (dispatch) => {
+export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
+    const {id} = schedule;
+    if (!id) {
+        return;
+    }
     const updatedScheduleObj = {
-        name: title,
         ...schedule,
+        name,
         sections: schedule.meetings,
     };
-    processScheduleId(dispatch, title, fetch(`/schedules/${schedule.id}/`, {
+    return fetch(`/schedules/${id}/`, {
         method: "PUT",
         credentials: "include",
         mode: 'same-origin',
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrf()
+            'X-CSRFToken': getCsrf(),
         },
         body: JSON.stringify(updatedScheduleObj),
-    }));
+    }).then(() => {
+        if (name === "cart") {
+            dispatch(markCartSynced());
+        } else {
+            dispatch(markScheduleSynced(name));
+        }
+    }).catch(() => {});
 };
 
 export function fetchSectionInfo(searchData) {

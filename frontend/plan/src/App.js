@@ -35,7 +35,7 @@ import {
 import fetch from "cross-fetch";
 import getCsrf from "./csrf";
 
-// import { fetchCourseSearch, fetchSectionInfo } from "./actions";
+// import { fetchCourseSearch, fetchSectionInfo } from "./actions";u
 
 //const previousState = localStorage.getItem("coursePlanSchedules");
 const previousState = null;
@@ -70,19 +70,16 @@ function App() {
                         id: scheduleState.cartId,
                         meetings: scheduleState.cartSections
                     }));
-                store.dispatch(markCartSynced());
             }
-            const schedulesState = scheduleState.schedules;
-            Object.keys(schedulesState)
+            Object.keys(scheduleState.schedules)
                 .forEach(scheduleName => {
-                    const schedule = schedulesState[scheduleName];
+                    const schedule = scheduleState.schedules[scheduleName];
                     if (!schedule.pushedToBackend) {
                         if (schedule.isNew) {
                             store.dispatch(createScheduleOnBackend(scheduleName, schedule.meetings));
                         } else {
                             store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
                         }
-                        store.dispatch(markScheduleSynced(scheduleName));
                     }
                 });
             // Delete all schedules that have been deleted
