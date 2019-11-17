@@ -130,8 +130,10 @@ class CrosslistingTestCase(TestCase):
         self.assertEqual(3, Course.objects.count())
 
 
+@override_settings(SWITCHBOARD_TEST_APP='api')
 class RequirementTestCase(TestCase):
     def setUp(self):
+        set_semester()
         get_course('CIS', '120', '2012A')  # dummy course to make sure we're filtering by semester
         self.course = get_course('CIS', '120', TEST_SEMESTER)
         self.course2 = get_course('CIS', '125', TEST_SEMESTER)
@@ -141,19 +143,26 @@ class RequirementTestCase(TestCase):
                                 school='SAS',
                                 code='TEST1',
                                 name='Test 1')
-
         self.req2 = Requirement(semester=TEST_SEMESTER,
                                 school='SAS',
                                 code='TEST2',
                                 name='Test 2')
+        self.req3 = Requirement(semester='XXXXX',
+                                school='SAS',
+                                code='TEST1',
+                                name='Test 1+')
 
         self.req1.save()
         self.req2.save()
+        self.req3.save()
 
         self.req1.departments.add(self.department)
+        self.req1.overrides.add(self.course2)
         self.req2.courses.add(self.course)
         self.req2.courses.add(self.course2)
-        self.req1.overrides.add(self.course2)
+        self.req3.departments.add(self.department)
+
+        self.client = APIClient()
 
     def assertCoursesEqual(self, expected, actual):
         def get_codes(x): sorted([f'{c.department.code}-{c.code}' for c in x])
@@ -186,6 +195,16 @@ class RequirementTestCase(TestCase):
         reqs = self.course2.requirements
         self.assertEqual(1, len(reqs))
         self.assertEqual(self.req2, reqs[0])
+
+    def test_requirement_route(self):
+        response = self.client.get(f'/current/requirements/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(2, len(response.data))
+
+    def test_requirement_route_other_sem(self):
+        response = self.client.get(f'/XXXXX/requirements/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(1, len(response.data))
 
 
 class MeetingTestCase(TestCase):
