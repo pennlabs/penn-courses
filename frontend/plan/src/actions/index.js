@@ -231,8 +231,10 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // Checkbox Filters
-    const checkboxFields = ["cu"];
-    const checkboxDefaultFields = [{ 0.5: 0, 1: 0, 1.5: 0 }];
+    const checkboxFields = ["cu", "type"];
+    const checkboxDefaultFields = [{ 0.5: 0, 1: 0, 1.5: 0 }, {
+        LAB: 0, REC: 0, SEM: 0, STU: 0,
+    }];
     for (let i = 0; i < checkboxFields.length; i += 1) {
         if (filterData[checkboxFields[i]]
             && JSON.stringify(filterData[checkboxFields[i]])

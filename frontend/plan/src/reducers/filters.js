@@ -18,7 +18,12 @@ export const initialState = {
         course_quality: [0, 4],
         instructor_quality: [0, 4],
         time: null,
-        type: null,
+        type: {
+            LAB: 0,
+            REC: 0,
+            SEM: 0,
+            STU: 0,
+        },
         cu: {
             0.5: 0,
             1: 0,
