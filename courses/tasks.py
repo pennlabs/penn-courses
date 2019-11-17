@@ -1,13 +1,18 @@
 import csv
 import logging
-import os
 
 from celery import shared_task
+
+from django.utils.timezone import make_aware
+
+import pytz
 
 from courses import registrar
 from courses.models import Course, Department, Requirement, Section, StatusUpdate
 from courses.util import upsert_course_from_opendata
 from options.models import get_value
+
+from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -102,21 +107,37 @@ def semester_sync(query='', semester=None):
     load_requirements(school='WH', semester=semester)
 
 
-def load_course_status_history(directory):
-    for root, dirs, files in os.walk(directory):
-        for name in files:
-            if name.endswith('.csv'):
-                full_path = os.path.join(directory, name)
-                with open(full_path, newline='') as history_file:
-                    history_reader = csv.reader(history_file, delimiter=' ', quotechar='|')
-                    i = 0
-                    for row in history_reader:
-                        i += 1
-                        if i % 100 == 0:
-                            print(f'loading status history from {name}... ({i} / {len(history_reader)})')
-                        if Section.objects.filter(full_code=(row[4]+'-'+row[5]+'-'+row[6])).exists():
-                            sec = Section.objects.get(full_code=(row[4]+'-'+row[5]+'-'+row[6]))
-                            status_update = StatusUpdate(section=sec, old_status=row[0], new_status=row[1],
-                                                         alert_sent=row[2], created_at=row[3], request_body='')
-                            status_update.save()
-                print(f'finished loading status history from {name}')
+def load_course_status_history(full_path):
+    row_count = 0
+    with open(full_path, newline='') as history_file:
+        history_reader = csv.reader(history_file, delimiter=',', quotechar='|')
+        row_count = sum(1 for row in history_reader)
+    with open(full_path, newline='') as history_file:
+        print(f'beginning to load status history from {full_path}')
+        history_reader = csv.reader(history_file, delimiter=',', quotechar='|')
+        i = 1
+        iter_reader = iter(history_reader)
+        next(iter_reader)
+        for row in iter_reader:
+            i += 1
+            if i % 100 == 1:
+                print(f'loading status history... ({i} / {row_count})')
+            section_code = row[4]+'-'+row[5]+'-'+row[6]
+            row[3] += ' UTC'
+            row[3] = datetime.strptime(row[3], '%Y-%m-%d %H:%M:%S.%f %Z')
+            row[3] = make_aware(row[3], timezone=pytz.utc, is_dst=None)
+            if Section.objects.filter(full_code=section_code, course__semester=get_value('SEMESTER', None)).exists():
+                sec = Section.objects.get(full_code=(row[4]+'-'+row[5]+'-'+row[6]),
+                                          course__semester=get_value('SEMESTER', None))
+                if StatusUpdate.objects.filter(section=sec).exists(): #this should not overwrite... it should clear all objects and then rewrite
+                    status_update = StatusUpdate.objects.get(section=sec)
+                    status_update.old_status = row[0]
+                    status_update.new_status = row[1]
+                    status_update.alert_sent = row[2]
+                    status_update.created_at = row[3] # this does not work
+                    status_update.save()
+                else:
+                    status_update = StatusUpdate(section=sec, old_status=row[0], new_status=row[1],
+                                                 alert_sent=row[2], created_at=row[3])
+                    status_update.save()
+    print(f'finished loading status history from {full_path}... processed {row_count} rows')

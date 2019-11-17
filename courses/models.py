@@ -203,7 +203,8 @@ class StatusUpdate(models.Model):
 
     def __str__(self):
         d = dict(self.STATUS_CHOICES)
-        return f'{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}'
+        # return f'{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}'
+        return 'StatusUpdate for ' + self.section.__str__()
 
 
 """
