@@ -54,10 +54,12 @@ def record_update(section_id, semester, old_status, new_status, alerted, req):
     return u
 
 
-def add_instructors(section, names):
+def set_instructors(section, names):
+    instructors = []
     for instructor in names:
         i, _ = Instructor.objects.get_or_create(name=instructor)
-        section.instructors.add(i)
+        instructors.append(i)
+    section.instructors.set(instructors)
 
 
 def get_room(building_code, room_number):
@@ -171,7 +173,7 @@ def upsert_course_from_opendata(info, semester):
                                         + meeting['start_time'] + ' - '
                                         + meeting['end_time'] for meeting in info['meetings']])
 
-    add_instructors(section, [instructor['name'] for instructor in info['instructors']])
+    set_instructors(section, [instructor['name'] for instructor in info['instructors']])
     set_meetings(section, info['meetings'])
     add_associated_sections(section, info)
     add_restrictions(section, info['requirements'])

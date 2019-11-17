@@ -19,4 +19,5 @@ urlpatterns = [
     path('api/submit', views.third_party_register, name='api-register'),
     path('api/settings/', UserDetailView.as_view(), name='user-data'),
     path('api/', include(router.urls)),
+    path('s/', include('shortener.urls')),
 ]
