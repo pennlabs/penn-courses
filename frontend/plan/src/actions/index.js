@@ -349,16 +349,17 @@ export function fetchCourseDetails(courseId) {
     };
 }
 
-export const fetchSchedulesAndInitializeCart = cart => (dispatch) => {
+export const fetchSchedulesAndInitializeCart = (cart, onComplete = () => null) => (dispatch) => {
     fetch("/schedules/")
         .then(res => res.json())
-        .then(schedules =>{
-            if(schedules) {
+        .then(schedules => {
+            if (schedules) {
                 dispatch(updateSchedules(schedules));
             }
             if (!schedules.cart) {
                 dispatch(createScheduleOnBackend("cart", cart));
             }
+            onComplete();
         })
         .catch(error => console.log("Not logged in"));
 };
@@ -373,22 +374,23 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
     fetch("/schedules/", {
         method: "POST",
         credentials: "include",
-        mode: 'same-origin',
+        mode: "same-origin",
         headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrf()
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf()
         },
         body: JSON.stringify({
             name,
             sections,
         }),
-    }).then(response => response.json())
+    })
+        .then(response => response.json())
         .then(({ id }) => dispatch(setScheduleIdAndMarkSynced(name, id)));
 };
 
 export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
-    const {id} = schedule;
+    const { id } = schedule;
     if (!id) {
         return;
     }
@@ -400,20 +402,23 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
     return fetch(`/schedules/${id}/`, {
         method: "PUT",
         credentials: "include",
-        mode: 'same-origin',
+        mode: "same-origin",
         headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrf(),
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
         },
         body: JSON.stringify(updatedScheduleObj),
-    }).then(() => {
-        if (name === "cart") {
-            dispatch(markCartSynced());
-        } else {
-            dispatch(markScheduleSynced(name));
-        }
-    }).catch(() => {});
+    })
+        .then(() => {
+            if (name === "cart") {
+                dispatch(markCartSynced());
+            } else {
+                dispatch(markScheduleSynced(name));
+            }
+        })
+        .catch(() => {
+        });
 };
 
 export function fetchSectionInfo(searchData) {

@@ -61,45 +61,46 @@ function App() {
 
     useEffect(() => {
         const scheduleStateInit = store.getState().schedule;
-        store.dispatch(fetchSchedulesAndInitializeCart(scheduleStateInit.cartSections));
-        window.setInterval(() => {
-            const scheduleState = store.getState().schedule;
-            if (!scheduleState.cartPushedToBackend && ("cartId" in scheduleState)) {
-                store.dispatch(updateScheduleOnBackend("cart",
-                    {
-                        id: scheduleState.cartId,
-                        meetings: scheduleState.cartSections
-                    }));
-            }
-            Object.keys(scheduleState.schedules)
-                .forEach(scheduleName => {
-                    const schedule = scheduleState.schedules[scheduleName];
-                    if (!schedule.pushedToBackend) {
-                        if (schedule.isNew) {
-                            store.dispatch(createScheduleOnBackend(scheduleName, schedule.meetings));
-                        } else {
-                            store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
+        store.dispatch(fetchSchedulesAndInitializeCart(scheduleStateInit.cartSections, () => {
+            window.setInterval(() => {
+                const scheduleState = store.getState().schedule;
+                if (!scheduleState.cartPushedToBackend && ("cartId" in scheduleState)) {
+                    store.dispatch(updateScheduleOnBackend("cart",
+                        {
+                            id: scheduleState.cartId,
+                            meetings: scheduleState.cartSections
+                        }));
+                }
+                Object.keys(scheduleState.schedules)
+                    .forEach(scheduleName => {
+                        const schedule = scheduleState.schedules[scheduleName];
+                        if (!schedule.pushedToBackend) {
+                            if (schedule.isNew) {
+                                store.dispatch(createScheduleOnBackend(scheduleName, schedule.meetings));
+                            } else {
+                                store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
+                            }
                         }
-                    }
-                });
-            // Delete all schedules that have been deleted
-            Object.keys(scheduleState.deletedSchedules || {})
-                .forEach(deletedScheduleId => {
-                    delete scheduleState.deletedSchedules[deletedScheduleId];
-                    fetch("/schedules/" + deletedScheduleId + "/", {
-                        method: "DELETE",
-                        credentials: "include",
-                        mode: "same-origin",
-                        headers: {
-                            "Accept": "application/json",
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": getCsrf(),
-                        },
-                    })
-                        .then(() => {
-                        });
-                });
-        }, 2000);
+                    });
+                // Delete all schedules that have been deleted
+                Object.keys(scheduleState.deletedSchedules || {})
+                    .forEach(deletedScheduleId => {
+                        delete scheduleState.deletedSchedules[deletedScheduleId];
+                        fetch("/schedules/" + deletedScheduleId + "/", {
+                            method: "DELETE",
+                            credentials: "include",
+                            mode: "same-origin",
+                            headers: {
+                                "Accept": "application/json",
+                                "Content-Type": "application/json",
+                                "X-CSRFToken": getCsrf(),
+                            },
+                        })
+                            .then(() => {
+                            });
+                    });
+            }, 2000);
+        }));
     }, []);
 
     localStorage.hasVisited = true;
