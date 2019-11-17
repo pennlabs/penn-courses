@@ -162,6 +162,7 @@ export const schedule = (state = initialState, action) => {
                         });
                     } else if (state.schedules[name]) {
                         newScheduleObject[name].id = scheduleId;
+                        newScheduleObject[name].isNew = false;
                         const oldSectionSet = {};
                         state.schedules[name].meetings.forEach(({ id }) => {
                             oldSectionSet[id] = true;
