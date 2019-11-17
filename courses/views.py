@@ -1,6 +1,11 @@
 from rest_framework import filters, generics, viewsets
 from rest_framework.permissions import IsAuthenticated
 
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.decorators import api_view
+
+
 from courses.models import Course, Requirement, Section, UserData
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer, MiniSectionSerializer,
                                  RequirementListSerializer, UserDataSerializer)
@@ -64,3 +69,19 @@ class UserDataViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return UserData.objects.filter(user=self.request.user)
+
+
+"""
+@api_view(['GET', 'POST', 'PUT'])
+def get_settings(request):
+    data, created = UserData.objects.get_or_create(user=request.user)
+    if request.method == 'GET':
+        serializer = UserDataSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    elif request.method == 'POST':
+        data.email = request.data.get('email')
+        data.phone = request.data.get('')
+        return Response({"detail": "Data created", "data": request.data}, status=status.HTTP_201_CREATED)
+    else: # PUT
+"""
+
