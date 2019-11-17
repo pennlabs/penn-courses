@@ -66,7 +66,18 @@ const getUnsynced = (schedules) => {
 };
 
 /**
+ *  Replaces a schedule with the minimal information needed for it to render so that it can
+ *  be saved in localStorage
+ */
+const stripSchedule = ({ id }) => ({
+  id,
+  meetings: [],
+});
+
+/**
  * Limits the schedule information stored in local storage to whatever hasn't been synced
+ * Also adds a stripped version of the current schedule selected to localStorage to
+ * prevent no schedule from appearing on page load
  */
 const limitScheduleInfo = ({ scheduleSelected, cartPushedToBackend, deletedSchedules, cartSections, schedules }) => {
     return {
@@ -74,7 +85,7 @@ const limitScheduleInfo = ({ scheduleSelected, cartPushedToBackend, deletedSched
         cartPushedToBackend,
         deletedSchedules,
         cartSections: cartPushedToBackend ? [] : (cartSections || []),
-        schedules: getUnsynced(schedules)
+        schedules: {...getUnsynced(schedules), [scheduleSelected]: stripSchedule(schedules[scheduleSelected])}
     };
 };
 
