@@ -1,6 +1,8 @@
 from django.db.models import Manager, Prefetch, Q
 from rest_framework import serializers
 
+from django.contrib.auth import get_user_model
+
 from courses.models import Course, Meeting, Requirement, Section, UserData
 
 
@@ -257,7 +259,30 @@ class CourseDetailSerializer(CourseListSerializer):
         ]
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = [
+            'username',
+            'first_name',
+            'last_name',
+        ]
+
+
 class UserDataSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = UserData
-        fields = ['email', 'phone']
+        fields = [
+            'email',
+            'phone',
+            'user'
+        ]
+
+    def create(self, validated_data):
+        user = validated_data.pop('tracks')
+        album = Album.objects.create(**validated_data)
+        for track_data in tracks_data:
+            Track.objects.create(album=album, **track_data)
+        return album
