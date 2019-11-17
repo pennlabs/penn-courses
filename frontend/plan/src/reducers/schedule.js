@@ -284,8 +284,8 @@ export const schedule = (state = initialState, action) => {
                 schedules: {
                     ...state.schedules,
                     [state.scheduleSelected]: {
+                        ...state.schedules[state.scheduleSelected],
                         pushedToBackend: false,
-                        ...state[state.scheduleSelected],
                         meetings: state.schedules[state.scheduleSelected].meetings
                             .filter(m => m.id !== action.id),
                     },
