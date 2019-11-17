@@ -40,12 +40,32 @@ const initiateSync = store => {
                     let schedName = Object.keys(scheduleStateInit.schedules)
                         .reduce((acc, schedNameSelected) => acc || ((scheduleStateInit
                             .schedules[schedNameSelected].id === id) && schedNameSelected), false);
-                    store.dispatch(deleteSchedule(schedName));
+                    if (schedName) {
+                        store.dispatch(deleteSchedule(schedName));
+                    }
                 }
             });
         localStorage.setItem("coursePlanObservedSchedules", JSON.stringify(schedulesObserved));
         window.setInterval(() => {
             const scheduleState = store.getState().schedule;
+            // Delete all schedules (on the backend) that have been deleted
+            Object.keys(scheduleState.deletedSchedules || {})
+                .forEach(deletedScheduleId => {
+                    delete scheduleState.deletedSchedules[deletedScheduleId];
+                    fetch("/schedules/" + deletedScheduleId + "/", {
+                        method: "DELETE",
+                        credentials: "include",
+                        mode: "same-origin",
+                        headers: {
+                            "Accept": "application/json",
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": getCsrf(),
+                        },
+                    })
+                        .then(() => {
+                        });
+                });
+
             // Update the server if the cart has been updated
             if (!scheduleState.cartPushedToBackend && ("cartId" in scheduleState)) {
                 store.dispatch(updateScheduleOnBackend("cart",
@@ -65,23 +85,6 @@ const initiateSync = store => {
                             store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
                         }
                     }
-                });
-            // Delete all schedules that have been deleted
-            Object.keys(scheduleState.deletedSchedules || {})
-                .forEach(deletedScheduleId => {
-                    delete scheduleState.deletedSchedules[deletedScheduleId];
-                    fetch("/schedules/" + deletedScheduleId + "/", {
-                        method: "DELETE",
-                        credentials: "include",
-                        mode: "same-origin",
-                        headers: {
-                            "Accept": "application/json",
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": getCsrf(),
-                        },
-                    })
-                        .then(() => {
-                        });
                 });
         }, 2000);
     }));

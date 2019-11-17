@@ -369,7 +369,7 @@ export const fetchSchedulesAndInitializeCart = (cart, onComplete = () => null) =
             }
             onComplete(schedules);
         })
-        .catch(error => console.log("Not logged in"));
+        .catch(error => console.log(error, "Not logged in"));
 };
 
 export const setScheduleIdAndMarkSynced = (name, id) => ({
