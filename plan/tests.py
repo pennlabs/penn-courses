@@ -355,4 +355,3 @@ class ScheduleTest(TestCase):
                                                              {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                     content_type='application/json')
         self.assertEqual(400, response.status_code)
-        self.assertEqual(response.data['detail'], 'Unique constraint violated')
