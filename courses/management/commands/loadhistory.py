@@ -15,8 +15,7 @@ class Command(BaseCommand):
         src = os.path.abspath(kwargs['src'])
         _, file_extension = os.path.splitext(kwargs['src'])
         if not os.path.exists(src):
-            print('File does not exist.')
-            return -1
+            return 'File does not exist.'
         if not file_extension == '.csv':
-            print('File is not a csv.')
+            return 'File is not a csv.'
         load_course_status_history(src)

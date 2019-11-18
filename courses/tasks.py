@@ -118,6 +118,7 @@ def load_course_status_history(full_path):
         i = 1
         iter_reader = iter(history_reader)
         next(iter_reader)
+        StatusUpdate.objects.all().delete()
         for row in iter_reader:
             i += 1
             if i % 100 == 1:
@@ -126,17 +127,13 @@ def load_course_status_history(full_path):
             row[3] += ' UTC'
             row[3] = datetime.strptime(row[3], '%Y-%m-%d %H:%M:%S.%f %Z')
             row[3] = make_aware(row[3], timezone=pytz.utc, is_dst=None)
+            if row[0] != 'O' and row[0] != 'C' and row[0] != 'X':
+                row[0] = ''
             if Section.objects.filter(full_code=section_code, course__semester=get_value('SEMESTER', None)).exists():
-                sec = Section.objects.get(full_code=(row[4]+'-'+row[5]+'-'+row[6]),
+                sec = Section.objects.get(full_code=(row[4] + '-' + row[5] + '-' + row[6]),
                                           course__semester=get_value('SEMESTER', None))
-                if StatusUpdate.objects.filter(section=sec).exists(): #this should not overwrite... it should clear all objects and then rewrite
-                    status_update = StatusUpdate.objects.get(section=sec)
-                    status_update.old_status = row[0]
-                    status_update.new_status = row[1]
-                    status_update.alert_sent = row[2]
-                    status_update.created_at = row[3] # this does not work
-                    status_update.save()
-                else:
+                if not StatusUpdate.objects.filter(section=sec, old_status=row[0], new_status=row[1],
+                                                   alert_sent=row[2], created_at=row[3]).exists():
                     status_update = StatusUpdate(section=sec, old_status=row[0], new_status=row[1],
                                                  alert_sent=row[2], created_at=row[3])
                     status_update.save()

@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Q
 
+from django.utils import timezone
+
 from options.models import get_value
 from plan.annotations import course_reviews, sections_with_reviews
 
@@ -197,14 +199,13 @@ class StatusUpdate(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
     old_status = models.CharField(max_length=16, choices=STATUS_CHOICES)
     new_status = models.CharField(max_length=16, choices=STATUS_CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     alert_sent = models.BooleanField()
     request_body = models.TextField()
 
     def __str__(self):
         d = dict(self.STATUS_CHOICES)
-        # return f'{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}'
-        return 'StatusUpdate for ' + self.section.__str__()
+        return f'{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}'
 
 
 """
