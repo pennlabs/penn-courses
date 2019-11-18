@@ -7,12 +7,6 @@ from courses.util import (create_mock_data, get_course, get_course_and_section,
                           separate_course_code, set_crosslistings, update_course_from_record)
 from options.models import Option
 
-from django.utils.six import StringIO
-
-from django.core.management import call_command
-
-from test.support import EnvironmentVarGuard
-
 
 TEST_SEMESTER = '2019A'
 

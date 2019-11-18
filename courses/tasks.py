@@ -1,18 +1,15 @@
 import csv
 import logging
-
-from celery import shared_task
-
-from django.utils.timezone import make_aware
+from datetime import datetime
 
 import pytz
+from celery import shared_task
+from django.utils.timezone import make_aware
 
 from courses import registrar
 from courses.models import Course, Department, Requirement, Section, StatusUpdate
 from courses.util import upsert_course_from_opendata
 from options.models import get_value
-
-from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
