@@ -25,15 +25,8 @@ import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
 import {
-    createSchedule, createScheduleOnBackend,
-    fetchSchedulesAndInitializeCart,
-    markCartSynced,
-    markScheduleSynced,
-    openModal,
-    updateScheduleOnBackend
+    openModal
 } from "./actions";
-import fetch from "cross-fetch";
-import getCsrf from "./csrf";
 import initiateSync from "./syncutils";
 
 // import { fetchCourseSearch, fetchSectionInfo } from "./actions";u

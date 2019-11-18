@@ -1,5 +1,5 @@
 import React from "react";
-import { createSchedule, renameSchedule } from "../../actions";
+import { createScheduleOnFrontend, renameSchedule } from "../../actions";
 import NameScheduleModalInterior from "./NameScheduleModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
 
@@ -54,7 +54,7 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             };
         case "CREATE_SCHEDULE":
             return {
-                namingFunction: newName => dispatch(createSchedule(newName)),
+                namingFunction: newName => dispatch(createScheduleOnFrontend(newName)),
             };
         default:
             return {};

@@ -79,7 +79,7 @@ const initiateSync = store => {
                 .forEach(scheduleName => {
                     const schedule = scheduleState.schedules[scheduleName];
                     if (!schedule.pushedToBackend) {
-                        if (schedule.isNew) {
+                        if (schedule.isNew && !("id" in schedule)) {
                             store.dispatch(createScheduleOnBackend(scheduleName, schedule.meetings));
                         } else {
                             store.dispatch(updateScheduleOnBackend(scheduleName, schedule));

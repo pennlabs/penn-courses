@@ -155,17 +155,12 @@ export const updateCourseInfo = course => (
     }
 );
 
-const createScheduleOnFrontend = scheduleName => (
+export const createScheduleOnFrontend = scheduleName => (
     {
         type: CREATE_SCHEDULE,
         scheduleName,
     }
 );
-
-export const createSchedule = scheduleName => dispatch => {
-    dispatch(createScheduleOnFrontend(scheduleName));
-    dispatch(createScheduleOnBackend(scheduleName, []));
-};
 
 export const openModal = (modalKey, modalProps, modalTitle) => (
     {
