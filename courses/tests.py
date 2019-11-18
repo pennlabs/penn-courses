@@ -1,10 +1,12 @@
+import json
+
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
-from courses.models import Course, Department, Instructor, Requirement, Section
-from courses.util import (create_mock_data, get_course, get_course_and_section,
-                          record_update, relocate_reqs_from_restrictions,
-                          separate_course_code, set_crosslistings, update_course_from_record)
+from courses.models import Course, Department, Instructor, Meeting, Requirement, Section
+from courses.util import (create_mock_data, get_course, get_course_and_section, record_update,
+                          relocate_reqs_from_restrictions, separate_course_code, set_crosslistings,
+                          update_course_from_record, upsert_course_from_opendata)
 from options.models import Option
 
 
@@ -410,3 +412,13 @@ class RelocateReqsRestsTest(TestCase):
         self.assertTrue('Humanities & Social Science Sector' in self.reqs and
                         'Natural Science & Math Sector' in self.reqs and
                         'A requirement' in self.reqs)
+
+
+class ParseOpendataResponseTestCase(TestCase):
+
+    def test_parse_response(self):
+        upsert_course_from_opendata(json.load(open('courses/test-opendata.json', 'r'))['result_data'][0], TEST_SEMESTER)
+        self.assertEqual(1, Course.objects.count())
+        self.assertEqual(21, Section.objects.count())
+        self.assertEqual(3, Meeting.objects.count())
+        self.assertEqual(2, Instructor.objects.count())
