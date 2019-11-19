@@ -14,7 +14,7 @@ class RegistrationAdmin(admin.ModelAdmin):
                      )
     autocomplete_fields = ('section', )
 
-    list_filter = ['notification_sent' ,'section__course__semester']
+    list_filter = ['notification_sent', 'section__course__semester']
 
     list_select_related = (
         'section',
