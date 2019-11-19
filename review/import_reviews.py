@@ -6,7 +6,7 @@ import requests
 from django.conf import settings
 
 from courses.models import Instructor
-from courses.util import get_course_and_section
+from courses.util import get_or_create_course_and_section
 from review.models import Review
 
 
@@ -39,7 +39,7 @@ def save_reviews(revs, print_every=20):
             instr = Instructor.objects.get(name__icontains=rev['instructor'])
         else:
             instr = Instructor.objects.create(name=rev['instructor'].title())
-        _, sec = get_course_and_section(rev['section'], rev['semester'])
+        _, sec = get_or_create_course_and_section(rev['section'], rev['semester'])
         sec.instructors.add(instr)
         review, _ = Review.objects.get_or_create(instructor=instr,
                                                  section=sec)
