@@ -115,7 +115,6 @@ def load_course_status_history(full_path):
         i = 1
         iter_reader = iter(history_reader)
         next(iter_reader)
-        StatusUpdate.objects.all().delete()
         for row in iter_reader:
             i += 1
             if i % 100 == 1:
