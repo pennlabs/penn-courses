@@ -21,7 +21,7 @@ def separate_course_code(course_code):
     raise ValueError(f'Course code could not be parsed: {course_code}')
 
 
-def get_course(dept_code, course_id, semester):
+def get_or_create_course(dept_code, course_id, semester):
     dept, _ = Department.objects.get_or_create(code=dept_code)
 
     course, _ = Course.objects.get_or_create(department=dept,
@@ -31,20 +31,30 @@ def get_course(dept_code, course_id, semester):
     return course
 
 
-def get_course_and_section(course_code, semester, section_manager=None):
+def get_or_create_course_and_section(course_code, semester, section_manager=None):
     if section_manager is None:
         section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
 
-    course = get_course(dept_code, course_id, semester)
+    course = get_or_create_course(dept_code, course_id, semester)
 
     section, _ = section_manager.get_or_create(course=course, code=section_id)
 
     return course, section
 
 
+def get_course_and_section(course_code, semester, section_manager=None):
+    if section_manager is None:
+        section_manager = Section.objects
+
+    dept_code, course_id, section_id = separate_course_code(course_code)
+    course = Course.objects.get(department__code=dept_code, code=course_id, semester=semester)
+    section = section_manager.get(course=course, code=section_id)
+    return course, section
+
+
 def record_update(section_id, semester, old_status, new_status, alerted, req):
-    _, section = get_course_and_section(section_id, semester)
+    _, section = get_or_create_course_and_section(section_id, semester)
     u = StatusUpdate(section=section,
                      old_status=old_status,
                      new_status=new_status,
@@ -90,7 +100,7 @@ def add_associated_sections(section, info):
         sections = info.get(assoc, [])
         for sect in sections:
             section_code = f"{sect['subject']}-{sect['course_id']}-{sect['section_id']}"
-            _, associated = get_course_and_section(section_code, semester)
+            _, associated = get_or_create_course_and_section(section_code, semester)
             section.associated_sections.add(associated)
 
 
@@ -98,7 +108,7 @@ def set_crosslistings(course, crosslist_primary):
     if len(crosslist_primary) == 0:
         course.primary_listing = course
     else:
-        primary_course, _ = get_course_and_section(crosslist_primary, course.semester)
+        primary_course, _ = get_or_create_course_and_section(crosslist_primary, course.semester)
         course.primary_listing = primary_course
 
 
@@ -147,7 +157,7 @@ def relocate_reqs_from_restrictions(rests, reqs, travellers):
 def upsert_course_from_opendata(info, semester):
     course_code = info['section_id_normalized']
     try:
-        course, section = get_course_and_section(course_code, semester)
+        course, section = get_or_create_course_and_section(course_code, semester)
     except ValueError:
         return  # if we can't parse the course code, skip this course.
 
@@ -195,7 +205,7 @@ def update_course_from_record(update):
 
 
 def create_mock_data(code, semester):
-    course, section = get_course_and_section(code, semester)
+    course, section = get_or_create_course_and_section(code, semester)
     section.credits = 1
     section.status = 'O'
     section.save()

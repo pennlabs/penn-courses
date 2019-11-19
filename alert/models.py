@@ -9,7 +9,7 @@ from django.utils import timezone
 from shortener.models import Url
 
 from alert.alerts import Email, Text
-from courses.models import Section, get_current_semester
+from courses.models import Course, Section, get_current_semester
 from courses.util import get_course_and_section
 
 
@@ -132,7 +132,15 @@ class Registration(models.Model):
 def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, api_key=None):
     if not email_address and not phone:
         return RegStatus.NO_CONTACT_INFO
-    course, section = get_course_and_section(course_code, get_current_semester())
+    try:
+        course, section = get_course_and_section(course_code, get_current_semester())
+    except Course.DoesNotExist:
+        return RegStatus.COURSE_NOT_FOUND
+    except Section.DoesNotExist:
+        return RegStatus.COURSE_NOT_FOUND
+    except ValueError:
+        return RegStatus.COURSE_NOT_FOUND
+
     registration = Registration(section=section, email=email_address, phone=phone, source=source)
     registration.validate_phone()
 

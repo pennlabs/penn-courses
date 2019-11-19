@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Section
-from courses.util import get_course_and_section
+from courses.util import get_or_create_course_and_section
 from courses.views import CourseList
 from options.models import get_value
 from plan.filters import bound_filter, choice_filter, requirement_filter
@@ -43,12 +43,16 @@ def get_sections(data):
     if 'meetings' in data:
         sections = []
         for s in data.get('meetings'):
-            _, section = get_course_and_section(s.get('id'), s.get('semester'), section_manager=Section.with_reviews)
+            _, section = get_or_create_course_and_section(s.get('id'),
+                                                          s.get('semester'),
+                                                          section_manager=Section.with_reviews)
             sections.append(section)
     elif 'sections' in data:
         sections = []
         for s in data.get('sections'):
-            _, section = get_course_and_section(s.get('id'), s.get('semester'), section_manager=Section.with_reviews)
+            _, section = get_or_create_course_and_section(s.get('id'),
+                                                          s.get('semester'),
+                                                          section_manager=Section.with_reviews)
             sections.append(section)
     return sections
 
