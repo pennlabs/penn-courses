@@ -178,6 +178,10 @@ class Section(models.Model):
         return '%s-%s' % (self.course.course_id, self.code)
 
     @property
+    def semester(self):
+        return self.course.semester
+
+    @property
     def is_open(self):
         return self.status == 'O'
 
