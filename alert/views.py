@@ -56,7 +56,7 @@ def do_register(course_code, email_address, phone, source, make_response, api_ke
                              "You've already registered to get alerts for %s!" % course_code)
     elif res == RegStatus.COURSE_NOT_FOUND:
         return make_response('danger',
-                             '%s did not match any in our database. Please try again!' % course_code)
+                             '%s did not match any course in our database. Please try again!' % course_code)
     elif res == RegStatus.NO_CONTACT_INFO:
         return make_response('danger',
                              'Please enter either a phone number or an email address.')
