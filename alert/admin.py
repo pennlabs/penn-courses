@@ -10,7 +10,7 @@ class RegistrationAdmin(admin.ModelAdmin):
     search_fields = ('email',
                      'phone',
                      'section__full_code',
-                     'section__course__department',
+                     'section__course__department__code',
                      )
     autocomplete_fields = ('section', )
 
