@@ -6,7 +6,7 @@ from django.conf import settings
 
 from alert.models import Registration
 from courses.models import StatusUpdate
-from courses.util import update_course_from_record, get_course_and_section
+from courses.util import get_course_and_section, update_course_from_record
 from options.models import get_value
 
 
