@@ -6,9 +6,9 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from alert import tasks
-from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, get_or_create_course_and_section, register_for_course
+from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, register_for_course
 from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
-from courses.util import record_update, update_course_from_record
+from courses.util import record_update, update_course_from_record, get_or_create_course_and_section
 from options.models import Option
 
 
@@ -112,6 +112,11 @@ class RegisterTestCase(TestCase):
         res = register_for_course(self.sections[0].normalized, 'e@example.com', None)
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
+
+    def test_phony_course(self):
+        res = register_for_course('PHONY-100-001', 'e@example.com', '+15555555555')
+        self.assertEqual(RegStatus.COURSE_NOT_FOUND, res)
+        self.assertEqual(0, Registration.objects.count())
 
     def test_justphone(self):
         res = register_for_course(self.sections[0].normalized, None, '5555555555')

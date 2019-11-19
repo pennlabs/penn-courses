@@ -43,6 +43,16 @@ def get_or_create_course_and_section(course_code, semester, section_manager=None
     return course, section
 
 
+def get_course_and_section(course_code, semester, section_manager=None):
+    if section_manager is None:
+        section_manager = Section.objects
+
+    dept_code, course_id, section_id = separate_course_code(course_code)
+    course = Course.objects.get(department__code=dept_code, code=course_id, semester=semester)
+    section = section_manager.get(course=course, code=section_id)
+    return course, section
+
+
 def record_update(section_id, semester, old_status, new_status, alerted, req):
     _, section = get_or_create_course_and_section(section_id, semester)
     u = StatusUpdate(section=section,

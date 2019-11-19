@@ -4,9 +4,9 @@ import redis
 from celery import shared_task
 from django.conf import settings
 
-from alert.models import Registration, get_or_create_course_and_section
+from alert.models import Registration
 from courses.models import StatusUpdate
-from courses.util import update_course_from_record
+from courses.util import update_course_from_record, get_course_and_section
 from options.models import get_value
 
 
@@ -45,7 +45,7 @@ def send_alert(reg_id, sent_by=''):
 
 
 def get_active_registrations(course_code, semester):
-    _, section = get_or_create_course_and_section(course_code, semester)
+    _, section = get_course_and_section(course_code, semester)
     return list(section.registration_set.filter(notification_sent=False))
 
 
