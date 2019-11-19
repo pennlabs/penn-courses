@@ -3,7 +3,7 @@ import re
 from rest_framework import filters
 
 
-class TypedSearchBackend(filters.SearchFilter):
+class TypedCourseSearchBackend(filters.SearchFilter):
     code_re = re.compile(r'^([A-Za-z]{1,4})?[ |-]?(\d{1,5})?$')
 
     def infer_search_type(self, query):
@@ -34,8 +34,24 @@ class TypedSearchBackend(filters.SearchFilter):
             search_type = self.infer_search_type(request.GET.get('search', ''))
 
         if search_type == 'course':
-            return ['full_code']
+            return ['^full_code']
         elif search_type == 'keyword':
             return ['title', 'sections__instructors__name']
         else:
             return super().get_search_fields(view, request)
+
+
+class TypedSectionSearchBackend(filters.SearchFilter):
+    code_re = re.compile(r'^([A-Za-z]+) *[ -]?(\d{3}|[A-Z]{1,3})?[ -]?(\d+)?$')
+
+    def get_search_terms(self, request):
+        query = request.query_params.get(self.search_param, '')
+
+        match = self.code_re.match(query)
+        if match:
+            query = match.group(1)
+            if match.group(2) is not None:
+                query = query + f'-{match.group(2)}'
+                if match.group(3) is not None:
+                    query = query + f'-{match.group(3)}'
+        return [query]
