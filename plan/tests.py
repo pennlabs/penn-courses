@@ -8,7 +8,7 @@ from courses.models import Instructor, Requirement
 from courses.util import create_mock_data
 from options.models import Option
 from plan.models import Schedule
-from plan.search import TypedSearchBackend
+from plan.search import TypedCourseSearchBackend
 from review.models import Review
 
 
@@ -22,12 +22,12 @@ def set_semester():
 class TypedSearchBackendTestCase(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
-        self.search = TypedSearchBackend()
+        self.search = TypedCourseSearchBackend()
 
     def test_type_course(self):
         req = self.factory.get('/', {'type': 'course', 'search': 'ABC123'})
         terms = self.search.get_search_fields(None, req)
-        self.assertEqual(['full_code'], terms)
+        self.assertEqual(['^full_code'], terms)
 
     def test_type_keyword(self):
         req = self.factory.get('/', {'type': 'keyword', 'search': 'ABC123'})
@@ -39,7 +39,7 @@ class TypedSearchBackendTestCase(TestCase):
         for course in courses:
             req = self.factory.get('/', {'type': 'auto', 'search': course})
             terms = self.search.get_search_fields(None, req)
-            self.assertEqual(['full_code'], terms, f'search:{course}')
+            self.assertEqual(['^full_code'], terms, f'search:{course}')
 
     def test_auto_keyword(self):
         keywords = ['rajiv', 'gandhi', 'programming', 'hello world']
