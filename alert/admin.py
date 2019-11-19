@@ -10,12 +10,11 @@ class RegistrationAdmin(admin.ModelAdmin):
     search_fields = ('email',
                      'phone',
                      'section__full_code',
-                     'section__course__departm',
-                     'section__course__code',
-                     'section__code')
+                     'section__course__department',
+                     )
     autocomplete_fields = ('section', )
 
-    list_filter = ['section__course__semester']
+    list_filter = ['notification_sent' ,'section__course__semester']
 
     list_select_related = (
         'section',
