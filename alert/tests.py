@@ -118,6 +118,11 @@ class RegisterTestCase(TestCase):
         self.assertEqual(RegStatus.COURSE_NOT_FOUND, res)
         self.assertEqual(0, Registration.objects.count())
 
+    def test_invalid_course(self):
+        res = register_for_course('econ 0-0-1', 'e@example.com', '+15555555555')
+        self.assertEqual(RegStatus.COURSE_NOT_FOUND, res)
+        self.assertEqual(0, Registration.objects.count())
+
     def test_justphone(self):
         res = register_for_course(self.sections[0].normalized, None, '5555555555')
         self.assertEqual(RegStatus.SUCCESS, res)

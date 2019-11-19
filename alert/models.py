@@ -138,6 +138,8 @@ def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, ap
         return RegStatus.COURSE_NOT_FOUND
     except Section.DoesNotExist:
         return RegStatus.COURSE_NOT_FOUND
+    except ValueError:
+        return RegStatus.COURSE_NOT_FOUND
 
     registration = Registration(section=section, email=email_address, phone=phone, source=source)
     registration.validate_phone()
