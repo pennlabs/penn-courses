@@ -10,7 +10,7 @@ from shortener.models import Url
 
 from alert.alerts import Email, Text
 from courses.models import Section, get_current_semester
-from courses.util import get_course_and_section
+from courses.util import get_or_create_course_and_section
 
 
 class RegStatus(Enum):
@@ -132,7 +132,7 @@ class Registration(models.Model):
 def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, api_key=None):
     if not email_address and not phone:
         return RegStatus.NO_CONTACT_INFO
-    course, section = get_course_and_section(course_code, get_current_semester())
+    course, section = get_or_create_course_and_section(course_code, get_current_semester())
     registration = Registration(section=section, email=email_address, phone=phone, source=source)
     registration.validate_phone()
 

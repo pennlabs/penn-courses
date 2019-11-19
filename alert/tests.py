@@ -6,7 +6,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from alert import tasks
-from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, get_course_and_section, register_for_course
+from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, get_or_create_course_and_section, register_for_course
 from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
 from courses.util import record_update, update_course_from_record
 from options.models import Option
@@ -29,7 +29,7 @@ def set_semester():
 class SendAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
-        course, section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
+        course, section = get_or_create_course_and_section('CIS-160-001', TEST_SEMESTER)
         self.r = Registration(email='yo@example.com',
                               phone='+15555555555',
                               section=section)
@@ -64,9 +64,9 @@ class RegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
         self.sections = []
-        self.sections.append(get_course_and_section('CIS-160-001', TEST_SEMESTER)[1])
-        self.sections.append(get_course_and_section('CIS-160-002', TEST_SEMESTER)[1])
-        self.sections.append(get_course_and_section('CIS-120-001', TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section('CIS-160-001', TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section('CIS-160-002', TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section('CIS-120-001', TEST_SEMESTER)[1])
 
     def test_successful_registration(self):
         res = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
@@ -128,7 +128,7 @@ class RegisterTestCase(TestCase):
 class ResubscribeTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
+        _, self.section = get_or_create_course_and_section('CIS-160-001', TEST_SEMESTER)
         self.base_reg = Registration(email='e@example.com', phone='+15555555555', section=self.section)
         self.base_reg.save()
 
@@ -197,7 +197,7 @@ class ResubscribeTestCase(TestCase):
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
+        _, self.section = get_or_create_course_and_section('CIS-160-001', TEST_SEMESTER)
         self.r1 = Registration(email='e@example.com', phone='+15555555555', section=self.section)
         self.r2 = Registration(email='f@example.com', phone='+15555555556', section=self.section)
         self.r3 = Registration(email='g@example.com', phone='+15555555557', section=self.section)
@@ -216,7 +216,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
             self.assertTrue(id_ in expected_ids)
 
     def test_collect_none(self):
-        get_course_and_section('CIS-121-001', TEST_SEMESTER)
+        get_or_create_course_and_section('CIS-121-001', TEST_SEMESTER)
         result = tasks.get_active_registrations('CIS-121-001', TEST_SEMESTER)
         self.assertTrue(len(result) == 0)
 
@@ -429,7 +429,7 @@ class APIRegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
         self.client = Client()
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.course, self.section = get_or_create_course_and_section('CIS-120-001', TEST_SEMESTER)
         self.permission = APIPrivilege.objects.create(code=PCA_REGISTRATION)
         self.key = APIKey.objects.get_or_create(email='contact@penncoursenotify.com')[0]
         self.key.privileges.add(self.permission)
@@ -517,7 +517,7 @@ class APIRegisterTestCase(TestCase):
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
         set_semester()
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.course, self.section = get_or_create_course_and_section('CIS-120-001', TEST_SEMESTER)
 
     def test_update_status(self):
         self.section.status = 'C'
@@ -530,5 +530,5 @@ class CourseStatusUpdateTestCase(TestCase):
                            'JSON')
         up.save()
         update_course_from_record(up)
-        _, section = get_course_and_section(self.section.normalized, TEST_SEMESTER)
+        _, section = get_or_create_course_and_section(self.section.normalized, TEST_SEMESTER)
         self.assertEqual('O', section.status)
