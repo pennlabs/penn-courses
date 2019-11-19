@@ -10,12 +10,12 @@ from courses.views import CourseList
 from options.models import get_value
 from plan.filters import bound_filter, choice_filter, requirement_filter
 from plan.models import Schedule
-from plan.search import TypedSearchBackend
+from plan.search import TypedCourseSearchBackend
 from plan.serializers import ScheduleSerializer
 
 
 class CourseListSearch(CourseList):
-    filter_backends = [TypedSearchBackend]
+    filter_backends = [TypedCourseSearchBackend]
     search_fields = ('full_code', 'title', 'sections__instructors__name')
 
     def get_queryset(self):
