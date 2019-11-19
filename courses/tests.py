@@ -465,3 +465,11 @@ class SectionSearchTestCase(TestCase):
     def test_match_department(self):
         res = self.client.get('/courses/', {'search': 'CIS'})
         self.assertEqual(3, len(res.data))
+
+    def test_match_lowercase(self):
+        res = self.client.get('/courses/', {'search': 'cis120'})
+        self.assertEqual(2, len(res.data))
+
+    def test_nomatch(self):
+        res = self.client.get('/courses/', {'search': '123bdfsh3wq!@#'})
+        self.assertEqual(0, len(res.data))
