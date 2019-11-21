@@ -422,3 +422,54 @@ class ParseOpendataResponseTestCase(TestCase):
         self.assertEqual(21, Section.objects.count())
         self.assertEqual(3, Meeting.objects.count())
         self.assertEqual(2, Instructor.objects.count())
+
+
+@override_settings(SWITCHBOARD_TEST_APP='pca')
+class SectionSearchTestCase(TestCase):
+    def setUp(self):
+        create_mock_data('CIS-120-001', TEST_SEMESTER)
+        create_mock_data('CIS-160-001', TEST_SEMESTER)
+        create_mock_data('CIS-120-201', TEST_SEMESTER)
+        create_mock_data('PSCI-181-001', TEST_SEMESTER)
+        self.client = APIClient()
+
+    def test_match_exact(self):
+        res = self.client.get('/courses/', {'search': 'CIS-120-001'})
+        self.assertEqual(1, len(res.data))
+        self.assertEqual('CIS-120-001', res.data[0]['section_id'])
+
+    def test_match_exact_spaces(self):
+        res = self.client.get('/courses/', {'search': 'CIS 120 001'})
+        self.assertEqual(1, len(res.data))
+        self.assertEqual('CIS-120-001', res.data[0]['section_id'])
+
+    def test_match_exact_nosep(self):
+        res = self.client.get('/courses/', {'search': 'PSCI181001'})
+        self.assertEqual(1, len(res.data))
+        self.assertEqual('PSCI-181-001', res.data[0]['section_id'])
+
+    def test_match_full_course_nosep(self):
+        res = self.client.get('/courses/', {'search': 'CIS120'})
+        self.assertEqual(2, len(res.data))
+        self.assertEqual('CIS-120-001', res.data[0]['section_id'])
+
+    def test_match_full_course_exact(self):
+        res = self.client.get('/courses/', {'search': 'CIS-120'})
+        self.assertEqual(2, len(res.data))
+        self.assertEqual('CIS-120-001', res.data[0]['section_id'])
+
+    def test_match_full_course_space(self):
+        res = self.client.get('/courses/', {'search': 'PSCI 181'})
+        self.assertEqual(1, len(res.data))
+
+    def test_match_department(self):
+        res = self.client.get('/courses/', {'search': 'CIS'})
+        self.assertEqual(3, len(res.data))
+
+    def test_match_lowercase(self):
+        res = self.client.get('/courses/', {'search': 'cis120'})
+        self.assertEqual(2, len(res.data))
+
+    def test_nomatch(self):
+        res = self.client.get('/courses/', {'search': '123bdfsh3wq!@#'})
+        self.assertEqual(0, len(res.data))
