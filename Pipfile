@@ -26,9 +26,10 @@ django-filter = "*"
 shortener = "*"
 django-labs-accounts = "*"
 "beautifulsoup4" = "*"
+ipython = "*"
 
 [dev-packages]
-coveralls = "*"
+codecov = "*"
 unittest-xml-reporting = "*"
 coverage = "*"
 flake8 = "*"
