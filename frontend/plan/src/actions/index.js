@@ -231,7 +231,7 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // Checkbox Filters
-    const checkboxFields = ["cu", "type"];
+    const checkboxFields = ["cu", "activity"];
     const checkboxDefaultFields = [{ 0.5: 0, 1: 0, 1.5: 0 }, {
         LAB: 0, REC: 0, SEM: 0, STU: 0,
     }];

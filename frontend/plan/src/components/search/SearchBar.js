@@ -143,16 +143,16 @@ function SearchBar({
             </DropdownButton>
             <DropdownButton
                 title="Type"
-                filterData={filterData.type}
-                defaultFilter={defaultFilters.filterData.type}
+                filterData={filterData.activity}
+                defaultFilter={defaultFilters.filterData.activity}
                 isDisabled={isLoading}
-                clearFilter={clearFilterSearch("type")}
+                clearFilter={clearFilterSearch("activity")}
             >
                 <CheckboxFilter
                     filterData={filterData}
                     updateCheckboxFilter={updateCheckboxFilter}
                     isDisabled={isLoading}
-                    checkboxProperty="type"
+                    checkboxProperty="activity"
                     startSearch={conditionalStartSearch}
                 />
             </DropdownButton>

@@ -24,7 +24,7 @@ class CourseListSearch(CourseList):
         filters = {
             'requirements': requirement_filter,
             'cu': choice_filter('sections__credits'),
-            'type': choice_filter('sections__activity'),
+            'activity': choice_filter('sections__activity'),
             'course_quality': bound_filter('course_quality'),
             'instructor_quality': bound_filter('instructor_quality'),
             'difficulty': bound_filter('difficulty')
