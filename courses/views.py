@@ -1,9 +1,10 @@
-from rest_framework import filters, generics
+from rest_framework import generics
 
 from courses.models import Course, Requirement, Section
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
                                  MiniSectionSerializer, RequirementListSerializer)
 from options.models import get_value
+from plan.search import TypedSectionSearchBackend
 
 
 class BaseCourseMixin(generics.GenericAPIView):
@@ -32,7 +33,7 @@ class BaseCourseMixin(generics.GenericAPIView):
 class SectionList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = MiniSectionSerializer
     queryset = Section.with_reviews.all()
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [TypedSectionSearchBackend]
     search_fields = ['^full_code']
 
     @staticmethod

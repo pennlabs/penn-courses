@@ -7,8 +7,20 @@ from alert.models import Registration
 
 class RegistrationAdmin(admin.ModelAdmin):
     readonly_fields = ('section_link', 'resubscribed_from', 'created_at')
-    search_fields = ('email', 'phone', 'section__course__department', 'section__course__code', 'section__code')
+    search_fields = ('email',
+                     'phone',
+                     'section__full_code',
+                     'section__course__department__code',
+                     )
     autocomplete_fields = ('section', )
+
+    list_filter = ['notification_sent', 'section__course__semester']
+
+    list_select_related = (
+        'section',
+        'section__course',
+        'section__course__department',
+    )
 
     def section_link(self, instance):
         link = reverse('admin:courses_section_change', args=[instance.section.id])
