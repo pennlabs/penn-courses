@@ -1,9 +1,12 @@
-from rest_framework import filters, generics
+from rest_framework import filters, generics, viewsets
 from rest_framework.permissions import IsAuthenticated
+import operator
+from functools import reduce
+from django.db.models import Q
 
-from courses.models import Course, Requirement, Section, UserData
+from courses.models import Course, Requirement, Section, UserData, StatusUpdate
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer, MiniSectionSerializer,
-                                 RequirementListSerializer, UserDataSerializer)
+                                 RequirementListSerializer, UserDataSerializer, StatusUpdateSerializer)
 from options.models import get_value
 
 
@@ -67,3 +70,15 @@ class UserDetailView(generics.RetrieveAPIView, generics.UpdateAPIView):
     def get_object(self):
         ob, _ = UserData.objects.get_or_create(user=self.request.user)
         return ob
+
+
+class StatusUpdateView(generics.ListAPIView):
+    serializer_class = StatusUpdateSerializer
+    http_method_names = ['get']
+    lookup_field = 'full_code'
+
+    def get_queryset(self):
+        queryset = StatusUpdate.objects.filter(Q(section__course__full_code=self.kwargs['full_code']))
+        queryset = super().get_serializer_class().setup_eager_loading(queryset)
+        return queryset
+
