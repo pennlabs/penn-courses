@@ -67,7 +67,6 @@ AUTHENTICATION_BACKENDS = [
 PLATFORM_ACCOUNTS = {
     'REDIRECT_URI': os.environ.get('LABS_REDIRECT_URI', 'https://api.penncourses.org/accounts/callback/'),
     'ADMIN_PERMISSION': 'courses_admin',
-    'CUSTOM_ADMIN': False,
 }
 
 MIDDLEWARE = [

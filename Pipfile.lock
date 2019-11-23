@@ -148,11 +148,11 @@
         },
         "django-labs-accounts": {
             "hashes": [
-                "sha256:759096b7af281a1bb707818f1daeba979aa144b17d9e8f69ca1de74da5b50159",
-                "sha256:d95bcd60ab4208a11e452f44ca7c0544a9d9ef892b70257b7dc8c3e224204ce7"
+                "sha256:7804b13d23fc2f0f04998c620734c08925546349cd601c649688321798c76c22",
+                "sha256:aa1aa487c076a2bc6810a32862e2878ac3cac2290c3f8833e43bfce5cfdb4e3f"
             ],
             "index": "pypi",
-            "version": "==0.4.1"
+            "version": "==0.4.2"
         },
         "django-timezone-field": {
             "hashes": [
