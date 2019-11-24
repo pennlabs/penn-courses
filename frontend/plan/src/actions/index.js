@@ -1,5 +1,6 @@
 import fetch from "cross-fetch";
 import getCsrf from "../csrf";
+import { conditionalFetch } from "../syncutils";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -50,6 +51,9 @@ export const UPDATE_SCHEDULES = "UPDATE_SCHEDULES";
 export const SET_SCHEDULE_ID_MARK_SYNCED = "SET_SCHEDULE_ID_MARK_SYNCED";
 export const MARK_SCHEDULE_SYNCED = "MARK_SCHEDULE_SYNCED";
 export const MARK_CART_SYNCED = "MARK_CART_SYNCED";
+export const DELETION_ATTEMPT_FAILED = "INCREMENT_DELETION_ATTEMPTS";
+export const DELETION_ATTEMPT_SUCCEEDED = "DELETION_SUCCESSFUL";
+export const ATTEMPT_DELETION = "ATTEMPT_DELETION";
 
 
 export const markScheduleSynced = scheduleName => (
@@ -322,6 +326,20 @@ export function clearFilter(propertyName) {
     };
 }
 
+export const deletionAttemptCompleted = deletedScheduleId => ({
+    type: DELETION_ATTEMPT_FAILED,
+    deletedScheduleId,
+});
+
+export const deletionSuccessful = deletedScheduleId => ({
+    type: DELETION_ATTEMPT_SUCCEEDED,
+    deletedScheduleId
+});
+
+export const attemptDeletion = deletedScheduleId => ({
+    type: ATTEMPT_DELETION,
+    deletedScheduleId
+});
 
 export function clearAll() {
     return {
@@ -380,7 +398,7 @@ export const setScheduleIdAndMarkSynced = (name, id) => ({
  * @returns {Function}
  */
 export const createScheduleOnBackend = (name, sections) => (dispatch) => {
-    fetch("/schedules/", {
+    const fetchResult = conditionalFetch("/schedules/", {
         method: "POST",
         credentials: "include",
         mode: "same-origin",
@@ -393,8 +411,9 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
             name,
             sections,
         }),
-    })
-        .then(response => {
+    });
+    if (fetchResult) {
+        fetchResult.then(response => {
             if (response.ok) {
                 response.json()
                     .then(({ id }) => {
@@ -404,7 +423,8 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
                     });
             }
         })
-        .catch(ignored => null);
+            .catch(ignored => null);
+    }
 };
 
 /**

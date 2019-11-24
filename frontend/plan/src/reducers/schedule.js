@@ -11,7 +11,11 @@ import {
     REMOVE_CART_ITEM,
     UPDATE_SCHEDULES,
     SET_SCHEDULE_ID_MARK_SYNCED,
-    MARK_CART_SYNCED, MARK_SCHEDULE_SYNCED
+    MARK_CART_SYNCED,
+    MARK_SCHEDULE_SYNCED,
+    DELETION_ATTEMPT_FAILED,
+    DELETION_ATTEMPT_SUCCEEDED,
+    ATTEMPT_DELETION
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 
@@ -71,9 +75,9 @@ const toggleSection = (meetings, section) => {
  * @param schedule
  */
 const withoutId = schedule => {
-  const newSchedule = {...schedule};
-  delete newSchedule["id"];
-  return newSchedule;
+    const newSchedule = { ...schedule };
+    delete newSchedule["id"];
+    return newSchedule;
 };
 
 /**
@@ -249,7 +253,7 @@ export const schedule = (state = initialState, action) => {
                 },
                 scheduleSelected: action.scheduleName,
             };
-        case DELETE_SCHEDULE: {
+        case DELETE_SCHEDULE:
             const newSchedules = removeSchedule(action.scheduleName, state.schedules);
             if (Object.keys(newSchedules).length === 0) {
                 newSchedules["Empty Schedule"] = generateDefaultSchedule();
@@ -258,11 +262,52 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 deletedSchedules: {
                     ...(state.deletedSchedules || {}),
-                    [state.schedules[action.scheduleName].id]: true
+                    [state.schedules[action.scheduleName].id]: {
+                        deletionQueued: false,
+                        attempts: 0
+                    }
                 },
                 schedules: newSchedules,
                 scheduleSelected: action.scheduleName === state.scheduleSelected
                     ? Object.keys(newSchedules)[0] : state.scheduleSelected,
+            };
+        case ATTEMPT_DELETION:
+            // attempt deletion API call
+            return {
+                ...state,
+                deletedSchedules: {
+                    ...state.deletedSchedules,
+                    [action.deletedScheduleId]: {
+                        deletionQueued: true,
+                        attempts: 1
+                    }
+                }
+            };
+        case DELETION_ATTEMPT_SUCCEEDED: {
+            // deletion API call was successful
+            const newDeletedSchedules = { ...(state.deletedSchedules || []) };
+            delete newDeletedSchedules[action.scheduleId];
+            return {
+                ...state,
+                deletedSchedules: newDeletedSchedules,
+            };
+        }
+        case DELETION_ATTEMPT_FAILED: {
+            // a call to the deletion API route was completed with a failure
+            return {
+                ...state,
+                deletedSchedules: state.deletedSchedules ? {
+                    ...state.deletedSchedules,
+                    [action.deletedScheduleId]: {
+                        attempts: state.deletedSchedules[action.deletedScheduleId].attempts + 1,
+                        deletionQueued: false
+                    }
+                } : {
+                    [action.deletedScheduleId]: {
+                        attempts: 1,
+                        deletionQueued: false
+                    }
+                }
             };
         }
         case CHANGE_SCHEDULE:

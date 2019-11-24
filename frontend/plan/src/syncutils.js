@@ -1,10 +1,21 @@
 import {
-    createScheduleOnBackend, deleteSchedule,
-    fetchSchedulesAndInitializeCart,
+    attemptDeletion,
+    createScheduleOnBackend, deleteSchedule, deletionAttemptCompleted, deletionSuccessful,
+    fetchSchedulesAndInitializeCart, incrementDeletionAttempts,
     updateScheduleOnBackend
 } from "./actions";
 import fetch from "cross-fetch";
 import getCsrf from "./csrf";
+
+// Ensure that fetches only happen once ever 250 ms
+let lastFetched = 0;
+export const conditionalFetch = (url, init) => {
+    const now = Date.now();
+    if (now - lastFetched > 250) {
+        return fetch(url, init);
+    }
+    return null;
+};
 
 /**
  * Initiates schedule syncing on page load
@@ -47,12 +58,16 @@ const initiateSync = store => {
             });
         localStorage.setItem("coursePlanObservedSchedules", JSON.stringify(schedulesObserved));
         window.setInterval(() => {
-            const scheduleState = store.getState().schedule;
+            const scheduleState = store.getState().schedule || {};
             // Delete all schedules (on the backend) that have been deleted
             Object.keys(scheduleState.deletedSchedules || {})
                 .forEach(deletedScheduleId => {
-                    delete scheduleState.deletedSchedules[deletedScheduleId];
-                    fetch("/schedules/" + deletedScheduleId + "/", {
+                    // Don't queue a deletion on the backend if it has already been queued
+                    if (scheduleState.deletedSchedules[deletedScheduleId]  && scheduleState.deletedSchedules[deletedScheduleId].deletionQueued) {
+                        return;
+                    }
+                    store.dispatch(attemptDeletion(deletedScheduleId));
+                    const fetchResult = conditionalFetch("/schedules/" + deletedScheduleId + "/", {
                         method: "DELETE",
                         credentials: "include",
                         mode: "same-origin",
@@ -61,9 +76,16 @@ const initiateSync = store => {
                             "Content-Type": "application/json",
                             "X-CSRFToken": getCsrf(),
                         },
-                    })
-                        .then(() => {
+                    });
+                    if (fetchResult) {
+                        fetchResult.then(response => {
+                           if (response.ok) {
+                               store.dispatch(deletionSuccessful(deletedScheduleId));
+                           } else {
+                               store.dispatch(deletionAttemptCompleted(deletedScheduleId));
+                           }
                         });
+                    }
                 });
 
             // Update the server if the cart has been updated
