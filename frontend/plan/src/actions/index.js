@@ -390,7 +390,8 @@ export const fetchSchedulesAndInitializeCart = (cart, onComplete = () => null) =
             if (schedules) {
                 dispatch(updateSchedules(schedules));
             }
-            if (!schedules.cart) {
+            // if the cart doesn't exist on the backend, create it
+            if (!schedules.reduce((acc, {name}) => acc || name === "cart", false)) {
                 dispatch(createScheduleOnBackend("cart", cart));
             }
             onComplete(schedules);
