@@ -476,7 +476,7 @@ export const deleteScheduleOnBackend = deletedScheduleId => dispatch => {
  */
 export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
     const { id } = schedule;
-    if (!id) {
+    if (!id || schedule.isNew) {
         return;
     }
     const updatedScheduleObj = {

@@ -32,6 +32,7 @@ const generateDefaultSchedule = () => (
             creationQueued: false,
             creationAttempts: 0
         },
+        updatedAt: 1,
     }
 );
 
@@ -43,7 +44,8 @@ const initialState = {
     scheduleSelected: DEFAULT_SCHEDULE_NAME,
     cartSections: [],
     cartPushedToBackend: false,
-    deletedSchedules: []
+    deletedSchedules: [],
+    cartUpdated: false,
 };
 
 /**
@@ -159,46 +161,30 @@ export const schedule = (state = initialState, action) => {
             // eslint-disable-next-line
             const newScheduleObject = { ...(state.schedules || {}) };
             // eslint-disable-next-line
-            const newCart = [...(state.cartSections || [])];
-            let cartHasChanged = false;
+            let newCart = [...(state.cartSections || [])];
             if (schedulesFromBackend) {
                 schedulesFromBackend.forEach(({
-                    id: scheduleId, name, sections, semester,
+                    id: scheduleId, name, sections, semester, updated_at,
                 }) => {
+                    const cloudVersionUpdated = new Date(updated_at).getTime();
                     if (name === "cart") {
-                        const oldSectionSet = {};
-                        state.cartSections.forEach(({ id }) => {
-                            oldSectionSet[id] = true;
-                        });
                         state.cartId = scheduleId;
-                        sections.forEach(cartSection => {
-                            if (!oldSectionSet[cartSection.id]) {
-                                newCart.push(cartSection);
-                                cartHasChanged = true;
-                            }
-                        });
+                        if (!state.cartUpdated || cloudVersionUpdated > state.cartUpdated) {
+                            newCart = sections;
+                        }
                     } else if (state.schedules[name]) {
                         newScheduleObject[name].id = scheduleId;
                         newScheduleObject[name].isNew = false;
-                        const oldSectionSet = {};
-                        state.schedules[name].meetings.forEach(({ id }) => {
-                            oldSectionSet[id] = true;
-                        });
-                        let scheduleHasChanged = false;
-                        sections.forEach(section => {
-                            if (!oldSectionSet[section.id]) {
-                                newScheduleObject[name].meetings.push(section);
-                                scheduleHasChanged = true;
-                            }
-                        });
-                        newScheduleObject[name].pushedToBackend =
-                            newScheduleObject[name].pushedToBackend && !scheduleHasChanged;
+                        if (!state.schedules[name].updated_at || state.schedules[name].updated_at < cloudVersionUpdated) {
+                            newScheduleObject[name].meetings = sections;
+                        }
                     } else {
                         newScheduleObject[name] = {
                             meetings: sections,
                             semester,
                             id: scheduleId,
                             pushedToBackend: true,
+                            updated_at: cloudVersionUpdated,
                         };
                     }
                 });
@@ -207,7 +193,7 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 schedules: newScheduleObject,
                 cartSections: newCart,
-                cartPushedToBackend: state.cartPushedToBackend && !cartHasChanged,
+                cartPushedToBackend: true,
             };
         case CLEAR_SCHEDULE:
             return {
@@ -217,7 +203,8 @@ export const schedule = (state = initialState, action) => {
                     [state.scheduleSelected]: {
                         ...[state.scheduleSelected],
                         meetings: [],
-                        cartPushedToBackend: false,
+                        updated_at: Date.now(),
+                        pushedToBackend: false,
                     },
                 },
             };
@@ -228,6 +215,7 @@ export const schedule = (state = initialState, action) => {
                     ...removeSchedule(action.oldName, state.schedules),
                     [action.newName]: {
                         ...state.schedules[action.oldName],
+                        updated_at: Date.now(),
                         pushedToBackend: false,
                     },
                 },
@@ -243,6 +231,7 @@ export const schedule = (state = initialState, action) => {
                         {
                             ...withoutId(state.schedules[action.scheduleName]),
                             pushedToBackend: false,
+                            updated_at: Date.now(),
                             isNew: {
                                 creationQueued: false,
                                 creationAttempts: 0
@@ -362,6 +351,7 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [state.scheduleSelected]: {
                         ...state.schedules[state.scheduleSelected],
+                        updated_at: Date.now(),
                         meetings: toggleSection(state.schedules[state.scheduleSelected].meetings,
                             action.course),
                         pushedToBackend: false,
@@ -375,6 +365,7 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [state.scheduleSelected]: {
                         ...state.schedules[state.scheduleSelected],
+                        updated_at: Date.now(),
                         pushedToBackend: false,
                         meetings: state.schedules[state.scheduleSelected].meetings
                             .filter(m => m.id !== action.id),
@@ -384,12 +375,14 @@ export const schedule = (state = initialState, action) => {
         case ADD_CART_ITEM:
             return {
                 ...state,
+                cartUpdated: Date.now(),
                 cartSections: [...cartSections, action.section],
                 cartPushedToBackend: false,
             };
         case REMOVE_CART_ITEM:
             return {
                 ...state,
+                cartUpdated: Date.now(),
                 cartSections: state.cartSections.filter(({ id }) => id !== action.sectionId),
                 cartPushedToBackend: false,
             };
