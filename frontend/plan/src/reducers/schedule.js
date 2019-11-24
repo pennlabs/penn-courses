@@ -10,12 +10,12 @@ import {
     ADD_CART_ITEM,
     REMOVE_CART_ITEM,
     UPDATE_SCHEDULES,
-    SET_SCHEDULE_ID_MARK_SYNCED,
+    CREATION_SUCCESSFUL,
     MARK_CART_SYNCED,
     MARK_SCHEDULE_SYNCED,
     DELETION_ATTEMPT_FAILED,
     DELETION_ATTEMPT_SUCCEEDED,
-    ATTEMPT_DELETION
+    ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 
@@ -28,7 +28,10 @@ const generateDefaultSchedule = () => (
         colorPalette: [],
         LocAdded: false,
         pushedToBackend: false,
-        isNew: true,
+        isNew: {
+            creationQueued: false,
+            creationAttempts: 0
+        },
     }
 );
 
@@ -129,7 +132,7 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 cartPushedToBackend: true,
             };
-        case SET_SCHEDULE_ID_MARK_SYNCED:
+        case CREATION_SUCCESSFUL:
             if (action.name === "cart") {
                 return {
                     ...state,
@@ -240,7 +243,10 @@ export const schedule = (state = initialState, action) => {
                         {
                             ...withoutId(state.schedules[action.scheduleName]),
                             pushedToBackend: false,
-                            isNew: true,
+                            isNew: {
+                                creationQueued: false,
+                                creationAttempts: 0
+                            },
                         },
                 },
             };
@@ -252,6 +258,40 @@ export const schedule = (state = initialState, action) => {
                     [action.scheduleName]: generateDefaultSchedule(),
                 },
                 scheduleSelected: action.scheduleName,
+            };
+        case ATTEMPT_SCHEDULE_CREATION:
+            if (action.scheduleName === "cart") {
+                return state;
+            }
+            return {
+                ...state,
+                schedules: {
+                    ...state.schedules,
+                    [action.scheduleName]: {
+                        ...state.schedules[action.scheduleName],
+                        isNew: {
+                            creationQueued: true,
+                            creationAttempts: state.schedules[action.scheduleName].isNew.creationAttempts + 1
+                        }
+                    }
+                }
+            };
+        case UNSUCCESSFUL_SCHEDULE_CREATION:
+            if (action.scheduleName === "cart") {
+                return state;
+            }
+            return {
+              ...state,
+              schedules: {
+                  ...state.schedules,
+                  [action.scheduleName]: {
+                      ...state.schedules[action.scheduleName],
+                      isNew: {
+                          ...state.schedules[action.scheduleName].isNew,
+                          creationQueued: false,
+                      }
+                  }
+              }
             };
         case DELETE_SCHEDULE:
             const newSchedules = removeSchedule(action.scheduleName, state.schedules);

@@ -48,12 +48,15 @@ export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
 // Backend accounts integration
 export const UPDATE_SCHEDULES = "UPDATE_SCHEDULES";
-export const SET_SCHEDULE_ID_MARK_SYNCED = "SET_SCHEDULE_ID_MARK_SYNCED";
+export const CREATION_SUCCESSFUL = "SET_SCHEDULE_ID_MARK_SYNCED";
 export const MARK_SCHEDULE_SYNCED = "MARK_SCHEDULE_SYNCED";
 export const MARK_CART_SYNCED = "MARK_CART_SYNCED";
 export const DELETION_ATTEMPT_FAILED = "INCREMENT_DELETION_ATTEMPTS";
 export const DELETION_ATTEMPT_SUCCEEDED = "DELETION_SUCCESSFUL";
 export const ATTEMPT_DELETION = "ATTEMPT_DELETION";
+export const ATTEMPT_SCHEDULE_CREATION = "ATTEMPT_SCHEDULE_CREATION";
+export const SUCCESSFUL_SCHEDULE_CREATION = "SUCCESSFUL_SCHEDULE_CREATION";
+export const UNSUCCESSFUL_SCHEDULE_CREATION = "UNSUCCESSFUL_SCHEDULE_CREATION";
 
 
 export const markScheduleSynced = scheduleName => (
@@ -336,6 +339,16 @@ export const deletionSuccessful = deletedScheduleId => ({
     deletedScheduleId
 });
 
+export const creationUnsuccessful = createdScheduleName => ({
+    type: UNSUCCESSFUL_SCHEDULE_CREATION,
+    scheduleName: createdScheduleName,
+});
+
+export const creationAttempted = createdScheduleName => ({
+    type: UNSUCCESSFUL_SCHEDULE_CREATION,
+    scheduleName: createdScheduleName,
+});
+
 export const attemptDeletion = deletedScheduleId => ({
     type: ATTEMPT_DELETION,
     deletedScheduleId
@@ -385,8 +398,8 @@ export const fetchSchedulesAndInitializeCart = (cart, onComplete = () => null) =
         .catch(error => console.log(error, "Not logged in"));
 };
 
-export const setScheduleIdAndMarkSynced = (name, id) => ({
-    type: SET_SCHEDULE_ID_MARK_SYNCED,
+export const creationSuccessful = (name, id) => ({
+    type: CREATION_SUCCESSFUL,
     name,
     id,
 });
@@ -398,6 +411,7 @@ export const setScheduleIdAndMarkSynced = (name, id) => ({
  * @returns {Function}
  */
 export const createScheduleOnBackend = (name, sections) => (dispatch) => {
+    dispatch(creationAttempted(name));
     const fetchResult = conditionalFetch("/schedules/", {
         method: "POST",
         credentials: "include",
@@ -418,12 +432,38 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
                 response.json()
                     .then(({ id }) => {
                         if (id) {
-                            dispatch(setScheduleIdAndMarkSynced(name, id));
+                            dispatch(creationSuccessful(name, id));
                         }
                     });
             }
         })
-            .catch(ignored => null);
+            .catch( error => {
+                console.log(error);
+                dispatch(creationUnsuccessful(name));
+            });
+    }
+};
+
+export const deleteScheduleOnBackend = deletedScheduleId => dispatch => {
+    dispatch(attemptDeletion(deletedScheduleId));
+    const fetchResult = conditionalFetch("/schedules/" + deletedScheduleId + "/", {
+        method: "DELETE",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    });
+    if (fetchResult) {
+        fetchResult.then(response => {
+            if (response.ok) {
+                dispatch(deletionSuccessful(deletedScheduleId));
+            } else {
+                dispatch(deletionAttemptCompleted(deletedScheduleId));
+            }
+        });
     }
 };
 

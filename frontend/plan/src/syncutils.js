@@ -1,7 +1,12 @@
 import {
     attemptDeletion,
-    createScheduleOnBackend, deleteSchedule, deletionAttemptCompleted, deletionSuccessful,
-    fetchSchedulesAndInitializeCart, incrementDeletionAttempts,
+    createScheduleOnBackend,
+    deleteSchedule,
+    deleteScheduleOnBackend,
+    deletionAttemptCompleted,
+    deletionSuccessful,
+    fetchSchedulesAndInitializeCart,
+    incrementDeletionAttempts,
     updateScheduleOnBackend
 } from "./actions";
 import fetch from "cross-fetch";
@@ -66,26 +71,7 @@ const initiateSync = store => {
                     if (scheduleState.deletedSchedules[deletedScheduleId]  && scheduleState.deletedSchedules[deletedScheduleId].deletionQueued) {
                         return;
                     }
-                    store.dispatch(attemptDeletion(deletedScheduleId));
-                    const fetchResult = conditionalFetch("/schedules/" + deletedScheduleId + "/", {
-                        method: "DELETE",
-                        credentials: "include",
-                        mode: "same-origin",
-                        headers: {
-                            "Accept": "application/json",
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": getCsrf(),
-                        },
-                    });
-                    if (fetchResult) {
-                        fetchResult.then(response => {
-                           if (response.ok) {
-                               store.dispatch(deletionSuccessful(deletedScheduleId));
-                           } else {
-                               store.dispatch(deletionAttemptCompleted(deletedScheduleId));
-                           }
-                        });
-                    }
+                    store.dispatch(deleteScheduleOnBackend(deletedScheduleId));
                 });
 
             // Update the server if the cart has been updated
@@ -101,7 +87,7 @@ const initiateSync = store => {
                 .forEach(scheduleName => {
                     const schedule = scheduleState.schedules[scheduleName];
                     if (!schedule.pushedToBackend) {
-                        if (schedule.isNew && !("id" in schedule)) {
+                        if (schedule.isNew && !schedule.isNew.creationQueued && !("id" in schedule)) {
                             store.dispatch(createScheduleOnBackend(scheduleName, schedule.meetings));
                         } else {
                             store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
