@@ -6,6 +6,7 @@ from courses.models import Course, Requirement, Section
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
                                  MiniSectionSerializer, RequirementListSerializer, UserSerializer)
 from options.models import get_value
+from plan.search import TypedSectionSearchBackend
 
 
 class BaseCourseMixin(generics.GenericAPIView):
@@ -33,8 +34,8 @@ class BaseCourseMixin(generics.GenericAPIView):
 
 class SectionList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = MiniSectionSerializer
-    queryset = Section.objects.all()
-    filter_backends = [filters.SearchFilter]
+    queryset = Section.with_reviews.all()
+    filter_backends = [TypedSectionSearchBackend]
     search_fields = ['^full_code']
 
     @staticmethod
@@ -44,13 +45,13 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = CourseListSerializer
-    queryset = Course.objects.filter(sections__isnull=False)
+    queryset = Course.with_reviews.filter(sections__isnull=False)
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     serializer_class = CourseDetailSerializer
     lookup_field = 'full_code'
-    queryset = Course.objects.all()
+    queryset = Course.with_reviews.all()
 
 
 class RequirementList(generics.ListAPIView, BaseCourseMixin):

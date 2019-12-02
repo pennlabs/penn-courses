@@ -1,6 +1,6 @@
 import {
     LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT,
-    UPDATE_RANGE_FILTER, CLEAR_FILTER, CLEAR_ALL
+    UPDATE_RANGE_FILTER, CLEAR_FILTER, CLEAR_ALL, UPDATE_CHECKBOX_FILTER
 } from "../actions";
 
 export const initialState = {
@@ -18,8 +18,17 @@ export const initialState = {
         course_quality: [0, 4],
         instructor_quality: [0, 4],
         time: null,
-        type: null,
-        cu: [0.5, 2],
+        activity: {
+            LAB: 0,
+            REC: 0,
+            SEM: 0,
+            STU: 0,
+        },
+        cu: {
+            0.5: 0,
+            1: 0,
+            1.5: 0,
+        },
     },
     defaultReqs: null,
 };
@@ -79,6 +88,18 @@ export const filters = (state = initialState, action) => {
                 },
             };
 
+        case UPDATE_CHECKBOX_FILTER:
+            return {
+                ...state,
+                filterData: {
+                    ...state.filterData,
+                    [action.field]: {
+                        ...state.filterData[action.field],
+                        [action.value]: action.toggleState,
+                    },
+                },
+            };
+
         case CLEAR_FILTER:
             if (action.propertyName === "selectedReq") {
                 return {
@@ -89,6 +110,7 @@ export const filters = (state = initialState, action) => {
                     },
                 };
             }
+
             return {
                 ...state,
                 filterData: {

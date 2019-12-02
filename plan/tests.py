@@ -8,7 +8,7 @@ from courses.models import Instructor, Requirement
 from courses.util import create_mock_data
 from options.models import Option
 from plan.models import Schedule
-from plan.search import TypedSearchBackend
+from plan.search import TypedCourseSearchBackend
 from review.models import Review
 
 
@@ -22,12 +22,12 @@ def set_semester():
 class TypedSearchBackendTestCase(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
-        self.search = TypedSearchBackend()
+        self.search = TypedCourseSearchBackend()
 
     def test_type_course(self):
         req = self.factory.get('/', {'type': 'course', 'search': 'ABC123'})
         terms = self.search.get_search_fields(None, req)
-        self.assertEqual(['full_code'], terms)
+        self.assertEqual(['^full_code'], terms)
 
     def test_type_keyword(self):
         req = self.factory.get('/', {'type': 'keyword', 'search': 'ABC123'})
@@ -39,7 +39,7 @@ class TypedSearchBackendTestCase(TestCase):
         for course in courses:
             req = self.factory.get('/', {'type': 'auto', 'search': course})
             terms = self.search.get_search_fields(None, req)
-            self.assertEqual(['full_code'], terms, f'search:{course}')
+            self.assertEqual(['^full_code'], terms, f'search:{course}')
 
     def test_auto_keyword(self):
         keywords = ['rajiv', 'gandhi', 'programming', 'hello world']
@@ -89,12 +89,17 @@ class CreditUnitFilterTestCase(TestCase):
         set_semester()
 
     def test_include_course(self):
-        response = self.client.get('/courses/', {'cu': '0.5-1'})
+        response = self.client.get('/courses/', {'cu': '1.0'})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+
+    def test_include_multiple(self):
+        response = self.client.get('/courses/', {'cu': '0.5,1.0'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_exclude_course(self):
-        response = self.client.get('/courses/', {'cu': '.25-.75'})
+        response = self.client.get('/courses/', {'cu': '.5,1.5'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
@@ -237,11 +242,46 @@ class ScheduleTest(TestCase):
         self.assertEqual(len(response.data[1]['sections']), 2)
         self.assertEqual(response.data[1]['sections'][0]['id'], 'CIS-121-001')
 
+    def test_create_schedule_meetings(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'semester': TEST_SEMESTER,
+                                                'name': 'New Test Schedule',
+                                                'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(response.data[1]['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data[1]['sections']), 2)
+        self.assertEqual(response.data[1]['sections'][0]['id'], 'CIS-121-001')
+
     def test_update_schedule_specific(self):
         response = self.client.put('/schedules/' + str(self.s.id) + '/',
                                    json.dumps({'semester': TEST_SEMESTER,
                                                'name': 'New Test Schedule',
                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                            {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data[0]['sections']), 2)
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-121-001')
+        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['name'], 'New Test Schedule')
+        self.assertEqual(len(response.data['sections']), 2)
+        self.assertEqual(response.data['sections'][0]['id'], 'CIS-121-001')
+
+    def test_update_schedule_specific_meetings(self):
+        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+                                   json.dumps({'semester': TEST_SEMESTER,
+                                               'name': 'New Test Schedule',
+                                               'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 202)
@@ -350,4 +390,3 @@ class ScheduleTest(TestCase):
                                                              {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                     content_type='application/json')
         self.assertEqual(400, response.status_code)
-        self.assertEqual(response.data['detail'], 'Unique constraint violated')

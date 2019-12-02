@@ -28,14 +28,14 @@ class Instructor(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, unique=True, db_index=True)
 
     def __str__(self):
         return self.name
 
 
 class Department(models.Model):
-    code = models.CharField(max_length=8, unique=True)
+    code = models.CharField(max_length=8, unique=True, db_index=True)
     name = models.CharField(max_length=255)
 
     def __str__(self):
@@ -48,19 +48,20 @@ class CourseManager(models.Manager):
 
 
 class Course(models.Model):
-    objects = CourseManager()
+    objects = models.Manager()
+    with_reviews = CourseManager()
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='courses')
     code = models.CharField(max_length=8)
-    semester = models.CharField(max_length=5)
+    semester = models.CharField(max_length=5, db_index=True)
 
     title = models.TextField()
     description = models.TextField(blank=True)
 
-    full_code = models.CharField(max_length=16, blank=True)
+    full_code = models.CharField(max_length=16, blank=True, db_index=True)
 
     prerequisites = models.TextField(blank=True)
 
@@ -92,6 +93,7 @@ class Course(models.Model):
     @property
     def requirements(self):
         return Requirement.objects.exclude(id__in=self.nonrequirement_set.all())\
+            .filter(semester=self.semester)\
             .filter(Q(id__in=self.requirement_set.all()) | Q(id__in=self.department.requirements.all()))
 
     def save(self, *args, **kwargs):
@@ -113,11 +115,12 @@ class Restriction(models.Model):
 
 class SectionManager(models.Manager):
     def get_queryset(self):
-        return sections_with_reviews(super().get_queryset())
+        return sections_with_reviews(super().get_queryset()).distinct()
 
 
 class Section(models.Model):
-    objects = SectionManager()
+    objects = models.Manager()
+    with_reviews = SectionManager()
 
     STATUS_CHOICES = (
         ('O', 'Open'),
@@ -150,10 +153,10 @@ class Section(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sections')
     full_code = models.CharField(max_length=32, blank=True, db_index=True)
 
-    status = models.CharField(max_length=4, choices=STATUS_CHOICES)
+    status = models.CharField(max_length=4, choices=STATUS_CHOICES, db_index=True)
 
     capacity = models.IntegerField(default=0)
-    activity = models.CharField(max_length=50, choices=ACTIVITY_CHOICES)
+    activity = models.CharField(max_length=50, choices=ACTIVITY_CHOICES, db_index=True)
     meeting_times = models.TextField(blank=True)
 
     instructors = models.ManyToManyField(Instructor)
@@ -163,7 +166,8 @@ class Section(models.Model):
     credits = models.DecimalField(max_digits=3,  # some course for 2019C is 14 CR...
                                   decimal_places=2,
                                   null=True,
-                                  blank=True)
+                                  blank=True,
+                                  db_index=True)
 
     def __str__(self):
         return '%s-%s %s' % (self.course.course_id, self.code, self.course.semester)
@@ -172,6 +176,10 @@ class Section(models.Model):
     def normalized(self):
         """String used for querying updates to this section with the Penn API"""
         return '%s-%s' % (self.course.course_id, self.code)
+
+    @property
+    def semester(self):
+        return self.course.semester
 
     @property
     def is_open(self):
@@ -279,11 +287,11 @@ class Requirement(models.Model):
     )
     # organize requirements by semester so that we don't get huge related sets which don't give particularly good
     # info.
-    semester = models.CharField(max_length=5)
+    semester = models.CharField(max_length=5, db_index=True)
     # what school this requirement belongs to
-    school = models.CharField(max_length=5, choices=SCHOOL_CHOICES)
+    school = models.CharField(max_length=5, choices=SCHOOL_CHOICES, db_index=True)
     # code identifying this requirement
-    code = models.CharField(max_length=10)
+    code = models.CharField(max_length=10, db_index=True)
     # name of the requirement
     name = models.CharField(max_length=255)
 

@@ -204,7 +204,7 @@ class CourseListSerializer(serializers.ModelSerializer):
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
                                              Prefetch('sections',
-                                                      Section.objects.all()
+                                                      Section.with_reviews.all()
                                                       .filter(meetings__isnull=False)
                                                       .filter(credits__isnull=False)
                                                       .filter(Q(status='O') | Q(status='C')).distinct()),
@@ -237,7 +237,7 @@ class CourseDetailSerializer(CourseListSerializer):
         queryset = queryset.prefetch_related('primary_listing__listing_set__department',
                                              'department',
                                              Prefetch('sections',
-                                                      Section.objects.all()
+                                                      Section.with_reviews.all()
                                                       .filter(meetings__isnull=False)
                                                       .filter(credits__isnull=False)
                                                       .filter(Q(status='O') | Q(status='C')).distinct()),

@@ -11,15 +11,7 @@ import {
 function SectionList({ sections, cartSections, manageCart }) {
     const isInCart = ({ id }) => cartSections.indexOf(id) !== -1;
     return (
-        <>
-            <div className="section-row segment">
-                <div className="header" />
-                <div className="header">SECT</div>
-                <div className="header">INSTR</div>
-                <div className="header">TYPE</div>
-                <div className="header">TIME</div>
-            </div>
-
+        <div className="results">
             <ul>
                 {sections.map(s => (
                     <Section
@@ -29,7 +21,7 @@ function SectionList({ sections, cartSections, manageCart }) {
                     />
                 ))}
             </ul>
-        </>
+        </div>
     );
 }
 

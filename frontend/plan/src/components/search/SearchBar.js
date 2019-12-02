@@ -6,6 +6,7 @@ import "./Search.css";
 import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
+import { CheckboxFilter } from "./CheckboxFilter";
 import { SearchField } from "./SearchField";
 import { initialState as defaultFilters } from "../../reducers/filters";
 import {
@@ -15,10 +16,12 @@ import {
     remSchoolReq,
     updateSearchText,
     updateRangeFilter,
+    updateCheckboxFilter,
     clearAll,
     clearFilter,
     updateSearch
 } from "../../actions";
+
 
 function shouldSearch(filterData) {
     const searchString = filterData.searchString.length >= 3;
@@ -126,7 +129,8 @@ function SearchBar({
     remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
-    setTab,
+    // eslint-disable-next-line no-shadow
+    updateCheckboxFilter, setTab,
 }) {
 
     const [user, setUser] = useState(null);
@@ -230,6 +234,36 @@ function SearchBar({
                     isDisabled={isLoading}
                 />
             </DropdownButton>
+            <DropdownButton
+                title="CU"
+                filterData={filterData.cu}
+                defaultFilter={defaultFilters.filterData.cu}
+                isDisabled={isLoading}
+                clearFilter={clearFilterSearch("cu")}
+            >
+                <CheckboxFilter
+                    filterData={filterData}
+                    updateCheckboxFilter={updateCheckboxFilter}
+                    isDisabled={isLoading}
+                    checkboxProperty="cu"
+                    startSearch={conditionalStartSearch}
+                />
+            </DropdownButton>
+            <DropdownButton
+                title="Type"
+                filterData={filterData.activity}
+                defaultFilter={defaultFilters.filterData.activity}
+                isDisabled={isLoading}
+                clearFilter={clearFilterSearch("activity")}
+            >
+                <CheckboxFilter
+                    filterData={filterData}
+                    updateCheckboxFilter={updateCheckboxFilter}
+                    isDisabled={isLoading}
+                    checkboxProperty="activity"
+                    startSearch={conditionalStartSearch}
+                />
+            </DropdownButton>
         </React.Fragment>
     );
     if (isMobileOnly) {
@@ -250,7 +284,7 @@ function SearchBar({
                     <div>
                         <img src="/static/favicon.ico" alt="" style={{
                             height: "2.5rem",
-                            padding: "0 1rem"
+                            padding: "0 0.5rem"
                         }}/>
                     </div>
                     <SearchField
@@ -260,9 +294,8 @@ function SearchBar({
                         updateSearchText={updateSearchText}
                         isDisabled={isLoading}
                     />
-                    <div style={{ paddingLeft: "10px" }} role="button"
-                         onClick={() => showHideReqs(!reqsShown)}>
-                        <i className="fas fa-filter"/>
+                    <div style={{ padding: "0.5rem" }} role="button" onClick={() => showHideReqs(!reqsShown)}>
+                        <i className="fas fa-filter" />
                     </div>
                 </div>
                 {reqsShown && (
@@ -357,6 +390,7 @@ SearchBar.propTypes = {
     remSchoolReq: PropTypes.func,
     updateSearchText: PropTypes.func,
     updateRangeFilter: PropTypes.func,
+    updateCheckboxFilter: PropTypes.func,
     clearAll: PropTypes.func,
     clearFilter: PropTypes.func,
     clearSearchResults: PropTypes.func,
@@ -387,6 +421,9 @@ const mapDispatchToProps = dispatch => ({
     remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
     updateSearchText: s => dispatch(updateSearchText(s)),
     updateRangeFilter: field => values => dispatch(updateRangeFilter(field, values)),
+    updateCheckboxFilter: (field, value, toggleState) => dispatch(
+        updateCheckboxFilter(field, value, toggleState)
+    ),
     clearAll: () => dispatch(clearAll()),
     clearFilter: propertyName => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),
