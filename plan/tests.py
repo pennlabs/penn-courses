@@ -133,7 +133,15 @@ class RequirementFilterTestCase(TestCase):
         req2.courses.add(course3)
 
         response = self.client.get('/courses/', {'requirements': 'REQ@SAS,REQ2@SEAS'})
-        self.assertEqual(2, len(response.data))
+        self.assertEqual(0, len(response.data))
+
+    def test_double_count_req(self):
+        req2 = Requirement(semester=TEST_SEMESTER, code='REQ2', school='SEAS')
+        req2.save()
+        req2.courses.add(self.math)
+        response = self.client.get('/courses/', {'requirements': 'REQ@SAS,REQ2@SEAS'})
+        self.assertEqual(1, len(response.data))
+        self.assertEqual('MATH-114', response.data[0]['id'])
 
 
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
