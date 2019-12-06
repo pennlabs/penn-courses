@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Manager, Prefetch, Q
 from rest_framework import serializers
 
-from courses.models import Course, Meeting, Requirement, Section, UserData, StatusUpdate
+from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserData
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -291,4 +291,3 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
     def setup_eager_loading(queryset):
         queryset = queryset.prefetch_related('section')
         return queryset
-

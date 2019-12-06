@@ -8,7 +8,6 @@ from django.urls import reverse
 from alert import tasks
 from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, get_course_and_section, register_for_course
 from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
-from courses.util import record_update, update_course_from_record
 from options.models import Option
 
 
@@ -511,24 +510,3 @@ class APIRegisterTestCase(TestCase):
         )
         self.assertEqual(401, res.status_code)
         self.assertEqual(0, Registration.objects.count())
-
-
-@override_settings(SWITCHBOARD_TEST_APP='pca')
-class CourseStatusUpdateTestCase(TestCase):
-    def setUp(self):
-        set_semester()
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
-
-    def test_update_status(self):
-        self.section.status = 'C'
-        self.section.save()
-        up = record_update(self.section.normalized,
-                           TEST_SEMESTER,
-                           'C',
-                           'O',
-                           True,
-                           'JSON')
-        up.save()
-        update_course_from_record(up)
-        _, section = get_course_and_section(self.section.normalized, TEST_SEMESTER)
-        self.assertEqual('O', section.status)
