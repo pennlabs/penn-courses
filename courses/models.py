@@ -5,6 +5,11 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+
+from django.utils.translation import ugettext as _
+
+import phonenumbers
 
 from options.models import get_value
 from plan.annotations import course_reviews, sections_with_reviews
@@ -349,7 +354,24 @@ class UserData(models.Model):
     """
     user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='user')
     email = models.EmailField(blank=True, null=True)
-    phone = models.CharField(blank=True, null=True, max_length=100)
+
+    def validate_phone(value):
+        try:
+            phone_number = phonenumbers.parse(value, 'US')
+            phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164)
+        except phonenumbers.phonenumberutil.NumberParseException:
+            raise ValidationError('Enter a valid phone number.')
+
+    phone = models.CharField(blank=True, null=True, max_length=100, validators=[validate_phone])
 
     def __str__(self):
         return 'Data from User: %s' % self.user
+
+    def save(self, *args, **kwargs):
+        super(UserData, self).save(*args, **kwargs)
+        if self.phone is not None:
+            try:
+                phone_number = phonenumbers.parse(self.phone, 'US')
+                self.phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164)
+            except phonenumbers.phonenumberutil.NumberParseException:
+                raise ValidationError('Invalid phone number (this should have been caught already)')

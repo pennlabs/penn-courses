@@ -4,7 +4,7 @@ from rest_framework import routers
 import courses.views
 from alert import views
 from alert.views import RegistrationViewSet
-from courses.views import UserDetailView
+from courses.views import UserDetailView, StatusUpdateView
 
 
 router = routers.DefaultRouter()
@@ -13,6 +13,7 @@ router.register(r'registrations', RegistrationViewSet, basename='registrations')
 urlpatterns = [
     path('', views.index, name='index'),
     path('courses/', courses.views.SectionList.as_view()),
+    path('statusupdate/<slug:full_code>/', StatusUpdateView.as_view()),
     path('submitted', views.register, name='register'),
     path('resubscribe/<int:id_>', views.resubscribe, name='resubscribe'),
     path('webhook', views.accept_webhook, name='webhook'),
