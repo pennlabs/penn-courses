@@ -5,13 +5,13 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from rest_framework.test import APIClient
 
 from alert import tasks
 from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, get_course_and_section, register_for_course
 from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
-from options.models import Option
-from rest_framework.test import APIClient
 from courses.util import create_mock_data
+from options.models import Option
 
 
 TEST_SEMESTER = '2019A'

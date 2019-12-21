@@ -1,15 +1,12 @@
 import math
 import uuid
 
+import phonenumbers
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from django.core.exceptions import ValidationError
-
-from django.utils.translation import ugettext as _
-
-import phonenumbers
 
 from options.models import get_value
 from plan.annotations import course_reviews, sections_with_reviews
@@ -357,8 +354,7 @@ class UserData(models.Model):
 
     def validate_phone(value):
         try:
-            phone_number = phonenumbers.parse(value, 'US')
-            phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164)
+            phonenumbers.parse(value, 'US')
         except phonenumbers.phonenumberutil.NumberParseException:
             raise ValidationError('Enter a valid phone number.')
 

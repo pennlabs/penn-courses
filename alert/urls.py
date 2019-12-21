@@ -4,7 +4,7 @@ from rest_framework import routers
 import courses.views
 from alert import views
 from alert.views import RegistrationViewSet
-from courses.views import UserDetailView, StatusUpdateView
+from courses.views import StatusUpdateView, UserDetailView
 
 
 router = routers.DefaultRouter()

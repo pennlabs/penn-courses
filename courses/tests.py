@@ -1,7 +1,7 @@
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
-from courses.models import Course, Department, Instructor, Requirement, Section, StatusUpdate
+from courses.models import Course, Department, Instructor, Requirement, Section
 from courses.util import (create_mock_data, get_course, get_course_and_section,
                           record_update, relocate_reqs_from_restrictions,
                           separate_course_code, set_crosslistings, update_course_from_record)

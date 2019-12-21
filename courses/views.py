@@ -2,8 +2,6 @@ from django.db.models import Q
 from rest_framework import filters, generics
 from rest_framework.permissions import IsAuthenticated
 
-import phonenumbers
-
 from courses.models import Course, Requirement, Section, StatusUpdate, UserData
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer, MiniSectionSerializer,
                                  RequirementListSerializer, StatusUpdateSerializer, UserDataSerializer)
