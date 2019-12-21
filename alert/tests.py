@@ -580,18 +580,18 @@ class UserDataTestCase(TestCase):
 
     def test_update_settings(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'mureytasroc@gmail.com',
+                                   json.dumps({'email': 'example@email.com',
                                                'phone': '9178286430'}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['email'], 'mureytasroc@gmail.com')
+        self.assertEqual(response.data['email'], 'example@email.com')
         self.assertEqual(response.data['phone'], '+19178286430')
         self.assertEqual(response.data['user']['username'], 'jacob')
         self.assertEqual(response.data['user']['first_name'], '')
         self.assertEqual(response.data['user']['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['email'], 'mureytasroc@gmail.com')
+        self.assertEqual(response.data['email'], 'example@email.com')
         self.assertEqual(response.data['phone'], '+19178286430')
         self.assertEqual(response.data['user']['username'], 'jacob')
         self.assertEqual(response.data['user']['first_name'], '')
@@ -599,85 +599,86 @@ class UserDataTestCase(TestCase):
 
     def test_update_settings_change_user(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'mureytasroc@gmail.com',
-                                               'phone': '9178286430',
-                                               'user': {'username':'jacob', 'first_name': 'NEW NAME', 'last_name':''}}),
+                                   json.dumps({'email': 'example@email.com',
+                                               'phone': '3131234567',
+                                               'user': {'username': 'jacob',
+                                                        'first_name': 'NEW NAME', 'last_name': ''}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['email'], 'mureytasroc@gmail.com')
-        self.assertEqual(response.data['phone'], '+19178286430')
+        self.assertEqual(response.data['email'], 'example@email.com')
+        self.assertEqual(response.data['phone'], '+13131234567')
         self.assertEqual(response.data['user']['username'], 'jacob')
         self.assertEqual(response.data['user']['first_name'], '')
         self.assertEqual(response.data['user']['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['email'], 'mureytasroc@gmail.com')
-        self.assertEqual(response.data['phone'], '+19178286430')
+        self.assertEqual(response.data['email'], 'example@email.com')
+        self.assertEqual(response.data['phone'], '+13131234567')
         self.assertEqual(response.data['user']['username'], 'jacob')
         self.assertEqual(response.data['user']['first_name'], '')
         self.assertEqual(response.data['user']['last_name'], '')
 
     def test_invalid_phone(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'mureytasroc@gmail.com',
+                                   json.dumps({'email': 'example@email.com',
                                                'phone': 'abc'}),
                                    content_type='application/json')
-        self.assertEqual(response.status_code, 400)
-        response = self.client.get('/api/settings/')
         self.assertEqual(400, response.status_code)
-        self.assertEqual(response.data['email'], '')
-        self.assertEqual(response.data['phone'], '')
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        response = self.client.get('/api/settings/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(None, response.data['email'])
+        self.assertEqual(None, response.data['phone'])
+        self.assertEqual('jacob', response.data['user']['username'])
+        self.assertEqual('', response.data['user']['first_name'])
+        self.assertEqual('', response.data['user']['last_name'])
 
     def test_invalid_email(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'mureytasroc@',
-                                               'phone': '9178286430'}),
+                                   json.dumps({'email': 'example@',
+                                               'phone': '3131234567'}),
                                    content_type='application/json')
-        self.assertEqual(response.status_code, 400)
-        response = self.client.get('/api/settings/')
         self.assertEqual(400, response.status_code)
-        self.assertEqual(response.data['email'], '')
-        self.assertEqual(response.data['phone'], '')
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        response = self.client.get('/api/settings/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(None, response.data['email'])
+        self.assertEqual(None, response.data['phone'])
+        self.assertEqual('jacob', response.data['user']['username'])
+        self.assertEqual('', response.data['user']['first_name'])
+        self.assertEqual('', response.data['user']['last_name'])
 
     def test_null_email(self):
         response = self.client.put('/api/settings/',
                                    json.dumps({'email': None,
-                                               'phone': '9178286430'}),
+                                               'phone': '3131234567'}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['email'], None)
-        self.assertEqual(response.data['phone'], '+19178286430')
+        self.assertEqual(response.data['phone'], '+13131234567')
         self.assertEqual(response.data['user']['username'], 'jacob')
         self.assertEqual(response.data['user']['first_name'], '')
         self.assertEqual(response.data['user']['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['email'], None)
-        self.assertEqual(response.data['phone'], '+19178286430')
+        self.assertEqual(response.data['phone'], '+13131234567')
         self.assertEqual(response.data['user']['username'], 'jacob')
         self.assertEqual(response.data['user']['first_name'], '')
         self.assertEqual(response.data['user']['last_name'], '')
 
     def test_null_phone(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'mureytasroc@gmail.com',
+                                   json.dumps({'email': 'example@email.com',
                                                'phone': None}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['email'], 'mureytasroc@gmail.com')
+        self.assertEqual(response.data['email'], 'example@email.com')
         self.assertEqual(response.data['phone'], None)
         self.assertEqual(response.data['user']['username'], 'jacob')
         self.assertEqual(response.data['user']['first_name'], '')
         self.assertEqual(response.data['user']['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['email'], 'mureytasroc@gmail.com')
+        self.assertEqual(response.data['email'], 'example@email.com')
         self.assertEqual(response.data['phone'], None)
         self.assertEqual(response.data['user']['username'], 'jacob')
         self.assertEqual(response.data['user']['first_name'], '')

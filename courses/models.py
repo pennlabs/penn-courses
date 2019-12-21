@@ -368,10 +368,10 @@ class UserData(models.Model):
         return 'Data from User: %s' % self.user
 
     def save(self, *args, **kwargs):
-        super(UserData, self).save(*args, **kwargs)
         if self.phone is not None:
             try:
                 phone_number = phonenumbers.parse(self.phone, 'US')
                 self.phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164)
             except phonenumbers.phonenumberutil.NumberParseException:
                 raise ValidationError('Invalid phone number (this should have been caught already)')
+        super(UserData, self).save(*args, **kwargs)
