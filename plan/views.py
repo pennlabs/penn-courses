@@ -1,5 +1,6 @@
 from django.db import IntegrityError
 from django.db.models import Prefetch
+from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -19,7 +20,7 @@ class CourseListSearch(CourseList):
     search_fields = ('full_code', 'title', 'sections__instructors__name')
 
     def get_queryset(self):
-        queryset = super().get_queryset().prefetch_related(Prefetch('sections'))
+        queryset = super().get_queryset()
 
         filters = {
             'requirements': requirement_filter,
@@ -57,7 +58,7 @@ def get_sections(data):
     return sections
 
 
-class ScheduleViewSet(viewsets.ModelViewSet):
+class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     serializer_class = ScheduleSerializer
     http_method_names = ['get', 'post', 'delete', 'put']
     permission_classes = [IsAuthenticated]
@@ -121,5 +122,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Schedule.objects.filter(person=self.request.user)
-        queryset = super().get_serializer_class().setup_eager_loading(queryset)
+        queryset = queryset.prefetch_related(
+            Prefetch('sections', Section.with_reviews.all()),
+        )
         return queryset
