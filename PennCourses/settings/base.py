@@ -85,15 +85,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'PennCourses.urls.base')
 
-FRONTEND_DIR = os.path.abspath(
-    os.path.join(BASE_DIR, '..', 'frontend'))
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            FRONTEND_DIR
-        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -105,9 +99,6 @@ TEMPLATES = [
         },
     },
 ]
-
-STATICFILES_DIRS = [os.path.join(FRONTEND_DIR, 'plan', 'build', 'static'),
-                    os.path.join(FRONTEND_DIR, 'plan', 'build', 'icons')]
 
 WSGI_APPLICATION = 'PennCourses.wsgi.application'
 
