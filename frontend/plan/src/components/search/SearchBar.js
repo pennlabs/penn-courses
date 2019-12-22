@@ -201,7 +201,7 @@ function SearchBar({
             <div className="level-left" style={{ maxWidth: "80vw" }}>
                 <div className="level-item">
                     <img
-                        src="/static/favicon.ico"
+                        src="/icons/favicon.ico"
                         alt=""
                         style={{
                             height: "2.5rem",

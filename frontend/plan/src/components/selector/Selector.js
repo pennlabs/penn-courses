@@ -45,8 +45,7 @@ function Selector(props) {
             maxWidth: "45vh",
         }}
         >
-            <img src="/static/empty-state-search.svg" />
-
+            <img src="/icons/empty-state-search.svg" />
             <h3 style={{
                 fontWeight: "bold",
                 marginBottom: "0.5rem",
