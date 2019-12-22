@@ -14,4 +14,4 @@ PennCourses/settings/static/
 *.sqlite3
 *-test.json
 celerybeat-schedule
-pcr-backup
+pcr-backup*
