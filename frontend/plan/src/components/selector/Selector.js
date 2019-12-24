@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
@@ -24,6 +24,9 @@ function Selector(props) {
         isSearchingCourseInfo,
         sortMode,
     } = props;
+
+    const [scrollPos, setScrollPos] = useState(0);
+
     let element = (
         <div style={{
             fontSize: "0.8em",
@@ -51,6 +54,8 @@ function Selector(props) {
                 isLoading={isLoadingCourseInfo}
                 courses={courses}
                 getCourse={getCourse}
+                scrollPos={scrollPos}
+                setScrollPos={setScrollPos}
             />
         );
     }
