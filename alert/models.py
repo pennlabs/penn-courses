@@ -131,15 +131,15 @@ class Registration(models.Model):
 
 def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, api_key=None):
     if not email_address and not phone:
-        return RegStatus.NO_CONTACT_INFO
+        return RegStatus.NO_CONTACT_INFO, None
     try:
         course, section = get_course_and_section(course_code, get_current_semester())
     except Course.DoesNotExist:
-        return RegStatus.COURSE_NOT_FOUND
+        return RegStatus.COURSE_NOT_FOUND, None
     except Section.DoesNotExist:
-        return RegStatus.COURSE_NOT_FOUND
+        return RegStatus.COURSE_NOT_FOUND, None
     except ValueError:
-        return RegStatus.COURSE_NOT_FOUND
+        return RegStatus.COURSE_NOT_FOUND, None
 
     registration = Registration(section=section, email=email_address, phone=phone, source=source)
     registration.validate_phone()
@@ -148,8 +148,8 @@ def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, ap
                                    email=email_address,
                                    phone=registration.phone,
                                    notification_sent=False).exists():
-        return RegStatus.OPEN_REG_EXISTS
+        return RegStatus.OPEN_REG_EXISTS, section.full_code
 
     registration.api_key = api_key
     registration.save()
-    return RegStatus.SUCCESS
+    return RegStatus.SUCCESS, section.full_code
