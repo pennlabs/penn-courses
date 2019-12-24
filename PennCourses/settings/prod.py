@@ -37,8 +37,7 @@ HOST_TO_APP = {
     'penncoursesearch.com': 'pcp-construction',
     'www.penncoursesearch.com': 'pcp-construction',
 
-    'penncoursereview.com': 'pcr',
-    'www.penncoursereview.com': 'pcr'
+    'api.penncourses.org': 'api',
 }
 
 if len(ALLOWED_HOSTS) == 0:
