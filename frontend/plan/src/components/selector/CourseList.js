@@ -58,10 +58,9 @@ export default class CourseList extends React.Component {
             courses,
             getCourse,
             sortMode,
-            hide,
         } = this.props;
         return (
-            <div className={hide ? "scroll-container blarg" : "scroll-container"}>
+            <div className="scroll-container">
                 <div style={{
                     display: "flex",
                     flexDirection: "row",
@@ -102,7 +101,6 @@ CourseList.propTypes = {
     courses: PropTypes.arrayOf(PropTypes.object).isRequired,
     getCourse: PropTypes.func.isRequired,
     sortMode: PropTypes.string.isRequired,
-    hide: PropTypes.bool,
     scrollPos: PropTypes.number,
     setScrollPos: PropTypes.func,
 };
