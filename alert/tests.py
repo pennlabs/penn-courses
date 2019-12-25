@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from alert import tasks
 from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, register_for_course
 from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
-from courses.util import create_mock_data, get_or_create_course_and_section
+from courses.util import create_mock_data, get_or_create_course_and_section, record_update, update_course_from_record
 from options.models import Option
 
 
