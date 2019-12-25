@@ -11,7 +11,7 @@ def requirement_filter(queryset, req_ids, semester):
             requirement = Requirement.objects.get(semester=semester, code=code, school=school)
         except Requirement.DoesNotExist:
             continue
-        query |= Q(id__in=requirement.satisfying_courses.all())
+        query &= Q(id__in=requirement.satisfying_courses.all())
     queryset = queryset.filter(query)
 
     return queryset

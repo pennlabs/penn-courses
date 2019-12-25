@@ -15,9 +15,10 @@ class InstructorAdmin(admin.ModelAdmin):
 
 
 class CourseAdmin(admin.ModelAdmin):
-    search_fields = ('department', 'code', 'semester')
+    search_fields = ('full_code', 'department__code', 'code', 'semester')
     autocomplete_fields = ('department', 'primary_listing')
     readonly_fields = ('crosslistings', )
+    list_filter = ('semester', )
 
     list_select_related = (
         'department',
@@ -30,9 +31,11 @@ class CourseAdmin(admin.ModelAdmin):
 
 
 class SectionAdmin(admin.ModelAdmin):
-    search_fields = ('course__department__code', 'course__code', 'code', 'course__semester')
+    search_fields = ('full_code', 'course__department__code', 'course__code', 'code', 'course__semester')
     readonly_fields = ('course_link',)
     autocomplete_fields = ('instructors', 'course', 'associated_sections', )
+    list_filter = ('course__semester', )
+    list_display = ['full_code', 'semester', 'status']
 
     list_select_related = (
         'course',
@@ -61,6 +64,11 @@ class RequirementAdmin(admin.ModelAdmin):
 class StatusUpdateAdmin(admin.ModelAdmin):
     autocomplete_fields = ('section', )
     readonly_fields = ('created_at', )
+    list_select_related = [
+        'section',
+        'section__course',
+        'section__course__department'
+    ]
 
 
 class UserDataAdmin(admin.ModelAdmin):

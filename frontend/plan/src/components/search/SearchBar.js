@@ -140,7 +140,21 @@ function SearchBar({
                     checkboxProperty="cu"
                     startSearch={conditionalStartSearch}
                 />
-
+            </DropdownButton>
+            <DropdownButton
+                title="Type"
+                filterData={filterData.activity}
+                defaultFilter={defaultFilters.filterData.activity}
+                isDisabled={isLoading}
+                clearFilter={clearFilterSearch("activity")}
+            >
+                <CheckboxFilter
+                    filterData={filterData}
+                    updateCheckboxFilter={updateCheckboxFilter}
+                    isDisabled={isLoading}
+                    checkboxProperty="activity"
+                    startSearch={conditionalStartSearch}
+                />
             </DropdownButton>
         </React.Fragment>
     );

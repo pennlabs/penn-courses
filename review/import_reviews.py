@@ -6,7 +6,7 @@ import requests
 from django.conf import settings
 
 from courses.models import Instructor
-from courses.util import get_course_and_section
+from courses.util import get_or_create_course_and_section
 from review.models import Review
 
 
@@ -14,7 +14,7 @@ token = settings.PCR_TOKEN
 base_url = 'https://api.penncoursereview.com/v1'
 
 
-def extract_reviews(data, department):
+def extract_reviews(data, department=None):
     bit_re = re.compile(r'(^r)?([A-Z])')
 
     # For example, transform 'rCourseQuality' -> 'course_quality'.
@@ -22,12 +22,13 @@ def extract_reviews(data, department):
 
     result = []
     for rev in data['values']:
-        result.append({
-            'instructor': rev['instructor']['name'],
-            'section': [sec for sec in rev['section']['aliases'] if sec.startswith(department)][0],
-            'semester': rev['section']['semester'],
-            'ratings': dict([(pythonify_field(k), v) for k, v in rev['ratings'].items()])
-        })
+        for sec in rev['section']['aliases']:
+            result.append({
+                'instructor': rev['instructor']['name'],
+                'section': sec,
+                'semester': rev['section']['semester'],
+                'ratings': dict([(pythonify_field(k), v) for k, v in rev['ratings'].items()])
+            })
     return result
 
 
@@ -39,7 +40,7 @@ def save_reviews(revs, print_every=20):
             instr = Instructor.objects.get(name__icontains=rev['instructor'])
         else:
             instr = Instructor.objects.create(name=rev['instructor'].title())
-        _, sec = get_course_and_section(rev['section'], rev['semester'])
+        _, sec = get_or_create_course_and_section(rev['section'], rev['semester'])
         sec.instructors.add(instr)
         review, _ = Review.objects.get_or_create(instructor=instr,
                                                  section=sec)
@@ -65,13 +66,27 @@ def get_reviews_for_department(dept):
         print(r.text)
 
 
+def get_reviews_for_semester(sem):
+    r = requests.get(base_url + f'/semesters/{sem}/reviews/', {'token': token})
+    if r.status_code == 200:
+        return extract_reviews(r.json()['result'])
+    else:
+        print(r.text)
+
+
 def save_reviews_for_department(dept, filename):
     dept_reviews = get_reviews_for_department(dept)
     with open(filename, 'w') as f:
         json.dump(dept_reviews, f)
 
 
-def load_reviews_for_department(filename):
+def save_reviews_for_semester(sem, filename):
+    sem_reviews = get_reviews_for_semester(sem)
+    with open(filename, 'w') as f:
+        json.dump(sem_reviews, f)
+
+
+def load_reviews_from_file(filename):
     with open(filename) as f:
         save_reviews(json.load(f))
 

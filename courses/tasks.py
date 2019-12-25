@@ -8,7 +8,7 @@ from django.utils.timezone import make_aware
 
 from courses import registrar
 from courses.models import Course, Department, Requirement, Section, StatusUpdate
-from courses.util import upsert_course_from_opendata
+from courses.util import get_course_and_section, upsert_course_from_opendata
 from options.models import get_value
 
 
@@ -33,6 +33,25 @@ def load_courses(query='', semester=None):
         i += 1
 
     return {'result': 'succeeded', 'name': 'courses.tasks.load_courses'}
+
+
+@shared_task(name='courses.tasks.set_all_status')
+def set_all_status(semester=None):
+    if semester is None:
+        semester = get_value('SEMESTER')
+    statuses = registrar.get_all_course_status(semester)
+    for status in statuses:
+        if 'section_id_normalized' not in status:
+            continue
+
+        try:
+            _, section = get_course_and_section(status['section_id_normalized'], semester)
+        except Section.DoesNotExist:
+            continue
+        except Course.DoesNotExist:
+            continue
+        section.status = status['status']
+        section.save()
 
 
 def load_requirements(school=None, semester=None, requirements=None):

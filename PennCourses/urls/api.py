@@ -4,5 +4,7 @@ from PennCourses.urls.base import urlpatterns
 
 
 urlpatterns = [
-    path('', include('courses.urls')),
+    path('plan/', include('plan.urls')),
+    path('alert/', include('alert.urls')),
+    path('courses/', include('courses.urls'))
 ] + urlpatterns

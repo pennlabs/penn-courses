@@ -8,9 +8,9 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from alert import tasks
-from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, get_course_and_section, register_for_course
+from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, register_for_course
 from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
-from courses.util import create_mock_data
+from courses.util import create_mock_data, get_or_create_course_and_section
 from options.models import Option
 
 
@@ -31,7 +31,7 @@ def set_semester():
 class SendAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
-        course, section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
+        course, section = get_or_create_course_and_section('CIS-160-001', TEST_SEMESTER)
         self.r = Registration(email='yo@example.com',
                               phone='+15555555555',
                               section=section)
@@ -66,12 +66,12 @@ class RegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
         self.sections = []
-        self.sections.append(get_course_and_section('CIS-160-001', TEST_SEMESTER)[1])
-        self.sections.append(get_course_and_section('CIS-160-002', TEST_SEMESTER)[1])
-        self.sections.append(get_course_and_section('CIS-120-001', TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section('CIS-160-001', TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section('CIS-160-002', TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section('CIS-120-001', TEST_SEMESTER)[1])
 
     def test_successful_registration(self):
-        res = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
         r = Registration.objects.get()
@@ -82,46 +82,64 @@ class RegisterTestCase(TestCase):
         self.assertEqual(SOURCE_PCA, r.source)
         self.assertIsNone(r.api_key)
 
+    def test_nonnormalized_course_code(self):
+        res, norm = register_for_course('cis160001', 'e@example.com', '+15555555555')
+        self.assertEqual(RegStatus.SUCCESS, res)
+        self.assertEqual('CIS-160-001', norm)
+        self.assertEqual(1, len(Registration.objects.all()))
+        r = Registration.objects.get()
+        self.assertEqual('CIS-160-001', r.section.full_code)
+
     def test_duplicate_registration(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
         r1.save()
-        res = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.OPEN_REG_EXISTS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
     def test_reregister(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0], notification_sent=True)
         r1.save()
-        res = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_sameuser_diffsections(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
         r1.save()
-        res = register_for_course(self.sections[1].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[1].normalized, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_sameuser_diffcourse(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
         r1.save()
-        res = register_for_course(self.sections[2].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[2].normalized, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_justemail(self):
-        res = register_for_course(self.sections[0].normalized, 'e@example.com', None)
+        res, norm = register_for_course(self.sections[0].normalized, 'e@example.com', None)
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
+    def test_phony_course(self):
+        res, norm = register_for_course('PHONY-100-001', 'e@example.com', '+15555555555')
+        self.assertEqual(RegStatus.COURSE_NOT_FOUND, res)
+        self.assertEqual(0, Registration.objects.count())
+
+    def test_invalid_course(self):
+        res, norm = register_for_course('econ 0-0-1', 'e@example.com', '+15555555555')
+        self.assertEqual(RegStatus.COURSE_NOT_FOUND, res)
+        self.assertEqual(0, Registration.objects.count())
+
     def test_justphone(self):
-        res = register_for_course(self.sections[0].normalized, None, '5555555555')
+        res, norm = register_for_course(self.sections[0].normalized, None, '5555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
     def test_nocontact(self):
-        res = register_for_course(self.sections[0].normalized, None, None)
+        res, norm = register_for_course(self.sections[0].normalized, None, None)
         self.assertEqual(RegStatus.NO_CONTACT_INFO, res)
         self.assertEqual(0, len(Registration.objects.all()))
 
@@ -130,7 +148,7 @@ class RegisterTestCase(TestCase):
 class ResubscribeTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
+        _, self.section = get_or_create_course_and_section('CIS-160-001', TEST_SEMESTER)
         self.base_reg = Registration(email='e@example.com', phone='+15555555555', section=self.section)
         self.base_reg.save()
 
@@ -199,7 +217,7 @@ class ResubscribeTestCase(TestCase):
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section = get_course_and_section('CIS-160-001', TEST_SEMESTER)
+        _, self.section = get_or_create_course_and_section('CIS-160-001', TEST_SEMESTER)
         self.r1 = Registration(email='e@example.com', phone='+15555555555', section=self.section)
         self.r2 = Registration(email='f@example.com', phone='+15555555556', section=self.section)
         self.r3 = Registration(email='g@example.com', phone='+15555555557', section=self.section)
@@ -218,7 +236,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
             self.assertTrue(id_ in expected_ids)
 
     def test_collect_none(self):
-        get_course_and_section('CIS-121-001', TEST_SEMESTER)
+        get_or_create_course_and_section('CIS-121-001', TEST_SEMESTER)
         result = tasks.get_active_registrations('CIS-121-001', TEST_SEMESTER)
         self.assertTrue(len(result) == 0)
 
@@ -431,7 +449,7 @@ class APIRegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
         self.client = Client()
-        self.course, self.section = get_course_and_section('CIS-120-001', TEST_SEMESTER)
+        self.course, self.section = get_or_create_course_and_section('CIS-120-001', TEST_SEMESTER)
         self.permission = APIPrivilege.objects.create(code=PCA_REGISTRATION)
         self.key = APIKey.objects.get_or_create(email='contact@penncoursenotify.com')[0]
         self.key.privileges.add(self.permission)
@@ -518,6 +536,7 @@ class APIRegisterTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pca')
 class StatusUpdateTest(TestCase):
     def setUp(self):
+        set_semester()
         _, cis120_section = create_mock_data('CIS-120-001', TEST_SEMESTER)
         _, cis160_section = create_mock_data('CIS-160-001', TEST_SEMESTER)
         self.statusUpdates = [StatusUpdate(section=cis120_section,
