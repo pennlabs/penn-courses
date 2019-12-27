@@ -11,6 +11,11 @@ from django.utils import timezone
 from options.models import get_value
 from plan.annotations import course_reviews, sections_with_reviews
 
+from django.dispatch import receiver
+from django.contrib.auth.models import User
+from django.db import models
+from django.db.models.signals import post_save
+
 
 def get_current_semester():
     return get_value('SEMESTER', '2019C')
@@ -349,12 +354,13 @@ class APIKey(models.Model):
     privileges = models.ManyToManyField(APIPrivilege, related_name='key_set', blank=True)
 
 
-class UserData(models.Model):
+class UserProfile(models.Model):
     """
     A model that stores all user data from PCX users
     """
-    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='user')
+    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='profile')
     email = models.EmailField(blank=True, null=True)
+    # phone field defined underneath validate_phone function below
 
     def validate_phone(value):
         try:
@@ -374,4 +380,11 @@ class UserData(models.Model):
                 self.phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164)
             except phonenumbers.phonenumberutil.NumberParseException:
                 raise ValidationError('Invalid phone number (this should have been caught already)')
-        super(UserData, self).save(*args, **kwargs)
+        super(UserProfile, self).save(*args, **kwargs)
+
+
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+    instance.profile.save()

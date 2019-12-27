@@ -585,7 +585,7 @@ class StatusUpdateTest(TestCase):
 
 
 @override_settings(SWITCHBOARD_TEST_APP='pca')
-class UserDataTestCase(TestCase):
+class UserDetailTestCase(TestCase):
     def setUp(self):
         User.objects.create_user(username='jacob',
                                  email='jacob@example.com',
@@ -721,3 +721,9 @@ class UserDataTestCase(TestCase):
         self.assertEqual(response.data['user']['username'], 'jacob')
         self.assertEqual(response.data['user']['first_name'], '')
         self.assertEqual(response.data['user']['last_name'], '')
+
+    def test_multiple_users(self):
+        User.objects.create_user(username='murey',
+                                 email='murey@example.com',
+                                 password='top_secret')
+

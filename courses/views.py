@@ -3,9 +3,9 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
-from courses.models import Course, Requirement, Section, StatusUpdate, UserData
+from courses.models import Course, Requirement, Section, StatusUpdate, UserProfile
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer, MiniSectionSerializer,
-                                 RequirementListSerializer, StatusUpdateSerializer, UserDataSerializer)
+                                 RequirementListSerializer, StatusUpdateSerializer, UserProfileSerializer)
 from options.models import get_value
 from plan.search import TypedSectionSearchBackend
 
@@ -81,15 +81,15 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
     queryset = Requirement.objects.all()
 
 
-class UserDetailView(generics.RetrieveAPIView, generics.UpdateAPIView):
-    serializer_class = UserDataSerializer
+class UserProfileView(generics.RetrieveAPIView, generics.UpdateAPIView):
+    serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return UserData.objects.all()
+        return UserProfile.objects.all()
 
     def get_object(self):
-        ob, _ = UserData.objects.get_or_create(user=self.request.user)
+        ob, _ = UserProfile.objects.get_or_create(user=self.request.user)
         return ob
 
 
@@ -99,6 +99,4 @@ class StatusUpdateView(generics.ListAPIView):
     lookup_field = 'full_code'
 
     def get_queryset(self):
-        queryset = StatusUpdate.objects.filter(Q(section__course__full_code=self.kwargs['full_code']))
-        queryset = super().get_serializer_class().setup_eager_loading(queryset)
-        return queryset
+        return StatusUpdate.objects.filter(Q(section__course__full_code=self.kwargs['full_code']))

@@ -3,11 +3,11 @@ from rest_framework import serializers
 
 from alert.models import Registration
 from courses.models import Section
-from courses.serializers import SectionDetailSerializer
+from courses.serializers import MiniSectionSerializer
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    section = SectionDetailSerializer(read_only=True)
+    section = MiniSectionSerializer(read_only=True)
 
     class Meta:
         model = Registration

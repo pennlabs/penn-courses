@@ -244,6 +244,4 @@ class RegistrationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Registration.objects.filter(user=self.request.user)
-        queryset = super().get_serializer_class().setup_eager_loading(queryset)
-        return queryset
+        return Registration.objects.filter(user=self.request.user)

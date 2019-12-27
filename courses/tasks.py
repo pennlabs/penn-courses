@@ -1,13 +1,9 @@
-import csv
 import logging
-from datetime import datetime
 
-import pytz
 from celery import shared_task
-from django.utils.timezone import make_aware
 
 from courses import registrar
-from courses.models import Course, Department, Requirement, Section, StatusUpdate
+from courses.models import Course, Department, Requirement, Section
 from courses.util import get_course_and_section, upsert_course_from_opendata
 from options.models import get_value
 
@@ -122,34 +118,3 @@ def semester_sync(query='', semester=None):
     load_requirements(school='SEAS', semester=semester)
     load_requirements(school='WH', semester=semester)
 
-
-def load_course_status_history(full_path):
-    row_count = 0
-    with open(full_path, newline='') as history_file:
-        history_reader = csv.reader(history_file, delimiter=',', quotechar='|')
-        row_count = sum(1 for row in history_reader)
-    with open(full_path, newline='') as history_file:
-        print(f'beginning to load status history from {full_path}')
-        history_reader = csv.reader(history_file, delimiter=',', quotechar='|')
-        i = 1
-        iter_reader = iter(history_reader)
-        next(iter_reader)
-        for row in iter_reader:
-            i += 1
-            if i % 100 == 1:
-                print(f'loading status history... ({i} / {row_count})')
-            section_code = row[4]+'-'+row[5]+'-'+row[6]
-            row[3] += ' UTC'
-            row[3] = datetime.strptime(row[3], '%Y-%m-%d %H:%M:%S.%f %Z')
-            row[3] = make_aware(row[3], timezone=pytz.utc, is_dst=None)
-            if row[0] != 'O' and row[0] != 'C' and row[0] != 'X':
-                row[0] = ''
-            if Section.objects.filter(full_code=section_code, course__semester=get_value('SEMESTER', None)).exists():
-                sec = Section.objects.get(full_code=(row[4] + '-' + row[5] + '-' + row[6]),
-                                          course__semester=get_value('SEMESTER', None))
-                if not StatusUpdate.objects.filter(section=sec, old_status=row[0], new_status=row[1],
-                                                   alert_sent=row[2], created_at=row[3]).exists():
-                    status_update = StatusUpdate(section=sec, old_status=row[0], new_status=row[1],
-                                                 alert_sent=row[2], created_at=row[3])
-                    status_update.save()
-    print(f'finished loading status history from {full_path}... processed {row_count} rows')

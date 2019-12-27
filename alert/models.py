@@ -10,7 +10,7 @@ from django.utils import timezone
 from shortener.models import Url
 
 from alert.alerts import Email, Text
-from courses.models import Course, Section, UserData, get_current_semester
+from courses.models import Course, Section, UserProfile, get_current_semester
 from courses.util import get_course_and_section
 
 
@@ -43,6 +43,7 @@ class Registration(models.Model):
     api_key = models.ForeignKey('courses.APIKey', blank=True, null=True, on_delete=models.CASCADE)
 
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=True, null=True)
+    # going forward, email and phone will be None and contact information can be found in the user's UserData object
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(blank=True, null=True, max_length=100)
     # section that the user registered to be notified about
@@ -90,12 +91,14 @@ class Registration(models.Model):
         self.validate_phone()
         if self.user is not None:
             if self.email is not None:
-                user_data, _ = UserData.objects.get_or_create(user=self.user)
+                user_data, _ = UserProfile.objects.get_or_create(user=self.user)
                 user_data.email = self.email
+                user_data.save()
                 self.email = None
             if self.phone is not None:
-                user_data, _ = UserData.objects.get_or_create(user=self.user)
+                user_data, _ = UserProfile.objects.get_or_create(user=self.user)
                 user_data.phone = self.phone
+                user_data.save()
                 self.phone = None
         super().save(*args, **kwargs)
 
@@ -114,7 +117,7 @@ class Registration(models.Model):
         return '{}/s/{}'.format(settings.PCA_URL, url.short_id)
 
     def alert(self, forced=False, sent_by=''):
-        if forced or not (self.notification_sent or self.muted or self.deleted):
+        if forced or self.is_active:
             text_result = Text(self).send_alert()
             email_result = Email(self).send_alert()
             logging.debug('NOTIFICATION SENT FOR ' + self.__str__())
@@ -122,7 +125,9 @@ class Registration(models.Model):
             self.notification_sent_at = timezone.now()
             self.notification_sent_by = sent_by
             self.save()
-            if not self.auto_mute:
+            if self.auto_mute:
+                self.muted = True
+            else:
                 self.resubscribe()
             return email_result is not None and text_result is not None  # True if no error in email/text.
         else:
@@ -180,6 +185,3 @@ def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, ap
     registration.save()
     return RegStatus.SUCCESS, section.full_code
 
-
-def get_current_undeleted_notifications():  # will return muted and unmuted notifications which are not deleted or sent
-    return Registration.objects.filter(deleted=False, notification_sent=False)

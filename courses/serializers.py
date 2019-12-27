@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Manager
 from rest_framework import serializers
 
-from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserData
+from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserProfile
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -214,11 +214,11 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
-class UserDataSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
 
     class Meta:
-        model = UserData
+        model = UserProfile
         fields = [
             'email',
             'phone',
@@ -231,9 +231,5 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StatusUpdate
-        fields = ['section', 'old_status', 'new_status', 'created_at', 'alert_sent', 'request_body']
+        fields = ['section', 'old_status', 'new_status', 'created_at', 'alert_sent']
 
-    @staticmethod
-    def setup_eager_loading(queryset):
-        queryset = queryset.prefetch_related('section')
-        return queryset

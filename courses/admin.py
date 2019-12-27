@@ -3,7 +3,31 @@ from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
 from courses.models import (APIKey, APIPrivilege, Building, Course, Department, Instructor, Meeting,
-                            Requirement, Restriction, Room, Section, StatusUpdate, UserData)
+                            Requirement, Restriction, Room, Section, StatusUpdate, UserProfile)
+
+
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
+
+from .models import UserProfile
+
+
+# User Profile: https://github.com/sibtc/django-admin-user-profile
+class ProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = 'Profile'
+    fk_name = 'user'
+
+
+class CustomUserAdmin(UserAdmin):
+    inlines = (ProfileInline, )
+
+    def get_inline_instances(self, request, obj=None):
+        if not obj:
+            return list()
+        return super(CustomUserAdmin, self).get_inline_instances(request, obj)
 
 
 class DepartmentAdmin(admin.ModelAdmin):
@@ -70,11 +94,11 @@ class StatusUpdateAdmin(admin.ModelAdmin):
         'section__course__department'
     ]
 
-
+'''
 class UserDataAdmin(admin.ModelAdmin):
     search_fields = ('user', 'email', 'phone', )
     autocomplete_fields = ('user', )
-
+'''
 
 admin.site.register(APIKey)
 admin.site.register(APIPrivilege)
@@ -88,4 +112,7 @@ admin.site.register(Restriction)
 admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Meeting, MeetingAdmin)
 admin.site.register(StatusUpdate, StatusUpdateAdmin)
-admin.site.register(UserData, UserDataAdmin)
+
+# https://github.com/sibtc/django-admin-user-profile
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
