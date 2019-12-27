@@ -45,7 +45,8 @@ def get_sections(data):
         raw_sections = data.get('meetings')
     elif 'sections' in data:
         raw_sections = data.get('sections')
-    else: return None
+    else:
+        return None
     sections = []
     for s in raw_sections:
         _, section = get_or_create_course_and_section(s.get('id'),
