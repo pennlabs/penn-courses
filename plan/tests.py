@@ -346,7 +346,7 @@ class ScheduleTest(TestCase):
                                     json.dumps({'id': str(self.s.id),
                                                 'semester': TEST_SEMESTER,
                                                 'name': 'My Test Schedule',
-                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                'sections': [{'id': 'CIS-120-001', 'semester': TEST_SEMESTER},
                                                              {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 202)
@@ -355,7 +355,7 @@ class ScheduleTest(TestCase):
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['name'], 'My Test Schedule')
         self.assertEqual(len(response.data[0]['sections']), 2)
-        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-121-001')
+        self.assertEqual(response.data[0]['sections'][0]['id'], 'CIS-120-001')
 
     def test_delete(self):
         response = self.client.delete('/schedules/'+str(self.s.id)+'/')
