@@ -45,15 +45,13 @@ def get_sections(data):
         sections = []
         for s in data.get('meetings'):
             _, section = get_or_create_course_and_section(s.get('id'),
-                                                          s.get('semester'),
-                                                          section_manager=Section.with_reviews)
+                                                          s.get('semester'))
             sections.append(section)
     elif 'sections' in data:
         sections = []
         for s in data.get('sections'):
             _, section = get_or_create_course_and_section(s.get('id'),
-                                                          s.get('semester'),
-                                                          section_manager=Section.with_reviews)
+                                                          s.get('semester'))
             sections.append(section)
     return sections
 
