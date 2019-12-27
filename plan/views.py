@@ -40,19 +40,17 @@ class CourseListSearch(CourseList):
 
 
 def get_sections(data):
-    sections = None
+    raw_sections = []
     if 'meetings' in data:
-        sections = []
-        for s in data.get('meetings'):
-            _, section = get_or_create_course_and_section(s.get('id'),
-                                                          s.get('semester'))
-            sections.append(section)
+        raw_sections = data.get('meetings')
     elif 'sections' in data:
-        sections = []
-        for s in data.get('sections'):
-            _, section = get_or_create_course_and_section(s.get('id'),
-                                                          s.get('semester'))
-            sections.append(section)
+        raw_sections = data.get('sections')
+    else: return None
+    sections = []
+    for s in raw_sections:
+        _, section = get_or_create_course_and_section(s.get('id'),
+                                                      s.get('semester'))
+        sections.append(section)
     return sections
 
 
