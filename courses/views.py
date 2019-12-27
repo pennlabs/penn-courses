@@ -1,6 +1,8 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics
+from rest_framework import filters, generics
+from rest_framework.permissions import IsAuthenticated
 
 from courses.models import Course, Requirement, Section
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
