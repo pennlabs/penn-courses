@@ -243,15 +243,13 @@ class ScheduleTest(TestCase):
         print(serialized_section.get('course_quality'),
                          get_average_reviews(reviews, 'course_quality'))'''
         if consider_review_data:
-            self.assertTrue(math.isclose(serialized_section.get('course_quality'),
-                             get_average_reviews(reviews, 'course_quality')))
-            self.assertTrue(math.isclose(serialized_section.get('instructor_quality'),
-                                         get_average_reviews(reviews, 'instructor_quality')))
-            self.assertTrue(math.isclose(serialized_section.get('difficulty'),
-                                         get_average_reviews(reviews, 'difficulty')))
-            self.assertTrue(math.isclose(serialized_section.get('work_required'),
-                                         get_average_reviews(reviews, 'work_required')))
-        self.assertTrue(False) # remove above print statements, uncomment review data tests
+            fields = ['course_quality', 'instructor_quality', 'difficulty', 'work_required']
+            for field in fields:
+                expected = get_average_reviews(reviews, field)
+                actual = serialized_section.get(field)
+                self.assertAlmostEqual(expected, actual, 3)
+
+        # self.assertTrue(False) # remove above print statements, uncomment review data tests
 
     def test_get_schedule(self):
         response = self.client.get('/schedules/')

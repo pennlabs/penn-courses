@@ -12,9 +12,6 @@ from django.db.models import Avg, F, FloatField, OuterRef, Subquery
 from review.models import ReviewBit
 
 
-
-
-
 def get_current_semester():
     return get_value('SEMESTER', '2019C')
 
