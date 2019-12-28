@@ -27,10 +27,10 @@ class Schedule(models.Model):
         unique_together = (('name', 'semester', 'person'), )
 
     def save(self, *args, **kwargs):
-        super(Schedule, self).save(*args, **kwargs)
         for s in self.sections.all():
             if self.semester != s.course.semester:
                 raise ValidationError('Sections do not match semester')
+        super(Schedule, self).save(*args, **kwargs)
 
     def __str__(self):
         return 'User: %s, Schedule ID: %s' % (self.person, self.id)

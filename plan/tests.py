@@ -218,15 +218,14 @@ class CourseReviewAverageTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
 class ScheduleTest(TestCase):
     def setUp(self):
-        _, self.cis120, self.cis120_reviews = create_mock_data_with_reviews('CIS-120-001', TEST_SEMESTER, 2)
+        # _, self.cis120, self.cis120_reviews = create_mock_data_with_reviews('CIS-120-001', TEST_SEMESTER, 2)
         self.s = Schedule(person=User.objects.create_user(username='jacob',
                                                           email='jacob@example.com',
                                                           password='top_secret'),
                           semester=TEST_SEMESTER,
-                          name='My Test Schedule',
-                          )
+                          name='My Test Schedule')
         self.s.save()
-        self.s.sections.set([self.cis120])
+        # self.s.sections.set([self.cis120])
         self.client = APIClient()
         self.client.login(username='jacob', password='top_secret')
 
@@ -236,6 +235,7 @@ class ScheduleTest(TestCase):
         self.assertEqual(section.activity, serialized_section.get('activity'))
         self.assertEqual(section.credits, serialized_section.get('credits'))
         self.assertEqual(section.semester, serialized_section.get('semester'))
+        print(reviews)
         print(serialized_section.get('course_quality'),
                          get_average_reviews(reviews, 'course_quality'))
         self.assertTrue(False)
