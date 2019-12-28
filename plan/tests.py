@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 import math
 
-from courses.models import Instructor, Requirement
+from courses.models import Instructor, Requirement, Section
 from courses.util import create_mock_data, create_mock_data_with_reviews, get_average_reviews
 from options.models import Option
 from plan.models import Schedule
@@ -217,14 +217,14 @@ class CourseReviewAverageTestCase(TestCase):
 @override_settings(SWITCHBOARD_TEST_APP='pcp')
 class ScheduleTest(TestCase):
     def setUp(self):
-        # _, self.cis120, self.cis120_reviews = create_mock_data_with_reviews('CIS-120-001', TEST_SEMESTER, 2)
+        _, self.cis120, self.cis120_reviews = create_mock_data_with_reviews('CIS-120-001', TEST_SEMESTER, 2)
         self.s = Schedule(person=User.objects.create_user(username='jacob',
                                                           email='jacob@example.com',
                                                           password='top_secret'),
                           semester=TEST_SEMESTER,
                           name='My Test Schedule')
         self.s.save()
-        # self.s.sections.set([self.cis120])
+        self.s.sections.set([self.cis120])
         self.client = APIClient()
         self.client.login(username='jacob', password='top_secret')
 
@@ -234,20 +234,20 @@ class ScheduleTest(TestCase):
         self.assertEqual(section.activity, serialized_section.get('activity'))
         self.assertEqual(section.credits, serialized_section.get('credits'))
         self.assertEqual(section.semester, serialized_section.get('semester'))
-        print(reviews)
+        print(reviews[0].reviewbit_set.get(field='course_quality').score,
+              reviews[1].reviewbit_set.get(field='course_quality').score)
         print(serialized_section.get('course_quality'),
                          get_average_reviews(reviews, 'course_quality'))
-        self.assertTrue(False)
-        (not consider_review_data or (
-            math.isclose(serialized_section.get('course_quality'),
-                         get_average_reviews(reviews, 'course_quality')) and
-            math.isclose(serialized_section.get('instructor_quality'),
-                         get_average_reviews(reviews, 'instructor_quality')) and
-            math.isclose(serialized_section.get('difficulty'),
-                         get_average_reviews(reviews, 'difficulty')) and
-            math.isclose(serialized_section.get('work_required'),
-                         get_average_reviews(reviews, 'work_required'))
-        ))
+        if consider_review_data:
+            self.assertTrue(math.isclose(serialized_section.get('course_quality'),
+                             get_average_reviews(reviews, 'course_quality')))
+            self.assertTrue(math.isclose(serialized_section.get('instructor_quality'),
+                                         get_average_reviews(reviews, 'instructor_quality')))
+            self.assertTrue(math.isclose(serialized_section.get('difficulty'),
+                                         get_average_reviews(reviews, 'difficulty')))
+            self.assertTrue(math.isclose(serialized_section.get('work_required'),
+                                         get_average_reviews(reviews, 'work_required')))
+        self.assertTrue(False)  # remove print statements above
 
     def test_get_schedule(self):
         response = self.client.get('/schedules/')
