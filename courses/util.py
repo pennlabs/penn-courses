@@ -4,7 +4,7 @@ import re
 from django.core.exceptions import ObjectDoesNotExist
 
 from courses.models import (Building, Course, Department, Instructor, Meeting,
-                            Requirement, Restriction, Room, Section, StatusUpdate, Instructor)
+                            Requirement, Restriction, Room, Section, StatusUpdate)
 from review.models import Review, ReviewBit
 
 
@@ -239,7 +239,7 @@ def create_mock_data_with_reviews(code, semester, number_of_instructors):
     course, section = create_mock_data(code, semester)
     reviews = []
     for i in range(1, number_of_instructors+1):
-        instr, _ = Instructor.objects.get_or_create(name="Instructor" + str(i))
+        instr, _ = Instructor.objects.get_or_create(name='Instructor' + str(i))
         section.instructors.add(instr)
         review = Review(section=section, instructor=instr)
         review.save()
@@ -263,5 +263,5 @@ def get_average_reviews(reviews, field):
         except ObjectDoesNotExist:
             pass
     if count == 0:
-        raise ValueError("No reviews found for given field")
+        raise ValueError('No reviews found for given field')
     return total / count

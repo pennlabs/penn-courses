@@ -2,13 +2,9 @@ import math
 import uuid
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Avg, FloatField, OuterRef, Q, Subquery
 
 from options.models import get_value
-# from plan.annotations import course_reviews, sections_with_reviews
-
-from django.db.models import Avg, F, FloatField, OuterRef, Subquery
-
 from review.models import ReviewBit
 
 

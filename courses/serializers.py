@@ -1,4 +1,3 @@
-from django.db.models import Manager
 from rest_framework import serializers
 
 from courses.models import Course, Meeting, Requirement, Section
