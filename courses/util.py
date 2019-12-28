@@ -1,8 +1,11 @@
 import json
 import re
 
+from django.core.exceptions import ObjectDoesNotExist
+
 from courses.models import (Building, Course, Department, Instructor, Meeting,
-                            Requirement, Restriction, Room, Section, StatusUpdate)
+                            Requirement, Restriction, Room, Section, StatusUpdate, Instructor)
+from review.models import Review, ReviewBit
 
 
 def separate_course_code(course_code):
@@ -207,6 +210,7 @@ def create_mock_data(code, semester):
     course, section = get_or_create_course_and_section(code, semester)
     section.credits = 1
     section.status = 'O'
+    section.activity = 'LEC'
     section.save()
     m = [
         {
@@ -229,3 +233,35 @@ def create_mock_data(code, semester):
     ]
     set_meetings(section, m)
     return course, section
+
+
+def create_mock_data_with_reviews(code, semester, number_of_instructors):
+    course, section = create_mock_data(code, semester)
+    reviews = []
+    for i in range(1, number_of_instructors+1):
+        instr, _ = Instructor.objects.get_or_create(name="Instructor" + str(i))
+        section.instructors.add(instr)
+        review = Review(section=section, instructor=instr)
+        review.save()
+        ReviewBit(review=review, field='course_quality', score=4/i).save()
+        ReviewBit(review=review, field='instructor_quality', score=4/(i+1)).save()
+        ReviewBit(review=review, field='difficulty', score=4/(i+2)).save()
+        ReviewBit(review=review, field='work_required', score=4/(i+3)).save()
+        reviews.append(review)
+    return course, section, reviews
+
+
+# averages review data for a given field, given a list of Review objects
+def get_average_reviews(reviews, field):
+    count = 0
+    total = 0
+    for r in reviews:
+        try:
+            rb = r.reviewbit_set.get(field=field)
+            count += 1
+            total += rb.score
+        except ObjectDoesNotExist:
+            pass
+    if count == 0:
+        raise ValueError("No reviews found for given field")
+    return total / count
