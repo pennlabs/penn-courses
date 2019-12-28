@@ -5,7 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from courses.models import (Building, Course, Department, Instructor, Meeting,
                             Requirement, Restriction, Room, Section, StatusUpdate)
-from review.models import Review, ReviewBit
+from review.models import Review
 
 
 def separate_course_code(course_code):
