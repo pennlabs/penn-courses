@@ -83,11 +83,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
         ]
 
 
-class CourseIdField(serializers.RelatedField):
-    def to_representation(self, value):
-        return value.course_id
-
-
 class RequirementListSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
 
@@ -134,7 +129,7 @@ class CourseListSerializer(serializers.ModelSerializer):
 
 
 class CourseDetailSerializer(CourseListSerializer):
-    crosslistings = CourseIdField(many=True, read_only=True)
+    crosslistings = serializers.SlugRelatedField(slug_field='full_code', many=True, read_only=True)
     sections = SectionDetailSerializer(many=True)
     requirements = RequirementListSerializer(many=True)
 

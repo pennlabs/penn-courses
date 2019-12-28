@@ -122,11 +122,7 @@ class Course(models.Model):
         unique_together = (('department', 'code', 'semester'), ('full_code', 'semester'))
 
     def __str__(self):
-        return '%s %s' % (self.course_id, self.semester)
-
-    @property
-    def course_id(self):
-        return '%s-%s' % (self.department, self.code)
+        return '%s %s' % (self.full_code, self.semester)
 
     @property
     def crosslistings(self):
