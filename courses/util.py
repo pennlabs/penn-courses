@@ -4,7 +4,7 @@ import re
 from django.core.exceptions import ObjectDoesNotExist
 
 from courses.models import (Building, Course, Department, Instructor, Meeting,
-                            Requirement, Restriction, Room, Section, StatusUpdate, Instructor)
+                            Requirement, Restriction, Room, Section, StatusUpdate)
 from review.models import Review, ReviewBit
 
 
