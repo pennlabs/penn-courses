@@ -202,6 +202,7 @@ class CourseReviewAverageTestCase(TestCase):
         response = self.client.get('/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data['sections']))
+        self.assertEqual(1.5, response.data['sections'][1]['course_quality'], response.data['sections'][1])
 
     def test_filter_courses_by_review_included(self):
         response = self.client.get('/courses/', {'difficulty': '2.5-3.5'})
