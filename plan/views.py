@@ -81,11 +81,10 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             schedule.semester = request.data.get('semester')
             schedule.name = request.data.get('name')
             schedule.save()
-            schedule.sections.set(get_sections(request.data))
-            serialized_schedule = ScheduleSerializer(schedule)
-            return Response(serialized_schedule.data, status=status.HTTP_202_ACCEPTED)
+            schedule.sections.set(sections)
+            return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_202_ACCEPTED)
         except IntegrityError as e:
-            return Response({'detail': 'Probably unique constraint violated... error: ' + str(e.__cause__)},
+            return Response({'detail': 'IntegrityError encountered while trying to update: ' + str(e.__cause__)},
                             status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
@@ -109,14 +108,13 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                                                       name=request.data.get('name'),
                                                       id=request.data.get('id'))
             else:
-                schedule = Schedule.objects.create(person=request.user,
-                                                   semester=request.data.get('semester'),
-                                                   name=request.data.get('name'))
-            schedule.sections.set(get_sections(request.data))
-            serialized_schedule = ScheduleSerializer(schedule)
-            return Response(serialized_schedule.data, status=status.HTTP_201_CREATED)
+                schedule = self.get_queryset().create(person=request.user,
+                                                      semester=request.data.get('semester'),
+                                                      name=request.data.get('name'))
+            schedule.sections.set(sections)
+            return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_201_CREATED)
         except IntegrityError as e:
-            return Response({'detail': 'Probably unique constraint violated... error: ' + str(e.__cause__)},
+            return Response({'detail': 'IntegrityError encountered while trying to create: ' + str(e.__cause__)},
                             status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
