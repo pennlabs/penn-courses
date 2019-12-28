@@ -243,10 +243,12 @@ def create_mock_data_with_reviews(code, semester, number_of_instructors):
         section.instructors.add(instr)
         review = Review(section=section, instructor=instr)
         review.save()
-        ReviewBit(review=review, field='course_quality', score=4/i).save()
-        ReviewBit(review=review, field='instructor_quality', score=4/(i+1)).save()
-        ReviewBit(review=review, field='difficulty', score=4/(i+2)).save()
-        ReviewBit(review=review, field='work_required', score=4/(i+3)).save()
+        review.set_scores({
+            'course_quality': 4/i,
+            'instructor_quality': 4/(i+1),
+            'difficulty': 4/(i+2),
+            'work_required': 4/(i+3)
+        })
         reviews.append(review)
     return course, section, reviews
 
