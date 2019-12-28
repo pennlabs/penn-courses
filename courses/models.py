@@ -211,12 +211,7 @@ class Section(models.Model):
                                   db_index=True)
 
     def __str__(self):
-        return '%s-%s %s' % (self.course.course_id, self.code, self.course.semester)
-
-    @property
-    def normalized(self):
-        """String used for querying updates to this section with the Penn API"""
-        return '%s-%s' % (self.course.course_id, self.code)
+        return '%s %s' % (self.full_code, self.course.semester)
 
     @property
     def semester(self):

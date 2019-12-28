@@ -19,7 +19,7 @@ class MeetingSerializer(serializers.ModelSerializer):
 class SectionIdField(serializers.RelatedField):
     def to_representation(self, value):
         return {
-            'id': value.normalized,
+            'id': value.full_code,
             'activity': value.activity
         }
 
@@ -49,7 +49,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
 
 
 class SectionDetailSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='normalized')
+    id = serializers.ReadOnlyField(source='full_code')
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
     instructors = serializers.StringRelatedField(many=True)
@@ -102,7 +102,7 @@ class RequirementListSerializer(serializers.ModelSerializer):
 
 
 class CourseListSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='course_id')
+    id = serializers.ReadOnlyField(source='full_code')
     num_sections = serializers.SerializerMethodField()
 
     course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)

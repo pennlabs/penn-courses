@@ -88,7 +88,7 @@ class CourseStatusUpdateTestCase(TestCase):
     def test_update_status(self):
         self.section.status = 'C'
         self.section.save()
-        up = record_update(self.section.normalized,
+        up = record_update(self.section.full_code,
                            TEST_SEMESTER,
                            'C',
                            'O',
@@ -96,7 +96,7 @@ class CourseStatusUpdateTestCase(TestCase):
                            'JSON')
         up.save()
         update_course_from_record(up)
-        _, section = create_mock_data(self.section.normalized, TEST_SEMESTER)
+        _, section = create_mock_data(self.section.full_code, TEST_SEMESTER)
         self.assertEqual('O', section.status)
 
 

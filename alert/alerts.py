@@ -31,7 +31,7 @@ class Alert(ABC):
     def __init__(self, template, reg):
         t = loader.get_template(template)
         self.text = t.render({
-            'course': reg.section.normalized,
+            'course': reg.section.full_code,
             'signup_url': reg.resub_url,
             'brand': 'Penn Course Alert'
         })
@@ -52,7 +52,7 @@ class Email(Alert):
         try:
             return send_email(from_='Penn Course Alert <team@penncoursealert.com>',
                               to=self.registration.email,
-                              subject='%s is now open!' % self.registration.section.normalized,
+                              subject='%s is now open!' % self.registration.section.full_code,
                               html=self.text)
         except SMTPRecipientsRefused:
             logger.exception('Email Error')
