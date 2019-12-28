@@ -4,11 +4,7 @@ from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 
-import math
-
-from options.models import get_value
-
-from courses.models import Instructor, Requirement, Section
+from courses.models import Instructor, Requirement
 from courses.util import create_mock_data, create_mock_data_with_reviews, get_average_reviews
 from options.models import Option
 from plan.models import Schedule
@@ -204,6 +200,7 @@ class CourseReviewAverageTestCase(TestCase):
         response = self.client.get('/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data['sections']))
+        self.assertEqual(1.5, response.data['sections'][1]['course_quality'], response.data['sections'][1])
 
     def test_filter_courses_by_review_included(self):
         response = self.client.get('/courses/', {'difficulty': '2.5-3.5'})
@@ -237,20 +234,13 @@ class ScheduleTest(TestCase):
         self.assertEqual(section.activity, serialized_section.get('activity'))
         self.assertEqual(section.credits, serialized_section.get('credits'))
         self.assertEqual(section.semester, serialized_section.get('semester'))
-        '''print(reviews[0].reviewbit_set.get(field='course_quality').score,
-              reviews[1].reviewbit_set.get(field='course_quality').score)
-        print(serialized_section.get('course_quality'),
-                         get_average_reviews(reviews, 'course_quality'))'''
+
         if consider_review_data:
-            self.assertTrue(math.isclose(serialized_section.get('course_quality'),
-                             get_average_reviews(reviews, 'course_quality')))
-            self.assertTrue(math.isclose(serialized_section.get('instructor_quality'),
-                                         get_average_reviews(reviews, 'instructor_quality')))
-            self.assertTrue(math.isclose(serialized_section.get('difficulty'),
-                                         get_average_reviews(reviews, 'difficulty')))
-            self.assertTrue(math.isclose(serialized_section.get('work_required'),
-                                         get_average_reviews(reviews, 'work_required')))
-        self.assertTrue(False) # remove above print statements, uncomment review data tests
+            fields = ['course_quality', 'instructor_quality', 'difficulty', 'work_required']
+            for field in fields:
+                expected = get_average_reviews(reviews, field)
+                actual = serialized_section.get(field)
+                self.assertAlmostEqual(expected, actual, 3)
 
     def test_get_schedule(self):
         response = self.client.get('/schedules/')
@@ -279,7 +269,7 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data[1]['semester'], TEST_SEMESTER)
         self.assertEqual(len(response.data[1]['sections']), 2)
         self.check_serialized_section(response.data[1]['sections'][0],
-                                                      cis121, cis121_reviews, True)
+                                      cis121, cis121_reviews, True)
         self.check_serialized_section(response.data[1]['sections'][1],
                                       cis160, cis160_reviews, True)
 
@@ -322,7 +312,7 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data[1]['semester'], TEST_SEMESTER)
         self.assertEqual(len(response.data[1]['sections']), 2)
         self.check_serialized_section(response.data[1]['sections'][0],
-                                                      cis121, cis121_reviews, True)
+                                      cis121, cis121_reviews, True)
         self.check_serialized_section(response.data[1]['sections'][1],
                                       cis160, cis160_reviews, True)
 
@@ -343,7 +333,7 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
         self.assertEqual(len(response.data[0]['sections']), 2)
         self.check_serialized_section(response.data[0]['sections'][0],
-                                                      cis121, cis121_reviews, True)
+                                      cis121, cis121_reviews, True)
         self.check_serialized_section(response.data[0]['sections'][1],
                                       cis160, cis160_reviews, True)
         response = self.client.get('/schedules/' + str(self.s.id) + '/')
@@ -382,7 +372,7 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data['semester'], TEST_SEMESTER)
         self.assertEqual(len(response.data['sections']), 2)
         self.check_serialized_section(response.data['sections'][0],
-                                                      cis121, cis121_reviews, True)
+                                      cis121, cis121_reviews, True)
         self.check_serialized_section(response.data['sections'][1],
                                       cis160, cis160_reviews, True)
 
@@ -412,9 +402,9 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data['semester'], TEST_SEMESTER)
         self.assertEqual(len(response.data['sections']), 2)
         self.check_serialized_section(response.data['sections'][0],
-                                                      cis121, cis121_reviews, True)
+                                      cis121, cis121_reviews, True)
         self.check_serialized_section(response.data['sections'][1],
-                                                      cis160, cis160_reviews, True)
+                                      cis160, cis160_reviews, True)
 
     def test_update_schedule_general(self):
         _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
