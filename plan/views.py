@@ -49,7 +49,8 @@ def get_sections(data):
     sections = []
     for s in raw_sections:
         _, section = get_course_and_section(s.get('id'),
-                                            s.get('semester'))
+                                            s.get('semester'),
+                                            Section.with_reviews # remove this... this is just for testing tests rn
         sections.append(section)
     return sections
 
