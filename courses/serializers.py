@@ -164,6 +164,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(read_only=False)
 
+    def update(self, instance, validated_data):
+        prof, _ = UserProfile.objects.get_or_create(user=instance)
+        prof_data = validated_data.pop('profile')
+        for key in ['username', 'first_name', 'email']:
+            if key in validated_data:
+                setattr(instance, key, validated_data[key])
+        for key in ['phone', 'email']:
+            if key in prof_data:
+                setattr(prof, key, prof_data[key])
+        setattr(instance, 'profile', prof)
+        return instance
+
     class Meta:
         model = get_user_model()
         fields = [
