@@ -93,7 +93,7 @@ def resubscribe(request, id_):
         new_reg = old_reg.resubscribe()
         return homepage_with_msg(request,
                                  'info',
-                                 'You have been resubscribed for alerts to %s!' % new_reg.section.normalized)
+                                 'You have been resubscribed for alerts to %s!' % new_reg.section.full_code)
 
 
 def alert_for_course(c_id, semester, sent_by):
