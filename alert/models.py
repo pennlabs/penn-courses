@@ -184,4 +184,3 @@ def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, ap
     registration.api_key = api_key
     registration.save()
     return RegStatus.SUCCESS, section.full_code
-

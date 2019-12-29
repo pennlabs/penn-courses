@@ -726,17 +726,3 @@ class UserDetailTestCase(TestCase):
         User.objects.create_user(username='murey',
                                  email='murey@example.com',
                                  password='top_secret')
-
-    def test_update_status(self):
-        self.section.status = 'C'
-        self.section.save()
-        up = record_update(self.section.full_code,
-                           TEST_SEMESTER,
-                           'C',
-                           'O',
-                           True,
-                           'JSON')
-        up.save()
-        update_course_from_record(up)
-        _, section = get_or_create_course_and_section(self.section.full_code, TEST_SEMESTER)
-        self.assertEqual('O', section.status)

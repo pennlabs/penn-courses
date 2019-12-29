@@ -3,18 +3,16 @@ import uuid
 
 import phonenumbers
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Avg, FloatField, OuterRef, Q, Subquery
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
 from options.models import get_value
 from review.models import ReviewBit
-
-from django.dispatch import receiver
-from django.contrib.auth.models import User
-from django.db import models
-from django.db.models.signals import post_save
 
 
 def get_current_semester():

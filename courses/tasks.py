@@ -117,4 +117,3 @@ def semester_sync(query='', semester=None):
     load_courses(query=query, semester=semester)
     load_requirements(school='SEAS', semester=semester)
     load_requirements(school='WH', semester=semester)
-

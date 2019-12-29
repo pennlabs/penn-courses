@@ -1,14 +1,11 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
-from courses.models import (APIKey, APIPrivilege, Building, Course, Department, Instructor, Meeting,
-                            Requirement, Restriction, Room, Section, StatusUpdate, UserProfile)
-
-
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import User
+from courses.models import (APIKey, APIPrivilege, Building, Course, Department, Instructor,
+                            Meeting, Requirement, Restriction, Room, Section, StatusUpdate)
 
 from .models import UserProfile
 
@@ -94,11 +91,13 @@ class StatusUpdateAdmin(admin.ModelAdmin):
         'section__course__department'
     ]
 
-'''
+
+"""
 class UserDataAdmin(admin.ModelAdmin):
     search_fields = ('user', 'email', 'phone', )
     autocomplete_fields = ('user', )
-'''
+"""
+
 
 admin.site.register(APIKey)
 admin.site.register(APIPrivilege)
