@@ -152,25 +152,25 @@ class CourseDetailSerializer(CourseListSerializer):
         ]
 
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = [
+            'email',
+            'phone'
+        ]
+
+
 class UserSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer(read_only=False)
+
     class Meta:
         model = get_user_model()
         fields = [
             'username',
             'first_name',
             'last_name',
-        ]
-
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-
-    class Meta:
-        model = UserProfile
-        fields = [
-            'email',
-            'phone',
-            'user'
+            'profile'
         ]
 
 

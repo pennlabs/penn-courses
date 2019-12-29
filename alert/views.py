@@ -8,6 +8,7 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonRespons
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -238,10 +239,10 @@ def third_party_register(request):
         raise Http404('Only POST requests are accepted.')
 
 
-class RegistrationViewSet(viewsets.ModelViewSet):
+class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     serializer_class = RegistrationSerializer
     http_method_names = ['get', 'post', 'put']
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Registration.objects.filter(user=self.request.user)
+        return Registration.objects.filter(person=self.request.user).prefetch_related('section')
