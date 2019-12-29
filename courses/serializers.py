@@ -1,5 +1,3 @@
-from django.contrib.auth import get_user_model
-from django.db.models import Manager
 from rest_framework import serializers
 
 from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserProfile
