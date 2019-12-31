@@ -167,9 +167,11 @@ class UserSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         prof, _ = UserProfile.objects.get_or_create(user=instance)
         prof_data = validated_data.pop('profile')
-        for key in ['username', 'first_name', 'email']:
+        for key in ['username', 'first_name', 'last_name']:
             if key in validated_data:
                 setattr(instance, key, validated_data[key])
+        if 'username' not in validated_data:
+            validated_data.username = instance.username
         for key in ['phone', 'email']:
             if key in prof_data:
                 setattr(prof, key, prof_data[key])

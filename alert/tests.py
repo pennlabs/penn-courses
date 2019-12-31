@@ -588,7 +588,6 @@ class StatusUpdateTest(TestCase):
 class UserDetailTestCase(TestCase):
     def setUp(self):
         User.objects.create_user(username='jacob',
-                                 email='jacob@example.com',
                                  password='top_secret')
         self.client = APIClient()
         self.client.login(username='jacob', password='top_secret')
@@ -596,133 +595,280 @@ class UserDetailTestCase(TestCase):
     def test_settings_before_create(self):
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
+        self.assertEqual('jacob', response.data['username'])
+        self.assertEqual('', response.data['first_name'])
+        self.assertEqual('', response.data['last_name'])
+        self.assertEqual(None, response.data['profile']['email'])
+        self.assertEqual(None, response.data['profile']['phone'])
 
     def test_update_settings(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'example@email.com',
-                                               'phone': '9178286430'}),
+                                   json.dumps({'username': 'jacob',
+                                               'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['email'], 'example@email.com')
-        self.assertEqual(response.data['phone'], '+19178286430')
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['email'], 'example@email.com')
-        self.assertEqual(response.data['phone'], '+19178286430')
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
 
-    def test_update_settings_change_user(self):
+    def test_update_settings_change_first_name(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'example@email.com',
-                                               'phone': '3131234567',
-                                               'user': {'username': 'jacob',
-                                                        'first_name': 'NEW NAME', 'last_name': ''}}),
+                                   json.dumps({'username': 'jacob', 'first_name': 'newname', 'last_name': '',
+                                               'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['email'], 'example@email.com')
-        self.assertEqual(response.data['phone'], '+13131234567')
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], 'newname')
+        self.assertEqual(response.data['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['email'], 'example@email.com')
-        self.assertEqual(response.data['phone'], '+13131234567')
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], 'newname')
+        self.assertEqual(response.data['last_name'], '')
+
+    def test_update_settings_change_last_name(self):
+        response = self.client.put('/api/settings/',
+                                   json.dumps({'username': 'jacob', 'first_name': '', 'last_name': 'newname',
+                                               'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], 'newname')
+        response = self.client.get('/api/settings/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], 'newname')
+
+    def test_update_settings_change_username(self):
+        response = self.client.put('/api/settings/',
+                                   json.dumps({'username': 'newusername', 'first_name': '', 'last_name': '',
+                                               'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'newusername')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
+        response = self.client.get('/api/settings/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'newusername')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
+
+    def test_add_fields(self):
+        response = self.client.put('/api/settings/',
+                                   json.dumps({'username': 'jacob', 'first_name': '', 'last_name': '',
+                                               'middle_name': 'm',
+                                               'profile': {'email': 'example@email.com', 'phone': '3131234567',
+                                                           'favorite_color': 'blue'}}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertFalse('favorite_color' in response.data['profile'])
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
+        self.assertFalse('middle_name' in response.data)
+        response = self.client.get('/api/settings/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertFalse('favorite_color' in response.data['profile'])
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
+        self.assertFalse('middle_name' in response.data)
+
+    def test_ignore_fields_email_update(self):
+        self.client.put('/api/settings/',
+                        json.dumps({'username': 'jacob', 'first_name': 'fname', 'last_name': 'lname',
+                                    'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
+                        content_type='application/json')
+        response = self.client.put('/api/settings/',
+                                   json.dumps({'username': 'jacob',
+                                               'profile': {'email': 'example2@email.com'}}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['email'], 'example2@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], 'fname')
+        self.assertEqual(response.data['last_name'], 'lname')
+        response = self.client.get('/api/settings/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['profile']['email'], 'example2@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], 'fname')
+        self.assertEqual(response.data['last_name'], 'lname')
+
+    def test_ignore_fields_phone_update(self):
+        self.client.put('/api/settings/',
+                        json.dumps({'username': 'jacob', 'first_name': 'fname', 'last_name': 'lname',
+                                    'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
+                        content_type='application/json')
+        response = self.client.put('/api/settings/',
+                                   json.dumps({'username': 'jacob',
+                                               'profile': {'phone': '2121234567'}}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['phone'], '+12121234567')
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], 'fname')
+        self.assertEqual(response.data['last_name'], 'lname')
+        response = self.client.get('/api/settings/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['profile']['phone'], '+12121234567')
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], 'fname')
+        self.assertEqual(response.data['last_name'], 'lname')
 
     def test_invalid_phone(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'example@email.com',
-                                               'phone': 'abc'}),
+                                   json.dumps({'username': 'jacob',
+                                               'profile': {'email': 'example@email.com', 'phone': 'abc'}}),
                                    content_type='application/json')
         self.assertEqual(400, response.status_code)
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(None, response.data['email'])
-        self.assertEqual(None, response.data['phone'])
-        self.assertEqual('jacob', response.data['user']['username'])
-        self.assertEqual('', response.data['user']['first_name'])
-        self.assertEqual('', response.data['user']['last_name'])
+        self.assertEqual(None, response.data['profile']['email'])
+        self.assertEqual(None, response.data['profile']['phone'])
+        self.assertEqual('jacob', response.data['username'])
+        self.assertEqual('', response.data['first_name'])
+        self.assertEqual('', response.data['last_name'])
 
     def test_invalid_email(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'example@',
-                                               'phone': '3131234567'}),
+                                   json.dumps({'username': 'jacob',
+                                               'profile': {'email': 'example@', 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(400, response.status_code)
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(None, response.data['email'])
-        self.assertEqual(None, response.data['phone'])
-        self.assertEqual('jacob', response.data['user']['username'])
-        self.assertEqual('', response.data['user']['first_name'])
-        self.assertEqual('', response.data['user']['last_name'])
+        self.assertEqual(None, response.data['profile']['email'])
+        self.assertEqual(None, response.data['profile']['phone'])
+        self.assertEqual('jacob', response.data['username'])
+        self.assertEqual('', response.data['first_name'])
+        self.assertEqual('', response.data['last_name'])
 
     def test_null_email(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': None,
-                                               'phone': '3131234567'}),
+                                   json.dumps({'username': 'jacob',
+                                               'profile': {'email': None, 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['email'], None)
-        self.assertEqual(response.data['phone'], '+13131234567')
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], None)
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['email'], None)
-        self.assertEqual(response.data['phone'], '+13131234567')
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], None)
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
 
     def test_null_phone(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': 'example@email.com',
-                                               'phone': None}),
+                                   json.dumps({'username': 'jacob',
+                                               'profile': {'email': 'example@email.com', 'phone': None}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['email'], 'example@email.com')
-        self.assertEqual(response.data['phone'], None)
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], None)
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['email'], 'example@email.com')
-        self.assertEqual(response.data['phone'], None)
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], None)
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
 
     def test_both_null(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'email': None,
-                                               'phone': None}),
+                                   json.dumps({'username': 'jacob',
+                                               'profile': {'email': None, 'phone': None}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['email'], None)
-        self.assertEqual(response.data['phone'], None)
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], None)
+        self.assertEqual(response.data['profile']['phone'], None)
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['email'], None)
-        self.assertEqual(response.data['phone'], None)
-        self.assertEqual(response.data['user']['username'], 'jacob')
-        self.assertEqual(response.data['user']['first_name'], '')
-        self.assertEqual(response.data['user']['last_name'], '')
+        self.assertEqual(response.data['profile']['email'], None)
+        self.assertEqual(response.data['profile']['phone'], None)
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
 
-    def test_multiple_users(self):
+    def test_multiple_users_independent(self):
         User.objects.create_user(username='murey',
-                                 email='murey@example.com',
                                  password='top_secret')
+        client2 = APIClient()
+        client2.login(username='murey', password='top_secret')
+        response = self.client.put('/api/settings/',
+                                   json.dumps({'username': 'jacob',
+                                               'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
+        response = self.client.get('/api/settings/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['profile']['email'], 'example@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+13131234567')
+        self.assertEqual(response.data['username'], 'jacob')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
+        response = client2.put('/api/settings/',
+                               json.dumps({'username': 'murey',
+                                           'profile': {'email': 'example2@email.com', 'phone': '2121234567'}}),
+                               content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['email'], 'example2@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+12121234567')
+        self.assertEqual(response.data['username'], 'murey')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
+        response = client2.get('/api/settings/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['profile']['email'], 'example2@email.com')
+        self.assertEqual(response.data['profile']['phone'], '+12121234567')
+        self.assertEqual(response.data['username'], 'murey')
+        self.assertEqual(response.data['first_name'], '')
+        self.assertEqual(response.data['last_name'], '')
