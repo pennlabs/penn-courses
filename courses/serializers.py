@@ -170,8 +170,6 @@ class UserSerializer(serializers.ModelSerializer):
         for key in ['username', 'first_name', 'last_name']:
             if key in validated_data:
                 setattr(instance, key, validated_data[key])
-        if 'username' not in validated_data:
-            validated_data.username = instance.username
         for key in ['phone', 'email']:
             if key in prof_data:
                 setattr(prof, key, prof_data[key])
