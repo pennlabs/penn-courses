@@ -173,7 +173,9 @@ class UserSerializer(serializers.ModelSerializer):
         for key in ['phone', 'email']:
             if key in prof_data:
                 setattr(prof, key, prof_data[key])
+        prof.save()
         setattr(instance, 'profile', prof)
+        instance.save()
         return instance
 
     class Meta:
