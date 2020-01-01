@@ -1,12 +1,12 @@
 from rest_framework import serializers
 
 from alert.models import Registration
-from courses.serializers import MiniSectionSerializer
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    section = MiniSectionSerializer(read_only=True)
+    section = serializers.SlugRelatedField(slug_field='full_code')
+    user = serializers.SlugRelatedField(slug_field='username')
 
     class Meta:
         model = Registration
-        fields = ['created_at', 'updated_at', 'section', 'deleted', 'muted', 'auto_mute']
+        fields = ['created_at', 'updated_at', 'section', 'user', 'deleted', 'muted', 'auto_mute']

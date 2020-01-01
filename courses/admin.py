@@ -92,13 +92,6 @@ class StatusUpdateAdmin(admin.ModelAdmin):
     ]
 
 
-"""
-class UserDataAdmin(admin.ModelAdmin):
-    search_fields = ('user', 'email', 'phone', )
-    autocomplete_fields = ('user', )
-"""
-
-
 admin.site.register(APIKey)
 admin.site.register(APIPrivilege)
 admin.site.register(Department, DepartmentAdmin)

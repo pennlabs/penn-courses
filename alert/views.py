@@ -245,4 +245,4 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Registration.objects.filter(person=self.request.user).prefetch_related('section')
+        return Registration.objects.filter(user=self.request.user)
