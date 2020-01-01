@@ -87,7 +87,7 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return get_user_model().objects.all().prefetch_related('profile')
+        return get_user_model().objects.filter(pk=self.request.user.pk)
 
     def get_object(self):
         return self.request.user

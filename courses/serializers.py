@@ -190,8 +190,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class StatusUpdateSerializer(serializers.ModelSerializer):
-    section = serializers.ReadOnlyField(source='section__full_code')
+    section = serializers.ReadOnlyField(source='section__full_code', read_only=True)
 
     class Meta:
         model = StatusUpdate
         fields = ['section', 'old_status', 'new_status', 'created_at', 'alert_sent']
+        read_only_fields = fields
