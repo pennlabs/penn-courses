@@ -167,7 +167,7 @@ class UserSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         prof, _ = UserProfile.objects.get_or_create(user=instance)
         prof_data = validated_data.pop('profile')
-        for key in ['username', 'first_name', 'last_name']:
+        for key in ['first_name', 'last_name']:
             if key in validated_data:
                 setattr(instance, key, validated_data[key])
         for key in ['phone', 'email']:
@@ -186,6 +186,7 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'profile'
         ]
+        read_only_fields = ['username']
 
 
 class StatusUpdateSerializer(serializers.ModelSerializer):

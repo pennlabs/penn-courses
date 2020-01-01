@@ -47,7 +47,7 @@ class Email(Alert):
         super().__init__('alert/email_alert.html', reg)
 
     def send_alert(self):
-        if self.registration.user.profile.email is not None:
+        if self.registration.user is not None and self.registration.user.profile.email is not None:
             email = self.registration.user.profile.email
         elif self.registration.email is not None:
             email = self.registration.email
@@ -68,7 +68,7 @@ class Text(Alert):
         super().__init__('alert/text_alert.txt', reg)
 
     def send_alert(self):
-        if self.registration.user.profile.phone is not None:
+        if self.registration.user is not None and self.registration.user.profile.phone is not None:
             phone_number = self.registration.user.profile.phone
         elif self.registration.phone is not None:
             phone_number = self.registration.phone

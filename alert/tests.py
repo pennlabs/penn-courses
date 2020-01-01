@@ -603,8 +603,7 @@ class UserDetailTestCase(TestCase):
 
     def test_update_settings(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob',
-                                               'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
+                                   json.dumps({'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['profile']['email'], 'example@email.com')
@@ -622,7 +621,7 @@ class UserDetailTestCase(TestCase):
 
     def test_update_settings_change_first_name(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob', 'first_name': 'newname', 'last_name': '',
+                                   json.dumps({'first_name': 'newname', 'last_name': '',
                                                'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
@@ -641,7 +640,7 @@ class UserDetailTestCase(TestCase):
 
     def test_update_settings_change_last_name(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob', 'first_name': '', 'last_name': 'newname',
+                                   json.dumps({'first_name': '', 'last_name': 'newname',
                                                'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
@@ -663,23 +662,23 @@ class UserDetailTestCase(TestCase):
                                    json.dumps({'username': 'newusername', 'first_name': '', 'last_name': '',
                                                'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
                                    content_type='application/json')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['profile']['email'], 'example@email.com')
         self.assertEqual(response.data['profile']['phone'], '+13131234567')
-        self.assertEqual(response.data['username'], 'newusername')
+        self.assertEqual(response.data['username'], 'jacob')
         self.assertEqual(response.data['first_name'], '')
         self.assertEqual(response.data['last_name'], '')
         response = self.client.get('/api/settings/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['profile']['email'], 'example@email.com')
         self.assertEqual(response.data['profile']['phone'], '+13131234567')
-        self.assertEqual(response.data['username'], 'newusername')
+        self.assertEqual(response.data['username'], 'jacob')
         self.assertEqual(response.data['first_name'], '')
         self.assertEqual(response.data['last_name'], '')
 
     def test_add_fields(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob', 'first_name': '', 'last_name': '',
+                                   json.dumps({'first_name': '', 'last_name': '',
                                                'middle_name': 'm',
                                                'profile': {'email': 'example@email.com', 'phone': '3131234567',
                                                            'favorite_color': 'blue'}}),
@@ -704,12 +703,11 @@ class UserDetailTestCase(TestCase):
 
     def test_ignore_fields_email_update(self):
         self.client.put('/api/settings/',
-                        json.dumps({'username': 'jacob', 'first_name': 'fname', 'last_name': 'lname',
+                        json.dumps({'first_name': 'fname', 'last_name': 'lname',
                                     'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
                         content_type='application/json')
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob',
-                                               'profile': {'email': 'example2@email.com'}}),
+                                   json.dumps({'profile': {'email': 'example2@email.com'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['profile']['email'], 'example2@email.com')
@@ -727,12 +725,11 @@ class UserDetailTestCase(TestCase):
 
     def test_ignore_fields_phone_update(self):
         self.client.put('/api/settings/',
-                        json.dumps({'username': 'jacob', 'first_name': 'fname', 'last_name': 'lname',
+                        json.dumps({'first_name': 'fname', 'last_name': 'lname',
                                     'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
                         content_type='application/json')
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob',
-                                               'profile': {'phone': '2121234567'}}),
+                                   json.dumps({'profile': {'phone': '2121234567'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['profile']['phone'], '+12121234567')
@@ -750,8 +747,7 @@ class UserDetailTestCase(TestCase):
 
     def test_invalid_phone(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob',
-                                               'profile': {'email': 'example@email.com', 'phone': 'abc'}}),
+                                   json.dumps({'profile': {'email': 'example@email.com', 'phone': 'abc'}}),
                                    content_type='application/json')
         self.assertEqual(400, response.status_code)
         response = self.client.get('/api/settings/')
@@ -764,8 +760,7 @@ class UserDetailTestCase(TestCase):
 
     def test_invalid_email(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob',
-                                               'profile': {'email': 'example@', 'phone': '3131234567'}}),
+                                   json.dumps({'profile': {'email': 'example@', 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(400, response.status_code)
         response = self.client.get('/api/settings/')
@@ -778,8 +773,7 @@ class UserDetailTestCase(TestCase):
 
     def test_null_email(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob',
-                                               'profile': {'email': None, 'phone': '3131234567'}}),
+                                   json.dumps({'profile': {'email': None, 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['profile']['email'], None)
@@ -797,8 +791,7 @@ class UserDetailTestCase(TestCase):
 
     def test_null_phone(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob',
-                                               'profile': {'email': 'example@email.com', 'phone': None}}),
+                                   json.dumps({'profile': {'email': 'example@email.com', 'phone': None}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['profile']['email'], 'example@email.com')
@@ -816,8 +809,7 @@ class UserDetailTestCase(TestCase):
 
     def test_both_null(self):
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob',
-                                               'profile': {'email': None, 'phone': None}}),
+                                   json.dumps({'profile': {'email': None, 'phone': None}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['profile']['email'], None)
@@ -839,8 +831,7 @@ class UserDetailTestCase(TestCase):
         client2 = APIClient()
         client2.login(username='murey', password='top_secret')
         response = self.client.put('/api/settings/',
-                                   json.dumps({'username': 'jacob',
-                                               'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
+                                   json.dumps({'profile': {'email': 'example@email.com', 'phone': '3131234567'}}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['profile']['email'], 'example@email.com')
@@ -856,8 +847,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data['first_name'], '')
         self.assertEqual(response.data['last_name'], '')
         response = client2.put('/api/settings/',
-                               json.dumps({'username': 'murey',
-                                           'profile': {'email': 'example2@email.com', 'phone': '2121234567'}}),
+                               json.dumps({'profile': {'email': 'example2@email.com', 'phone': '2121234567'}}),
                                content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['profile']['email'], 'example2@email.com')
