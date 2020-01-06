@@ -8,6 +8,7 @@ const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]
 
 export default function CourseDetails({ course, getCourse }) {
     const requirements = course.requirements || [];
+    const prerequisites = course.prerequisites.trim() || "";
     const crosslistings = course.crosslistings || [];
     const { description } = course;
     return (
@@ -43,6 +44,16 @@ export default function CourseDetails({ course, getCourse }) {
                     </li>
                 ) : null
             }
+            {prerequisites.length ? (
+                <li>
+                    <span className="icon is-small">
+                        <i className="fas fa-random" />
+                    </span>
+                    &nbsp; Prerequisites: &nbsp;
+                    <TagList elements={[prerequisites.replace(/-/g, " ")]} limit={2} />
+                </li>
+            ) : null
+            }
             {crosslistings.length > 0 ? (
                 <li>
                     <span className="icon is-small">
@@ -65,7 +76,7 @@ export default function CourseDetails({ course, getCourse }) {
                     textAlign: "center",
                 }}
             >
-                 View on Penn Course Review
+                View on Penn Course Review
             </a>
             {description ? (
                 <li style={{

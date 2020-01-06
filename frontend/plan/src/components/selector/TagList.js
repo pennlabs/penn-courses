@@ -37,7 +37,7 @@ export default function TagList({
         <span>
             {visibleTags.map(elt => (
                 <Tag
-                    onClick={onClick ? () => onClick(elt.replace(/ /g, "-")) : null}
+                    onClick={onClick && (() => onClick(elt.replace(/ /g, "-")))}
                 >
                     {elt}
                 </Tag>
