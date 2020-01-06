@@ -140,6 +140,7 @@ class CourseDetailSerializer(CourseListSerializer):
             'title',
             'description',
             'semester',
+            'prerequisites',
             'course_quality',
             'instructor_quality',
             'difficulty',
