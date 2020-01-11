@@ -24,9 +24,9 @@ const AccountIndicator = () => {
             });
     }, []);
 
-    return user ?
-        <UserSelector user={user} onLogout={() => setUser(null)}/> :
-        <LoginButton/>;
+    return user
+        ? <UserSelector user={user} onLogout={() => setUser(null)} />
+        : <LoginButton />;
 };
 
 export default AccountIndicator;

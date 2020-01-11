@@ -28,7 +28,7 @@ const generateDefaultSchedule = () => (
         colorPalette: [],
         LocAdded: false,
         pushedToBackend: false,
-        isNew: {
+        backendCreationState: {
             creationQueued: false,
             creationAttempts: 0,
         },
@@ -114,6 +114,101 @@ const nextAvailable = (scheduleName, used) => {
     return newScheduleName;
 };
 
+/**
+ * Returns the new state following the creation of a schedule
+ * @param state The redux state
+ * @param scheduleName The name of the schedule
+ * @returns {{schedules}}
+ */
+const processScheduleCreation = (state, scheduleName) => {
+    const schedule = state.schedules[scheduleName];
+    return {
+        ...state,
+        schedules: {
+            ...state.schedules,
+            [scheduleName]: {
+                ...schedule,
+                backendCreationState: {
+                    creationQueued: true,
+                    creationAttempts: schedule.backendCreationState.creationAttempts + 1,
+                },
+            },
+        },
+    };
+};
+
+/**
+ * Takes in schedules from the backend; incorporates them into state; and returns the new state
+ * @param state The redux state
+ * @param schedulesFromBackend The schedules object sent by the backend
+ * @returns {{cartSections: *, cartPushedToBackend: boolean, schedules: *}}
+ */
+const processScheduleUpdate = (state, schedulesFromBackend) => {
+    const newScheduleObject = { ...(state.schedules || {}) };
+    let newCart = [...(state.cartSections || [])];
+    const newState = { ...state };
+    if (schedulesFromBackend) {
+        schedulesFromBackend.forEach(({
+            id: scheduleId, name, sections, semester, ...rest
+        }) => {
+            const cloudUpdated = new Date(rest.updated_at).getTime();
+            if (name === "cart") {
+                newState.cartId = scheduleId;
+                if (!state.cartUpdated || cloudUpdated > state.cartUpdated) {
+                    newCart = sections;
+                }
+            } else if (state.schedules[name]) {
+                newScheduleObject[name].id = scheduleId;
+                newScheduleObject[name].backendCreationState = false;
+                const selectedSched = state.schedules[name];
+                if (!selectedSched.updated_at || selectedSched.updated_at < cloudUpdated) {
+                    newScheduleObject[name].meetings = sections;
+                }
+            } else {
+                newScheduleObject[name] = {
+                    meetings: sections,
+                    semester,
+                    id: scheduleId,
+                    pushedToBackend: true,
+                    updated_at: cloudUpdated,
+                };
+            }
+        });
+    }
+    return {
+        ...newState,
+        schedules: newScheduleObject,
+        cartSections: newCart,
+        cartPushedToBackend: true,
+    };
+};
+
+/**
+ * Performs a deletion and returns the resulting state
+ * @param state The redux state
+ * @param scheduleName The name of the schedule to delete
+ * @returns {{scheduleSelected: (*), deletedSchedules: {}, schedules: *}}
+ */
+const processScheduleDeletion = (state, scheduleName) => {
+    const newSchedules = removeSchedule(scheduleName, state.schedules);
+    if (Object.keys(newSchedules).length === 0) {
+        newSchedules["Empty Schedule"] = generateDefaultSchedule();
+    }
+    return {
+        ...state,
+        deletedSchedules: {
+            ...(state.deletedSchedules || {}),
+            [state.schedules[scheduleName].id]: {
+                deletionQueued: false,
+                attempts: 0,
+            },
+        },
+        schedules: newSchedules,
+        scheduleSelected: scheduleName === state.scheduleSelected
+            ? Object.keys(newSchedules)[0] : state.scheduleSelected,
+    };
+};
+
 export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
     switch (action.type) {
@@ -125,7 +220,7 @@ export const schedule = (state = initialState, action) => {
                     [action.scheduleName]: {
                         ...state.schedules[action.scheduleName],
                         pushedToBackend: true,
-                        isNew: false,
+                        backendCreationState: false,
                     },
                 },
             };
@@ -150,51 +245,13 @@ export const schedule = (state = initialState, action) => {
                         ...state.schedules[action.name],
                         id: action.id,
                         pushedToBackend: true,
-                        isNew: false,
+                        backendCreationState: false,
                     },
                 },
             };
 
         case UPDATE_SCHEDULES:
-            // eslint-disable-next-line
-            const { schedulesFromBackend } = action;
-            // eslint-disable-next-line
-            const newScheduleObject = { ...(state.schedules || {}) };
-            // eslint-disable-next-line
-            let newCart = [...(state.cartSections || [])];
-            if (schedulesFromBackend) {
-                schedulesFromBackend.forEach(({
-                    id: scheduleId, name, sections, semester, updated_at,
-                }) => {
-                    const cloudVersionUpdated = new Date(updated_at).getTime();
-                    if (name === "cart") {
-                        state.cartId = scheduleId;
-                        if (!state.cartUpdated || cloudVersionUpdated > state.cartUpdated) {
-                            newCart = sections;
-                        }
-                    } else if (state.schedules[name]) {
-                        newScheduleObject[name].id = scheduleId;
-                        newScheduleObject[name].isNew = false;
-                        if (!state.schedules[name].updated_at || state.schedules[name].updated_at < cloudVersionUpdated) {
-                            newScheduleObject[name].meetings = sections;
-                        }
-                    } else {
-                        newScheduleObject[name] = {
-                            meetings: sections,
-                            semester,
-                            id: scheduleId,
-                            pushedToBackend: true,
-                            updated_at: cloudVersionUpdated,
-                        };
-                    }
-                });
-            }
-            return {
-                ...state,
-                schedules: newScheduleObject,
-                cartSections: newCart,
-                cartPushedToBackend: true,
-            };
+            return processScheduleUpdate(state, action.schedulesFromBackend);
         case CLEAR_SCHEDULE:
             return {
                 ...state,
@@ -232,7 +289,7 @@ export const schedule = (state = initialState, action) => {
                             ...withoutId(state.schedules[action.scheduleName]),
                             pushedToBackend: false,
                             updated_at: Date.now(),
-                            isNew: {
+                            backendCreationState: {
                                 creationQueued: false,
                                 creationAttempts: 0,
                             },
@@ -252,19 +309,7 @@ export const schedule = (state = initialState, action) => {
             if (action.scheduleName === "cart") {
                 return state;
             }
-            return {
-                ...state,
-                schedules: {
-                    ...state.schedules,
-                    [action.scheduleName]: {
-                        ...state.schedules[action.scheduleName],
-                        isNew: {
-                            creationQueued: true,
-                            creationAttempts: state.schedules[action.scheduleName].isNew.creationAttempts + 1,
-                        },
-                    },
-                },
-            };
+            return processScheduleCreation(state, action.scheduleName);
         case UNSUCCESSFUL_SCHEDULE_CREATION:
             if (action.scheduleName === "cart") {
                 return state;
@@ -275,31 +320,15 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [action.scheduleName]: {
                         ...state.schedules[action.scheduleName],
-                        isNew: {
-                            ...state.schedules[action.scheduleName].isNew,
+                        backendCreationState: {
+                            ...state.schedules[action.scheduleName].backendCreationState,
                             creationQueued: false,
                         },
                     },
                 },
             };
         case DELETE_SCHEDULE:
-            const newSchedules = removeSchedule(action.scheduleName, state.schedules);
-            if (Object.keys(newSchedules).length === 0) {
-                newSchedules["Empty Schedule"] = generateDefaultSchedule();
-            }
-            return {
-                ...state,
-                deletedSchedules: {
-                    ...(state.deletedSchedules || {}),
-                    [state.schedules[action.scheduleName].id]: {
-                        deletionQueued: false,
-                        attempts: 0,
-                    },
-                },
-                schedules: newSchedules,
-                scheduleSelected: action.scheduleName === state.scheduleSelected
-                    ? Object.keys(newSchedules)[0] : state.scheduleSelected,
-            };
+            return processScheduleDeletion(state, action.scheduleName);
         case ATTEMPT_DELETION:
             // attempt deletion API call
             return {

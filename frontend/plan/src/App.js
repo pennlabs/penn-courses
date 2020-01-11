@@ -29,8 +29,6 @@ import {
 } from "./actions";
 import initiateSync from "./syncutils";
 
-// import { fetchCourseSearch, fetchSectionInfo } from "./actions";u
-
 const previousState = localStorage.getItem("coursePlanSchedules");
 const previousStateJSON = previousState ? JSON.parse(previousState) : undefined;
 const loggerMiddleware = createLogger();
@@ -131,7 +129,9 @@ function App() {
             <div style={{ padding: "0px 2em 0px 2em" }}>
                 <SearchBar style={{ flexGrow: 0 }} />
                 <div className="App columns is-mobile is-multiline main" style={{ padding: 0 }}>
-                    <div className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop">
+                    <div
+                        className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop"
+                    >
                         <span style={{
                             display: "flex",
                             flexDirection: "row",

@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { useOnClickOutside } from "../useOnClickOutside";
 import PropTypes from "prop-types";
+import { useOnClickOutside } from "../useOnClickOutside";
 
-const UserSelector = ({ user: { first_name, last_name, username }, onLogout }) => {
+const UserSelector = ({ user: { username, ...rest }, onLogout }) => {
     const [selected, setSelected] = useState(false);
+
+    const firstName = rest.first_name;
+    const lastName = rest.last_name;
 
     const onClickOutside = useOnClickOutside(() => {
         setSelected(false);
@@ -22,19 +25,19 @@ const UserSelector = ({ user: { first_name, last_name, username }, onLogout }) =
             >
                 <span>
                     {" "}
-                    {(first_name && first_name.charAt(0)) || "U"}
+                    {(firstName && firstName.charAt(0)) || "U"}
                     {" "}
                 </span>
             </div>
             <div className="logout dropdown-menu">
                 <div id="logout-dropdown-menu-container">
-                    <div className="triangle-up"/>
+                    <div className="triangle-up" />
                     <div id="logout-dropdown-inner-menu">
                         <p className="name-container">
                             {" "}
-                            {first_name}
+                            {firstName}
                             {" "}
-                            {last_name}
+                            {lastName}
                             {" "}
                         </p>
                         <p className="email-container">
@@ -57,7 +60,7 @@ const UserSelector = ({ user: { first_name, last_name, username }, onLogout }) =
                         >
                             Logout
                             <div id="logout-icon-container">
-                                <i className="fas fa-sign-out-alt"/>
+                                <i className="fas fa-sign-out-alt" />
                             </div>
                         </div>
                     </div>

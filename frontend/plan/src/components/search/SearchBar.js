@@ -21,8 +21,6 @@ import {
     clearFilter,
     updateSearch
 } from "../../actions";
-import { useOnClickOutside } from "../useOnClickOutside";
-import getCsrf from "../../csrf";
 import AccountIndicator from "../accounts/AccountIndicator";
 
 
@@ -50,7 +48,6 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     updateCheckboxFilter, setTab,
 }) {
-
     useEffect(() => {
         loadRequirements();
     }, [loadRequirements]);
@@ -222,7 +219,7 @@ function SearchBar({
                         role="button"
                         onClick={() => showHideReqs(!reqsShown)}
                     >
-                        <i className="fas fa-filter"/>
+                        <i className="fas fa-filter" />
                     </div>
                 </div>
                 {reqsShown && (
@@ -270,7 +267,7 @@ function SearchBar({
 
                 <div className="level-item filterContainer" id="filterdiv">
                     <span className="icon">
-                        <i className="fas fa-filter"/>
+                        <i className="fas fa-filter" />
                     </span>
                     <p> Filter by</p>
                     {dropDowns}
@@ -301,7 +298,7 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <AccountIndicator/>
+                    <AccountIndicator />
                 </div>
             </div>
         </div>
@@ -325,7 +322,6 @@ SearchBar.propTypes = {
     defaultReqs: PropTypes.objectOf(PropTypes.number),
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
-    user: PropTypes.objectOf(PropTypes.any),
     setTab: PropTypes.func,
 };
 
@@ -336,7 +332,6 @@ const mapStateToProps = state => (
         defaultReqs: state.filters.defaultReqs,
         isLoadingCourseInfo: state.sections.courseInfoLoading,
         isSearchingCourseInfo: state.sections.searchInfoLoading,
-        user: null,
     }
 );
 

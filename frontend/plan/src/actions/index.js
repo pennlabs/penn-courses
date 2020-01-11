@@ -1,6 +1,6 @@
 import fetch from "cross-fetch";
 import getCsrf from "../csrf";
-import { conditionalFetch } from "../syncutils";
+import { rateLimitedFetch } from "../syncutils";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -49,14 +49,13 @@ export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
 // Backend accounts integration
 export const UPDATE_SCHEDULES = "UPDATE_SCHEDULES";
-export const CREATION_SUCCESSFUL = "SET_SCHEDULE_ID_MARK_SYNCED";
+export const CREATION_SUCCESSFUL = "CREATION_SUCCESSFUL";
 export const MARK_SCHEDULE_SYNCED = "MARK_SCHEDULE_SYNCED";
 export const MARK_CART_SYNCED = "MARK_CART_SYNCED";
-export const DELETION_ATTEMPT_FAILED = "INCREMENT_DELETION_ATTEMPTS";
-export const DELETION_ATTEMPT_SUCCEEDED = "DELETION_SUCCESSFUL";
+export const DELETION_ATTEMPT_FAILED = "DELETION_ATTEMPT_FAILED";
+export const DELETION_ATTEMPT_SUCCEEDED = "DELETION_ATTEMPT_SUCCEEDED";
 export const ATTEMPT_DELETION = "ATTEMPT_DELETION";
 export const ATTEMPT_SCHEDULE_CREATION = "ATTEMPT_SCHEDULE_CREATION";
-export const SUCCESSFUL_SCHEDULE_CREATION = "SUCCESSFUL_SCHEDULE_CREATION";
 export const UNSUCCESSFUL_SCHEDULE_CREATION = "UNSUCCESSFUL_SCHEDULE_CREATION";
 
 
@@ -262,7 +261,7 @@ function buildCourseSearchUrl(filterData) {
     const checkboxDefaultFields = [{
         0.5: 0,
         1: 0,
-        1.5: 0
+        1.5: 0,
     }, {
         LAB: 0,
         REC: 0,
@@ -455,7 +454,7 @@ export const creationSuccessful = (name, id) => ({
  */
 export const createScheduleOnBackend = (name, sections) => (dispatch) => {
     dispatch(creationAttempted(name));
-    conditionalFetch("/schedules/", {
+    rateLimitedFetch("/schedules/", {
         method: "POST",
         credentials: "include",
         mode: "same-origin",
@@ -488,7 +487,7 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
 
 export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
     dispatch(attemptDeletion(deletedScheduleId));
-    conditionalFetch(`/schedules/${deletedScheduleId}/`, {
+    rateLimitedFetch(`/schedules/${deletedScheduleId}/`, {
         method: "DELETE",
         credentials: "include",
         mode: "same-origin",
@@ -516,7 +515,7 @@ export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
  */
 export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
     const { id } = schedule;
-    if (!id || schedule.isNew) {
+    if (!id || schedule.backendCreationState) {
         return;
     }
     const updatedScheduleObj = {
@@ -524,7 +523,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         name,
         sections: schedule.meetings,
     };
-    return fetch(`/schedules/${id}/`, {
+    fetch(`/schedules/${id}/`, {
         method: "PUT",
         credentials: "include",
         mode: "same-origin",
