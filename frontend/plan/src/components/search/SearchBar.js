@@ -21,6 +21,7 @@ import {
     clearFilter,
     updateSearch
 } from "../../actions";
+import { useOnClickOutside } from "../useOnClickOutside";
 
 
 function shouldSearch(filterData) {
@@ -54,22 +55,15 @@ const LoginButton = () => (
 
 const UserSelector = ({ user: { first_name, last_name, username } }) => {
     const [selected, setSelected] = useState(false);
-    const [ref, setRef] = useState(null);
-    useEffect(() => {
-        const listener = (event) => {
-            if (ref && !ref.contains(event.target)) {
-                setSelected(false);
-            }
-        };
-        document.addEventListener("click", listener);
-        return () => {
-            document.removeEventListener("click", listener);
-        };
-    });
+
+    const onClickOutside = useOnClickOutside(() => {
+        setSelected(false);
+    }, !selected);
+
     return (
         <div
             className={`dropdown${selected ? " is-active" : ""}`}
-            ref={setRef}
+            ref={onClickOutside}
         >
             <div
                 className={`dropdown-trigger${selected ? " user-selector-selected" : ""}`}
@@ -103,7 +97,8 @@ const UserSelector = ({ user: { first_name, last_name, username } }) => {
                             role="button"
                             id="logout-button"
                             onClick={() => {
-                                fetch("/accounts/logout").then(console.log);
+                                fetch("/accounts/logout")
+                                    .then(console.log);
                             }}
                         >
                             Logout
@@ -139,7 +134,8 @@ function SearchBar({
         fetch("/accounts/me/")
             .then(response => {
                 if (response.ok) {
-                    response.json().then(newUser => setUser(newUser));
+                    response.json()
+                        .then(newUser => setUser(newUser));
                 } else {
                     setUser(null);
                 }
@@ -294,8 +290,9 @@ function SearchBar({
                         updateSearchText={updateSearchText}
                         isDisabled={isLoading}
                     />
-                    <div style={{ padding: "0.5rem" }} role="button" onClick={() => showHideReqs(!reqsShown)}>
-                        <i className="fas fa-filter" />
+                    <div style={{ padding: "0.5rem" }} role="button"
+                         onClick={() => showHideReqs(!reqsShown)}>
+                        <i className="fas fa-filter"/>
                     </div>
                 </div>
                 {reqsShown && (
