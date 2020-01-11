@@ -447,66 +447,6 @@ export const creationSuccessful = (name, id) => ({
 });
 
 /**
- * Creates a schedule on the backend
- * @param name The name of the schedule
- * @param sections The list of sections for the schedule
- * @returns {Function}
- */
-export const createScheduleOnBackend = (name, sections) => (dispatch) => {
-    dispatch(creationAttempted(name));
-    rateLimitedFetch("/schedules/", {
-        method: "POST",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify({
-            name,
-            sections,
-        }),
-    })
-        .then((response) => {
-            if (response.ok) {
-                response.json()
-                    .then(({ id }) => {
-                        if (id) {
-                            dispatch(creationSuccessful(name, id));
-                        }
-                    });
-            }
-        })
-        .catch(({ minDelayNotElapsed }) => {
-            if (!minDelayNotElapsed) {
-                dispatch(creationUnsuccessful(name));
-            }
-        });
-};
-
-export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
-    dispatch(attemptDeletion(deletedScheduleId));
-    rateLimitedFetch(`/schedules/${deletedScheduleId}/`, {
-        method: "DELETE",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-    })
-        .then((response) => {
-            if (response.ok) {
-                dispatch(deletionSuccessful(deletedScheduleId));
-            } else {
-                dispatch(deletionAttemptCompleted(deletedScheduleId));
-            }
-        });
-};
-
-/**
  * Updates a schedule on the backend
  * Skips if the id is not yet initialized for the schedule
  * Once the schedule has been updated, the schedule is marked as updated locally
@@ -566,6 +506,63 @@ export function fetchSectionInfo(searchData) {
             )
     );
 }
+
+
+/**
+ * Creates a schedule on the backend
+ * @param name The name of the schedule
+ * @param sections The list of sections for the schedule
+ * @returns {Function}
+ */
+export const createScheduleOnBackend = (name, sections) => (dispatch) => {
+    dispatch(creationAttempted(name));
+    rateLimitedFetch("/schedules/", {
+        method: "POST",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify({
+            name,
+            sections,
+        }),
+    })
+        .then(response => response.json())
+        .then(({ id }) => {
+            if (id) {
+                dispatch(creationSuccessful(name, id));
+            }
+        })
+        .catch(({ minDelayNotElapsed }) => {
+            if (!minDelayNotElapsed) {
+                dispatch(creationUnsuccessful(name));
+            }
+        });
+};
+
+export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
+    dispatch(attemptDeletion(deletedScheduleId));
+    rateLimitedFetch(`/schedules/${deletedScheduleId}/`, {
+        method: "DELETE",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    })
+        .then((response) => {
+            if (response.ok) {
+                dispatch(deletionSuccessful(deletedScheduleId));
+            } else {
+                dispatch(deletionAttemptCompleted(deletedScheduleId));
+            }
+        });
+};
 
 export function courseSearchLoading() {
     return {
