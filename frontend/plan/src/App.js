@@ -72,11 +72,11 @@ function App() {
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SearchBar setTab={setTab}/>
+                <SearchBar setTab={setTab} />
                 <Tabs value={tab} className="topTabs" centered>
-                    <Tab className="topTab" label="Search" onClick={() => setTab(0)}/>
-                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)}/>
-                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)}/>
+                    <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
+                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
+                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)} />
                 </Tabs>
                 <SwipeableViews
                     index={tab}
@@ -87,8 +87,9 @@ function App() {
                 >
                     <div style={{
                         paddingLeft: "10px",
-                        paddingRight: "10px"
-                    }}>
+                        paddingRight: "10px",
+                    }}
+                    >
                         <div>
                             <div style={{
                                 display: "flex",
@@ -97,7 +98,7 @@ function App() {
                                 margin: "10px",
                             }}
                             >
-                                <SearchSortDropdown/>
+                                <SearchSortDropdown />
                             </div>
                             <div
                                 className="box"
@@ -106,19 +107,19 @@ function App() {
                                     paddingRight: 0,
                                 }}
                             >
-                                <Selector/>
+                                <Selector />
                             </div>
                         </div>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Cart setTab={setTab}/>
+                        <Cart setTab={setTab} />
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Schedule setTab={setTab}/>
+                        <Schedule setTab={setTab} />
                     </div>
                 </SwipeableViews>
-                <Footer/>
-                <ModalContainer/>
+                <Footer />
+                <ModalContainer />
             </Provider>
         );
     }
@@ -150,7 +151,7 @@ function App() {
                                 display: "flex",
                             }}
                             >
-                                <SearchSortDropdown/>
+                                <SearchSortDropdown />
                             </div>
                         </span>
                         <div
@@ -160,7 +161,7 @@ function App() {
                                 paddingRight: 0,
                             }}
                         >
-                            <Selector/>
+                            <Selector />
                         </div>
                     </div>
                     <div
@@ -180,15 +181,15 @@ function App() {
                         >
                             Cart
                         </h3>
-                        <Cart/>
+                        <Cart />
                     </div>
                     <div className="column">
                         <Schedule />
                     </div>
                 </div>
             </div>
-            <Footer/>
-            <ModalContainer/>
+            <Footer />
+            <ModalContainer />
         </Provider>
     );
 }

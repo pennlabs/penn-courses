@@ -30,7 +30,7 @@ const generateDefaultSchedule = () => (
         pushedToBackend: false,
         isNew: {
             creationQueued: false,
-            creationAttempts: 0
+            creationAttempts: 0,
         },
         updatedAt: 1,
     }
@@ -79,9 +79,9 @@ const toggleSection = (meetings, section) => {
  * Returns a copy of th given schedule without its id
  * @param schedule
  */
-const withoutId = schedule => {
+const withoutId = (schedule) => {
     const newSchedule = { ...schedule };
-    delete newSchedule["id"];
+    delete newSchedule.id;
     return newSchedule;
 };
 
@@ -126,8 +126,8 @@ export const schedule = (state = initialState, action) => {
                         ...state.schedules[action.scheduleName],
                         pushedToBackend: true,
                         isNew: false,
-                    }
-                }
+                    },
+                },
             };
         case MARK_CART_SYNCED:
             return {
@@ -141,20 +141,20 @@ export const schedule = (state = initialState, action) => {
                     cartId: action.id,
                     cartPushedToBackend: true,
                 };
-            } else {
-                return {
-                    ...state,
-                    schedules: {
-                        ...state.schedules,
-                        [action.name]: {
-                            ...state.schedules[action.name],
-                            id: action.id,
-                            pushedToBackend: true,
-                            isNew: false,
-                        },
-                    },
-                };
             }
+            return {
+                ...state,
+                schedules: {
+                    ...state.schedules,
+                    [action.name]: {
+                        ...state.schedules[action.name],
+                        id: action.id,
+                        pushedToBackend: true,
+                        isNew: false,
+                    },
+                },
+            };
+
         case UPDATE_SCHEDULES:
             // eslint-disable-next-line
             const { schedulesFromBackend } = action;
@@ -234,7 +234,7 @@ export const schedule = (state = initialState, action) => {
                             updated_at: Date.now(),
                             isNew: {
                                 creationQueued: false,
-                                creationAttempts: 0
+                                creationAttempts: 0,
                             },
                         },
                 },
@@ -260,27 +260,27 @@ export const schedule = (state = initialState, action) => {
                         ...state.schedules[action.scheduleName],
                         isNew: {
                             creationQueued: true,
-                            creationAttempts: state.schedules[action.scheduleName].isNew.creationAttempts + 1
-                        }
-                    }
-                }
+                            creationAttempts: state.schedules[action.scheduleName].isNew.creationAttempts + 1,
+                        },
+                    },
+                },
             };
         case UNSUCCESSFUL_SCHEDULE_CREATION:
             if (action.scheduleName === "cart") {
                 return state;
             }
             return {
-              ...state,
-              schedules: {
-                  ...state.schedules,
-                  [action.scheduleName]: {
-                      ...state.schedules[action.scheduleName],
-                      isNew: {
-                          ...state.schedules[action.scheduleName].isNew,
-                          creationQueued: false,
-                      }
-                  }
-              }
+                ...state,
+                schedules: {
+                    ...state.schedules,
+                    [action.scheduleName]: {
+                        ...state.schedules[action.scheduleName],
+                        isNew: {
+                            ...state.schedules[action.scheduleName].isNew,
+                            creationQueued: false,
+                        },
+                    },
+                },
             };
         case DELETE_SCHEDULE:
             const newSchedules = removeSchedule(action.scheduleName, state.schedules);
@@ -293,8 +293,8 @@ export const schedule = (state = initialState, action) => {
                     ...(state.deletedSchedules || {}),
                     [state.schedules[action.scheduleName].id]: {
                         deletionQueued: false,
-                        attempts: 0
-                    }
+                        attempts: 0,
+                    },
                 },
                 schedules: newSchedules,
                 scheduleSelected: action.scheduleName === state.scheduleSelected
@@ -308,9 +308,9 @@ export const schedule = (state = initialState, action) => {
                     ...state.deletedSchedules,
                     [action.deletedScheduleId]: {
                         deletionQueued: true,
-                        attempts: 1
-                    }
-                }
+                        attempts: 1,
+                    },
+                },
             };
         case DELETION_ATTEMPT_SUCCEEDED: {
             // deletion API call was successful
@@ -329,14 +329,14 @@ export const schedule = (state = initialState, action) => {
                     ...state.deletedSchedules,
                     [action.deletedScheduleId]: {
                         attempts: state.deletedSchedules[action.deletedScheduleId].attempts + 1,
-                        deletionQueued: false
-                    }
+                        deletionQueued: false,
+                    },
                 } : {
                     [action.deletedScheduleId]: {
                         attempts: 1,
-                        deletionQueued: false
-                    }
-                }
+                        deletionQueued: false,
+                    },
+                },
             };
         }
         case CHANGE_SCHEDULE:

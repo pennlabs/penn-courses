@@ -370,7 +370,7 @@ export const deletionAttemptCompleted = deletedScheduleId => ({
 
 export const deletionSuccessful = deletedScheduleId => ({
     type: DELETION_ATTEMPT_SUCCEEDED,
-    deletedScheduleId
+    deletedScheduleId,
 });
 
 export const creationUnsuccessful = createdScheduleName => ({
@@ -385,7 +385,7 @@ export const creationAttempted = createdScheduleName => ({
 
 export const attemptDeletion = deletedScheduleId => ({
     type: ATTEMPT_DELETION,
-    deletedScheduleId
+    deletedScheduleId,
 });
 
 export function clearAll() {
@@ -420,12 +420,12 @@ export function fetchCourseDetails(courseId) {
 export const fetchSchedulesAndInitializeCart = (cart, onComplete = () => null) => (dispatch) => {
     fetch("/schedules/")
         .then(res => res.json())
-        .then(schedules => {
+        .then((schedules) => {
             if (schedules) {
                 dispatch(updateSchedules(schedules));
             }
             // if the cart doesn't exist on the backend, create it
-            if (!schedules.reduce((acc, {name}) => acc || name === "cart", false)) {
+            if (!schedules.reduce((acc, { name }) => acc || name === "cart", false)) {
                 dispatch(createScheduleOnBackend("cart", cart));
             }
             onComplete(schedules);
@@ -452,9 +452,9 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
         credentials: "include",
         mode: "same-origin",
         headers: {
-            "Accept": "application/json",
+            Accept: "application/json",
             "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf()
+            "X-CSRFToken": getCsrf(),
         },
         body: JSON.stringify({
             name,
@@ -462,7 +462,7 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
         }),
     });
     if (fetchResult) {
-        fetchResult.then(response => {
+        fetchResult.then((response) => {
             if (response.ok) {
                 response.json()
                     .then(({ id }) => {
@@ -472,27 +472,27 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
                     });
             }
         })
-            .catch( error => {
+            .catch((error) => {
                 console.log(error);
                 dispatch(creationUnsuccessful(name));
             });
     }
 };
 
-export const deleteScheduleOnBackend = deletedScheduleId => dispatch => {
+export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
     dispatch(attemptDeletion(deletedScheduleId));
-    const fetchResult = conditionalFetch("/schedules/" + deletedScheduleId + "/", {
+    const fetchResult = conditionalFetch(`/schedules/${deletedScheduleId}/`, {
         method: "DELETE",
         credentials: "include",
         mode: "same-origin",
         headers: {
-            "Accept": "application/json",
+            Accept: "application/json",
             "Content-Type": "application/json",
             "X-CSRFToken": getCsrf(),
         },
     });
     if (fetchResult) {
-        fetchResult.then(response => {
+        fetchResult.then((response) => {
             if (response.ok) {
                 dispatch(deletionSuccessful(deletedScheduleId));
             } else {
@@ -524,7 +524,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         credentials: "include",
         mode: "same-origin",
         headers: {
-            "Accept": "application/json",
+            Accept: "application/json",
             "Content-Type": "application/json",
             "X-CSRFToken": getCsrf(),
         },

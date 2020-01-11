@@ -4,8 +4,8 @@
 const getCsrf = () => {
     const result = document.cookie && document.cookie.split("; ")
         .reduce((acc, cookie) => acc || ((cookie
-                .substring(0, "csrftoken".length + 1) === ("csrftoken=")) &&
-            decodeURIComponent(cookie.substring("csrftoken=".length))), null);
+            .substring(0, "csrftoken".length + 1) === ("csrftoken="))
+            && decodeURIComponent(cookie.substring("csrftoken=".length))), null);
     return result;
 };
 
