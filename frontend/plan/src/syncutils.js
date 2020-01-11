@@ -1,25 +1,39 @@
 import fetch from "cross-fetch";
 import {
-    attemptDeletion,
     createScheduleOnBackend,
     deleteSchedule,
     deleteScheduleOnBackend,
-    deletionAttemptCompleted,
-    deletionSuccessful,
     fetchSchedulesAndInitializeCart,
-    incrementDeletionAttempts,
     updateScheduleOnBackend
 } from "./actions";
-import getCsrf from "./csrf";
+import { MIN_FETCH_INTERVAL } from "./sync_constants";
 
-// Ensure that fetches only happen once ever 250 ms
-const lastFetched = 0;
+let lastFetched = 0;
+/**
+ * Ensure that fetches don't happen too frequently by requiring that it has been 250ms
+ * since the last conditional fetch.
+ * @param url The url to fetch
+ * @param init The init to apply to the url
+ * @returns {Promise<unknown>}
+ */
 export const conditionalFetch = (url, init) => {
-    const now = Date.now();
-    if (now - lastFetched > 250) {
-        return fetch(url, init);
-    }
-    return null;
+    // Wrap the fetch in a new promise that conditionally rejects if
+    // the required amount of time has not elapsed
+    return new Promise(((resolve, reject) => {
+        const now = Date.now();
+        if (now - lastFetched > MIN_FETCH_INTERVAL) {
+            fetch(url, init)
+                .then(result => {
+                    resolve(result);
+                })
+                .catch(err => {
+                    reject(err);
+                });
+            lastFetched = now;
+        } else {
+            reject({ minDelayNotElapsed: true });
+        }
+    }));
 };
 
 /**

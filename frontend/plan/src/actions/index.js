@@ -259,19 +259,27 @@ function buildCourseSearchUrl(filterData) {
 
     // Checkbox Filters
     const checkboxFields = ["cu", "activity"];
-    const checkboxDefaultFields = [{ 0.5: 0, 1: 0, 1.5: 0 }, {
-        LAB: 0, REC: 0, SEM: 0, STU: 0,
+    const checkboxDefaultFields = [{
+        0.5: 0,
+        1: 0,
+        1.5: 0
+    }, {
+        LAB: 0,
+        REC: 0,
+        SEM: 0,
+        STU: 0,
     }];
     for (let i = 0; i < checkboxFields.length; i += 1) {
         if (filterData[checkboxFields[i]]
             && JSON.stringify(filterData[checkboxFields[i]])
             !== JSON.stringify(checkboxDefaultFields[i])) {
             const applied = [];
-            Object.keys(filterData[checkboxFields[i]]).map((item) => {
-                if (filterData[checkboxFields[i]][item] === 1) {
-                    applied.push(item);
-                }
-            });
+            Object.keys(filterData[checkboxFields[i]])
+                .map((item) => {
+                    if (filterData[checkboxFields[i]][item] === 1) {
+                        applied.push(item);
+                    }
+                });
             if (applied.length > 0) {
                 queryString += `&${checkboxFields[i]}=${applied[0]}`;
                 for (let j = 1; j < applied.length; j += 1) {
@@ -447,7 +455,7 @@ export const creationSuccessful = (name, id) => ({
  */
 export const createScheduleOnBackend = (name, sections) => (dispatch) => {
     dispatch(creationAttempted(name));
-    const fetchResult = conditionalFetch("/schedules/", {
+    conditionalFetch("/schedules/", {
         method: "POST",
         credentials: "include",
         mode: "same-origin",
@@ -460,9 +468,8 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
             name,
             sections,
         }),
-    });
-    if (fetchResult) {
-        fetchResult.then((response) => {
+    })
+        .then((response) => {
             if (response.ok) {
                 response.json()
                     .then(({ id }) => {
@@ -472,16 +479,16 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
                     });
             }
         })
-            .catch((error) => {
-                console.log(error);
+        .catch(({ minDelayNotElapsed }) => {
+            if (!minDelayNotElapsed) {
                 dispatch(creationUnsuccessful(name));
-            });
-    }
+            }
+        });
 };
 
 export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
     dispatch(attemptDeletion(deletedScheduleId));
-    const fetchResult = conditionalFetch(`/schedules/${deletedScheduleId}/`, {
+    conditionalFetch(`/schedules/${deletedScheduleId}/`, {
         method: "DELETE",
         credentials: "include",
         mode: "same-origin",
@@ -490,16 +497,14 @@ export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
             "Content-Type": "application/json",
             "X-CSRFToken": getCsrf(),
         },
-    });
-    if (fetchResult) {
-        fetchResult.then((response) => {
+    })
+        .then((response) => {
             if (response.ok) {
                 dispatch(deletionSuccessful(deletedScheduleId));
             } else {
                 dispatch(deletionAttemptCompleted(deletedScheduleId));
             }
         });
-    }
 };
 
 /**
