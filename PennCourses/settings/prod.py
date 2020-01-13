@@ -15,7 +15,9 @@ sentry_sdk.init(
 # Whitenoise Configuration
 MIDDLEWARE.remove('django.middleware.security.SecurityMiddleware')
 MIDDLEWARE.remove('PennCourses.middleware.SwitchboardMiddleware')
+MIDDLEWARE.remove('corsheaders.middleware.CorsMiddleware')
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'PennCourses.middleware.SwitchboardMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -23,6 +25,24 @@ MIDDLEWARE = [
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Share cookie with frontend
+SESSION_COOKIE_DOMAIN = '.pennlabs.org'
+CSRF_COOKIE_DOMAIN = '.pennlabs.org'
+CSRF_COOKIE_SAMESITE = None
+
+# Django CORS Settings
+CORS_ORIGIN_REGEX_WHITELIST = [
+    r'^https://[\w-]+.penncourseplan.com$',
+    r'^https://penncourseplan.com$'
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    '.pennlabs.org',
+    'pennlabs.org'
+    '.penncourseplan.com',
+    'penncourseplan.com'
+]
 
 # Domain Routing Middleware
 # Define URL schemes for each domain.

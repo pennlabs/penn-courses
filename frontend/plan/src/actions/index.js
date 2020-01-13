@@ -1,4 +1,5 @@
 import fetch from "cross-fetch";
+import { BACKEND_URL } from "../constants";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -44,6 +45,17 @@ export const TOGGLE_CHECK = "TOGGLE_CHECK";
 export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
 export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
+
+
+const doAPIRequest = (path) => {
+    let uri = null;
+    if (BACKEND_URL) {
+        uri = BACKEND_URL + path;
+    } else {
+        uri = path;
+    }
+    return fetch(uri);
+};
 
 
 export const duplicateSchedule = scheduleName => (
@@ -167,7 +179,7 @@ export const clearSchedule = () => (
 
 export const loadRequirements = () => (
     dispatch => (
-        fetch("/requirements")
+        doAPIRequest("/requirements")
             .then(
                 response => response.json()
                     .then((data) => {
@@ -260,7 +272,7 @@ function buildCourseSearchUrl(filterData) {
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
         dispatch(updateSearchRequest());
-        fetch(buildCourseSearchUrl(filterData)).then(
+        doAPIRequest(buildCourseSearchUrl(filterData)).then(
             response => response.json().then(
                 json => dispatch(updateSearch(json)),
                 error => dispatch(courseSearchError(error)),
@@ -344,7 +356,7 @@ export function clearAll() {
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
-        fetch(`/courses/${courseId}`)
+        doAPIRequest(`/courses/${courseId}`)
             .then(res => res.json())
             .then(course => dispatch(updateCourseInfo(course)))
             .catch(error => dispatch(sectionInfoSearchError(error)));
@@ -353,7 +365,7 @@ export function fetchCourseDetails(courseId) {
 
 export function fetchSectionInfo(searchData) {
     return dispatch => (
-        fetch(buildSectionInfoSearchUrl(searchData)).then(
+        doAPIRequest(buildSectionInfoSearchUrl(searchData)).then(
             response => response.json().then(
                 (json) => {
                     const info = {
