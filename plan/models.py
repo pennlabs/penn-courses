@@ -7,7 +7,11 @@ from courses.models import Section
 
 class ScheduleManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().prefetch_related(models.Prefetch('sections', Section.with_reviews.all()))
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(models.Prefetch("sections", Section.with_reviews.all()))
+        )
 
 
 class Schedule(models.Model):
@@ -24,14 +28,14 @@ class Schedule(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = (('name', 'semester', 'person'), )
+        unique_together = (("name", "semester", "person"),)
 
     def save(self, *args, **kwargs):
         if self.id is not None:
             for s in self.sections.all():
                 if self.semester != s.course.semester:
-                    raise ValidationError('Sections do not match semester')
+                    raise ValidationError("Sections do not match semester")
         super(Schedule, self).save(*args, **kwargs)
 
     def __str__(self):
-        return 'User: %s, Schedule ID: %s' % (self.person, self.id)
+        return "User: %s, Schedule ID: %s" % (self.person, self.id)

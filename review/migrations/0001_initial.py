@@ -9,23 +9,36 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('courses', '0016_auto_20190523_1554'),
+        ("courses", "0016_auto_20190523_1554"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Review',
+            name="Review",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('course_quality', models.DecimalField(decimal_places=2, max_digits=3)),
-                ('difficulty', models.DecimalField(decimal_places=2, max_digits=3)),
-                ('instructor_quality', models.DecimalField(decimal_places=2, max_digits=3)),
-                ('work_required', models.DecimalField(decimal_places=2, max_digits=3)),
-                ('instructor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='courses.Instructor')),
-                ('section', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='courses.Section')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("course_quality", models.DecimalField(decimal_places=2, max_digits=3)),
+                ("difficulty", models.DecimalField(decimal_places=2, max_digits=3)),
+                ("instructor_quality", models.DecimalField(decimal_places=2, max_digits=3)),
+                ("work_required", models.DecimalField(decimal_places=2, max_digits=3)),
+                (
+                    "instructor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="courses.Instructor"
+                    ),
+                ),
+                (
+                    "section",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="courses.Section"
+                    ),
+                ),
             ],
-            options={
-                'unique_together': {('section', 'instructor')},
-            },
+            options={"unique_together": {("section", "instructor")},},
         ),
     ]

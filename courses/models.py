@@ -9,7 +9,7 @@ from review.models import ReviewBit
 
 
 def get_current_semester():
-    return get_value('SEMESTER', '2019C')
+    return get_value("SEMESTER", "2019C")
 
 
 """
@@ -19,8 +19,8 @@ Core Course Models
 The Instructor, Course and Section models define the core course information
 used in Alert and Plan.
 
-The StatusUpdate model holds changes to the "status" field over time, recording how course availability changes
-over time.
+The StatusUpdate model holds changes to the "status" field over time, recording how course
+availability changes over time.
 """
 
 
@@ -47,44 +47,48 @@ Queryset annotations
 ====================
 
 This file has code which annotates Course and Section querysets with Review information.
-There's some tricky JOINs going on here, through the Subquery objects which you can read about here:
-https://docs.djangoproject.com/en/2.2/ref/models/expressions/#subquery-expressions.
+There's some tricky JOINs going on here, through the Subquery objects which you can read about
+here: https://docs.djangoproject.com/en/2.2/ref/models/expressions/#subquery-expressions.
 
-This allows us to have the database do all of the work of averaging PCR data, so that we can get all of our Course and
-Section data in two queries.
+This allows us to have the database do all of the work of averaging PCR data, so that we can
+get all of our Course and Section data in two queries.
 """
 
 
-# Annotations are basically the same for Course and Section, save a few of the subfilters, so generalize it out.
+# Annotations are basically the same for Course and Section, save a few of the subfilters, so
+# generalize it out.
 def review_averages(queryset, subfilters):
-    fields = ['course_quality', 'difficulty', 'instructor_quality', 'work_required']
-    return queryset.annotate(**{
-        field: Subquery(
-            ReviewBit.objects.filter(field=field, **subfilters)
-            .values('field')
-            .order_by()
-            .annotate(avg=Avg('score'))
-            .values('avg')[:1],
-            output_field=FloatField())
-        for field in fields
-    })
+    fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
+    return queryset.annotate(
+        **{
+            field: Subquery(
+                ReviewBit.objects.filter(field=field, **subfilters)
+                .values("field")
+                .order_by()
+                .annotate(avg=Avg("score"))
+                .values("avg")[:1],
+                output_field=FloatField(),
+            )
+            for field in fields
+        }
+    )
 
 
 def sections_with_reviews(queryset):
     return review_averages(
         queryset,
         {
-            'review__section__course__full_code': OuterRef('course__full_code'),
+            "review__section__course__full_code": OuterRef("course__full_code"),
             # get all the reviews for instructors in the Section.instructors many-to-many
-            'review__instructor__in': Subquery(
-                Instructor.objects.filter(section=OuterRef(OuterRef('pk'))).values('pk').order_by()
-            )
-        }
-    ).order_by('code')
+            "review__instructor__in": Subquery(
+                Instructor.objects.filter(section=OuterRef(OuterRef("pk"))).values("pk").order_by()
+            ),
+        },
+    ).order_by("code")
 
 
 def course_reviews(queryset):
-    return review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
+    return review_averages(queryset, {"review__section__course__full_code": OuterRef("full_code")})
 
 
 class CourseManager(models.Manager):
@@ -99,7 +103,7 @@ class Course(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='courses')
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="courses")
     code = models.CharField(max_length=8)
     semester = models.CharField(max_length=5, db_index=True)
 
@@ -112,17 +116,15 @@ class Course(models.Model):
 
     # Handle crosslisted courses.
     # All crosslisted courses have a "primary listing" in the registrar.
-    primary_listing = models.ForeignKey('Course',
-                                        related_name='listing_set',
-                                        on_delete=models.CASCADE,
-                                        null=True,
-                                        blank=True)
+    primary_listing = models.ForeignKey(
+        "Course", related_name="listing_set", on_delete=models.CASCADE, null=True, blank=True
+    )
 
     class Meta:
-        unique_together = (('department', 'code', 'semester'), ('full_code', 'semester'))
+        unique_together = (("department", "code", "semester"), ("full_code", "semester"))
 
     def __str__(self):
-        return '%s %s' % (self.full_code, self.semester)
+        return "%s %s" % (self.full_code, self.semester)
 
     @property
     def crosslistings(self):
@@ -133,12 +135,16 @@ class Course(models.Model):
 
     @property
     def requirements(self):
-        return Requirement.objects.exclude(id__in=self.nonrequirement_set.all())\
-            .filter(semester=self.semester)\
-            .filter(Q(id__in=self.requirement_set.all()) | Q(id__in=self.department.requirements.all()))
+        return (
+            Requirement.objects.exclude(id__in=self.nonrequirement_set.all())
+            .filter(semester=self.semester)
+            .filter(
+                Q(id__in=self.requirement_set.all()) | Q(id__in=self.department.requirements.all())
+            )
+        )
 
     def save(self, *args, **kwargs):
-        self.full_code = f'{self.department.code}-{self.code}'
+        self.full_code = f"{self.department.code}-{self.code}"
         super().save(*args, **kwargs)
 
 
@@ -148,10 +154,10 @@ class Restriction(models.Model):
 
     @property
     def permit_required(self):
-        return 'permission' in self.description.lower()
+        return "permission" in self.description.lower()
 
     def __str__(self):
-        return f'{self.code} - {self.description}'
+        return f"{self.code} - {self.description}"
 
 
 class SectionManager(models.Manager):
@@ -164,34 +170,34 @@ class Section(models.Model):
     with_reviews = SectionManager()
 
     STATUS_CHOICES = (
-        ('O', 'Open'),
-        ('C', 'Closed'),
-        ('X', 'Cancelled'),
-        ('', 'Unlisted'),
+        ("O", "Open"),
+        ("C", "Closed"),
+        ("X", "Cancelled"),
+        ("", "Unlisted"),
     )
 
     ACTIVITY_CHOICES = (
-        ('CLN', 'Clinic'),
-        ('DIS', 'Dissertation'),
-        ('IND', 'Independent Study'),
-        ('LAB', 'Lab'),
-        ('LEC', 'Lecture'),
-        ('MST', 'Masters Thesis'),
-        ('REC', 'Recitation'),
-        ('SEM', 'Seminar'),
-        ('SRT', 'Senior Thesis'),
-        ('STU', 'Studio'),
-        ('***', 'Undefined'),
+        ("CLN", "Clinic"),
+        ("DIS", "Dissertation"),
+        ("IND", "Independent Study"),
+        ("LAB", "Lab"),
+        ("LEC", "Lecture"),
+        ("MST", "Masters Thesis"),
+        ("REC", "Recitation"),
+        ("SEM", "Seminar"),
+        ("SRT", "Senior Thesis"),
+        ("STU", "Studio"),
+        ("***", "Undefined"),
     )
 
     class Meta:
-        unique_together = (('code', 'course'), )
+        unique_together = (("code", "course"),)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     code = models.CharField(max_length=16)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sections')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
     full_code = models.CharField(max_length=32, blank=True, db_index=True)
 
     status = models.CharField(max_length=4, choices=STATUS_CHOICES, db_index=True)
@@ -201,17 +207,19 @@ class Section(models.Model):
     meeting_times = models.TextField(blank=True)
 
     instructors = models.ManyToManyField(Instructor)
-    associated_sections = models.ManyToManyField('Section')
+    associated_sections = models.ManyToManyField("Section")
     restrictions = models.ManyToManyField(Restriction, blank=True)
 
-    credits = models.DecimalField(max_digits=3,  # some course for 2019C is 14 CR...
-                                  decimal_places=2,
-                                  null=True,
-                                  blank=True,
-                                  db_index=True)
+    credits = models.DecimalField(
+        max_digits=3,  # some course for 2019C is 14 CR...
+        decimal_places=2,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
     def __str__(self):
-        return '%s %s' % (self.full_code, self.course.semester)
+        return "%s %s" % (self.full_code, self.course.semester)
 
     @property
     def semester(self):
@@ -219,20 +227,15 @@ class Section(models.Model):
 
     @property
     def is_open(self):
-        return self.status == 'O'
+        return self.status == "O"
 
     def save(self, *args, **kwargs):
-        self.full_code = f'{self.course.full_code}-{self.code}'
+        self.full_code = f"{self.course.full_code}-{self.code}"
         super().save(*args, **kwargs)
 
 
 class StatusUpdate(models.Model):
-    STATUS_CHOICES = (
-        ('O', 'Open'),
-        ('C', 'Closed'),
-        ('X', 'Cancelled'),
-        ('', 'Unlisted')
-    )
+    STATUS_CHOICES = (("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted"))
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
     old_status = models.CharField(max_length=16, choices=STATUS_CHOICES)
     new_status = models.CharField(max_length=16, choices=STATUS_CHOICES)
@@ -242,7 +245,7 @@ class StatusUpdate(models.Model):
 
     def __str__(self):
         d = dict(self.STATUS_CHOICES)
-        return f'{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}'
+        return f"{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}"
 
 
 """
@@ -255,6 +258,7 @@ The next section of models store information related to scheduling and location.
 
 class Building(models.Model):
     """ A building at Penn. """
+
     code = models.CharField(max_length=4, unique=True)
     name = models.CharField(max_length=80, blank=True)
     latitude = models.FloatField(blank=True, null=True)
@@ -266,37 +270,39 @@ class Building(models.Model):
 
 class Room(models.Model):
     """ A room in a Building. It optionally may be named. """
+
     building = models.ForeignKey(Building, on_delete=models.CASCADE)
     number = models.CharField(max_length=5)
     name = models.CharField(max_length=80)
 
     class Meta:
         """ To hold uniqueness constraint """
-        unique_together = (('building', 'number'),)
+
+        unique_together = (("building", "number"),)
 
     def __str__(self):
-        return f'{self.building.code} {self.number}'
+        return f"{self.building.code} {self.number}"
 
 
 class Meeting(models.Model):
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='meetings')
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="meetings")
     day = models.CharField(max_length=1)
     # the time hh:mm is formatted as decimal hh.mm, h + mm / 100
-    start = models.DecimalField(max_digits=4,
-                                decimal_places=2)
-    end = models.DecimalField(max_digits=4,
-                              decimal_places=2)
+    start = models.DecimalField(max_digits=4, decimal_places=2)
+    end = models.DecimalField(max_digits=4, decimal_places=2)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = (('section', 'day', 'start', 'end', 'room'), )
+        unique_together = (("section", "day", "start", "end", "room"),)
 
     @staticmethod
     def int_to_time(time):
         hour = math.floor(time) % 12
         minute = (time % 1) * 60
 
-        return f'{hour if hour != 0 else 12}:{minute if minute != 0 else "00"} {"AM" if time < 12 else "PM"}'
+        return "{}:{} {}".format(
+            hour if hour != 0 else 12, minute if minute != 0 else "00", "AM" if time < 12 else "PM"
+        )
 
     @property
     def start_time(self):
@@ -307,7 +313,7 @@ class Meeting(models.Model):
         return Meeting.int_to_time(self.end)
 
     def __str__(self):
-        return f'{self.section}: {self.start_time}-{self.end_time} in {self.room}'
+        return f"{self.section}: {self.start_time}-{self.end_time} in {self.room}"
 
 
 """
@@ -316,13 +322,9 @@ Requirements
 
 
 class Requirement(models.Model):
-    SCHOOL_CHOICES = (
-        ('SEAS', 'Engineering'),
-        ('WH', 'Wharton'),
-        ('SAS', 'College')
-    )
-    # organize requirements by semester so that we don't get huge related sets which don't give particularly good
-    # info.
+    SCHOOL_CHOICES = (("SEAS", "Engineering"), ("WH", "Wharton"), ("SAS", "College"))
+    # organize requirements by semester so that we don't get huge related sets which don't give
+    # particularly good info.
     semester = models.CharField(max_length=5, db_index=True)
     # what school this requirement belongs to
     school = models.CharField(max_length=5, choices=SCHOOL_CHOICES, db_index=True)
@@ -332,50 +334,57 @@ class Requirement(models.Model):
     name = models.CharField(max_length=255)
 
     # Departments which satisfy this requirement
-    departments = models.ManyToManyField(Department, related_name='requirements', blank=True)
+    departments = models.ManyToManyField(Department, related_name="requirements", blank=True)
     # Courses which satisfy this requirement
-    courses = models.ManyToManyField(Course, related_name='requirement_set', blank=True)
+    courses = models.ManyToManyField(Course, related_name="requirement_set", blank=True)
 
     # Courses which do not satisfy this requirement.
-    # For example, CIS classes are Engineering courses, but CIS-125 is NOT an engineering class, so for the ENG
-    # requirement, CIS-125 would go into the overrides set.
-    overrides = models.ManyToManyField(Course, related_name='nonrequirement_set', blank=True)
+    # For example, CIS classes are Engineering courses, but CIS-125 is NOT an engineering class,
+    # so for the ENG requirement, CIS-125 would go into the overrides set.
+    overrides = models.ManyToManyField(Course, related_name="nonrequirement_set", blank=True)
 
     class Meta:
-        unique_together = (('semester', 'code', 'school'), )
+        unique_together = (("semester", "code", "school"),)
 
     def __str__(self):
-        return f'{self.code} @ {self.school} - {self.semester}'
+        return f"{self.code} @ {self.school} - {self.semester}"
 
     @property
     def satisfying_courses(self):
-        return Course.objects.all()\
-            .exclude(id__in=self.overrides.all())\
-            .filter(Q(department__in=self.departments.all(), semester=self.semester) | Q(id__in=self.courses.all()))
+        return (
+            Course.objects.all()
+            .exclude(id__in=self.overrides.all())
+            .filter(
+                Q(department__in=self.departments.all(), semester=self.semester)
+                | Q(id__in=self.courses.all())
+            )
+        )
 
 
 """
 3rd-Party API
 """
 
-PCA_REGISTRATION = 'PCA_REGISTRATION'
+PCA_REGISTRATION = "PCA_REGISTRATION"
 
 
 class APIPrivilege(models.Model):
     """
     Describes a type of access privelege that an API key can have.
     """
+
     code = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
 
 
 class APIKey(models.Model):
     """
-    An API Key is linked with an email address for contact purposes. May link with a user @ Penn if we wanted to
-    restrict that.
+    An API Key is linked with an email address for contact purposes. May link with a user @ Penn if
+    we wanted to restrict that.
     """
+
     email = models.EmailField()
     code = models.CharField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
     active = models.BooleanField(blank=True, default=True)
 
-    privileges = models.ManyToManyField(APIPrivilege, related_name='key_set', blank=True)
+    privileges = models.ManyToManyField(APIPrivilege, related_name="key_set", blank=True)

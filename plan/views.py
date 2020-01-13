@@ -18,18 +18,18 @@ from plan.serializers import ScheduleSerializer
 
 class CourseListSearch(CourseList):
     filter_backends = [TypedCourseSearchBackend]
-    search_fields = ('full_code', 'title', 'sections__instructors__name')
+    search_fields = ("full_code", "title", "sections__instructors__name")
 
     def get_queryset(self):
         queryset = super().get_queryset()
 
         filters = {
-            'requirements': requirement_filter,
-            'cu': choice_filter('sections__credits'),
-            'activity': choice_filter('sections__activity'),
-            'course_quality': bound_filter('course_quality'),
-            'instructor_quality': bound_filter('instructor_quality'),
-            'difficulty': bound_filter('difficulty')
+            "requirements": requirement_filter,
+            "cu": choice_filter("sections__credits"),
+            "activity": choice_filter("sections__activity"),
+            "course_quality": bound_filter("course_quality"),
+            "instructor_quality": bound_filter("instructor_quality"),
+            "difficulty": bound_filter("difficulty"),
         }
 
         for field, filter_func in filters.items():
@@ -42,91 +42,116 @@ class CourseListSearch(CourseList):
 
 def get_sections(data):
     raw_sections = []
-    if 'meetings' in data:
-        raw_sections = data.get('meetings')
-    elif 'sections' in data:
-        raw_sections = data.get('sections')
+    if "meetings" in data:
+        raw_sections = data.get("meetings")
+    elif "sections" in data:
+        raw_sections = data.get("sections")
     sections = []
     for s in raw_sections:
-        _, section = get_course_and_section(s.get('id'),
-                                            s.get('semester'))
+        _, section = get_course_and_section(s.get("id"), s.get("semester"))
         sections.append(section)
     return sections
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     serializer_class = ScheduleSerializer
-    http_method_names = ['get', 'post', 'delete', 'put']
+    http_method_names = ["get", "post", "delete", "put"]
     permission_classes = [IsAuthenticated]
 
     def update(self, request, pk=None):
         try:
             schedule = self.get_queryset().get(id=pk)
         except Schedule.DoesNotExist:
-            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if 'semester' not in request.data:
-            request.data['semester'] = get_value('SEMESTER', None)
+        if "semester" not in request.data:
+            request.data["semester"] = get_value("SEMESTER", None)
 
         try:
             sections = get_sections(request.data)
         except ObjectDoesNotExist:
-            return Response({'detail': 'One or more sections not found in database.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "One or more sections not found in database."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         for s in sections:
-            if s.course.semester != request.data.get('semester'):
-                return Response({'detail': 'Semester uniformity invariant violated.'},
-                                status=status.HTTP_400_BAD_REQUEST)
+            if s.course.semester != request.data.get("semester"):
+                return Response(
+                    {"detail": "Semester uniformity invariant violated."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         try:
             schedule.person = request.user
-            schedule.semester = request.data.get('semester')
-            schedule.name = request.data.get('name')
+            schedule.semester = request.data.get("semester")
+            schedule.name = request.data.get("name")
             schedule.save()
             schedule.sections.set(sections)
-            return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_202_ACCEPTED)
+            return Response(
+                {"message": "success", "id": schedule.id}, status=status.HTTP_202_ACCEPTED
+            )
         except IntegrityError as e:
-            return Response({'detail': 'IntegrityError encountered while trying to update: ' + str(e.__cause__)},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    "detail": "IntegrityError encountered while trying to update: "
+                    + str(e.__cause__)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     def create(self, request, *args, **kwargs):
-        if self.get_queryset().filter(id=request.data.get('id')).exists():
-            return self.update(request, request.data.get('id'))
+        if self.get_queryset().filter(id=request.data.get("id")).exists():
+            return self.update(request, request.data.get("id"))
 
-        if 'semester' not in request.data:
-            request.data['semester'] = get_value('SEMESTER', None)
+        if "semester" not in request.data:
+            request.data["semester"] = get_value("SEMESTER", None)
 
         try:
             sections = get_sections(request.data)
         except ObjectDoesNotExist:
-            return Response({'detail': 'One or more sections not found in database.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "One or more sections not found in database."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         for sec in sections:
-            if sec.course.semester != request.data.get('semester'):
-                return Response({'detail': 'Semester uniformity invariant violated.'},
-                                status=status.HTTP_400_BAD_REQUEST)
+            if sec.course.semester != request.data.get("semester"):
+                return Response(
+                    {"detail": "Semester uniformity invariant violated."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         try:
-            if 'id' in request.data:  # Also from above we know that this id does not conflict with existing schedules.
-                schedule = self.get_queryset().create(person=request.user,
-                                                      semester=request.data.get('semester'),
-                                                      name=request.data.get('name'),
-                                                      id=request.data.get('id'))
+            if (
+                "id" in request.data
+            ):  # Also from above we know that this id does not conflict with existing schedules.
+                schedule = self.get_queryset().create(
+                    person=request.user,
+                    semester=request.data.get("semester"),
+                    name=request.data.get("name"),
+                    id=request.data.get("id"),
+                )
             else:
-                schedule = self.get_queryset().create(person=request.user,
-                                                      semester=request.data.get('semester'),
-                                                      name=request.data.get('name'))
+                schedule = self.get_queryset().create(
+                    person=request.user,
+                    semester=request.data.get("semester"),
+                    name=request.data.get("name"),
+                )
             schedule.sections.set(sections)
-            return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_201_CREATED)
+            return Response(
+                {"message": "success", "id": schedule.id}, status=status.HTTP_201_CREATED
+            )
         except IntegrityError as e:
-            return Response({'detail': 'IntegrityError encountered while trying to create: ' + str(e.__cause__)},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    "detail": "IntegrityError encountered while trying to create: "
+                    + str(e.__cause__)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     def get_queryset(self):
         queryset = Schedule.objects.filter(person=self.request.user)
-        queryset = queryset.prefetch_related(
-            Prefetch('sections', Section.with_reviews.all()),
-        )
+        queryset = queryset.prefetch_related(Prefetch("sections", Section.with_reviews.all()),)
         return queryset

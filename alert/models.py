@@ -21,8 +21,8 @@ class RegStatus(Enum):
     NO_CONTACT_INFO = auto()
 
 
-SOURCE_PCA = 'PCA'
-SOURCE_API = 'API'
+SOURCE_PCA = "PCA"
+SOURCE_API = "API"
 
 
 class Registration(models.Model):
@@ -30,16 +30,16 @@ class Registration(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     SOURCE_CHOICES = (
-        ('PCA', 'Penn Course Alert'),
-        ('API', '3rd Party Integration'),
-        ('PCP', 'Penn Course Plan'),
-        ('PCR', 'Penn Course Review'),
-        ('PM', 'Penn Mobile')
+        ("PCA", "Penn Course Alert"),
+        ("API", "3rd Party Integration"),
+        ("PCP", "Penn Course Plan"),
+        ("PCR", "Penn Course Review"),
+        ("PM", "Penn Mobile"),
     )
 
     # Where did the registration come from?
     source = models.CharField(max_length=16, choices=SOURCE_CHOICES)
-    api_key = models.ForeignKey('courses.APIKey', blank=True, null=True, on_delete=models.CASCADE)
+    api_key = models.ForeignKey("courses.APIKey", blank=True, null=True, on_delete=models.CASCADE)
 
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(blank=True, null=True, max_length=100)
@@ -49,29 +49,35 @@ class Registration(models.Model):
     notification_sent = models.BooleanField(default=False)
     notification_sent_at = models.DateTimeField(blank=True, null=True)
     METHOD_CHOICES = (
-        ('', 'Unsent'),
-        ('LEG', '[Legacy] Sequence of course API requests'),
-        ('WEB', 'Webhook'),
-        ('SERV', 'Course Status Service'),
-        ('ADM', 'Admin Interface'),
+        ("", "Unsent"),
+        ("LEG", "[Legacy] Sequence of course API requests"),
+        ("WEB", "Webhook"),
+        ("SERV", "Course Status Service"),
+        ("ADM", "Admin Interface"),
     )
-    notification_sent_by = models.CharField(max_length=16, choices=METHOD_CHOICES, default='', blank=True)
+    notification_sent_by = models.CharField(
+        max_length=16, choices=METHOD_CHOICES, default="", blank=True
+    )
 
     # track resubscriptions
-    resubscribed_from = models.OneToOneField('Registration',
-                                             blank=True,
-                                             null=True,
-                                             on_delete=models.SET_NULL,
-                                             related_name='resubscribed_to')
+    resubscribed_from = models.OneToOneField(
+        "Registration",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="resubscribed_to",
+    )
 
     def __str__(self):
-        return '%s: %s' % (self.email or self.phone, self.section.__str__())
+        return "%s: %s" % (self.email or self.phone, self.section.__str__())
 
     def validate_phone(self):
         """Store phone numbers in the format recommended by Twilio."""
         try:
-            phone_number = phonenumbers.parse(self.phone, 'US')
-            self.phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164)
+            phone_number = phonenumbers.parse(self.phone, "US")
+            self.phone = phonenumbers.format_number(
+                phone_number, phonenumbers.PhoneNumberFormat.E164
+            )
         except phonenumbers.phonenumberutil.NumberParseException:
             # if the phone number is unparseable, don't include it.
             self.phone = None
@@ -83,22 +89,25 @@ class Registration(models.Model):
     @property
     def resub_url(self):
         """Get the resubscribe URL associated with this registration"""
-        full_url = '%s%s' % (settings.PCA_URL, urls.reverse('resubscribe',
-                                                            kwargs={'id_': self.id},
-                                                            urlconf='alert.urls'))
+        full_url = "%s%s" % (
+            settings.PCA_URL,
+            urls.reverse("resubscribe", kwargs={"id_": self.id}, urlconf="alert.urls"),
+        )
         url, _ = Url.objects.get_or_create(full_url)
-        return '{}/s/{}'.format(settings.PCA_URL, url.short_id)
+        return "{}/s/{}".format(settings.PCA_URL, url.short_id)
 
-    def alert(self, forced=False, sent_by=''):
+    def alert(self, forced=False, sent_by=""):
         if forced or not self.notification_sent:
             text_result = Text(self).send_alert()
             email_result = Email(self).send_alert()
-            logging.debug('NOTIFICATION SENT FOR ' + self.__str__())
+            logging.debug("NOTIFICATION SENT FOR " + self.__str__())
             self.notification_sent = True
             self.notification_sent_at = timezone.now()
             self.notification_sent_by = sent_by
             self.save()
-            return email_result is not None and text_result is not None  # True if no error in email/text.
+            return (
+                email_result is not None and text_result is not None
+            )  # True if no error in email/text.
         else:
             return False
 
@@ -115,16 +124,22 @@ class Registration(models.Model):
         :return: Registration object for the resubscription
         """
         most_recent_reg = self
-        while hasattr(most_recent_reg, 'resubscribed_to'):  # follow the chain of resubscriptions to the most recent one
+        while hasattr(
+            most_recent_reg, "resubscribed_to"
+        ):  # follow the chain of resubscriptions to the most recent one
             most_recent_reg = most_recent_reg.resubscribed_to
 
-        if not most_recent_reg.notification_sent:  # if a notification hasn't been sent on this recent one,
+        if (
+            not most_recent_reg.notification_sent
+        ):  # if a notification hasn't been sent on this recent one,
             return most_recent_reg  # don't create duplicate registrations for no reason.
 
-        new_registration = Registration(email=self.email,
-                                        phone=self.phone,
-                                        section=self.section,
-                                        resubscribed_from=most_recent_reg)
+        new_registration = Registration(
+            email=self.email,
+            phone=self.phone,
+            section=self.section,
+            resubscribed_from=most_recent_reg,
+        )
         new_registration.save()
         return new_registration
 
@@ -144,10 +159,9 @@ def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, ap
     registration = Registration(section=section, email=email_address, phone=phone, source=source)
     registration.validate_phone()
 
-    if Registration.objects.filter(section=section,
-                                   email=email_address,
-                                   phone=registration.phone,
-                                   notification_sent=False).exists():
+    if Registration.objects.filter(
+        section=section, email=email_address, phone=registration.phone, notification_sent=False
+    ).exists():
         return RegStatus.OPEN_REG_EXISTS, section.full_code
 
     registration.api_key = api_key
