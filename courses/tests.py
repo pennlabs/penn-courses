@@ -132,7 +132,7 @@ class CrosslistingTestCase(TestCase):
         self.assertEqual(3, Course.objects.count())
 
 
-@override_settings(SWITCHBOARD_TEST_APP='api')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class RequirementTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -219,7 +219,7 @@ API Test Cases
 """
 
 
-@override_settings(SWITCHBOARD_TEST_APP='api')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class CourseListTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -266,7 +266,7 @@ class CourseListTestCase(TestCase):
         self.assertEqual(response.data[1]['num_sections'], 0, response.data)
 
 
-@override_settings(SWITCHBOARD_TEST_APP='api')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class CourseDetailTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -317,7 +317,7 @@ class CourseDetailTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-@override_settings(SWITCHBOARD_TEST_APP='api')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class RelocateReqsRestsTest(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -424,7 +424,7 @@ class ParseOpendataResponseTestCase(TestCase):
         self.assertEqual(2, Instructor.objects.count())
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pca')
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
 class SectionSearchTestCase(TestCase):
     def setUp(self):
         create_mock_data('CIS-120-001', TEST_SEMESTER)
