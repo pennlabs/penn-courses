@@ -1,7 +1,8 @@
 deploy_version: 0.1.9
 applications:
   - name: redis
-    image: redis:4.0
+    image: redis
+    tag: 4.0
   - name: celery
     image: penn-courses-backend
     secret: penn-courses
