@@ -31,11 +31,23 @@ jobs:
           command: |
             cd frontend/plan && npm run lint
   check-no-lint:
-    - django-tools/setup
-    - django-tools/test:
-      project-name: "PennCourses"
-    - django-tools/code-coverage
-    - django-tools/upload-artifacts
+    working_directory: ~/pennlabs
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+          DATABASE_URL: mysql://root:password@127.0.0.1:3306/circle_test
+      - image: circleci/mysql:latest
+        command: --default-authentication-plugin=mysql_native_password
+        environment:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: circle_test
+    steps:
+      - django-tools/setup
+      - django-tools/test:
+        project-name: "PennCourses"
+      - django-tools/code-coverage
+      - django-tools/upload-artifacts
 
 
 workflows:
