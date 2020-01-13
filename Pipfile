@@ -38,6 +38,7 @@ coverage = "*"
 flake8 = "*"
 flake8-isort = "*"
 flake8-quotes = "*"
+black = "==19.10b0"
 
 [requires]
 python_version = "3"
