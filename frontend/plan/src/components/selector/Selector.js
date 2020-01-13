@@ -60,7 +60,7 @@ function Selector(props) {
             <CourseInfo
                 getCourse={getCourse}
                 course={course}
-                back={clearCourse}
+                back={courses.length > 1 ? clearCourse : null}
                 manage={{
                     addToSchedule,
                     removeFromSchedule,
