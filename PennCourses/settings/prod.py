@@ -38,10 +38,10 @@ CORS_ORIGIN_REGEX_WHITELIST = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    '.pennlabs.org',
-    'pennlabs.org'
     '.penncourseplan.com',
-    'penncourseplan.com'
+    'penncourseplan.com',
+    '.penncoursealert.com',
+    'penncoursealert.com',
 ]
 
 # Domain Routing Middleware
