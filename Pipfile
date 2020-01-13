@@ -29,6 +29,7 @@ django-labs-accounts = "*"
 ipython = "*"
 django-auto-prefetching = "*"
 django-cors-headers = "*"
+django-runtime-options = "*"
 
 [dev-packages]
 codecov = "*"

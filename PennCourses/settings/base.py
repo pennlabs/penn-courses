@@ -48,12 +48,12 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'corsheaders',
 
-    'shortener',
+    'shortener.apps.ShortenerConfig',
     'accounts.apps.AccountsConfig',
+    'options.apps.OptionsConfig',
 
     'alert',
     'courses',
-    'options',
     'plan',
     'review',
 ]

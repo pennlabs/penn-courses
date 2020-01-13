@@ -1,11 +1,11 @@
 from django.db.models import Prefetch, Q
 from django_auto_prefetching import AutoPrefetchViewSetMixin
+from options.models import get_value
 from rest_framework import generics
 
 from courses.models import Course, Requirement, Section
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
                                  MiniSectionSerializer, RequirementListSerializer)
-from options.models import get_value
 from plan.search import TypedSectionSearchBackend
 
 

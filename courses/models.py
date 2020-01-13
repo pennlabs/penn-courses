@@ -3,8 +3,8 @@ import uuid
 
 from django.db import models
 from django.db.models import Avg, FloatField, OuterRef, Q, Subquery
-
 from options.models import get_value
+
 from review.models import ReviewBit
 
 
