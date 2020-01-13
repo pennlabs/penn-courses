@@ -12,8 +12,8 @@ branch-filters: &branch-filters
 jobs:
   pcp-lint:
     working_directory: ~/pennlabs
-      docker:
-        - image: circleci/node:10
+    docker:
+      - image: circleci/node:10
     steps:
       - checkout
       - restore_cache:
