@@ -43,6 +43,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: circle_test
     steps:
+      - checkout
       - django-tools/setup
       - django-tools/test:
           project-name: "PennCourses"
