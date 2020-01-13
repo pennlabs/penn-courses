@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'debug_toolbar',
+    'corsheaders',
 
     'shortener',
     'accounts.apps.AccountsConfig',
@@ -70,6 +71,7 @@ PLATFORM_ACCOUNTS = {
 }
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'PennCourses.middleware.SwitchboardMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -81,7 +83,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'PennCourses.urls.base'
+ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'PennCourses.urls.base')
 
 FRONTEND_DIR = os.path.abspath(
     os.path.join(BASE_DIR, '..', 'frontend'))
