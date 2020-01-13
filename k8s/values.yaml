@@ -6,26 +6,11 @@ applications:
   - name: celery
     image: penn-courses-backend
     secret: penn-courses
-    cmd:
-      - celery
-      - worker
-      - "-A"
-      - PennCourses
-      - "-Q"
-      - "alerts,celery"
-      - "-linfo"
+    cmd: ["celery", "worker", "-A", "PennCourses", "-Q", "alerts,celery", "-linfo"]
   - name: beat
     image: penn-courses-backend
     secret: penn-courses
-    cmd:
-      - celery
-      - "-A"
-      - PennCourses
-      - beat
-      - "-l"
-      - info
-      - "--scheduler"
-      - "django_celery_beat.schedulers:DatabaseScheduler"
+    cmd: ["celery", "-A", "PennCourses", "beat", "-l" "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
   - name: backend
     image: penn-courses-backend
     secret: penn-courses
