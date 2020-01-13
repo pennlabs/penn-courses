@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch
 from django_auto_prefetching import AutoPrefetchViewSetMixin
+from options.models import get_value
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,7 +10,6 @@ from rest_framework.response import Response
 from courses.models import Section
 from courses.util import get_course_and_section
 from courses.views import CourseList
-from options.models import get_value
 from plan.filters import bound_filter, choice_filter, requirement_filter
 from plan.models import Schedule
 from plan.search import TypedCourseSearchBackend
