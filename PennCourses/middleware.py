@@ -12,12 +12,12 @@ class SwitchboardMiddleware:
         if settings.SWITCHBOARD_TEST_APP is not None:
             app = settings.SWITCHBOARD_TEST_APP
         else:
-            host = request.get_host().split(":")[0]
-            app = settings.HOST_TO_APP.get(host, "base")
+            host = request.get_host().split(':')[0]
+            app = settings.HOST_TO_APP.get(host, 'base')
 
         request.site = app
         # https://docs.djangoproject.com/en/2.2/topics/http/urls/#how-django-processes-a-request
-        request.urlconf = f"PennCourses.urls.{app}"
+        request.urlconf = f'PennCourses.urls.{app}'
 
         response = self.get_response(request)
 

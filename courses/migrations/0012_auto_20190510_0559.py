@@ -7,17 +7,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("courses", "0011_auto_20190510_0504"),
+        ('courses', '0011_auto_20190510_0504'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="section",
-            name="course",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="sections",
-                to="courses.Course",
-            ),
+            model_name='section',
+            name='course',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sections', to='courses.Course'),
         ),
     ]

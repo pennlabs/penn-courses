@@ -4,7 +4,7 @@ from .models import Option
 
 
 class OptionAdmin(admin.ModelAdmin):
-    list_display = ["key", "value", "description"]
+    list_display = ['key', 'value', 'description']
 
 
 admin.site.register(Option, OptionAdmin)
