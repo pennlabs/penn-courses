@@ -28,6 +28,7 @@ django-labs-accounts = "*"
 "beautifulsoup4" = "*"
 ipython = "*"
 django-auto-prefetching = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 codecov = "*"

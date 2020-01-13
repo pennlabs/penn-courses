@@ -69,11 +69,11 @@ class RegisterTestCase(TestCase):
         self.sections.append(get_or_create_course_and_section('CIS-120-001', TEST_SEMESTER)[1])
 
     def test_successful_registration(self):
-        res, norm = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[0].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
         r = Registration.objects.get()
-        self.assertEqual(self.sections[0].normalized, r.section.normalized)
+        self.assertEqual(self.sections[0].full_code, r.section.full_code)
         self.assertEqual('e@example.com', r.email)
         self.assertEqual('+15555555555', r.phone)
         self.assertFalse(r.notification_sent)
@@ -91,33 +91,33 @@ class RegisterTestCase(TestCase):
     def test_duplicate_registration(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
         r1.save()
-        res, norm = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[0].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.OPEN_REG_EXISTS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
     def test_reregister(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0], notification_sent=True)
         r1.save()
-        res, norm = register_for_course(self.sections[0].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[0].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_sameuser_diffsections(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
         r1.save()
-        res, norm = register_for_course(self.sections[1].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[1].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_sameuser_diffcourse(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
         r1.save()
-        res, norm = register_for_course(self.sections[2].normalized, 'e@example.com', '+15555555555')
+        res, norm = register_for_course(self.sections[2].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_justemail(self):
-        res, norm = register_for_course(self.sections[0].normalized, 'e@example.com', None)
+        res, norm = register_for_course(self.sections[0].full_code, 'e@example.com', None)
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
@@ -132,12 +132,12 @@ class RegisterTestCase(TestCase):
         self.assertEqual(0, Registration.objects.count())
 
     def test_justphone(self):
-        res, norm = register_for_course(self.sections[0].normalized, None, '5555555555')
+        res, norm = register_for_course(self.sections[0].full_code, None, '5555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
     def test_nocontact(self):
-        res, norm = register_for_course(self.sections[0].normalized, None, None)
+        res, norm = register_for_course(self.sections[0].full_code, None, None)
         self.assertEqual(RegStatus.NO_CONTACT_INFO, res)
         self.assertEqual(0, len(Registration.objects.all()))
 
@@ -224,7 +224,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
         self.r3.save()
 
     def test_collect_all(self):
-        result = tasks.get_active_registrations(self.section.normalized, TEST_SEMESTER)
+        result = tasks.get_active_registrations(self.section.full_code, TEST_SEMESTER)
         expected_ids = [r.id for r in [self.r1, self.r2, self.r3]]
         result_ids = [r.id for r in result]
         for id_ in expected_ids:
@@ -243,7 +243,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
         self.r3.notification_sent = True
         self.r2.save()
         self.r3.save()
-        result_ids = [r.id for r in tasks.get_active_registrations(self.section.normalized, TEST_SEMESTER)]
+        result_ids = [r.id for r in tasks.get_active_registrations(self.section.full_code, TEST_SEMESTER)]
         expected_ids = [self.r1.id]
         for id_ in expected_ids:
             self.assertTrue(id_ in result_ids)
@@ -253,7 +253,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
     def test_collect_some(self):
         self.r2.notification_sent = True
         self.r2.save()
-        result_ids = [r.id for r in tasks.get_active_registrations(self.section.normalized, TEST_SEMESTER)]
+        result_ids = [r.id for r in tasks.get_active_registrations(self.section.full_code, TEST_SEMESTER)]
         expected_ids = [self.r1.id, self.r3.id]
         for id_ in expected_ids:
             self.assertTrue(id_ in result_ids)
@@ -540,7 +540,7 @@ class CourseStatusUpdateTestCase(TestCase):
     def test_update_status(self):
         self.section.status = 'C'
         self.section.save()
-        up = record_update(self.section.normalized,
+        up = record_update(self.section.full_code,
                            TEST_SEMESTER,
                            'C',
                            'O',
@@ -548,5 +548,5 @@ class CourseStatusUpdateTestCase(TestCase):
                            'JSON')
         up.save()
         update_course_from_record(up)
-        _, section = get_or_create_course_and_section(self.section.normalized, TEST_SEMESTER)
+        _, section = get_or_create_course_and_section(self.section.full_code, TEST_SEMESTER)
         self.assertEqual('O', section.status)
