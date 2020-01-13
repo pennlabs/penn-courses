@@ -10,7 +10,7 @@ applications:
   - name: beat
     image: penn-courses-backend
     secret: penn-courses
-    cmd: ["celery", "-A", "PennCourses", "beat", "-l" "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+    cmd: ["celery", "-A", "PennCourses", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
   - name: backend
     image: penn-courses-backend
     secret: penn-courses
@@ -25,3 +25,13 @@ applications:
       hosts:
         - host: penncourseplan.com
           paths: ["/"]
+  - name: alert
+    image: penn-courses-backend
+    secret: penn-courses
+    ingress:
+      hosts:
+        - host: penncoursealert.com
+          paths: ["/"]
+          extraEnv:
+            - key: ROOT_URLCONF
+              value: PennCourses.urls.pca
