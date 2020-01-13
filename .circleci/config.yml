@@ -45,7 +45,7 @@ jobs:
     steps:
       - django-tools/setup
       - django-tools/test:
-        project-name: "PennCourses"
+          project-name: "PennCourses"
       - django-tools/code-coverage
       - django-tools/upload-artifacts
 
