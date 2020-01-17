@@ -6,33 +6,7 @@ import {
     fetchSchedulesAndInitializeCart,
     updateScheduleOnBackend
 } from "./actions";
-import { MIN_FETCH_INTERVAL, SYNC_INTERVAL } from "./sync_constants";
-
-let lastFetched = 0;
-/**
- * Ensure that fetches don't happen too frequently by requiring that it has been 250ms
- * since the last rate-limited fetch.
- * @param url The url to fetch
- * @param init The init to apply to the url
- * @returns {Promise<unknown>}
- */
-export const rateLimitedFetch = (url, init) => new Promise(((resolve, reject) => {
-    // Wraps the fetch in a new promise that conditionally rejects if
-    // the required amount of time has not elapsed
-    const now = Date.now();
-    if (now - lastFetched > MIN_FETCH_INTERVAL) {
-        fetch(url, init)
-            .then((result) => {
-                resolve(result);
-            })
-            .catch((err) => {
-                reject(err);
-            });
-        lastFetched = now;
-    } else {
-        reject({ minDelayNotElapsed: true });
-    }
-}));
+import { SYNC_INTERVAL } from "./sync_constants";
 
 /**
  * Runs the sync loop, which compares the local schedule data to the schedule data on the cloud

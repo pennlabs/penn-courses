@@ -1,7 +1,7 @@
 import fetch from "cross-fetch";
 import { BACKEND_URL } from "../constants";
 import getCsrf from "../csrf";
-import { rateLimitedFetch } from "../syncutils";
+import { MIN_FETCH_INTERVAL } from "../sync_constants";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -415,6 +415,33 @@ export const updateSchedules = schedulesFromBackend => ({
     type: UPDATE_SCHEDULES,
     schedulesFromBackend,
 });
+
+let lastFetched = 0;
+/**
+ * Ensure that fetches don't happen too frequently by requiring that it has been 250ms
+ * since the last rate-limited fetch.
+ * @param url The url to fetch
+ * @param init The init to apply to the url
+ * @returns {Promise<unknown>}
+ */
+
+const rateLimitedFetch = (url, init) => new Promise(((resolve, reject) => {
+    // Wraps the fetch in a new promise that conditionally rejects if
+    // the required amount of time has not elapsed
+    const now = Date.now();
+    if (now - lastFetched > MIN_FETCH_INTERVAL) {
+        fetch(url, init)
+            .then((result) => {
+                resolve(result);
+            })
+            .catch((err) => {
+                reject(err);
+            });
+        lastFetched = now;
+    } else {
+        reject({ minDelayNotElapsed: true });
+    }
+}));
 
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {

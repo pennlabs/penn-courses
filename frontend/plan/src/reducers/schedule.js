@@ -161,7 +161,7 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
                 newScheduleObject[name].id = scheduleId;
                 newScheduleObject[name].backendCreationState = false;
                 const selectedSched = state.schedules[name];
-                if (!selectedSched.updated_at || selectedSched.updated_at < cloudUpdated) {
+                if (!selectedSched.updated_at || cloudUpdated > selectedSched.updated_at) {
                     newScheduleObject[name].meetings = sections;
                 }
             } else {
