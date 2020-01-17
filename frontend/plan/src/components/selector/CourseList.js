@@ -32,6 +32,9 @@ const courseSort = (courses, sortMode) => {
 };
 
 export default function CourseList({ courses, getCourse, sortMode }) {
+    if (courses.length === 1) {
+        getCourse(courses[0].id);
+    }
     return (
         <div className="scroll-container">
             <div style={{

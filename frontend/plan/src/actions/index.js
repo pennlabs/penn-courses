@@ -1,4 +1,5 @@
 import fetch from "cross-fetch";
+import { BACKEND_URL } from "../constants";
 import getCsrf from "../csrf";
 import { rateLimitedFetch } from "../syncutils";
 
@@ -71,6 +72,17 @@ export const markCartSynced = () => (
         type: MARK_CART_SYNCED,
     }
 );
+
+const doAPIRequest = (path) => {
+    let uri = null;
+    if (BACKEND_URL) {
+        uri = BACKEND_URL + path;
+    } else {
+        uri = path;
+    }
+    return fetch(uri);
+};
+
 
 export const duplicateSchedule = scheduleName => (
     {
@@ -193,7 +205,7 @@ export const clearSchedule = () => (
 
 export const loadRequirements = () => (
     dispatch => (
-        fetch("/requirements")
+        doAPIRequest("/requirements")
             .then(
                 response => response.json()
                     .then((data) => {
@@ -294,15 +306,13 @@ function buildCourseSearchUrl(filterData) {
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
         dispatch(updateSearchRequest());
-        fetch(buildCourseSearchUrl(filterData))
-            .then(
-                response => response.json()
-                    .then(
-                        json => dispatch(updateSearch(json)),
-                        error => dispatch(courseSearchError(error)),
-                    ),
+        doAPIRequest(buildCourseSearchUrl(filterData)).then(
+            response => response.json().then(
+                json => dispatch(updateSearch(json)),
                 error => dispatch(courseSearchError(error)),
-            );
+            ),
+            error => dispatch(courseSearchError(error)),
+        );
     };
 }
 
@@ -409,7 +419,7 @@ export const updateSchedules = schedulesFromBackend => ({
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
-        fetch(`/courses/${courseId}`)
+        doAPIRequest(`/courses/${courseId}`)
             .then(res => res.json())
             .then(course => dispatch(updateCourseInfo(course)))
             .catch(error => dispatch(sectionInfoSearchError(error)));
@@ -487,23 +497,21 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
 
 export function fetchSectionInfo(searchData) {
     return dispatch => (
-        fetch(buildSectionInfoSearchUrl(searchData))
-            .then(
-                response => response.json()
-                    .then(
-                        (json) => {
-                            const info = {
-                                id: json.id,
-                                description: json.description,
-                                crosslistings: json.crosslistings,
-                            };
-                            const { sections } = json;
-                            dispatch(updateCourseInfo(sections, info));
-                        },
-                        error => dispatch(sectionInfoSearchError(error)),
-                    ),
+        doAPIRequest(buildSectionInfoSearchUrl(searchData)).then(
+            response => response.json().then(
+                (json) => {
+                    const info = {
+                        id: json.id,
+                        description: json.description,
+                        crosslistings: json.crosslistings,
+                    };
+                    const { sections } = json;
+                    dispatch(updateCourseInfo(sections, info));
+                },
                 error => dispatch(sectionInfoSearchError(error)),
-            )
+            ),
+            error => dispatch(sectionInfoSearchError(error)),
+        )
     );
 }
 

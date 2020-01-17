@@ -2,11 +2,11 @@ import json
 
 from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
+from options.models import Option
 from rest_framework.test import APIClient
 
 from courses.models import Instructor, Requirement
 from courses.util import create_mock_data, create_mock_data_with_reviews, get_average_reviews
-from options.models import Option
 from plan.models import Schedule
 from plan.search import TypedCourseSearchBackend
 from review.models import Review

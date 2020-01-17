@@ -4,12 +4,12 @@ from unittest.mock import patch
 
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from options.models import Option
 
 from alert import tasks
 from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, register_for_course
 from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
 from courses.util import get_or_create_course_and_section, record_update, update_course_from_record
-from options.models import Option
 
 
 TEST_SEMESTER = '2019A'

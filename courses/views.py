@@ -1,13 +1,11 @@
-from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
 from django_auto_prefetching import AutoPrefetchViewSetMixin
+from options.models import get_value
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 
 from courses.models import Course, Requirement, Section
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
-                                 MiniSectionSerializer, RequirementListSerializer, UserSerializer)
-from options.models import get_value
+                                 MiniSectionSerializer, RequirementListSerializer)
 from plan.search import TypedSectionSearchBackend
 
 
@@ -80,14 +78,3 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 class RequirementList(generics.ListAPIView, BaseCourseMixin):
     serializer_class = RequirementListSerializer
     queryset = Requirement.objects.all()
-
-
-class UserDetailView(generics.RetrieveAPIView):
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return get_user_model().objects.all()
-
-    def get_object(self):
-        return self.request.user
