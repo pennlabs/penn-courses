@@ -57,12 +57,8 @@ function SearchBar({
     const conditionalStartSearch = (filterInfo) => {
         if (shouldSearch(filterInfo)) {
             startSearch(filterInfo);
-        } else {
-            clearSearchResults();
         }
     };
-
-    const isLoading = isLoadingCourseInfo || isSearchingCourseInfo;
 
     const clearFilterSearch = property => () => {
         clearFilter(property);
@@ -80,17 +76,16 @@ function SearchBar({
     };
     const dropDowns = (
         <React.Fragment>
-            <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")} isDisabled={isLoading}>
+            <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")}>
                 <SchoolReq
                     startSearch={conditionalStartSearch}
                     schoolReq={schoolReq}
                     filterData={filterData}
                     addSchoolReq={addSchoolReq}
                     remSchoolReq={remSchoolReq}
-                    isDisabled={isLoading}
                 />
             </DropdownButton>
-            <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")} isDisabled={isLoading}>
+            <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")}>
                 <RangeFilter
                     minRange={0}
                     maxRange={4}
@@ -99,10 +94,9 @@ function SearchBar({
                     updateRangeFilter={updateRangeFilter("difficulty")}
                     startSearch={conditionalStartSearch}
                     rangeProperty="difficulty"
-                    isDisabled={isLoading}
                 />
             </DropdownButton>
-            <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")} isDisabled={isLoading}>
+            <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")}>
                 <RangeFilter
                     minRange={0}
                     maxRange={4}
@@ -111,10 +105,9 @@ function SearchBar({
                     updateRangeFilter={updateRangeFilter("course_quality")}
                     startSearch={conditionalStartSearch}
                     rangeProperty="course_quality"
-                    isDisabled={isLoading}
                 />
             </DropdownButton>
-            <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")} isDisabled={isLoading}>
+            <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")}>
                 <RangeFilter
                     minRange={0}
                     maxRange={4}
@@ -123,20 +116,17 @@ function SearchBar({
                     updateRangeFilter={updateRangeFilter("instructor_quality")}
                     startSearch={conditionalStartSearch}
                     rangeProperty="instructor_quality"
-                    isDisabled={isLoading}
                 />
             </DropdownButton>
             <DropdownButton
                 title="CU"
                 filterData={filterData.cu}
                 defaultFilter={defaultFilters.filterData.cu}
-                isDisabled={isLoading}
                 clearFilter={clearFilterSearch("cu")}
             >
                 <CheckboxFilter
                     filterData={filterData}
                     updateCheckboxFilter={updateCheckboxFilter}
-                    isDisabled={isLoading}
                     checkboxProperty="cu"
                     startSearch={conditionalStartSearch}
                 />
@@ -145,13 +135,11 @@ function SearchBar({
                 title="Type"
                 filterData={filterData.activity}
                 defaultFilter={defaultFilters.filterData.activity}
-                isDisabled={isLoading}
                 clearFilter={clearFilterSearch("activity")}
             >
                 <CheckboxFilter
                     filterData={filterData}
                     updateCheckboxFilter={updateCheckboxFilter}
-                    isDisabled={isLoading}
                     checkboxProperty="activity"
                     startSearch={conditionalStartSearch}
                 />
@@ -173,7 +161,6 @@ function SearchBar({
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
-                        isDisabled={isLoading}
                     />
                     <div style={{ padding: "0.5rem" }} role="button" onClick={() => showHideReqs(!reqsShown)}>
                         <i className="fas fa-filter" />
@@ -202,7 +189,6 @@ function SearchBar({
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
-                        isDisabled={isLoading}
                     />
                 </div>
 
@@ -221,6 +207,7 @@ function SearchBar({
                         style={{ marginRight: "1em", color: "#7e7e7e" }}
                         type="button"
                         onClick={() => {
+                            clearSearchResults();
                             conditionalStartSearch({
                                 ...defaultFilters.filterData,
                                 searchString: filterData.searchString,
@@ -228,7 +215,6 @@ function SearchBar({
                             });
                             clearAll();
                         }}
-                        disabled={isLoading ? "disabled" : false}
                     >
                         Clear all
                     </button>

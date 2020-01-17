@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 
 export function RangeFilter({
     setIsActive, minRange, maxRange, filterData,
-    updateRangeFilter, startSearch, rangeProperty, step, isDisabled,
+    updateRangeFilter, startSearch, rangeProperty, step,
 }) {
     const [searchTimeout, setSearchTimeout] = useState();
     const [ref, setRef] = useState(null);
@@ -88,7 +88,6 @@ export function RangeFilter({
                     step={step}
                     allowCross={false}
                     onChange={onSliderChange}
-                    disabled={isDisabled}
                 />
             </div>
         </div>
@@ -103,7 +102,6 @@ RangeFilter.propTypes = {
     updateRangeFilter: PropTypes.func,
     rangeProperty: PropTypes.string,
     step: PropTypes.number,
-    isDisabled: PropTypes.bool,
     // eslint-disable-next-line react/forbid-prop-types
     filterData: PropTypes.object,
 };
