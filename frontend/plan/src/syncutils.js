@@ -48,8 +48,8 @@ const buildSyncLoop = (store) => {
             .forEach((scheduleName) => {
                 const schedule = scheduleState.schedules[scheduleName];
                 if (!schedule.pushedToBackend) {
-                    const shouldCreateOnBackend = schedule.backendCreationState &&
-                        !schedule.backendCreationState.creationQueued && !("id" in schedule);
+                    const shouldCreateOnBackend = schedule.backendCreationState
+                        && !schedule.backendCreationState.creationQueued && !("id" in schedule);
                     if (shouldCreateOnBackend || firstSync) {
                         store.dispatch(createScheduleOnBackend(scheduleName,
                             schedule.meetings));

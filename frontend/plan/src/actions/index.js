@@ -306,13 +306,15 @@ function buildCourseSearchUrl(filterData) {
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
         dispatch(updateSearchRequest());
-        doAPIRequest(buildCourseSearchUrl(filterData)).then(
-            response => response.json().then(
-                json => dispatch(updateSearch(json)),
+        doAPIRequest(buildCourseSearchUrl(filterData))
+            .then(
+                response => response.json()
+                    .then(
+                        json => dispatch(updateSearch(json)),
+                        error => dispatch(courseSearchError(error)),
+                    ),
                 error => dispatch(courseSearchError(error)),
-            ),
-            error => dispatch(courseSearchError(error)),
-        );
+            );
     };
 }
 
@@ -461,7 +463,8 @@ export function fetchCourseDetails(courseId) {
  * from the backend)
  * @returns {Function}
  */
-export const fetchBackendSchedulesAndInitializeCart = (cart, onComplete = () => null) => (dispatch) => {
+export const fetchBackendSchedulesAndInitializeCart = (cart,
+    onComplete = () => null) => (dispatch) => {
     fetch("/schedules/")
         .then(res => res.json())
         .then((schedules) => {
@@ -524,21 +527,23 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
 
 export function fetchSectionInfo(searchData) {
     return dispatch => (
-        doAPIRequest(buildSectionInfoSearchUrl(searchData)).then(
-            response => response.json().then(
-                (json) => {
-                    const info = {
-                        id: json.id,
-                        description: json.description,
-                        crosslistings: json.crosslistings,
-                    };
-                    const { sections } = json;
-                    dispatch(updateCourseInfo(sections, info));
-                },
+        doAPIRequest(buildSectionInfoSearchUrl(searchData))
+            .then(
+                response => response.json()
+                    .then(
+                        (json) => {
+                            const info = {
+                                id: json.id,
+                                description: json.description,
+                                crosslistings: json.crosslistings,
+                            };
+                            const { sections } = json;
+                            dispatch(updateCourseInfo(sections, info));
+                        },
+                        error => dispatch(sectionInfoSearchError(error)),
+                    ),
                 error => dispatch(sectionInfoSearchError(error)),
-            ),
-            error => dispatch(sectionInfoSearchError(error)),
-        )
+            )
     );
 }
 
