@@ -134,16 +134,15 @@ export default initiateSync;
  */
 export const preventMultipleTabs = callback => {
     const sessionId = Date.now() + "";
-    const activeSession = sessionStorage.getItem("activeSession");
-    if (activeSession) {
-        callback();
-        return () => {
-            sessionStorage.setItem("activeSession", sessionId);
-        };
-    } else {
-        sessionStorage.setItem("activeSession", sessionId);
-        return () => {
-            sessionStorage.removeItem("activeSession");
-        };
-    }
+    localStorage.setItem("openPages", sessionId);
+    window.addEventListener('storage', ({key}) => {
+        if(key === "openPages"){
+            // Listen if anybody else is opening the same page
+            localStorage.setItem("pageAvailable",sessionId);
+        }
+        if(key === "pageAvailable"){
+            // The page is already open somewhere else
+            callback();
+        }
+    }, false);
 };
