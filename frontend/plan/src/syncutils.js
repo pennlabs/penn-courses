@@ -7,6 +7,10 @@ import {
 } from "./actions";
 import { SYNC_INTERVAL } from "./sync_constants";
 
+// keep track of whether the current localStorage data reflects backend sync functionality
+let firstSync = !localStorage.getItem("usesBackendSync");
+localStorage.setItem("usesBackendSync", "true");
+
 /**
  * Runs the sync loop, which compares the local schedule data to the schedule data on the cloud
  * @param store The redux store
@@ -37,8 +41,9 @@ const syncLoop = (store) => {
         .forEach((scheduleName) => {
             const schedule = scheduleState.schedules[scheduleName];
             if (!schedule.pushedToBackend) {
-                if (schedule.backendCreationState && !schedule.backendCreationState.creationQueued
-                    && !("id" in schedule)) {
+                const shouldCreateOnBackend = schedule.backendCreationState &&
+                    !schedule.backendCreationState.creationQueued && !("id" in schedule);
+                if (shouldCreateOnBackend || firstSync) {
                     store.dispatch(createScheduleOnBackend(scheduleName,
                         schedule.meetings));
                 } else {
@@ -46,6 +51,7 @@ const syncLoop = (store) => {
                 }
             }
         });
+    firstSync = false;
 };
 
 /**
@@ -61,10 +67,12 @@ const initiateSync = (store) => {
     const localStorageSchedulesObserved = localStorage.getItem("coursePlanObservedSchedules");
     if (localStorageSchedulesObserved) {
         try {
-            schedulesObserved = JSON.parse(localStorageSchedulesObserved);
+            schedulesObserved = JSON.parse(localStorageSchedulesObserved) || {};
         } catch (ignored) {
             schedulesObserved = {};
         }
+    } else {
+        schedulesObserved = {};
     }
 
     const scheduleStateInit = store.getState().schedule;
