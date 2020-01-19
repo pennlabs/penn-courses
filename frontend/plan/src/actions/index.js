@@ -1,4 +1,5 @@
 import fetch from "cross-fetch";
+import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { BACKEND_URL } from "../constants";
 import getCsrf from "../csrf";
 import { MIN_FETCH_INTERVAL } from "../sync_constants";
@@ -303,18 +304,19 @@ function buildCourseSearchUrl(filterData) {
     return queryString;
 }
 
+const courseSearch = (dispatch, filterData) => (
+    doAPIRequest(buildCourseSearchUrl(filterData))
+);
+
+const debouncedCourseSearch = AwesomeDebouncePromise(courseSearch, 500);
+
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
         dispatch(updateSearchRequest());
-        doAPIRequest(buildCourseSearchUrl(filterData))
-            .then(
-                response => response.json()
-                    .then(
-                        json => dispatch(updateSearch(json)),
-                        error => dispatch(courseSearchError(error)),
-                    ),
-                error => dispatch(courseSearchError(error)),
-            );
+        debouncedCourseSearch(dispatch, filterData)
+            .then(res => res.json())
+            .then(res => dispatch(updateSearch(res)))
+            .catch(error => dispatch(courseSearchError(error)));
     };
 }
 

@@ -6,21 +6,15 @@ export function SearchField({
     startSearch, updateSearchText, filterData, isDisabled, setTab,
 }) {
     const [searchValue, setSearchValue] = useState("");
-    const [searchTimeout, setSearchTimeout] = useState();
 
     const handleChangeVal = (event) => {
         const searchText = event.target.value;
+        updateSearchText(searchText);
+        startSearch({
+            ...filterData,
+            searchString: searchText,
+        });
         setSearchValue(searchText);
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
-        }
-        setSearchTimeout(setTimeout(() => {
-            updateSearchText(searchText);
-            startSearch({
-                ...filterData,
-                searchString: searchText,
-            });
-        }, 1000));
     };
 
     return (

@@ -2,7 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 
 export function CheckboxFilter({
-    filterData, updateCheckboxFilter, startSearch, isDisabled, checkboxProperty,
+    filterData, updateCheckboxFilter, startSearch, checkboxProperty,
 }) {
     return (
         <div className="columns contained">
@@ -14,7 +14,6 @@ export function CheckboxFilter({
                             type="checkbox"
                             id={filterProperty}
                             checked={filterData[checkboxProperty][filterProperty] === 1}
-                            disabled={isDisabled ? "disabled" : false}
                             onChange={() => {
                                 const toChange = filterData[checkboxProperty][filterProperty]
                                     === 1 ? 0 : 1;
@@ -38,7 +37,6 @@ export function CheckboxFilter({
 }
 
 CheckboxFilter.propTypes = {
-    isDisabled: PropTypes.bool,
     startSearch: PropTypes.func,
     updateCheckboxFilter: PropTypes.func,
     checkboxProperty: PropTypes.string,
