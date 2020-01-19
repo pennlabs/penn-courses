@@ -27,7 +27,7 @@ import SearchSortDropdown from "./components/search/SearchSortDropdown";
 import {
     openModal
 } from "./actions";
-import initiateSync from "./syncutils";
+import initiateSync, { preventMultipleTabs } from "./syncutils";
 
 const previousState = localStorage.getItem("coursePlanSchedules");
 const previousStateJSON = previousState ? JSON.parse(previousState) : undefined;
@@ -50,6 +50,15 @@ store.subscribe(() => {
 function App() {
     const { hasVisited } = localStorage;
     const [currentUser, setCurrentUser] = useState(null);
+    const [multipleTabsOpen, setMultipleTabsOpen] = useState(false);
+
+    useEffect(() => {
+        return preventMultipleTabs(() => {
+            store.dispatch(openModal("MULTITAB",
+                {},
+            "Multiple tabs"));
+        });
+    }, []);
 
     useEffect(() => {
         // ensure that the user is logged in before initiating the sync
@@ -57,7 +66,8 @@ function App() {
             // returns a function for dismantling the sync loop
             return initiateSync(store);
         }
-        return () => {};
+        return () => {
+        };
     }, [currentUser]);
 
     localStorage.hasVisited = true;
@@ -80,11 +90,11 @@ function App() {
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SearchBar setTab={setTab} />
+                <SearchBar setTab={setTab}/>
                 <Tabs value={tab} className="topTabs" centered>
-                    <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
-                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
-                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)} />
+                    <Tab className="topTab" label="Search" onClick={() => setTab(0)}/>
+                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)}/>
+                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)}/>
                 </Tabs>
                 <SwipeableViews
                     index={tab}
@@ -106,7 +116,7 @@ function App() {
                                 margin: "10px",
                             }}
                             >
-                                <SearchSortDropdown />
+                                <SearchSortDropdown/>
                             </div>
                             <div
                                 className="box"
@@ -115,19 +125,19 @@ function App() {
                                     paddingRight: 0,
                                 }}
                             >
-                                <Selector />
+                                <Selector/>
                             </div>
                         </div>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Cart setTab={setTab} />
+                        <Cart setTab={setTab}/>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Schedule setTab={setTab} />
+                        <Schedule setTab={setTab}/>
                     </div>
                 </SwipeableViews>
-                <Footer />
-                <ModalContainer />
+                <Footer/>
+                <ModalContainer/>
             </Provider>
         );
     }
@@ -137,7 +147,7 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ padding: "0px 2em 0px 2em" }}>
-                <SearchBar style={{ flexGrow: 0 }} user={currentUser} setUser={setCurrentUser} />
+                <SearchBar style={{ flexGrow: 0 }} user={currentUser} setUser={setCurrentUser}/>
                 <div className="App columns is-mobile is-multiline main" style={{ padding: 0 }}>
                     <div
                         className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop"
@@ -161,7 +171,7 @@ function App() {
                                 display: "flex",
                             }}
                             >
-                                <SearchSortDropdown />
+                                <SearchSortDropdown/>
                             </div>
                         </span>
                         <div
@@ -171,7 +181,7 @@ function App() {
                                 paddingRight: 0,
                             }}
                         >
-                            <Selector />
+                            <Selector/>
                         </div>
                     </div>
                     <div
@@ -191,15 +201,15 @@ function App() {
                         >
                             Cart
                         </h3>
-                        <Cart />
+                        <Cart/>
                     </div>
                     <div className="column">
-                        <Schedule />
+                        <Schedule/>
                     </div>
                 </div>
             </div>
-            <Footer />
-            <ModalContainer />
+            <Footer/>
+            <ModalContainer/>
         </Provider>
     );
 }

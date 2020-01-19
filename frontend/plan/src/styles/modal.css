@@ -32,6 +32,7 @@
     border-bottom: none!important;
     background-color: white!important;
     font-weight: bold;
+    border-radius: 4px!important;
 }
 
 .modal-card-head, .modal-card-body {

@@ -33,6 +33,14 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <WelcomeModalInterior />
             );
+        case "MULTITAB":
+            return (
+                <div>
+                    <p>
+                        You have another tab of Penn Course Plan open.
+                    </p>
+                </div>
+            );
         default:
             return null;
     }

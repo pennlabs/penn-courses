@@ -43,6 +43,7 @@ const buildSyncLoop = (store) => {
                     meetings: scheduleState.cartSections,
                 }));
         }
+
         // Update the server with any new changes to schedules
         Object.keys(scheduleState.schedules)
             .forEach((scheduleName) => {
@@ -71,7 +72,7 @@ const buildSyncLoop = (store) => {
 const initiateSync = (store) => {
     // Retrieve all the schedules that have been observed coming from
     // the backend at any point in time.
-    // This ensures that schedules can be safely deleted without coming back.
+    // This ensures that schedules can be safely deleted without randomly returning.
     let schedulesObserved;
     const localStorageSchedulesObserved = localStorage.getItem("coursePlanObservedSchedules");
     if (localStorageSchedulesObserved) {
@@ -103,8 +104,8 @@ const initiateSync = (store) => {
                         // find the name of the schedule with the deleted id
                         const schedName = Object.keys(scheduleStateInit.schedules)
                             .reduce((acc, schedNameSelected) => acc || ((scheduleStateInit
-                                .schedules[schedNameSelected].id === id) && schedNameSelected),
-                            false);
+                                    .schedules[schedNameSelected].id === id) && schedNameSelected),
+                                false);
                         if (schedName) {
                             store.dispatch(deleteSchedule(schedName));
                         }
@@ -125,3 +126,24 @@ const initiateSync = (store) => {
 };
 
 export default initiateSync;
+
+/**
+ * An effect hook for preventing multiple tabs from being open
+ * @param callback
+ * @return {Function} Returns a function for restoring the active session in session storage
+ */
+export const preventMultipleTabs = callback => {
+    const sessionId = Date.now() + "";
+    const activeSession = sessionStorage.getItem("activeSession");
+    if (activeSession) {
+        callback();
+        return () => {
+            sessionStorage.setItem("activeSession", sessionId);
+        };
+    } else {
+        sessionStorage.setItem("activeSession", sessionId);
+        return () => {
+            sessionStorage.removeItem("activeSession");
+        };
+    }
+};
