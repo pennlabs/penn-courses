@@ -49,7 +49,16 @@ store.subscribe(() => {
 
 function App() {
     const { hasVisited } = localStorage;
-    useEffect(() => initiateSync(store), []);
+    const [currentUser, setCurrentUser] = useState(null);
+
+    useEffect(() => {
+        // ensure that the user is logged in before initiating the sync
+        if (currentUser) {
+            // returns a function for dismantling the sync loop
+            return initiateSync(store);
+        }
+    }, [currentUser]);
+
     localStorage.hasVisited = true;
     if (!hasVisited) {
         store.dispatch(openModal("WELCOME",
@@ -127,7 +136,7 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ padding: "0px 2em 0px 2em" }}>
-                <SearchBar style={{ flexGrow: 0 }} />
+                <SearchBar style={{ flexGrow: 0 }} user={currentUser} setUser={setCurrentUser}/>
                 <div className="App columns is-mobile is-multiline main" style={{ padding: 0 }}>
                     <div
                         className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop"

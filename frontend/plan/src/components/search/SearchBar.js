@@ -46,7 +46,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
     // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab,
+    updateCheckboxFilter, setTab, user, setUser
 }) {
     useEffect(() => {
         loadRequirements();
@@ -298,7 +298,7 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <AccountIndicator />
+                    <AccountIndicator user={user} setUser={setUser}/>
                 </div>
             </div>
         </div>
@@ -323,6 +323,8 @@ SearchBar.propTypes = {
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
     setTab: PropTypes.func,
+    user: PropTypes.objectOf(PropTypes.any),
+    setUser: PropTypes.func,
 };
 
 const mapStateToProps = state => (

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect} from "react";
 import UserSelector from "./UserSelector";
 import LoginButton from "./LoginButton";
+import PropTypes from "prop-types";
 
 /**
  * An indicator of whether the user is logged in, and what account they are logged into.
@@ -9,9 +10,7 @@ import LoginButton from "./LoginButton";
  * information.
  */
 
-const AccountIndicator = () => {
-    const [user, setUser] = useState(null);
-
+const AccountIndicator = ({ user, setUser }) => {
     useEffect(() => {
         fetch("/accounts/me/")
             .then((response) => {
@@ -25,8 +24,13 @@ const AccountIndicator = () => {
     }, []);
 
     return user
-        ? <UserSelector user={user} onLogout={() => setUser(null)} />
-        : <LoginButton />;
+        ? <UserSelector user={user} onLogout={() => setUser(null)}/>
+        : <LoginButton/>;
+};
+
+AccountIndicator.propTypes = {
+    user: PropTypes.objectOf(PropTypes.any),
+    setUser: PropTypes.func,
 };
 
 export default AccountIndicator;

@@ -461,7 +461,7 @@ export function fetchCourseDetails(courseId) {
  * from the backend)
  * @returns {Function}
  */
-export const fetchSchedulesAndInitializeCart = (cart, onComplete = () => null) => (dispatch) => {
+export const fetchBackendSchedulesAndInitializeCart = (cart, onComplete = () => null) => (dispatch) => {
     fetch("/schedules/")
         .then(res => res.json())
         .then((schedules) => {
