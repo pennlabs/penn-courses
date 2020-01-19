@@ -37,7 +37,8 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <div>
                     <p>
-                        You have another tab of Penn Course Plan open.
+                        You have another tab of Penn Course Plan open. Please use Penn Course Plan
+                        in a single tab.
                     </p>
                 </div>
             );
