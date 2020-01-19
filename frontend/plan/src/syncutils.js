@@ -1,4 +1,3 @@
-import fetch from "cross-fetch";
 import {
     createScheduleOnBackend,
     deleteSchedule,

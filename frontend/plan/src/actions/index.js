@@ -439,7 +439,7 @@ const rateLimitedFetch = (url, init) => new Promise(((resolve, reject) => {
             });
         lastFetched = now;
     } else {
-        reject({ minDelayNotElapsed: true });
+        reject(new Error("minDelayNotElapsed"));
     }
 }));
 
@@ -571,8 +571,8 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
                 dispatch(creationSuccessful(name, id));
             }
         })
-        .catch(({ minDelayNotElapsed }) => {
-            if (!minDelayNotElapsed) {
+        .catch(({ message }) => {
+            if (message !== "minDelayNotElapsed") {
                 dispatch(creationUnsuccessful(name));
             }
         });
