@@ -67,10 +67,12 @@ const initiateSync = (store) => {
     const localStorageSchedulesObserved = localStorage.getItem("coursePlanObservedSchedules");
     if (localStorageSchedulesObserved) {
         try {
-            schedulesObserved = JSON.parse(localStorageSchedulesObserved);
+            schedulesObserved = JSON.parse(localStorageSchedulesObserved) || {};
         } catch (ignored) {
             schedulesObserved = {};
         }
+    } else {
+        schedulesObserved = {};
     }
 
     const scheduleStateInit = store.getState().schedule;
