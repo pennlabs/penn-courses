@@ -38,9 +38,9 @@ const transformTime = (t, roundUp) => {
     const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 10) / 10;
     if (roundUp) {
         return Math.ceil(timeDec * 2) / 2;
-    } else {
-        return Math.floor(timeDec * 2) / 2;
     }
+
+    return Math.floor(timeDec * 2) / 2;
 };
 
 
