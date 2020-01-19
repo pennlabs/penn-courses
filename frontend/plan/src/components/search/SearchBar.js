@@ -197,16 +197,7 @@ function SearchBar({
                     borderRadius: "6px",
                 }}
                 >
-                    <div>
-                        <img
-                            src="/static/favicon.ico"
-                            alt=""
-                            style={{
-                                height: "2.5rem",
-                                padding: "0 0.5rem",
-                            }}
-                        />
-                    </div>
+                    <AccountIndicator user={user} setUser={setUser} />
                     <SearchField
                         setTab={setTab}
                         startSearch={conditionalStartSearch}

@@ -90,7 +90,7 @@ function App() {
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SearchBar setTab={setTab}/>
+                <SearchBar setTab={setTab} user={currentUser} setUser={setCurrentUser}/>
                 <Tabs value={tab} className="topTabs" centered>
                     <Tab className="topTab" label="Search" onClick={() => setTab(0)}/>
                     <Tab className="topTab" label="Cart" onClick={() => setTab(1)}/>
