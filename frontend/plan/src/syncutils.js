@@ -104,8 +104,8 @@ const initiateSync = (store) => {
                         // find the name of the schedule with the deleted id
                         const schedName = Object.keys(scheduleStateInit.schedules)
                             .reduce((acc, schedNameSelected) => acc || ((scheduleStateInit
-                                    .schedules[schedNameSelected].id === id) && schedNameSelected),
-                                false);
+                                .schedules[schedNameSelected].id === id) && schedNameSelected),
+                            false);
                         if (schedName) {
                             store.dispatch(deleteSchedule(schedName));
                         }
@@ -132,15 +132,15 @@ export default initiateSync;
  * @param callback
  * @return {Function} Returns a function for restoring the active session in session storage
  */
-export const preventMultipleTabs = callback => {
-    const sessionId = Date.now() + "";
+export const preventMultipleTabs = (callback) => {
+    const sessionId = `${Date.now()}`;
     localStorage.setItem("openPages", sessionId);
-    window.addEventListener('storage', ({key}) => {
-        if(key === "openPages"){
+    window.addEventListener("storage", ({ key }) => {
+        if (key === "openPages") {
             // Listen if anybody else is opening the same page
-            localStorage.setItem("pageAvailable",sessionId);
+            localStorage.setItem("pageAvailable", sessionId);
         }
-        if(key === "pageAvailable"){
+        if (key === "pageAvailable") {
             // The page is already open somewhere else
             callback();
         }
