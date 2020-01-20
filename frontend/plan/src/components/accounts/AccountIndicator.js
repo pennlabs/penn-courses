@@ -31,6 +31,7 @@ const AccountIndicator = ({ user, setUser, onLeft }) => {
 AccountIndicator.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
     setUser: PropTypes.func,
+    onLeft: PropTypes.bool,
 };
 
 export default AccountIndicator;

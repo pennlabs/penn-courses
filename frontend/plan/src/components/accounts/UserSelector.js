@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "../useOnClickOutside";
 
-const UserSelector = ({ user: { username, ...rest }, onLogout , onLeft}) => {
+const UserSelector = ({ user: { username, ...rest }, onLogout, onLeft }) => {
     const [selected, setSelected] = useState(false);
 
     const firstName = rest.first_name;
