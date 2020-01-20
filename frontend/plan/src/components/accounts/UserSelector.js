@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "../useOnClickOutside";
 
-const UserSelector = ({ user: { username, ...rest }, onLogout }) => {
+const UserSelector = ({ user: { username, ...rest }, onLogout , onLeft}) => {
     const [selected, setSelected] = useState(false);
 
     const firstName = rest.first_name;
@@ -32,7 +32,7 @@ const UserSelector = ({ user: { username, ...rest }, onLogout }) => {
             <div className="logout dropdown-menu">
                 <div id="logout-dropdown-menu-container">
                     <div className="triangle-up" />
-                    <div id="logout-dropdown-inner-menu">
+                    <div id="logout-dropdown-inner-menu" className={`${onLeft ? " on-left" : ""}`}>
                         <p className="name-container">
                             {" "}
                             {firstName}
@@ -73,6 +73,7 @@ const UserSelector = ({ user: { username, ...rest }, onLogout }) => {
 UserSelector.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
     onLogout: PropTypes.func,
+    onLeft: PropTypes.bool,
 };
 
 export default UserSelector;

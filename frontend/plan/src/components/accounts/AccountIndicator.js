@@ -10,7 +10,7 @@ import LoginButton from "./LoginButton";
  * information.
  */
 
-const AccountIndicator = ({ user, setUser }) => {
+const AccountIndicator = ({ user, setUser, onLeft }) => {
     useEffect(() => {
         fetch("/accounts/me/")
             .then((response) => {
@@ -24,7 +24,7 @@ const AccountIndicator = ({ user, setUser }) => {
     }, [setUser]);
 
     return user
-        ? <UserSelector user={user} onLogout={() => setUser(null)} />
+        ? <UserSelector user={user} onLogout={() => setUser(null)} onLeft={onLeft} />
         : <LoginButton />;
 };
 
