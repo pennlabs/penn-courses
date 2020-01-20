@@ -3,8 +3,7 @@ from django.views.generic import TemplateView
 from rest_framework import routers
 
 from courses.views import CourseDetail, RequirementList
-
-from .views import CourseListSearch, ScheduleViewSet
+from plan.views import CourseListSearch, ScheduleViewSet
 
 
 router = routers.DefaultRouter()

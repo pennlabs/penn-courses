@@ -21,6 +21,7 @@ import {
     clearFilter,
     updateSearch
 } from "../../actions";
+import AccountIndicator from "../accounts/AccountIndicator";
 
 
 function shouldSearch(filterData) {
@@ -37,7 +38,6 @@ function shouldSearch(filterData) {
     return searchString || selectedReq;
 }
 
-
 function SearchBar({
     // eslint-disable-next-line no-shadow
     startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
@@ -46,7 +46,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
     // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab,
+    updateCheckboxFilter, setTab, user, setUser,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -150,25 +150,44 @@ function SearchBar({
         return (
             <div style={{ marginTop: "0px" }}>
                 <div style={{
-                    display: "flex", justifyContent: "space-evenly", alignItems: "stretch", flexWrap: "wrap", background: "white", paddingTop: "20px", paddingBottom: "10px", marginBottom: "10px", borderRadius: "6px",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    background: "white",
+                    paddingTop: "20px",
+                    paddingBottom: "10px",
+                    marginBottom: "10px",
+                    borderRadius: "6px",
                 }}
                 >
-                    <div>
-                        <img src="/static/favicon.ico" alt="" style={{ height: "2.5rem", padding: "0 0.5rem" }} />
-                    </div>
+                    <AccountIndicator user={user} setUser={setUser} />
                     <SearchField
                         setTab={setTab}
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
                     />
-                    <div style={{ padding: "0.5rem" }} role="button" onClick={() => showHideReqs(!reqsShown)}>
+                    <div
+                        style={{ padding: "0.5rem" }}
+                        role="button"
+                        onClick={() => showHideReqs(!reqsShown)}
+                    >
                         <i className="fas fa-filter" />
                     </div>
                 </div>
                 {reqsShown && (
                     <div style={{
-                        zIndex: "100", marginTop: "-20px", padding: "10px", marginBottom: "20px", display: "flex", width: "100vw", alignItems: "center", flexWrap: "wrap", background: "white", justifyContent: "flex-start",
+                        zIndex: "100",
+                        marginTop: "-20px",
+                        padding: "10px",
+                        marginBottom: "20px",
+                        display: "flex",
+                        width: "100vw",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        background: "white",
+                        justifyContent: "flex-start",
                     }}
                     >
                         {dropDowns}
@@ -182,7 +201,14 @@ function SearchBar({
         <div className="bar level is-mobile" style={{ height: "auto" }}>
             <div className="level-left" style={{ maxWidth: "80vw" }}>
                 <div className="level-item">
-                    <img src="/static/favicon.ico" alt="" style={{ height: "2rem", paddingLeft: "1.5rem" }} />
+                    <img
+                        src="/static/favicon.ico"
+                        alt=""
+                        style={{
+                            height: "2.5rem",
+                            paddingLeft: "1.5rem",
+                        }}
+                    />
                 </div>
                 <div className="level-item" id="searchdiv">
                     <SearchField
@@ -204,7 +230,10 @@ function SearchBar({
                 <div className="level-item">
                     <button
                         className="button is-white"
-                        style={{ marginRight: "1em", color: "#7e7e7e" }}
+                        style={{
+                            marginRight: "1em",
+                            color: "#7e7e7e",
+                        }}
                         type="button"
                         onClick={() => {
                             clearSearchResults();
@@ -218,6 +247,11 @@ function SearchBar({
                     >
                         Clear all
                     </button>
+                </div>
+            </div>
+            <div className="level-right">
+                <div className="level-item">
+                    <AccountIndicator user={user} setUser={setUser} />
                 </div>
             </div>
         </div>
@@ -242,6 +276,8 @@ SearchBar.propTypes = {
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
     setTab: PropTypes.func,
+    user: PropTypes.objectOf(PropTypes.any),
+    setUser: PropTypes.func,
 };
 
 const mapStateToProps = state => (
