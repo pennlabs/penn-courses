@@ -113,10 +113,13 @@
     color: #4a4a4a;
     border-radius: 4px;
     position: relative;
-    right: 61%;
     padding: 0.32rem;
     font-size: 0.85rem;
     box-shadow: 0 0 5px 0 lightgrey;
+}
+
+#logout-dropdown-inner-menu:not(.on-left) {
+    right: 61%;
 }
 
 #logout-dropdown-inner-menu .name-container{

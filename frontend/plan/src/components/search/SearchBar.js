@@ -161,7 +161,7 @@ function SearchBar({
                     borderRadius: "6px",
                 }}
                 >
-                    <AccountIndicator user={user} setUser={setUser} />
+                    <AccountIndicator user={user} setUser={setUser} onLeft={true} />
                     <SearchField
                         setTab={setTab}
                         startSearch={conditionalStartSearch}
@@ -251,7 +251,7 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <AccountIndicator user={user} setUser={setUser} />
+                    <AccountIndicator user={user} setUser={setUser} onLeft={false} />
                 </div>
             </div>
         </div>
