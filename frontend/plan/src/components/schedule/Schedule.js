@@ -33,9 +33,14 @@ const hashString = (s) => {
     return hash;
 };
 
-const transformTime = (t) => {
+const transformTime = (t, roundUp) => {
     const frac = t % 1;
-    return Math.floor(t) + Math.round((frac / 0.6) * 10) / 10;
+    const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 10) / 10;
+    if (roundUp) {
+        return Math.ceil(timeDec * 2) / 2;
+    }
+
+    return Math.floor(timeDec * 2) / 2;
 };
 
 
@@ -95,8 +100,8 @@ class Schedule extends Component {
             meetings.push(...s.meetings.map(m => (
                 {
                     day: m.day,
-                    start: transformTime(m.start),
-                    end: transformTime(m.end),
+                    start: transformTime(m.start, false),
+                    end: transformTime(m.end, true),
                     course: {
                         color,
                         id: s.id,
