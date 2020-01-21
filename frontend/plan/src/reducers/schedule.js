@@ -173,6 +173,7 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
                 cartSections: [...cartSections, action.section],
+                lastAdded: action.section,
             };
         case REMOVE_CART_ITEM:
             return {

@@ -6,7 +6,7 @@ import Badge from "../Badge";
 
 const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
 
-export default function CourseDetails({ course, getCourse }) {
+export default function CourseDetails({ course, getCourse, view }) {
     const requirements = course.requirements || [];
     const crosslistings = course.crosslistings || [];
     const { description } = course;
@@ -73,13 +73,18 @@ export default function CourseDetails({ course, getCourse }) {
                     marginBottom: "2em",
                 }}
                 >
-                    <ShowMoreText
-                        lines={2}
-                        more="See more"
-                        less="See less"
-                    >
-                        {description}
-                    </ShowMoreText>
+                    {view !== 1
+                        && (
+                            <ShowMoreText
+                                lines={2}
+                                more="See more"
+                                less="See less"
+                            >
+                                {description}
+                            </ShowMoreText>
+                        )
+                    }
+                    {view === 1 && description}
                 </li>
             ) : null}
         </ul>
@@ -89,4 +94,5 @@ export default function CourseDetails({ course, getCourse }) {
 CourseDetails.propTypes = {
     course: PropTypes.objectOf(PropTypes.any).isRequired,
     getCourse: PropTypes.func,
+    view: PropTypes.number,
 };

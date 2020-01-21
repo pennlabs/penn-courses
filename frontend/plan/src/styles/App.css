@@ -10,6 +10,48 @@ html {
     margin-bottom: 10px;
 }
 
+.smooth-transition{
+    transition: all .5s ease-in-out;
+}
+
+.showScheduleButton{
+    position:fixed !important;
+    font-size: 3.3em;
+    top:50%;
+    right:-1.5%;
+    transition-duration: 0.2s;
+}
+
+.showScheduleButton:hover{
+    right:-1%;
+}
+
+.hidden{
+    opacity:0;
+}
+
+.hideScheduleButton{
+    position:absolute !important;
+    font-size: 3.3em;
+    top:50%;
+    z-index: 5;
+    right:0%;
+    transition-duration: 0.2s;
+}
+
+.popover-content{
+  z-index:100;
+}
+
+.hideScheduleButton:hover{
+    right:-0.5%;
+}
+
+
+.highlighted{
+    background: #e1e3f7 !important;
+}
+
 .topTab{
     text-transform: none !important;
     background-color: black;

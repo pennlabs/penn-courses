@@ -46,7 +46,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
     // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab,
+    updateCheckboxFilter, setTab, setView,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -230,7 +230,7 @@ function SearchBar({
                         }}
                         disabled={isLoading ? "disabled" : false}
                     >
-                        Clear all
+                      Clear all
                     </button>
                 </div>
             </div>
@@ -256,6 +256,7 @@ SearchBar.propTypes = {
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
     setTab: PropTypes.func,
+    setView: PropTypes.func,
 };
 
 const mapStateToProps = state => (

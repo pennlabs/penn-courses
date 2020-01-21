@@ -27,7 +27,7 @@ const CartEmpty = () => (
 );
 
 const Cart = ({
-    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab,
+    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab, lastAdded,
 }) => (
     <section
         style={{
@@ -36,6 +36,7 @@ const Cart = ({
             flexDirection: "column",
             padding: 0,
         }}
+        id="cart"
         className="box"
     >
         {courses.length === 0 ? <CartEmpty /> : courses
@@ -46,6 +47,7 @@ const Cart = ({
                     <CartSection
                         toggleCheck={() => toggleCourse(section)}
                         code={code}
+                        lastAdded={lastAdded && code === lastAdded.id}
                         checked={checked}
                         name={name}
                         meetings={meetings}
@@ -73,11 +75,16 @@ Cart.propTypes = {
     courseInfo: PropTypes.func.isRequired,
     courseInfoLoading: PropTypes.bool,
     setTab: PropTypes.func,
+    lastAdded: PropTypes.objectOf(PropTypes.string),
 };
 
 // const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
 const mapStateToProps = (state) => {
-    const { schedule: { cartSections, schedules, scheduleSelected } } = state;
+    const {
+        schedule: {
+            cartSections, schedules, scheduleSelected, lastAdded,
+        },
+    } = state;
     return {
         courseInfoLoading: state.sections.courseInfoLoading,
         courses: cartSections.map(course => ({
@@ -87,6 +94,7 @@ const mapStateToProps = (state) => {
                 .filter(s => s.id !== course.id)
                 .map(s => s.meetings).flat()),
         })),
+        lastAdded,
     };
 };
 

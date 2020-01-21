@@ -57,6 +57,8 @@ function App() {
 
     const [tab, setTab] = useState(0);
 
+    const [view, setView] = useState(0);
+
     const containerRef = useRef();
 
     const scrollTop = (index, action) => {
@@ -121,9 +123,9 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ padding: "0px 2em 0px 2em" }}>
-                <SearchBar style={{ flexGrow: 0 }} />
-                <div className="App columns is-mobile is-multiline main" style={{ padding: 0 }}>
-                    <div className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop">
+                <SearchBar setView={setView} style={{ flexGrow: 0 }} />
+                <div className="App columns main smooth-transition" style={view === 0 ? { padding: 0, width: "130%" } : { padding: 0, width: "123%" }}>
+                    <div className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}>
                         <span style={{
                             display: "flex",
                             flexDirection: "row",
@@ -153,11 +155,11 @@ function App() {
                                 paddingRight: 0,
                             }}
                         >
-                            <Selector />
+                            <Selector view={view} />
                         </div>
                     </div>
                     <div
-                        className="column is-one-fourth-mobile is-one-fifth-tablet is-one-fifth-desktop"
+                        className="column is-2"
                         style={
                             {
                                 display: "flex",
@@ -175,11 +177,27 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div className="column">
+                    <div className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}>
                         <Schedule />
                     </div>
                 </div>
             </div>
+            {view === 1
+                ? (
+                    <div className="showScheduleButton popover is-popover-left">
+                        <i role="button" className="fas fa-arrow-circle-left" onClick={() => setView(0)} />
+                        <div className="popover-content">Show Schedule</div>
+                    </div>
+                )
+                : (
+                    <div className="hideScheduleButton popover is-popover-left">
+                        <i role="button" className="fas fa-arrow-circle-right" onClick={() => setView(1)} />
+                        <div className="popover-content">Hide Schedule</div>
+                    </div>
+                )
+
+
+            }
             <Footer />
             <ModalContainer />
         </Provider>
