@@ -41,7 +41,7 @@ function Selector(props) {
             fontSize: "0.8em",
             textAlign: "center",
             marginTop: "5vh",
-            maxWidth: "30vh",
+            maxWidth: "30vw",
         }}
         >
             <svg src="/static/empty-state-search.svg" />
