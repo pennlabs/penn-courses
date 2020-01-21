@@ -10,7 +10,6 @@ import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
-import { isMobileOnly } from "react-device-detect";
 import SwipeableViews from "react-swipeable-views";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
@@ -84,12 +83,17 @@ function App() {
         window.scrollTo(0, 0);
     };
 
-    if (isMobileOnly) {
+    if (window.innerWidth < 800) {
         return (
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SearchBar setTab={setTab} user={currentUser} setUser={setCurrentUser} />
+                <SearchBar
+                    setTab={setTab}
+                    user={currentUser}
+                    setUser={setCurrentUser}
+                    mobileView={true}
+                />
                 <Tabs value={tab} className="topTabs" centered>
                     <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
                     <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
@@ -124,15 +128,15 @@ function App() {
                                     paddingRight: 0,
                                 }}
                             >
-                                <Selector />
+                                <Selector mobileView={true} />
                             </div>
                         </div>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Cart setTab={setTab} />
+                        <Cart setTab={setTab} mobileView={true} />
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Schedule setTab={setTab} />
+                        <Schedule setTab={setTab} mobileView={true} />
                     </div>
                 </SwipeableViews>
                 <Footer />
@@ -152,7 +156,7 @@ function App() {
                     setUser={setCurrentUser}
                     style={{ flexGrow: 0 }}
                 />
-                <div className="App columns main smooth-transition" style={view === 0 ? { padding: 0, width: "130%" } : { padding: 0, width: "123%" }}>
+                <div className="App columns is-mobile main smooth-transition" style={view === 0 ? { padding: 0, width: "130%" } : { padding: 0, width: "123%" }}>
                     <div className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}>
                         <span style={{
                             display: "flex",

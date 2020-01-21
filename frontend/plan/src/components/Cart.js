@@ -1,7 +1,6 @@
 import React from "react";
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
-import { isMobileOnly } from "react-device-detect";
 import CartSection from "./CartSection";
 import { meetingsContainSection, meetingSetsIntersect } from "../meetUtil";
 import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
@@ -27,7 +26,7 @@ const CartEmpty = () => (
 );
 
 const Cart = ({
-    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab, lastAdded,
+    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab, lastAdded, mobileView,
 }) => (
     <section
         style={{
@@ -57,7 +56,7 @@ const Cart = ({
                             const codeParts = code.split("-");
                             if (!courseInfoLoading) {
                                 courseInfo(`${codeParts[0]}-${codeParts[1]}`);
-                                if (isMobileOnly) {
+                                if (mobileView) {
                                     setTab(0);
                                 }
                             }
@@ -76,6 +75,7 @@ Cart.propTypes = {
     courseInfoLoading: PropTypes.bool,
     setTab: PropTypes.func,
     lastAdded: PropTypes.objectOf(PropTypes.string),
+    mobileView: PropTypes.bool,
 };
 
 // const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({

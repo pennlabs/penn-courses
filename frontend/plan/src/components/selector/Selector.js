@@ -70,7 +70,7 @@ function Selector(props) {
         } else {
             element = (
                 <div className="columns">
-                    <div className="column is-one-third" style={{ height: "calc(100vh - 12em)", borderRight: "1px solid #dddddd" }}>
+                    <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
                         <CourseList
                             sortMode={sortMode}
                             isLoading={isLoadingCourseInfo}
@@ -100,7 +100,7 @@ function Selector(props) {
         } else {
             element = (
                 <div className="columns">
-                    <div className="column is-one-third" style={{ height: "calc(100vh - 12em)", borderRight: "1px solid #dddddd" }}>
+                    <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
                         <CourseList
                             sortMode={sortMode}
                             isLoading={isLoadingCourseInfo}
@@ -108,9 +108,9 @@ function Selector(props) {
                             getCourse={getCourse}
                         />
                     </div>
-                    {isLoadingCourseInfo ? loadingIndicator
-                        : (
-                            <div className="column is-two-thirds" style={{ height: "calc(100vh - 12em)" }}>
+                    <div className="column is-two-thirds" style={{ height: "calc(100vh - 12.5em)" }}>
+                        {isLoadingCourseInfo ? loadingIndicator
+                            : (
                                 <CourseInfo
                                     getCourse={getCourse}
                                     course={course}
@@ -120,9 +120,10 @@ function Selector(props) {
                                         removeFromSchedule,
                                     }}
                                 />
-                            </div>
-                        )
-                    }
+                            )
+                        }
+                    </div>
+
                 </div>
             );
         }
