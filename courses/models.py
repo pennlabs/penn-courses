@@ -2,10 +2,10 @@ import math
 import uuid
 
 from django.db import models
-from django.db.models import Q
-
+from django.db.models import Avg, FloatField, OuterRef, Q, Subquery
 from options.models import get_value
-from plan.annotations import course_reviews, sections_with_reviews
+
+from review.models import ReviewBit
 
 
 def get_current_semester():
@@ -40,6 +40,51 @@ class Department(models.Model):
 
     def __str__(self):
         return self.code
+
+
+"""
+Queryset annotations
+====================
+
+This file has code which annotates Course and Section querysets with Review information.
+There's some tricky JOINs going on here, through the Subquery objects which you can read about here:
+https://docs.djangoproject.com/en/2.2/ref/models/expressions/#subquery-expressions.
+
+This allows us to have the database do all of the work of averaging PCR data, so that we can get all of our Course and
+Section data in two queries.
+"""
+
+
+# Annotations are basically the same for Course and Section, save a few of the subfilters, so generalize it out.
+def review_averages(queryset, subfilters):
+    fields = ['course_quality', 'difficulty', 'instructor_quality', 'work_required']
+    return queryset.annotate(**{
+        field: Subquery(
+            ReviewBit.objects.filter(field=field, **subfilters)
+            .values('field')
+            .order_by()
+            .annotate(avg=Avg('score'))
+            .values('avg')[:1],
+            output_field=FloatField())
+        for field in fields
+    })
+
+
+def sections_with_reviews(queryset):
+    return review_averages(
+        queryset,
+        {
+            'review__section__course__full_code': OuterRef('course__full_code'),
+            # get all the reviews for instructors in the Section.instructors many-to-many
+            'review__instructor__in': Subquery(
+                Instructor.objects.filter(section=OuterRef(OuterRef('pk'))).values('pk').order_by()
+            )
+        }
+    ).order_by('code')
+
+
+def course_reviews(queryset):
+    return review_averages(queryset, {'review__section__course__full_code': OuterRef('full_code')})
 
 
 class CourseManager(models.Manager):
@@ -77,11 +122,7 @@ class Course(models.Model):
         unique_together = (('department', 'code', 'semester'), ('full_code', 'semester'))
 
     def __str__(self):
-        return '%s %s' % (self.course_id, self.semester)
-
-    @property
-    def course_id(self):
-        return '%s-%s' % (self.department, self.code)
+        return '%s %s' % (self.full_code, self.semester)
 
     @property
     def crosslistings(self):
@@ -170,12 +211,7 @@ class Section(models.Model):
                                   db_index=True)
 
     def __str__(self):
-        return '%s-%s %s' % (self.course.course_id, self.code, self.course.semester)
-
-    @property
-    def normalized(self):
-        """String used for querying updates to this section with the Penn API"""
-        return '%s-%s' % (self.course.course_id, self.code)
+        return '%s %s' % (self.full_code, self.course.semester)
 
     @property
     def semester(self):

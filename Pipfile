@@ -27,6 +27,9 @@ shortener = "*"
 django-labs-accounts = "*"
 "beautifulsoup4" = "*"
 ipython = "*"
+django-auto-prefetching = "*"
+django-cors-headers = "*"
+django-runtime-options = "*"
 
 [dev-packages]
 codecov = "*"

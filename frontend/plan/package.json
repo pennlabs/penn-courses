@@ -5,6 +5,7 @@
   "proxy": "http://localhost:8000/",
   "dependencies": {
     "@material-ui/core": "^4.5.2",
+    "awesome-debounce-promise": "^2.1.0",
     "bulma": "^0.7.5",
     "bulma-extensions": "^6.2.7",
     "bulma-popover": "^1.0.0",

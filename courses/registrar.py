@@ -39,7 +39,7 @@ def report_api_error(err):
         logger.error('Penn API error', extra={'error_msg': err})
 
 
-def get_all_course_availability(semester):
+def get_all_course_status(semester):
     headers = get_headers()
     url = f'https://esb.isc-seo.upenn.edu/8091/open_data/course_status/{semester}/all'
     r = requests.get(url, headers=headers)

@@ -15,7 +15,9 @@ sentry_sdk.init(
 # Whitenoise Configuration
 MIDDLEWARE.remove('django.middleware.security.SecurityMiddleware')
 MIDDLEWARE.remove('PennCourses.middleware.SwitchboardMiddleware')
+MIDDLEWARE.remove('corsheaders.middleware.CorsMiddleware')
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'PennCourses.middleware.SwitchboardMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -23,6 +25,19 @@ MIDDLEWARE = [
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Django CORS Settings
+CORS_ORIGIN_REGEX_WHITELIST = [
+    r'^https://[\w-]+.penncourseplan.com$',
+    r'^https://penncourseplan.com$'
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    '.penncourseplan.com',
+    'penncourseplan.com',
+    '.penncoursealert.com',
+    'penncoursealert.com',
+]
 
 # Domain Routing Middleware
 # Define URL schemes for each domain.
@@ -37,8 +52,7 @@ HOST_TO_APP = {
     'penncoursesearch.com': 'pcp-construction',
     'www.penncoursesearch.com': 'pcp-construction',
 
-    'penncoursereview.com': 'pcr',
-    'www.penncoursereview.com': 'pcr'
+    'api.penncourses.org': 'api',
 }
 
 if len(ALLOWED_HOSTS) == 0:

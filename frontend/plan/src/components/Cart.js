@@ -87,7 +87,7 @@ const mapStateToProps = (state) => {
     } = state;
     return {
         courseInfoLoading: state.sections.courseInfoLoading,
-        courses: cartSections.map(course => ({
+        courses: (cartSections || []).map(course => ({
             section: course,
             checked: meetingsContainSection(schedules[scheduleSelected].meetings, course),
             overlaps: meetingSetsIntersect(course.meetings, schedules[scheduleSelected].meetings

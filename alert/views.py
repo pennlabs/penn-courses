@@ -8,12 +8,12 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonRespons
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from options.models import get_bool, get_value
 
 from alert.models import SOURCE_API, Registration, RegStatus, register_for_course
 from alert.tasks import send_course_alerts
 from courses.models import PCA_REGISTRATION, APIKey
 from courses.util import record_update, update_course_from_record
-from options.models import get_bool, get_value
 
 
 logger = logging.getLogger(__name__)
@@ -46,14 +46,14 @@ def index(request):
 
 
 def do_register(course_code, email_address, phone, source, make_response, api_key=None):
-    res = register_for_course(course_code, email_address, phone, source, api_key)
+    res, normalized_course_code = register_for_course(course_code, email_address, phone, source, api_key)
 
     if res == RegStatus.SUCCESS:
         return make_response('success',
-                             'Your registration for %s was successful!' % course_code)
+                             'Your registration for %s was successful!' % normalized_course_code)
     elif res == RegStatus.OPEN_REG_EXISTS:
         return make_response('warning',
-                             "You've already registered to get alerts for %s!" % course_code)
+                             "You've already registered to get alerts for %s!" % normalized_course_code)
     elif res == RegStatus.COURSE_NOT_FOUND:
         return make_response('danger',
                              '%s did not match any course in our database. Please try again!' % course_code)
@@ -90,7 +90,7 @@ def resubscribe(request, id_):
         new_reg = old_reg.resubscribe()
         return homepage_with_msg(request,
                                  'info',
-                                 'You have been resubscribed for alerts to %s!' % new_reg.section.normalized)
+                                 'You have been resubscribed for alerts to %s!' % new_reg.section.full_code)
 
 
 def alert_for_course(c_id, semester, sent_by):

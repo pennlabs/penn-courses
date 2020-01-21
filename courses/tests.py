@@ -1,13 +1,13 @@
 import json
 
 from django.test import TestCase, override_settings
+from options.models import Option
 from rest_framework.test import APIClient
 
 from courses.models import Course, Department, Instructor, Meeting, Requirement, Section
 from courses.util import (create_mock_data, get_or_create_course, get_or_create_course_and_section, record_update,
                           relocate_reqs_from_restrictions, separate_course_code, set_crosslistings,
                           update_course_from_record, upsert_course_from_opendata)
-from options.models import Option
 
 
 TEST_SEMESTER = '2019A'
@@ -88,7 +88,7 @@ class CourseStatusUpdateTestCase(TestCase):
     def test_update_status(self):
         self.section.status = 'C'
         self.section.save()
-        up = record_update(self.section.normalized,
+        up = record_update(self.section.full_code,
                            TEST_SEMESTER,
                            'C',
                            'O',
@@ -96,7 +96,7 @@ class CourseStatusUpdateTestCase(TestCase):
                            'JSON')
         up.save()
         update_course_from_record(up)
-        _, section = create_mock_data(self.section.normalized, TEST_SEMESTER)
+        _, section = create_mock_data(self.section.full_code, TEST_SEMESTER)
         self.assertEqual('O', section.status)
 
 
@@ -199,12 +199,12 @@ class RequirementTestCase(TestCase):
         self.assertEqual(self.req2, reqs[0])
 
     def test_requirement_route(self):
-        response = self.client.get(f'/current/requirements/')
+        response = self.client.get(f'/courses/current/requirements/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(2, len(response.data))
 
     def test_requirement_route_other_sem(self):
-        response = self.client.get(f'/XXXXX/requirements/')
+        response = self.client.get(f'/courses/XXXXX/requirements/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(1, len(response.data))
 
@@ -228,7 +228,7 @@ class CourseListTestCase(TestCase):
         set_semester()
 
     def test_get_courses(self):
-        response = self.client.get('/all/courses/')
+        response = self.client.get('/courses/all/courses/')
         self.assertEqual(len(response.data), 2)
         course_codes = [d['id'] for d in response.data]
         self.assertTrue('CIS-120' in course_codes and 'MATH-114' in course_codes)
@@ -239,30 +239,30 @@ class CourseListTestCase(TestCase):
         new_sem = TEST_SEMESTER[:-1] + 'Z'
         create_mock_data('MATH-104-001', new_sem)
 
-        response = self.client.get(f'/{TEST_SEMESTER}/courses/')
+        response = self.client.get(f'/courses/{TEST_SEMESTER}/courses/')
         self.assertEqual(len(response.data), 2)
 
-        response = self.client.get(f'/{new_sem}/courses/')
+        response = self.client.get(f'/courses/{new_sem}/courses/')
         self.assertEqual(len(response.data), 1)
 
-        response = self.client.get('/all/courses/')
+        response = self.client.get('/courses/all/courses/')
         self.assertEqual(len(response.data), 3)
 
     def test_current_semester(self):
         new_sem = TEST_SEMESTER[:-1] + 'Z'
         create_mock_data('MATH-104-001', new_sem)
-        response = self.client.get(f'/current/courses/')
+        response = self.client.get(f'/courses/current/courses/')
         self.assertEqual(len(response.data), 2)
 
     def test_course_with_no_sections_not_in_list(self):
         self.math.sections.all().delete()
-        response = self.client.get('/all/courses/')
+        response = self.client.get('/courses/all/courses/')
         self.assertEqual(len(response.data), 1, response.data)
 
     def test_course_with_cancelled_sections_not_in_list(self):
         self.math1.status = 'X'
         self.math1.save()
-        response = self.client.get('/all/courses/')
+        response = self.client.get('/courses/all/courses/')
         self.assertEqual(response.data[1]['num_sections'], 0, response.data)
 
 
@@ -279,7 +279,7 @@ class CourseDetailTestCase(TestCase):
 
     def test_get_course(self):
         course, section = create_mock_data('CIS-120-201', TEST_SEMESTER)
-        response = self.client.get('/all/courses/CIS-120/')
+        response = self.client.get('/courses/all/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['id'], 'CIS-120')
         self.assertEqual(len(response.data['sections']), 2)
@@ -290,7 +290,7 @@ class CourseDetailTestCase(TestCase):
         section.credits = 1
         section.status = 'X'
         section.save()
-        response = self.client.get('/all/courses/CIS-120/')
+        response = self.client.get('/courses/all/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['id'], 'CIS-120')
         self.assertEqual(len(response.data['sections']), 1, response.data['sections'])
@@ -299,7 +299,7 @@ class CourseDetailTestCase(TestCase):
         course, section = create_mock_data('CIS-120-201', TEST_SEMESTER)
         section.credits = None
         section.save()
-        response = self.client.get('/all/courses/CIS-120/')
+        response = self.client.get('/courses/all/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['id'], 'CIS-120')
         self.assertEqual(len(response.data['sections']), 1, response.data['sections'])
@@ -307,13 +307,13 @@ class CourseDetailTestCase(TestCase):
     def test_course_no_good_sections(self):
         self.section.status = 'X'
         self.section.save()
-        response = self.client.get('/all/courses/CIS-120/')
+        response = self.client.get('/courses/all/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['id'], 'CIS-120')
         self.assertEqual(len(response.data['sections']), 0)
 
     def test_not_get_course(self):
-        response = self.client.get('/all/courses/CIS-160/')
+        response = self.client.get('/courses/all/courses/CIS-160/')
         self.assertEqual(response.status_code, 404)
 
 

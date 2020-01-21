@@ -15,13 +15,6 @@ class ReviewSerializer(serializers.ModelSerializer):
     instructor = serializers.StringRelatedField()
     fields = ReviewBitSerializer(source='reviewbit_set', many=True)
 
-    @staticmethod
-    def setup_eager_loading(queryset):
-        queryset = queryset\
-            .prefetch_related('reviewbit_set')\
-            .select_related('section', 'instructor')
-        return queryset
-
     class Meta:
         model = Review
         fields = (

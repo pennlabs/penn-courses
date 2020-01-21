@@ -2,7 +2,7 @@ import os
 
 from django.core.management.base import BaseCommand
 
-from review.import_reviews import load_all_reviews
+from review.import_reviews import load_all_reviews, load_reviews_from_file
 
 
 class Command(BaseCommand):
@@ -12,9 +12,14 @@ class Command(BaseCommand):
         parser.add_argument('--src', nargs='?', type=str, default='pcr-backup')
 
     def handle(self, *args, **kwargs):
-        directory = os.path.abspath(kwargs['src'])
-        if not os.path.exists(directory):
-            print('Source directory does not exist.')
+        src = os.path.abspath(kwargs['src'])
+        if not os.path.exists(src):
+            print('Source does not exist.')
             return -1
 
-        load_all_reviews(directory)
+        if os.path.isdir(src):
+            print(f'loading reviews from directory {src}')
+            load_all_reviews(src)
+        else:
+            print(f'loading reviews from file {src}')
+            load_reviews_from_file(src)

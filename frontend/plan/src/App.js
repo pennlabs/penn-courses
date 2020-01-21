@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
@@ -24,9 +24,10 @@ import Footer from "./components/footer";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
-import { openModal } from "./actions";
-
-// import { fetchCourseSearch, fetchSectionInfo } from "./actions";
+import {
+    openModal
+} from "./actions";
+import initiateSync, { preventMultipleTabs } from "./syncutils";
 
 const previousState = localStorage.getItem("coursePlanSchedules");
 const previousStateJSON = previousState ? JSON.parse(previousState) : undefined;
@@ -48,6 +49,24 @@ store.subscribe(() => {
 
 function App() {
     const { hasVisited } = localStorage;
+    const [currentUser, setCurrentUser] = useState(null);
+
+    useEffect(() => preventMultipleTabs(() => {
+        store.dispatch(openModal("MULTITAB",
+            {},
+            "Multiple tabs"));
+    }), []);
+
+    useEffect(() => {
+        // ensure that the user is logged in before initiating the sync
+        if (currentUser) {
+            // returns a function for dismantling the sync loop
+            return initiateSync(store);
+        }
+        return () => {
+        };
+    }, [currentUser]);
+
     localStorage.hasVisited = true;
     if (!hasVisited) {
         store.dispatch(openModal("WELCOME",
@@ -70,7 +89,7 @@ function App() {
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SearchBar setTab={setTab} />
+                <SearchBar setTab={setTab} user={currentUser} setUser={setCurrentUser} />
                 <Tabs value={tab} className="topTabs" centered>
                     <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
                     <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
@@ -83,7 +102,11 @@ function App() {
                     onSwitching={scrollTop}
                     onChangeIndex={setTab}
                 >
-                    <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                    <div style={{
+                        paddingLeft: "10px",
+                        paddingRight: "10px",
+                    }}
+                    >
                         <div>
                             <div style={{
                                 display: "flex",
@@ -123,7 +146,12 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ padding: "0px 2em 0px 2em" }}>
-                <SearchBar setView={setView} style={{ flexGrow: 0 }} />
+                <SearchBar
+                    setView={setView}
+                    user={currentUser}
+                    setUser={setCurrentUser}
+                    style={{ flexGrow: 0 }}
+                />
                 <div className="App columns main smooth-transition" style={view === 0 ? { padding: 0, width: "130%" } : { padding: 0, width: "123%" }}>
                     <div className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}>
                         <span style={{
