@@ -128,7 +128,7 @@ function App() {
                                     paddingRight: 0,
                                 }}
                             >
-                                <Selector mobileView={true} />
+                                <Selector mobileView={true} view={0} />
                             </div>
                         </div>
                     </div>

@@ -81,7 +81,7 @@ export default function Section({
                     </div>
                 </div>
                 <div style={{
-                    display: "flex", flexDirection: "row", flexWrap: "wrap", alignItems: "center",
+                    display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", alignItems: "center"
                 }}
                 >
                     <div>
