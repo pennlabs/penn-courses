@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
@@ -27,6 +27,7 @@ function Selector(props) {
     } = props;
 
     const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && view === 0);
+
     const loadingIndicator = (
         <div
             className="button is-loading"
@@ -58,26 +59,29 @@ function Selector(props) {
         </div>
     );
 
+    const courseList = (
+        <CourseList
+            sortMode={sortMode}
+            isLoading={isLoadingCourseInfo}
+            courses={courses}
+            getCourse={getCourse}
+        />
+    );
+
+    useEffect(() => {
+        if (courses.length === 1) {
+            getCourse(courses[0].id);
+        }
+    }, [isSearchingCourseInfo]);
+
     if (courses.length > 0 && !course) {
         if (view === 0) {
-            element = (
-                <CourseList
-                    sortMode={sortMode}
-                    isLoading={isLoadingCourseInfo}
-                    courses={courses}
-                    getCourse={getCourse}
-                />
-            );
+            element = courseList;
         } else {
             element = (
                 <div className="columns">
                     <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
-                        <CourseList
-                            sortMode={sortMode}
-                            isLoading={isLoadingCourseInfo}
-                            courses={courses}
-                            getCourse={getCourse}
-                        />
+                        {courseList}
                     </div>
                 </div>
 
@@ -102,12 +106,7 @@ function Selector(props) {
             element = (
                 <div className="columns">
                     <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
-                        <CourseList
-                            sortMode={sortMode}
-                            isLoading={isLoadingCourseInfo}
-                            courses={courses}
-                            getCourse={getCourse}
-                        />
+                        {courseList}
                     </div>
                     <div className="column is-two-thirds" style={{ height: "calc(100vh - 12.5em)" }}>
                         {isLoadingCourseInfo ? loadingIndicator
