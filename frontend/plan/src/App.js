@@ -156,7 +156,7 @@ function App() {
                     setUser={setCurrentUser}
                     style={{ flexGrow: 0 }}
                 />
-                <div className="App columns is-mobile main smooth-transition" style={view === 0 ? { padding: 0, width: "130%" } : { padding: 0, width: "123%" }}>
+              <div className="App columns is-mobile main smooth-transition" style={view === 0 ? { padding: 0, width: "129%" } : { padding: 0, width: "123%" }}>
                     <div className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}>
                         <span style={{
                             display: "flex",
@@ -209,7 +209,7 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}>
+                    <div style={{zIndex: 2, paddingRight:"0px", marginRight:"15px"}} className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}>
                         <Schedule />
                     </div>
                 </div>
@@ -217,14 +217,14 @@ function App() {
             {view === 1
                 ? (
                     <div className="showScheduleButton popover is-popover-left">
-                        <i role="button" className="fas fa-arrow-circle-left" onClick={() => setView(0)} />
+                        <i role="button" className="fas fa-arrow-alt-circle-left" onClick={() => setView(0)} />
                         <div className="popover-content">Show Schedule</div>
                     </div>
                 )
                 : (
                     <div className="hideScheduleButton popover is-popover-left">
-                        <i role="button" className="fas fa-arrow-circle-right" onClick={() => setView(1)} />
-                        <div className="popover-content">Hide Schedule</div>
+                        <i role="button" className="fas fa-arrow-alt-circle-right" onClick={() => setView(1)} />
+                        <div className="popover-content" style={{position:"absolute", zIndex:"1000 !important"}}>Hide Schedule</div>
                     </div>
                 )
 

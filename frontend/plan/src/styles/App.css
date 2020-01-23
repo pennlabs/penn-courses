@@ -16,9 +16,9 @@ html {
 
 .showScheduleButton{
     position:fixed !important;
-    font-size: 3.3em;
-    top:50%;
-    right:-1.5%;
+    font-size: 3em;
+    top:48%;
+    right:-1.3%;
     transition-duration: 0.2s;
 }
 
@@ -32,19 +32,28 @@ html {
 
 .hideScheduleButton{
     position:absolute !important;
-    font-size: 3.3em;
-    top:50%;
-    z-index: 5;
+    font-size: 3em;
+    top:48%;
     right:0%;
     transition-duration: 0.2s;
 }
 
+.hideScheduleButton .fa-arrow-alt-circle-right{
+    color:#8890d3;
+}
+
+
+.showScheduleButton .fa-arrow-alt-circle-left{
+    color:#8890d3;
+}
+/*
 .popover-content{
   z-index:100;
-}
+} */
 
 .hideScheduleButton:hover{
     right:-0.5%;
+    z-index: 3;
 }
 
 
@@ -522,7 +531,7 @@ ul {
   box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.09);
 }
 
-@media all and (max-width: 768px){
+@media all and (max-width: 800px){
   .box{
     min-height: calc(100vh - 8em);
     height: 100%;
