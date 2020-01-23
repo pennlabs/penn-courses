@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { isMobileOnly } from "react-device-detect";
 import connect from "react-redux/es/connect/connect";
 import "./Search.css";
 import { DropdownButton } from "../DropdownButton";
@@ -46,7 +45,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
     // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab, user, setUser,
+    updateCheckboxFilter, setTab, setView, user, setUser, mobileView,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -146,7 +145,7 @@ function SearchBar({
             </DropdownButton>
         </React.Fragment>
     );
-    if (isMobileOnly) {
+    if (mobileView) {
         return (
             <div style={{ marginTop: "0px" }}>
                 <div style={{
@@ -245,7 +244,7 @@ function SearchBar({
                             clearAll();
                         }}
                     >
-                        Clear all
+                      Clear all
                     </button>
                 </div>
             </div>
@@ -276,8 +275,10 @@ SearchBar.propTypes = {
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
     setTab: PropTypes.func,
+    setView: PropTypes.func,
     user: PropTypes.objectOf(PropTypes.any),
     setUser: PropTypes.func,
+    mobileView: PropTypes.bool,
 };
 
 const mapStateToProps = state => (

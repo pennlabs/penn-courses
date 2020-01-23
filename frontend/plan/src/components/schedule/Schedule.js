@@ -170,7 +170,7 @@ class Schedule extends Component {
         };
 
         return (
-            <div className="column vertical-section">
+            <div className="column vertical-section" style={{ paddingRight: "100px !important" }}>
                 <h3 className="section-header">
                     <ScheduleSelectorDropdown
                         activeName={activeScheduleName}

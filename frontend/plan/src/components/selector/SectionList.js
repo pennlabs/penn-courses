@@ -8,7 +8,9 @@ import {
 } from "../../actions";
 
 
-function SectionList({ sections, cartSections, manageCart }) {
+function SectionList({
+    sections, cartSections, manageCart, view,
+}) {
     const isInCart = ({ id }) => cartSections.indexOf(id) !== -1;
     return (
         <div className="results">
@@ -16,6 +18,7 @@ function SectionList({ sections, cartSections, manageCart }) {
                 {sections.map(s => (
                     <Section
                         section={s}
+                        view={view}
                         cart={manageCart(s)}
                         inCart={isInCart(s)}
                     />
@@ -29,6 +32,7 @@ SectionList.propTypes = {
     sections: PropTypes.arrayOf(PropTypes.object).isRequired,
     cartSections: PropTypes.arrayOf(PropTypes.String).isRequired,
     manageCart: PropTypes.func,
+    view: PropTypes.number,
 };
 
 const mapStateToProps = (state, ownProps) => (

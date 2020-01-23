@@ -406,6 +406,7 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 cartUpdated: Date.now(),
                 cartSections: [...cartSections, action.section],
+                lastAdded: action.section,
                 cartPushedToBackend: false,
             };
         case REMOVE_CART_ITEM:

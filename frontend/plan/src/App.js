@@ -10,7 +10,6 @@ import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
-import { isMobileOnly } from "react-device-detect";
 import SwipeableViews from "react-swipeable-views";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
@@ -76,18 +75,25 @@ function App() {
 
     const [tab, setTab] = useState(0);
 
+    const [view, setView] = useState(0);
+
     const containerRef = useRef();
 
     const scrollTop = (index, action) => {
         window.scrollTo(0, 0);
     };
 
-    if (isMobileOnly) {
+    if (window.innerWidth < 800) {
         return (
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SearchBar setTab={setTab} user={currentUser} setUser={setCurrentUser} />
+                <SearchBar
+                    setTab={setTab}
+                    user={currentUser}
+                    setUser={setCurrentUser}
+                    mobileView={true}
+                />
                 <Tabs value={tab} className="topTabs" centered>
                     <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
                     <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
@@ -122,15 +128,15 @@ function App() {
                                     paddingRight: 0,
                                 }}
                             >
-                                <Selector />
+                                <Selector mobileView={true} view={0} />
                             </div>
                         </div>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Cart setTab={setTab} />
+                        <Cart setTab={setTab} mobileView={true} />
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Schedule setTab={setTab} />
+                        <Schedule setTab={setTab} mobileView={true} />
                     </div>
                 </SwipeableViews>
                 <Footer />
@@ -144,11 +150,14 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ padding: "0px 2em 0px 2em" }}>
-                <SearchBar style={{ flexGrow: 0 }} user={currentUser} setUser={setCurrentUser} />
-                <div className="App columns is-mobile is-multiline main" style={{ padding: 0 }}>
-                    <div
-                        className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop"
-                    >
+                <SearchBar
+                    setView={setView}
+                    user={currentUser}
+                    setUser={setCurrentUser}
+                    style={{ flexGrow: 0 }}
+                />
+                <div className="App columns is-mobile main smooth-transition" style={view === 0 ? { padding: 0, width: "129%" } : { padding: 0, width: "123%" }}>
+                    <div className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}>
                         <span style={{
                             display: "flex",
                             flexDirection: "row",
@@ -178,11 +187,11 @@ function App() {
                                 paddingRight: 0,
                             }}
                         >
-                            <Selector />
+                            <Selector view={view} />
                         </div>
                     </div>
                     <div
-                        className="column is-one-fourth-mobile is-one-fifth-tablet is-one-fifth-desktop"
+                        className="column is-2"
                         style={
                             {
                                 display: "flex",
@@ -200,11 +209,27 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div className="column">
+                    <div style={{ zIndex: 2, paddingRight: "0px", marginRight: "15px" }} className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}>
                         <Schedule />
                     </div>
                 </div>
             </div>
+            {view === 1
+                ? (
+                    <div className="showScheduleButton popover is-popover-left">
+                        <i role="button" className="fas fa-arrow-alt-circle-left" onClick={() => setView(0)} />
+                        <div className="popover-content">Show Schedule</div>
+                    </div>
+                )
+                : (
+                    <div className="hideScheduleButton popover is-popover-left">
+                        <i role="button" className="fas fa-arrow-alt-circle-right" onClick={() => setView(1)} />
+                        <div className="popover-content">Hide Schedule</div>
+                    </div>
+                )
+
+
+            }
             <Footer />
             <ModalContainer />
         </Provider>
