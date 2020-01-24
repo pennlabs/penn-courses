@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import "bulma-popover/css/bulma-popver.min.css";
+import scrollIntoView from "scroll-into-view-if-needed";
 
 import Badge from "../Badge";
 
@@ -10,6 +11,13 @@ export default function Section({
     section, cart, inCart,
 }) {
     const { instructors, meetings, status } = section;
+    const cartAdd = (sec) => {
+        cart.add();
+        setTimeout(() => {
+            const target = document.getElementById(sec.id);
+            scrollIntoView(target, { behavior: "smooth", block: "end", scrollMode: "if-needed" });
+        }, 50);
+    };
     return (
         <div className="course_section">
             <li style={{
@@ -17,7 +25,7 @@ export default function Section({
             }}
             >
                 <div style={{
-                    display: "flex", flexDirection: "column", flexGrow: "1", padding: "1em", paddingRight: "0",
+                    display: "flex", flexDirection: "row", flexWrap: "wrap", flexGrow: "1", justifyContent: "space-between", padding: "1em", paddingRight: "0",
                 }}
                 >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -48,7 +56,7 @@ export default function Section({
                         </div>
                     </div>
                     <div style={{
-                        marginTop: "0.5em", display: "grid", fontSize: "0.7rem", gridTemplateColumns: "40% 15% 40%",
+                        minWidth: "200px", marginTop: "0.5em", display: "grid", fontSize: "0.7rem", gridTemplateColumns: "40% 15% 40%",
                     }}
                     >
                         <div>
@@ -72,7 +80,10 @@ export default function Section({
                         </div>
                     </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div style={{
+                    display: "flex", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", alignItems: "center",
+                }}
+                >
                     <div>
                         {instructors.length > 0 ? (
                             <div className="popover is-popover-left">
@@ -91,7 +102,7 @@ export default function Section({
                             />
                         )}
                     </div>
-                    { status == "C"
+                    { status === "C"
                         ? (
                             <div className="popover is-popover-left">
                                 <a className="bell" target="_blank" href={`https://penncoursealert.com/?course=${section.id}`}>
@@ -106,7 +117,7 @@ export default function Section({
                 </div>
                 <div
                     role="button"
-                    onClick={inCart ? cart.remove : cart.add}
+                    onClick={inCart ? cart.remove : () => cartAdd(section)}
                     style={{ padding: "1.8em", paddingLeft: "1em", width: "2.5em" }}
                 >
                     {inCart ? (

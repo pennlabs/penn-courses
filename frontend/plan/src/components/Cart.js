@@ -1,7 +1,6 @@
 import React from "react";
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
-import { isMobileOnly } from "react-device-detect";
 import CartSection from "./CartSection";
 import { meetingsContainSection, meetingSetsIntersect } from "../meetUtil";
 import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
@@ -27,7 +26,7 @@ const CartEmpty = () => (
 );
 
 const Cart = ({
-    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab,
+    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab, lastAdded, mobileView,
 }) => (
     <section
         style={{
@@ -36,6 +35,7 @@ const Cart = ({
             flexDirection: "column",
             padding: 0,
         }}
+        id="cart"
         className="box"
     >
         {courses.length === 0 ? <CartEmpty /> : courses
@@ -46,6 +46,7 @@ const Cart = ({
                     <CartSection
                         toggleCheck={() => toggleCourse(section)}
                         code={code}
+                        lastAdded={lastAdded && code === lastAdded.id}
                         checked={checked}
                         name={name}
                         meetings={meetings}
@@ -55,7 +56,7 @@ const Cart = ({
                             const codeParts = code.split("-");
                             if (!courseInfoLoading) {
                                 courseInfo(`${codeParts[0]}-${codeParts[1]}`);
-                                if (isMobileOnly) {
+                                if (mobileView) {
                                     setTab(0);
                                 }
                             }
@@ -73,20 +74,27 @@ Cart.propTypes = {
     courseInfo: PropTypes.func.isRequired,
     courseInfoLoading: PropTypes.bool,
     setTab: PropTypes.func,
+    lastAdded: PropTypes.objectOf(PropTypes.string),
+    mobileView: PropTypes.bool,
 };
 
 // const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
 const mapStateToProps = (state) => {
-    const { schedule: { cartSections, schedules, scheduleSelected } } = state;
+    const {
+        schedule: {
+            cartSections, schedules, scheduleSelected, lastAdded,
+        },
+    } = state;
     return {
         courseInfoLoading: state.sections.courseInfoLoading,
-        courses: cartSections.map(course => ({
+        courses: (cartSections || []).map(course => ({
             section: course,
             checked: meetingsContainSection(schedules[scheduleSelected].meetings, course),
             overlaps: meetingSetsIntersect(course.meetings, schedules[scheduleSelected].meetings
                 .filter(s => s.id !== course.id)
                 .map(s => s.meetings).flat()),
         })),
+        lastAdded,
     };
 };
 

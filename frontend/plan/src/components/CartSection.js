@@ -4,7 +4,7 @@ import "../styles/course-cart.css";
 import { isMobile } from "react-device-detect";
 import { getTimeString } from "../meetUtil";
 
-const CourseDetails = ({ meetings, code }) => (
+const CourseDetails = ({ meetings, code, overlaps }) => (
     <div style={{
         flexGrow: "0",
         display: "flex",
@@ -14,14 +14,27 @@ const CourseDetails = ({ meetings, code }) => (
         alignItems: "left",
     }}
     >
-        <b>{code.replace(/-/g, " ")}</b>
-        <div style={{ fontSize: "0.8rem" }}>{getTimeString(meetings)}</div>
+        <b>
+            <span>{code.replace(/-/g, " ")}</span>
+        </b>
+        <div style={{ fontSize: "0.8rem" }}>
+            {overlaps && (
+                <div className="popover is-popover-right">
+                    <i style={{ paddingRight: "5px" }} className="fas fa-calendar-times" />
+                    <span className="popover-content">
+                              Conflicts with schedule!
+                    </span>
+                </div>
+            )}
+            {getTimeString(meetings)}
+        </div>
     </div>
 );
 
 CourseDetails.propTypes = {
     meetings: PropTypes.arrayOf(PropTypes.object).isRequired,
     code: PropTypes.string.isRequired,
+    overlaps: PropTypes.bool,
 };
 
 
@@ -86,12 +99,13 @@ CourseTrashCan.propTypes = {
 };
 
 const CartSection = ({
-    toggleCheck, checked, code, meetings, remove, courseInfo, overlaps,
+    toggleCheck, checked, code, meetings, remove, courseInfo, overlaps, lastAdded,
 }) => (
     <div
         role="switch"
+        id={code}
         aria-checked="false"
-        className="course-cart-item"
+        className={lastAdded ? "course-cart-item highlighted" : "course-cart-item"}
         style={!isMobile
             ? {
                 display: "flex",
@@ -99,13 +113,11 @@ const CartSection = ({
                 justifyContent: "space-around",
                 padding: "0.8rem",
                 borderBottom: "1px solid rgb(200, 200, 200)",
-                opacity: overlaps ? 0.5 : 1.0,
             } : {
                 display: "grid",
                 gridTemplateColumns: "20% 50% 15% 15%",
                 padding: "0.8rem",
                 borderBottom: "1px solid rgb(200, 200, 200)",
-                opacity: overlaps ? 0.5 : 1.0,
             }}
         onClick={(e) => {
             // ensure that it's not the trash can being clicked
@@ -115,7 +127,7 @@ const CartSection = ({
         }}
     >
         <CourseCheckbox checked={checked} />
-        <CourseDetails meetings={meetings} code={code} />
+        <CourseDetails meetings={meetings} code={code} overlaps={overlaps} />
         <CourseInfoButton courseInfo={courseInfo} />
         <CourseTrashCan remove={remove} />
     </div>
@@ -129,6 +141,7 @@ CartSection.propTypes = {
     toggleCheck: PropTypes.func.isRequired,
     remove: PropTypes.func.isRequired,
     courseInfo: PropTypes.func.isRequired,
+    lastAdded: PropTypes.bool,
 };
 
 export default CartSection;

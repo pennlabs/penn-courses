@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
@@ -23,15 +23,30 @@ function Selector(props) {
         isLoadingCourseInfo,
         isSearchingCourseInfo,
         sortMode,
+        view,
     } = props;
+
+    const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && view === 0);
+
+    const loadingIndicator = (
+        <div
+            className="button is-loading"
+            style={{
+                height: "100%", width: "100%", border: "none", fontSize: "3rem",
+            }}
+        />
+    );
+
     let element = (
         <div style={{
             fontSize: "0.8em",
             textAlign: "center",
             marginTop: "5vh",
+            maxWidth: "45vh",
         }}
         >
             <img src="/static/empty-state-search.svg" />
+
             <h3 style={{
                 fontWeight: "bold",
                 marginBottom: "0.5rem",
@@ -44,45 +59,78 @@ function Selector(props) {
         </div>
     );
 
-    if (courses.length > 0) {
-        element = (
-            <CourseList
-                sortMode={sortMode}
-                isLoading={isLoadingCourseInfo}
-                courses={courses}
-                getCourse={getCourse}
-            />
-        );
+    const courseList = (
+        <CourseList
+            sortMode={sortMode}
+            isLoading={isLoadingCourseInfo}
+            courses={courses}
+            getCourse={getCourse}
+        />
+    );
+
+    useEffect(() => {
+        if (courses.length === 1) {
+            getCourse(courses[0].id);
+        }
+    }, [isSearchingCourseInfo]);
+
+    if (courses.length > 0 && !course) {
+        if (view === 0) {
+            element = courseList;
+        } else {
+            element = (
+                <div className="columns">
+                    <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
+                        {courseList}
+                    </div>
+                </div>
+
+            );
+        }
     }
 
     if (course) {
-        element = (
-            <CourseInfo
-                getCourse={getCourse}
-                course={course}
-                back={courses.length > 1 ? clearCourse : null}
-                manage={{
-                    addToSchedule,
-                    removeFromSchedule,
-                }}
-            />
-        );
-    }
-
-    const isLoading = isLoadingCourseInfo || isSearchingCourseInfo;
-
-    return (
-        <>
-            {isLoading && (
-                <div
-                    className="button is-loading"
-                    style={{
-                        height: "100%", width: "100%", border: "none", fontSize: "3rem",
+        if (view === 0) {
+            element = (
+                <CourseInfo
+                    getCourse={getCourse}
+                    course={course}
+                    back={clearCourse}
+                    manage={{
+                        addToSchedule,
+                        removeFromSchedule,
                     }}
                 />
-            )
-            }
-            {!isLoading && element}
+            );
+        } else {
+            element = (
+                <div className="columns">
+                    <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
+                        {courseList}
+                    </div>
+                    <div className="column is-two-thirds" style={{ height: "calc(100vh - 12.5em)" }}>
+                        {isLoadingCourseInfo ? loadingIndicator
+                            : (
+                                <CourseInfo
+                                    getCourse={getCourse}
+                                    course={course}
+                                    view={view}
+                                    manage={{
+                                        addToSchedule,
+                                        removeFromSchedule,
+                                    }}
+                                />
+                            )
+                        }
+                    </div>
+
+                </div>
+            );
+        }
+    }
+    return (
+        <>
+            {isLoading ? loadingIndicator : element}
         </>
     );
 }
@@ -97,6 +145,7 @@ Selector.propTypes = {
     removeFromSchedule: PropTypes.func,
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
+    view: PropTypes.number,
 };
 
 const mapStateToProps = state => (
