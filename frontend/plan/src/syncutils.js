@@ -115,8 +115,8 @@ const initiateSync = (store) => {
                         // find the name of the schedule with the deleted id
                         const schedName = Object.keys(scheduleStateInit.schedules)
                             .reduce((acc, schedNameSelected) => acc || ((scheduleStateInit
-                                    .schedules[schedNameSelected].id === id) && schedNameSelected),
-                                false);
+                                .schedules[schedNameSelected].id === id) && schedNameSelected),
+                            false);
                         if (schedName) {
                             store.dispatch(deleteSchedule(schedName));
                         }
@@ -130,7 +130,7 @@ const initiateSync = (store) => {
             intervalRecord.push(window.setInterval(syncLoop, SYNC_INTERVAL));
         }));
 
-    window.addEventListener("beforeunload", function (e) {
+    window.addEventListener("beforeunload", (e) => {
         if (!allPushed(store.getState().schedule)) {
             e.preventDefault();
             e.returnValue = "";
