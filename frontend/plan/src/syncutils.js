@@ -7,22 +7,67 @@ import {
 } from "./actions";
 import { SYNC_INTERVAL } from "./sync_constants";
 
+
 /**
- * This is a closure around the sync loop.
- * The reason this is enclosed in a closure is to ensure that the "usesBackendSync" key in
- * localStorage is only modified when the sync loop is used.
+ * Initiates schedule syncing on page load by first performing an initial sync and then
+ * setting up a periodic loop.
+ * Returns a function for dismantling the sync loop.
  * @param store The redux store
- * @return {Function}
  */
-const buildSyncLoop = (store) => {
-    // keep track of whether the current localStorage data reflects backend sync functionality
+const initiateSync = (store) => {
+    // Retrieve all the schedules that have been observed coming from
+    // the backend at any point in time.
+    // This ensures that schedules can be safely deleted without randomly returning.
+    let schedulesObserved;
+    const localStorageSchedulesObserved = localStorage.getItem("coursePlanObservedSchedules");
+    if (localStorageSchedulesObserved) {
+        try {
+            schedulesObserved = JSON.parse(localStorageSchedulesObserved) || {};
+        } catch (ignored) {
+            schedulesObserved = {};
+        }
+    } else {
+        schedulesObserved = {};
+    }
+
     let firstSync = !localStorage.getItem("usesBackendSync");
     localStorage.setItem("usesBackendSync", "true");
 
-    /**
-     * Runs the sync loop, which compares the local schedule data to the schedule data on the cloud
-     */
-    return () => {
+    // a mutable record of whether the sync has been terminated
+    const syncTerminated = [false];
+
+    const cloudPull = () => {
+        const scheduleStateInit = store.getState().schedule;
+        return new Promise(resolve => {
+            store.dispatch(fetchBackendSchedulesAndInitializeCart(scheduleStateInit.cartSections,
+                (newSchedulesObserved) => {
+                    // record the new schedules that have been observed
+                    newSchedulesObserved.forEach(({ id }) => {
+                        schedulesObserved[id] = true;
+                    });
+                    Object.keys(schedulesObserved)
+                        .forEach((id) => {
+                            // The schedule has been observed from the backend before,
+                            // but is no longer being observed; Should be deleted locally.
+                            if (!newSchedulesObserved[id]) {
+                                delete schedulesObserved[id];
+                                // find the name of the schedule with the deleted id
+                                const schedName = Object.keys(scheduleStateInit.schedules)
+                                    .reduce((acc, schedNameSelected) => acc || ((scheduleStateInit
+                                            .schedules[schedNameSelected].id === id) && schedNameSelected),
+                                        false);
+                                if (schedName) {
+                                    store.dispatch(deleteSchedule(schedName));
+                                }
+                            }
+                        });
+                    localStorage.setItem("coursePlanObservedSchedules", JSON.stringify(schedulesObserved));
+                    resolve();
+                }));
+        });
+    };
+
+    const cloudPush = () => {
         const scheduleState = store.getState().schedule || {};
         // Delete all schedules (on the backend) that have been deleted
         Object.keys(scheduleState.deletedSchedules || {})
@@ -61,67 +106,30 @@ const buildSyncLoop = (store) => {
             });
         firstSync = false;
     };
-};
 
-/**
- * Initiates schedule syncing on page load by first performing an initial sync and then
- * setting up a periodic loop.
- * Returns a function for dismantling the sync loop.
- * @param store The redux store
- */
-const initiateSync = (store) => {
-    // Retrieve all the schedules that have been observed coming from
-    // the backend at any point in time.
-    // This ensures that schedules can be safely deleted without randomly returning.
-    let schedulesObserved;
-    const localStorageSchedulesObserved = localStorage.getItem("coursePlanObservedSchedules");
-    if (localStorageSchedulesObserved) {
-        try {
-            schedulesObserved = JSON.parse(localStorageSchedulesObserved) || {};
-        } catch (ignored) {
-            schedulesObserved = {};
+    const waitBeforeNextSync = () => {
+        return new Promise(resolve => {
+            setTimeout(resolve, SYNC_INTERVAL);
+        });
+    };
+
+    const syncLoop = async () => {
+        await cloudPull();
+        cloudPush();
+        await waitBeforeNextSync();
+    };
+
+    const startSyncLoop = async () => {
+        while (!syncTerminated[0]) {
+            await syncLoop();
         }
-    } else {
-        schedulesObserved = {};
-    }
+    };
 
-    // stores the sync interval
-    const intervalRecord = [];
-
-    const scheduleStateInit = store.getState().schedule;
-    store.dispatch(fetchBackendSchedulesAndInitializeCart(scheduleStateInit.cartSections,
-        (newSchedulesObserved) => {
-            // record the new schedules that have been observed
-            newSchedulesObserved.forEach(({ id }) => {
-                schedulesObserved[id] = true;
-            });
-            Object.keys(schedulesObserved)
-                .forEach((id) => {
-                    // The schedule has been observed from the backend before,
-                    // but is no longer being observed; Should be deleted locally.
-                    if (!newSchedulesObserved[id]) {
-                        delete schedulesObserved[id];
-                        // find the name of the schedule with the deleted id
-                        const schedName = Object.keys(scheduleStateInit.schedules)
-                            .reduce((acc, schedNameSelected) => acc || ((scheduleStateInit
-                                .schedules[schedNameSelected].id === id) && schedNameSelected),
-                            false);
-                        if (schedName) {
-                            store.dispatch(deleteSchedule(schedName));
-                        }
-                    }
-                });
-            localStorage.setItem("coursePlanObservedSchedules", JSON.stringify(schedulesObserved));
-
-            // At the given interval, makes sure that all schedules are up-to-date on
-            // both the frontend and backend.
-            const syncLoop = buildSyncLoop(store);
-            intervalRecord.push(window.setInterval(syncLoop, SYNC_INTERVAL));
-        }));
+    startSyncLoop().then();
 
     // return a function for dismantling the sync loop
     return () => {
-        intervalRecord.forEach(interval => window.clearInterval(interval));
+        syncTerminated[0] = true;
     };
 };
 
