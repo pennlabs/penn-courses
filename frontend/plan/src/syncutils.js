@@ -64,6 +64,17 @@ const buildSyncLoop = (store) => {
 };
 
 /**
+ * Returns whether all schedules have been pushed to the backend
+ */
+const allPushed = (scheduleState) => {
+    if (!scheduleState.cartPushedToBackend) {
+        return false;
+    }
+    return Object.values(scheduleState.schedules)
+        .reduce((acc, { pushedToBackend }) => acc && pushedToBackend, true);
+};
+
+/**
  * Initiates schedule syncing on page load by first performing an initial sync and then
  * setting up a periodic loop.
  * Returns a function for dismantling the sync loop.
@@ -104,8 +115,8 @@ const initiateSync = (store) => {
                         // find the name of the schedule with the deleted id
                         const schedName = Object.keys(scheduleStateInit.schedules)
                             .reduce((acc, schedNameSelected) => acc || ((scheduleStateInit
-                                .schedules[schedNameSelected].id === id) && schedNameSelected),
-                            false);
+                                    .schedules[schedNameSelected].id === id) && schedNameSelected),
+                                false);
                         if (schedName) {
                             store.dispatch(deleteSchedule(schedName));
                         }
@@ -118,6 +129,13 @@ const initiateSync = (store) => {
             const syncLoop = buildSyncLoop(store);
             intervalRecord.push(window.setInterval(syncLoop, SYNC_INTERVAL));
         }));
+
+    window.addEventListener("beforeunload", function (e) {
+        if (!allPushed(store.getState().schedule)) {
+            e.preventDefault();
+            e.returnValue = "";
+        }
+    });
 
     // return a function for dismantling the sync loop
     return () => {
