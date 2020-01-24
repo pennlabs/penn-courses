@@ -38,7 +38,7 @@ const initiateSync = (store) => {
 
     const cloudPull = () => {
         const scheduleStateInit = store.getState().schedule;
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             store.dispatch(fetchBackendSchedulesAndInitializeCart(scheduleStateInit.cartSections,
                 (newSchedulesObserved) => {
                     // record the new schedules that have been observed
@@ -54,8 +54,9 @@ const initiateSync = (store) => {
                                 // find the name of the schedule with the deleted id
                                 const schedName = Object.keys(scheduleStateInit.schedules)
                                     .reduce((acc, schedNameSelected) => acc || ((scheduleStateInit
-                                            .schedules[schedNameSelected].id === id) && schedNameSelected),
-                                        false);
+                                        .schedules[schedNameSelected]
+                                        .id === id) && schedNameSelected),
+                                    false);
                                 if (schedName) {
                                     store.dispatch(deleteSchedule(schedName));
                                 }
@@ -107,11 +108,9 @@ const initiateSync = (store) => {
         firstSync = false;
     };
 
-    const waitBeforeNextSync = () => {
-        return new Promise(resolve => {
-            setTimeout(resolve, SYNC_INTERVAL);
-        });
-    };
+    const waitBeforeNextSync = () => new Promise((resolve) => {
+        setTimeout(resolve, SYNC_INTERVAL);
+    });
 
     const syncLoop = async () => {
         await cloudPull();
