@@ -5,7 +5,6 @@ const LoginButton = () => (
         className="button is-link login"
         href={`/accounts/login/?next=${window.location}`}
         style={{
-            // background: "#7674EA",
             padding: "0.5rem",
             fontSize: "1rem!important",
             paddingRight: "1rem",
