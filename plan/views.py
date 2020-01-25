@@ -42,35 +42,35 @@ class CourseListSearch(CourseList):
         return queryset.distinct()
 
 
-def get_sections(data):
-    raw_sections = []
-    if 'meetings' in data:
-        raw_sections = data.get('meetings')
-    elif 'sections' in data:
-        raw_sections = data.get('sections')
-    sections = []
-    for s in raw_sections:
-        _, section = get_course_and_section(s.get('id'),
-                                            s.get('semester'))
-        sections.append(section)
-    return sections
-
-
-def check_semester(data, sections):
-    for i, s in enumerate(sections):
-        if i == 0 and 'semester' not in data:
-            data['semester'] = s.course.semester
-        elif s.course.semester != data.get('semester'):
-            return Response({'detail': 'Semester uniformity invariant violated.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-    if 'semester' not in data:
-        data['semester'] = get_value('SEMESTER', None)
-
-
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     serializer_class = ScheduleSerializer
     http_method_names = ['get', 'post', 'delete', 'put']
     permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def get_sections(data):
+        raw_sections = []
+        if 'meetings' in data:
+            raw_sections = data.get('meetings')
+        elif 'sections' in data:
+            raw_sections = data.get('sections')
+        sections = []
+        for s in raw_sections:
+            _, section = get_course_and_section(s.get('id'),
+                                                s.get('semester'))
+            sections.append(section)
+        return sections
+
+    @staticmethod
+    def check_semester(data, sections):
+        for i, s in enumerate(sections):
+            if i == 0 and 'semester' not in data:
+                data['semester'] = s.course.semester
+            elif s.course.semester != data.get('semester'):
+                return Response({'detail': 'Semester uniformity invariant violated.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+        if 'semester' not in data:
+            data['semester'] = get_value('SEMESTER', None)
 
     def update(self, request, pk=None):
         if 'json' in request.content_type.lower():
@@ -84,12 +84,12 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            sections = get_sections(data)
+            sections = self.get_sections(data)
         except ObjectDoesNotExist:
             return Response({'detail': 'One or more sections not found in database.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        semester_res = check_semester(data, sections)
+        semester_res = self.check_semester(data, sections)
         if semester_res is not None:
             return semester_res
 
@@ -114,12 +114,12 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return self.update(request, data.get('id'))
 
         try:
-            sections = get_sections(data)
+            sections = self.get_sections(data)
         except ObjectDoesNotExist:
             return Response({'detail': 'One or more sections not found in database.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        semester_res = check_semester(data, sections)
+        semester_res = self.check_semester(data, sections)
         if semester_res is not None:
             return semester_res
 
