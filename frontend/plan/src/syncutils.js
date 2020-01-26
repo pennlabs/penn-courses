@@ -9,6 +9,17 @@ import { SYNC_INTERVAL } from "./sync_constants";
 
 
 /**
+ * Returns whether all schedules have been pushed to the backend
+ */
+const allPushed = (scheduleState) => {
+    if (!scheduleState.cartPushedToBackend) {
+        return false;
+    }
+    return Object.values(scheduleState.schedules)
+        .reduce((acc, { pushedToBackend }) => acc && pushedToBackend, true);
+};
+
+/**
  * Initiates schedule syncing on page load by first performing an initial sync and then
  * setting up a periodic loop.
  * Returns a function for dismantling the sync loop.
@@ -125,6 +136,13 @@ const initiateSync = (store) => {
     };
 
     startSyncLoop().then();
+
+    window.addEventListener("beforeunload", (e) => {
+        if (!allPushed(store.getState().schedule)) {
+            e.preventDefault();
+            e.returnValue = "";
+        }
+    });
 
     // return a function for dismantling the sync loop
     return () => {
