@@ -44,7 +44,9 @@ const initiateSync = (store) => {
     let firstSync = !localStorage.getItem("usesBackendSync");
     localStorage.setItem("usesBackendSync", "true");
 
-    // a mutable record of whether the sync has been terminated
+    // A record of whether the sync has been terminated.
+    // Made this an array to avoid ambiguity with whether it's just a local copy of the variable
+    // being updated.
     const syncTerminated = [false];
 
     const cloudPull = () => {
