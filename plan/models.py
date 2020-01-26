@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from django.db import models
 
 from courses.models import Section
@@ -25,13 +24,6 @@ class Schedule(models.Model):
 
     class Meta:
         unique_together = (('name', 'semester', 'person'), )
-
-    def save(self, *args, **kwargs):
-        if self.id is not None:
-            for s in self.sections.all():
-                if self.semester != s.course.semester:
-                    raise ValidationError('Sections do not match semester')
-        super(Schedule, self).save(*args, **kwargs)
 
     def __str__(self):
         return 'User: %s, Schedule ID: %s' % (self.person, self.id)

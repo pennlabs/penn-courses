@@ -274,25 +274,61 @@ class ScheduleTest(TestCase):
                                       cis160, cis160_reviews, True)
 
     def test_create_schedule_no_semester(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
+        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
+        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', '1739C', 2)
         response = self.client.post('/schedules/',
                                     json.dumps({'name': 'New Test Schedule',
                                                 'sections': [{'id': 'CIS-121-001',
-                                                              'semester': TEST_SEMESTER},
+                                                              'semester': '1739C'},
                                                              {'id': 'CIS-160-001',
-                                                              'semester': TEST_SEMESTER}]}),
+                                                              'semester': '1739C'}]}),
                                     content_type='application/json')
         self.assertEqual(201, response.status_code)
         response = self.client.get('/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[1]['name'], 'New Test Schedule')
-        self.assertEqual(response.data[1]['semester'], TEST_SEMESTER)
+        self.assertEqual(response.data[1]['semester'], '1739C')
         self.assertEqual(len(response.data[1]['sections']), 2)
         self.check_serialized_section(response.data[1]['sections'][0],
                                       cis121, cis121_reviews, True)
         self.check_serialized_section(response.data[1]['sections'][1],
+                                      cis160, cis160_reviews, True)
+        response = self.client.get('/schedules/' + str(self.s.id+1) + '/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['name'], 'New Test Schedule')
+        self.assertEqual(response.data['semester'], '1739C')
+        self.check_serialized_section(response.data['sections'][0],
+                                      cis121, cis121_reviews, True)
+        self.check_serialized_section(response.data['sections'][1],
+                                      cis160, cis160_reviews, True)
+
+    def test_update_schedule_no_semester(self):
+        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
+        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', '1739C', 2)
+        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+                                   json.dumps({'name': 'New Test Schedule',
+                                               'sections': [{'id': 'CIS-121-001', 'semester': '1739C'},
+                                                            {'id': 'CIS-160-001', 'semester': '1739C'}]}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+        self.assertEqual(response.data[0]['semester'], '1739C')
+        self.assertEqual(len(response.data[0]['sections']), 2)
+        self.check_serialized_section(response.data[0]['sections'][0],
+                                      cis121, cis121_reviews, True)
+        self.check_serialized_section(response.data[0]['sections'][1],
+                                      cis160, cis160_reviews, True)
+        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['name'], 'New Test Schedule')
+        self.assertEqual(response.data['semester'], '1739C')
+        self.check_serialized_section(response.data['sections'][0],
+                                      cis121, cis121_reviews, True)
+        self.check_serialized_section(response.data['sections'][1],
                                       cis160, cis160_reviews, True)
 
     def test_create_schedule_meetings(self):
@@ -516,3 +552,58 @@ class ScheduleTest(TestCase):
                                     content_type='application/json')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['detail'], 'One or more sections not found in database.')
+
+    def test_user_not_logged_in(self):
+        client2 = APIClient()
+        response = client2.post('/schedules/',
+                                json.dumps({'semester': TEST_SEMESTER,
+                                            'name': 'New Test Schedule',
+                                            'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                         {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                                content_type='application/json')
+        self.assertEqual(403, response.status_code)
+        response = client2.get('/schedules/')
+        self.assertEqual(403, response.status_code)
+        response = client2.put('/schedules/' + str(self.s.id) + '/',
+                               json.dumps({'semester': TEST_SEMESTER,
+                                           'name': 'New Test Schedule',
+                                           'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+                                                        {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+                               content_type='application/json')
+        self.assertEqual(403, response.status_code)
+
+    def test_create_schedule_no_semester_no_courses(self):
+        response = self.client.post('/schedules/',
+                                    json.dumps({'name': 'New Test Schedule',
+                                                'sections': []}),
+                                    content_type='application/json')
+        self.assertEqual(201, response.status_code)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(response.data[1]['name'], 'New Test Schedule')
+        self.assertEqual(response.data[1]['semester'], TEST_SEMESTER)
+        self.assertEqual(len(response.data[1]['sections']), 0)
+        response = self.client.get('/schedules/' + str(self.s.id+1) + '/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['name'], 'New Test Schedule')
+        self.assertEqual(response.data['semester'], TEST_SEMESTER)
+        self.assertEqual(len(response.data['sections']), 0)
+
+    def test_update_schedule_no_semester_no_courses(self):
+        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+                                   json.dumps({'name': 'New Test Schedule',
+                                               'sections': []}),
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 202)
+        response = self.client.get('/schedules/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+        self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
+        self.assertEqual(len(response.data[0]['sections']), 0)
+        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data['name'], 'New Test Schedule')
+        self.assertEqual(response.data['semester'], TEST_SEMESTER)
+        self.assertEqual(len(response.data['sections']), 0)
