@@ -1,5 +1,3 @@
-import json
-
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch
@@ -73,30 +71,25 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             data['semester'] = get_value('SEMESTER', None)
 
     def update(self, request, pk=None):
-        if 'json' in request.content_type.lower():
-            data = json.loads(request.body)
-        else:
-            data = request.POST
-
         try:
             schedule = self.get_queryset().get(id=pk)
         except Schedule.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            sections = self.get_sections(data)
+            sections = self.get_sections(request.data)
         except ObjectDoesNotExist:
             return Response({'detail': 'One or more sections not found in database.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        semester_res = self.check_semester(data, sections)
+        semester_res = self.check_semester(request.data, sections)
         if semester_res is not None:
             return semester_res
 
         try:
             schedule.person = request.user
-            schedule.semester = data.get('semester')
-            schedule.name = data.get('name')
+            schedule.semester = request.data.get('semester')
+            schedule.name = request.data.get('name')
             schedule.save()
             schedule.sections.set(sections)
             return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_202_ACCEPTED)
@@ -105,34 +98,29 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
-        if 'json' in request.content_type.lower():
-            data = json.loads(request.body)
-        else:
-            data = request.POST
-
-        if self.get_queryset().filter(id=data.get('id')).exists():
-            return self.update(request, data.get('id'))
+        if self.get_queryset().filter(id=request.data.get('id')).exists():
+            return self.update(request, request.data.get('id'))
 
         try:
-            sections = self.get_sections(data)
+            sections = self.get_sections(request.data)
         except ObjectDoesNotExist:
             return Response({'detail': 'One or more sections not found in database.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        semester_res = self.check_semester(data, sections)
+        semester_res = self.check_semester(request.data, sections)
         if semester_res is not None:
             return semester_res
 
         try:
-            if 'id' in data:  # Also from above we know that this id does not conflict with existing schedules.
+            if 'id' in request.data:  # Also from above we know that this id does not conflict with existing schedules.
                 schedule = self.get_queryset().create(person=request.user,
-                                                      semester=data.get('semester'),
-                                                      name=data.get('name'),
-                                                      id=data.get('id'))
+                                                      semester=request.data.get('semester'),
+                                                      name=request.data.get('name'),
+                                                      id=request.data.get('id'))
             else:
                 schedule = self.get_queryset().create(person=request.user,
-                                                      semester=data.get('semester'),
-                                                      name=data.get('name'))
+                                                      semester=request.data.get('semester'),
+                                                      name=request.data.get('name'))
             schedule.sections.set(sections)
             return Response({'message': 'success', 'id': schedule.id}, status=status.HTTP_201_CREATED)
         except IntegrityError as e:
