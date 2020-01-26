@@ -27,6 +27,7 @@ import {
     openModal
 } from "./actions";
 import initiateSync, { preventMultipleTabs } from "./syncutils";
+import { DISABLE_MULTIPLE_TABS } from "./sync_constants";
 
 const previousState = localStorage.getItem("coursePlanSchedules");
 const previousStateJSON = previousState ? JSON.parse(previousState) : undefined;
@@ -50,11 +51,16 @@ function App() {
     const { hasVisited } = localStorage;
     const [currentUser, setCurrentUser] = useState(null);
 
-    useEffect(() => preventMultipleTabs(() => {
-        store.dispatch(openModal("MULTITAB",
-            {},
-            "Multiple tabs"));
-    }), []);
+    useEffect(() => {
+        if (DISABLE_MULTIPLE_TABS) {
+            return preventMultipleTabs(() => {
+                store.dispatch(openModal("MULTITAB",
+                    {},
+                    "Multiple tabs"));
+            });
+        }
+        return null;
+    }, []);
 
     useEffect(() => {
         // ensure that the user is logged in before initiating the sync
@@ -156,8 +162,19 @@ function App() {
                     setUser={setCurrentUser}
                     style={{ flexGrow: 0 }}
                 />
-                <div className="App columns is-mobile main smooth-transition" style={view === 0 ? { padding: 0, width: "129%" } : { padding: 0, width: "123%" }}>
-                    <div className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}>
+                <div
+                    className="App columns is-mobile main smooth-transition"
+                    style={view === 0 ? {
+                        padding: 0,
+                        width: "129%",
+                    } : {
+                        padding: 0,
+                        width: "123%",
+                    }}
+                >
+                    <div
+                        className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}
+                    >
                         <span style={{
                             display: "flex",
                             flexDirection: "row",
@@ -209,7 +226,14 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div style={{ zIndex: 2, paddingRight: "0px", marginRight: "15px" }} className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}>
+                    <div
+                        style={{
+                            zIndex: 2,
+                            paddingRight: "0px",
+                            marginRight: "15px",
+                        }}
+                        className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}
+                    >
                         <Schedule />
                     </div>
                 </div>
@@ -217,13 +241,21 @@ function App() {
             {view === 1
                 ? (
                     <div className="showScheduleButton popover is-popover-left">
-                        <i role="button" className="fas fa-arrow-alt-circle-left" onClick={() => setView(0)} />
+                        <i
+                            role="button"
+                            className="fas fa-arrow-alt-circle-left"
+                            onClick={() => setView(0)}
+                        />
                         <div className="popover-content">Show Schedule</div>
                     </div>
                 )
                 : (
                     <div className="hideScheduleButton popover is-popover-left">
-                        <i role="button" className="fas fa-arrow-alt-circle-right" onClick={() => setView(1)} />
+                        <i
+                            role="button"
+                            className="fas fa-arrow-alt-circle-right"
+                            onClick={() => setView(1)}
+                        />
                         <div className="popover-content">Hide Schedule</div>
                     </div>
                 )
