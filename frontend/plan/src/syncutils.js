@@ -126,12 +126,12 @@ const initiateSync = (store) => {
     const syncLoop = async () => {
         await cloudPull();
         cloudPush();
-        await waitBeforeNextSync();
     };
 
     const startSyncLoop = async () => {
         while (!syncTerminated[0]) {
-            await syncLoop();
+            // ensure that the minimum distance between syncs is SYNC_INTERVAL
+            await Promise.all([syncLoop(), waitBeforeNextSync()]);
         }
     };
 
@@ -139,8 +139,11 @@ const initiateSync = (store) => {
 
     window.addEventListener("beforeunload", (e) => {
         if (!allPushed(store.getState().schedule)) {
+            // If the schedules aren't pushed, notify the user that they have unsaved changes
+            // and push the schedules.
             e.preventDefault();
             e.returnValue = "";
+            cloudPush();
         }
     });
 
