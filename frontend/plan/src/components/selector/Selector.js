@@ -68,12 +68,6 @@ function Selector(props) {
         />
     );
 
-    useEffect(() => {
-        if (courses.length === 1) {
-            getCourse(courses[0].id);
-        }
-    }, [isSearchingCourseInfo]); // eslint-disable-line
-
     if (courses.length > 0 && !course) {
         if (view === 0) {
             element = courseList;
