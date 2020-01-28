@@ -49,6 +49,11 @@ proxied between the two development servers.
 
 ## Loading Course Data
 
+`python manage.py setoption SEMESTER <semester>`
+
+Where `<semester>` is something in the form of `2019C`, for Fall 2019.
+Spring, Summer and Fall are `A`, `B` and `C`, respectively.
+
 This project isn't too useful without Penn course data. To load in
 course data, set the environment variables `API_KEY` and `API_SECRET` to
 the `Bearer` and `Token` credentials, respectively, that you recieve
