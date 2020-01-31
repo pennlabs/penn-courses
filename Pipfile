@@ -30,6 +30,8 @@ ipython = "*"
 django-auto-prefetching = "*"
 django-cors-headers = "*"
 django-runtime-options = "*"
+numpy = "*"
+scikit-learn = "*"
 
 [dev-packages]
 codecov = "*"
