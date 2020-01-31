@@ -63,4 +63,17 @@ class Command(BaseCommand):
         for course_index, cluster_index in enumerate(raw_cluster_result):
             clusters[cluster_index].append(courses[course_index])
 
-        print(vectorize_user(kwargs["user"], course_vectors_dict))
+        cluster_centroids = [sum(course_vectors_dict[course] for course in cluster) / len(cluster) for cluster in
+                             clusters]
+
+        user_vector = vectorize_user(kwargs["user"], course_vectors_dict)
+
+        max_similarity = 0
+        best_cluster_index = -1
+        for cluster_index, centroid in enumerate(cluster_centroids):
+            similarity = np.dot(centroid, user_vector) / (np.linalg.norm(centroid) * np.linalg.norm(user_vector))
+            if similarity > max_similarity:
+                max_similarity = similarity
+                best_cluster_index = cluster_index
+
+        print(clusters[best_cluster_index])
