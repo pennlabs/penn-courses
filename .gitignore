@@ -1,7 +1,9 @@
+# Development Environment
 .env
 .vscode
 .idea/
 .DS_Store
+env.sh
 *.pyc
 __pycache__/
 .coverage
