@@ -944,7 +944,7 @@ img.small{
 }
 
 .level .button {
-  font-size: 0.75rem !important;
+  font-size: 0.75rem;
 }
 
 *[role=button] .fa-times {
