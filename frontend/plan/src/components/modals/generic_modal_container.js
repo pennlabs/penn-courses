@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
+import s from "./generic_modal_container.module.css";
 import { closeModal } from "../../actions";
 import { generateModalInterior, generateModalActions } from "./model_content_generator";
 
@@ -10,16 +11,16 @@ import { generateModalInterior, generateModalActions } from "./model_content_gen
 const ModalContainer = ({
     children, title, close, dispatch, modalKey, modalProps, isBig,
 }) => (
-    <div className={`modal ${title ? "is-active" : ""}`}>
+    <div className={title ? "modal is-active" : "modal"}>
         <div className="modal-background" />
-        <div className={`modal-card ${isBig ? " big" : ""}`}>
+        <div className={isBig ? "modal-card big" : "modal-card"}>
             <header className="modal-card-head">
                 <header className="modal-card-title">{title}</header>
                 <div
                     role="button"
                     aria-label="close"
                     onClick={close}
-                    style={{ cursor: "pointer" }}
+                    className={s.pointer}
                 >
                     <span className="icon is-small">
                         <i className="fa fa-times" />
