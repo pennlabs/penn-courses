@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import s from "./NameScheduleModalInterior.module.css";
 import { validateScheduleName } from "../schedule/schedule_name_validation";
 
 const NameScheduleModalInterior = ({
@@ -32,7 +33,7 @@ const NameScheduleModalInterior = ({
                 value={userInput}
                 type="text"
                 ref={ref => setInputRef(ref)}
-                style={{ backgroundColor: error ? "#f9dcda" : "#f1f1f1" }}
+                className={error ? s.error : s.input}
                 onChange={() => setUserInput(inputRef.value)}
                 onClick={() => {
                     if (overwriteDefault && userInput === defaultValue) {
