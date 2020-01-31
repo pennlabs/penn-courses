@@ -1,12 +1,11 @@
 from typing import Set
 
+import numpy as np
 from accounts.middleware import User
 from django.core.management.base import BaseCommand
-from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.cluster import AgglomerativeClustering
 
 from plan.models import Schedule
-import numpy as np
-import sklearn
 
 
 def sections_to_courses(sections) -> Set[str]:
@@ -16,6 +15,19 @@ def sections_to_courses(sections) -> Set[str]:
     :return: A string set
     """
     return {str(section.course).split(" ")[0] for section in sections}
+
+
+def vectorize_user(user, course_vectors_dict):
+    """
+    Aggregates a vector over all the courses in the user's schedule
+    :param user:
+    :param course_vectors:
+    :return:
+    """
+    user_pk = User.objects.filter(username=user)[0].pk
+    return sum(
+        course_vectors_dict[course] for schedule in Schedule.objects.filter(person=user_pk)
+        for course in sections_to_courses(schedule.sections.all()))
 
 
 class Command(BaseCommand):
@@ -42,12 +54,13 @@ class Command(BaseCommand):
                     relevant_vector = course_vectors_dict[course]
                 relevant_vector[vector_component] += 1
 
-        courses, course_vectors = zip(*course_vectors_dict.items())
-        courses, course_vectors = list(courses), np.array(list(course_vectors))
+        _courses, _course_vectors = zip(*course_vectors_dict.items())
+        courses, course_vectors = list(_courses), np.array(list(_course_vectors))
         num_clusters = 3
         model = AgglomerativeClustering(n_clusters=num_clusters, linkage="average", affinity="cosine")
         raw_cluster_result = model.fit_predict(course_vectors)
         clusters = [[] for _ in range(num_clusters)]
         for course_index, cluster_index in enumerate(raw_cluster_result):
             clusters[cluster_index].append(courses[course_index])
-        print(clusters)
+
+        print(vectorize_user(kwargs["user"], course_vectors_dict))
