@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
+import s from "./WelcomeModalInterior.module.css";
 
 const WelcomeModalInterior = ({ close }) => (
     <div>
@@ -27,7 +28,7 @@ const WelcomeModalInterior = ({ close }) => (
         <p>
             With
             {" "}
-            <i className="fa fa-heart" style={{ color: "red" }} />
+            <i className={`fa fa-heart ${s.heart}`} />
             ,
             <br />
             -
