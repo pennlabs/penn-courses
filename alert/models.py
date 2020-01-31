@@ -40,7 +40,7 @@ class Registration(models.Model):
 
     # Where did the registration come from?
     source = models.CharField(max_length=16, choices=SOURCE_CHOICES)
-    api_key = models.ForeignKey('courses.APIKey', blank=True, null=True, on_delete=models.CASCADE)
+    api_key = models.ForeignKey('courses.APIKey', blank=True, null=True, on_delete=models.CASCADE)  # remove eventually
 
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=True, null=True)
     # going forward, email and phone will be None and contact information can be found in the user's UserData object
@@ -48,14 +48,11 @@ class Registration(models.Model):
     phone = models.CharField(blank=True, null=True, max_length=100)
     # section that the user registered to be notified about
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
-    # changed to True if user deletes notification
+    # changed to True if user deletes notification, never changed back (a new model is created on resubscription)
     deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(blank=True, null=True)
-    # changed to True if user mutes notification
-    muted = models.BooleanField(default=False)
-    muted_at = models.DateTimeField(blank=True, null=True)
     # does the user have auto-mute enabled for this alert?
-    auto_mute = models.BooleanField(default=True)
+    auto_resubscribe = models.BooleanField(default=False)
     # change to True once notification email has been sent out
     notification_sent = models.BooleanField(default=False)
     notification_sent_at = models.DateTimeField(blank=True, null=True)
@@ -105,7 +102,7 @@ class Registration(models.Model):
     @property
     def is_active(self):
         """Returns True iff the registration would send a notification when the watched section changes to open"""
-        return not (self.notification_sent or self.muted or self.deleted)
+        return not (self.notification_sent or self.deleted)
 
     @property
     def resub_url(self):
@@ -125,9 +122,7 @@ class Registration(models.Model):
             self.notification_sent_at = timezone.now()
             self.notification_sent_by = sent_by
             self.save()
-            if self.auto_mute:
-                self.muted = True
-            else:
+            if self.auto_resubscribe:
                 self.resubscribe()
             return email_result is not None and text_result is not None  # True if no error in email/text.
         else:
@@ -159,8 +154,14 @@ class Registration(models.Model):
         new_registration.save()
         return new_registration
 
+    def get_most_current(self):
+        if hasattr(self, 'resubscribed_to'):
+            return self.resubscribed_to.get_most_current()
+        else:
+            return self
 
-def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, api_key=None):
+
+def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, request=None, api_key=None):
     if not email_address and not phone:
         return RegStatus.NO_CONTACT_INFO, None
     try:
@@ -180,7 +181,9 @@ def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, ap
                                    phone=registration.phone,
                                    notification_sent=False).exists():
         return RegStatus.OPEN_REG_EXISTS, section.full_code
-
+    if request is not None:
+        registration.user = request.user
+        registration.auto_resubscribe = request.data.get('auto_resubscribe', False)
     registration.api_key = api_key
     registration.save()
     return RegStatus.SUCCESS, section.full_code

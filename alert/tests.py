@@ -862,3 +862,20 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data['username'], 'murey')
         self.assertEqual(response.data['first_name'], '')
         self.assertEqual(response.data['last_name'], '')
+
+    def test_user_not_logged_in(self):
+        client2 = APIClient()
+        response = client2.put('/api/settings/',
+                               json.dumps({'profile': {'email': 'example2@email.com', 'phone': '2121234567'}}),
+                               content_type='application/json')
+        self.assertEqual(403, response.status_code)
+        response = client2.get('/api/settings/')
+        self.assertEqual(403, response.status_code)
+
+@override_settings(SWITCHBOARD_TEST_APP='pca')
+class AlertRegistrationTestCase(TestCase):
+    def setUp(self):
+        User.objects.create_user(username='jacob',
+                                 password='top_secret')
+        self.client = APIClient()
+        self.client.login(username='jacob', password='top_secret')

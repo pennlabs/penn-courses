@@ -8,6 +8,7 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonRespons
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Prefetch
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -18,6 +19,11 @@ from alert.tasks import send_course_alerts
 from courses.models import PCA_REGISTRATION, APIKey
 from courses.util import record_update, update_course_from_record
 from options.models import get_bool, get_value
+
+from django.db import IntegrityError
+from rest_framework import status
+from rest_framework.generics import ListCreateAPIView
+from rest_framework.response import Response
 
 
 logger = logging.getLogger(__name__)
@@ -243,6 +249,101 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     serializer_class = RegistrationSerializer
     http_method_names = ['get', 'post', 'put']
     permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def handle_registration(request):
+        if not get_bool('REGISTRATION_OPEN', True):
+            return Response({'message': 'Registration is not open.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        section_code = request.data.get('section', None)
+        email_address = request.user.profile.email
+        phone = request.user.profile.phone
+
+        if request.data.get('section', None) is None:
+            return Response({'notification': 'You must include a not null section'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        res, normalized_course_code = register_for_course(section_code, email_address, phone, 'PCA', request, None)
+
+        if res == RegStatus.SUCCESS:
+            return Response({'notification': 'Your registration for %s was successful!' % normalized_course_code},
+                            status=status.HTTP_201_CREATED)
+        elif res == RegStatus.OPEN_REG_EXISTS:
+            return Response({'notification':
+                                 "You've already registered to get alerts for %s!" % normalized_course_code},
+                            status=status.HTTP_202_ACCEPTED)
+        elif res == RegStatus.COURSE_NOT_FOUND:
+            return Response({'notification':
+                                 '%s did not match any course in our database. Please try again!' % section_code},
+                            status=status.HTTP_404_NOT_FOUND)
+        elif res == RegStatus.NO_CONTACT_INFO:
+            return Response({'notification':
+                                 'You must set a phone number and/or an email address to register for an alert.'},
+                            status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response({'notification': 'There was an error on our end. Please try again!'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object().get_most_current()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def update(self, request, pk=None):
+        try:
+            registration = self.get_queryset().get(id=pk)
+        except Registration.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        registration = registration.get_most_current()
+
+        if registration.section.semester != get_value('SEMESTER', None):
+            return Response({'detail': 'You can only update registrations from the current semester.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if request.data.get('resubscribe', False):
+                if not registration.notification_sent:
+                    return Response({'detail': 'You can only resubscribe to an alert that has already been sent.'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+                if registration.deleted:
+                    return Response({'detail': 'You cannot resubscribe to a deleted alert '
+                                               '(the user should not be able to do this; they can easily'
+                                               'make a new registration).'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+                registration.resubscribe()
+                return Response({'detail': 'Resubscribed successfully'},
+                                status=status.HTTP_200_OK)
+            elif request.data.get('deleted', False):
+                changed = not registration.deleted
+                registration.deleted = True
+                registration.save()
+                if changed:
+                    return Response({'detail': 'Registration deleted'},
+                                    status=status.HTTP_200_OK)
+            elif 'auto_resubscribe' in request.data:
+                changed = registration.auto_resubscribe != request.data.get('auto_resubscribe')
+                registration.auto_resubscribe = request.data.get('auto_resubscribe')
+                registration.save()
+                if changed:
+                    return Response({'detail': 'auto_resubscribe updated to ' + str(registration.auto_resubscribe)},
+                                    status=status.HTTP_200_OK)
+            if 'notification_sent' in request.data:  # REMOVE... THIS IS JUST FOR DEBUGGING
+                changed = registration.notification_sent != request.data.get('notification_sent')
+                registration.notification_sent = request.data.get('notification_sent')
+                registration.save()
+                if changed:
+                    return Response({'detail': 'notification_sent updated to ' + str(registration.notification_sent)},
+                                    status=status.HTTP_200_OK)
+        except IntegrityError as e:
+            return Response({'detail': 'IntegrityError encountered while trying to update: ' + str(e.__cause__)},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': 'no changes made'},
+                        status=status.HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        if self.get_queryset().filter(id=request.data.get('id')).exists():
+            return self.update(request, request.data.get('id'))
+        return self.handle_registration(request)
 
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
