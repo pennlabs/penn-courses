@@ -4,29 +4,29 @@ applications:
     image: redis
     tag: "4.0"
   - name: celery
-    image: penn-courses-backend
+    image: pennlabs/penn-courses-backend
     secret: penn-courses
     cmd: ["celery", "worker", "-A", "PennCourses", "-Q", "alerts,celery", "-linfo"]
   - name: beat
-    image: penn-courses-backend
+    image: pennlabs/penn-courses-backend
     secret: penn-courses
     cmd: ["celery", "-A", "PennCourses", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
   - name: backend
-    image: penn-courses-backend
+    image: pennlabs/penn-courses-backend
     secret: penn-courses
     ingress:
       hosts:
-        - host: api.penncourses.org
-          paths: ["/"]
+        - host: penncourseplan.com
+          paths: ["/api"]
   - name: plan
-    image: penn-course-plan
+    image: pennlabs/pcp-frontend
     secret: penn-courses-plan
     ingress:
       hosts:
         - host: penncourseplan.com
           paths: ["/"]
   - name: alert
-    image: penn-courses-backend
+    image: pennlabs/penn-courses-backend
     secret: penn-courses
     ingress:
       hosts:

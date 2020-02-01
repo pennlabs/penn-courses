@@ -73,8 +73,8 @@ workflows:
           requires:
             - pcp-lint
           path: frontend/plan
-          cache_from: "pennlabs/penn-course-plan:latest"
-          image: "pennlabs/penn-course-plan"
+          cache_from: "pennlabs/pcp-frontend:latest"
+          image: "pennlabs/pcp-frontend"
           tag: "${CIRCLE_SHA1},latest"
           context: docker-publish
           <<: *branch-filters
