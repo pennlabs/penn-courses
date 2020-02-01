@@ -7,10 +7,16 @@ applications:
     image: pennlabs/penn-courses-backend
     secret: penn-courses
     cmd: ["celery", "worker", "-A", "PennCourses", "-Q", "alerts,celery", "-linfo"]
+    extraEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: PennCourses.settings.production
   - name: beat
     image: pennlabs/penn-courses-backend
     secret: penn-courses
     cmd: ["celery", "-A", "PennCourses", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+    extraEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: PennCourses.settings.production
   - name: backend
     image: pennlabs/penn-courses-backend
     secret: penn-courses
@@ -18,6 +24,9 @@ applications:
       hosts:
         - host: penncourseplan.com
           paths: ["/api"]
+    extraEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: PennCourses.settings.production
   - name: plan
     image: pennlabs/pcp-frontend
     secret: penn-courses-plan
@@ -33,5 +42,7 @@ applications:
         - host: penncoursealert.com
           paths: ["/"]
           extraEnv:
-            - key: ROOT_URLCONF
+            - name: ROOT_URLCONF
               value: PennCourses.urls.pca
+            - name: DJANGO_SETTINGS_MODULE
+              value: PennCourses.settings.production

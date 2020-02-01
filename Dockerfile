@@ -11,7 +11,7 @@ RUN pipenv install --system
 # Copy project files
 COPY . /app/
 
-ENV DJANGO_SETTINGS_MODULE PennCourses.settings.prod
+ENV DJANGO_SETTINGS_MODULE PennCourses.settings.production
 ENV SECRET_KEY 'temporary key just to build the docker image'
 
 # Collect static files
