@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
@@ -68,11 +68,6 @@ function Selector(props) {
         />
     );
 
-    useEffect(() => {
-        if (courses.length === 1) {
-            getCourse(courses[0].id);
-        }
-    }, [courses, getCourse, isSearchingCourseInfo]);
 
     if (courses.length > 0 && !course) {
         if (view === 0) {

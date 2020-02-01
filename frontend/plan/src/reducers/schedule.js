@@ -32,7 +32,7 @@ const generateDefaultSchedule = () => (
             creationQueued: false,
             creationAttempts: 0,
         },
-        updatedAt: 1,
+        updated_at: 1,
     }
 );
 

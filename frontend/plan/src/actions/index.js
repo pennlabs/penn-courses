@@ -315,7 +315,12 @@ export function fetchCourseSearch(filterData) {
         dispatch(updateSearchRequest());
         debouncedCourseSearch(dispatch, filterData)
             .then(res => res.json())
-            .then(res => dispatch(updateSearch(res)))
+            .then((res) => {
+                dispatch(updateSearch(res));
+                if (res.length === 1) {
+                    dispatch(fetchCourseDetails(res[0].id));
+                }
+            })
             .catch(error => dispatch(courseSearchError(error)));
     };
 }

@@ -58,6 +58,7 @@ const initiateSync = (store) => {
                     newSchedulesObserved.forEach(({ id }) => {
                         schedulesObserved[id] = true;
                     });
+                    const scheduleState = store.getState().schedule;
                     Object.keys(schedulesObserved)
                         .forEach((id) => {
                             // The schedule has been observed from the backend before,
@@ -65,8 +66,8 @@ const initiateSync = (store) => {
                             if (!newSchedulesObserved[id]) {
                                 delete schedulesObserved[id];
                                 // find the name of the schedule with the deleted id
-                                const schedName = Object.keys(scheduleStateInit.schedules)
-                                    .reduce((acc, schedNameSelected) => acc || ((scheduleStateInit
+                                const schedName = Object.keys(scheduleState.schedules)
+                                    .reduce((acc, schedNameSelected) => acc || ((scheduleState
                                         .schedules[schedNameSelected]
                                         .id === id) && schedNameSelected),
                                     false);
