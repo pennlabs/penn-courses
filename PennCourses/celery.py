@@ -5,7 +5,7 @@ from django.conf import settings
 
 
 # set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'PennCourses.settings.dev')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'PennCourses.settings.development')
 
 app = Celery('PennCourses', broker=settings.MESSAGE_BROKER_URL)
 

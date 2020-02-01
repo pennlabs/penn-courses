@@ -147,7 +147,6 @@ def accept_webhook(request):
     if 'json' not in request.content_type.lower():
         return HttpResponse('Request expected in JSON', status=415)
 
-    print('{}: webhook request body: {}'.format(datetime.datetime.now(), request.body))
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:

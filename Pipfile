@@ -3,6 +3,15 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[dev-packages]
+codecov = "*"
+coverage = "*"
+black = "==19.10b0"
+unittest-xml-reporting = "*"
+flake8 = "*"
+flake8-isort = "*"
+flake8-quotes = "*"
+
 [packages]
 django = ">=2.2.4"
 mysqlclient = "*"
@@ -16,8 +25,6 @@ sentry-sdk = "*"
 dj-database-url = "*"
 django-celery-beat = "*"
 django-celery-results = "*"
-gunicorn = "*"
-whitenoise = "*"
 django-debug-toolbar = "*"
 djangorestframework = "*"
 unidecode = "*"
@@ -30,14 +37,9 @@ ipython = "*"
 django-auto-prefetching = "*"
 django-cors-headers = "*"
 django-runtime-options = "*"
-
-[dev-packages]
-codecov = "*"
-unittest-xml-reporting = "*"
-coverage = "*"
-flake8 = "*"
-flake8-isort = "*"
-flake8-quotes = "*"
+pyyaml = "*"
+uritemplate = "*"
+uwsgi = "*"
 
 [requires]
 python_version = "3"

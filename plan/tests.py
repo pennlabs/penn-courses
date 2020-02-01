@@ -49,7 +49,7 @@ class TypedSearchBackendTestCase(TestCase):
             self.assertEqual(['title', 'sections__instructors__name'], terms, f'search:{kw}')
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pcp')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class CourseSearchTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -58,7 +58,7 @@ class CourseSearchTestCase(TestCase):
         set_semester()
 
     def test_search_by_dept(self):
-        response = self.client.get('/courses/', {'search': 'math', 'type': 'auto'})
+        response = self.client.get('/api/plan/courses/', {'search': 'math', 'type': 'auto'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(len(response.data), 1)
         course_codes = [d['id'] for d in response.data]
@@ -69,14 +69,14 @@ class CourseSearchTestCase(TestCase):
         self.math1.instructors.add(Instructor.objects.get_or_create(name='Josh Doman')[0])
         searches = ['Tiffany', 'Chang']
         for search in searches:
-            response = self.client.get('/courses/', {'search': search, 'type': 'auto'})
+            response = self.client.get('/api/plan/courses/', {'search': search, 'type': 'auto'})
             self.assertEqual(200, response.status_code)
             self.assertEqual(len(response.data), 1)
             course_codes = [d['id'] for d in response.data]
             self.assertTrue('CIS-120' in course_codes and 'MATH-114' not in course_codes, f'search:{search}')
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pcp')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class CreditUnitFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -89,22 +89,22 @@ class CreditUnitFilterTestCase(TestCase):
         set_semester()
 
     def test_include_course(self):
-        response = self.client.get('/courses/', {'cu': '1.0'})
+        response = self.client.get('/api/plan/courses/', {'cu': '1.0'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_include_multiple(self):
-        response = self.client.get('/courses/', {'cu': '0.5,1.0'})
+        response = self.client.get('/api/plan/courses/', {'cu': '0.5,1.0'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_exclude_course(self):
-        response = self.client.get('/courses/', {'cu': '.5,1.5'})
+        response = self.client.get('/api/plan/courses/', {'cu': '.5,1.5'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pcp')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class RequirementFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -116,12 +116,12 @@ class RequirementFilterTestCase(TestCase):
         set_semester()
 
     def test_return_all_courses(self):
-        response = self.client.get('/courses/')
+        response = self.client.get('/api/plan/courses/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
 
     def test_filter_for_req(self):
-        response = self.client.get('/courses/', {'requirements': 'REQ@SAS'})
+        response = self.client.get('/api/plan/courses/', {'requirements': 'REQ@SAS'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual('MATH-114', response.data[0]['id'])
@@ -132,19 +132,19 @@ class RequirementFilterTestCase(TestCase):
         req2.save()
         req2.courses.add(course3)
 
-        response = self.client.get('/courses/', {'requirements': 'REQ@SAS,REQ2@SEAS'})
+        response = self.client.get('/api/plan/courses/', {'requirements': 'REQ@SAS,REQ2@SEAS'})
         self.assertEqual(0, len(response.data))
 
     def test_double_count_req(self):
         req2 = Requirement(semester=TEST_SEMESTER, code='REQ2', school='SEAS')
         req2.save()
         req2.courses.add(self.math)
-        response = self.client.get('/courses/', {'requirements': 'REQ@SAS,REQ2@SEAS'})
+        response = self.client.get('/api/plan/courses/', {'requirements': 'REQ@SAS,REQ2@SEAS'})
         self.assertEqual(1, len(response.data))
         self.assertEqual('MATH-114', response.data[0]['id'])
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pcp')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class CourseReviewAverageTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data('CIS-120-001', TEST_SEMESTER)
@@ -175,14 +175,14 @@ class CourseReviewAverageTestCase(TestCase):
         set_semester()
 
     def test_course_average(self):
-        response = self.client.get('/courses/CIS-120/')
+        response = self.client.get('/api/plan/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, response.data['course_quality'])
         self.assertEqual(3, response.data['instructor_quality'])
         self.assertEqual(3, response.data['difficulty'])
 
     def test_section_reviews(self):
-        response = self.client.get('/courses/CIS-120/')
+        response = self.client.get('/api/plan/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data['sections']))
 
@@ -197,23 +197,23 @@ class CourseReviewAverageTestCase(TestCase):
             'difficulty': 1,
         })
         self.section2.instructors.add(instructor3)
-        response = self.client.get('/courses/CIS-120/')
+        response = self.client.get('/api/plan/courses/CIS-120/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data['sections']))
         self.assertEqual(1.5, response.data['sections'][1]['course_quality'], response.data['sections'][1])
 
     def test_filter_courses_by_review_included(self):
-        response = self.client.get('/courses/', {'difficulty': '2.5-3.5'})
+        response = self.client.get('/api/plan/courses/', {'difficulty': '2.5-3.5'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_filter_courses_by_review_excluded(self):
-        response = self.client.get('/courses/', {'difficulty': '0-2'})
+        response = self.client.get('/api/plan/courses/', {'difficulty': '0-2'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pcp')
+@override_settings(ROOT_URLCONF='PennCourses.urls.api')
 class ScheduleTest(TestCase):
     def setUp(self):
         set_semester()
@@ -243,7 +243,7 @@ class ScheduleTest(TestCase):
                 self.assertAlmostEqual(expected, actual, 3)
 
     def test_get_schedule(self):
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['name'], 'My Test Schedule')
@@ -255,14 +255,14 @@ class ScheduleTest(TestCase):
     def test_create_schedule(self):
         _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
         _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'semester': TEST_SEMESTER,
                                                 'name': 'New Test Schedule',
                                                 'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
                                                              {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 201)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[1]['name'], 'New Test Schedule')
@@ -276,7 +276,7 @@ class ScheduleTest(TestCase):
     def test_create_schedule_no_semester(self):
         _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
         _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', '1739C', 2)
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'name': 'New Test Schedule',
                                                 'sections': [{'id': 'CIS-121-001',
                                                               'semester': '1739C'},
@@ -284,7 +284,7 @@ class ScheduleTest(TestCase):
                                                               'semester': '1739C'}]}),
                                     content_type='application/json')
         self.assertEqual(201, response.status_code)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[1]['name'], 'New Test Schedule')
@@ -294,7 +294,7 @@ class ScheduleTest(TestCase):
                                       cis121, cis121_reviews, True)
         self.check_serialized_section(response.data[1]['sections'][1],
                                       cis160, cis160_reviews, True)
-        response = self.client.get('/schedules/' + str(self.s.id+1) + '/')
+        response = self.client.get('/api/plan/schedules/' + str(self.s.id+1) + '/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['name'], 'New Test Schedule')
         self.assertEqual(response.data['semester'], '1739C')
@@ -306,13 +306,13 @@ class ScheduleTest(TestCase):
     def test_update_schedule_no_semester(self):
         _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
         _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', '1739C', 2)
-        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+        response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
                                    json.dumps({'name': 'New Test Schedule',
                                                'sections': [{'id': 'CIS-121-001', 'semester': '1739C'},
                                                             {'id': 'CIS-160-001', 'semester': '1739C'}]}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 202)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['name'], 'New Test Schedule')
@@ -322,7 +322,7 @@ class ScheduleTest(TestCase):
                                       cis121, cis121_reviews, True)
         self.check_serialized_section(response.data[0]['sections'][1],
                                       cis160, cis160_reviews, True)
-        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['name'], 'New Test Schedule')
         self.assertEqual(response.data['semester'], '1739C')
@@ -334,14 +334,14 @@ class ScheduleTest(TestCase):
     def test_create_schedule_meetings(self):
         _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
         _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'semester': TEST_SEMESTER,
                                                 'name': 'New Test Schedule',
                                                 'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
                                                              {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 201)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[1]['name'], 'New Test Schedule')
@@ -355,14 +355,14 @@ class ScheduleTest(TestCase):
     def test_update_schedule_specific(self):
         _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
         _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+        response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
                                    json.dumps({'semester': TEST_SEMESTER,
                                                'name': 'New Test Schedule',
                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 202)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['name'], 'New Test Schedule')
@@ -372,7 +372,7 @@ class ScheduleTest(TestCase):
                                       cis121, cis121_reviews, True)
         self.check_serialized_section(response.data[0]['sections'][1],
                                       cis160, cis160_reviews, True)
-        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['name'], 'New Test Schedule')
         self.assertEqual(response.data['semester'], TEST_SEMESTER)
@@ -385,14 +385,14 @@ class ScheduleTest(TestCase):
     def test_update_schedule_specific_meetings(self):
         _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
         _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+        response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
                                    json.dumps({'semester': TEST_SEMESTER,
                                                'name': 'New Test Schedule',
                                                'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 202)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['name'], 'New Test Schedule')
@@ -402,7 +402,7 @@ class ScheduleTest(TestCase):
                                       cis121, cis121_reviews, True)
         self.check_serialized_section(response.data[0]['sections'][1],
                                       cis160, cis160_reviews, True)
-        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['name'], 'New Test Schedule')
         self.assertEqual(response.data['semester'], TEST_SEMESTER)
@@ -415,14 +415,14 @@ class ScheduleTest(TestCase):
     def test_update_schedule_specific_same_name(self):
         _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
         _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+        response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
                                    json.dumps({'semester': TEST_SEMESTER,
                                                'name': 'My Test Schedule',
                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 202)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['name'], 'My Test Schedule')
@@ -432,7 +432,7 @@ class ScheduleTest(TestCase):
                                       cis121, cis121_reviews, True)
         self.check_serialized_section(response.data[0]['sections'][1],
                                       cis160, cis160_reviews, True)
-        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['name'], 'My Test Schedule')
         self.assertEqual(response.data['semester'], TEST_SEMESTER)
@@ -445,7 +445,7 @@ class ScheduleTest(TestCase):
     def test_update_schedule_general(self):
         _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
         _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'id': str(self.s.id),
                                                 'semester': TEST_SEMESTER,
                                                 'name': 'New Test Schedule',
@@ -453,7 +453,7 @@ class ScheduleTest(TestCase):
                                                              {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 202)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['name'], 'New Test Schedule')
@@ -466,7 +466,7 @@ class ScheduleTest(TestCase):
 
     def test_update_schedule_general_same_name(self):
         _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'id': str(self.s.id),
                                                 'semester': TEST_SEMESTER,
                                                 'name': 'My Test Schedule',
@@ -474,7 +474,7 @@ class ScheduleTest(TestCase):
                                                              {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 202)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['name'], 'My Test Schedule')
@@ -485,16 +485,16 @@ class ScheduleTest(TestCase):
                                       cis160, cis160_reviews, True)
 
     def test_delete(self):
-        response = self.client.delete('/schedules/'+str(self.s.id)+'/')
+        response = self.client.delete('/api/plan/schedules/'+str(self.s.id)+'/')
         self.assertEqual(response.status_code, 204)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
     def test_semesters_not_uniform(self):
         create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
         create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'semester': TEST_SEMESTER,
                                                 'name': 'New Test Schedule',
                                                 'sections': [{'id': 'CIS-121-001', 'semester': '1739C'},
@@ -506,7 +506,7 @@ class ScheduleTest(TestCase):
     def test_semesters_not_uniform_update(self):
         create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
         create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'id': str(self.s.id),
                                                 'semester': TEST_SEMESTER,
                                                 'name': 'New Test Schedule',
@@ -517,14 +517,14 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data['detail'], 'Semester uniformity invariant violated.')
 
     def test_schedule_dne(self):
-        response = self.client.get('/schedules/1000/')
+        response = self.client.get('/api/plan/schedules/1000/')
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data['detail'], 'Not found.')
 
     def test_name_already_exists(self):
         create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
         create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'semester': TEST_SEMESTER,
                                                 'name': 'My Test Schedule',
                                                 'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
@@ -534,7 +534,7 @@ class ScheduleTest(TestCase):
 
     def test_section_dne_one(self):
         create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'semester': TEST_SEMESTER,
                                                 'name': 'New Test Schedule',
                                                 'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
@@ -544,7 +544,7 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data['detail'], 'One or more sections not found in database.')
 
     def test_section_dne_all(self):
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'semester': TEST_SEMESTER,
                                                 'name': 'New Test Schedule',
                                                 'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
@@ -555,16 +555,16 @@ class ScheduleTest(TestCase):
 
     def test_user_not_logged_in(self):
         client2 = APIClient()
-        response = client2.post('/schedules/',
+        response = client2.post('/api/plan/schedules/',
                                 json.dumps({'semester': TEST_SEMESTER,
                                             'name': 'New Test Schedule',
                                             'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
                                                          {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
                                 content_type='application/json')
         self.assertEqual(403, response.status_code)
-        response = client2.get('/schedules/')
+        response = client2.get('/api/plan/schedules/')
         self.assertEqual(403, response.status_code)
-        response = client2.put('/schedules/' + str(self.s.id) + '/',
+        response = client2.put('/api/plan/schedules/' + str(self.s.id) + '/',
                                json.dumps({'semester': TEST_SEMESTER,
                                            'name': 'New Test Schedule',
                                            'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
@@ -573,36 +573,36 @@ class ScheduleTest(TestCase):
         self.assertEqual(403, response.status_code)
 
     def test_create_schedule_no_semester_no_courses(self):
-        response = self.client.post('/schedules/',
+        response = self.client.post('/api/plan/schedules/',
                                     json.dumps({'name': 'New Test Schedule',
                                                 'sections': []}),
                                     content_type='application/json')
         self.assertEqual(201, response.status_code)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[1]['name'], 'New Test Schedule')
         self.assertEqual(response.data[1]['semester'], TEST_SEMESTER)
         self.assertEqual(len(response.data[1]['sections']), 0)
-        response = self.client.get('/schedules/' + str(self.s.id+1) + '/')
+        response = self.client.get('/api/plan/schedules/' + str(self.s.id+1) + '/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['name'], 'New Test Schedule')
         self.assertEqual(response.data['semester'], TEST_SEMESTER)
         self.assertEqual(len(response.data['sections']), 0)
 
     def test_update_schedule_no_semester_no_courses(self):
-        response = self.client.put('/schedules/' + str(self.s.id) + '/',
+        response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
                                    json.dumps({'name': 'New Test Schedule',
                                                'sections': []}),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 202)
-        response = self.client.get('/schedules/')
+        response = self.client.get('/api/plan/schedules/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['name'], 'New Test Schedule')
         self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
         self.assertEqual(len(response.data[0]['sections']), 0)
-        response = self.client.get('/schedules/' + str(self.s.id) + '/')
+        response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data['name'], 'New Test Schedule')
         self.assertEqual(response.data['semester'], TEST_SEMESTER)
