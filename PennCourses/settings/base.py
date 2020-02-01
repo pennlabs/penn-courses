@@ -159,8 +159,8 @@ API_URL = 'https://esb.isc-seo.upenn.edu/8091/open_data/course_section_search'
 WEBHOOK_USERNAME = os.environ.get('WEBHOOK_USERNAME', 'webhook')
 WEBHOOK_PASSWORD = os.environ.get('WEBHOOK_PASSWORD', 'password')
 
-# Amazon SES Credentials
-SMTP_HOST = os.environ.get('SMTP_HOST', 'email-smtp.us-east-1.amazonaws.com')
+# Email Configuration
+SMTP_HOST = os.environ.get('SMTP_HOST', '')
 SMTP_PORT = os.environ.get('SMTP_PORT', 587)
 SMTP_USERNAME = os.environ.get('SMTP_USERNAME', '')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
