@@ -33,6 +33,9 @@ applications:
       hosts:
         - host: penncourseplan.com
           paths: ["/"]
+    extraEnv:
+      - name: REACT_APP_BACKEND_URL
+        value: https://penncourseplan.com/api/plan
   - name: alert
     image: pennlabs/penn-courses-backend
     secret: penn-courses
