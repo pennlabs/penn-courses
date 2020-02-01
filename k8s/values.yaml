@@ -3,6 +3,7 @@ applications:
   - name: redis
     image: redis
     tag: "4.0"
+    port: 6379
   - name: celery
     image: pennlabs/penn-courses-backend
     secret: penn-courses
