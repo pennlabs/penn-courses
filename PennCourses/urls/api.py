@@ -14,3 +14,10 @@ urlpatterns = [
     path('documentation/', include_docs_urls(title='API Docs')),
     path('accounts/', include('accounts.urls', namespace='accounts')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+urlpatterns = [path("api/", include(urlpatterns))]
+
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns = [path("__debug__/", include(debug_toolbar.urls))] + urlpatterns
