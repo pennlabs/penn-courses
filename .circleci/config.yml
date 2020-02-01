@@ -61,7 +61,7 @@ workflows:
       - docker/publish:
           name: publish-backend
           requires:
-            - django-tools/check
+            - check-no-lint
           cache_from: "pennlabs/penn-courses-backend:latest"
           image: "pennlabs/penn-courses-backend"
           tag: "${CIRCLE_SHA1},latest"
