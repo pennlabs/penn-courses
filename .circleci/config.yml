@@ -36,14 +36,14 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - django-tools/check:
-          project-name: "PennCourses"
-          black: false
-          flake8: false  # TODO: remove these before merging
+#      - django-tools/check:
+#          project-name: "PennCourses"
+#          black: false
+#          flake8: false  # TODO: remove these before merging
       - docker/publish:
           name: publish-backend
-          requires:
-            - django-tools/check
+#          requires:
+#            - django-tools/check
           cache_from: "pennlabs/penn-courses-backend:latest"
           image: "pennlabs/penn-courses-backend"
           tag: "${CIRCLE_SHA1},latest"
