@@ -1,4 +1,4 @@
-deploy_version: 0.1.9
+deploy_version: 0.1.12
 applications:
   - name: redis
     image: redis
@@ -29,7 +29,6 @@ applications:
         value: PennCourses.settings.production
   - name: plan
     image: pennlabs/pcp-frontend
-    secret: penn-courses-plan
     ingress:
       hosts:
         - host: penncourseplan.com

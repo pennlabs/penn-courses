@@ -15,20 +15,21 @@ import os
 import dj_database_url
 
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DOMAIN = os.environ.get("DOMAIN", "example.com")
 
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '&3!f%)t!o$+dwu3(jao7ipi2f4(k-2ua7@28+^yge-cn7c!_14'
+SECRET_KEY = os.environ.get("SECRET_KEY", "&3!f%)t!o$+dwu3(jao7ipi2f4(k-2ua7@28+^yge-cn7c!_14")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -58,18 +59,6 @@ INSTALLED_APPS = [
     'review',
 ]
 
-# From labs-accounts
-AUTHENTICATION_BACKENDS = [
-    'accounts.backends.LabsUserBackend',
-    'django.contrib.auth.backends.ModelBackend',
-]
-
-# From labs-accounts
-PLATFORM_ACCOUNTS = {
-    'REDIRECT_URI': os.environ.get('LABS_REDIRECT_URI', 'https://api.penncourses.org/accounts/callback/'),
-    'ADMIN_PERMISSION': 'courses_admin',
-}
-
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
@@ -80,6 +69,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'accounts.middleware.OAuth2TokenMiddleware',
 ]
 
 ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'PennCourses.urls.api')
@@ -87,6 +77,7 @@ ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'PennCourses.urls.api')
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        "DIRS": ["PennCourses/templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -106,7 +97,7 @@ WSGI_APPLICATION = 'PennCourses.wsgi.application'
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default='mysql://pc:password@127.0.0.1:3306/penncourses')
+    "default": dj_database_url.config(default="sqlite:///" + os.path.join(BASE_DIR, "db.sqlite3"))
 }
 
 
@@ -129,12 +120,20 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Authentication Backends
+
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.LabsUserBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/New_York'
 
 USE_I18N = True
 
@@ -147,8 +146,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_ROOT = os.path.join(PROJECT_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+
+# DLA Settings
+
+PLATFORM_ACCOUNTS = {
+    "REDIRECT_URI": os.environ.get(
+        "LABS_REDIRECT_URI", "http://localhost:8000/accounts/callback/"
+    ),
+    "CLIENT_ID": "clientid",
+    "CLIENT_SECRET": "supersecretclientsecret",
+    "PLATFORM_URL": "https://platform-dev.pennlabs.org",
+    "CUSTOM_ADMIN": False,
+}
+
 
 # Penn OpenData API
 API_KEY = os.environ.get('API_KEY', '')
