@@ -74,14 +74,9 @@ export const markCartSynced = () => (
     }
 );
 
-const doAPIRequest = (path) => {
-    let uri = null;
-    if (BACKEND_URL) {
-        uri = BACKEND_URL + path;
-    } else {
-        uri = path;
-    }
-    return fetch(uri);
+const doAPIRequest = (path, options={}) => {
+    const uri = (BACKEND_URL || "") + path;
+    return fetch(uri, options);
 };
 
 
@@ -439,7 +434,7 @@ const rateLimitedFetch = (url, init) => new Promise(((resolve, reject) => {
     // the required amount of time has not elapsed
     const now = Date.now();
     if (now - lastFetched > MIN_FETCH_INTERVAL) {
-        fetch(url, init)
+        doAPIRequest(url, init)
             .then((result) => {
                 resolve(result);
             })
@@ -472,7 +467,7 @@ export function fetchCourseDetails(courseId) {
  */
 export const fetchBackendSchedulesAndInitializeCart = (cart,
     onComplete = () => null) => (dispatch) => {
-    fetch("/schedules/")
+    doAPIRequest("/schedules/")
         .then(res => res.json())
         .then((schedules) => {
             if (schedules) {
@@ -510,7 +505,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         name,
         sections: schedule.meetings,
     };
-    fetch(`/schedules/${id}/`, {
+    doAPIRequest(`/schedules/${id}/`, {
         method: "PUT",
         credentials: "include",
         mode: "same-origin",
