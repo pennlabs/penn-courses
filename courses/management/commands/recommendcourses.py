@@ -5,8 +5,10 @@ import numpy as np
 from accounts.middleware import User
 from django.core.management.base import BaseCommand
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.feature_extraction.text import TfidfVectorizer
 
+from courses.models import Course
 from plan.models import Schedule
 
 
@@ -63,8 +65,27 @@ def vectorize_courses_by_schedule_presence():
     return {course: scaled for course, scaled in zip(courses, scaled)}
 
 
+def vectorize_courses_by_description(courses):
+    descriptions = [Course.objects.filter(full_code=course)[0].description for course in courses]
+    vectorizer = TfidfVectorizer()
+    vectors = vectorizer.fit_transform(descriptions)
+    dim_reducer = TruncatedSVD(n_components=200)
+    vectors = dim_reducer.fit_transform(vectors)
+    # divide the vectors by the average norm
+    norm_avg = sum(np.linalg.norm(vector) for vector in vectors) / len(vectors)
+    scaled = np.array([vector / norm_avg for vector in vectors])
+    return scaled
+
+
 def generate_course_vectors_dict():
-    return vectorize_courses_by_schedule_presence()
+    courses_to_vectors = {}
+    courses, courses_vectorized_by_schedule_presence = zip(*vectorize_courses_by_schedule_presence().items())
+    courses_vectorized_by_description = vectorize_courses_by_description(courses)
+    for course, schedule_vector, description_vector in zip(courses, courses_vectorized_by_schedule_presence,
+                                                           courses_vectorized_by_description):
+        total_vector = np.concatenate([schedule_vector, description_vector])
+        courses_to_vectors[course] = total_vector
+    return courses_to_vectors
 
 
 def generate_course_clusters():
