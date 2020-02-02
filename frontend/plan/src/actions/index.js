@@ -74,9 +74,12 @@ export const markCartSynced = () => (
     }
 );
 
-const doAPIRequest = (path, options={}) => {
-    const uri = (BACKEND_URL || "") + path;
-    return fetch(uri, options);
+export const generateUrl = (path, isAPIRequest) => {
+    return (BACKEND_URL || "") + ((BACKEND_URL && isAPIRequest) ? "/plan/" : "")  + path;
+};
+
+const doAPIRequest = (path, options = {}) => {
+    return fetch(generateUrl(path, true), options);
 };
 
 
