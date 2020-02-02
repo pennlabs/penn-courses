@@ -23,6 +23,7 @@ from options.models import get_bool, get_value
 from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView
+from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
 
 
@@ -284,6 +285,17 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response({'notification': 'There was an error on our end. Please try again!'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset_current())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object().get_most_current()
         serializer = self.get_serializer(instance)
@@ -327,13 +339,6 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 if changed:
                     return Response({'detail': 'auto_resubscribe updated to ' + str(registration.auto_resubscribe)},
                                     status=status.HTTP_200_OK)
-            if 'notification_sent' in request.data:  # REMOVE... THIS IS JUST FOR DEBUGGING
-                changed = registration.notification_sent != request.data.get('notification_sent')
-                registration.notification_sent = request.data.get('notification_sent')
-                registration.save()
-                if changed:
-                    return Response({'detail': 'notification_sent updated to ' + str(registration.notification_sent)},
-                                    status=status.HTTP_200_OK)
         except IntegrityError as e:
             return Response({'detail': 'IntegrityError encountered while trying to update: ' + str(e.__cause__)},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -344,6 +349,17 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if self.get_queryset().filter(id=request.data.get('id')).exists():
             return self.update(request, request.data.get('id'))
         return self.handle_registration(request)
+
+    def get_queryset(self):
+        return Registration.objects.filter(user=self.request.user)
+
+    def get_queryset_current(self):
+        return Registration.objects.filter(user=self.request.user, resubscribed_to__isnull=True)
+
+
+class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet):
+    serializer_class = RegistrationSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)

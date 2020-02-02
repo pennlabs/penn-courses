@@ -3,12 +3,13 @@ from rest_framework import routers
 
 import courses.views
 from alert import views
-from alert.views import RegistrationViewSet
+from alert.views import RegistrationViewSet, RegistrationHistoryViewSet
 from courses.views import StatusUpdateView, UserView
 
 
 router = routers.DefaultRouter()
 router.register(r'registrations', RegistrationViewSet, basename='registrations')
+router.register(r'registrationhistory', RegistrationHistoryViewSet, basename='registrationhistory')
 
 urlpatterns = [
     path('', views.index, name='index'),

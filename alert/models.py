@@ -56,6 +56,7 @@ class Registration(models.Model):
     # change to True once notification email has been sent out
     notification_sent = models.BooleanField(default=False)
     notification_sent_at = models.DateTimeField(blank=True, null=True)
+
     METHOD_CHOICES = (
         ('', 'Unsent'),
         ('LEG', '[Legacy] Sequence of course API requests'),
@@ -147,9 +148,11 @@ class Registration(models.Model):
         if not most_recent_reg.notification_sent:  # if a notification hasn't been sent on this recent one,
             return most_recent_reg  # don't create duplicate registrations for no reason.
 
-        new_registration = Registration(email=self.email,
+        new_registration = Registration(user=self.user,
+                                        email=self.email,
                                         phone=self.phone,
                                         section=self.section,
+                                        auto_resubscribe=self.resubscribe,
                                         resubscribed_from=most_recent_reg)
         new_registration.save()
         return new_registration
