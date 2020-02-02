@@ -30,6 +30,36 @@ def vectorize_user(user, course_vectors_dict):
         for course in sections_to_courses(schedule.sections.all()))
 
 
+def generate_course_clusters():
+    users = User.objects.all()
+    num_users = len(users)
+    id_transformer = {user.pk: i for i, user in enumerate(users)}
+    course_vectors_dict = {}
+    for schedule in Schedule.objects.all():
+        vector_component = id_transformer[schedule.person.pk]
+        for course in sections_to_courses(schedule.sections.all()):
+            relevant_vector: np.ndarray
+            if course not in course_vectors_dict:
+                relevant_vector = np.zeros(num_users)
+                course_vectors_dict[course] = relevant_vector
+            else:
+                relevant_vector = course_vectors_dict[course]
+            relevant_vector[vector_component] += 1
+
+    _courses, _course_vectors = zip(*course_vectors_dict.items())
+    courses, course_vectors = list(_courses), np.array(list(_course_vectors))
+    num_clusters = 3
+    model = AgglomerativeClustering(n_clusters=num_clusters, linkage="average", affinity="cosine")
+    raw_cluster_result = model.fit_predict(course_vectors)
+    clusters = [[] for _ in range(num_clusters)]
+    for course_index, cluster_index in enumerate(raw_cluster_result):
+        clusters[cluster_index].append(courses[course_index])
+
+    cluster_centroids = [sum(course_vectors_dict[course] for course in cluster) / len(cluster) for cluster in
+                         clusters]
+    return cluster_centroids, clusters, course_vectors_dict
+
+
 class Command(BaseCommand):
     help = 'Recommend courses for a user.'
 
@@ -39,33 +69,8 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         if "user" not in kwargs or kwargs["user"] is None:
             raise Exception("User not defined")
-        users = User.objects.all()
-        num_users = len(users)
-        id_transformer = {user.pk: i for i, user in enumerate(users)}
-        course_vectors_dict = {}
-        for schedule in Schedule.objects.all():
-            vector_component = id_transformer[schedule.person.pk]
-            for course in sections_to_courses(schedule.sections.all()):
-                relevant_vector: np.ndarray
-                if course not in course_vectors_dict:
-                    relevant_vector = np.zeros(num_users)
-                    course_vectors_dict[course] = relevant_vector
-                else:
-                    relevant_vector = course_vectors_dict[course]
-                relevant_vector[vector_component] += 1
 
-        _courses, _course_vectors = zip(*course_vectors_dict.items())
-        courses, course_vectors = list(_courses), np.array(list(_course_vectors))
-        num_clusters = 3
-        model = AgglomerativeClustering(n_clusters=num_clusters, linkage="average", affinity="cosine")
-        raw_cluster_result = model.fit_predict(course_vectors)
-        clusters = [[] for _ in range(num_clusters)]
-        for course_index, cluster_index in enumerate(raw_cluster_result):
-            clusters[cluster_index].append(courses[course_index])
-
-        cluster_centroids = [sum(course_vectors_dict[course] for course in cluster) / len(cluster) for cluster in
-                             clusters]
-
+        cluster_centroids, clusters, course_vectors_dict = generate_course_clusters()
         user_vector = vectorize_user(kwargs["user"], course_vectors_dict)
 
         max_similarity = 0
