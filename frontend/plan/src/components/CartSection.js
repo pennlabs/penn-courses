@@ -4,7 +4,7 @@ import "../styles/course-cart.css";
 import { isMobile } from "react-device-detect";
 import { getTimeString } from "../meetUtil";
 
-const CourseDetails = ({ meetings, code, overlaps }) => (
+const CourseDetails = ({ meetings, code, overlaps, starred, toggleStar }) => (
     <div style={{
         flexGrow: "0",
         display: "flex",
@@ -16,6 +16,17 @@ const CourseDetails = ({ meetings, code, overlaps }) => (
     >
         <b>
             <span>{code.replace(/-/g, " ")}</span>
+            <span
+                style={{ fontSize: "0.5rem" }}
+                role="button"
+                className="cart-toggle-star"
+                onClick={toggleStar}
+            >
+                <i
+                    className={`${starred ? "fas" : "far"} fa-star fa-xs`}
+                    style={{ paddingTop: "0.33rem", paddingLeft: "0.2rem", color: "#ffc520" }}
+                />
+            </span>
         </b>
         <div style={{ fontSize: "0.8rem" }}>
             {overlaps && (
@@ -100,6 +111,7 @@ CourseTrashCan.propTypes = {
 
 const CartSection = ({
     toggleCheck, checked, code, meetings, remove, courseInfo, overlaps, lastAdded,
+    starred, toggleStar,
 }) => (
     <div
         role="switch"
@@ -121,13 +133,20 @@ const CartSection = ({
             }}
         onClick={(e) => {
             // ensure that it's not the trash can being clicked
-            if (e.target.parentElement.getAttribute("class") !== "cart-delete-course") {
+            if (e.target.parentElement.getAttribute("class") !== "cart-delete-course"
+                && e.target.parentElement.getAttribute("class") !== "cart-toggle-star") {
                 toggleCheck();
             }
         }}
     >
         <CourseCheckbox checked={checked} />
-        <CourseDetails meetings={meetings} code={code} overlaps={overlaps} />
+        <CourseDetails
+            meetings={meetings}
+            code={code}
+            overlaps={overlaps}
+            starred={starred}
+            toggleStar={toggleStar}
+        />
         <CourseInfoButton courseInfo={courseInfo} />
         <CourseTrashCan remove={remove} />
     </div>

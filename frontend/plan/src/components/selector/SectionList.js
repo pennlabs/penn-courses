@@ -46,7 +46,7 @@ const mapStateToProps = (state, ownProps) => (
 const mapDispatchToProps = dispatch => (
     {
         manageCart: section => ({
-            add: () => dispatch(addCartItem(section)),
+            add: () => dispatch(addCartItem(section, false)),
             remove: () => dispatch(removeCartItem(section.id)),
         }),
     }

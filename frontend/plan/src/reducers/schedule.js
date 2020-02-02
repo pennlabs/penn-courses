@@ -15,7 +15,7 @@ import {
     MARK_SCHEDULE_SYNCED,
     DELETION_ATTEMPT_FAILED,
     DELETION_ATTEMPT_SUCCEEDED,
-    ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION
+    ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION, TOGGLE_STAR
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 
@@ -387,6 +387,19 @@ export const schedule = (state = initialState, action) => {
                     },
                 },
             };
+
+        case TOGGLE_STAR:
+            return {
+                ...state,
+                cartSections: state.cartSections.map((section) => {
+                    const modifiedSection = section;
+                    if (section.id === action.id) {
+                        modifiedSection.starred = !section.starred;
+                    }
+                    return modifiedSection;
+                }),
+            };
+
         case REMOVE_SCHED_ITEM:
             return {
                 ...state,

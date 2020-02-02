@@ -44,6 +44,7 @@ export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
 export const SECTION_INFO_SEARCH_SUCCESS = "SECTION_INFO_SEARCH_SUCCESS";
 
 export const TOGGLE_CHECK = "TOGGLE_CHECK";
+export const TOGGLE_STAR = "TOGGLE_STAR";
 
 export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
@@ -121,10 +122,13 @@ export const addSchedItem = section => (
     }
 );
 
-export const addCartItem = section => (
+export const addCartItem = (section, starred) => (
     {
         type: ADD_CART_ITEM,
-        section,
+        section: {
+            ...section,
+            starred,
+        },
     }
 );
 
@@ -628,6 +632,12 @@ export const toggleCheck = course => ({
     type: TOGGLE_CHECK,
     course,
 });
+
+export const toggleStar = id => ({
+    type: TOGGLE_STAR,
+    id,
+});
+
 
 export const removeCartItem = sectionId => ({
     type: REMOVE_CART_ITEM,

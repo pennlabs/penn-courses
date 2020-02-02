@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import CartSection from "./CartSection";
 import { meetingsContainSection, meetingSetsIntersect } from "../meetUtil";
-import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
+import { removeCartItem, toggleCheck, toggleStar, fetchCourseDetails } from "../actions";
 
 const CartEmpty = () => (
     <div style={{
@@ -27,6 +27,8 @@ const CartEmpty = () => (
 
 const Cart = ({
     courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab, lastAdded, mobileView,
+    // eslint-disable-next-line
+    toggleStar,
 }) => (
     <section
         style={{
@@ -41,11 +43,15 @@ const Cart = ({
         {courses.length === 0 ? <CartEmpty /> : courses
             .sort((a, b) => a.section.id.localeCompare(b.section.id))
             .map(({ section, checked, overlaps }) => {
-                const { id: code, description: name, meetings } = section;
+                const {
+                    id: code, description: name, meetings, starred,
+                } = section;
                 return (
                     <CartSection
                         toggleCheck={() => toggleCourse(section)}
+                        toggleStar={() => toggleStar(code)}
                         code={code}
+                        starred={starred}
                         lastAdded={lastAdded && code === lastAdded.id}
                         checked={checked}
                         name={name}
@@ -102,6 +108,7 @@ const mapDispatchToProps = dispatch => ({
     toggleCourse: courseId => dispatch(toggleCheck(courseId)),
     removeItem: courseId => dispatch(removeCartItem(courseId)),
     courseInfo: id => dispatch(fetchCourseDetails(id)),
+    toggleStar: courseId => dispatch(toggleStar(courseId)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Cart);
