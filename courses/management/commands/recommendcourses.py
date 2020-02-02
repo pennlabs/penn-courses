@@ -1,9 +1,11 @@
+import math
 from typing import Set
 
 import numpy as np
 from accounts.middleware import User
 from django.core.management.base import BaseCommand
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.decomposition import PCA
 
 from plan.models import Schedule
 
@@ -30,7 +32,12 @@ def vectorize_user(user, course_vectors_dict):
         for course in sections_to_courses(schedule.sections.all()))
 
 
-def generate_course_clusters():
+def vectorize_courses_by_schedule_presence():
+    """
+    Return a dict mapping course ids to a vector wherein each component contains how many times the corresponding user
+    has that course in their schedules.
+    :return:
+    """
     users = User.objects.all()
     num_users = len(users)
     id_transformer = {user.pk: i for i, user in enumerate(users)}
@@ -45,7 +52,23 @@ def generate_course_clusters():
             else:
                 relevant_vector = course_vectors_dict[course]
             relevant_vector[vector_component] += 1
+    courses, vectors = zip(*course_vectors_dict.items())
+    # reduce dimensionality to the log of the number of users
+    vectors = np.array(vectors)
+    dim_reducer = PCA(n_components=round(math.log2(num_users + 2)))
+    dim_reduced = dim_reducer.fit_transform(vectors)
+    # divide the vectors by the average norm
+    norm_avg = sum(np.linalg.norm(vector) for vector in dim_reduced) / len(dim_reduced)
+    scaled = np.array([vector / norm_avg for vector in dim_reduced])
+    return {course: scaled for course, scaled in zip(courses, scaled)}
 
+
+def generate_course_vectors_dict():
+    return vectorize_courses_by_schedule_presence()
+
+
+def generate_course_clusters():
+    course_vectors_dict = generate_course_vectors_dict()
     _courses, _course_vectors = zip(*course_vectors_dict.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = 3
