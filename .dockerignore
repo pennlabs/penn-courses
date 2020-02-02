@@ -1,0 +1,28 @@
+# Docker
+Dockerfile
+.dockerignore
+
+# git
+.circleci
+.git
+.gitignore
+.gitmodules
+.env
+**/*.md
+LICENSE
+
+# Misc
+.coverage
+**/__pycache__/
+tests/
+*.sqlite3
+
+# Dev
+.vscode
+
+# MacOS
+.DS_Store
+
+# PCX
+pcr-backup
+frontend/

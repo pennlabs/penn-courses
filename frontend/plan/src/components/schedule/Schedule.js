@@ -263,7 +263,7 @@ const EmptySchedule = () => (
         marginTop: "5vh",
     }}
     >
-        <img style={{ width: "65%" }} src="/static/empty-state-cal.svg" />
+        <img style={{ width: "65%" }} src="/icons/empty-state-cal.svg" />
         <h3 style={{
             fontWeight: "bold",
             marginBottom: "0.5rem",
