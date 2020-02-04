@@ -24,7 +24,7 @@ applications:
     ingress:
       hosts:
         - host: penncourseplan.com
-          paths: ["/api", "/admin", "/accounts"]
+          paths: ["/api", "/admin", "/accounts", "/assets"]
     extraEnv:
       - name: DJANGO_SETTINGS_MODULE
         value: PennCourses.settings.production
