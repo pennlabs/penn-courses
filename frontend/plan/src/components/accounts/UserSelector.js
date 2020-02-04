@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "../useOnClickOutside";
-import { generateUrl } from "../../actions";
 
 const UserSelector = ({ user: { username, ...rest }, onLogout, onLeft }) => {
     const [selected, setSelected] = useState(false);
@@ -50,7 +49,7 @@ const UserSelector = ({ user: { username, ...rest }, onLogout, onLeft }) => {
                             role="button"
                             id="logout-button"
                             onClick={() => {
-                                fetch(generateUrl("/accounts/logout/"), {
+                                fetch("/api/accounts/logout/", {
                                     method: "GET",
                                     redirect: "follow",
                                 })

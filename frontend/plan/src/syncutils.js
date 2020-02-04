@@ -134,6 +134,7 @@ const initiateSync = (store) => {
     const startSyncLoop = async () => {
         while (!syncTerminated[0]) {
             // ensure that the minimum distance between syncs is SYNC_INTERVAL
+            // eslint-disable-line no-await-in-loop
             await Promise.all([syncLoop(), waitBeforeNextSync()]);
         }
     };

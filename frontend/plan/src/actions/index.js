@@ -1,6 +1,5 @@
 import fetch from "cross-fetch";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
-import { BACKEND_URL } from "../constants";
 import getCsrf from "../csrf";
 import { MIN_FETCH_INTERVAL } from "../sync_constants";
 
@@ -74,9 +73,7 @@ export const markCartSynced = () => (
     }
 );
 
-export const generateUrl = (path, isAPIRequest) => (BACKEND_URL || "") + ((BACKEND_URL && isAPIRequest) ? "/plan" : "") + path;
-
-const doAPIRequest = (path, options = {}) => fetch(generateUrl(path, true), options);
+const doAPIRequest = (path, options = {}) => fetch(`/api/plan${path}`, options);
 
 
 export const duplicateSchedule = scheduleName => (
