@@ -3,7 +3,7 @@ from rest_framework import routers
 
 import courses.views
 from alert import views
-from alert.views import RegistrationViewSet, RegistrationHistoryViewSet
+from alert.views import RegistrationHistoryViewSet, RegistrationViewSet
 from courses.views import StatusUpdateView, UserView
 
 

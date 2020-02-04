@@ -27,6 +27,21 @@ def send_email(from_, to, subject, html):
         return True
 
 
+def send_text(to, text):
+    try:
+        client = Client(settings.TWILIO_SID, settings.TWILIO_AUTH_TOKEN)
+        msg = client.messages.create(
+            to=to,
+            from_=settings.TWILIO_NUMBER,
+            body=text
+        )
+        if msg.sid is not None:
+            return True
+    except TwilioRestException:
+        logger.exception('Text Error')
+        return False
+
+
 class Alert(ABC):
     def __init__(self, template, reg):
         t = loader.get_template(template)
@@ -75,15 +90,4 @@ class Text(Alert):
         else:
             return False
 
-        try:
-            client = Client(settings.TWILIO_SID, settings.TWILIO_AUTH_TOKEN)
-            msg = client.messages.create(
-                to=phone_number,
-                from_=settings.TWILIO_NUMBER,
-                body=self.text
-            )
-            if msg.sid is not None:
-                return True
-        except TwilioRestException:
-            logger.exception('Text Error')
-            return False
+        return send_text(phone_number, self.text)

@@ -4,14 +4,15 @@ import json
 import logging
 
 from django.conf import settings
+from django.db import IntegrityError
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Prefetch
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from alert.models import SOURCE_API, Registration, RegStatus, register_for_course
 from alert.serializers import RegistrationSerializer
@@ -19,12 +20,6 @@ from alert.tasks import send_course_alerts
 from courses.models import PCA_REGISTRATION, APIKey
 from courses.util import record_update, update_course_from_record
 from options.models import get_bool, get_value
-
-from django.db import IntegrityError
-from rest_framework import status
-from rest_framework.generics import ListCreateAPIView
-from rest_framework.mixins import ListModelMixin
-from rest_framework.response import Response
 
 
 logger = logging.getLogger(__name__)
@@ -264,22 +259,22 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response({'notification': 'You must include a not null section'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        res, normalized_course_code = register_for_course(section_code, email_address, phone, 'PCA', request, None)
+        res, normalized_course_code = register_for_course(section_code, email_address, phone, 'PCA', None, request)
 
         if res == RegStatus.SUCCESS:
             return Response({'notification': 'Your registration for %s was successful!' % normalized_course_code},
                             status=status.HTTP_201_CREATED)
         elif res == RegStatus.OPEN_REG_EXISTS:
             return Response({'notification':
-                                 "You've already registered to get alerts for %s!" % normalized_course_code},
+                             "You've already registered to get alerts for %s!" % normalized_course_code},
                             status=status.HTTP_202_ACCEPTED)
         elif res == RegStatus.COURSE_NOT_FOUND:
             return Response({'notification':
-                                 '%s did not match any course in our database. Please try again!' % section_code},
+                             '%s did not match any course in our database. Please try again!' % section_code},
                             status=status.HTTP_404_NOT_FOUND)
         elif res == RegStatus.NO_CONTACT_INFO:
             return Response({'notification':
-                                 'You must set a phone number and/or an email address to register for an alert.'},
+                             'You must set a phone number and/or an email address to register for an alert.'},
                             status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             return Response({'notification': 'There was an error on our end. Please try again!'},
@@ -353,8 +348,9 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
 
+    # TODO: make 1 database query with prefetch
     def get_queryset_current(self):
-        return Registration.objects.filter(user=self.request.user, resubscribed_to__isnull=True)
+        return Registration.objects.filter(user=self.request.user, notification_sent=False, deleted=False)
 
 
 class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet):

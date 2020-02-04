@@ -40,7 +40,7 @@ class Registration(models.Model):
 
     # Where did the registration come from?
     source = models.CharField(max_length=16, choices=SOURCE_CHOICES)
-    api_key = models.ForeignKey('courses.APIKey', blank=True, null=True, on_delete=models.CASCADE)  # remove eventually
+    api_key = models.ForeignKey('courses.APIKey', blank=True, null=True, on_delete=models.CASCADE)
 
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=True, null=True)
     # going forward, email and phone will be None and contact information can be found in the user's UserData object
@@ -115,6 +115,7 @@ class Registration(models.Model):
         return '{}/s/{}'.format(settings.PCA_URL, url.short_id)
 
     def alert(self, forced=False, sent_by=''):
+        print('in alert (this should be last), calling text_result or email_result')
         if forced or self.is_active:
             text_result = Text(self).send_alert()
             email_result = Email(self).send_alert()
@@ -152,7 +153,7 @@ class Registration(models.Model):
                                         email=self.email,
                                         phone=self.phone,
                                         section=self.section,
-                                        auto_resubscribe=self.resubscribe,
+                                        auto_resubscribe=self.auto_resubscribe,
                                         resubscribed_from=most_recent_reg)
         new_registration.save()
         return new_registration
@@ -164,7 +165,7 @@ class Registration(models.Model):
             return self
 
 
-def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, request=None, api_key=None):
+def register_for_course(course_code, email_address, phone, source=SOURCE_PCA, api_key=None, request=None):
     if not email_address and not phone:
         return RegStatus.NO_CONTACT_INFO, None
     try:

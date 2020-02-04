@@ -2,8 +2,6 @@ from rest_framework import serializers
 
 from alert.models import Registration
 
-from courses.models import Section
-
 
 class RegistrationSerializer(serializers.ModelSerializer):
     section = serializers.SlugRelatedField(slug_field='full_code', read_only=True)

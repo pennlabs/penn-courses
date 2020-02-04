@@ -46,7 +46,7 @@ def send_alert(reg_id, sent_by=''):
 
 def get_active_registrations(course_code, semester):
     _, section = get_course_and_section(course_code, semester)
-    return list(section.registration_set.filter(notification_sent=False))
+    return list(section.registration_set.filter(notification_sent=False, deleted=False))
 
 
 @shared_task(name='pca.tasks.send_course_alerts')
