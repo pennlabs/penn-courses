@@ -49,7 +49,7 @@ const UserSelector = ({ user: { username, ...rest }, onLogout, onLeft }) => {
                             role="button"
                             id="logout-button"
                             onClick={() => {
-                                fetch("/api/accounts/logout/", {
+                                fetch("/accounts/logout/", {
                                     method: "GET",
                                     redirect: "follow",
                                 })
