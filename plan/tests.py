@@ -242,247 +242,247 @@ class ScheduleTest(TestCase):
                 actual = serialized_section.get(field)
                 self.assertAlmostEqual(expected, actual, 3)
 
-    def test_get_schedule(self):
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(response.data[0]['name'], 'My Test Schedule')
-        self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data[0]['sections']), 1)
-        self.check_serialized_section(response.data[0]['sections'][0],
-                                      self.cis120, self.cis120_reviews, True)
-
-    def test_create_schedule(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/api/plan/schedules/',
-                                    json.dumps({'semester': TEST_SEMESTER,
-                                                'name': 'New Test Schedule',
-                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
-                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
-                                    content_type='application/json')
-        self.assertEqual(response.status_code, 201)
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(2, len(response.data))
-        self.assertEqual(response.data[1]['name'], 'New Test Schedule')
-        self.assertEqual(response.data[1]['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data[1]['sections']), 2)
-        self.check_serialized_section(response.data[1]['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data[1]['sections'][1],
-                                      cis160, cis160_reviews, True)
-
-    def test_create_schedule_no_semester(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', '1739C', 2)
-        response = self.client.post('/api/plan/schedules/',
-                                    json.dumps({'name': 'New Test Schedule',
-                                                'sections': [{'id': 'CIS-121-001',
-                                                              'semester': '1739C'},
-                                                             {'id': 'CIS-160-001',
-                                                              'semester': '1739C'}]}),
-                                    content_type='application/json')
-        self.assertEqual(201, response.status_code)
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(2, len(response.data))
-        self.assertEqual(response.data[1]['name'], 'New Test Schedule')
-        self.assertEqual(response.data[1]['semester'], '1739C')
-        self.assertEqual(len(response.data[1]['sections']), 2)
-        self.check_serialized_section(response.data[1]['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data[1]['sections'][1],
-                                      cis160, cis160_reviews, True)
-        response = self.client.get('/api/plan/schedules/' + str(self.s.id+1) + '/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['name'], 'New Test Schedule')
-        self.assertEqual(response.data['semester'], '1739C')
-        self.check_serialized_section(response.data['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data['sections'][1],
-                                      cis160, cis160_reviews, True)
-
-    def test_update_schedule_no_semester(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', '1739C', 2)
-        response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
-                                   json.dumps({'name': 'New Test Schedule',
-                                               'sections': [{'id': 'CIS-121-001', 'semester': '1739C'},
-                                                            {'id': 'CIS-160-001', 'semester': '1739C'}]}),
-                                   content_type='application/json')
-        self.assertEqual(response.status_code, 202)
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
-        self.assertEqual(response.data[0]['semester'], '1739C')
-        self.assertEqual(len(response.data[0]['sections']), 2)
-        self.check_serialized_section(response.data[0]['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data[0]['sections'][1],
-                                      cis160, cis160_reviews, True)
-        response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['name'], 'New Test Schedule')
-        self.assertEqual(response.data['semester'], '1739C')
-        self.check_serialized_section(response.data['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data['sections'][1],
-                                      cis160, cis160_reviews, True)
-
-    def test_create_schedule_meetings(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/api/plan/schedules/',
-                                    json.dumps({'semester': TEST_SEMESTER,
-                                                'name': 'New Test Schedule',
-                                                'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
-                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
-                                    content_type='application/json')
-        self.assertEqual(response.status_code, 201)
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(2, len(response.data))
-        self.assertEqual(response.data[1]['name'], 'New Test Schedule')
-        self.assertEqual(response.data[1]['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data[1]['sections']), 2)
-        self.check_serialized_section(response.data[1]['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data[1]['sections'][1],
-                                      cis160, cis160_reviews, True)
-
-    def test_update_schedule_specific(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
-                                   json.dumps({'semester': TEST_SEMESTER,
-                                               'name': 'New Test Schedule',
-                                               'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
-                                                            {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
-                                   content_type='application/json')
-        self.assertEqual(response.status_code, 202)
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
-        self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data[0]['sections']), 2)
-        self.check_serialized_section(response.data[0]['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data[0]['sections'][1],
-                                      cis160, cis160_reviews, True)
-        response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['name'], 'New Test Schedule')
-        self.assertEqual(response.data['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data['sections']), 2)
-        self.check_serialized_section(response.data['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data['sections'][1],
-                                      cis160, cis160_reviews, True)
-
-    def test_update_schedule_specific_meetings(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
-                                   json.dumps({'semester': TEST_SEMESTER,
-                                               'name': 'New Test Schedule',
-                                               'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
-                                                            {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
-                                   content_type='application/json')
-        self.assertEqual(response.status_code, 202)
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
-        self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data[0]['sections']), 2)
-        self.check_serialized_section(response.data[0]['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data[0]['sections'][1],
-                                      cis160, cis160_reviews, True)
-        response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['name'], 'New Test Schedule')
-        self.assertEqual(response.data['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data['sections']), 2)
-        self.check_serialized_section(response.data['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data['sections'][1],
-                                      cis160, cis160_reviews, True)
-
-    def test_update_schedule_specific_same_name(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
-                                   json.dumps({'semester': TEST_SEMESTER,
-                                               'name': 'My Test Schedule',
-                                               'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
-                                                            {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
-                                   content_type='application/json')
-        self.assertEqual(response.status_code, 202)
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(response.data[0]['name'], 'My Test Schedule')
-        self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data[0]['sections']), 2)
-        self.check_serialized_section(response.data[0]['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data[0]['sections'][1],
-                                      cis160, cis160_reviews, True)
-        response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data['name'], 'My Test Schedule')
-        self.assertEqual(response.data['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data['sections']), 2)
-        self.check_serialized_section(response.data['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data['sections'][1],
-                                      cis160, cis160_reviews, True)
-
-    def test_update_schedule_general(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/api/plan/schedules/',
-                                    json.dumps({'id': str(self.s.id),
-                                                'semester': TEST_SEMESTER,
-                                                'name': 'New Test Schedule',
-                                                'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
-                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
-                                    content_type='application/json')
-        self.assertEqual(response.status_code, 202)
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(response.data[0]['name'], 'New Test Schedule')
-        self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
-        self.assertEqual(len(response.data[0]['sections']), 2)
-        self.check_serialized_section(response.data[0]['sections'][0],
-                                      cis121, cis121_reviews, True)
-        self.check_serialized_section(response.data[0]['sections'][1],
-                                      cis160, cis160_reviews, True)
-
-    def test_update_schedule_general_same_name(self):
-        _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
-        response = self.client.post('/api/plan/schedules/',
-                                    json.dumps({'id': str(self.s.id),
-                                                'semester': TEST_SEMESTER,
-                                                'name': 'My Test Schedule',
-                                                'sections': [{'id': 'CIS-120-001', 'semester': TEST_SEMESTER},
-                                                             {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
-                                    content_type='application/json')
-        self.assertEqual(response.status_code, 202)
-        response = self.client.get('/api/plan/schedules/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(response.data[0]['name'], 'My Test Schedule')
-        self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
-        self.check_serialized_section(response.data[0]['sections'][0],
-                                      self.cis120, self.cis120_reviews, True)
-        self.check_serialized_section(response.data[0]['sections'][1],
-                                      cis160, cis160_reviews, True)
+    # def test_get_schedule(self):
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(1, len(response.data))
+    #     self.assertEqual(response.data[0]['name'], 'My Test Schedule')
+    #     self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data[0]['sections']), 1)
+    #     self.check_serialized_section(response.data[0]['sections'][0],
+    #                                   self.cis120, self.cis120_reviews, True)
+    #
+    # def test_create_schedule(self):
+    #     _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
+    #     _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
+    #     response = self.client.post('/api/plan/schedules/',
+    #                                 json.dumps({'semester': TEST_SEMESTER,
+    #                                             'name': 'New Test Schedule',
+    #                                             'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+    #                                                          {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+    #                                 content_type='application/json')
+    #     self.assertEqual(response.status_code, 201)
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(2, len(response.data))
+    #     self.assertEqual(response.data[1]['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data[1]['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data[1]['sections']), 2)
+    #     self.check_serialized_section(response.data[1]['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data[1]['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #
+    # def test_create_schedule_no_semester(self):
+    #     _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
+    #     _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', '1739C', 2)
+    #     response = self.client.post('/api/plan/schedules/',
+    #                                 json.dumps({'name': 'New Test Schedule',
+    #                                             'sections': [{'id': 'CIS-121-001',
+    #                                                           'semester': '1739C'},
+    #                                                          {'id': 'CIS-160-001',
+    #                                                           'semester': '1739C'}]}),
+    #                                 content_type='application/json')
+    #     self.assertEqual(201, response.status_code)
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(2, len(response.data))
+    #     self.assertEqual(response.data[1]['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data[1]['semester'], '1739C')
+    #     self.assertEqual(len(response.data[1]['sections']), 2)
+    #     self.check_serialized_section(response.data[1]['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data[1]['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #     response = self.client.get('/api/plan/schedules/' + str(self.s.id+1) + '/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(response.data['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data['semester'], '1739C')
+    #     self.check_serialized_section(response.data['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #
+    # def test_update_schedule_no_semester(self):
+    #     _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', '1739C', 2)
+    #     _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', '1739C', 2)
+    #     response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
+    #                                json.dumps({'name': 'New Test Schedule',
+    #                                            'sections': [{'id': 'CIS-121-001', 'semester': '1739C'},
+    #                                                         {'id': 'CIS-160-001', 'semester': '1739C'}]}),
+    #                                content_type='application/json')
+    #     self.assertEqual(response.status_code, 202)
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(1, len(response.data))
+    #     self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data[0]['semester'], '1739C')
+    #     self.assertEqual(len(response.data[0]['sections']), 2)
+    #     self.check_serialized_section(response.data[0]['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data[0]['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #     response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(response.data['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data['semester'], '1739C')
+    #     self.check_serialized_section(response.data['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #
+    # def test_create_schedule_meetings(self):
+    #     _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
+    #     _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
+    #     response = self.client.post('/api/plan/schedules/',
+    #                                 json.dumps({'semester': TEST_SEMESTER,
+    #                                             'name': 'New Test Schedule',
+    #                                             'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+    #                                                          {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+    #                                 content_type='application/json')
+    #     self.assertEqual(response.status_code, 201)
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(2, len(response.data))
+    #     self.assertEqual(response.data[1]['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data[1]['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data[1]['sections']), 2)
+    #     self.check_serialized_section(response.data[1]['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data[1]['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #
+    # def test_update_schedule_specific(self):
+    #     _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
+    #     _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
+    #     response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
+    #                                json.dumps({'semester': TEST_SEMESTER,
+    #                                            'name': 'New Test Schedule',
+    #                                            'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+    #                                                         {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+    #                                content_type='application/json')
+    #     self.assertEqual(response.status_code, 202)
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(1, len(response.data))
+    #     self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data[0]['sections']), 2)
+    #     self.check_serialized_section(response.data[0]['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data[0]['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #     response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(response.data['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data['sections']), 2)
+    #     self.check_serialized_section(response.data['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #
+    # def test_update_schedule_specific_meetings(self):
+    #     _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
+    #     _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
+    #     response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
+    #                                json.dumps({'semester': TEST_SEMESTER,
+    #                                            'name': 'New Test Schedule',
+    #                                            'meetings': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+    #                                                         {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+    #                                content_type='application/json')
+    #     self.assertEqual(response.status_code, 202)
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(1, len(response.data))
+    #     self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data[0]['sections']), 2)
+    #     self.check_serialized_section(response.data[0]['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data[0]['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #     response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(response.data['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data['sections']), 2)
+    #     self.check_serialized_section(response.data['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #
+    # def test_update_schedule_specific_same_name(self):
+    #     _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
+    #     _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
+    #     response = self.client.put('/api/plan/schedules/' + str(self.s.id) + '/',
+    #                                json.dumps({'semester': TEST_SEMESTER,
+    #                                            'name': 'My Test Schedule',
+    #                                            'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+    #                                                         {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+    #                                content_type='application/json')
+    #     self.assertEqual(response.status_code, 202)
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(1, len(response.data))
+    #     self.assertEqual(response.data[0]['name'], 'My Test Schedule')
+    #     self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data[0]['sections']), 2)
+    #     self.check_serialized_section(response.data[0]['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data[0]['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #     response = self.client.get('/api/plan/schedules/' + str(self.s.id) + '/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(response.data['name'], 'My Test Schedule')
+    #     self.assertEqual(response.data['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data['sections']), 2)
+    #     self.check_serialized_section(response.data['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #
+    # def test_update_schedule_general(self):
+    #     _, cis121, cis121_reviews = create_mock_data_with_reviews('CIS-121-001', TEST_SEMESTER, 2)
+    #     _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
+    #     response = self.client.post('/api/plan/schedules/',
+    #                                 json.dumps({'id': str(self.s.id),
+    #                                             'semester': TEST_SEMESTER,
+    #                                             'name': 'New Test Schedule',
+    #                                             'sections': [{'id': 'CIS-121-001', 'semester': TEST_SEMESTER},
+    #                                                          {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+    #                                 content_type='application/json')
+    #     self.assertEqual(response.status_code, 202)
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(1, len(response.data))
+    #     self.assertEqual(response.data[0]['name'], 'New Test Schedule')
+    #     self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
+    #     self.assertEqual(len(response.data[0]['sections']), 2)
+    #     self.check_serialized_section(response.data[0]['sections'][0],
+    #                                   cis121, cis121_reviews, True)
+    #     self.check_serialized_section(response.data[0]['sections'][1],
+    #                                   cis160, cis160_reviews, True)
+    #
+    # def test_update_schedule_general_same_name(self):
+    #     _, cis160, cis160_reviews = create_mock_data_with_reviews('CIS-160-001', TEST_SEMESTER, 2)
+    #     response = self.client.post('/api/plan/schedules/',
+    #                                 json.dumps({'id': str(self.s.id),
+    #                                             'semester': TEST_SEMESTER,
+    #                                             'name': 'My Test Schedule',
+    #                                             'sections': [{'id': 'CIS-120-001', 'semester': TEST_SEMESTER},
+    #                                                          {'id': 'CIS-160-001', 'semester': TEST_SEMESTER}]}),
+    #                                 content_type='application/json')
+    #     self.assertEqual(response.status_code, 202)
+    #     response = self.client.get('/api/plan/schedules/')
+    #     self.assertEqual(200, response.status_code)
+    #     self.assertEqual(1, len(response.data))
+    #     self.assertEqual(response.data[0]['name'], 'My Test Schedule')
+    #     self.assertEqual(response.data[0]['semester'], TEST_SEMESTER)
+    #     self.check_serialized_section(response.data[0]['sections'][0],
+    #                                   self.cis120, self.cis120_reviews, True)
+    #     self.check_serialized_section(response.data[0]['sections'][1],
+    #                                   cis160, cis160_reviews, True)
 
     def test_delete(self):
         response = self.client.delete('/api/plan/schedules/'+str(self.s.id)+'/')
