@@ -109,6 +109,20 @@ def vectorize_courses_by_description(courses):
     return scaled
 
 
+def cache_result(function):
+    memo = {}
+
+    def inner(*args, **kwargs):
+        if len(memo) > 0:
+            return memo["val"]
+        result = function(*args, **kwargs)
+        memo["val"] = result
+        return result
+
+    return inner
+
+
+@cache_result
 def courses_by_user_from_csv():
     courses_by_user_dict = {}
     for line in open("./course_data.csv", "r"):
@@ -171,6 +185,19 @@ def best_recommendations(cluster, course_vectors_dict, user_vector, exclude: Opt
     return [course for course, _ in heapq.nlargest(n_recommendations, recs, lambda x: x[1])]
 
 
+def recommend_courses(course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses, n_recommendations=5):
+    max_similarity = 0
+    best_cluster_index = -1
+    for cluster_index, centroid in enumerate(cluster_centroids):
+        similarity = np.dot(centroid, user_vector) / (np.linalg.norm(centroid) * np.linalg.norm(user_vector))
+        if similarity > max_similarity:
+            max_similarity = similarity
+            best_cluster_index = cluster_index
+
+    return best_recommendations(clusters[best_cluster_index], course_vectors_dict, user_vector, exclude=user_courses,
+                                n_recommendations=n_recommendations)
+
+
 class Command(BaseCommand):
     help = 'Recommend courses for a user.'
 
@@ -186,13 +213,4 @@ class Command(BaseCommand):
         else:
             user_vector, user_courses = vectorize_user_by_courses(kwargs["courses"].split(","), course_vectors_dict)
 
-        max_similarity = 0
-        best_cluster_index = -1
-        for cluster_index, centroid in enumerate(cluster_centroids):
-            similarity = np.dot(centroid, user_vector) / (np.linalg.norm(centroid) * np.linalg.norm(user_vector))
-            if similarity > max_similarity:
-                max_similarity = similarity
-                best_cluster_index = cluster_index
-
-        print(
-            best_recommendations(clusters[best_cluster_index], course_vectors_dict, user_vector, exclude=user_courses))
+        print(recommend_courses(course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses))
