@@ -526,7 +526,7 @@ ul {
 
 
 .box{
-  height: calc(100vh - 9em - 3em);
+  height: calc(100vh - 10.2em);
   border-radius: 4px;
   box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.09);
 }

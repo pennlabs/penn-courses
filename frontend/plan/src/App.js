@@ -155,7 +155,7 @@ function App() {
         <Provider store={store}>
             {initGA()}
             {logPageView()}
-            <div style={{ padding: "0px 2em 0px 2em" }}>
+            <div style={{ padding: "0px 0px" }}>
                 <SearchBar
                     setView={setView}
                     user={currentUser}
@@ -165,10 +165,10 @@ function App() {
                 <div
                     className="App columns is-mobile main smooth-transition"
                     style={view === 0 ? {
-                        padding: 0,
-                        width: "129%",
+                        padding: "0px 2em",
+                        width: "128%",
                     } : {
-                        padding: 0,
+                        padding: "0px 2em",
                         width: "123%",
                     }}
                 >

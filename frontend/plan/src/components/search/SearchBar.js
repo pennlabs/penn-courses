@@ -197,17 +197,19 @@ function SearchBar({
     }
 
     return (
-        <div className="bar level is-mobile" style={{ height: "auto" }}>
+        <div className="bar level is-mobile" style={{ height: "auto", margin: "0em 0em 1em 0em", borderRadius: "0em" }}>
             <div className="level-left" style={{ maxWidth: "80vw" }}>
                 <div className="level-item">
-                    <img
-                        src="/static/favicon.ico"
-                        alt=""
-                        style={{
-                            height: "2.5rem",
-                            paddingLeft: "1.5rem",
-                        }}
-                    />
+                    <a href="/">
+                        <img
+                            src="/static/favicon.ico"
+                            alt=""
+                            style={{
+                                height: "2.5rem",
+                                paddingLeft: "1.5rem",
+                            }}
+                        />
+                    </a>
                 </div>
                 <div className="level-item" id="searchdiv">
                     <SearchField
@@ -225,7 +227,7 @@ function SearchBar({
                     {dropDowns}
                 </div>
             </div>
-            <div className="level-right is-hidden-mobile">
+            <div className="level-right">
                 <div className="level-item">
                     <button
                         className="button is-white"
@@ -247,8 +249,6 @@ function SearchBar({
                       Clear all
                     </button>
                 </div>
-            </div>
-            <div className="level-right">
                 <div className="level-item">
                     <AccountIndicator user={user} setUser={setUser} onLeft={false} />
                 </div>
