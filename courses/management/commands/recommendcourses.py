@@ -1,5 +1,6 @@
 import math
-from typing import Set
+from collections import defaultdict
+from typing import Set, List, Dict
 
 import numpy as np
 from accounts.middleware import User
@@ -34,26 +35,46 @@ def vectorize_user(user, course_vectors_dict):
         for course in sections_to_courses(schedule.sections.all()))
 
 
-def vectorize_courses_by_schedule_presence():
+def generate_courses_by_user():
     """
-    Return a dict mapping course ids to a vector wherein each component contains how many times the corresponding user
-    has that course in their schedules.
-    :return:
+    :return: A list in which each item is a dict corresponding with the multiset of courses for a particular user
     """
-    users = User.objects.all()
-    num_users = len(users)
-    id_transformer = {user.pk: i for i, user in enumerate(users)}
-    course_vectors_dict = {}
+    courses_by_user_dict = {}
     for schedule in Schedule.objects.all():
-        vector_component = id_transformer[schedule.person.pk]
         for course in sections_to_courses(schedule.sections.all()):
+            person_id = schedule.person.pk
+            user_courses: Dict[str, int]
+            if person_id not in courses_by_user_dict:
+                user_courses = {}
+                courses_by_user_dict[person_id] = user_courses
+            else:
+                user_courses = courses_by_user_dict[person_id]
+            if course in user_courses:
+                user_courses[course] += 1
+            else:
+                user_courses[course] = 1
+    return list(courses_by_user_dict.values())
+
+
+def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]):
+    """
+    @:param courses_by_user: A list of dicts in which each dict maps a course id to the number of times a user has it
+    in their schedules.
+    :return: A dict mapping course ids to a vector wherein each component contains how many times the corresponding user
+    has that course in their schedules.
+    """
+    num_users = len(courses_by_user)
+    course_vectors_dict = {}
+    for user_index, user_courses in enumerate(courses_by_user):
+        for course, frequency in user_courses.items():
             relevant_vector: np.ndarray
             if course not in course_vectors_dict:
                 relevant_vector = np.zeros(num_users)
                 course_vectors_dict[course] = relevant_vector
             else:
                 relevant_vector = course_vectors_dict[course]
-            relevant_vector[vector_component] += 1
+            relevant_vector[user_index] = frequency
+
     courses, vectors = zip(*course_vectors_dict.items())
     # reduce dimensionality to the log of the number of users
     vectors = np.array(vectors)
@@ -79,7 +100,8 @@ def vectorize_courses_by_description(courses):
 
 def generate_course_vectors_dict():
     courses_to_vectors = {}
-    courses, courses_vectorized_by_schedule_presence = zip(*vectorize_courses_by_schedule_presence().items())
+    courses, courses_vectorized_by_schedule_presence = zip(
+        *vectorize_courses_by_schedule_presence(generate_courses_by_user()).items())
     courses_vectorized_by_description = vectorize_courses_by_description(courses)
     for course, schedule_vector, description_vector in zip(courses, courses_vectorized_by_schedule_presence,
                                                            courses_vectorized_by_description):
