@@ -7,14 +7,13 @@ import importlib
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from options.models import Option
 from rest_framework.test import APIClient
 
 from alert import tasks
 from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, register_for_course
 from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
-from courses.util import create_mock_data, get_or_create_course_and_section
-from options.models import Option
-
+from courses.util import get_or_create_course_and_section, record_update, update_course_from_record
 
 TEST_SEMESTER = '2019A'
 
@@ -29,7 +28,7 @@ def set_semester():
 
 @patch('alert.models.Text.send_alert')
 @patch('alert.models.Email.send_alert')
-@override_settings(SWITCHBOARD_TEST_APP='pca')
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
 class SendAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -63,7 +62,7 @@ class SendAlertTestCase(TestCase):
         self.assertTrue(mock_text.called)
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pca')
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
 class RegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -146,7 +145,7 @@ class RegisterTestCase(TestCase):
         self.assertEqual(0, len(Registration.objects.all()))
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pca')
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
 class ResubscribeTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -215,7 +214,7 @@ class ResubscribeTestCase(TestCase):
         self.assertEqual(result, reg3)
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pca')
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -266,7 +265,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
 
 
 @patch('alert.views.alert_for_course')
-@override_settings(SWITCHBOARD_TEST_APP='pca')
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
 class WebhookViewTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -446,7 +445,7 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(0, StatusUpdate.objects.count())
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pca')
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
 class APIRegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -535,8 +534,8 @@ class APIRegisterTestCase(TestCase):
         self.assertEqual(0, Registration.objects.count())
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pca')
-class StatusUpdateTest(TestCase):
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
+class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
         set_semester()
         _, cis120_section = create_mock_data('CIS-120-001', TEST_SEMESTER)

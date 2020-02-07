@@ -15,20 +15,21 @@ import os
 import dj_database_url
 
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DOMAIN = os.environ.get("DOMAIN", "example.com")
 
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '&3!f%)t!o$+dwu3(jao7ipi2f4(k-2ua7@28+^yge-cn7c!_14'
+SECRET_KEY = os.environ.get("SECRET_KEY", "&3!f%)t!o$+dwu3(jao7ipi2f4(k-2ua7@28+^yge-cn7c!_14")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -48,31 +49,18 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'corsheaders',
 
-    'shortener',
+    'shortener.apps.ShortenerConfig',
     'accounts.apps.AccountsConfig',
+    'options.apps.OptionsConfig',
 
     'alert',
     'courses',
-    'options',
     'plan',
     'review',
 ]
 
-# From labs-accounts
-AUTHENTICATION_BACKENDS = [
-    'accounts.backends.LabsUserBackend',
-    'django.contrib.auth.backends.ModelBackend',
-]
-
-# From labs-accounts
-PLATFORM_ACCOUNTS = {
-    'REDIRECT_URI': os.environ.get('LABS_REDIRECT_URI', 'https://api.penncourses.org/accounts/callback/'),
-    'ADMIN_PERMISSION': 'courses_admin',
-}
-
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'PennCourses.middleware.SwitchboardMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -81,19 +69,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'accounts.middleware.OAuth2TokenMiddleware',
 ]
 
-ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'PennCourses.urls.base')
-
-FRONTEND_DIR = os.path.abspath(
-    os.path.join(BASE_DIR, '..', 'frontend'))
+ROOT_URLCONF = os.environ.get('ROOT_URLCONF', 'PennCourses.urls.api')
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            FRONTEND_DIR
-        ],
+        "DIRS": ["PennCourses/templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -106,9 +90,6 @@ TEMPLATES = [
     },
 ]
 
-STATICFILES_DIRS = [os.path.join(FRONTEND_DIR, 'plan', 'build', 'static'),
-                    os.path.join(FRONTEND_DIR, 'plan', 'build', 'icons')]
-
 WSGI_APPLICATION = 'PennCourses.wsgi.application'
 
 
@@ -116,7 +97,7 @@ WSGI_APPLICATION = 'PennCourses.wsgi.application'
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default='mysql://pc:password@127.0.0.1:3306/penncourses')
+    "default": dj_database_url.config(default="sqlite:///" + os.path.join(BASE_DIR, "db.sqlite3"))
 }
 
 
@@ -139,12 +120,20 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Authentication Backends
+
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.LabsUserBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/New_York'
 
 USE_I18N = True
 
@@ -156,9 +145,22 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
-STATIC_URL = '/static/'
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_ROOT = os.path.join(PROJECT_DIR, 'static')
+STATIC_URL = '/assets/'
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+
+# DLA Settings
+
+PLATFORM_ACCOUNTS = {
+    "REDIRECT_URI": os.environ.get(
+        "LABS_REDIRECT_URI", "http://localhost:8000/accounts/callback/"
+    ),
+    "CLIENT_ID": "clientid",
+    "CLIENT_SECRET": "supersecretclientsecret",
+    "PLATFORM_URL": "https://platform-dev.pennlabs.org",
+    "CUSTOM_ADMIN": False,
+}
+
 
 # Penn OpenData API
 API_KEY = os.environ.get('API_KEY', '')
@@ -169,8 +171,8 @@ API_URL = 'https://esb.isc-seo.upenn.edu/8091/open_data/course_section_search'
 WEBHOOK_USERNAME = os.environ.get('WEBHOOK_USERNAME', 'webhook')
 WEBHOOK_PASSWORD = os.environ.get('WEBHOOK_PASSWORD', 'password')
 
-# Amazon SES Credentials
-SMTP_HOST = os.environ.get('SMTP_HOST', 'email-smtp.us-east-1.amazonaws.com')
+# Email Configuration
+SMTP_HOST = os.environ.get('SMTP_HOST', '')
 SMTP_PORT = os.environ.get('SMTP_PORT', 587)
 SMTP_USERNAME = os.environ.get('SMTP_USERNAME', '')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
@@ -199,5 +201,3 @@ REST_FRAMEWORK = {
 INTERNAL_IPS = [
     '127.0.0.1'
 ]
-
-SWITCHBOARD_TEST_APP = None

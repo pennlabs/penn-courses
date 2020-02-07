@@ -10,7 +10,12 @@ export default function Times(props) {
     const intToTime = (t) => {
         let hour = Math.floor(t % 12);
         const min = (t % 1) * 60;
-        const meridian = t < 12 ? "AM" : "PM";
+        let meridian;
+        if (t === 24) {
+            meridian = "AM";
+        } else {
+            meridian = t < 12 ? "AM" : "PM";
+        }
         if (hour === 0) {
             hour = 12;
         }

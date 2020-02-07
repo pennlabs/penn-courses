@@ -4,6 +4,16 @@ from rest_framework import serializers
 from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserProfile
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = [
+            'username',
+            'first_name',
+            'last_name',
+        ]
+
+
 class MeetingSerializer(serializers.ModelSerializer):
     room = serializers.StringRelatedField()
 

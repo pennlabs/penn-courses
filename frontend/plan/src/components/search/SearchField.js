@@ -1,30 +1,23 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { isMobileOnly } from "react-device-detect";
 
 export function SearchField({
-    startSearch, updateSearchText, filterData, isDisabled, setTab,
+    startSearch, updateSearchText, filterData, isDisabled, setTab, mobileView,
 }) {
     const [searchValue, setSearchValue] = useState("");
-    const [searchTimeout, setSearchTimeout] = useState();
 
     const handleChangeVal = (event) => {
         const searchText = event.target.value;
+        updateSearchText(searchText);
+        startSearch({
+            ...filterData,
+            searchString: searchText,
+        });
         setSearchValue(searchText);
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
-        }
-        setSearchTimeout(setTimeout(() => {
-            updateSearchText(searchText);
-            startSearch({
-                ...filterData,
-                searchString: searchText,
-            });
-        }, 1000));
     };
 
     return (
-        <div role="button" onClick={() => (isMobileOnly ? setTab(0) : null)} className="control has-icons-left">
+        <div role="button" onClick={() => (mobileView ? setTab(0) : null)} className="control has-icons-left">
             <input
                 id="searchbar"
                 type="text"
@@ -49,4 +42,5 @@ SearchField.propTypes = {
     filterData: PropTypes.object,
     isDisabled: PropTypes.bool,
     setTab: PropTypes.func,
+    mobileView: PropTypes.bool,
 };

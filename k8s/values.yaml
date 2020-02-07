@@ -1,0 +1,51 @@
+deploy_version: 0.1.12
+applications:
+  - name: redis
+    image: redis
+    tag: "4.0"
+    port: 6379
+  - name: celery
+    image: pennlabs/penn-courses-backend
+    secret: penn-courses
+    cmd: ["celery", "worker", "-A", "PennCourses", "-Q", "alerts,celery", "-linfo"]
+    extraEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: PennCourses.settings.production
+  - name: beat
+    image: pennlabs/penn-courses-backend
+    secret: penn-courses
+    cmd: ["celery", "-A", "PennCourses", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+    extraEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: PennCourses.settings.production
+  - name: backend
+    image: pennlabs/penn-courses-backend
+    secret: penn-courses
+    ingress:
+      hosts:
+        - host: penncourseplan.com
+          paths: ["/api", "/admin", "/accounts", "/assets"]
+    extraEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: PennCourses.settings.production
+  - name: plan
+    image: pennlabs/pcp-frontend
+    ingress:
+      hosts:
+        - host: penncourseplan.com
+          paths: ["/"]
+    extraEnv:
+      - name: REACT_APP_BACKEND_URL
+        value: https://penncourseplan.com/api/plan
+  - name: alert
+    image: pennlabs/penn-courses-backend
+    secret: penn-courses
+    ingress:
+      hosts:
+        - host: penncoursealert.com
+          paths: ["/"]
+    extraEnv:
+      - name: ROOT_URLCONF
+        value: PennCourses.urls.pca
+      - name: DJANGO_SETTINGS_MODULE
+        value: PennCourses.settings.production

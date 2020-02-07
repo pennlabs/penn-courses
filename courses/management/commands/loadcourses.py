@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from courses.tasks import load_courses, load_requirements
+from courses.tasks import load_courses, load_requirements, set_all_status
 
 
 class Command(BaseCommand):
@@ -18,3 +18,4 @@ class Command(BaseCommand):
         load_courses(query=kwargs['query'], semester=kwargs['semester'])
         load_requirements(school='SEAS', semester=kwargs['semester'])
         load_requirements(school='WH', semester=kwargs['semester'])
+        set_all_status(semester=kwargs['semester'])

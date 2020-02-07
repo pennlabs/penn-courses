@@ -1,5 +1,4 @@
 import base64
-import datetime
 import json
 import logging
 
@@ -9,6 +8,8 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonRespons
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from options.models import get_bool, get_value
+
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -19,7 +20,6 @@ from alert.serializers import RegistrationSerializer
 from alert.tasks import send_course_alerts
 from courses.models import PCA_REGISTRATION, APIKey
 from courses.util import record_update, update_course_from_record
-from options.models import get_bool, get_value
 
 
 logger = logging.getLogger(__name__)
@@ -153,7 +153,6 @@ def accept_webhook(request):
     if 'json' not in request.content_type.lower():
         return HttpResponse('Request expected in JSON', status=415)
 
-    print('{}: webhook request body: {}'.format(datetime.datetime.now(), request.body))
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:

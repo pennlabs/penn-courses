@@ -3,11 +3,11 @@ import logging
 import redis
 from celery import shared_task
 from django.conf import settings
+from options.models import get_value
 
 from alert.models import Registration
 from courses.models import StatusUpdate
 from courses.util import get_course_and_section, update_course_from_record
-from options.models import get_value
 
 
 logger = logging.getLogger(__name__)
