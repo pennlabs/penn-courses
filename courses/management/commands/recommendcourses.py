@@ -1,7 +1,7 @@
 import heapq
 import math
 from collections import defaultdict
-from typing import Set, List, Dict
+from typing import Set, List, Dict, Optional
 
 import numpy as np
 from accounts.middleware import User
@@ -31,9 +31,9 @@ def vectorize_user(user, course_vectors_dict):
     :return:
     """
     user_pk = User.objects.filter(username=user)[0].pk
-    return sum(
-        course_vectors_dict[course] for schedule in Schedule.objects.filter(person=user_pk)
-        for course in sections_to_courses(schedule.sections.all()))
+    courses = [course for schedule in Schedule.objects.filter(person=user_pk)
+               for course in sections_to_courses(schedule.sections.all())]
+    return sum(course_vectors_dict[course] for course in courses), set(courses)
 
 
 def generate_courses_by_user():
@@ -140,7 +140,7 @@ def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     return courses_to_vectors
 
 
-def generate_course_clusters(n_per_cluster=100):
+def generate_course_clusters(n_per_cluster=200):
     course_vectors_dict = generate_course_vectors_dict()
     _courses, _course_vectors = zip(*course_vectors_dict.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
@@ -156,9 +156,12 @@ def generate_course_clusters(n_per_cluster=100):
     return cluster_centroids, clusters, course_vectors_dict
 
 
-def best_recommendations(cluster, course_vectors_dict, user_vector, n_recommendations=10):
+def best_recommendations(cluster, course_vectors_dict, user_vector, exclude: Optional[Set[str]] = None,
+                         n_recommendations=5):
     recs = []
     for course in cluster:
+        if exclude is not None and course in exclude:
+            continue
         course_vector = course_vectors_dict[course]
         similarity = np.dot(course_vector, user_vector) / (np.linalg.norm(course_vector) * np.linalg.norm(user_vector))
         recs.append((course, similarity))
@@ -176,7 +179,7 @@ class Command(BaseCommand):
             raise Exception("User not defined")
 
         cluster_centroids, clusters, course_vectors_dict = generate_course_clusters()
-        user_vector = vectorize_user(kwargs["user"], course_vectors_dict)
+        user_vector, user_courses = vectorize_user(kwargs["user"], course_vectors_dict)
 
         max_similarity = 0
         best_cluster_index = -1
@@ -186,4 +189,5 @@ class Command(BaseCommand):
                 max_similarity = similarity
                 best_cluster_index = cluster_index
 
-        print(best_recommendations(clusters[best_cluster_index], course_vectors_dict, user_vector))
+        print(
+            best_recommendations(clusters[best_cluster_index], course_vectors_dict, user_vector, exclude=user_courses))
