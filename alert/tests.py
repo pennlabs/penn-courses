@@ -27,55 +27,6 @@ def set_semester():
     Option(key='SEMESTER', value=TEST_SEMESTER, value_type='TXT').save()
 
 
-def override_delay(modules_names, before_func, before_kwargs):
-    """
-    A function that makes delay()ed functions synchronous for testing.  Please read the full docs (RTFM)
-    before using to prevent unintended behavior or errors.
-    See AlertRegistrationTestCase.simulate_alert for an example of how to use this function
-
-    Args:
-        modules_names: a list of 2-tuples of the form (module, name) where module is the module in which
-            the delay()ed function is located and name is its name.  Note that each 2-tuple corresponds to
-            exactly one delay()ed function.
-            Make sure to order the delayed functions' 2-tuples in the
-            modules_names list in the order that they will be executed.
-            Also, note that each delay()ed function after the first must be
-            triggered by the previous one (directly or indirectly).  Otherwise you could just
-            call this function multiple times.  If this condition is not met, an error will be thrown.
-            For more complicated use-cases (like patching functions between delay()ed functions),
-            you will have to implement the functionality of this function yourself, in a custom way tailored to your
-            use-case.
-            Example of valid modules_names argument (from AlertRegistrationTestCase.simulate_alert):
-                [('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')]
-        before_func: a function (not its name, the actual function as a variable) which will be executed to trigger
-            the first delay()ed function in modules_names.  Note that this function MUST trigger the first
-            delay()ed function in modules_names or an error will be thrown.
-            Example of a valid before_func argument (from AlertRegistrationTestCase.simulate_alert):
-                a function simulating the webhook firing which causes send_course_alerts.delay() to be called
-        before_kwargs: a dictionary of keyword-value arguments which will be unpacked and passed into before_func
-    """
-    if len(modules_names) > 0:
-        mn = modules_names[-1]
-        with patch(mn[0]+'.'+mn[1]+'.delay') as mock_func:
-            mock_func.side_effect = getattr(importlib.import_module(mn[0]), mn[1])
-            if len(modules_names) == 1:
-                before_func(**before_kwargs)
-            else:
-                override_delay(modules_names[:-1], before_func, before_kwargs)
-
-
-
-'''
-def override_delay(func_module, func_name, return_value, before_function_called, before_args, before_kwargs,
-                   after_function_called, after_args, after_kwargs):
-    with patch(func_module+'.'+func_name+'.delay', return_value=return_value) as not_delayed_anymore:
-        before_ret = before_function_called(*before_args, **before_kwargs)
-        ca = not_delayed_anymore.call_args
-        getattr(importlib.import_module(func_module), func_name)(*ca[0], **ca[1])
-        return after_function_called(*after_args, **{**after_kwargs, **(before_ret if before_ret is not None else {})})
-'''
-
-
 @patch('alert.models.Text.send_alert')
 @patch('alert.models.Email.send_alert')
 @override_settings(SWITCHBOARD_TEST_APP='pca')
@@ -924,6 +875,44 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(403, response.status_code)
 
 
+
+def override_delay(modules_names, before_func, before_kwargs):
+    """
+    A function that makes delay()ed functions synchronous for testing.  Please read the full docs (RTFM)
+    before using to prevent unintended behavior or errors.
+    See AlertRegistrationTestCase.simulate_alert for an example of how to use this function
+
+    Args:
+        modules_names: a list of 2-tuples of the form (module, name) where module is the module in which
+            the delay()ed function is located and name is its name.  Note that each 2-tuple corresponds to
+            exactly one delay()ed function.
+            Make sure to order the delayed functions' 2-tuples in the
+            modules_names list in the order that they will be executed.
+            Also, note that each delay()ed function after the first must be
+            triggered by the previous one (directly or indirectly).  Otherwise you could just
+            call this function multiple times.  If this condition is not met, an error will be thrown.
+            For more complicated use-cases (like patching functions between delay()ed functions),
+            you will have to implement the functionality of this function yourself, in a custom way tailored to your
+            use-case.
+            Example of valid modules_names argument (from AlertRegistrationTestCase.simulate_alert):
+                [('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')]
+        before_func: a function (not its name, the actual function as a variable) which will be executed to trigger
+            the first delay()ed function in modules_names.  Note that this function MUST trigger the first
+            delay()ed function in modules_names or an error will be thrown.
+            Example of a valid before_func argument (from AlertRegistrationTestCase.simulate_alert):
+                a function simulating the webhook firing which causes send_course_alerts.delay() to be called
+        before_kwargs: a dictionary of keyword-value arguments which will be unpacked and passed into before_func
+    """
+    if len(modules_names) > 0:
+        mn = modules_names[-1]
+        with patch(mn[0]+'.'+mn[1]+'.delay') as mock_func:
+            mock_func.side_effect = getattr(importlib.import_module(mn[0]), mn[1])
+            if len(modules_names) == 1:
+                before_func(**before_kwargs)
+            else:
+                override_delay(modules_names[:-1], before_func, before_kwargs)
+
+
 @override_settings(SWITCHBOARD_TEST_APP='pca')
 class AlertRegistrationTestCase(TestCase):
     def setUp(self):
@@ -987,8 +976,8 @@ class AlertRegistrationTestCase(TestCase):
     def simulate_alert(self, section):
         with patch('alert.alerts.send_email', return_value=True) as send_email: # rename to mock
             with patch('alert.alerts.send_text', return_value=True) as send_text:
-                send_email.side_effect = lambda *args, **kwargs: (print('send_email'), print(args), print(kwargs), None)[3]
-                send_text.side_effect = lambda *args, **kwargs: (print('send_text'), print(args), print(kwargs), None)[3]
+                # send_email.side_effect = lambda *args, **kwargs: (print('send_email'), print(args), print(kwargs), None)[3]
+                # send_text.side_effect = lambda *args, **kwargs: (print('send_text'), print(args), print(kwargs), None)[3]
                 override_delay([('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')],
                                self.simulate_alert_helper_before, {'section': section})
                 self.assertEqual('+11234567890', send_text.call_args[0][0])
@@ -1007,7 +996,6 @@ class AlertRegistrationTestCase(TestCase):
                                     json.dumps({'id': self.registration_cis120.id,
                                                 'resubscribe': True}),
                                     content_type='application/json')
-        print(response.data)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/api/registrations/'+str(self.registration_cis120.id)+'/')
         self.assertEqual(200, response.status_code)

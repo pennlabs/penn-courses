@@ -115,7 +115,6 @@ class Registration(models.Model):
         return '{}/s/{}'.format(settings.PCA_URL, url.short_id)
 
     def alert(self, forced=False, sent_by=''):
-        print('in alert (this should be last), calling text_result or email_result')
         if forced or self.is_active:
             text_result = Text(self).send_alert()
             email_result = Email(self).send_alert()
