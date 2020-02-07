@@ -1,3 +1,4 @@
+import heapq
 import math
 from collections import defaultdict
 from typing import Set, List, Dict
@@ -86,8 +87,15 @@ def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]
     return {course: scaled for course, scaled in zip(courses, scaled)}
 
 
+def get_description(course):
+    try:
+        return Course.objects.filter(full_code=course)[0].description
+    except Exception:
+        return ""
+
+
 def vectorize_courses_by_description(courses):
-    descriptions = [Course.objects.filter(full_code=course)[0].description for course in courses]
+    descriptions = [get_description(course) for course in courses]
     vectorizer = TfidfVectorizer()
     vectors = vectorizer.fit_transform(descriptions)
     dim_reducer = TruncatedSVD(n_components=200)
@@ -98,23 +106,45 @@ def vectorize_courses_by_description(courses):
     return scaled
 
 
-def generate_course_vectors_dict():
+def courses_by_user_from_csv():
+    courses_by_user_dict = {}
+    for line in open("./course_data.csv", "r"):
+        parts = line.split(",")
+        uid, course = parts[0], parts[1]
+        user_courses_dict: Dict[str, int]
+        if uid in courses_by_user_dict:
+            user_courses_dict = courses_by_user_dict[uid]
+        else:
+            user_courses_dict = {}
+            courses_by_user_dict[uid] = user_courses_dict
+        if course not in user_courses_dict:
+            user_courses_dict[course] = 1
+        else:
+            user_courses_dict[course] += 1
+    return list(courses_by_user_dict.values())
+
+
+def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     courses_to_vectors = {}
+    courses_by_user = courses_by_user_from_csv() if from_csv else generate_courses_by_user()
     courses, courses_vectorized_by_schedule_presence = zip(
-        *vectorize_courses_by_schedule_presence(generate_courses_by_user()).items())
+        *vectorize_courses_by_schedule_presence(courses_by_user).items())
     courses_vectorized_by_description = vectorize_courses_by_description(courses)
     for course, schedule_vector, description_vector in zip(courses, courses_vectorized_by_schedule_presence,
                                                            courses_vectorized_by_description):
-        total_vector = np.concatenate([schedule_vector, description_vector])
+        if use_descriptions:
+            total_vector = np.concatenate([schedule_vector, description_vector])
+        else:
+            total_vector = schedule_vector
         courses_to_vectors[course] = total_vector
     return courses_to_vectors
 
 
-def generate_course_clusters():
+def generate_course_clusters(n_per_cluster=100):
     course_vectors_dict = generate_course_vectors_dict()
     _courses, _course_vectors = zip(*course_vectors_dict.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
-    num_clusters = 3
+    num_clusters = round(len(courses) / n_per_cluster)
     model = AgglomerativeClustering(n_clusters=num_clusters, linkage="average", affinity="cosine")
     raw_cluster_result = model.fit_predict(course_vectors)
     clusters = [[] for _ in range(num_clusters)]
@@ -124,6 +154,15 @@ def generate_course_clusters():
     cluster_centroids = [sum(course_vectors_dict[course] for course in cluster) / len(cluster) for cluster in
                          clusters]
     return cluster_centroids, clusters, course_vectors_dict
+
+
+def best_recommendations(cluster, course_vectors_dict, user_vector, n_recommendations=10):
+    recs = []
+    for course in cluster:
+        course_vector = course_vectors_dict[course]
+        similarity = np.dot(course_vector, user_vector) / (np.linalg.norm(course_vector) * np.linalg.norm(user_vector))
+        recs.append((course, similarity))
+    return [course for course, _ in heapq.nlargest(n_recommendations, recs, lambda x: x[1])]
 
 
 class Command(BaseCommand):
@@ -147,4 +186,4 @@ class Command(BaseCommand):
                 max_similarity = similarity
                 best_cluster_index = cluster_index
 
-        print(clusters[best_cluster_index])
+        print(best_recommendations(clusters[best_cluster_index], course_vectors_dict, user_vector))
