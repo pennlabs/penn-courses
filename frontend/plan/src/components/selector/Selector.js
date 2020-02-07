@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
@@ -45,8 +45,7 @@ function Selector(props) {
             maxWidth: "45vh",
         }}
         >
-            <img src="/static/empty-state-search.svg" />
-
+            <img src="/icons/empty-state-search.svg" />
             <h3 style={{
                 fontWeight: "bold",
                 marginBottom: "0.5rem",
@@ -68,11 +67,6 @@ function Selector(props) {
         />
     );
 
-    useEffect(() => {
-        if (courses.length === 1) {
-            getCourse(courses[0].id);
-        }
-    }, [isSearchingCourseInfo]); // eslint-disable-line
 
     if (courses.length > 0 && !course) {
         if (view === 0) {

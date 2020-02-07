@@ -200,16 +200,14 @@ function SearchBar({
         <div className="bar level is-mobile" style={{ height: "auto", margin: "0em 0em 1em 0em", borderRadius: "0em" }}>
             <div className="level-left" style={{ maxWidth: "80vw" }}>
                 <div className="level-item">
-                    <a href="/">
-                        <img
-                            src="/static/favicon.ico"
-                            alt=""
-                            style={{
-                                height: "2.5rem",
-                                paddingLeft: "1.5rem",
-                            }}
-                        />
-                    </a>
+                    <img
+                        src="/icons/favicon.ico"
+                        alt=""
+                        style={{
+                            height: "2.5rem",
+                            paddingLeft: "1.5rem",
+                        }}
+                    />
                 </div>
                 <div className="level-item" id="searchdiv">
                     <SearchField

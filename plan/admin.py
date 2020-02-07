@@ -4,7 +4,7 @@ from plan.models import Schedule
 
 
 class ScheduleAdmin(admin.ModelAdmin):
-    search_fields = ('person', )
+    search_fields = ('person__username', )
     autocomplete_fields = ('person', 'sections')
 
 

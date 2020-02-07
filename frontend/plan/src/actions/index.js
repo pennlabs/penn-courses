@@ -1,6 +1,5 @@
 import fetch from "cross-fetch";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
-import { BACKEND_URL } from "../constants";
 import getCsrf from "../csrf";
 import { MIN_FETCH_INTERVAL } from "../sync_constants";
 
@@ -74,15 +73,7 @@ export const markCartSynced = () => (
     }
 );
 
-const doAPIRequest = (path) => {
-    let uri = null;
-    if (BACKEND_URL) {
-        uri = BACKEND_URL + path;
-    } else {
-        uri = path;
-    }
-    return fetch(uri);
-};
+const doAPIRequest = (path, options = {}) => fetch(`/api/plan${path}`, options);
 
 
 export const duplicateSchedule = scheduleName => (
@@ -315,7 +306,12 @@ export function fetchCourseSearch(filterData) {
         dispatch(updateSearchRequest());
         debouncedCourseSearch(dispatch, filterData)
             .then(res => res.json())
-            .then(res => dispatch(updateSearch(res)))
+            .then((res) => {
+                dispatch(updateSearch(res));
+                if (res.length === 1) {
+                    dispatch(fetchCourseDetails(res[0].id));
+                }
+            })
             .catch(error => dispatch(courseSearchError(error)));
     };
 }
@@ -434,7 +430,7 @@ const rateLimitedFetch = (url, init) => new Promise(((resolve, reject) => {
     // the required amount of time has not elapsed
     const now = Date.now();
     if (now - lastFetched > MIN_FETCH_INTERVAL) {
-        fetch(url, init)
+        doAPIRequest(url, init)
             .then((result) => {
                 resolve(result);
             })
@@ -467,7 +463,7 @@ export function fetchCourseDetails(courseId) {
  */
 export const fetchBackendSchedulesAndInitializeCart = (cart,
     onComplete = () => null) => (dispatch) => {
-    fetch("/schedules/")
+    doAPIRequest("/schedules/")
         .then(res => res.json())
         .then((schedules) => {
             if (schedules) {
@@ -505,7 +501,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         name,
         sections: schedule.meetings,
     };
-    fetch(`/schedules/${id}/`, {
+    doAPIRequest(`/schedules/${id}/`, {
         method: "PUT",
         credentials: "include",
         mode: "same-origin",
