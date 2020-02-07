@@ -1,6 +1,5 @@
 import heapq
 import math
-from collections import defaultdict
 from typing import Set, List, Dict, Optional
 
 import numpy as np
@@ -23,6 +22,10 @@ def sections_to_courses(sections) -> Set[str]:
     return {str(section.course).split(" ")[0] for section in sections}
 
 
+def vectorize_user_by_courses(courses, course_vectors_dict):
+    return sum(course_vectors_dict[course] for course in courses), set(courses)
+
+
 def vectorize_user(user, course_vectors_dict):
     """
     Aggregates a vector over all the courses in the user's schedule
@@ -33,7 +36,7 @@ def vectorize_user(user, course_vectors_dict):
     user_pk = User.objects.filter(username=user)[0].pk
     courses = [course for schedule in Schedule.objects.filter(person=user_pk)
                for course in sections_to_courses(schedule.sections.all())]
-    return sum(course_vectors_dict[course] for course in courses), set(courses)
+    return vectorize_user_by_courses(courses, course_vectors_dict)
 
 
 def generate_courses_by_user():
@@ -173,13 +176,15 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--user', nargs='?', type=str)
+        parser.add_argument('--courses', nargs='?', type=str)
 
     def handle(self, *args, **kwargs):
-        if "user" not in kwargs or kwargs["user"] is None:
-            raise Exception("User not defined")
 
         cluster_centroids, clusters, course_vectors_dict = generate_course_clusters()
-        user_vector, user_courses = vectorize_user(kwargs["user"], course_vectors_dict)
+        if "user" in kwargs and kwargs["user"] is not None:
+            user_vector, user_courses = vectorize_user(kwargs["user"], course_vectors_dict)
+        else:
+            user_vector, user_courses = vectorize_user_by_courses(kwargs["courses"].split(","), course_vectors_dict)
 
         max_similarity = 0
         best_cluster_index = -1
