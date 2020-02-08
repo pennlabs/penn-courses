@@ -48,41 +48,43 @@ const SearchSortDropdown = ({ updateSort }) => {
         };
     });
     return (
-        <div
-            ref={node => setRef(node)}
-            className={`classic dropdown${isActive
-                ? " is-active" : ""}`}
-        >
-            <span className="selected_name">Sort by</span>
+        <div>
+            <span>Sort by</span>
             <div
-                className="classic-dropdown-trigger"
-                onClick={() => setIsActive(!isActive)}
-                role="button"
+                className={`classic dropdown${isActive
+                    ? " is-active" : ""}`}
+                ref={node => setRef(node)}
             >
                 <div
+                    className={`classic-dropdown-trigger myDropdown ${isActive ? "is-active" : ""}`}
+                    role="button"
                     aria-haspopup={true}
                     aria-controls="dropdown-menu"
+                    onClick={() => setIsActive(!isActive)}
                 >
-                    <span className="icon is-small">
-                        <i className="fa fa-chevron-down" aria-hidden="true" />
-                    </span>
+                    <div>{contents[activeItem]}</div>
+                    <div>
+                        <span className="icon">
+                            <i className="fa fa-chevron-down" aria-hidden="true" />
+                        </span>
+                    </div>
                 </div>
-            </div>
-            <div className="dropdown-menu" role="menu">
-                <div className="dropdown-content" style={{ width: "6rem" }}>
-                    {Array.from(contents.entries())
-                        .map(([index, sortType]) => (
-                            <DropdownButton
-                                key={index}
-                                isActive={activeItem === index}
-                                makeActive={() => {
-                                    setActiveItem(index);
-                                    setIsActive(false);
-                                }}
-                                onClick={() => updateSort(sortType)}
-                                text={sortType}
-                            />
-                        ))}
+                <div className="dropdown-menu" role="menu">
+                    <div className="dropdown-content" style={{ width: "6rem" }}>
+                        {Array.from(contents.entries())
+                            .map(([index, sortType]) => (
+                                <DropdownButton
+                                    key={index}
+                                    isActive={activeItem === index}
+                                    makeActive={() => {
+                                        setActiveItem(index);
+                                        setIsActive(false);
+                                    }}
+                                    onClick={() => updateSort(sortType)}
+                                    text={sortType}
+                                />
+                            ))}
+                    </div>
                 </div>
             </div>
         </div>

@@ -6,12 +6,14 @@ const LoginButton = () => (
         href={`/accounts/login/?next=${window.location}`}
         style={{
             padding: "0.5rem",
+            background: "#7674EA",
+            fontWeight: "bold",
             fontSize: "1rem!important",
             paddingRight: "1rem",
             paddingLeft: "1rem",
         }}
     >
-        Login
+        Log In
     </a>
 );
 

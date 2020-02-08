@@ -1,6 +1,6 @@
 .schedule {
     display: grid;
-    height: calc(100% - 10em);
+    height: calc(100vh - 22em);
     margin-bottom: 5px;
     margin-right: 20px;
     column-gap: 0;
@@ -131,6 +131,6 @@ span.verticalLine-last {
   }
 
   .schedule{
-    height:100%;
+    height:calc(100vh - 12em);
   }
 }

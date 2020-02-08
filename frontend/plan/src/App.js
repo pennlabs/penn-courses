@@ -166,49 +166,19 @@ function App() {
                     className="App columns is-mobile main smooth-transition"
                     style={view === 0 ? {
                         padding: "0px 2em",
-                        width: "128%",
+                        width: "123%",
                     } : {
                         padding: "0px 2em",
-                        width: "123%",
+                        width: "118%",
                     }}
                 >
                     <div
-                        className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}
+                        className={view === 0 ? "column smooth-transition is-one-fifth box" : "column smooth-transition is-two-thirds box"}
                     >
-                        <span style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                        }}
-                        >
-                            <h3 style={{
-                                display: "flex",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
-                            }}
-                            >
-                                Search Results
-                            </h3>
-                            <div style={{
-                                float: "right",
-                                display: "flex",
-                            }}
-                            >
-                                <SearchSortDropdown />
-                            </div>
-                        </span>
-                        <div
-                            className="box"
-                            style={{
-                                paddingLeft: 0,
-                                paddingRight: 0,
-                            }}
-                        >
-                            <Selector view={view} />
-                        </div>
+                        <Selector view={view} />
                     </div>
                     <div
-                        className="column is-2"
+                        className="column is-2 box"
                         style={
                             {
                                 display: "flex",
@@ -216,12 +186,7 @@ function App() {
                             }
                         }
                     >
-                        <h3 style={{
-                            display: "flex",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
-                        }}
-                        >
+                        <h3 className="section-header" style={{ borderBottom: "1px solid #e4e4e4" }}>
                             Cart
                         </h3>
                         <Cart />
@@ -232,7 +197,7 @@ function App() {
                             paddingRight: "0px",
                             marginRight: "15px",
                         }}
-                        className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}
+                        className={view === 0 ? "smooth-transition box column is-5" : "smooth-transition box column is-5 hidden"}
                     >
                         <Schedule />
                     </div>

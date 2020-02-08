@@ -93,16 +93,17 @@ const ScheduleSelectorDropdown = ({
             className={`classic dropdown${isActive
                 ? " is-active" : ""}`}
         >
-            <span className="selected_name">{activeName}</span>
             <div
-                className="classic-dropdown-trigger"
+                className="myDropdown"
                 onClick={() => setIsActive(!isActive)}
                 role="button"
             >
                 <div
                     aria-haspopup={true}
                     aria-controls="dropdown-menu"
+                    style={{ margin: "-0.1em" }}
                 >
+                    <span className="selected_name">{activeName}</span>
                     <span className="icon is-small">
                         <i className="fa fa-chevron-down" aria-hidden="true" />
                     </span>
