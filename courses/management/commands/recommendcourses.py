@@ -5,9 +5,10 @@ from typing import Set, List, Dict, Optional
 import numpy as np
 from accounts.middleware import User
 from django.core.management.base import BaseCommand
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import AgglomerativeClustering, KMeans
 from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import normalize
 
 from courses.models import Course
 from plan.models import Schedule
@@ -22,8 +23,14 @@ def sections_to_courses(sections) -> Set[str]:
     return {str(section.course).split(" ")[0] for section in sections}
 
 
+def cosine_similarity(vec_a, vec_b):
+    np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
+
+
 def vectorize_user_by_courses(courses, course_vectors_dict):
-    return sum(course_vectors_dict[course] for course in courses), set(courses)
+    vector = sum(course_vectors_dict[course] for course in courses)
+    vector = vector / np.linalg.norm(vector)
+    return vector, set(courses)
 
 
 def vectorize_user(user, course_vectors_dict):
@@ -85,8 +92,7 @@ def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]
     dim_reducer = PCA(n_components=round(math.log2(num_users + 2)))
     dim_reduced = dim_reducer.fit_transform(vectors)
     # divide the vectors by the average norm
-    norm_avg = sum(np.linalg.norm(vector) for vector in dim_reduced) / len(dim_reduced)
-    scaled = np.array([vector / norm_avg for vector in dim_reduced])
+    scaled = normalize(dim_reduced)
     return {course: scaled for course, scaled in zip(courses, scaled)}
 
 
@@ -101,12 +107,10 @@ def vectorize_courses_by_description(courses):
     descriptions = [get_description(course) for course in courses]
     vectorizer = TfidfVectorizer()
     vectors = vectorizer.fit_transform(descriptions)
-    dim_reducer = TruncatedSVD(n_components=200)
+    dim_reducer = TruncatedSVD(n_components=500)
     vectors = dim_reducer.fit_transform(vectors)
-    # divide the vectors by the average norm
-    norm_avg = sum(np.linalg.norm(vector) for vector in vectors) / len(vectors)
-    scaled = np.array([vector / norm_avg for vector in vectors])
-    return scaled
+    # divide the vectors by their norms
+    return normalize(vectors)
 
 
 def cache_result(function):
@@ -150,19 +154,21 @@ def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     for course, schedule_vector, description_vector in zip(courses, courses_vectorized_by_schedule_presence,
                                                            courses_vectorized_by_description):
         if use_descriptions:
+            if np.linalg.norm(description_vector) == 0:
+                continue
             total_vector = np.concatenate([schedule_vector, description_vector])
         else:
             total_vector = schedule_vector
-        courses_to_vectors[course] = total_vector
+        courses_to_vectors[course] = total_vector / np.linalg.norm(total_vector)
     return courses_to_vectors
 
 
-def generate_course_clusters(n_per_cluster=200):
+def generate_course_clusters(n_per_cluster=100):
     course_vectors_dict = generate_course_vectors_dict()
     _courses, _course_vectors = zip(*course_vectors_dict.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = round(len(courses) / n_per_cluster)
-    model = AgglomerativeClustering(n_clusters=num_clusters, linkage="average", affinity="cosine")
+    model = KMeans(n_clusters=num_clusters)
     raw_cluster_result = model.fit_predict(course_vectors)
     clusters = [[] for _ in range(num_clusters)]
     for course_index, cluster_index in enumerate(raw_cluster_result):
@@ -186,12 +192,12 @@ def best_recommendations(cluster, course_vectors_dict, user_vector, exclude: Opt
 
 
 def recommend_courses(course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses, n_recommendations=5):
-    max_similarity = 0
+    min_distance = -1
     best_cluster_index = -1
     for cluster_index, centroid in enumerate(cluster_centroids):
-        similarity = np.dot(centroid, user_vector) / (np.linalg.norm(centroid) * np.linalg.norm(user_vector))
-        if similarity > max_similarity:
-            max_similarity = similarity
+        distance = np.linalg.norm(centroid - user_vector)
+        if best_cluster_index == -1 or distance < min_distance:
+            min_distance = distance
             best_cluster_index = cluster_index
 
     return best_recommendations(clusters[best_cluster_index], course_vectors_dict, user_vector, exclude=user_courses,
