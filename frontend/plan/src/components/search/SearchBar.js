@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 import "./Search.css";
-import { DropdownButton } from "../DropdownButton";
+import { FilterDropdownButton } from "../FilterDropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
@@ -75,7 +75,7 @@ function SearchBar({
     };
     const dropDowns = (
         <React.Fragment>
-            <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")}>
+            <FilterDropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")}>
                 <SchoolReq
                     startSearch={conditionalStartSearch}
                     schoolReq={schoolReq}
@@ -83,8 +83,8 @@ function SearchBar({
                     addSchoolReq={addSchoolReq}
                     remSchoolReq={remSchoolReq}
                 />
-            </DropdownButton>
-            <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")}>
+            </FilterDropdownButton>
+            <FilterDropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")}>
                 <RangeFilter
                     minRange={0}
                     maxRange={4}
@@ -94,8 +94,8 @@ function SearchBar({
                     startSearch={conditionalStartSearch}
                     rangeProperty="difficulty"
                 />
-            </DropdownButton>
-            <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")}>
+            </FilterDropdownButton>
+            <FilterDropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")}>
                 <RangeFilter
                     minRange={0}
                     maxRange={4}
@@ -105,8 +105,8 @@ function SearchBar({
                     startSearch={conditionalStartSearch}
                     rangeProperty="course_quality"
                 />
-            </DropdownButton>
-            <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")}>
+            </FilterDropdownButton>
+            <FilterDropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")}>
                 <RangeFilter
                     minRange={0}
                     maxRange={4}
@@ -116,8 +116,8 @@ function SearchBar({
                     startSearch={conditionalStartSearch}
                     rangeProperty="instructor_quality"
                 />
-            </DropdownButton>
-            <DropdownButton
+            </FilterDropdownButton>
+            <FilterDropdownButton
                 title="CU"
                 filterData={filterData.cu}
                 defaultFilter={defaultFilters.filterData.cu}
@@ -129,8 +129,8 @@ function SearchBar({
                     checkboxProperty="cu"
                     startSearch={conditionalStartSearch}
                 />
-            </DropdownButton>
-            <DropdownButton
+            </FilterDropdownButton>
+            <FilterDropdownButton
                 title="Type"
                 filterData={filterData.activity}
                 defaultFilter={defaultFilters.filterData.activity}
@@ -142,7 +142,7 @@ function SearchBar({
                     checkboxProperty="activity"
                     startSearch={conditionalStartSearch}
                 />
-            </DropdownButton>
+            </FilterDropdownButton>
         </React.Fragment>
     );
     if (mobileView) {
