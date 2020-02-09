@@ -11,22 +11,22 @@
     transition:0.2s all;
     display:flex;
     font-weight: normal;
-    font-size: 0.8em;
+    font-size: 1em;
     flex-direction: row;
-    border: 1px solid #c9c9c9 !important;
-    margin-left: 1em;
+    margin-left: 0.2em !important;
     align-items: center;
     justify-content: space-space-between;
     border-radius: 5px;
-    padding: 0.3em 0.7em;
+    padding: 0.3em 0.5em;
 }
 
 .myDropdown div span i{
     font-size: 0.8em;
+    padding-left: 0.3em;
 }
 
 .myDropdown:hover {
-    background-color: #ebedff;
+    background-color: rgb(234, 234, 234);
 }
 
 .filterButton {
@@ -132,9 +132,9 @@
     margin-bottom: 0.25rem;
 } */
 
-.classic-dropdown-trigger:hover {
+/* .classic-dropdown-trigger:hover {
     background: rgba(175, 194, 255, 0.27);
-}
+} */
 
 /* .classic.is-active .classic-dropdown-trigger div {
     background: rgba(162, 180, 237, 0.38);

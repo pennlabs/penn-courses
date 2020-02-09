@@ -62,7 +62,7 @@ const SearchSortDropdown = ({ updateSort }) => {
                     aria-controls="dropdown-menu"
                     onClick={() => setIsActive(!isActive)}
                 >
-                    <div>{contents[activeItem]}</div>
+                    <div style={{ fontWeight: "500" }}>{contents[activeItem]}</div>
                     <div>
                         <span className="icon">
                             <i className="fa fa-chevron-down" aria-hidden="true" />

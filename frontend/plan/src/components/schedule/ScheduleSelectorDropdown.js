@@ -95,6 +95,7 @@ const ScheduleSelectorDropdown = ({
         >
             <div
                 className="myDropdown"
+                style={{ marginTop: "-0.2em" }}
                 onClick={() => setIsActive(!isActive)}
                 role="button"
             >
