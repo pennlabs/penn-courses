@@ -1149,6 +1149,8 @@ class AlertRegistrationTestCase(TestCase):
     def test_registrations_get_most_current_after_resubscribe(self):
         pass
 
+# replace recursive get most current with SQL query in gets / puts (change method), and resubscribe (add method)
+
 # test manage.py loadhistory command
 
 # test course status update hook
