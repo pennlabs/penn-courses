@@ -10,7 +10,6 @@ from django.db.models import Avg, FloatField, OuterRef, Q, Subquery
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-
 from options.models import get_value
 
 from review.models import ReviewBit

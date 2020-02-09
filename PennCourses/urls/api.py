@@ -4,7 +4,7 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 from rest_framework.schemas import get_schema_view
 
-from courses.views import UserDetailView
+from courses.views import UserView
 
 
 urlpatterns = [
@@ -27,7 +27,7 @@ urlpatterns = [
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/me/', UserDetailView.as_view()),
+    path('accounts/me/', UserView.as_view()),
     path('accounts/', include('accounts.urls', namespace='accounts')),
     path('api/', include(urlpatterns))
 ]

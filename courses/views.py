@@ -8,7 +8,6 @@ from rest_framework.permissions import IsAuthenticated
 from courses.models import Course, Requirement, Section, StatusUpdate
 from courses.serializers import (CourseDetailSerializer, CourseListSerializer, MiniSectionSerializer,
                                  RequirementListSerializer, StatusUpdateSerializer, UserSerializer)
-from options.models import get_value
 from plan.search import TypedSectionSearchBackend
 
 

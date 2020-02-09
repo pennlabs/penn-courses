@@ -5,6 +5,7 @@ import phonenumbers  # library for parsing and formatting phone numbers.
 from django import urls
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 from shortener.models import Url
@@ -156,6 +157,64 @@ class Registration(models.Model):
                                         resubscribed_from=most_recent_reg)
         new_registration.save()
         return new_registration
+
+    def get_resubscribe_group(self):
+        # DO NOT add variable parameters or reference external variables improperly
+        # (to prevent against SQL injection attacks)
+        # https://docs.djangoproject.com/en/3.0/topics/db/sql/
+        if not isinstance(self.id, int):
+            raise ValueError('ID must be an int')
+        return Registration.objects.raw("""
+            WITH
+            cte_resubscribes_forward AS (
+                SELECT
+                    *
+                FROM
+                    alert_registration
+                WHERE id=%s
+                UNION ALL
+                SELECT
+                    e.*
+                FROM
+                    alert_registration e
+                    INNER JOIN cte_resubscribes_forward o
+                        ON o.id = e.resubscribed_from_id ),
+            cte_resubscribes_backward AS (
+                SELECT
+                    *
+                FROM
+                    alert_registration
+                WHERE id=%s
+                UNION ALL
+                SELECT
+                    e.*
+                FROM
+                    alert_registration e
+                    INNER JOIN cte_resubscribes_backward o
+                        ON o.resubscribed_from_id = e.id )
+            SELECT
+                *
+                FROM
+                    cte_resubscribes_forward
+            UNION
+            SELECT
+                *
+                FROM
+                    cte_resubscribes_backward;""", (self.id, self.id))
+
+    def get_most_current_unstable(self):
+        for r in self.get_resubscribe_group():
+            if not hasattr(r, 'resubscribed_to'):
+                return r
+        raise ObjectDoesNotExist('This means an invariant is violated in the database (a resubscribe group should ' +
+                                 'always have an element with no resubscribed_to)')
+
+    def get_original_registration(self):
+        for r in self.get_resubscribe_group():
+            if not hasattr(r, 'resubscribed_from'):
+                return r
+        raise ObjectDoesNotExist('This means an invariant is violated in the database (a resubscribe group should ' +
+                                 'always have an element with no resubscribed_from)')
 
     def get_most_current(self):
         if hasattr(self, 'resubscribed_to'):

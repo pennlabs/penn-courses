@@ -8,9 +8,8 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonRespons
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from options.models import get_bool, get_value
-
 from django_auto_prefetching import AutoPrefetchViewSetMixin
+from options.models import get_bool, get_value
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response

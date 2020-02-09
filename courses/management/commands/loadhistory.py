@@ -5,9 +5,9 @@ from datetime import datetime
 import pytz
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
+from options.models import get_value
 
 from courses.models import Section, StatusUpdate
-from options.models import get_value
 
 
 class Command(BaseCommand):

@@ -1,19 +1,20 @@
 import base64
+import importlib
 import json
 from unittest.mock import patch
-
-import importlib
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils.dateparse import parse_datetime
 from options.models import Option
 from rest_framework.test import APIClient
 
 from alert import tasks
 from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, register_for_course
 from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
-from courses.util import get_or_create_course_and_section, record_update, update_course_from_record
+from courses.util import create_mock_data, get_or_create_course_and_section
+
 
 TEST_SEMESTER = '2019A'
 
@@ -24,6 +25,43 @@ def contains_all(l1, l2):
 
 def set_semester():
     Option(key='SEMESTER', value=TEST_SEMESTER, value_type='TXT').save()
+
+
+def override_delay(modules_names, before_func, before_kwargs):
+    """
+    A function that makes delay()ed functions synchronous for testing.  Please read the full docs (RTFM)
+    before using to prevent unintended behavior or errors.
+    See AlertRegistrationTestCase.simulate_alert for an example of how to use this function
+
+    Args:
+        modules_names: a list of 2-tuples of the form (module, name) where module is the module in which
+            the delay()ed function is located and name is its name.  Note that each 2-tuple corresponds to
+            exactly one delay()ed function.
+            Make sure to order the delayed functions' 2-tuples in the
+            modules_names list in the order that they will be executed.
+            Also, note that each delay()ed function after the first must be
+            triggered by the previous one (directly or indirectly).  Otherwise you could just
+            call this function multiple times.  If this condition is not met, an error will be thrown.
+            For more complicated use-cases (like patching functions between delay()ed functions),
+            you will have to implement the functionality of this function yourself, in a custom way tailored to your
+            use-case.
+            Example of valid modules_names argument (from AlertRegistrationTestCase.simulate_alert):
+                [('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')]
+        before_func: a function (not its name, the actual function as a variable) which will be executed to trigger
+            the first delay()ed function in modules_names.  Note that this function MUST trigger the first
+            delay()ed function in modules_names or an error will be thrown.
+            Example of a valid before_func argument (from AlertRegistrationTestCase.simulate_alert):
+                a function simulating the webhook firing which causes send_course_alerts.delay() to be called
+        before_kwargs: a dictionary of keyword-value arguments which will be unpacked and passed into before_func
+    """
+    if len(modules_names) > 0:
+        mn = modules_names[-1]
+        with patch(mn[0]+'.'+mn[1]+'.delay') as mock_func:
+            mock_func.side_effect = getattr(importlib.import_module(mn[0]), mn[1])
+            if len(modules_names) == 1:
+                before_func(**before_kwargs)
+            else:
+                override_delay(modules_names[:-1], before_func, before_kwargs)
 
 
 @patch('alert.models.Text.send_alert')
@@ -585,7 +623,7 @@ class CourseStatusUpdateTestCase(TestCase):
         self.assertEqual(0, len(response.data))
 
 
-@override_settings(SWITCHBOARD_TEST_APP='pca')
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
 class UserDetailTestCase(TestCase):
     def setUp(self):
         User.objects.create_user(username='jacob',
@@ -874,45 +912,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(403, response.status_code)
 
 
-
-def override_delay(modules_names, before_func, before_kwargs):
-    """
-    A function that makes delay()ed functions synchronous for testing.  Please read the full docs (RTFM)
-    before using to prevent unintended behavior or errors.
-    See AlertRegistrationTestCase.simulate_alert for an example of how to use this function
-
-    Args:
-        modules_names: a list of 2-tuples of the form (module, name) where module is the module in which
-            the delay()ed function is located and name is its name.  Note that each 2-tuple corresponds to
-            exactly one delay()ed function.
-            Make sure to order the delayed functions' 2-tuples in the
-            modules_names list in the order that they will be executed.
-            Also, note that each delay()ed function after the first must be
-            triggered by the previous one (directly or indirectly).  Otherwise you could just
-            call this function multiple times.  If this condition is not met, an error will be thrown.
-            For more complicated use-cases (like patching functions between delay()ed functions),
-            you will have to implement the functionality of this function yourself, in a custom way tailored to your
-            use-case.
-            Example of valid modules_names argument (from AlertRegistrationTestCase.simulate_alert):
-                [('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')]
-        before_func: a function (not its name, the actual function as a variable) which will be executed to trigger
-            the first delay()ed function in modules_names.  Note that this function MUST trigger the first
-            delay()ed function in modules_names or an error will be thrown.
-            Example of a valid before_func argument (from AlertRegistrationTestCase.simulate_alert):
-                a function simulating the webhook firing which causes send_course_alerts.delay() to be called
-        before_kwargs: a dictionary of keyword-value arguments which will be unpacked and passed into before_func
-    """
-    if len(modules_names) > 0:
-        mn = modules_names[-1]
-        with patch(mn[0]+'.'+mn[1]+'.delay') as mock_func:
-            mock_func.side_effect = getattr(importlib.import_module(mn[0]), mn[1])
-            if len(modules_names) == 1:
-                before_func(**before_kwargs)
-            else:
-                override_delay(modules_names[:-1], before_func, before_kwargs)
-
-
-@override_settings(SWITCHBOARD_TEST_APP='pca')
+@override_settings(ROOT_URLCONF='PennCourses.urls.pca')
 class AlertRegistrationTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -926,6 +926,8 @@ class AlertRegistrationTestCase(TestCase):
         self.client = APIClient()
         self.client.login(username='jacob', password='top_secret')
         _, self.cis120 = create_mock_data('CIS-120-001', TEST_SEMESTER)
+        _, self.cis160 = create_mock_data('CIS-160-001', TEST_SEMESTER)
+        _, self.cis121 = create_mock_data('CIS-121-001', TEST_SEMESTER)
         response = self.client.post('/api/registrations/',
                                     json.dumps({'section': 'CIS-120-001',
                                                 'auto_resubscribe': False}),
@@ -935,19 +937,31 @@ class AlertRegistrationTestCase(TestCase):
 
     @staticmethod
     def convert_date(date):
-        return date.isoformat()[:-6]+'Z' if date is not None else None
+        return parse_datetime(date) if date is not None else None
 
     def check_model_with_response_data(self, model, data):
         self.assertEqual(model.id, data['id'])
         self.assertEqual(model.user.username, data['user'])
+        self.assertEqual(model.section.full_code, data['section'])
         self.assertEqual(model.deleted, data['deleted'])
-        self.assertEqual(self.convert_date(model.deleted_at), data['deleted_at'])
+        self.assertEqual(model.deleted_at, self.convert_date(data['deleted_at']))
         self.assertEqual(model.auto_resubscribe, data['auto_resubscribe'])
         self.assertEqual(model.notification_sent, data['notification_sent'])
-        self.assertEqual(self.convert_date(model.notification_sent_at), data['notification_sent_at'])
-        self.assertEqual(self.convert_date(model.created_at), data['created_at'])
-        self.assertEqual(self.convert_date(model.updated_at), data['updated_at'])
-        self.assertEqual(model.section.full_code, data['section'])
+        self.assertEqual(model.notification_sent_at, self.convert_date(data['notification_sent_at']))
+        self.assertEqual(model.created_at, self.convert_date(data['created_at']))
+        self.assertEqual(model.updated_at, self.convert_date(data['updated_at']))
+
+    def check_model_with_raw_queryset(self, model, qs):
+        self.assertEqual(model.id, qs.id)
+        self.assertEqual(model.user.username, qs.user.username)
+        self.assertEqual(model.section.full_code, qs.section.full_code)
+        self.assertEqual(model.deleted, qs.deleted)
+        self.assertEqual(model.deleted_at, model.deleted_at)
+        self.assertEqual(model.auto_resubscribe, model.auto_resubscribe)
+        self.assertEqual(model.notification_sent, qs.notification_sent)
+        self.assertEqual(model.notification_sent_at, qs.notification_sent_at)
+        self.assertEqual(model.created_at, qs.created_at)
+        self.assertEqual(model.updated_at, qs.updated_at)
 
     def simulate_alert_helper_before(self, section):
         auth = base64.standard_b64encode('webhook:password'.encode('ascii'))
@@ -968,37 +982,148 @@ class AlertRegistrationTestCase(TestCase):
             **headers)
         self.assertEqual(200, res.status_code)
         self.assertTrue('sent' in json.loads(res.content)['message'])
-        self.assertEqual(1, StatusUpdate.objects.count())
-        u = StatusUpdate.objects.get()
-        self.assertTrue(u.alert_sent)
 
-    def simulate_alert(self, section):
-        with patch('alert.alerts.send_email', return_value=True) as send_email: # rename to mock
-            with patch('alert.alerts.send_text', return_value=True) as send_text:
-                # send_email.side_effect = lambda *args, **kwargs: (print('send_email'), print(args), print(kwargs), None)[3]
-                # send_text.side_effect = lambda *args, **kwargs: (print('send_text'), print(args), print(kwargs), None)[3]
+    def simulate_alert(self, section, num_status_updates=1):
+        with patch('alert.alerts.send_email', return_value=True) as send_email_mock:
+            with patch('alert.alerts.send_text', return_value=True) as send_text_mock:
                 override_delay([('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')],
                                self.simulate_alert_helper_before, {'section': section})
-                self.assertEqual('+11234567890', send_text.call_args[0][0])
-                self.assertEqual('j@gmail.com', send_email.call_args[1]['to'])
-
-
+                self.assertEqual(1, send_email_mock.call_count)
+                self.assertEqual(1, send_text_mock.call_count)
+                self.assertEqual('+11234567890', send_text_mock.call_args[0][0])
+                self.assertEqual('j@gmail.com', send_email_mock.call_args[1]['to'])
+                for r in Registration.objects.filter(section=section):
+                    self.assertTrue(r.notification_sent)
+                    self.assertIsNotNone(r.notification_sent_at)
+                self.assertEqual(num_status_updates, StatusUpdate.objects.count())
+                for u in StatusUpdate.objects.all():
+                    self.assertTrue(u.alert_sent)
 
     def test_registrations_get_most_current(self):
-        response = self.client.get('/api/registrations/'+str(self.registration_cis120.id)+'/')
+        response = self.client.get('/api/registrations/1/')
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120, response.data)
 
-    def test_registrations_resubscribe_get_old(self):
-        self.simulate_alert(self.cis120)
+    def test_registrations_resubscribe_get_old_and_history(self):
         response = self.client.post('/api/registrations/',
-                                    json.dumps({'id': self.registration_cis120.id,
+                                    json.dumps({'section': 'CIS-160-001',
+                                                'auto_resubscribe': False}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        response = self.client.get('/api/registrations/2/')
+        self.assertEqual(response.status_code, 200)
+        self.check_model_with_response_data(Registration.objects.get(id=2), response.data)
+        self.simulate_alert(self.cis120, 1)
+        response = self.client.post('/api/registrations/',
+                                    json.dumps({'id': 1,
+                                                'resubscribe': True}),
+                                    content_type='application/json')
+        self.registration_cis120 = Registration.objects.get(id=1)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/api/registrations/1/')
+        self.assertEqual(200, response.status_code)
+        self.check_model_with_response_data(self.registration_cis120.resubscribed_to, response.data)
+        self.simulate_alert(self.cis120, 2)
+        response = self.client.post('/api/registrations/',
+                                    json.dumps({'id': 3,
                                                 'resubscribe': True}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        response = self.client.get('/api/registrations/'+str(self.registration_cis120.id)+'/')
+        response = self.client.post('/api/registrations/',
+                                    json.dumps({'section': 'CIS-121-001',
+                                                'auto_resubscribe': False}),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.registration_cis120 = Registration.objects.get(id=1)
+        response = self.client.get('/api/registrations/')
         self.assertEqual(200, response.status_code)
-        self.check_model_with_response_data(self.registration_cis120.resubscribed_to, response.data)
+        self.assertEqual(3, len(response.data))
+        fourth_data = next(item for item in response.data if item['id'] == 4)
+        second_data = next(item for item in response.data if item['id'] == 2)
+        fifth_data = next(item for item in response.data if item['id'] == 5)
+        self.check_model_with_response_data(self.registration_cis120.resubscribed_to.resubscribed_to, fourth_data)
+        self.check_model_with_response_data(Registration.objects.get(id=2), second_data)
+        self.check_model_with_response_data(Registration.objects.get(id=5), fifth_data)
+        response = self.client.get('/api/registrationhistory/')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(5, len(response.data))
+        first_data = next(item for item in response.data if item['id'] == 1)
+        first_ob = Registration.objects.get(id=1)
+        self.check_model_with_response_data(self.registration_cis120, first_data)
+        self.assertIsNone(first_ob.resubscribed_from)
+        self.assertTrue(self.registration_cis120.notification_sent)
+        self.assertIsNotNone(self.registration_cis120.notification_sent_at)
+        second_data = next(item for item in response.data if item['id'] == 2)
+        second_ob = Registration.objects.get(id=2)
+        self.check_model_with_response_data(second_ob, second_data)
+        self.assertIsNone(second_ob.resubscribed_from)
+        self.assertFalse(hasattr(second_ob, 'resubscribed_to'))
+        self.assertFalse(second_data['notification_sent'])
+        self.assertIsNone(second_data['notification_sent_at'])
+        third_data = next(item for item in response.data if item['id'] == 3)
+        third_ob = Registration.objects.get(id=3)
+        self.assertEquals(self.registration_cis120.resubscribed_to, Registration.objects.get(id=3))
+        self.assertEquals(first_ob, third_ob.resubscribed_from)
+        self.check_model_with_response_data(self.registration_cis120.resubscribed_to, third_data)
+        self.assertTrue(third_data['notification_sent'])
+        self.assertIsNotNone(third_data['notification_sent_at'])
+        fourth_data = next(item for item in response.data if item['id'] == 4)
+        fourth_ob = Registration.objects.get(id=4)
+        self.assertEquals(self.registration_cis120.resubscribed_to.resubscribed_to, fourth_ob)
+        self.check_model_with_response_data(self.registration_cis120.resubscribed_to.resubscribed_to, fourth_data)
+        self.assertEquals(third_ob, fourth_ob.resubscribed_from)
+        self.assertFalse(hasattr(fourth_ob, 'resubscribed_to'))
+        self.assertFalse(fourth_data['notification_sent'])
+        self.assertIsNone(fourth_data['notification_sent_at'])
+        fifth_data = next(item for item in response.data if item['id'] == 5)
+        fifth_ob = Registration.objects.get(id=5)
+        self.check_model_with_response_data(fifth_ob, fifth_data)
+        self.assertIsNone(fifth_ob.resubscribed_from)
+        self.assertFalse(hasattr(fifth_ob, 'resubscribed_to'))
+        self.assertFalse(fifth_data['notification_sent'])
+        self.assertIsNone(fifth_data['notification_sent_at'])
+
+    def test_get_resubscribe_group(self):
+        self.client.post('/api/registrations/',
+                         json.dumps({'section': 'CIS-160-001',
+                                     'auto_resubscribe': False}),
+                         content_type='application/json')
+        self.simulate_alert(self.cis120, 1)
+        self.client.post('/api/registrations/',
+                         json.dumps({'id': 1,
+                                     'resubscribe': True}),
+                         content_type='application/json')
+        self.simulate_alert(self.cis120, 2)
+        self.client.post('/api/registrations/',
+                         json.dumps({'id': 3,
+                                     'resubscribe': True}),
+                         content_type='application/json')
+        self.client.post('/api/registrations/',
+                         json.dumps({'section': 'CIS-121-001',
+                                     'auto_resubscribe': False}),
+                         content_type='application/json')
+        self.registration_cis120 = Registration.objects.get(id=1)
+        first = Registration.objects.get(id=1)
+        second = Registration.objects.get(id=3)
+        third = Registration.objects.get(id=4)
+        self.assertEqual(len(first.get_resubscribe_group()), 3)
+        self.assertEqual(len(second.get_resubscribe_group()), 3)
+        self.assertEqual(len(third.get_resubscribe_group()), 3)
+        self.assertTrue(first in second.get_resubscribe_group())
+        self.assertTrue(second in first.get_resubscribe_group())
+        self.assertTrue(first in third.get_resubscribe_group())
+        self.assertTrue(third in first.get_resubscribe_group())
+        self.assertTrue(second in third.get_resubscribe_group())
+        self.assertTrue(third in second.get_resubscribe_group())
+
+    def test_get_most_current(self):
+        pass
+
+    def test_get_original_registration(self):
+        pass
+
+    def test_get_most_current_rec(self):
+        pass
 
     def test_registrations_list_only_current(self):
         pass
@@ -1023,3 +1148,11 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_registrations_get_most_current_after_resubscribe(self):
         pass
+
+# test manage.py loadhistory command
+
+# test course status update hook
+
+# fix plan list order
+
+# test integration with other code, Davis (UserDetail)
