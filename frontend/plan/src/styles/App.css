@@ -541,8 +541,9 @@ ul {
 @media all and (max-width: 800px){
   .box{
     min-height: calc(100vh - 8em);
-    height: 100%;
+    height: auto;
     box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);
+    padding:0.3em;
   }
   html{
     font-size: 15px;
@@ -891,7 +892,7 @@ ul {
   transition:250ms ease bottom;
   left:0;
   right:0;
-  padding: 0 0 0.7rem!important;
+  padding: 0rem 0 0.7rem!important;
 }
 
 .footer:hover{

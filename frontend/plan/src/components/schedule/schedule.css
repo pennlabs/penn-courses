@@ -119,7 +119,8 @@ span.verticalLine-last {
       position: absolute;
       white-space: nowrap;
       top: -9px;
-      left: -15px;
+      left: -10px;
+      transform: rotate(-60deg);
   }
 }
 

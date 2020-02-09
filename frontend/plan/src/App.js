@@ -22,7 +22,6 @@ import Selector from "./components/selector/Selector";
 import Footer from "./components/footer";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
-import SearchSortDropdown from "./components/search/SearchSortDropdown";
 import {
     openModal
 } from "./actions";
@@ -112,36 +111,13 @@ function App() {
                     onSwitching={scrollTop}
                     onChangeIndex={setTab}
                 >
-                    <div style={{
-                        paddingLeft: "10px",
-                        paddingRight: "10px",
-                    }}
-                    >
-                        <div>
-                            <div style={{
-                                display: "flex",
-                                flexDirection: "row",
-                                justifyContent: "space-around",
-                                margin: "10px",
-                            }}
-                            >
-                                <SearchSortDropdown />
-                            </div>
-                            <div
-                                className="box"
-                                style={{
-                                    paddingLeft: 0,
-                                    paddingRight: 0,
-                                }}
-                            >
-                                <Selector mobileView={true} view={0} />
-                            </div>
-                        </div>
+                    <div className="box">
+                        <Selector view={0} mobileView={true} />
                     </div>
                     <div style={{ padding: "10px" }}>
                         <Cart setTab={setTab} mobileView={true} />
                     </div>
-                    <div style={{ padding: "10px" }}>
+                    <div className="box" style={{ padding: "10px" }}>
                         <Schedule setTab={setTab} mobileView={true} />
                     </div>
                 </SwipeableViews>

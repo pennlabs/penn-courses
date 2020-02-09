@@ -25,6 +25,7 @@ function Selector(props) {
         isSearchingCourseInfo,
         sortMode,
         view,
+        mobileView,
     } = props;
 
     const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && view === 0);
@@ -129,7 +130,7 @@ function Selector(props) {
     } else {
         if (courses.length > 0 && !course) {
             element = (
-                <div style={{ height: "calc(100vh - 8em)" }}>
+                <div style={mobileView ? {} : { height: "calc(100vh - 8em)" }}>
                     {header}
                     {courseList}
                 </div>
@@ -168,6 +169,7 @@ Selector.propTypes = {
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
     view: PropTypes.number,
+    mobileView: PropTypes.bool,
 };
 
 const mapStateToProps = state => (

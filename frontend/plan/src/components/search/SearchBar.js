@@ -166,6 +166,7 @@ function SearchBar({
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
+                        mobileView={mobileView}
                     />
                     <div
                         style={{ padding: "0.5rem" }}
@@ -214,6 +215,7 @@ function SearchBar({
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
+                        mobielView={mobileView}
                     />
                 </div>
 
