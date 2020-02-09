@@ -14,9 +14,26 @@ from courses.models import Course
 from plan.models import Schedule
 
 
+def lookup_course(course):
+    try:
+        return Course.objects.filter(full_code=course)[0]
+    except Exception:
+        return None
+
+
+def normalize_class_name(class_name):
+    course_obj: Course = lookup_course(class_name)
+    if course_obj is None:
+        return class_name
+    class_name = str(course_obj.primary_listing)
+    if " " in class_name:
+        class_name = class_name.split(" ")[0]
+    return class_name
+
+
 def sections_to_courses(sections) -> Set[str]:
     """
-    Encodes a list section objects as a set of the base course code (e.g., CIS-140)
+    Encodes a list of section objects as a set of the base course code (e.g., CIS-140)
     :param sections: A section object list
     :return: A string set
     """
@@ -60,6 +77,7 @@ def generate_courses_by_user():
                 courses_by_user_dict[person_id] = user_courses
             else:
                 user_courses = courses_by_user_dict[person_id]
+            course = normalize_class_name(course)
             if course in user_courses:
                 user_courses[course] += 1
             else:
@@ -97,10 +115,22 @@ def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]
 
 
 def get_description(course):
-    try:
-        return Course.objects.filter(full_code=course)[0].description
-    except Exception:
+    course_obj = lookup_course(course)
+    if course_obj is None:
         return ""
+    return course_obj.description
+
+
+def find_prereqs(course_lists):
+    """
+    Determines lists of prereqs based on which courses are taken after another course the vast majority of the time they're
+    taken
+    :param course_lists:
+    :return:
+    """
+    prereqs = {}
+    for course_sequence in course_lists:
+        pass
 
 
 def vectorize_courses_by_description(courses):
@@ -138,6 +168,7 @@ def courses_by_user_from_csv():
         else:
             user_courses_dict = {}
             courses_by_user_dict[uid] = user_courses_dict
+        course = normalize_class_name(course)
         if course not in user_courses_dict:
             user_courses_dict[course] = 1
         else:
