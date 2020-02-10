@@ -48,7 +48,6 @@ const NameScheduleModalInterior = ({
             <p className="error_message">{errorMessage}</p>
             <button
                 className="button is-link"
-                role="button"
                 type="button"
                 onClick={() => {
                     submit();
