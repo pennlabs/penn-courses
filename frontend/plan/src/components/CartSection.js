@@ -35,6 +35,8 @@ CourseDetails.propTypes = {
     meetings: PropTypes.arrayOf(PropTypes.object).isRequired,
     code: PropTypes.string.isRequired,
     overlaps: PropTypes.bool,
+    starred: PropTypes.bool,
+    toggleStar: PropTypes.func,
 };
 
 
@@ -99,7 +101,14 @@ CourseTrashCan.propTypes = {
 };
 
 const CartSection = ({
-    toggleCheck, checked, code, meetings, remove, courseInfo, overlaps, lastAdded,
+    toggleCheck,
+    checked,
+    code,
+    meetings,
+    remove,
+    courseInfo,
+    overlaps,
+    lastAdded,
 }) => (
     <div
         role="switch"
@@ -142,6 +151,8 @@ CartSection.propTypes = {
     remove: PropTypes.func.isRequired,
     courseInfo: PropTypes.func.isRequired,
     lastAdded: PropTypes.bool,
+    starred: PropTypes.bool,
+    toggleStar: PropTypes.func,
 };
 
 export default CartSection;
