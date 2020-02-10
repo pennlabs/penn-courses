@@ -86,15 +86,16 @@ Cart.propTypes = {
 };
 
 // const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
-const mapStateToProps = (state) => {
-    const {
+const mapStateToProps = ({
         schedule: {
-            cartSections, schedules, scheduleSelected, lastAdded,
+        cartSections = [], schedules, scheduleSelected, lastAdded,
         },
-    } = state;
-    return {
-        courseInfoLoading: state.sections.courseInfoLoading,
-        courses: (cartSections || []).map(course => ({
+    sections: {
+        courseInfoLoading,
+    },
+}) => ({
+    courseInfoLoading,
+    courses: (cartSections).map(course => ({
             section: course,
             checked: meetingsContainSection(schedules[scheduleSelected].meetings, course),
             overlaps: meetingSetsIntersect(course.meetings, schedules[scheduleSelected].meetings
@@ -102,8 +103,7 @@ const mapStateToProps = (state) => {
                 .map(s => s.meetings).flat()),
         })),
         lastAdded,
-    };
-};
+});
 
 const mapDispatchToProps = dispatch => ({
     toggleCourse: courseId => dispatch(toggleCheck(courseId)),
