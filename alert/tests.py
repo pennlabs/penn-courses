@@ -110,7 +110,7 @@ class RegisterTestCase(TestCase):
         self.sections.append(get_or_create_course_and_section('CIS-120-001', TEST_SEMESTER)[1])
 
     def test_successful_registration(self):
-        res, norm = register_for_course(self.sections[0].full_code, 'e@example.com', '+15555555555')
+        res, norm, _ = register_for_course(self.sections[0].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
         r = Registration.objects.get()
@@ -122,7 +122,7 @@ class RegisterTestCase(TestCase):
         self.assertIsNone(r.api_key)
 
     def test_nonnormalized_course_code(self):
-        res, norm = register_for_course('cis160001', 'e@example.com', '+15555555555')
+        res, norm, _ = register_for_course('cis160001', 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual('CIS-160-001', norm)
         self.assertEqual(1, len(Registration.objects.all()))
@@ -132,53 +132,53 @@ class RegisterTestCase(TestCase):
     def test_duplicate_registration(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
         r1.save()
-        res, norm = register_for_course(self.sections[0].full_code, 'e@example.com', '+15555555555')
+        res, norm, _ = register_for_course(self.sections[0].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.OPEN_REG_EXISTS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
     def test_reregister(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0], notification_sent=True)
         r1.save()
-        res, norm = register_for_course(self.sections[0].full_code, 'e@example.com', '+15555555555')
+        res, norm, _ = register_for_course(self.sections[0].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_sameuser_diffsections(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
         r1.save()
-        res, norm = register_for_course(self.sections[1].full_code, 'e@example.com', '+15555555555')
+        res, norm, _ = register_for_course(self.sections[1].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_sameuser_diffcourse(self):
         r1 = Registration(email='e@example.com', phone='+15555555555', section=self.sections[0])
         r1.save()
-        res, norm = register_for_course(self.sections[2].full_code, 'e@example.com', '+15555555555')
+        res, norm, _ = register_for_course(self.sections[2].full_code, 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_justemail(self):
-        res, norm = register_for_course(self.sections[0].full_code, 'e@example.com', None)
+        res, norm, _ = register_for_course(self.sections[0].full_code, 'e@example.com', None)
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
     def test_phony_course(self):
-        res, norm = register_for_course('PHONY-100-001', 'e@example.com', '+15555555555')
+        res, norm, _ = register_for_course('PHONY-100-001', 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.COURSE_NOT_FOUND, res)
         self.assertEqual(0, Registration.objects.count())
 
     def test_invalid_course(self):
-        res, norm = register_for_course('econ 0-0-1', 'e@example.com', '+15555555555')
+        res, norm, _ = register_for_course('econ 0-0-1', 'e@example.com', '+15555555555')
         self.assertEqual(RegStatus.COURSE_NOT_FOUND, res)
         self.assertEqual(0, Registration.objects.count())
 
     def test_justphone(self):
-        res, norm = register_for_course(self.sections[0].full_code, None, '5555555555')
+        res, norm, _ = register_for_course(self.sections[0].full_code, None, '5555555555')
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
     def test_nocontact(self):
-        res, norm = register_for_course(self.sections[0].full_code, None, None)
+        res, norm, _ = register_for_course(self.sections[0].full_code, None, None)
         self.assertEqual(RegStatus.NO_CONTACT_INFO, res)
         self.assertEqual(0, len(Registration.objects.all()))
 
@@ -1000,7 +1000,7 @@ class AlertRegistrationTestCase(TestCase):
                     self.assertTrue(u.alert_sent)
 
     def test_registrations_get_most_current(self):
-        response = self.client.get('/api/registrations/1/')
+        response = self.client.get(f'/api/registrations/{self.registration_cis120.pk}/')
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120, response.data)
 
@@ -1010,7 +1010,7 @@ class AlertRegistrationTestCase(TestCase):
                                                 'auto_resubscribe': False}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 201)
-        response = self.client.get('/api/registrations/2/')
+        response = self.client.get(f'/api/registrations/{response.data["id"]}/')
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=2), response.data)
         self.simulate_alert(self.cis120, 1)

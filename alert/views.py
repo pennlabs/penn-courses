@@ -51,7 +51,7 @@ def index(request):
 
 
 def do_register(course_code, email_address, phone, source, make_response, api_key=None):
-    res, normalized_course_code = register_for_course(course_code, email_address, phone, source, api_key)
+    res, normalized_course_code, _ = register_for_course(course_code, email_address, phone, source, api_key)
 
     if res == RegStatus.SUCCESS:
         return make_response('success',
@@ -257,11 +257,13 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response({'notification': 'You must include a not null section'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        res, normalized_course_code = register_for_course(section_code, email_address, phone, 'PCA', None, request)
+        res, normalized_course_code, reg = register_for_course(section_code, email_address, phone, 'PCA', None, request)
 
         if res == RegStatus.SUCCESS:
-            return Response({'notification': 'Your registration for %s was successful!' % normalized_course_code},
-                            status=status.HTTP_201_CREATED)
+            return Response({
+                'notification': 'Your registration for %s was successful!' % normalized_course_code,
+                'id': reg.pk},
+                status=status.HTTP_201_CREATED)
         elif res == RegStatus.OPEN_REG_EXISTS:
             return Response({'notification':
                              "You've already registered to get alerts for %s!" % normalized_course_code},
