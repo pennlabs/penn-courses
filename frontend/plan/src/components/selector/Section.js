@@ -105,7 +105,12 @@ export default function Section({
                     { status === "C"
                         ? (
                             <div className="popover is-popover-left">
-                                <a className="bell" target="_blank" href={`https://penncoursealert.com/?course=${section.id}`}>
+                                <a
+                                    className="bell"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    href={`https://penncoursealert.com/?course=${section.id}`}
+                                >
                                     <i style={{ fontSize: "1rem" }} className="far fa-bell" />
                                 </a>
 
