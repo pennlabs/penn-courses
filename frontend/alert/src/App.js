@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import './App.css';
 import styled from 'styled-components';
 import Logo from './assets/PCA_logo.svg'
@@ -15,10 +15,9 @@ const Container = styled.div`
 const Title = styled.div`
   width:100%;
   padding: 1.5em 1em;
-  background: rgb(235, 76, 100);
+  background: #FF3860;
   text-align: center;
   color:white;
-  font-size: 1rem;
 `
 
 const Grid = styled.div`
@@ -40,22 +39,50 @@ const Input = styled.input`
   box-shadow: 0 4px 8px 0 rgba(200, 200, 200, 0.2), 0 6px 20px 0 rgba(200, 200, 200, 0.1);
   outline: none;
   border: none;
-  border-radius: 5px;
   color: #4A4A4A;
-  font-size: 1.5rem;
-  padding: 0.2rem 0.5rem;
-  margin: 0.5rem;
-  :focused {
-    border: 5px solid #3273dc;
+  font-size: 1.4rem;
+  padding: 0.5rem 1rem;
+  width: 320px;
+  margin: 0.6rem;
+  :focus {
+    box-shadow: 0 0 0 0.125em rgba(50,115,220,.25)
   }
   ::placeholder{
-    color: #
+    color: #D0D0D0;
   }
 `
 
 const MiddleArea = styled.div`
   background: rgb(251, 252, 255);
   width: 100%;
+`
+
+const Footer = styled.div`
+  color: #999999;
+  font-size: 0.8rem;
+  text-align: center;
+  position: absolute;
+  bottom: 15px;
+  width: 100%;
+  background: white;
+  padding-top: 3em;
+  padding-bottom:3em;
+  line-height:1.5;
+`
+
+const SubmitButton = styled.button`
+  border-radius: 5px;
+  background-color: #209CEE;
+  color: white;
+  font-size:1em;
+  margin:1em;
+  padding: 0.5em 1em;
+  transition: 0.2s all;
+  border: none;
+  cursor: pointer;
+  :hover{
+    background-color: #1496ed;
+  }
 `
 const TopBanner = (
     <Title>
@@ -70,15 +97,33 @@ const LogoArea = (
   </Grid>
 )
 
+
 function App() {
+  const onSubmit = () => {console.log(this.CourseInput.value)};
   return (
     <Container>
         {TopBanner}
         {LogoArea}
         <Tagline>Get alerted when a course opens up, by text and email.</Tagline>
-        <Input placeholder="Name"></Input>
+        <Input autocomplete="off" placeholder="Course"></Input>
         <Input placeholder="Email"></Input>
         <Input placeholder="Phone"></Input>
+        <SubmitButton onClick={onSubmit}>Submit</SubmitButton>
+        <Footer>
+          Made with
+                {" "}
+                <span className="icon is-small"><i className="fa fa-heart" style={{ color: "red" }} /></span>
+                {" "}
+                by
+                {" "}
+                <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
+                {" "}
+                .
+                <br />
+                Have feedback about Penn Course Alert? Let us know
+                {" "}
+                <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
+        </Footer>
     </Container>
   );
 }
