@@ -33,7 +33,7 @@ const Cart = ({
     courseInfoLoading,
     setTab,
     lastAdded,
-    mobileView
+    mobileView,
 }) => (
     <section
         style={{
