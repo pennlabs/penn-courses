@@ -1010,22 +1010,22 @@ class AlertRegistrationTestCase(TestCase):
                                                 'auto_resubscribe': False}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 201)
-        response = self.client.get(f'/api/registrations/{response.data["id"]}/')
+        new_pk = response.data['id']
+        response = self.client.get(f'/api/registrations/{new_pk}/')
         self.assertEqual(response.status_code, 200)
-        self.check_model_with_response_data(Registration.objects.get(id=2), response.data)
+        self.check_model_with_response_data(Registration.objects.get(id=new_pk), response.data)
         self.simulate_alert(self.cis120, 1)
         response = self.client.post('/api/registrations/',
-                                    json.dumps({'id': 1,
+                                    json.dumps({'id': self.registration_cis120.pk,
                                                 'resubscribe': True}),
                                     content_type='application/json')
-        self.registration_cis120 = Registration.objects.get(id=1)
         self.assertEqual(response.status_code, 200)
-        response = self.client.get('/api/registrations/1/')
+        response = self.client.get(f'/api/registrations/{self.registration_cis120.pk}/')
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120.resubscribed_to, response.data)
         self.simulate_alert(self.cis120, 2)
         response = self.client.post('/api/registrations/',
-                                    json.dumps({'id': 3,
+                                    json.dumps({'id': self.registration_cis120.get_most_current().pk,
                                                 'resubscribe': True}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 200)
@@ -1034,7 +1034,6 @@ class AlertRegistrationTestCase(TestCase):
                                                 'auto_resubscribe': False}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 201)
-        self.registration_cis120 = Registration.objects.get(id=1)
         response = self.client.get('/api/registrations/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
@@ -1090,12 +1089,12 @@ class AlertRegistrationTestCase(TestCase):
                          content_type='application/json')
         self.simulate_alert(self.cis120, 1)
         self.client.post('/api/registrations/',
-                         json.dumps({'id': 1,
+                         json.dumps({'id': self.registration_cis120.pk,
                                      'resubscribe': True}),
                          content_type='application/json')
         self.simulate_alert(self.cis120, 2)
         self.client.post('/api/registrations/',
-                         json.dumps({'id': 3,
+                         json.dumps({'id': self.registration_cis120.get_most_current().pk,
                                      'resubscribe': True}),
                          content_type='application/json')
         self.client.post('/api/registrations/',
