@@ -1,11 +1,11 @@
 import logging
 
 from celery import shared_task
+from options.models import get_value
 
 from courses import registrar
 from courses.models import Course, Department, Requirement, Section
 from courses.util import get_course_and_section, upsert_course_from_opendata
-from options.models import get_value
 
 
 logger = logging.getLogger(__name__)

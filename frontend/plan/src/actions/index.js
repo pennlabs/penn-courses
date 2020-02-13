@@ -1,4 +1,7 @@
 import fetch from "cross-fetch";
+import AwesomeDebouncePromise from "awesome-debounce-promise";
+import getCsrf from "../csrf";
+import { MIN_FETCH_INTERVAL } from "../sync_constants";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -44,6 +47,33 @@ export const TOGGLE_CHECK = "TOGGLE_CHECK";
 export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
 export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
+
+// Backend accounts integration
+export const UPDATE_SCHEDULES = "UPDATE_SCHEDULES";
+export const CREATION_SUCCESSFUL = "CREATION_SUCCESSFUL";
+export const MARK_SCHEDULE_SYNCED = "MARK_SCHEDULE_SYNCED";
+export const MARK_CART_SYNCED = "MARK_CART_SYNCED";
+export const DELETION_ATTEMPT_FAILED = "DELETION_ATTEMPT_FAILED";
+export const DELETION_ATTEMPT_SUCCEEDED = "DELETION_ATTEMPT_SUCCEEDED";
+export const ATTEMPT_DELETION = "ATTEMPT_DELETION";
+export const ATTEMPT_SCHEDULE_CREATION = "ATTEMPT_SCHEDULE_CREATION";
+export const UNSUCCESSFUL_SCHEDULE_CREATION = "UNSUCCESSFUL_SCHEDULE_CREATION";
+
+
+export const markScheduleSynced = scheduleName => (
+    {
+        scheduleName,
+        type: MARK_SCHEDULE_SYNCED,
+    }
+);
+
+export const markCartSynced = () => (
+    {
+        type: MARK_CART_SYNCED,
+    }
+);
+
+const doAPIRequest = (path, options = {}) => fetch(`/api/plan${path}`, options);
 
 
 export const duplicateSchedule = scheduleName => (
@@ -136,7 +166,7 @@ export const updateCourseInfo = course => (
     }
 );
 
-export const createSchedule = scheduleName => (
+export const createScheduleOnFrontend = scheduleName => (
     {
         type: CREATE_SCHEDULE,
         scheduleName,
@@ -167,7 +197,7 @@ export const clearSchedule = () => (
 
 export const loadRequirements = () => (
     dispatch => (
-        fetch("/requirements")
+        doAPIRequest("/requirements")
             .then(
                 response => response.json()
                     .then((data) => {
@@ -192,7 +222,7 @@ export const loadRequirements = () => (
                         console.log(error);
                     }),
                 (error) => {
-                // eslint-disable-next-line no-console
+                    // eslint-disable-next-line no-console
                     console.log(error);
                 }
             )
@@ -232,19 +262,27 @@ function buildCourseSearchUrl(filterData) {
 
     // Checkbox Filters
     const checkboxFields = ["cu", "activity"];
-    const checkboxDefaultFields = [{ 0.5: 0, 1: 0, 1.5: 0 }, {
-        LAB: 0, REC: 0, SEM: 0, STU: 0,
+    const checkboxDefaultFields = [{
+        0.5: 0,
+        1: 0,
+        1.5: 0,
+    }, {
+        LAB: 0,
+        REC: 0,
+        SEM: 0,
+        STU: 0,
     }];
     for (let i = 0; i < checkboxFields.length; i += 1) {
         if (filterData[checkboxFields[i]]
             && JSON.stringify(filterData[checkboxFields[i]])
             !== JSON.stringify(checkboxDefaultFields[i])) {
             const applied = [];
-            Object.keys(filterData[checkboxFields[i]]).map((item) => {
-                if (filterData[checkboxFields[i]][item] === 1) {
-                    applied.push(item);
-                }
-            });
+            Object.keys(filterData[checkboxFields[i]])
+                .map((item) => {
+                    if (filterData[checkboxFields[i]][item] === 1) {
+                        applied.push(item);
+                    }
+                });
             if (applied.length > 0) {
                 queryString += `&${checkboxFields[i]}=${applied[0]}`;
                 for (let j = 1; j < applied.length; j += 1) {
@@ -257,16 +295,24 @@ function buildCourseSearchUrl(filterData) {
     return queryString;
 }
 
+const courseSearch = (dispatch, filterData) => (
+    doAPIRequest(buildCourseSearchUrl(filterData))
+);
+
+const debouncedCourseSearch = AwesomeDebouncePromise(courseSearch, 500);
+
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
         dispatch(updateSearchRequest());
-        fetch(buildCourseSearchUrl(filterData)).then(
-            response => response.json().then(
-                json => dispatch(updateSearch(json)),
-                error => dispatch(courseSearchError(error)),
-            ),
-            error => dispatch(courseSearchError(error)),
-        );
+        debouncedCourseSearch(dispatch, filterData)
+            .then(res => res.json())
+            .then((res) => {
+                dispatch(updateSearch(res));
+                if (res.length === 1) {
+                    dispatch(fetchCourseDetails(res[0].id));
+                }
+            })
+            .catch(error => dispatch(courseSearchError(error)));
     };
 }
 
@@ -334,6 +380,30 @@ export function clearFilter(propertyName) {
     };
 }
 
+export const deletionAttemptCompleted = deletedScheduleId => ({
+    type: DELETION_ATTEMPT_FAILED,
+    deletedScheduleId,
+});
+
+export const deletionSuccessful = deletedScheduleId => ({
+    type: DELETION_ATTEMPT_SUCCEEDED,
+    deletedScheduleId,
+});
+
+export const creationUnsuccessful = createdScheduleName => ({
+    type: UNSUCCESSFUL_SCHEDULE_CREATION,
+    scheduleName: createdScheduleName,
+});
+
+export const creationAttempted = createdScheduleName => ({
+    type: UNSUCCESSFUL_SCHEDULE_CREATION,
+    scheduleName: createdScheduleName,
+});
+
+export const attemptDeletion = deletedScheduleId => ({
+    type: ATTEMPT_DELETION,
+    deletedScheduleId,
+});
 
 export function clearAll() {
     return {
@@ -341,35 +411,196 @@ export function clearAll() {
     };
 }
 
+export const updateSchedules = schedulesFromBackend => ({
+    type: UPDATE_SCHEDULES,
+    schedulesFromBackend,
+});
+
+let lastFetched = 0;
+/**
+ * Ensure that fetches don't happen too frequently by requiring that it has been 250ms
+ * since the last rate-limited fetch.
+ * @param url The url to fetch
+ * @param init The init to apply to the url
+ * @returns {Promise<unknown>}
+ */
+
+const rateLimitedFetch = (url, init) => new Promise(((resolve, reject) => {
+    // Wraps the fetch in a new promise that conditionally rejects if
+    // the required amount of time has not elapsed
+    const now = Date.now();
+    if (now - lastFetched > MIN_FETCH_INTERVAL) {
+        doAPIRequest(url, init)
+            .then((result) => {
+                resolve(result);
+            })
+            .catch((err) => {
+                reject(err);
+            });
+        lastFetched = now;
+    } else {
+        reject(new Error("minDelayNotElapsed"));
+    }
+}));
+
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
-        fetch(`/courses/${courseId}`)
+        doAPIRequest(`/courses/${courseId}`)
             .then(res => res.json())
             .then(course => dispatch(updateCourseInfo(course)))
             .catch(error => dispatch(sectionInfoSearchError(error)));
     };
 }
 
+/**
+ * Pulls schedules from the backend
+ * If the cart isn't included, it creates a cart
+ * @param cart The courses in the cart
+ * @param onComplete The function to call when initialization has been completed (with the schedules
+ * from the backend)
+ * @returns {Function}
+ */
+export const fetchBackendSchedulesAndInitializeCart = (cart,
+    onComplete = () => null) => (dispatch) => {
+    doAPIRequest("/schedules/")
+        .then(res => res.json())
+        .then((schedules) => {
+            if (schedules) {
+                dispatch(updateSchedules(schedules));
+            }
+            // if the cart doesn't exist on the backend, create it
+            if (!schedules.reduce((acc, { name }) => acc || name === "cart", false)) {
+                dispatch(createScheduleOnBackend("cart", cart));
+            }
+            onComplete(schedules);
+        })
+        .catch(error => console.log(error, "Not logged in"));
+};
+
+export const creationSuccessful = (name, id) => ({
+    type: CREATION_SUCCESSFUL,
+    name,
+    id,
+});
+
+/**
+ * Updates a schedule on the backend
+ * Skips if the id is not yet initialized for the schedule
+ * Once the schedule has been updated, the schedule is marked as updated locally
+ * @param name The name of the schedule
+ * @param schedule The schedule object
+ */
+export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
+    const { id } = schedule;
+    if (!id || schedule.backendCreationState) {
+        return;
+    }
+    const updatedScheduleObj = {
+        ...schedule,
+        name,
+        sections: schedule.meetings,
+    };
+    doAPIRequest(`/schedules/${id}/`, {
+        method: "PUT",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(updatedScheduleObj),
+    })
+        .then(() => {
+            if (name === "cart") {
+                dispatch(markCartSynced());
+            } else {
+                dispatch(markScheduleSynced(name));
+            }
+        })
+        .catch(() => {
+        });
+};
+
 export function fetchSectionInfo(searchData) {
     return dispatch => (
-        fetch(buildSectionInfoSearchUrl(searchData)).then(
-            response => response.json().then(
-                (json) => {
-                    const info = {
-                        id: json.id,
-                        description: json.description,
-                        crosslistings: json.crosslistings,
-                    };
-                    const { sections } = json;
-                    dispatch(updateCourseInfo(sections, info));
-                },
+        doAPIRequest(buildSectionInfoSearchUrl(searchData))
+            .then(
+                response => response.json()
+                    .then(
+                        (json) => {
+                            const info = {
+                                id: json.id,
+                                description: json.description,
+                                crosslistings: json.crosslistings,
+                            };
+                            const { sections } = json;
+                            dispatch(updateCourseInfo(sections, info));
+                        },
+                        error => dispatch(sectionInfoSearchError(error)),
+                    ),
                 error => dispatch(sectionInfoSearchError(error)),
-            ),
-            error => dispatch(sectionInfoSearchError(error)),
-        )
+            )
     );
 }
+
+
+/**
+ * Creates a schedule on the backend
+ * @param name The name of the schedule
+ * @param sections The list of sections for the schedule
+ * @returns {Function}
+ */
+export const createScheduleOnBackend = (name, sections) => (dispatch) => {
+    dispatch(creationAttempted(name));
+    rateLimitedFetch("/schedules/", {
+        method: "POST",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify({
+            name,
+            sections,
+        }),
+    })
+        .then(response => response.json())
+        .then(({ id }) => {
+            if (id) {
+                dispatch(creationSuccessful(name, id));
+            }
+        })
+        .catch(({ message }) => {
+            if (message !== "minDelayNotElapsed") {
+                dispatch(creationUnsuccessful(name));
+            }
+        });
+};
+
+export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
+    dispatch(attemptDeletion(deletedScheduleId));
+    rateLimitedFetch(`/schedules/${deletedScheduleId}/`, {
+        method: "DELETE",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    })
+        .then((response) => {
+            if (response.ok) {
+                dispatch(deletionSuccessful(deletedScheduleId));
+            } else {
+                dispatch(deletionAttemptCompleted(deletedScheduleId));
+            }
+        });
+};
 
 export function courseSearchLoading() {
     return {

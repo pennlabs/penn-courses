@@ -31,7 +31,9 @@ const courseSort = (courses, sortMode) => {
     return sorted;
 };
 
-export default function CourseList({ courses, getCourse, sortMode }) {
+export default function CourseList({
+    courses, getCourse, sortMode,
+}) {
     return (
         <div className="scroll-container">
             <div style={{
