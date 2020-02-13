@@ -5,20 +5,22 @@ import TagList from "./TagList";
 import Badge from "../Badge";
 
 const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
-const getPrereqCodes = text => {
-    if (typeof text !== 'string') return []
-    const captured = text.match(/(^|\W)[a-zA-Z]{3}[a-zA-Z]?(-|\s)[0-9]{3}($|(?=\W))/gm)
-    return captured ? captured.map(prereq => prereq.replace(/\W/g, " ").trim()) : []
-}
+const getPrereqCodes = (text) => {
+    if (typeof text !== "string") return [];
+    const captured = text.match(/(^|\W)[a-zA-Z]{3}[a-zA-Z]?(-|\s)[0-9]{3}($|(?=\W))/gm);
+    return captured ? captured.map(prereq => prereq.replace(/\W/g, " ").trim()) : [];
+};
 
-export default function CourseDetails({ course: {
-    requirements = [],
-    crosslistings = [],
-    description,
-    prerequisites,
-    ...course
-}, getCourse, view }) {
-    prerequisites = getPrereqCodes(prerequisites)
+export default function CourseDetails({
+    course: {
+        requirements = [],
+        crosslistings = [],
+        description,
+        prerequisites: prereqText,
+        ...course
+    }, getCourse, view,
+}) {
+    const prerequisites = getPrereqCodes(prereqText);
     return (
         <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
             <li>
