@@ -6,11 +6,13 @@ import Badge from "../Badge";
 
 const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
 
-export default function CourseDetails({ course, getCourse, view }) {
-    const requirements = course.requirements || [];
-    const prerequisites = course.prerequisites.trim() || "";
-    const crosslistings = course.crosslistings || [];
-    const { description } = course;
+export default function CourseDetails({ course: {
+    requirements = [],
+    crosslistings = [],
+    description,
+    prerequisites,
+    ...course
+}, getCourse, view }) {
     return (
         <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
             <li>
