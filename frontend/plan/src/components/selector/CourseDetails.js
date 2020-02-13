@@ -5,6 +5,11 @@ import TagList from "./TagList";
 import Badge from "../Badge";
 
 const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
+const getPrereqCodes = text => {
+    if (typeof text !== 'string') return []
+    const captured = text.match(/(^|\W)[a-zA-Z]{3}[a-zA-Z]?(-|\s)[0-9]{3}($|(?=\W))/gm)
+    return captured ? captured.map(prereq => prereq.replace(/\W/g, " ").trim()) : []
+}
 
 export default function CourseDetails({ course: {
     requirements = [],
@@ -13,6 +18,7 @@ export default function CourseDetails({ course: {
     prerequisites,
     ...course
 }, getCourse, view }) {
+    prerequisites = getPrereqCodes(prerequisites)
     return (
         <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
             <li>
@@ -52,7 +58,7 @@ export default function CourseDetails({ course: {
                         <i className="fas fa-random" />
                     </span>
                     &nbsp; Prerequisites: &nbsp;
-                    <TagList elements={[prerequisites.replace(/-/g, " ")]} limit={2} />
+                    <TagList elements={prerequisites} limit={2} />
                 </li>
             ) : null
             }
