@@ -317,8 +317,9 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                                                '(the user should not be able to do this; they can easily'
                                                'make a new registration).'},
                                     status=status.HTTP_400_BAD_REQUEST)
-                registration.resubscribe()
-                return Response({'detail': 'Resubscribed successfully'},
+                resub = registration.resubscribe()
+                return Response({'detail': 'Resubscribed successfully',
+                                 'id': resub.id},
                                 status=status.HTTP_200_OK)
             elif request.data.get('deleted', False):
                 changed = not registration.deleted

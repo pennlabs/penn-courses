@@ -951,18 +951,6 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(model.created_at, self.convert_date(data['created_at']))
         self.assertEqual(model.updated_at, self.convert_date(data['updated_at']))
 
-    def check_model_with_raw_queryset(self, model, qs):
-        self.assertEqual(model.id, qs.id)
-        self.assertEqual(model.user.username, qs.user.username)
-        self.assertEqual(model.section.full_code, qs.section.full_code)
-        self.assertEqual(model.deleted, qs.deleted)
-        self.assertEqual(model.deleted_at, model.deleted_at)
-        self.assertEqual(model.auto_resubscribe, model.auto_resubscribe)
-        self.assertEqual(model.notification_sent, qs.notification_sent)
-        self.assertEqual(model.notification_sent_at, qs.notification_sent_at)
-        self.assertEqual(model.created_at, qs.created_at)
-        self.assertEqual(model.updated_at, qs.updated_at)
-
     def simulate_alert_helper_before(self, section):
         auth = base64.standard_b64encode('webhook:password'.encode('ascii'))
         headers = {
@@ -1010,72 +998,75 @@ class AlertRegistrationTestCase(TestCase):
                                                 'auto_resubscribe': False}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 201)
-        new_pk = response.data['id']
-        response = self.client.get(f'/api/registrations/{new_pk}/')
+        second_id = response.data['id']
+        response = self.client.get(f'/api/registrations/{second_id}/')
         self.assertEqual(response.status_code, 200)
-        self.check_model_with_response_data(Registration.objects.get(id=new_pk), response.data)
+        self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
         self.simulate_alert(self.cis120, 1)
         response = self.client.post('/api/registrations/',
-                                    json.dumps({'id': self.registration_cis120.pk,
+                                    json.dumps({'id': self.registration_cis120.id,
                                                 'resubscribe': True}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        response = self.client.get(f'/api/registrations/{self.registration_cis120.pk}/')
+        third_id = response.data['id']
+        response = self.client.get(f'/api/registrations/{third_id}/')
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120.resubscribed_to, response.data)
         self.simulate_alert(self.cis120, 2)
         response = self.client.post('/api/registrations/',
-                                    json.dumps({'id': self.registration_cis120.get_most_current().pk,
+                                    json.dumps({'id': third_id,
                                                 'resubscribe': True}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 200)
+        fourth_id = response.data['id']
         response = self.client.post('/api/registrations/',
                                     json.dumps({'section': 'CIS-121-001',
                                                 'auto_resubscribe': False}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 201)
+        fifth_id = response.data['id']
         response = self.client.get('/api/registrations/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
-        fourth_data = next(item for item in response.data if item['id'] == 4)
-        second_data = next(item for item in response.data if item['id'] == 2)
-        fifth_data = next(item for item in response.data if item['id'] == 5)
+        fourth_data = next(item for item in response.data if item['id'] == fourth_id)
+        second_data = next(item for item in response.data if item['id'] == second_id)
+        fifth_data = next(item for item in response.data if item['id'] == fifth_id)
         self.check_model_with_response_data(self.registration_cis120.resubscribed_to.resubscribed_to, fourth_data)
-        self.check_model_with_response_data(Registration.objects.get(id=2), second_data)
-        self.check_model_with_response_data(Registration.objects.get(id=5), fifth_data)
+        self.check_model_with_response_data(Registration.objects.get(id=second_id), second_data)
+        self.check_model_with_response_data(Registration.objects.get(id=fifth_id), fifth_data)
         response = self.client.get('/api/registrationhistory/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(5, len(response.data))
-        first_data = next(item for item in response.data if item['id'] == 1)
-        first_ob = Registration.objects.get(id=1)
-        self.check_model_with_response_data(self.registration_cis120, first_data)
+        first_data = next(item for item in response.data if item['id'] == self.registration_cis120.id)
+        first_ob = Registration.objects.get(id=self.registration_cis120.id)
+        self.check_model_with_response_data(first_ob, first_data)
         self.assertIsNone(first_ob.resubscribed_from)
-        self.assertTrue(self.registration_cis120.notification_sent)
-        self.assertIsNotNone(self.registration_cis120.notification_sent_at)
-        second_data = next(item for item in response.data if item['id'] == 2)
-        second_ob = Registration.objects.get(id=2)
+        self.assertTrue(first_ob.notification_sent)
+        self.assertIsNotNone(first_ob.notification_sent_at)
+        second_data = next(item for item in response.data if item['id'] == second_id)
+        second_ob = Registration.objects.get(id=second_id)
         self.check_model_with_response_data(second_ob, second_data)
         self.assertIsNone(second_ob.resubscribed_from)
         self.assertFalse(hasattr(second_ob, 'resubscribed_to'))
         self.assertFalse(second_data['notification_sent'])
         self.assertIsNone(second_data['notification_sent_at'])
-        third_data = next(item for item in response.data if item['id'] == 3)
-        third_ob = Registration.objects.get(id=3)
-        self.assertEquals(self.registration_cis120.resubscribed_to, Registration.objects.get(id=3))
+        third_data = next(item for item in response.data if item['id'] == third_id)
+        third_ob = Registration.objects.get(id=third_id)
+        self.assertEquals(self.registration_cis120.resubscribed_to, Registration.objects.get(id=third_id))
         self.assertEquals(first_ob, third_ob.resubscribed_from)
-        self.check_model_with_response_data(self.registration_cis120.resubscribed_to, third_data)
+        self.check_model_with_response_data(first_ob.resubscribed_to, third_data)
         self.assertTrue(third_data['notification_sent'])
         self.assertIsNotNone(third_data['notification_sent_at'])
-        fourth_data = next(item for item in response.data if item['id'] == 4)
-        fourth_ob = Registration.objects.get(id=4)
-        self.assertEquals(self.registration_cis120.resubscribed_to.resubscribed_to, fourth_ob)
-        self.check_model_with_response_data(self.registration_cis120.resubscribed_to.resubscribed_to, fourth_data)
+        fourth_data = next(item for item in response.data if item['id'] == fourth_id)
+        fourth_ob = Registration.objects.get(id=fourth_id)
+        self.assertEquals(first_ob.resubscribed_to.resubscribed_to, fourth_ob)
+        self.check_model_with_response_data(first_ob.resubscribed_to.resubscribed_to, fourth_data)
         self.assertEquals(third_ob, fourth_ob.resubscribed_from)
         self.assertFalse(hasattr(fourth_ob, 'resubscribed_to'))
         self.assertFalse(fourth_data['notification_sent'])
         self.assertIsNone(fourth_data['notification_sent_at'])
-        fifth_data = next(item for item in response.data if item['id'] == 5)
-        fifth_ob = Registration.objects.get(id=5)
+        fifth_data = next(item for item in response.data if item['id'] == fifth_id)
+        fifth_ob = Registration.objects.get(id=fifth_id)
         self.check_model_with_response_data(fifth_ob, fifth_data)
         self.assertIsNone(fifth_ob.resubscribed_from)
         self.assertFalse(hasattr(fifth_ob, 'resubscribed_to'))
