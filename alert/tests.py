@@ -993,6 +993,7 @@ class AlertRegistrationTestCase(TestCase):
         self.check_model_with_response_data(self.registration_cis120, response.data)
 
     def test_registrations_resubscribe_get_old_and_history(self):
+        first_id = self.registration_cis120.id
         response = self.client.post('/api/registrations/',
                                     json.dumps({'section': 'CIS-160-001',
                                                 'auto_resubscribe': False}),
@@ -1004,7 +1005,7 @@ class AlertRegistrationTestCase(TestCase):
         self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
         self.simulate_alert(self.cis120, 1)
         response = self.client.post('/api/registrations/',
-                                    json.dumps({'id': self.registration_cis120.id,
+                                    json.dumps({'id': first_id,
                                                 'resubscribe': True}),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 200)
@@ -1037,8 +1038,8 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get('/api/registrationhistory/')
         self.assertEqual(200, response.status_code)
         self.assertEqual(5, len(response.data))
-        first_data = next(item for item in response.data if item['id'] == self.registration_cis120.id)
-        first_ob = Registration.objects.get(id=self.registration_cis120.id)
+        first_data = next(item for item in response.data if item['id'] == first_id)
+        first_ob = Registration.objects.get(id=first_id)
         self.check_model_with_response_data(first_ob, first_data)
         self.assertIsNone(first_ob.resubscribed_from)
         self.assertTrue(first_ob.notification_sent)
@@ -1074,37 +1075,39 @@ class AlertRegistrationTestCase(TestCase):
         self.assertIsNone(fifth_data['notification_sent_at'])
 
     def test_get_resubscribe_group(self):
+        first_id = self.registration_cis120.id
         self.client.post('/api/registrations/',
                          json.dumps({'section': 'CIS-160-001',
                                      'auto_resubscribe': False}),
                          content_type='application/json')
         self.simulate_alert(self.cis120, 1)
-        self.client.post('/api/registrations/',
-                         json.dumps({'id': self.registration_cis120.pk,
-                                     'resubscribe': True}),
-                         content_type='application/json')
+        response = self.client.post('/api/registrations/',
+                                    json.dumps({'id': first_id,
+                                                'resubscribe': True}),
+                                    content_type='application/json')
+        third_id = response.data['id']
         self.simulate_alert(self.cis120, 2)
-        self.client.post('/api/registrations/',
-                         json.dumps({'id': self.registration_cis120.get_most_current().pk,
-                                     'resubscribe': True}),
-                         content_type='application/json')
+        response = self.client.post('/api/registrations/',
+                                    json.dumps({'id': third_id,
+                                                'resubscribe': True}),
+                                    content_type='application/json')
+        fourth_id = response.data['id']
         self.client.post('/api/registrations/',
                          json.dumps({'section': 'CIS-121-001',
                                      'auto_resubscribe': False}),
                          content_type='application/json')
-        self.registration_cis120 = Registration.objects.get(id=1)
-        first = Registration.objects.get(id=1)
-        second = Registration.objects.get(id=3)
-        third = Registration.objects.get(id=4)
+        first = Registration.objects.get(id=first_id)
+        third = Registration.objects.get(id=third_id)
+        fourth = Registration.objects.get(id=fourth_id)
         self.assertEqual(len(first.get_resubscribe_group()), 3)
-        self.assertEqual(len(second.get_resubscribe_group()), 3)
         self.assertEqual(len(third.get_resubscribe_group()), 3)
-        self.assertTrue(first in second.get_resubscribe_group())
-        self.assertTrue(second in first.get_resubscribe_group())
+        self.assertEqual(len(fourth.get_resubscribe_group()), 3)
         self.assertTrue(first in third.get_resubscribe_group())
         self.assertTrue(third in first.get_resubscribe_group())
-        self.assertTrue(second in third.get_resubscribe_group())
-        self.assertTrue(third in second.get_resubscribe_group())
+        self.assertTrue(first in fourth.get_resubscribe_group())
+        self.assertTrue(fourth in first.get_resubscribe_group())
+        self.assertTrue(third in fourth.get_resubscribe_group())
+        self.assertTrue(fourth in third.get_resubscribe_group())
 
     def test_get_most_current(self):
         pass
@@ -1113,6 +1116,9 @@ class AlertRegistrationTestCase(TestCase):
         pass
 
     def test_get_most_current_rec(self):
+        pass
+
+    def test_resubscribe_to_old(self):
         pass
 
     def test_registrations_list_only_current(self):
