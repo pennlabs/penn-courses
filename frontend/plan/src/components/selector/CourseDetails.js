@@ -31,13 +31,14 @@ export default function CourseDetails({
         requirements = [],
         crosslistings = [],
         description,
-        prerequisites: prereqText,
+        prerequisites,
         course_quality: courseQuality,
         difficulty,
         id,
     }, getCourse, view,
 }) {
-    const prerequisites = annotatePrerequisites(prereqText, getCourse);
+    prerequisites = annotatePrerequisites(prerequisites, getCourse);
+    const isExpandedView = view === 1;
     return (
         <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
             <li>
@@ -102,7 +103,7 @@ export default function CourseDetails({
                 }}
                 >
                     <ShowMore
-                        disabled={view === 1}
+                        disabled={isExpandedView}
                         lines={2}
                         more="See more"
                         less="See less"
@@ -118,7 +119,7 @@ export default function CourseDetails({
                 }}
                 >
                     <ShowMore
-                        disabled={view === 1}
+                        disabled={isExpandedView}
                         lines={2}
                         more="See more"
                         less="See less"
