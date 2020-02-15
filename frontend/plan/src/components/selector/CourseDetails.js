@@ -31,13 +31,13 @@ export default function CourseDetails({
         requirements = [],
         crosslistings = [],
         description,
-        prerequisites,
+        prerequisites: prereqText,
         course_quality: courseQuality,
         difficulty,
         id,
     }, getCourse, view,
 }) {
-    prerequisites = annotatePrerequisites(prerequisites, getCourse);
+    const prerequisites = annotatePrerequisites(prereqText, getCourse);
     const isExpandedView = view === 1;
     return (
         <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
