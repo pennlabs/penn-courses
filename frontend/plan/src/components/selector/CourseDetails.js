@@ -5,13 +5,21 @@ import Badge from "../Badge";
 import ShowMore from "../ShowMore";
 
 const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
-const annotatePrerequisites = (text) => {
+const annotatePrerequisites = (text, onClick) => {
     if (typeof text !== "string" || !/\S/.test(text)) return null;
     const courseRegex = /((^|\W)[A-Z]{3}[A-Z]?(-|\s)[0-9]{3}($|(?=\W)))/;
     const tokens = text.split(courseRegex).filter(elem => /\S/.test(elem));
     tokens.unshift("Prerequisites: ");
     return tokens.map(token => (courseRegex.test(token)
-        ? <a>{token}</a>
+        ? (
+            <a onClick={e => {
+                e.preventDefault()
+                onClick && onClick(token.trim().replace(/\s/g, "-"));
+            }}
+            >
+                {token}
+            </a>
+        )
         : token));
 };
 
@@ -27,7 +35,7 @@ export default function CourseDetails({
         id,
     }, getCourse, view,
 }) {
-    const prerequisites = annotatePrerequisites(prereqText);
+    const prerequisites = annotatePrerequisites(prereqText, getCourse);
     return (
         <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
             <li>
