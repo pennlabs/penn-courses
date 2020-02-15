@@ -5,11 +5,16 @@ import Badge from "../Badge";
 import ShowMore from "../ShowMore";
 
 const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
-const getPrereqCodes = (text) => {
-    if (typeof text !== "string") return [];
-    const captured = text.match(/(^|\W)[a-zA-Z]{3}[a-zA-Z]?(-|\s)[0-9]{3}($|(?=\W))/gm);
-    return captured ? captured.map(prereq => prereq.replace(/\W/g, " ").trim()) : [];
+const annotatePrerequisites = (text) => {
+    if (typeof text !== "string" || !/\S/.test(text)) return null;
+    const courseRegex = /((^|\W)[A-Z]{3}[A-Z]?(-|\s)[0-9]{3}($|(?=\W)))/;
+    const tokens = text.split(courseRegex).filter(elem => /\S/.test(elem));
+    tokens.unshift("Prerequisites: ");
+    return tokens.map(token => (courseRegex.test(token)
+        ? <a>{token}</a>
+        : token));
 };
+
 
 export default function CourseDetails({
     course: {
@@ -17,10 +22,12 @@ export default function CourseDetails({
         crosslistings = [],
         description,
         prerequisites: prereqText,
-        ...course
+        course_quality: courseQuality,
+        difficulty,
+        id,
     }, getCourse, view,
 }) {
-    const prerequisites = getPrereqCodes(prereqText);
+    const prerequisites = annotatePrerequisites(prereqText);
     return (
         <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
             <li>
@@ -30,12 +37,12 @@ export default function CourseDetails({
                 &nbsp; Quality: &nbsp;
                 <Badge
                     baseColor={[43, 236, 56]}
-                    value={course.course_quality}
+                    value={courseQuality}
                 />
                 &nbsp; Difficulty: &nbsp;
                 <Badge
                     baseColor={[43, 236, 56]}
-                    value={course.difficulty}
+                    value={difficulty}
                 />
             </li>
             {requirements.length > 0
@@ -54,16 +61,6 @@ export default function CourseDetails({
                     </li>
                 ) : null
             }
-            {prerequisites.length ? (
-                <li>
-                    <span className="icon is-small">
-                        <i className="fas fa-random" />
-                    </span>
-                    &nbsp; Prerequisites: &nbsp;
-                    <TagList elements={prerequisites} limit={2} />
-                </li>
-            ) : null
-            }
             {crosslistings.length > 0 ? (
                 <li>
                     <span className="icon is-small">
@@ -78,7 +75,7 @@ export default function CourseDetails({
                 target="_blank"
                 className="button is-small pcr-svg"
                 type="button"
-                href={`https://penncoursereview.com/course/${(course.id)}`}
+                href={`https://penncoursereview.com/course/${(id)}`}
                 style={{
                     fontWeight: "700",
                     fontSize: "0.8 em",
@@ -88,7 +85,23 @@ export default function CourseDetails({
             >
                 View on Penn Course Review
             </a>
-            {description ? (
+            {prerequisites && (
+                <li style={{
+                    marginTop: "2em",
+                    marginBottom: "2em",
+                }}
+                >
+                    <ShowMore
+                        disabled={view === 1}
+                        lines={2}
+                        more="See more"
+                        less="See less"
+                    >
+                        {prerequisites}
+                    </ShowMore>
+                </li>
+            )}
+            {description && (
                 <li style={{
                     marginTop: "2em",
                     marginBottom: "2em",
