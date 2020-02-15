@@ -16,7 +16,6 @@ const ShowMore = ({
                         ...
                         <a role="button" onClick={toggleExpanded}>
                             {more}
-                            {" "}
                         </a>
                     </>
                 )}
