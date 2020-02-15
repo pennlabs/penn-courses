@@ -1,8 +1,8 @@
 import React from "react";
-import ShowMoreText from "react-show-more-text";
 import PropTypes from "prop-types";
 import TagList from "./TagList";
 import Badge from "../Badge";
+import ShowMore from "../ShowMore";
 
 const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
 const getPrereqCodes = (text) => {
@@ -94,20 +94,16 @@ export default function CourseDetails({
                     marginBottom: "2em",
                 }}
                 >
-                    {view !== 1
-                        && (
-                            <ShowMoreText
-                                lines={2}
-                                more="See more"
-                                less="See less"
-                            >
-                                {description}
-                            </ShowMoreText>
-                        )
-                    }
-                    {view === 1 && description}
+                    <ShowMore
+                        disabled={view === 1}
+                        lines={2}
+                        more="See more"
+                        less="See less"
+                    >
+                        {description}
+                    </ShowMore>
                 </li>
-            ) : null}
+            )}
         </ul>
     );
 }
