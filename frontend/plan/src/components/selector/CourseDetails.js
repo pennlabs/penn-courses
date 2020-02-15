@@ -12,10 +12,12 @@ const annotatePrerequisites = (text, onClick) => {
     tokens.unshift("Prerequisites: ");
     return tokens.map(token => (courseRegex.test(token)
         ? (
-            <a onClick={e => {
-                e.preventDefault()
-                onClick && onClick(token.trim().replace(/\s/g, "-"));
-            }}
+            <a
+                role="button"
+                onClick={(e) => {
+                    e.preventDefault();
+                    onClick && onClick(token.trim().replace(/\s/g, "-"));
+                }}
             >
                 {token}
             </a>
