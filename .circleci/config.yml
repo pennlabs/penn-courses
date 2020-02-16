@@ -38,8 +38,6 @@ workflows:
     jobs:
       - django-tools/check:
           project-name: "PennCourses"
-          black: false
-          flake8: false
       - docker/publish:
           name: publish-backend
           requires:
