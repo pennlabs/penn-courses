@@ -48,14 +48,16 @@ const SearchSortDropdown = ({ updateSort }) => {
         };
     });
     return (
-        <div>
-            <span>Sort by</span>
+        <div style={{ display: "table" }}>
+            <span style={{ display: "table-cell", verticalAlign: "bottom" }}>Sort by</span>
             <div
                 className={`classic dropdown${isActive
                     ? " is-active" : ""}`}
                 ref={node => setRef(node)}
+                style={{ display: "table-cell" }}
             >
                 <div
+                    style={{ padding: "0rem 0rem 0rem 0.4rem" }}
                     className={`classic-dropdown-trigger myDropdown ${isActive ? "is-active" : ""}`}
                     role="button"
                     aria-haspopup={true}
@@ -64,8 +66,8 @@ const SearchSortDropdown = ({ updateSort }) => {
                 >
                     <div style={{ fontWeight: "500" }}>{contents[activeItem]}</div>
                     <div>
-                        <span className="icon">
-                            <i className="fa fa-chevron-down" aria-hidden="true" />
+                        <span className="icon" style={{ display: "table" }}>
+                            <i className="fa fa-chevron-down" aria-hidden="true" style={{ paddingLeft: "0.5rem" }} />
                         </span>
                     </div>
                 </div>
