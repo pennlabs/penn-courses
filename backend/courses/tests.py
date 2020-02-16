@@ -459,7 +459,8 @@ class RelocateReqsRestsTest(TestCase):
 class ParseOpendataResponseTestCase(TestCase):
     def test_parse_response(self):
         upsert_course_from_opendata(
-            json.load(open("courses/test-opendata.json", "r"))["result_data"][0], TEST_SEMESTER
+            json.load(open("backend/courses/test-opendata.json", "r"))["result_data"][0],
+            TEST_SEMESTER,
         )
         self.assertEqual(1, Course.objects.count())
         self.assertEqual(21, Section.objects.count())
