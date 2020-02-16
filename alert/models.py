@@ -187,7 +187,7 @@ class Registration(models.Model):
                     alert_registration e
                     INNER JOIN cte_resubscribes_forward o
                         ON o.id = e.resubscribed_from_id ),
-            RECURSIVE cte_resubscribes_backward AS (
+            cte_resubscribes_backward AS (
                 SELECT
                     *
                 FROM
