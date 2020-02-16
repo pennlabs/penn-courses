@@ -167,14 +167,16 @@ class Registration(models.Model):
         return new_registration
 
     def get_resubscribe_group_sql(self):
+        # This is an optimization that we can use if we need to but as of now it is unused.  Remove this comment
+        # if you use it.
         # DO NOT add variable parameters or reference external variables improperly
         # (to prevent against SQL injection attacks)
         # https://docs.djangoproject.com/en/3.0/topics/db/sql/
         if not isinstance(self.id, int):
             raise ValueError('ID must be an int')
         return Registration.objects.raw("""
-            WITH
-            RECURSIVE cte_resubscribes_forward AS (
+            WITH RECURSIVE
+            cte_resubscribes_forward AS (
                 SELECT
                     *
                 FROM
@@ -219,7 +221,7 @@ class Registration(models.Model):
 
     def get_original_registration_sql(self):
         for r in self.get_resubscribe_group_sql():
-            if not hasattr(r, 'resubscribed_from'):
+            if r.resubscribed_from is None:
                 return r
         raise ObjectDoesNotExist('This means an invariant is violated in the database (a resubscribe group should ' +
                                  'always have an element with no resubscribed_from)')
