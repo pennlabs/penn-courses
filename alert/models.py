@@ -174,7 +174,7 @@ class Registration(models.Model):
             raise ValueError('ID must be an int')
         return Registration.objects.raw("""
             WITH
-            cte_resubscribes_forward AS (
+            RECURSIVE cte_resubscribes_forward AS (
                 SELECT
                     *
                 FROM
@@ -187,7 +187,7 @@ class Registration(models.Model):
                     alert_registration e
                     INNER JOIN cte_resubscribes_forward o
                         ON o.id = e.resubscribed_from_id ),
-            cte_resubscribes_backward AS (
+            RECURSIVE cte_resubscribes_backward AS (
                 SELECT
                     *
                 FROM
