@@ -5,7 +5,7 @@ import phonenumbers  # library for parsing and formatting phone numbers.
 from django import urls
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
+# from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 from shortener.models import Url
@@ -29,6 +29,7 @@ SOURCE_API = 'API'
 
 class Registration(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
+    original_created_at = models.DateTimeField(null=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     SOURCE_CHOICES = (
@@ -100,6 +101,12 @@ class Registration(models.Model):
                 user_data.save()
                 self.phone = None
         super().save(*args, **kwargs)
+        if self.original_created_at is None:
+            if self.resubscribed_from is None:
+                self.original_created_at = self.created_at
+            else:
+                self.original_created_at = self.get_original_registration_rec().created_at
+        super().save()
 
     @property
     def is_active(self):
@@ -154,11 +161,13 @@ class Registration(models.Model):
                                         phone=self.phone,
                                         section=self.section,
                                         auto_resubscribe=self.auto_resubscribe,
-                                        resubscribed_from=most_recent_reg)
+                                        resubscribed_from=most_recent_reg,
+                                        original_created_at=self.original_created_at)
         new_registration.save()
         return new_registration
 
-    def get_resubscribe_group(self):
+    '''
+    def get_resubscribe_group_sql(self):
         # DO NOT add variable parameters or reference external variables improperly
         # (to prevent against SQL injection attacks)
         # https://docs.djangoproject.com/en/3.0/topics/db/sql/
@@ -202,23 +211,30 @@ class Registration(models.Model):
                 FROM
                     cte_resubscribes_backward;""", (self.id, self.id))
 
-    def get_most_current_unstable(self):
-        for r in self.get_resubscribe_group():
+    def get_most_current_sql(self):
+        for r in self.get_resubscribe_group_sql():
             if not hasattr(r, 'resubscribed_to'):
                 return r
         raise ObjectDoesNotExist('This means an invariant is violated in the database (a resubscribe group should ' +
                                  'always have an element with no resubscribed_to)')
 
-    def get_original_registration(self):
-        for r in self.get_resubscribe_group():
+    def get_original_registration_sql(self):
+        for r in self.get_resubscribe_group_sql():
             if not hasattr(r, 'resubscribed_from'):
                 return r
         raise ObjectDoesNotExist('This means an invariant is violated in the database (a resubscribe group should ' +
                                  'always have an element with no resubscribed_from)')
+    '''
 
-    def get_most_current(self):
+    def get_most_current_rec(self):
         if hasattr(self, 'resubscribed_to'):
-            return self.resubscribed_to.get_most_current()
+            return self.resubscribed_to.get_most_current_rec()
+        else:
+            return self
+
+    def get_original_registration_rec(self):
+        if self.resubscribed_from is not None:
+            return self.resubscribed_from.get_original_registration_rec()
         else:
             return self
 

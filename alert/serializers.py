@@ -9,7 +9,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Registration
-        fields = ['id', 'created_at', 'updated_at', 'section', 'user', 'deleted', 'auto_resubscribe',
-                  'notification_sent', 'notification_sent_at', 'deleted_at']
-        read_only_fields = ['created_at', 'updated_at', 'section', 'user', 'notification_sent',
+        fields = ['id', 'created_at', 'original_created_at', 'updated_at', 'section', 'user', 'deleted',
+                  'auto_resubscribe', 'notification_sent', 'notification_sent_at', 'deleted_at']
+        read_only_fields = ['created_at', 'original_created_at', 'updated_at', 'section', 'user', 'notification_sent',
                             'notification_sent_at', 'deleted_at']

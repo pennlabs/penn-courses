@@ -292,7 +292,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object().get_most_current()
+        instance = self.get_object().get_most_current_rec()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
@@ -302,7 +302,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         except Registration.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        registration = registration.get_most_current()
+        registration = registration.get_most_current_rec()
 
         if registration.section.semester != get_value('SEMESTER', None):
             return Response({'detail': 'You can only update registrations from the current semester.'},
@@ -349,7 +349,6 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
 
-    # TODO: make 1 database query with prefetch
     def get_queryset_current(self):
         return Registration.objects.filter(user=self.request.user, notification_sent=False, deleted=False)
 
