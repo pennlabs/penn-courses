@@ -9,38 +9,37 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('alert', '0005_delete_courseupdate'),
+        ("alert", "0005_delete_courseupdate"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='registration',
-            name='auto_mute',
-            field=models.BooleanField(default=True),
+            model_name="registration", name="auto_mute", field=models.BooleanField(default=True),
         ),
         migrations.AddField(
-            model_name='registration',
-            name='deleted',
-            field=models.BooleanField(default=False),
+            model_name="registration", name="deleted", field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='registration',
-            name='deleted_at',
+            model_name="registration",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='registration',
-            name='muted',
-            field=models.BooleanField(default=False),
+            model_name="registration", name="muted", field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='registration',
-            name='muted_at',
+            model_name="registration",
+            name="muted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='registration',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            model_name="registration",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

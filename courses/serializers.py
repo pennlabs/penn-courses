@@ -9,24 +9,16 @@ class MeetingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Meeting
-        fields = (
-            'day',
-            'start',
-            'end',
-            'room'
-        )
+        fields = ("day", "start", "end", "room")
 
 
 class SectionIdField(serializers.RelatedField):
     def to_representation(self, value):
-        return {
-            'id': value.full_code,
-            'activity': value.activity
-        }
+        return {"id": value.full_code, "activity": value.activity}
 
 
 class MiniSectionSerializer(serializers.ModelSerializer):
-    section_id = serializers.CharField(source='full_code')
+    section_id = serializers.CharField(source="full_code")
     instructors = serializers.StringRelatedField(many=True)
     course_title = serializers.SerializerMethodField()
 
@@ -36,12 +28,12 @@ class MiniSectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Section
         fields = [
-            'section_id',
-            'status',
-            'activity',
-            'meeting_times',
-            'instructors',
-            'course_title',
+            "section_id",
+            "status",
+            "activity",
+            "meeting_times",
+            "instructors",
+            "course_title",
         ]
 
     @staticmethod
@@ -50,7 +42,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
 
 
 class SectionDetailSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='full_code')
+    id = serializers.ReadOnlyField(source="full_code")
     semester = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True)
     instructors = serializers.StringRelatedField(many=True)
@@ -68,20 +60,18 @@ class SectionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Section
         fields = [
-            'id',
-            'status',
-            'activity',
-            'credits',
-            'semester',
-            'meetings',
-            'instructors',
-            'course_quality',
-            'instructor_quality',
-            'difficulty',
-            'work_required'
-        ] + [
-            'associated_sections',
-        ]
+            "id",
+            "status",
+            "activity",
+            "credits",
+            "semester",
+            "meetings",
+            "instructors",
+            "course_quality",
+            "instructor_quality",
+            "difficulty",
+            "work_required",
+        ] + ["associated_sections",]
 
 
 class RequirementListSerializer(serializers.ModelSerializer):
@@ -89,21 +79,15 @@ class RequirementListSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_id(obj):
-        return f'{obj.code}@{obj.school}'
+        return f"{obj.code}@{obj.school}"
 
     class Meta:
         model = Requirement
-        fields = [
-            'id',
-            'code',
-            'school',
-            'semester',
-            'name'
-        ]
+        fields = ["id", "code", "school", "semester", "name"]
 
 
 class CourseListSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='full_code')
+    id = serializers.ReadOnlyField(source="full_code")
     num_sections = serializers.SerializerMethodField()
 
     course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
@@ -117,49 +101,42 @@ class CourseListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            'id',
-            'title',
-            'description',
-            'semester',
-            'num_sections',
-            'course_quality',
-            'instructor_quality',
-            'difficulty',
-            'work_required',
+            "id",
+            "title",
+            "description",
+            "semester",
+            "num_sections",
+            "course_quality",
+            "instructor_quality",
+            "difficulty",
+            "work_required",
         ]
 
 
 class CourseDetailSerializer(CourseListSerializer):
-    crosslistings = serializers.SlugRelatedField(slug_field='full_code', many=True, read_only=True)
+    crosslistings = serializers.SlugRelatedField(slug_field="full_code", many=True, read_only=True)
     sections = SectionDetailSerializer(many=True)
     requirements = RequirementListSerializer(many=True)
 
     class Meta:
         model = Course
         fields = [
-            'id',
-            'title',
-            'description',
-            'semester',
-            'prerequisites',
-            'course_quality',
-            'instructor_quality',
-            'difficulty',
-            'work_required',
-        ] + [
-            'crosslistings',
-            'requirements',
-            'sections',
-        ]
+            "id",
+            "title",
+            "description",
+            "semester",
+            "prerequisites",
+            "course_quality",
+            "instructor_quality",
+            "difficulty",
+            "work_required",
+        ] + ["crosslistings", "requirements", "sections",]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = [
-            'email',
-            'phone'
-        ]
+        fields = ["email", "phone"]
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -167,33 +144,28 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         prof, _ = UserProfile.objects.get_or_create(user=instance)
-        prof_data = validated_data.pop('profile')
-        for key in ['first_name', 'last_name']:
+        prof_data = validated_data.pop("profile")
+        for key in ["first_name", "last_name"]:
             if key in validated_data:
                 setattr(instance, key, validated_data[key])
-        for key in ['phone', 'email']:
+        for key in ["phone", "email"]:
             if key in prof_data:
                 setattr(prof, key, prof_data[key])
         prof.save()
-        setattr(instance, 'profile', prof)
+        setattr(instance, "profile", prof)
         instance.save()
         return instance
 
     class Meta:
         model = get_user_model()
-        fields = [
-            'username',
-            'first_name',
-            'last_name',
-            'profile'
-        ]
-        read_only_fields = ['username']
+        fields = ["username", "first_name", "last_name", "profile"]
+        read_only_fields = ["username"]
 
 
 class StatusUpdateSerializer(serializers.ModelSerializer):
-    section = serializers.ReadOnlyField(source='section__full_code', read_only=True)
+    section = serializers.ReadOnlyField(source="section__full_code", read_only=True)
 
     class Meta:
         model = StatusUpdate
-        fields = ['section', 'old_status', 'new_status', 'created_at', 'alert_sent']
+        fields = ["section", "old_status", "new_status", "created_at", "alert_sent"]
         read_only_fields = fields

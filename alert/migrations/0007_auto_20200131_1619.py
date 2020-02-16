@@ -6,21 +6,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('alert', '0006_auto_20191110_1357'),
+        ("alert", "0006_auto_20191110_1357"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='registration',
-            old_name='muted',
-            new_name='auto_resubscribe',
+            model_name="registration", old_name="muted", new_name="auto_resubscribe",
         ),
-        migrations.RemoveField(
-            model_name='registration',
-            name='auto_mute',
-        ),
-        migrations.RemoveField(
-            model_name='registration',
-            name='muted_at',
-        ),
+        migrations.RemoveField(model_name="registration", name="auto_mute",),
+        migrations.RemoveField(model_name="registration", name="muted_at",),
     ]

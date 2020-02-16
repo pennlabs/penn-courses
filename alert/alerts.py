@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 def send_email(from_, to, subject, html):
-    msg = MIMEText(html, 'html')
-    msg['Subject'] = subject
-    msg['From'] = from_
-    msg['To'] = to
+    msg = MIMEText(html, "html")
+    msg["Subject"] = subject
+    msg["From"] = from_
+    msg["To"] = to
 
     with SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
         server.ehlo()
@@ -30,26 +30,24 @@ def send_email(from_, to, subject, html):
 def send_text(to, text):
     try:
         client = Client(settings.TWILIO_SID, settings.TWILIO_AUTH_TOKEN)
-        msg = client.messages.create(
-            to=to,
-            from_=settings.TWILIO_NUMBER,
-            body=text
-        )
+        msg = client.messages.create(to=to, from_=settings.TWILIO_NUMBER, body=text)
         if msg.sid is not None:
             return True
     except TwilioRestException:
-        logger.exception('Text Error')
+        logger.exception("Text Error")
         return False
 
 
 class Alert(ABC):
     def __init__(self, template, reg):
         t = loader.get_template(template)
-        self.text = t.render({
-            'course': reg.section.full_code,
-            'signup_url': reg.resub_url,
-            'brand': 'Penn Course Alert'
-        })
+        self.text = t.render(
+            {
+                "course": reg.section.full_code,
+                "signup_url": reg.resub_url,
+                "brand": "Penn Course Alert",
+            }
+        )
         self.registration = reg
 
     @abstractmethod
@@ -59,7 +57,7 @@ class Alert(ABC):
 
 class Email(Alert):
     def __init__(self, reg):
-        super().__init__('alert/email_alert.html', reg)
+        super().__init__("alert/email_alert.html", reg)
 
     def send_alert(self):
         if self.registration.user is not None and self.registration.user.profile.email is not None:
@@ -69,18 +67,20 @@ class Email(Alert):
         else:
             return False
         try:
-            return send_email(from_='Penn Course Alert <team@penncoursealert.com>',
-                              to=email,
-                              subject='%s is now open!' % self.registration.section.full_code,
-                              html=self.text)
+            return send_email(
+                from_="Penn Course Alert <team@penncoursealert.com>",
+                to=email,
+                subject="%s is now open!" % self.registration.section.full_code,
+                html=self.text,
+            )
         except SMTPRecipientsRefused:
-            logger.exception('Email Error')
+            logger.exception("Email Error")
             return False
 
 
 class Text(Alert):
     def __init__(self, reg):
-        super().__init__('alert/text_alert.txt', reg)
+        super().__init__("alert/text_alert.txt", reg)
 
     def send_alert(self):
         if self.registration.user is not None and self.registration.user.profile.phone is not None:

@@ -6,28 +6,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0020_auto_20190928_0046'),
+        ("courses", "0020_auto_20190928_0046"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='requirement',
-            name='courses',
-            field=models.ManyToManyField(blank=True, related_name='requirement_set', to='courses.Course'),
+            model_name="requirement",
+            name="courses",
+            field=models.ManyToManyField(
+                blank=True, related_name="requirement_set", to="courses.Course"
+            ),
         ),
         migrations.AlterField(
-            model_name='requirement',
-            name='departments',
-            field=models.ManyToManyField(blank=True, related_name='requirements', to='courses.Department'),
+            model_name="requirement",
+            name="departments",
+            field=models.ManyToManyField(
+                blank=True, related_name="requirements", to="courses.Department"
+            ),
         ),
         migrations.AlterField(
-            model_name='requirement',
-            name='overrides',
-            field=models.ManyToManyField(blank=True, related_name='nonrequirement_set', to='courses.Course'),
+            model_name="requirement",
+            name="overrides",
+            field=models.ManyToManyField(
+                blank=True, related_name="nonrequirement_set", to="courses.Course"
+            ),
         ),
         migrations.AlterField(
-            model_name='section',
-            name='restrictions',
-            field=models.ManyToManyField(blank=True, to='courses.Restriction'),
+            model_name="section",
+            name="restrictions",
+            field=models.ManyToManyField(blank=True, to="courses.Restriction"),
         ),
     ]

@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('review', '0001_initial'),
+        ("review", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='review',
-            name='course_quality',
+            model_name="review",
+            name="course_quality",
             field=models.DecimalField(decimal_places=2, max_digits=3, null=True),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='difficulty',
+            model_name="review",
+            name="difficulty",
             field=models.DecimalField(decimal_places=2, max_digits=3, null=True),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='instructor_quality',
+            model_name="review",
+            name="instructor_quality",
             field=models.DecimalField(decimal_places=2, max_digits=3, null=True),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='work_required',
+            model_name="review",
+            name="work_required",
             field=models.DecimalField(decimal_places=2, max_digits=3, null=True),
         ),
     ]

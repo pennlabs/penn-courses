@@ -11,25 +11,43 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('courses', '0026_merge_20191117_1420'),
+        ("courses", "0026_merge_20191117_1420"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='UserProfile',
+            name="UserProfile",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('email', models.EmailField(blank=True, max_length=254, null=True)),
-                ('phone', models.CharField(blank=True, max_length=100, null=True, validators=[courses.models.UserProfile.validate_phone])),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='user', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("email", models.EmailField(blank=True, max_length=254, null=True)),
+                (
+                    "phone",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        validators=[courses.models.UserProfile.validate_phone],
+                    ),
+                ),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="user",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.AlterField(
-            model_name='statusupdate',
-            name='created_at',
+            model_name="statusupdate",
+            name="created_at",
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
-        migrations.DeleteModel(
-            name='UserData',
-        ),
+        migrations.DeleteModel(name="UserData",),
     ]

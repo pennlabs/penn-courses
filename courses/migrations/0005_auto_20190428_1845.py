@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0004_auto_20190428_1710'),
+        ("courses", "0004_auto_20190428_1710"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='section',
-            name='associated_sections',
-            field=models.ManyToManyField(to='courses.Section'),
+            model_name="section",
+            name="associated_sections",
+            field=models.ManyToManyField(to="courses.Section"),
         ),
         migrations.AddField(
-            model_name='section',
-            name='credits',
+            model_name="section",
+            name="credits",
             field=models.DecimalField(decimal_places=2, default=1.0, max_digits=3),
             preserve_default=False,
         ),
