@@ -22,7 +22,7 @@ const CourseDetails = ({ meetings, code, overlaps }) => (
                 <div className="popover is-popover-right">
                     <i style={{ paddingRight: "5px" }} className="fas fa-calendar-times" />
                     <span className="popover-content">
-                              Conflicts with schedule!
+                        Conflicts with schedule!
                     </span>
                 </div>
             )}

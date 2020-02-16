@@ -11,9 +11,11 @@ unittest-xml-reporting = "*"
 flake8 = "*"
 flake8-isort = "*"
 flake8-quotes = "*"
+pytest = "*"
+pytest-django = "*"
 
 [packages]
-django = ">=2.2.4"
+django = "<3.0"
 mysqlclient = "*"
 requests = "*"
 twilio = "*"
