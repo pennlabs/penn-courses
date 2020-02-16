@@ -1,8 +1,15 @@
 import math
 import uuid
 
+import phonenumbers
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Avg, FloatField, OuterRef, Q, Subquery
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
 from options.models import get_value
 
 from review.models import ReviewBit
@@ -236,7 +243,7 @@ class StatusUpdate(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
     old_status = models.CharField(max_length=16, choices=STATUS_CHOICES)
     new_status = models.CharField(max_length=16, choices=STATUS_CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     alert_sent = models.BooleanField()
     request_body = models.TextField()
 
@@ -379,3 +386,39 @@ class APIKey(models.Model):
     active = models.BooleanField(blank=True, default=True)
 
     privileges = models.ManyToManyField(APIPrivilege, related_name='key_set', blank=True)
+
+
+class UserProfile(models.Model):
+    """
+    A model that stores all user data from PCX users
+    """
+    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='profile')
+    email = models.EmailField(blank=True, null=True)
+    # phone field defined underneath validate_phone function below
+
+    def validate_phone(value):
+        try:
+            phonenumbers.parse(value, 'US')
+        except phonenumbers.phonenumberutil.NumberParseException:
+            raise ValidationError('Enter a valid phone number.')
+
+    phone = models.CharField(blank=True, null=True, max_length=100, validators=[validate_phone])
+
+    def __str__(self):
+        return 'Data from User: %s' % self.user
+
+    def save(self, *args, **kwargs):
+        if self.phone is not None:
+            try:
+                phone_number = phonenumbers.parse(self.phone, 'US')
+                self.phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164)
+            except phonenumbers.phonenumberutil.NumberParseException:
+                raise ValidationError('Invalid phone number (this should have been caught already)')
+        super(UserProfile, self).save(*args, **kwargs)
+
+
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+    instance.profile.save()

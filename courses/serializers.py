@@ -1,17 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from courses.models import Course, Meeting, Requirement, Section
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = get_user_model()
-        fields = [
-            'username',
-            'first_name',
-            'last_name',
-        ]
+from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserProfile
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -161,3 +151,49 @@ class CourseDetailSerializer(CourseListSerializer):
             'requirements',
             'sections',
         ]
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = [
+            'email',
+            'phone'
+        ]
+
+
+class UserSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer(read_only=False)
+
+    def update(self, instance, validated_data):
+        prof, _ = UserProfile.objects.get_or_create(user=instance)
+        prof_data = validated_data.pop('profile')
+        for key in ['first_name', 'last_name']:
+            if key in validated_data:
+                setattr(instance, key, validated_data[key])
+        for key in ['phone', 'email']:
+            if key in prof_data:
+                setattr(prof, key, prof_data[key])
+        prof.save()
+        setattr(instance, 'profile', prof)
+        instance.save()
+        return instance
+
+    class Meta:
+        model = get_user_model()
+        fields = [
+            'username',
+            'first_name',
+            'last_name',
+            'profile'
+        ]
+        read_only_fields = ['username']
+
+
+class StatusUpdateSerializer(serializers.ModelSerializer):
+    section = serializers.ReadOnlyField(source='section__full_code', read_only=True)
+
+    class Meta:
+        model = StatusUpdate
+        fields = ['section', 'old_status', 'new_status', 'created_at', 'alert_sent']
+        read_only_fields = fields

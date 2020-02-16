@@ -5,9 +5,9 @@ from options.models import get_value
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
-from courses.models import Course, Requirement, Section
-from courses.serializers import (CourseDetailSerializer, CourseListSerializer,
-                                 MiniSectionSerializer, RequirementListSerializer, UserSerializer)
+from courses.models import Course, Requirement, Section, StatusUpdate
+from courses.serializers import (CourseDetailSerializer, CourseListSerializer, MiniSectionSerializer,
+                                 RequirementListSerializer, StatusUpdateSerializer, UserSerializer)
 from plan.search import TypedSectionSearchBackend
 
 
@@ -82,12 +82,21 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
     queryset = Requirement.objects.all()
 
 
-class UserDetailView(generics.RetrieveAPIView):
+class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return get_user_model().objects.all()
+        return get_user_model().objects.filter(pk=self.request.user.pk)
 
     def get_object(self):
         return self.request.user
+
+
+class StatusUpdateView(generics.ListAPIView):
+    serializer_class = StatusUpdateSerializer
+    http_method_names = ['get']
+    lookup_field = 'full_code'
+
+    def get_queryset(self):
+        return StatusUpdate.objects.filter(Q(section__course__full_code=self.kwargs['full_code']))

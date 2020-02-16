@@ -27,6 +27,21 @@ def send_email(from_, to, subject, html):
         return True
 
 
+def send_text(to, text):
+    try:
+        client = Client(settings.TWILIO_SID, settings.TWILIO_AUTH_TOKEN)
+        msg = client.messages.create(
+            to=to,
+            from_=settings.TWILIO_NUMBER,
+            body=text
+        )
+        if msg.sid is not None:
+            return True
+    except TwilioRestException:
+        logger.exception('Text Error')
+        return False
+
+
 class Alert(ABC):
     def __init__(self, template, reg):
         t = loader.get_template(template)
@@ -47,11 +62,15 @@ class Email(Alert):
         super().__init__('alert/email_alert.html', reg)
 
     def send_alert(self):
-        if self.registration.email is None:
+        if self.registration.user is not None and self.registration.user.profile.email is not None:
+            email = self.registration.user.profile.email
+        elif self.registration.email is not None:
+            email = self.registration.email
+        else:
             return False
         try:
             return send_email(from_='Penn Course Alert <team@penncoursealert.com>',
-                              to=self.registration.email,
+                              to=email,
                               subject='%s is now open!' % self.registration.section.full_code,
                               html=self.text)
         except SMTPRecipientsRefused:
@@ -64,18 +83,11 @@ class Text(Alert):
         super().__init__('alert/text_alert.txt', reg)
 
     def send_alert(self):
-        if self.registration.phone is None:
+        if self.registration.user is not None and self.registration.user.profile.phone is not None:
+            phone_number = self.registration.user.profile.phone
+        elif self.registration.phone is not None:
+            phone_number = self.registration.phone
+        else:
             return False
 
-        try:
-            client = Client(settings.TWILIO_SID, settings.TWILIO_AUTH_TOKEN)
-            msg = client.messages.create(
-                to=self.registration.phone,
-                from_=settings.TWILIO_NUMBER,
-                body=self.text
-            )
-            if msg.sid is not None:
-                return True
-        except TwilioRestException:
-            logger.exception('Text Error')
-            return False
+        return send_text(phone_number, self.text)
