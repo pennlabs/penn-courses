@@ -1151,17 +1151,19 @@ class AlertRegistrationTestCase(TestCase):
         ids = self.create_auto_resubscribe_group()
         self.registrations_resubscribe_get_old_and_history_helper(ids)
 
-    def test_resubscribe_to_old(self):
-        ids = self.create_resubscribe_group()
+    def resubscribe_to_old_helper(self, ids, auto_resub=False):
         first_ob = Registration.objects.get(id=ids['first_id'])
         fourth_ob = Registration.objects.get(id=ids['fourth_id'])
         self.simulate_alert(self.cis120, 3)
-        response = self.client.post('/api/registrations/',
-                                    json.dumps({'id': ids['third_id'],
-                                                'resubscribe': True}),
-                                    content_type='application/json')
-        self.assertEqual(200, response.status_code)
-        sixth_id = response.data['id']
+        if auto_resub:
+            sixth_id = Registration.objects.get(id=ids['fourth_id']).resubscribed_to.id
+        else:
+            response = self.client.post('/api/registrations/',
+                                        json.dumps({'id': ids['third_id'],
+                                                    'resubscribe': True}),
+                                        content_type='application/json')
+            self.assertEqual(200, response.status_code)
+            sixth_id = response.data['id']
         response = self.client.get('/api/registrations/')
         sixth_data = next(item for item in response.data if item['id'] == sixth_id)
         sixth_ob = Registration.objects.get(id=sixth_id)
@@ -1172,6 +1174,14 @@ class AlertRegistrationTestCase(TestCase):
         self.assertFalse(hasattr(sixth_ob, 'resubscribed_to'))
         self.assertFalse(sixth_data['notification_sent'])
         self.assertIsNone(sixth_data['notification_sent_at'])
+
+    def test_resubscribe_to_old(self):
+        ids = self.create_resubscribe_group()
+        self.resubscribe_to_old_helper(ids)
+
+    def test_resubscribe_to_old_auto_resub(self):
+        ids = self.create_auto_resubscribe_group()
+        self.resubscribe_to_old_helper(ids, True)
 
     def registrations_multiple_users_helper(self, ids, auto_resub=False):
         new_user = User.objects.create_user(username='new_jacob',
@@ -1366,8 +1376,6 @@ class AlertRegistrationTestCase(TestCase):
 # test course status update hook
 
 # fix plan list order
-
-# fix recursive SQL method tests on circleci
 
 # test UserDetail integration with other code, Davis
 
