@@ -1246,7 +1246,6 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(Registration.objects.get(id=ids['fifth_id']),
                          Registration.objects.get(id=ids['fifth_id']).get_original_registration_rec())
 
-    """
     def test_get_resubscribe_group_sql(self):
         ids = self.create_resubscribe_group()
         first = Registration.objects.get(id=ids['first_id'])
@@ -1263,11 +1262,31 @@ class AlertRegistrationTestCase(TestCase):
         self.assertTrue(fourth in third.get_resubscribe_group_sql())
 
     def test_get_most_current_sql(self):
-        pass
+        ids = self.create_resubscribe_group()
+        self.assertEqual(Registration.objects.get(id=ids['fourth_id']),
+                         Registration.objects.get(id=ids['first_id']).get_most_current_sql())
+        self.assertEqual(Registration.objects.get(id=ids['second_id']),
+                         Registration.objects.get(id=ids['second_id']).get_most_current_sql())
+        self.assertEqual(Registration.objects.get(id=ids['fourth_id']),
+                         Registration.objects.get(id=ids['third_id']).get_most_current_sql())
+        self.assertEqual(Registration.objects.get(id=ids['fourth_id']),
+                         Registration.objects.get(id=ids['fourth_id']).get_most_current_sql())
+        self.assertEqual(Registration.objects.get(id=ids['fifth_id']),
+                         Registration.objects.get(id=ids['fifth_id']).get_most_current_sql())
 
     def test_get_original_registration_sql(self):
-        pass
-    """
+        ids = self.create_resubscribe_group()
+        self.assertEqual(Registration.objects.get(id=ids['first_id']),
+                         Registration.objects.get(id=ids['first_id']).get_original_registration_sql())
+        self.assertEqual(Registration.objects.get(id=ids['second_id']),
+                         Registration.objects.get(id=ids['second_id']).get_original_registration_sql())
+        self.assertEqual(Registration.objects.get(id=ids['first_id']),
+                         Registration.objects.get(id=ids['third_id']).get_original_registration_sql())
+        self.assertEqual(Registration.objects.get(id=ids['first_id']),
+                         Registration.objects.get(id=ids['fourth_id']).get_original_registration_sql())
+        self.assertEqual(Registration.objects.get(id=ids['fifth_id']),
+                         Registration.objects.get(id=ids['fifth_id']).get_original_registration_sql())
+
 
 # TESTING INCOMPLETE
 

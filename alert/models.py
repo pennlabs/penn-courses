@@ -5,7 +5,7 @@ import phonenumbers  # library for parsing and formatting phone numbers.
 from django import urls
 from django.conf import settings
 from django.contrib.auth import get_user_model
-# from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 from shortener.models import Url
@@ -166,7 +166,6 @@ class Registration(models.Model):
         new_registration.save()
         return new_registration
 
-    '''
     def get_resubscribe_group_sql(self):
         # DO NOT add variable parameters or reference external variables improperly
         # (to prevent against SQL injection attacks)
@@ -224,7 +223,6 @@ class Registration(models.Model):
                 return r
         raise ObjectDoesNotExist('This means an invariant is violated in the database (a resubscribe group should ' +
                                  'always have an element with no resubscribed_from)')
-    '''
 
     def get_most_current_rec(self):
         if hasattr(self, 'resubscribed_to'):
