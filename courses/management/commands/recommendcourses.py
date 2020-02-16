@@ -1,6 +1,6 @@
 import heapq
 import math
-from typing import Set, List, Dict, Optional
+from typing import Set, List, Dict, Optional, Tuple, Iterable
 
 import numpy as np
 from accounts.middleware import User
@@ -63,11 +63,41 @@ def vectorize_user(user, course_vectors_dict):
     return vectorize_user_by_courses(courses, course_vectors_dict)
 
 
-def generate_courses_by_user():
+def courses_data_from_db():
+    """
+    Fetches data from the courses db and yields tuples of the form person_id, course, semester
+    """
+    for schedule in Schedule.objects.all():
+        for course in sections_to_courses(schedule.sections.all()):
+            person_id = schedule.person.pk
+            yield (person_id, course, schedule.semester)
+
+
+def group_courses(courses_data: Iterable[Tuple[int, str, str]]):
+    unsequenced_courses_by_user_dict = {}
+    sequenced_courses_by_user_dict = {}
+    for person_id, course, semester in courses_data:
+        # maps a course to a list of semesters
+        user_courses: Dict[str, List[str]]
+        if person_id not in unsequenced_courses_by_user_dict:
+            user_courses = {}
+            unsequenced_courses_by_user_dict[person_id] = user_courses
+        else:
+            user_courses = unsequenced_courses_by_user_dict[person_id]
+        course = normalize_class_name(course)
+        if course in user_courses:
+            user_courses[course].append(semester)
+        else:
+            user_courses[course] = [semester]
+    return list(unsequenced_courses_by_user_dict.values())
+
+
+def generate_courses_by_user_from_db():
     """
     :return: A list in which each item is a dict corresponding with the multiset of courses for a particular user
     """
     courses_by_user_dict = {}
+
     for schedule in Schedule.objects.all():
         for course in sections_to_courses(schedule.sections.all()):
             person_id = schedule.person.pk
@@ -178,7 +208,7 @@ def courses_by_user_from_csv():
 
 def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     courses_to_vectors = {}
-    courses_by_user = courses_by_user_from_csv() if from_csv else generate_courses_by_user()
+    courses_by_user = courses_by_user_from_csv() if from_csv else generate_courses_by_user_from_db()
     courses, courses_vectorized_by_schedule_presence = zip(
         *vectorize_courses_by_schedule_presence(courses_by_user).items())
     courses_vectorized_by_description = vectorize_courses_by_description(courses)
