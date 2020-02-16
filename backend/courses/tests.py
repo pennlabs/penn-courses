@@ -1,4 +1,5 @@
 import json
+import os
 
 from django.test import TestCase, override_settings
 from options.models import Option
@@ -458,9 +459,13 @@ class RelocateReqsRestsTest(TestCase):
 
 class ParseOpendataResponseTestCase(TestCase):
     def test_parse_response(self):
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        if not os.path.basename(BASE_DIR).startswith("backend"):
+            test_file_path = os.path.join(BASE_DIR, "backend/courses/test-opendata.json")
+        else:
+            test_file_path = os.path.join(BASE_DIR, "courses/test-opendata.json")
         upsert_course_from_opendata(
-            json.load(open("backend/courses/test-opendata.json", "r"))["result_data"][0],
-            TEST_SEMESTER,
+            json.load(open(test_file_path, "r"))["result_data"][0], TEST_SEMESTER,
         )
         self.assertEqual(1, Course.objects.count())
         self.assertEqual(21, Section.objects.count())
