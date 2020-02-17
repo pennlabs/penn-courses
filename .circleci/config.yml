@@ -38,10 +38,12 @@ workflows:
     jobs:
       - django-tools/check:
           project-name: "PennCourses"
+          project-location: backend
       - docker/publish:
           name: publish-backend
           requires:
             - django-tools/check
+          path: backend
           cache_from: "pennlabs/penn-courses-backend:latest"
           image: "pennlabs/penn-courses-backend"
           tag: "${CIRCLE_SHA1},latest"
