@@ -17,6 +17,56 @@ from plan.serializers import ScheduleSerializer
 
 
 class CourseListSearch(CourseList):
+    """
+    The main API endpoint for PCP. Without any GET parameters, it simply returns all courses for
+    a given semester.
+
+    The main API endpoint for PCP is the `/courses` endpoint. Without any `GET` parameters, it
+    simply returns all courses for a given semester.
+
+    - `search`
+
+    The `search` parameter takes in the search query to subset the courses returned. By default,
+    the search type is `auto`. (see below)
+
+    - `type`
+
+    There are three current options for `type`:
+
+    - `auto` The default. Lets the backend decide which type of search to run.
+    - `course` Search against a course's full code, which includes the department and course IDs:
+    for example, `CIS120` should be a `course` query.
+    - `keyword` Search against instructors names and words in the course's title. Both `Programming`
+    and `Rajiv` are good `keyword` searches.
+
+    ## Filters
+    Filters are ANDed together.
+    - `requirements`
+
+    Filter search results by a given requirement, identified by `<code>@<school>`.
+    For example, classes which fulfill the humanities requirement in Engineering could be filtered
+    for with the requirement code `H@SEAS`. The same requirement at Wharton, which can include
+    slightly different classes, can be accessed with `H@WH`. A full list of requirements with their
+    IDs can be found with the `requirements/` endpoint described below.
+
+    Filter by multiple requirements (OR'd together), separating ids by `,`. For example,
+    `SS@SEAS,H@SEAS` will return all courses which match either social science or humanities
+    requirements for SEAS students.
+
+    ### Range Filters
+
+    There are a few filters which constitute ranges of floating-point numbers. The values for these
+    are `<min>-<max>` , with minimum excluded. For example, looking for classes in the range of
+    0-2.5 in difficulty, you would add the parameter `difficulty=0-2.5`. Below are the list of range
+    filters.
+
+    - `cu` course units. Will match if any section of a course has course units which fall in that
+    range.
+    - `difficulty` course difficulty averaged from all reviews.
+    - `course_quality` course quality averaged from all reviews.
+    - `instructor_quality` instructor quality averaged from all reviews.
+    """
+
     filter_backends = [TypedCourseSearchBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")
 
@@ -41,6 +91,16 @@ class CourseListSearch(CourseList):
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
+    """
+    list:
+    This route will return a list of schedules for the logged-in user, each with the fields
+    detailed below.
+
+    retrieve:
+    Get a single schedule.
+
+    """
+
     serializer_class = ScheduleSerializer
     http_method_names = ["get", "post", "delete", "put"]
     permission_classes = [IsAuthenticated]
@@ -108,6 +168,10 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
     def create(self, request, *args, **kwargs):
+        """
+        - `title` - must be unique for a given user in this semester.
+        - `meetings[*].semester` -
+        """
         if self.get_queryset().filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
 

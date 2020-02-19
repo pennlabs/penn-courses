@@ -84,6 +84,11 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
+    """
+    Return a detailed look at a specific course. Includes all details necessary to display course
+    info, including requirements this class fulfills, and all sections.
+    """
+
     serializer_class = CourseDetailSerializer
     lookup_field = "full_code"
 
@@ -104,6 +109,11 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
 
 class RequirementList(generics.ListAPIView, BaseCourseMixin):
+    """
+    Get a list of all requirements in the database for this semester. Includes the `id` field,
+    which can be used to identify the requirement in filters.
+    """
+
     serializer_class = RequirementListSerializer
     queryset = Requirement.objects.all()
 
