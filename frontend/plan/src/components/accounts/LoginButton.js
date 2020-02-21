@@ -3,7 +3,7 @@ import React from "react";
 const LoginButton = () => (
     <a
         className="button is-link login"
-        href={`/accounts/login/?next=${window.location}`}
+        href={`/accounts/login/?next=${window.location.pathname}`}
         style={{
             padding: "0.5rem",
             background: "#7674EA",

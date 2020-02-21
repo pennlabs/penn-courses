@@ -246,7 +246,7 @@ function SearchBar({
                             clearAll();
                         }}
                     >
-                      Clear all
+                        Clear all
                     </button>
                 </div>
                 <div className="level-item">
