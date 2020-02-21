@@ -22,7 +22,6 @@ import Selector from "./components/selector/Selector";
 import Footer from "./components/footer";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
-import SearchSortDropdown from "./components/search/SearchSortDropdown";
 import {
     openModal
 } from "./actions";
@@ -112,36 +111,13 @@ function App() {
                     onSwitching={scrollTop}
                     onChangeIndex={setTab}
                 >
-                    <div style={{
-                        paddingLeft: "10px",
-                        paddingRight: "10px",
-                    }}
-                    >
-                        <div>
-                            <div style={{
-                                display: "flex",
-                                flexDirection: "row",
-                                justifyContent: "space-around",
-                                margin: "10px",
-                            }}
-                            >
-                                <SearchSortDropdown />
-                            </div>
-                            <div
-                                className="box"
-                                style={{
-                                    paddingLeft: 0,
-                                    paddingRight: 0,
-                                }}
-                            >
-                                <Selector mobileView={true} view={0} />
-                            </div>
-                        </div>
+                    <div className="box">
+                        <Selector view={0} mobileView={true} />
                     </div>
                     <div style={{ padding: "10px" }}>
                         <Cart setTab={setTab} mobileView={true} />
                     </div>
-                    <div style={{ padding: "10px" }}>
+                    <div className="box" style={{ padding: "10px" }}>
                         <Schedule setTab={setTab} mobileView={true} />
                     </div>
                 </SwipeableViews>
@@ -155,7 +131,7 @@ function App() {
         <Provider store={store}>
             {initGA()}
             {logPageView()}
-            <div style={{ padding: "0px 2em 0px 2em" }}>
+            <div style={{ padding: "0px 0px" }}>
                 <SearchBar
                     setView={setView}
                     user={currentUser}
@@ -165,50 +141,20 @@ function App() {
                 <div
                     className="App columns is-mobile main smooth-transition"
                     style={view === 0 ? {
-                        padding: 0,
-                        width: "129%",
-                    } : {
-                        padding: 0,
+                        padding: "0px 2em",
                         width: "123%",
+                    } : {
+                        padding: "0px 2em",
+                        width: "118%",
                     }}
                 >
                     <div
-                        className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}
+                        className={view === 0 ? "column smooth-transition is-one-fifth box" : "column smooth-transition is-two-thirds box"}
                     >
-                        <span style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                        }}
-                        >
-                            <h3 style={{
-                                display: "flex",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
-                            }}
-                            >
-                                Search Results
-                            </h3>
-                            <div style={{
-                                float: "right",
-                                display: "flex",
-                            }}
-                            >
-                                <SearchSortDropdown />
-                            </div>
-                        </span>
-                        <div
-                            className="box"
-                            style={{
-                                paddingLeft: 0,
-                                paddingRight: 0,
-                            }}
-                        >
-                            <Selector view={view} />
-                        </div>
+                        <Selector view={view} />
                     </div>
                     <div
-                        className="column is-2"
+                        className="column is-2 box"
                         style={
                             {
                                 display: "flex",
@@ -216,12 +162,7 @@ function App() {
                             }
                         }
                     >
-                        <h3 style={{
-                            display: "flex",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
-                        }}
-                        >
+                        <h3 className="section-header" style={{ borderBottom: "1px solid #e4e4e4" }}>
                             Cart
                         </h3>
                         <Cart />
@@ -232,7 +173,7 @@ function App() {
                             paddingRight: "0px",
                             marginRight: "15px",
                         }}
-                        className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}
+                        className={view === 0 ? "smooth-transition box column is-5" : "smooth-transition box column is-5 hidden"}
                     >
                         <Schedule />
                     </div>

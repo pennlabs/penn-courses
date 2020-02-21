@@ -7,6 +7,7 @@ import "../../styles/selector.css";
 
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
+import SearchSortDropdown from "../search/SearchSortDropdown";
 
 import {
     fetchCourseDetails, updateCourseInfo, addSchedItem, removeSchedItem
@@ -24,6 +25,7 @@ function Selector(props) {
         isSearchingCourseInfo,
         sortMode,
         view,
+        mobileView,
     } = props;
 
     const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && view === 0);
@@ -32,9 +34,39 @@ function Selector(props) {
         <div
             className="button is-loading"
             style={{
-                height: "100%", width: "100%", border: "none", fontSize: "3rem",
+                height: "85%", width: "100%", border: "none", fontSize: "3rem",
             }}
         />
+    );
+
+    const header = (
+        <div>
+            <span style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                padding: "1em",
+                paddingBottom: "0.4em",
+            }}
+            >
+                <h3 style={{
+                    display: "flex",
+                    fontWeight: "bold",
+                    marginBottom: "0.5rem",
+                }}
+                >
+                    Search Results
+                </h3>
+                <div style={{
+                    float: "right",
+                    display: "flex",
+                    height: "1.5em",
+                }}
+                >
+                    <SearchSortDropdown />
+                </div>
+            </span>
+        </div>
     );
 
     let element = (
@@ -51,10 +83,10 @@ function Selector(props) {
                 marginBottom: "0.5rem",
             }}
             >
-            No result found
+                No result found
             </h3>
-        Search for courses, departments, or instructors above.
-        Looking for something specific? Try using the filters!
+            Search for courses, departments, or instructors above.
+            Looking for something specific? Try using the filters!
         </div>
     );
 
@@ -67,24 +99,44 @@ function Selector(props) {
         />
     );
 
-
-    if (courses.length > 0 && !course) {
-        if (view === 0) {
-            element = courseList;
-        } else {
-            element = (
-                <div className="columns">
-                    <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
-                        {courseList}
-                    </div>
+    if (view === 1) {
+        element = (
+            <div style={{ display: "grid", gridTemplateColumns: "33% 67%" }}>
+                <div style={{ height: "calc(100vh - 8em)", borderRight: "1px solid #dddddd" }}>
+                    {header}
+                    {isSearchingCourseInfo ? loadingIndicator : courseList}
                 </div>
-
+                {(!isSearchingCourseInfo && (course || isLoadingCourseInfo))
+              && (
+                  <div style={{ height: "calc(100vh - 8em)", paddingTop: "1em" }}>
+                      {isLoadingCourseInfo ? loadingIndicator
+                          : (
+                              <CourseInfo
+                                  getCourse={getCourse}
+                                  course={course}
+                                  view={view}
+                                  manage={{
+                                      addToSchedule,
+                                      removeFromSchedule,
+                                  }}
+                              />
+                          )
+                      }
+                  </div>
+              )
+                }
+            </div>
+        );
+    } else {
+        if (courses.length > 0 && !course) {
+            element = (
+                <div style={mobileView ? {} : { height: "calc(100vh - 8em)" }}>
+                    {header}
+                    {courseList}
+                </div>
             );
         }
-    }
-
-    if (course) {
-        if (view === 0) {
+        if (course) {
             element = (
                 <CourseInfo
                     getCourse={getCourse}
@@ -96,35 +148,12 @@ function Selector(props) {
                     }}
                 />
             );
-        } else {
-            element = (
-                <div className="columns">
-                    <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
-                        {courseList}
-                    </div>
-                    <div className="column is-two-thirds" style={{ height: "calc(100vh - 12.5em)" }}>
-                        {isLoadingCourseInfo ? loadingIndicator
-                            : (
-                                <CourseInfo
-                                    getCourse={getCourse}
-                                    course={course}
-                                    view={view}
-                                    manage={{
-                                        addToSchedule,
-                                        removeFromSchedule,
-                                    }}
-                                />
-                            )
-                        }
-                    </div>
-
-                </div>
-            );
         }
     }
+
     return (
         <>
-            {isLoading ? loadingIndicator : element}
+            {(view === 0 && isLoading) ? loadingIndicator : element}
         </>
     );
 }
@@ -140,6 +169,7 @@ Selector.propTypes = {
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
     view: PropTypes.number,
+    mobileView: PropTypes.bool,
 };
 
 const mapStateToProps = state => (

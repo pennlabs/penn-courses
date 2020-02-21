@@ -166,6 +166,7 @@ function SearchBar({
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
+                        mobileView={mobileView}
                     />
                     <div
                         style={{ padding: "0.5rem" }}
@@ -197,7 +198,7 @@ function SearchBar({
     }
 
     return (
-        <div className="bar level is-mobile" style={{ height: "auto" }}>
+        <div className="bar level is-mobile" style={{ height: "auto", margin: "0em 0em 1em 0em", borderRadius: "0em" }}>
             <div className="level-left" style={{ maxWidth: "80vw" }}>
                 <div className="level-item">
                     <img
@@ -214,6 +215,7 @@ function SearchBar({
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
+                        mobielView={mobileView}
                     />
                 </div>
 
@@ -225,7 +227,7 @@ function SearchBar({
                     {dropDowns}
                 </div>
             </div>
-            <div className="level-right is-hidden-mobile">
+            <div className="level-right">
                 <div className="level-item">
                     <button
                         className="button is-white"
@@ -244,11 +246,9 @@ function SearchBar({
                             clearAll();
                         }}
                     >
-                      Clear all
+                        Clear all
                     </button>
                 </div>
-            </div>
-            <div className="level-right">
                 <div className="level-item">
                     <AccountIndicator user={user} setUser={setUser} onLeft={false} />
                 </div>
