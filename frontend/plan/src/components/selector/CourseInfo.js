@@ -12,7 +12,7 @@ export default function CourseInfo({
             <div style={{ maxHeight: "10%" }}>
                 {back
                     && (
-                        <button type="button" className="button back-button grey-text" onClick={back} style={{ fontSize: "1em" }}>
+                        <button type="button" className="button back-button grey-text" onClick={back} style={{ fontSize: "1em", margin: "1em", marginBottom: "0em" }}>
                             <span className="icon">
                                 <i className="fas fa-arrow-left" />
                             </span>

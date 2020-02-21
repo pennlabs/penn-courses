@@ -39,12 +39,12 @@ html {
 }
 
 .hideScheduleButton .fa-arrow-alt-circle-right{
-    color:#8890d3;
+    color:#7674EA;
 }
 
 
 .showScheduleButton .fa-arrow-alt-circle-left{
-    color:#8890d3;
+    color:#7674EA;
 }
 /*
 .popover-content{
@@ -79,7 +79,9 @@ html {
 .section-header {
   display: flex;
   font-weight: bold;
-  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-top:1rem;
+  padding-left:1rem;
 }
 
 .vertical-section {
@@ -526,16 +528,22 @@ ul {
 
 
 .box{
-  height: calc(100vh - 9em - 3em);
+  height: calc(100vh - 8em);
   border-radius: 4px;
+  margin: 0.7em 0.7em 0em 0.7em;
   box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.09);
+}
+
+.column{
+  padding: 0 !important;
 }
 
 @media all and (max-width: 800px){
   .box{
     min-height: calc(100vh - 8em);
-    height: 100%;
+    height: auto;
     box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);
+    padding:0.3em;
   }
   html{
     font-size: 15px;
@@ -884,7 +892,7 @@ ul {
   transition:250ms ease bottom;
   left:0;
   right:0;
-  padding: 0 0 0.7rem!important;
+  padding: 0rem 0 0.7rem!important;
 }
 
 .footer:hover{
