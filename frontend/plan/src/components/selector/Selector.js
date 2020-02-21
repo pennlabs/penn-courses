@@ -55,7 +55,7 @@ function Selector(props) {
                     marginBottom: "0.5rem",
                 }}
                 >
-                Search Results
+                    Search Results
                 </h3>
                 <div style={{
                     float: "right",
