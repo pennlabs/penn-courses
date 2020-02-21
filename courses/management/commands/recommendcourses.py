@@ -1,4 +1,5 @@
 import heapq
+import itertools
 import math
 from typing import Set, List, Dict, Optional, Tuple, Iterable
 
@@ -12,6 +13,19 @@ from sklearn.preprocessing import normalize
 
 from courses.models import Course
 from plan.models import Schedule
+
+
+def cache_result(function):
+    memo = {}
+
+    def inner(*args, **kwargs):
+        if len(memo) > 0:
+            return memo["val"]
+        result = function(*args, **kwargs)
+        memo["val"] = result
+        return result
+
+    return inner
 
 
 def lookup_course(course):
@@ -73,46 +87,56 @@ def courses_data_from_db():
             yield (person_id, course, schedule.semester)
 
 
+@cache_result
+def courses_by_user_from_csv():
+    return group_courses(tuple(line.split(",")) for line in open("./course_data.csv", "r"))
+
+
 def group_courses(courses_data: Iterable[Tuple[int, str, str]]):
-    unsequenced_courses_by_user_dict = {}
-    sequenced_courses_by_user_dict = {}
+    """
+    :param courses_data: An iterable of person id, course string, semester string
+    :return:
+    """
+    # The dict below stores a person_id in association with a dict that associates
+    # a semester with a multiset of the courses taken during that semester. The reason this is a
+    # multiset is to take into account users with multiple mock schedules.
+    # This is an intermediate data form that is used to construct the two dicts returned.
+    courses_by_semester_by_user: Dict[int, Dict[str, Dict[str, int]]] = {}
     for person_id, course, semester in courses_data:
         # maps a course to a list of semesters
-        user_courses: Dict[str, List[str]]
-        if person_id not in unsequenced_courses_by_user_dict:
-            user_courses = {}
-            unsequenced_courses_by_user_dict[person_id] = user_courses
+        if person_id not in courses_by_semester_by_user:
+            user_dict = {}
+            courses_by_semester_by_user[person_id] = user_dict
         else:
-            user_courses = unsequenced_courses_by_user_dict[person_id]
-        course = normalize_class_name(course)
-        if course in user_courses:
-            user_courses[course].append(semester)
+            user_dict = courses_by_semester_by_user[person_id]
+
+        if semester not in user_dict:
+            semester_courses_multiset = {}
+            user_dict[semester] = semester_courses_multiset
         else:
-            user_courses[course] = [semester]
-    return list(unsequenced_courses_by_user_dict.values())
+            semester_courses_multiset = user_dict[semester]
+
+        if course in semester_courses_multiset:
+            semester_courses_multiset[course] += 1
+        else:
+            semester_courses_multiset[course] = 1
+
+    unsequenced_courses_by_user = {}
+    for user, courses_by_semester in courses_by_semester_by_user.items():
+        combined_multiset = {}
+        for semester, course_multiset in courses_by_semester.items():
+            for course, frequency in course_multiset.items():
+                combined_multiset[course] = frequency
+        unsequenced_courses_by_user[user] = combined_multiset
+
+    return list(unsequenced_courses_by_user.values())
 
 
 def generate_courses_by_user_from_db():
     """
     :return: A list in which each item is a dict corresponding with the multiset of courses for a particular user
     """
-    courses_by_user_dict = {}
-
-    for schedule in Schedule.objects.all():
-        for course in sections_to_courses(schedule.sections.all()):
-            person_id = schedule.person.pk
-            user_courses: Dict[str, int]
-            if person_id not in courses_by_user_dict:
-                user_courses = {}
-                courses_by_user_dict[person_id] = user_courses
-            else:
-                user_courses = courses_by_user_dict[person_id]
-            course = normalize_class_name(course)
-            if course in user_courses:
-                user_courses[course] += 1
-            else:
-                user_courses[course] = 1
-    return list(courses_by_user_dict.values())
+    return group_courses(courses_data_from_db())
 
 
 def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]):
@@ -171,39 +195,6 @@ def vectorize_courses_by_description(courses):
     vectors = dim_reducer.fit_transform(vectors)
     # divide the vectors by their norms
     return normalize(vectors)
-
-
-def cache_result(function):
-    memo = {}
-
-    def inner(*args, **kwargs):
-        if len(memo) > 0:
-            return memo["val"]
-        result = function(*args, **kwargs)
-        memo["val"] = result
-        return result
-
-    return inner
-
-
-@cache_result
-def courses_by_user_from_csv():
-    courses_by_user_dict = {}
-    for line in open("./course_data.csv", "r"):
-        parts = line.split(",")
-        uid, course = parts[0], parts[1]
-        user_courses_dict: Dict[str, int]
-        if uid in courses_by_user_dict:
-            user_courses_dict = courses_by_user_dict[uid]
-        else:
-            user_courses_dict = {}
-            courses_by_user_dict[uid] = user_courses_dict
-        course = normalize_class_name(course)
-        if course not in user_courses_dict:
-            user_courses_dict[course] = 1
-        else:
-            user_courses_dict[course] += 1
-    return list(courses_by_user_dict.values())
 
 
 def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
