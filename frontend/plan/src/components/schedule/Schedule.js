@@ -170,9 +170,8 @@ class Schedule extends Component {
         };
 
         return (
-            <div className="vertical-section" style={{ paddingRight: "100px !important" }}>
+            <div className="column vertical-section" style={{ paddingRight: "100px !important" }}>
                 <h3 className="section-header">
-                    <span>Mock Schedule</span>
                     <ScheduleSelectorDropdown
                         activeName={activeScheduleName}
                         contents={scheduleNames.map(scheduleName => ({
@@ -183,7 +182,7 @@ class Schedule extends Component {
                         mutators={schedulesMutator}
                     />
                 </h3>
-                <div>
+                <div className="box">
                     <div
                         className="schedule vertical-section-contents"
                         style={notEmpty ? dims : { padding: "1rem" }}

@@ -71,6 +71,7 @@
 }
 .scrollable::-webkit-scrollbar { width: 0 !important }
 .scrollable {
+    height: 100%;
     overflow-y: scroll;
     overflow-x: hidden;
 }
