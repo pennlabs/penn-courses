@@ -21,15 +21,15 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            cd frontend/plan && npm install
+            cd plan && npm install
       - save_cache:
           key: dependency-cache-{{ checksum "frontend/plan/package-lock.json" }}
           paths:
-            - frontend/plan/node_modules
+            - plan/node_modules
       - run:
           name: Lint
           command: |
-            cd frontend/plan
+            cd plan
             npm run lint
 
 workflows:
