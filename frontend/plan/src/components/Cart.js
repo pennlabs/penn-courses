@@ -36,6 +36,7 @@ const Cart = ({
             padding: 0,
         }}
         id="cart"
+        className="box"
     >
         {courses.length === 0 ? <CartEmpty /> : courses
             .sort((a, b) => a.section.id.localeCompare(b.section.id))
