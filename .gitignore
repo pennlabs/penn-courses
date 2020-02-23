@@ -9,7 +9,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-frontend/*/build/
+*/build/
 PennCourses/settings/static/
 *.sqlite3
 *-test.json

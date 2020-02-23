@@ -54,7 +54,7 @@ workflows:
           name: publish-plan
           requires:
             - pcp-lint
-          path: frontend/plan
+          path: plan
           cache_from: "pennlabs/pcp-frontend:latest"
           image: "pennlabs/pcp-frontend"
           tag: "${CIRCLE_SHA1},latest"
