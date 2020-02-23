@@ -21,8 +21,9 @@
 }
 
 .day {
-    font-weight: bolder;
-    font-size: 1.25em;
+    font-weight: 500;
+    font-size: 1.0em;
+    color: #84878F;
 }
 
 .inner-block {
@@ -65,30 +66,29 @@
 .time {
     position: absolute;
     top: -9px;
+    color: #84878F;
+    font-size: 0.8rem;
+    font-weight: 500;
 }
 
 span.horizontalLine {
-    border-top: 1px solid gray;
-    opacity: .5;
+    border-top: 0.1rem solid #E5E8EB;
     /*left: -5px;*/
     /*width: calc(100% + 10px);*/
 }
 
 span.horizontalLine-last {
-    border-bottom: 1px solid gray;
-    opacity: .5;
+    border-bottom: 0.1rem solid #E5E8EB;
     /*left: -5px;*/
     /*width: calc(100% + 10px);*/
 }
 
 span.verticalLine {
-    border-left: 1px solid gray;
-    opacity: .5;
+    border-left: 0.1rem solid #E5E8EB;
     /*left: -5px;*/
 }
 span.verticalLine-last {
-    border-right: 1px solid gray;
-    opacity: .5;
+    border-right: 0.1rem solid #E5E8EB;
     /*right: -5px;*/
 }
 .statsStyles{

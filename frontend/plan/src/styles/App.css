@@ -331,7 +331,7 @@ ul {
 #SectionList li:hover,
 #SectionInfo li:hover,
 .activeItem {
-  background-color: #E6E6E6;
+  background-color: #F9F9FF;
 }
 
 #CourseList li:active,
@@ -598,8 +598,7 @@ ul {
   height: 2.5em;
   line-height: 2.5em;
   text-align:center;
-  color: #4a4a4a;
-  font-size:1.1em;
+  color: #333333;
   vertical-align:center;
 }
 

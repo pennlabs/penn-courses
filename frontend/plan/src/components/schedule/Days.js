@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 export default function Days(props) {
     const { offset, weekend } = props;
-    const days = weekend ? ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] : ["MON", "TUE", "WED", "THU", "FRI"];
+    const days = weekend ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] : ["Mon", "Tue", "Wed", "Thu", "Fri"];
     const style = {
         display: "grid",
         gridColumnStart: 1 + offset,
