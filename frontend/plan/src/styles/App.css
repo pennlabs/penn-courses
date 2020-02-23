@@ -82,6 +82,7 @@ html {
   display: flex;
   font-weight: bold;
   margin-bottom: 0.5rem;
+  color: #333333;
 }
 
 .vertical-section {
@@ -141,14 +142,14 @@ i {
   right: 0;
   background-color: #F2F2F2;
   border-bottom-left-radius: 1.5em;
-  color: black;
+  color: #333333;
   line-height: 2em;
 }
 
 #MenuBar > a {
   margin-right: 1em;
   text-decoration: none;
-  color: black;
+  color: #333333;
 }
 
 h1 {
@@ -597,7 +598,7 @@ ul {
   height: 2.5em;
   line-height: 2.5em;
   text-align:center;
-  color: #87a2aa;
+  color: #4a4a4a;
   font-size:1.1em;
   vertical-align:center;
 }

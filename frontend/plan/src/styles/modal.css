@@ -41,8 +41,8 @@
 }
 
 .modal-card input {
-    background-color: #f4f4f4;
-    border-radius: 0.5rem;
+    border: 1px solid #D6D6D6 !important;
+    border-radius: 0.3rem;
     padding: 0.35rem;
     width: 100%;
     margin-top:0;
@@ -57,6 +57,7 @@
 
 .modal-card button.is-link {
     background: #7b84e6;
+    font-weight: 600;
 }
 
 .modal-card button.is-link:hover {
