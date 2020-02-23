@@ -142,6 +142,39 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
     return list(unsequenced_courses_by_user.values())
 
 
+def vectorize_by_copresence(courses_by_semester_by_user) -> Dict[str, np.ndarray]:
+    """
+    Vectorizes courses by whether they're in the user's schedule at the same time
+    :param courses_by_semester_by_user: Grouped courses data returned by group_courses
+    :return:
+    """
+    courses_set = set()
+    for _, courses_by_semester in courses_by_semester_by_user.items():
+        for _, course_multiset in courses_by_semester.items():
+            for course, _ in course_multiset.items():
+                courses_set.add(course)
+    courses_list = list(courses_set)
+    course_to_index = {course: i for i, course in enumerate(courses_list)}
+
+    copresence_vectors_by_course = {course: np.zeros(len(courses_list)) for course in courses_list}
+
+    for user, courses_by_semester in courses_by_semester_by_user.items():
+        for _, course_multiset in courses_by_semester.items():
+            for course_a, frequency_a in course_multiset.items():
+                for course_b, frequency_b in course_multiset.items():
+                    co_frequency = min(frequency_a, frequency_b)
+                    relevant_vector_a = copresence_vectors_by_course[course_a]
+                    relevant_vector_b = copresence_vectors_by_course[course_b]
+                    index_a = course_to_index[course_a]
+                    index_b = course_to_index[course_b]
+                    relevant_vector_a[index_b] += co_frequency
+                    relevant_vector_b[index_a] += co_frequency
+                    # make sure that every course appears with itself
+                    relevant_vector_a[index_a] += frequency_a
+                    relevant_vector_a[index_b] += frequency_b
+    return copresence_vectors_by_course
+
+
 def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]):
     """
     @:param courses_by_user: A list of dicts in which each dict maps a course id to the number of times a user has it
@@ -204,18 +237,26 @@ def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     courses_to_vectors = {}
     courses_data = courses_data_from_csv() if from_csv else courses_data_from_db()
     grouped_courses = group_courses(courses_data)
+    copresence_vectors_by_course = vectorize_by_copresence(grouped_courses)
     courses_by_user = get_unsequenced_courses_by_user(grouped_courses)
+
     courses, courses_vectorized_by_schedule_presence = zip(
         *vectorize_courses_by_schedule_presence(courses_by_user).items())
     courses_vectorized_by_description = vectorize_courses_by_description(courses)
-    for course, schedule_vector, description_vector in zip(courses, courses_vectorized_by_schedule_presence,
-                                                           courses_vectorized_by_description):
+    copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
+    copresence_vectors = normalize(copresence_vectors)
+    dim_reduce = TruncatedSVD(n_components=round(10 * math.log2(len(courses))))
+    copresence_vectors = dim_reduce.fit_transform(copresence_vectors)
+    for course, schedule_vector, description_vector, copresence_vector in zip(courses,
+                                                                              courses_vectorized_by_schedule_presence,
+                                                                              courses_vectorized_by_description,
+                                                                              copresence_vectors):
         if use_descriptions:
             if np.linalg.norm(description_vector) == 0:
                 continue
-            total_vector = np.concatenate([schedule_vector, description_vector])
+            total_vector = np.concatenate([schedule_vector, description_vector, copresence_vector])
         else:
-            total_vector = schedule_vector
+            total_vector = np.concatenate([schedule_vector, copresence_vector])
         courses_to_vectors[course] = total_vector / np.linalg.norm(total_vector)
     return courses_to_vectors
 
