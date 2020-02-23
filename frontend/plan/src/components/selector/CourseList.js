@@ -35,9 +35,9 @@ export default function CourseList({
     courses, getCourse, sortMode,
 }) {
     return (
-        <div className="scroll-container" style={{ height: "calc(100% - 3.5em)" }}>
+        <div className="scroll-container">
             <div style={{
-                display: "flex", flexDirection: "row", marginTop: "0em", paddingBottom: "1em", paddingLeft: "2em", borderBottom: "1px solid #eeeeee",
+                display: "flex", flexDirection: "row", paddingBottom: "1em", paddingLeft: "2em",
             }}
             >
                 <div className="header" style={{ overflow: "hidden", width: "60%" }}>

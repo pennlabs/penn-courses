@@ -6,7 +6,7 @@ export default function Footer() {
             className="has-text-centered"
         >
             <p style={{
-                marginTop: "0rem", marginBottom: "0.5rem", fontSize: "0.8rem", color: "#888888",
+                marginTop: "1rem", marginBottom: "0.5rem", fontSize: "0.8rem", color: "#888888",
             }}
             >
                 Made with
