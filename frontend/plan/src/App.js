@@ -53,7 +53,7 @@ function App() {
     const [view, setView] = useState(0);
     const containerRef = useRef();
     const scrollTop = () => window.scrollTo(0, 0);
-    const isExpanded = view === 1
+    const isExpanded = view === 1;
 
     useEffect(() => {
         if (!localStorage.hasVisited) {
@@ -227,7 +227,7 @@ function App() {
                         }}
                         className={isExpanded ? "smooth-transition column is-5 hidden" : "smooth-transition column is-5"}
                     >
-                    <Schedule />
+                        <Schedule />
                     </div>
                 </div>
             </div>
