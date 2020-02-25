@@ -48,10 +48,21 @@ store.subscribe(() => {
 });
 
 function App() {
-    const { hasVisited } = localStorage;
     const [currentUser, setCurrentUser] = useState(null);
+    const [tab, setTab] = useState(0);
+    const [view, setView] = useState(0);
+    const containerRef = useRef();
+    const scrollTop = () => window.scrollTo(0, 0);
+    const isExpanded = view === 1
 
     useEffect(() => {
+        if (!localStorage.hasVisited) {
+            store.dispatch(openModal("WELCOME",
+                {},
+                "Welcome to Penn Course Plan ✨"));
+            localStorage.hasVisited = true;
+        }
+
         if (DISABLE_MULTIPLE_TABS) {
             return preventMultipleTabs(() => {
                 store.dispatch(openModal("MULTITAB",
@@ -59,7 +70,6 @@ function App() {
                     "Multiple tabs"));
             });
         }
-        return null;
     }, []);
 
     useEffect(() => {
@@ -71,23 +81,6 @@ function App() {
         return () => {
         };
     }, [currentUser]);
-
-    localStorage.hasVisited = true;
-    if (!hasVisited) {
-        store.dispatch(openModal("WELCOME",
-            {},
-            "Welcome to Penn Course Plan ✨"));
-    }
-
-    const [tab, setTab] = useState(0);
-
-    const [view, setView] = useState(0);
-
-    const containerRef = useRef();
-
-    const scrollTop = (index, action) => {
-        window.scrollTo(0, 0);
-    };
 
     if (window.innerWidth < 800) {
         return (
