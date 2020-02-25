@@ -227,34 +227,10 @@ function App() {
                         }}
                         className={isExpanded ? "smooth-transition column is-5 hidden" : "smooth-transition column is-5"}
                     >
-                        <Schedule />
+                    <Schedule />
                     </div>
                 </div>
             </div>
-            {isExpanded
-                ? (
-                    <div className="showScheduleButton popover is-popover-left">
-                        <i
-                            role="button"
-                            className="fas fa-arrow-alt-circle-left"
-                            onClick={() => setView(0)}
-                        />
-                        <div className="popover-content">Show Schedule</div>
-                    </div>
-                )
-                : (
-                    <div className="hideScheduleButton popover is-popover-left">
-                        <i
-                            role="button"
-                            className="fas fa-arrow-alt-circle-right"
-                            onClick={() => setView(1)}
-                        />
-                        <div className="popover-content">Hide Schedule</div>
-                    </div>
-                )
-
-
-            }
             <Footer />
             <ModalContainer />
         </Provider>
