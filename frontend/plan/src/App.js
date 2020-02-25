@@ -157,16 +157,16 @@ function App() {
                 />
                 <div
                     className="App columns is-mobile main smooth-transition"
-                    style={view === 0 ? {
-                        padding: 0,
-                        width: "129%",
-                    } : {
+                    style={isExpanded ? {
                         padding: 0,
                         width: "123%",
+                    } : {
+                        padding: 0,
+                        width: "129%",
                     }}
                 >
                     <div
-                        className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}
+                        className={isExpanded ? "column smooth-transition is-two-thirds" : "column smooth-transition is-one-fifth"}
                     >
                         <span style={{
                             display: "flex",
@@ -225,13 +225,13 @@ function App() {
                             paddingRight: "0px",
                             marginRight: "15px",
                         }}
-                        className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}
+                        className={isExpanded ? "smooth-transition column is-5 hidden" : "smooth-transition column is-5"}
                     >
                         <Schedule />
                     </div>
                 </div>
             </div>
-            {view === 1
+            {isExpanded
                 ? (
                     <div className="showScheduleButton popover is-popover-left">
                         <i
