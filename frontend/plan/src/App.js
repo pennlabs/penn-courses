@@ -91,7 +91,7 @@ function App() {
                     setTab={setTab}
                     user={currentUser}
                     setUser={setCurrentUser}
-                    mobileView={true}
+                    mobileView
                 />
                 <Tabs value={tab} className="topTabs" centered>
                     <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
@@ -127,15 +127,15 @@ function App() {
                                     paddingRight: 0,
                                 }}
                             >
-                                <Selector mobileView={true} view={0} />
+                                <Selector mobileView view={0} />
                             </div>
                         </div>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Cart setTab={setTab} mobileView={true} />
+                        <Cart setTab={setTab} mobileView />
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Schedule setTab={setTab} mobileView={true} />
+                        <Schedule setTab={setTab} mobileView />
                     </div>
                 </SwipeableViews>
                 <Footer />
