@@ -70,6 +70,7 @@ function App() {
                     "Multiple tabs"));
             });
         }
+        return null;
     }, []);
 
     useEffect(() => {
