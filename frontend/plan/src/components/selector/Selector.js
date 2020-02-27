@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
@@ -26,6 +26,7 @@ function Selector(props) {
     } = props;
 
     const [scrollPos, setScrollPos] = useState(0);
+    useEffect(() => setScrollPos(0), [course])
 
     let element = (
         <div style={{
