@@ -12,6 +12,17 @@ class TypedCourseSearchBackend(filters.SearchFilter):
         else:
             return "keyword"
 
+    def get_schema_operation_parameters(self, view):
+        return [
+            {
+                "name": "search",
+                "schema": {"type": "string"},
+                "required": False,
+                "in": "query",
+                "description": "Search query. Can be either a fragment of a course code, or any keyword/professor name.",
+            },
+        ]
+
     @staticmethod
     def get_search_type(request):
         return request.GET.get("type", "auto")

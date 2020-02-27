@@ -133,7 +133,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         section_code = request.data.get("section", None)
 
-        if request.data.get("section", None) is None:
+        if section_code is None:
             return Response(
                 {"message": "You must include a not null section"},
                 status=status.HTTP_400_BAD_REQUEST,
