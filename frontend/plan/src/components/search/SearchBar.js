@@ -45,7 +45,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
     // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab, setView, user, setUser, mobileView, isExpanded
+    updateCheckboxFilter, setTab, setView, user, setUser, mobileView, isExpanded,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -216,7 +216,7 @@ function SearchBar({
                         updateSearchText={updateSearchText}
                     />
                 </div>
-                <div className="level-item filterContainer">
+                <div className="level-item filterContainer" style={{ marginLeft: ".5em" }}>
                     <a role="button" onClick={() => setView(0)} style={{ backgroundColor: isExpanded ? "white" : "#f0f1f3", padding: ".5em", paddingBottom: "0" }}>
                         <img src="/icons/toggle-norm.svg" alt="logo" />
                     </a>
@@ -281,6 +281,7 @@ SearchBar.propTypes = {
     defaultReqs: PropTypes.objectOf(PropTypes.number),
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
+    isExpanded: PropTypes.bool,
     setTab: PropTypes.func,
     setView: PropTypes.func,
     user: PropTypes.objectOf(PropTypes.any),
