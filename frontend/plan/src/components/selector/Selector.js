@@ -26,7 +26,6 @@ function Selector(props) {
     } = props;
 
     const [scrollPos, setScrollPos] = useState(0);
-    useEffect(() => setScrollPos(0), [course])
 
     let element = (
         <div style={{
