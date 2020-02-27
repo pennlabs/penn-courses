@@ -59,7 +59,7 @@
 }
 
 #filterdiv {
-    padding-left: 6rem;
+    padding-left: 4rem;
 }
 
 .icon {
@@ -71,11 +71,11 @@
 }
 
 #filterdiv > * {
-    padding-right: .5rem;
+    padding-right: 1rem;
 }
 
 #searchbar {
-    min-width: 14rem;
+    min-width: 17rem;
     background-color: #f4f4f4;
 }
 
