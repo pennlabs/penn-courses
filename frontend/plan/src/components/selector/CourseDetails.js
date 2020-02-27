@@ -65,7 +65,7 @@ export default function CourseDetails({ course, getCourse }) {
                     textAlign: "center",
                 }}
             >
-                 View on Penn Course Review
+                View on Penn Course Review
             </a>
             {description ? (
                 <li style={{

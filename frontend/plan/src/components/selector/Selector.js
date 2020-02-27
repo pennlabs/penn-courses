@@ -40,10 +40,10 @@ function Selector(props) {
                 marginBottom: "0.5rem",
             }}
             >
-            No result found
+                No result found
             </h3>
-        Search for courses, departments, or instructors above.
-        Looking for something specific? Try using the filters!
+            Search for courses, departments, or instructors above.
+            Looking for something specific? Try using the filters!
         </div>
     );
 

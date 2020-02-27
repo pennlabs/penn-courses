@@ -266,7 +266,7 @@ const EmptySchedule = () => (
         >
             No courses added
         </h3>
-            Select courses from the cart to add them to the calendar
+        Select courses from the cart to add them to the calendar
         <br />
     </div>
 );

@@ -27,7 +27,7 @@ export default function TagList({
                 </span>
                 {expanded && (
                     <a role="button" onClick={() => setExpanded(false)}>
-                    Hide requirements
+                        Hide requirements
                     </a>
                 )}
             </span>
