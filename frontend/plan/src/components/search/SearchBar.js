@@ -218,10 +218,10 @@ function SearchBar({
                 </div>
                 <div className="level-item filterContainer" style={{ marginLeft: ".5em" }}>
                     <a role="button" onClick={() => setView(0)} style={{ backgroundColor: isExpanded ? "white" : "#f0f1f3", padding: ".5em", paddingBottom: "0" }}>
-                        <img src="/icons/toggle-norm.svg" alt="logo" />
+                        <img style={{ width: "1.5em" }} src="/icons/toggle-norm.svg" alt="logo" />
                     </a>
                     <a role="button" onClick={() => setView(1)} style={{ backgroundColor: isExpanded ? "#f0f1f3" : "white", padding: ".5em", paddingBottom: "0" }}>
-                        <img src="/icons/toggle-expanded.svg" alt="logo" />
+                        <img style={{ width: "1.5em" }} src="/icons/toggle-expanded.svg" alt="logo" />
                     </a>
                 </div>
                 <div className="level-item filterContainer" id="filterdiv">
