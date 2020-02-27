@@ -45,7 +45,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
     // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab, setView, user, setUser, mobileView,
+    updateCheckboxFilter, setTab, setView, user, setUser, mobileView, isExpanded
 }) {
     useEffect(() => {
         loadRequirements();
@@ -216,7 +216,14 @@ function SearchBar({
                         updateSearchText={updateSearchText}
                     />
                 </div>
-
+                <div className="level-item filterContainer">
+                    <a role="button" onClick={() => setView(0)} style={{ backgroundColor: isExpanded ? "white" : "#f0f1f3", padding: ".5em", paddingBottom: "0" }}>
+                        <img src="/icons/toggle-norm.svg" alt="logo" />
+                    </a>
+                    <a role="button" onClick={() => setView(1)} style={{ backgroundColor: isExpanded ? "#f0f1f3" : "white", padding: ".5em", paddingBottom: "0" }}>
+                        <img src="/icons/toggle-expanded.svg" alt="logo" />
+                    </a>
+                </div>
                 <div className="level-item filterContainer" id="filterdiv">
                     <span className="icon">
                         <i className="fas fa-filter" />
