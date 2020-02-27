@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import Course from "./Course";
 
 const goodEasy = ({ difficulty, course_quality: courseQuality }) => (!difficulty
-|| !courseQuality ? 0
+    || !courseQuality ? 0
     : Math.pow(courseQuality + 0.5, 1.5) / (difficulty + 1));
 
 /**
@@ -31,71 +31,57 @@ const courseSort = (courses, sortMode) => {
     return sorted;
 };
 
-export default class CourseList extends React.Component {
-    constructor(props) {
-        super(props);
-        this.listRef = React.createRef();
-    }
+const CourseList = ({
+    courses, getCourse, sortMode, scrollPos, setScrollPos,
+}) => {
+    const listRef = useRef(null);
+    useEffect(() => {
+        // If we have a snapshot value, we've just added new items.
+        // Adjust scroll so these new items don't push the old ones out of view.
+        // (snapshot here is the value returned from getSnapshotBeforeUpdate)
+        listRef.current.scrollTop = scrollPos;
+        // Return cleanup function
+        return () => setScrollPos(listRef.current.scrollTop);
+    });
 
-
-    componentDidMount() {
-    // If we have a snapshot value, we've just added new items.
-    // Adjust scroll so these new items don't push the old ones out of view.
-    // (snapshot here is the value returned from getSnapshotBeforeUpdate)
-        const { scrollPos } = this.props;
-        const list = this.listRef.current;
-        list.scrollTop = scrollPos;
-    }
-
-    componentWillUnmount() {
-        const { setScrollPos } = this.props;
-        const list = this.listRef.current;
-        setScrollPos(list.scrollTop);
-    }
-
-    render() {
-        const {
-            courses,
-            getCourse,
-            sortMode,
-        } = this.props;
-        return (
-            <div className="scroll-container">
-                <div style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    paddingBottom: "1em",
-                    paddingLeft: "2em",
-                }}
+    return (
+        <div className="scroll-container">
+            <div style={{
+                display: "flex",
+                flexDirection: "row",
+                paddingBottom: "1em",
+                paddingLeft: "2em",
+            }}
+            >
+                <div
+                    className="header"
+                    style={{
+                        overflow: "hidden",
+                        width: "60%",
+                    }}
                 >
-                    <div
-                        className="header"
-                        style={{
-                            overflow: "hidden",
-                            width: "60%",
-                        }}
-                    >
                     COURSE
-                    </div>
-                    <div className="header" style={{ width: "20%" }}>QUAL</div>
-                    <div className="header" style={{ width: "20%" }}>DIFF</div>
                 </div>
-                <ul className="scrollable course-list" ref={this.listRef}>
-                    {
-                        courseSort(courses, sortMode)
-                            .map(course => (
-                                <Course
-                                    key={course.id}
-                                    course={course}
-                                    onClick={() => getCourse(course.id)}
-                                />
-                            ))
-                    }
-                </ul>
+                <div className="header" style={{ width: "20%" }}>QUAL</div>
+                <div className="header" style={{ width: "20%" }}>DIFF</div>
             </div>
-        );
-    }
-}
+            <ul className="scrollable course-list" ref={listRef}>
+                {
+                    courseSort(courses, sortMode)
+                        .map(course => (
+                            <Course
+                                key={course.id}
+                                course={course}
+                                onClick={() => getCourse(course.id)}
+                            />
+                        ))
+                }
+            </ul>
+        </div>
+    );
+};
+
+export default CourseList;
 
 CourseList.propTypes = {
     courses: PropTypes.arrayOf(PropTypes.object).isRequired,
