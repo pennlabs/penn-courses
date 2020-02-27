@@ -155,6 +155,7 @@ function App() {
                     user={currentUser}
                     setUser={setCurrentUser}
                     style={{ flexGrow: 0 }}
+                    isExpanded={isExpanded}
                 />
                 <div
                     className="App columns is-mobile main smooth-transition"
