@@ -8,6 +8,3 @@ export const SYNC_INTERVAL = 5000;
 
 // Whether to notify the user not to have multiple tabs open
 export const DISABLE_MULTIPLE_TABS = false;
-
-// The max number of deletion attempts (to send to the backend) before giving up
-export const MAX_DELETION_ATTEMPTS = 2;

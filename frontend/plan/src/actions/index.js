@@ -380,7 +380,7 @@ export function clearFilter(propertyName) {
     };
 }
 
-export const deletionAttemptFailed = deletedScheduleId => ({
+export const deletionAttemptCompleted = deletedScheduleId => ({
     type: DELETION_ATTEMPT_FAILED,
     deletedScheduleId,
 });
@@ -457,12 +457,11 @@ export function fetchCourseDetails(courseId) {
  * Pulls schedules from the backend
  * If the cart isn't included, it creates a cart
  * @param cart The courses in the cart
- * @param shouldInitCart Whether to initialize the cart
  * @param onComplete The function to call when initialization has been completed (with the schedules
  * from the backend)
  * @returns {Function}
  */
-export const fetchBackendSchedulesAndInitializeCart = (cart, shouldInitCart,
+export const fetchBackendSchedulesAndInitializeCart = (cart,
     onComplete = () => null) => (dispatch) => {
     doAPIRequest("/schedules/")
         .then(res => res.json())
@@ -471,7 +470,7 @@ export const fetchBackendSchedulesAndInitializeCart = (cart, shouldInitCart,
                 dispatch(updateSchedules(schedules));
             }
             // if the cart doesn't exist on the backend, create it
-            if (shouldInitCart && !schedules.reduce((acc, { name }) => acc || name === "cart", false)) {
+            if (!schedules.reduce((acc, { name }) => acc || name === "cart", false)) {
                 dispatch(createScheduleOnBackend("cart", cart));
             }
             onComplete(schedules);
@@ -594,12 +593,11 @@ export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
             "X-CSRFToken": getCsrf(),
         },
     })
-        .then(() => {
-            dispatch(deletionSuccessful(deletedScheduleId));
-        })
-        .catch(({ message }) => {
-            if (message !== "minDelayNotElapsed") {
-                dispatch(deletionAttemptFailed(deletedScheduleId));
+        .then((response) => {
+            if (response.ok) {
+                dispatch(deletionSuccessful(deletedScheduleId));
+            } else {
+                dispatch(deletionAttemptCompleted(deletedScheduleId));
             }
         });
 };
