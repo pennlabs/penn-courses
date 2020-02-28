@@ -55,22 +55,25 @@ const initiateSync = (store) => {
             store.dispatch(fetchBackendSchedulesAndInitializeCart(scheduleStateInit.cartSections,
                 (newSchedulesObserved) => {
                     // record the new schedules that have been observed
+                    const newSchedulesObservedSet = {};
                     newSchedulesObserved.forEach(({ id }) => {
                         schedulesObserved[id] = true;
+                        newSchedulesObservedSet[id] = true;
                     });
+
+
+                    console.log("NEW OBSERVED", newSchedulesObservedSet, "OLD OBSERVED", schedulesObserved);
                     const scheduleState = store.getState().schedule;
                     Object.keys(schedulesObserved)
                         .forEach((id) => {
                             // The schedule has been observed from the backend before,
                             // but is no longer being observed; Should be deleted locally.
-                            if (!newSchedulesObserved[id]) {
+                            if (!newSchedulesObservedSet[id]) {
                                 delete schedulesObserved[id];
                                 // find the name of the schedule with the deleted id
-                                const schedName = Object.keys(scheduleState.schedules)
-                                    .reduce((acc, schedNameSelected) => acc || ((scheduleState
-                                        .schedules[schedNameSelected]
-                                        .id === id) && schedNameSelected),
-                                    false);
+                                const schedName = Object.entries(scheduleState.schedules)
+                                    .filter(([_, { id: selectedId }]) => selectedId == id)
+                                    .map(([name, _]) => name)[0];
                                 if (schedName) {
                                     store.dispatch(deleteSchedule(schedName));
                                 }
