@@ -18,7 +18,7 @@ import {
     ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
-import { MAX_DELETION_ATTEMPTS } from "../sync_constants";
+import { MAX_DELETION_ATTEMPTS, MIN_TIME_DIFFERENCE } from "../sync_constants";
 
 const DEFAULT_SCHEDULE_NAME = "Schedule";
 
@@ -208,15 +208,27 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
         }) => {
             const cloudUpdated = new Date(rest.updated_at).getTime();
             if (name === "cart") {
+                const cartUpdated = state.cartUpdated;
+                const cartPushed = state.cartPushedToBackend;
+                // If changes to the cart are still syncing, ignore the requested update
+                if (!cartPushed && (cloudUpdated - cartUpdated) < MIN_TIME_DIFFERENCE) {
+                    return state;
+                }
                 newState.cartId = scheduleId;
-                if (!state.cartUpdated || cloudUpdated > state.cartUpdated) {
+                if (!cartUpdated || cloudUpdated > cartUpdated) {
                     newCart = sections;
                 }
             } else if (state.schedules[name]) {
+                const selectedSched = state.schedules[name];
+                const updated = selectedSched.updated_at;
+                // If changes to the schedule are still syncing, ignore the requested update
+                const pushed = selectedSched.pushedToBackend;
+                if (!pushed && (updated - cloudUpdated) < MIN_TIME_DIFFERENCE) {
+                    return state;
+                }
                 newScheduleObject[name].id = scheduleId;
                 newScheduleObject[name].backendCreationState = false;
-                const selectedSched = state.schedules[name];
-                if (!selectedSched.updated_at || cloudUpdated > selectedSched.updated_at) {
+                if (!updated || cloudUpdated > updated) {
                     newScheduleObject[name].meetings = sections;
                 }
             } else {
