@@ -8,3 +8,10 @@ export const SYNC_INTERVAL = 5000;
 
 // Whether to notify the user not to have multiple tabs open
 export const DISABLE_MULTIPLE_TABS = false;
+
+// The max number of deletion attempts (to send to the backend) before giving up
+export const MAX_DELETION_ATTEMPTS = 2;
+
+/* The minimum time difference in milliseconds between a schedule's local and remote timestamp
+ required for the schedule's local version to be overridden before changes to it are pushed */
+export const MIN_TIME_DIFFERENCE = 10000;
