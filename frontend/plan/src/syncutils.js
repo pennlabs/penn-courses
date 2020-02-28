@@ -98,7 +98,6 @@ const initiateSync = async (store) => {
                             // The schedule has been observed from the backend before,
                             // but is no longer being observed; Should be deleted locally.
                             if (!newSchedulesObservedSet[id]) {
-                                delete schedulesObserved[id];
                                 // find the name of the schedule with the deleted id
                                 const schedName = Object.entries(scheduleState.schedules)
                                     .filter(
