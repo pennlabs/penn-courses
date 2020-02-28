@@ -18,17 +18,21 @@ import {
     ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION, ENFORCE_SEMESTER
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
-import { MAX_DELETION_ATTEMPTS, MIN_TIME_DIFFERENCE } from "../sync_constants";
+import {
+    MAX_CREATION_ATTEMPTS,
+    MAX_DELETION_ATTEMPTS,
+    MIN_TIME_DIFFERENCE
+} from "../sync_constants";
 
 const DEFAULT_SCHEDULE_NAME = "Schedule";
 
 // returns the default empty schedule
-const generateDefaultSchedule = () => (
+const generateEmptySchedule = (isDefault=true) => (
     {
         meetings: [],
         colorPalette: [],
         LocAdded: false,
-        pushedToBackend: false,
+        pushedToBackend: isDefault,
         backendCreationState: {
             creationQueued: false,
             creationAttempts: 0,
@@ -41,12 +45,12 @@ const generateDefaultSchedule = () => (
 //  1. An object associating each schedule name with the schedule objecct
 //  2. The name of the currently selected schedule
 const initialState = {
-    schedules: { [DEFAULT_SCHEDULE_NAME]: generateDefaultSchedule() },
+    schedules: { [DEFAULT_SCHEDULE_NAME]: generateEmptySchedule() },
     scheduleSelected: DEFAULT_SCHEDULE_NAME,
     cartSections: [],
-    cartPushedToBackend: false,
+    cartPushedToBackend: true,
     deletedSchedules: [],
-    cartUpdated: false,
+    cartUpdated: 1,
 };
 
 /**
@@ -67,7 +71,7 @@ const resetCartId = (state) => {
 const resetCart = state => (resetCartId({
     ...state,
     cartSections: [],
-    cartPushedToBackend: false,
+    cartPushedToBackend: true,
     cartUpdated: false,
 }));
 
@@ -145,6 +149,9 @@ const nextAvailable = (scheduleName, used) => {
  */
 const processScheduleCreation = (state, scheduleName) => {
     const schedule = state.schedules[scheduleName];
+    if (schedule.backendCreationState.creationAttempts >= MAX_CREATION_ATTEMPTS) {
+        return processScheduleDeletion(state, scheduleName, true);
+    }
     return {
         ...state,
         schedules: {
@@ -233,7 +240,7 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
                 const updated = selectedSched.updated_at;
                 // If changes to the schedule are still syncing, ignore the requested update
                 const pushed = selectedSched.pushedToBackend;
-                if (!pushed && (updated - cloudUpdated) < MIN_TIME_DIFFERENCE) {
+                if (!pushed && updated && (updated - cloudUpdated) < MIN_TIME_DIFFERENCE) {
                     return state;
                 }
                 newScheduleObject[name].id = scheduleId;
@@ -241,7 +248,7 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
                 if (!updated || cloudUpdated > updated) {
                     newScheduleObject[name].meetings = sections;
                 }
-            } else {
+            } else if (!state.deletedSchedules[scheduleId]){
                 newScheduleObject[name] = {
                     meetings: sections,
                     semester,
@@ -273,7 +280,7 @@ const processScheduleDeletion = (state, scheduleName, localOnly = false) => {
         return resetCart(state);
     }
     if (Object.keys(newSchedules).length === 0) {
-        newSchedules[DEFAULT_SCHEDULE_NAME] = generateDefaultSchedule();
+        newSchedules[DEFAULT_SCHEDULE_NAME] = generateEmptySchedule();
     }
     return {
         ...state,
@@ -429,7 +436,7 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 schedules: {
                     ...state.schedules,
-                    [action.scheduleName]: generateDefaultSchedule(),
+                    [action.scheduleName]: generateEmptySchedule(false),
                 },
                 scheduleSelected: action.scheduleName,
             };
