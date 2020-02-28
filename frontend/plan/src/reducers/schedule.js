@@ -15,7 +15,7 @@ import {
     MARK_SCHEDULE_SYNCED,
     DELETION_ATTEMPT_FAILED,
     DELETION_ATTEMPT_SUCCEEDED,
-    ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION
+    ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION, RESET_SCHEDULES
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 import { MAX_DELETION_ATTEMPTS, MIN_TIME_DIFFERENCE } from "../sync_constants";
@@ -282,6 +282,8 @@ const processScheduleDeletion = (state, scheduleName) => {
 export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
     switch (action.type) {
+        case RESET_SCHEDULES:
+            return {...initialState};
         case MARK_SCHEDULE_SYNCED:
             return {
                 ...state,
