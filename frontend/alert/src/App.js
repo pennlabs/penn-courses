@@ -9,7 +9,7 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   height:100vh;
-  background: rgb(251, 252, 255);
+  background-color: rgba(244, 250, 255, 0.75);
 `
 
 const Title = styled.div`
@@ -32,17 +32,18 @@ const Tagline = styled.h3`
     font-weight: normal;
 `
 const Header = styled.h1`
-  color: #4A4A4A
+  color: #4A4A4A;
+  font-size: 2rem;
 `
 
 const Input = styled.input`
-  box-shadow: 0 4px 8px 0 rgba(200, 200, 200, 0.2), 0 6px 20px 0 rgba(200, 200, 200, 0.1);
   outline: none;
-  border: none;
+  border: 1px solid #d6d6d6;
   color: #4A4A4A;
   font-size: 1.4rem;
   padding: 0.5rem 1rem;
   width: 320px;
+  border-radius: 5px;
   margin: 0.6rem;
   :focus {
     box-shadow: 0 0 0 0.125em rgba(50,115,220,.25)
@@ -52,9 +53,13 @@ const Input = styled.input`
   }
 `
 
-const MiddleArea = styled.div`
-  background: rgb(251, 252, 255);
-  width: 100%;
+const Middle = styled.div`
+  position: absolute;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  top: 10%;
 `
 
 const Footer = styled.div`
@@ -64,7 +69,6 @@ const Footer = styled.div`
   position: absolute;
   bottom: 15px;
   width: 100%;
-  background: white;
   padding-top: 3em;
   padding-bottom:3em;
   line-height:1.5;
@@ -76,7 +80,8 @@ const SubmitButton = styled.button`
   color: white;
   font-size:1em;
   margin:1em;
-  padding: 0.5em 1em;
+  width: 5em;
+  padding: 0.7em 1em;
   transition: 0.2s all;
   border: none;
   cursor: pointer;
@@ -84,6 +89,15 @@ const SubmitButton = styled.button`
     background-color: #1496ed;
   }
 `
+
+const Toast = styled.div`
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  max-width: 300px;
+  background-color:
+`
+
 const TopBanner = (
     <Title>
       We're currently closed for signups. Come back after schedules have been posted!
@@ -92,23 +106,58 @@ const TopBanner = (
 
 const LogoArea = (
   <Grid>
-    <img width="100px" height="100px" src={require("./assets/PCA_logo.svg")}/>
+    <img width="70px" height="70px" src={require("./assets/PCA_logo.svg")}/>
     <Header>Penn Course Alert</Header>
   </Grid>
 )
+
+const NavContainer = styled.nav`
+  margin: 20px;
+  display: flex;
+  flex-align: left;
+  width: 95%;
+`;
+
+const NavElt = styled.a`
+  padding: 20px;
+  color: #4a4a4a;
+  font-weight: ${props => props.href === ("/" + window.location.href.split("/")[window.location.href.split("/").length - 1]) ? "bold" : "normal"}
+  `
+
+const AlertText = styled.div`
+  padding-top: 1rem;
+  color: #555555;
+`
+const Dropdown = styled.span`
+  color: #4a4a4a;
+  cursor: pointer;
+  font-weight: bold;
+`;
+
+const Nav = (
+  <NavContainer>
+    <NavElt href="/">Home</NavElt>
+    <NavElt href="/manage">Manage Alerts</NavElt>
+  </NavContainer>
+)
+
 
 
 function App() {
   const onSubmit = () => {console.log(this.CourseInput.value)};
   return (
     <Container>
-        {TopBanner}
-        {LogoArea}
-        <Tagline>Get alerted when a course opens up, by text and email.</Tagline>
-        <Input autocomplete="off" placeholder="Course"></Input>
-        <Input placeholder="Email"></Input>
-        <Input placeholder="Phone"></Input>
-        <SubmitButton onClick={onSubmit}>Submit</SubmitButton>
+        {}
+        {Nav}
+        <Middle>
+            {LogoArea}
+            <Tagline>Get alerted when a course opens up.</Tagline>
+            <Input autocomplete="off" placeholder="Course"></Input>
+            <Input placeholder="Email"></Input>
+            <Input placeholder="Phone"></Input>
+            <AlertText>Alert me <Dropdown>until I cancel</Dropdown></AlertText>
+            <SubmitButton onClick={onSubmit}>Submit</SubmitButton>
+        </Middle>
         <Footer>
           Made with
                 {" "}
