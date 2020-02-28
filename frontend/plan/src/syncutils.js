@@ -2,7 +2,7 @@ import {
     createScheduleOnBackend,
     deleteSchedule,
     deleteScheduleOnBackend,
-    fetchBackendSchedulesAndInitializeCart, resetSchedules,
+    fetchBackendSchedulesAndInitializeCart, enforceSemester,
     updateScheduleOnBackend
 } from "./actions";
 import { SYNC_INTERVAL } from "./sync_constants";
@@ -42,13 +42,9 @@ const initiateSync = async (store) => {
     }
 
     // Make sure the most up-to-date semester is being used
-    const lastSemester = localStorage.getItem("coursePlanLastSemesterObserved");
     await new Promise((resolve) => {
         const handleSemester = (semester) => {
-            if (lastSemester !== semester) {
-                store.dispatch(resetSchedules());
-                localStorage.setItem("coursePlanLastSemesterObserved", semester);
-            }
+            store.dispatch(enforceSemester(semester));
             resolve();
         };
         fetch("/api/options")

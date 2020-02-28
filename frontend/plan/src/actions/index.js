@@ -23,7 +23,7 @@ export const DELETE_SCHEDULE = "DELETE_SCHEDULE";
 export const RENAME_SCHEDULE = "RENAME_SCHEDULE";
 export const DUPLICATE_SCHEDULE = "DUPLICATE_SCHEDULE";
 export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
-export const RESET_SCHEDULES = "RESET_SCHEDULES";
+export const ENFORCE_SEMESTER = "ENFORCE_SEMESTER";
 
 export const COURSE_SEARCH_ERROR = "COURSE_SEARCH_ERROR";
 export const COURSE_SEARCH_LOADING = "COURSE_SEARCH_LOADING";
@@ -134,8 +134,9 @@ export const updateSearch = searchResults => (
     }
 );
 
-export const resetSchedules = () => ({
-    type: RESET_SCHEDULES,
+export const enforceSemester = semester => ({
+    type: ENFORCE_SEMESTER,
+    semester,
 });
 
 const updateSearchRequest = () => (
