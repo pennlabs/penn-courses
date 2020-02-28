@@ -48,10 +48,21 @@ store.subscribe(() => {
 });
 
 function App() {
-    const { hasVisited } = localStorage;
     const [currentUser, setCurrentUser] = useState(null);
+    const [tab, setTab] = useState(0);
+    const [view, setView] = useState(0);
+    const containerRef = useRef();
+    const scrollTop = () => window.scrollTo(0, 0);
+    const isExpanded = view === 1;
 
     useEffect(() => {
+        if (!localStorage.hasVisited) {
+            store.dispatch(openModal("WELCOME",
+                {},
+                "Welcome to Penn Course Plan ✨"));
+            localStorage.hasVisited = true;
+        }
+
         if (DISABLE_MULTIPLE_TABS) {
             return preventMultipleTabs(() => {
                 store.dispatch(openModal("MULTITAB",
@@ -72,23 +83,6 @@ function App() {
         };
     }, [currentUser]);
 
-    localStorage.hasVisited = true;
-    if (!hasVisited) {
-        store.dispatch(openModal("WELCOME",
-            {},
-            "Welcome to Penn Course Plan ✨"));
-    }
-
-    const [tab, setTab] = useState(0);
-
-    const [view, setView] = useState(0);
-
-    const containerRef = useRef();
-
-    const scrollTop = (index, action) => {
-        window.scrollTo(0, 0);
-    };
-
     if (window.innerWidth < 800) {
         return (
             <Provider store={store}>
@@ -98,7 +92,7 @@ function App() {
                     setTab={setTab}
                     user={currentUser}
                     setUser={setCurrentUser}
-                    mobileView={true}
+                    mobileView
                 />
                 <Tabs value={tab} className="topTabs" centered>
                     <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
@@ -134,15 +128,15 @@ function App() {
                                     paddingRight: 0,
                                 }}
                             >
-                                <Selector mobileView={true} view={0} />
+                                <Selector mobileView view={0} />
                             </div>
                         </div>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Cart setTab={setTab} mobileView={true} />
+                        <Cart setTab={setTab} mobileView />
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Schedule setTab={setTab} mobileView={true} />
+                        <Schedule setTab={setTab} mobileView />
                     </div>
                 </SwipeableViews>
                 <Footer />
@@ -161,19 +155,20 @@ function App() {
                     user={currentUser}
                     setUser={setCurrentUser}
                     style={{ flexGrow: 0 }}
+                    isExpanded={isExpanded}
                 />
                 <div
                     className="App columns is-mobile main smooth-transition"
-                    style={view === 0 ? {
-                        padding: 0,
-                        width: "129%",
-                    } : {
+                    style={isExpanded ? {
                         padding: 0,
                         width: "123%",
+                    } : {
+                        padding: 0,
+                        width: "129%",
                     }}
                 >
                     <div
-                        className={view === 0 ? "column smooth-transition is-one-fifth" : "column smooth-transition is-two-thirds"}
+                        className={isExpanded ? "column smooth-transition is-two-thirds" : "column smooth-transition is-one-fifth"}
                     >
                         <span style={{
                             display: "flex",
@@ -232,36 +227,12 @@ function App() {
                             paddingRight: "0px",
                             marginRight: "15px",
                         }}
-                        className={view === 0 ? "smooth-transition column is-5" : "smooth-transition column is-5 hidden"}
+                        className={isExpanded ? "smooth-transition column is-5 hidden" : "smooth-transition column is-5"}
                     >
                         <Schedule />
                     </div>
                 </div>
             </div>
-            {view === 1
-                ? (
-                    <div className="showScheduleButton popover is-popover-left">
-                        <i
-                            role="button"
-                            className="fas fa-arrow-alt-circle-left"
-                            onClick={() => setView(0)}
-                        />
-                        <div className="popover-content">Show Schedule</div>
-                    </div>
-                )
-                : (
-                    <div className="hideScheduleButton popover is-popover-left">
-                        <i
-                            role="button"
-                            className="fas fa-arrow-alt-circle-right"
-                            onClick={() => setView(1)}
-                        />
-                        <div className="popover-content">Hide Schedule</div>
-                    </div>
-                )
-
-
-            }
             <Footer />
             <ModalContainer />
         </Provider>
