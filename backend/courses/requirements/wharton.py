@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 # Data scraped from https://undergrad-inside.wharton.upenn.edu/course-search-2017/, which gets its
 # information from the JSON api located at COURSE_URL
 
-COURSE_URL = "https://apps.wharton.upenn.edu/reports/index.cfm?action=reports.renderDatatablesJSON&id=UGRGenEdsNew"  # noqa: E501
+COURSE_URL = "https://apps.wharton.upenn.edu/reports/1443/data/?&course_dept=all&req_satisfied=all&ccp_flag=all"  # noqa: E501
 columns = ["department", "course_number", "title", "reqs_satisfied", "ccp"]
 
 
@@ -42,13 +42,17 @@ def _add_ccp(reqs, ccp):
 def _clean_data(data):
     cleaned = dict()
     for row in data:
-        reqs = row[3].split(",")
-        _add_ccp(reqs, row[4])
+        reqs = row["req_satisfied"].split(",")
+        _add_ccp(reqs, row["ccp_flag"])
         reqs = [r for r in reqs if r != "See Advisor"]
         for req in reqs:
             req_list = cleaned.get(req, [])
             req_list.append(
-                {"department": unidecode.unidecode(row[0]), "course_id": row[1], "satisfies": True}
+                {
+                    "department": unidecode.unidecode(row["course_dept"]),
+                    "course_id": row["course_number"],
+                    "satisfies": True,
+                }
             )
             cleaned[req] = req_list
     return cleaned
@@ -61,7 +65,7 @@ REQUIREMENTS = {
     "H": "Humanities",
     "SS": "Social Science",
     "NSME": "Natural Sciences, Math, and Engineering",
-    "FGE": "Uncategorized / Flex Gen Ed Only",
+    "FGE": "Flex Gen Ed",
     "TIA": "Technology, Innovation, and Analytics",
     "GEBS": "Global Economy, Business, and Society",
 }
