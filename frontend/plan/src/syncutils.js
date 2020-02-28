@@ -51,18 +51,27 @@ const initiateSync = (store) => {
 
     const cloudPull = () => {
         const scheduleStateInit = store.getState().schedule;
+        const shouldInitCart = !scheduleStateInit.cartPushedToBackend;
         return new Promise((resolve) => {
             store.dispatch(fetchBackendSchedulesAndInitializeCart(scheduleStateInit.cartSections,
+                shouldInitCart,
                 (newSchedulesObserved) => {
                     // record the new schedules that have been observed
                     const newSchedulesObservedSet = {};
-                    newSchedulesObserved.forEach(({ id }) => {
+                    let cartFound = false;
+                    newSchedulesObserved.forEach(({ id, name }) => {
+                        if (name === "cart") {
+                            cartFound = true;
+                        }
                         schedulesObserved[id] = true;
                         newSchedulesObservedSet[id] = true;
                     });
 
+                    if (!cartFound && !shouldInitCart) {
+                        // the cart was deleted on the backend; reset it
+                        store.dispatch(deleteSchedule("cart"));
+                    }
 
-                    console.log("NEW OBSERVED", newSchedulesObservedSet, "OLD OBSERVED", schedulesObserved);
                     const scheduleState = store.getState().schedule;
                     Object.keys(schedulesObserved)
                         .forEach((id) => {
@@ -72,7 +81,9 @@ const initiateSync = (store) => {
                                 delete schedulesObserved[id];
                                 // find the name of the schedule with the deleted id
                                 const schedName = Object.entries(scheduleState.schedules)
-                                    .filter(([_, { id: selectedId }]) => selectedId == id)
+                                    .filter(
+                                        ([_, { id: selectedId }]) => (`${selectedId}`) === (`${id}`)
+                                    )
                                     .map(([name, _]) => name)[0];
                                 if (schedName) {
                                     store.dispatch(deleteSchedule(schedName));

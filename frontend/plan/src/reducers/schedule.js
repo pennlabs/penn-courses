@@ -50,6 +50,18 @@ const initialState = {
 };
 
 /**
+ * Resets the cart to be empty, and assumes that it has not been pushed
+ * @param state The old state
+ * @return {{cartSections: [], cartPushedToBackend: boolean, cartUpdated: boolean}} New state
+ */
+const resetCart = state => ({
+    ...state,
+    cartSections: [],
+    cartPushedToBackend: false,
+    cartUpdated: false,
+});
+
+/**
  * A helper method for removing a schedule from a schedules object
  * @param scheduleKey The name of the schedule
  * @param initialSchedule The initial schedules object
@@ -230,10 +242,13 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
  * Performs a deletion and returns the resulting state
  * @param state The redux state
  * @param scheduleName The name of the schedule to delete
- * @returns {{scheduleSelected: (*), deletedSchedules: {}, schedules: *}}
+ * Returns the new state
  */
 const processScheduleDeletion = (state, scheduleName) => {
     const newSchedules = removeSchedule(scheduleName, state.schedules);
+    if (scheduleName === "cart") {
+        return resetCart(state);
+    }
     if (Object.keys(newSchedules).length === 0) {
         newSchedules["Empty Schedule"] = generateDefaultSchedule();
     }
@@ -355,12 +370,7 @@ export const schedule = (state = initialState, action) => {
             return processScheduleCreation(state, action.scheduleName);
         case UNSUCCESSFUL_SCHEDULE_CREATION:
             if (action.scheduleName === "cart") {
-                return {
-                    ...state,
-                    cartSections: [],
-                    cartPushedToBackend: false,
-                    cartUpdated: false,
-                };
+                return resetCart(state);
             }
             return {
                 ...state,

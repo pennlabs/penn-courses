@@ -457,11 +457,12 @@ export function fetchCourseDetails(courseId) {
  * Pulls schedules from the backend
  * If the cart isn't included, it creates a cart
  * @param cart The courses in the cart
+ * @param shouldInitCart Whether to initialize the cart
  * @param onComplete The function to call when initialization has been completed (with the schedules
  * from the backend)
  * @returns {Function}
  */
-export const fetchBackendSchedulesAndInitializeCart = (cart,
+export const fetchBackendSchedulesAndInitializeCart = (cart, shouldInitCart,
     onComplete = () => null) => (dispatch) => {
     doAPIRequest("/schedules/")
         .then(res => res.json())
@@ -470,7 +471,7 @@ export const fetchBackendSchedulesAndInitializeCart = (cart,
                 dispatch(updateSchedules(schedules));
             }
             // if the cart doesn't exist on the backend, create it
-            if (!schedules.reduce((acc, { name }) => acc || name === "cart", false)) {
+            if (shouldInitCart && !schedules.reduce((acc, { name }) => acc || name === "cart", false)) {
                 dispatch(createScheduleOnBackend("cart", cart));
             }
             onComplete(schedules);
