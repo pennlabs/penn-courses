@@ -2,7 +2,7 @@ import {
     createScheduleOnBackend,
     deleteSchedule,
     deleteScheduleOnBackend,
-    fetchBackendSchedulesAndInitializeCart,
+    fetchBackendSchedulesAndInitializeCart, resetSchedules,
     updateScheduleOnBackend
 } from "./actions";
 import { SYNC_INTERVAL } from "./sync_constants";
@@ -25,7 +25,7 @@ const allPushed = (scheduleState) => {
  * Returns a function for dismantling the sync loop.
  * @param store The redux store
  */
-const initiateSync = (store) => {
+const initiateSync = async (store) => {
     // Retrieve all the schedules that have been observed coming from
     // the backend at any point in time.
     // This ensures that schedules can be safely deleted without randomly returning.
@@ -40,6 +40,26 @@ const initiateSync = (store) => {
     } else {
         schedulesObserved = {};
     }
+
+    // Make sure the most up-to-date semester is being used
+    const lastSemester = localStorage.getItem("coursePlanLastSemesterObserved");
+    await new Promise((resolve) => {
+        const handleSemester = (semester) => {
+            if (lastSemester !== semester) {
+                store.dispatch(resetSchedules());
+                localStorage.setItem("coursePlanLastSemesterObserved", semester);
+            }
+            resolve();
+        };
+        fetch("/api/options")
+            .then(response => response.json())
+            .then(options => {
+                handleSemester(options["SEMESTER"]);
+            })
+            .catch(() => {
+                handleSemester("2020C");
+            });
+    });
 
     let firstSync = !localStorage.getItem("usesBackendSync");
     localStorage.setItem("usesBackendSync", "true");
@@ -153,7 +173,8 @@ const initiateSync = (store) => {
         }
     };
 
-    startSyncLoop().then();
+    startSyncLoop()
+        .then();
 
     window.addEventListener("beforeunload", (e) => {
         if (!allPushed(store.getState().schedule)) {
