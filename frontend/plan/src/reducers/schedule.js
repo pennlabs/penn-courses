@@ -250,7 +250,7 @@ const processScheduleDeletion = (state, scheduleName) => {
         return resetCart(state);
     }
     if (Object.keys(newSchedules).length === 0) {
-        newSchedules["Empty Schedule"] = generateDefaultSchedule();
+        newSchedules[DEFAULT_SCHEDULE_NAME] = generateDefaultSchedule();
     }
     return {
         ...state,
