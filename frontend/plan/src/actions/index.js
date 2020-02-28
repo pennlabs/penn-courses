@@ -380,7 +380,7 @@ export function clearFilter(propertyName) {
     };
 }
 
-export const deletionAttemptCompleted = deletedScheduleId => ({
+export const deletionAttemptFailed = deletedScheduleId => ({
     type: DELETION_ATTEMPT_FAILED,
     deletedScheduleId,
 });
@@ -593,11 +593,12 @@ export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
             "X-CSRFToken": getCsrf(),
         },
     })
-        .then((response) => {
-            if (response.ok) {
-                dispatch(deletionSuccessful(deletedScheduleId));
-            } else {
-                dispatch(deletionAttemptCompleted(deletedScheduleId));
+        .then(() => {
+            dispatch(deletionSuccessful(deletedScheduleId));
+        })
+        .catch(({ message }) => {
+            if (message !== "minDelayNotElapsed") {
+                dispatch(deletionAttemptFailed(deletedScheduleId));
             }
         });
 };
