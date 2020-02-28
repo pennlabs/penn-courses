@@ -11,6 +11,7 @@ urlpatterns = [
     path("plan/", include("plan.urls")),
     path("alert/", include("alert.urls")),
     path("courses/", include("courses.urls")),
+    path("options/", include("options.urls", namespace="options")),
     path(
         "openapi/",
         get_schema_view(title="Penn Courses Documentation", public=True),
