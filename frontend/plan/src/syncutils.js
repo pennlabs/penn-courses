@@ -53,8 +53,8 @@ const initiateSync = async (store) => {
         };
         fetch("/api/options")
             .then(response => response.json())
-            .then(options => {
-                handleSemester(options["SEMESTER"]);
+            .then((options) => {
+                handleSemester(options.SEMESTER);
             })
             .catch(() => {
                 handleSemester("2020C");

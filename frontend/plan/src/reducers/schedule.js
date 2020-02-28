@@ -203,12 +203,12 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
     let newCart = [...(state.cartSections || [])];
     const newState = { ...state };
     if (schedulesFromBackend) {
-        schedulesFromBackend.forEach(({
+        for (const {
             id: scheduleId, name, sections, semester, ...rest
-        }) => {
+        } of schedulesFromBackend) {
             const cloudUpdated = new Date(rest.updated_at).getTime();
             if (name === "cart") {
-                const cartUpdated = state.cartUpdated;
+                const { cartUpdated } = state;
                 const cartPushed = state.cartPushedToBackend;
                 // If changes to the cart are still syncing, ignore the requested update
                 if (!cartPushed && (cloudUpdated - cartUpdated) < MIN_TIME_DIFFERENCE) {
@@ -240,7 +240,7 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
                     updated_at: cloudUpdated,
                 };
             }
-        });
+        }
     }
     return {
         ...newState,
@@ -283,7 +283,7 @@ export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
     switch (action.type) {
         case RESET_SCHEDULES:
-            return {...initialState};
+            return { ...initialState };
         case MARK_SCHEDULE_SYNCED:
             return {
                 ...state,

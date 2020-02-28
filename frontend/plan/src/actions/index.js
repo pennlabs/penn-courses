@@ -135,7 +135,7 @@ export const updateSearch = searchResults => (
 );
 
 export const resetSchedules = () => ({
-    type: RESET_SCHEDULES
+    type: RESET_SCHEDULES,
 });
 
 const updateSearchRequest = () => (
