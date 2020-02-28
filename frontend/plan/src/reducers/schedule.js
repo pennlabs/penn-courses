@@ -15,7 +15,7 @@ import {
     MARK_SCHEDULE_SYNCED,
     DELETION_ATTEMPT_FAILED,
     DELETION_ATTEMPT_SUCCEEDED,
-    ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION, RESET_SCHEDULES
+    ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION, ENFORCE_SEMESTER
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 import { MAX_DELETION_ATTEMPTS, MIN_TIME_DIFFERENCE } from "../sync_constants";
@@ -50,16 +50,26 @@ const initialState = {
 };
 
 /**
+ * Resets the cart ID stored in state and returns the new state
+ * @param state
+ */
+const resetCartId = (state) => {
+    const newState = { ...state };
+    delete newState.cartId;
+    return newState;
+};
+
+/**
  * Resets the cart to be empty, and assumes that it has not been pushed
  * @param state The old state
  * @return {{cartSections: [], cartPushedToBackend: boolean, cartUpdated: boolean}} New state
  */
-const resetCart = state => ({
+const resetCart = state => (resetCartId({
     ...state,
     cartSections: [],
     cartPushedToBackend: false,
     cartUpdated: false,
-});
+}));
 
 /**
  * A helper method for removing a schedule from a schedules object
@@ -254,9 +264,10 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
  * Performs a deletion and returns the resulting state
  * @param state The redux state
  * @param scheduleName The name of the schedule to delete
+ * @param localOnly Whether to only make this change on the frontend
  * Returns the new state
  */
-const processScheduleDeletion = (state, scheduleName) => {
+const processScheduleDeletion = (state, scheduleName, localOnly = false) => {
     const newSchedules = removeSchedule(scheduleName, state.schedules);
     if (scheduleName === "cart") {
         return resetCart(state);
@@ -266,24 +277,69 @@ const processScheduleDeletion = (state, scheduleName) => {
     }
     return {
         ...state,
-        deletedSchedules: {
-            ...(state.deletedSchedules || {}),
-            [state.schedules[scheduleName].id]: {
-                deletionQueued: false,
-                attempts: 0,
+        deletedSchedules: localOnly ? state.deletedSchedules
+            : {
+                ...(state.deletedSchedules || {}),
+                [state.schedules[scheduleName].id]: {
+                    deletionQueued: false,
+                    attempts: 0,
+                },
             },
-        },
         schedules: newSchedules,
         scheduleSelected: scheduleName === state.scheduleSelected
             ? Object.keys(newSchedules)[0] : state.scheduleSelected,
     };
 };
 
+/**
+ * Returns whether the given array of meetings/sections contains
+ * courses not from the current semester.
+ * @param meetings
+ * @param currentSemester
+ */
+const containsOldSemester = (meetings, currentSemester) => meetings
+    .reduce((acc, { semester }) => acc || (semester && (semester !== currentSemester)), false);
+
+/**
+ * Handles removal of an item from the cart
+ * @param sectionId
+ * @param state
+ * @return {{cartSections: *, cartPushedToBackend: boolean, cartUpdated: *}}
+ */
+const handleRemoveCartItem = (sectionId, state) => ({
+    ...state,
+    cartUpdated: Date.now(),
+    cartSections: state.cartSections.filter(({ id }) => id !== sectionId),
+    cartPushedToBackend: false,
+});
+
+/**
+ * Resets the cart and filters out old cart sections
+ * if it contains classes from the previous semester
+ * @param currentSemester
+ * @param state
+ * @return {{cartSections: *[], cartPushedToBackend: boolean, cartUpdated: boolean}|*}
+ */
+const enforceCartSemester = (currentSemester, state) => {
+    const hasOldCartSections = containsOldSemester(state.cartSections, currentSemester);
+    if (hasOldCartSections) {
+        return state.cartSections
+            .filter(({ semester }) => semester && (semester !== currentSemester))
+            .reduce((acc, { id }) => handleRemoveCartItem(id, acc), resetCartId(state));
+    }
+    return state;
+};
+
+
 export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
     switch (action.type) {
-        case RESET_SCHEDULES:
-            return { ...initialState };
+        // restrict schedules to ones from the current semester
+        case ENFORCE_SEMESTER:
+            return Object.entries(state.schedules)
+                .filter(([_, { meetings }]) => containsOldSemester(meetings, action.semester))
+                .reduce((acc, [name, _]) => processScheduleDeletion(state, name, true),
+                    enforceCartSemester(action.semester, state));
         case MARK_SCHEDULE_SYNCED:
             return {
                 ...state,
@@ -464,12 +520,7 @@ export const schedule = (state = initialState, action) => {
                 cartPushedToBackend: false,
             };
         case REMOVE_CART_ITEM:
-            return {
-                ...state,
-                cartUpdated: Date.now(),
-                cartSections: state.cartSections.filter(({ id }) => id !== action.sectionId),
-                cartPushedToBackend: false,
-            };
+            return handleRemoveCartItem(action.sectionId, state);
         default:
             return {
                 ...state,
