@@ -51,40 +51,26 @@ const initiateSync = (store) => {
 
     const cloudPull = () => {
         const scheduleStateInit = store.getState().schedule;
-        const shouldInitCart = !scheduleStateInit.cartPushedToBackend;
         return new Promise((resolve) => {
             store.dispatch(fetchBackendSchedulesAndInitializeCart(scheduleStateInit.cartSections,
-                shouldInitCart,
                 (newSchedulesObserved) => {
                     // record the new schedules that have been observed
-                    const newSchedulesObservedSet = {};
-                    let cartFound = false;
-                    newSchedulesObserved.forEach(({ id, name }) => {
-                        if (name === "cart") {
-                            cartFound = true;
-                        }
+                    newSchedulesObserved.forEach(({ id }) => {
                         schedulesObserved[id] = true;
-                        newSchedulesObservedSet[id] = true;
                     });
-
-                    if (!cartFound && !shouldInitCart) {
-                        // the cart was deleted on the backend; reset it
-                        store.dispatch(deleteSchedule("cart"));
-                    }
-
                     const scheduleState = store.getState().schedule;
                     Object.keys(schedulesObserved)
                         .forEach((id) => {
                             // The schedule has been observed from the backend before,
                             // but is no longer being observed; Should be deleted locally.
-                            if (!newSchedulesObservedSet[id]) {
+                            if (!newSchedulesObserved[id]) {
                                 delete schedulesObserved[id];
                                 // find the name of the schedule with the deleted id
-                                const schedName = Object.entries(scheduleState.schedules)
-                                    .filter(
-                                        ([_, { id: selectedId }]) => (`${selectedId}`) === (`${id}`)
-                                    )
-                                    .map(([name, _]) => name)[0];
+                                const schedName = Object.keys(scheduleState.schedules)
+                                    .reduce((acc, schedNameSelected) => acc || ((scheduleState
+                                        .schedules[schedNameSelected]
+                                        .id === id) && schedNameSelected),
+                                    false);
                                 if (schedName) {
                                     store.dispatch(deleteSchedule(schedName));
                                 }

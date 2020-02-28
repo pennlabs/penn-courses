@@ -18,7 +18,6 @@ import {
     ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
-import { MAX_DELETION_ATTEMPTS } from "../sync_constants";
 
 const DEFAULT_SCHEDULE_NAME = "Schedule";
 
@@ -48,18 +47,6 @@ const initialState = {
     deletedSchedules: [],
     cartUpdated: false,
 };
-
-/**
- * Resets the cart to be empty, and assumes that it has not been pushed
- * @param state The old state
- * @return {{cartSections: [], cartPushedToBackend: boolean, cartUpdated: boolean}} New state
- */
-const resetCart = state => ({
-    ...state,
-    cartSections: [],
-    cartPushedToBackend: false,
-    cartUpdated: false,
-});
 
 /**
  * A helper method for removing a schedule from a schedules object
@@ -151,48 +138,6 @@ const processScheduleCreation = (state, scheduleName) => {
 };
 
 /**
- * Handle a successful deletion on the backend
- * @param state The previous state
- * @param deletedScheduleId The id of the deleted schedule
- * @return {{deletedSchedules: {}}} The new state
- */
-const registerSuccessfulDeletion = (state, deletedScheduleId) => {
-    const newDeletedSchedules = { ...(state.deletedSchedules || []) };
-    delete newDeletedSchedules[deletedScheduleId];
-    return {
-        ...state,
-        deletedSchedules: newDeletedSchedules,
-    };
-};
-
-/**
- * Handle a failed deletion on the backend
- * @param state The previous state
- * @param deletedScheduleId The id of the deleted schedule
- * @return {{deletedSchedules: {}}} The new state
- */
-const registerFailedDeletion = (state, deletedScheduleId) => {
-    const oldDeletedSchedules = state.deletedSchedules || {};
-    const oldDeletionState = oldDeletedSchedules[deletedScheduleId] || { attempts: 0 };
-    const { attempts: oldAttempts } = oldDeletionState;
-    if (oldAttempts >= MAX_DELETION_ATTEMPTS) {
-        // assume this was a successful deletion and end attempts at deleting the schedule
-        return registerSuccessfulDeletion(state, deletedScheduleId);
-    }
-    return {
-        ...state,
-        deletedSchedules: {
-            ...oldDeletedSchedules,
-            [deletedScheduleId]: {
-                ...oldDeletionState,
-                attempts: oldAttempts + 1,
-                deletionQueued: false,
-            },
-        },
-    };
-};
-
-/**
  * Takes in schedules from the backend; incorporates them into state; and returns the new state
  * @param state The redux state
  * @param schedulesFromBackend The schedules object sent by the backend
@@ -242,15 +187,12 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
  * Performs a deletion and returns the resulting state
  * @param state The redux state
  * @param scheduleName The name of the schedule to delete
- * Returns the new state
+ * @returns {{scheduleSelected: (*), deletedSchedules: {}, schedules: *}}
  */
 const processScheduleDeletion = (state, scheduleName) => {
     const newSchedules = removeSchedule(scheduleName, state.schedules);
-    if (scheduleName === "cart") {
-        return resetCart(state);
-    }
     if (Object.keys(newSchedules).length === 0) {
-        newSchedules[DEFAULT_SCHEDULE_NAME] = generateDefaultSchedule();
+        newSchedules["Empty Schedule"] = generateDefaultSchedule();
     }
     return {
         ...state,
@@ -370,7 +312,7 @@ export const schedule = (state = initialState, action) => {
             return processScheduleCreation(state, action.scheduleName);
         case UNSUCCESSFUL_SCHEDULE_CREATION:
             if (action.scheduleName === "cart") {
-                return resetCart(state);
+                return state;
             }
             return {
                 ...state,
@@ -395,18 +337,36 @@ export const schedule = (state = initialState, action) => {
                     ...state.deletedSchedules,
                     [action.deletedScheduleId]: {
                         deletionQueued: true,
-                        attempts: (state.deletedSchedules[action.deletedScheduleId]
-                            && state.deletedSchedules[action.deletedScheduleId].attempts) + 1,
+                        attempts: 1,
                     },
                 },
             };
         case DELETION_ATTEMPT_SUCCEEDED: {
             // deletion API call was successful
-            return registerSuccessfulDeletion(state, action.deletedScheduleId);
+            const newDeletedSchedules = { ...(state.deletedSchedules || []) };
+            delete newDeletedSchedules[action.scheduleId];
+            return {
+                ...state,
+                deletedSchedules: newDeletedSchedules,
+            };
         }
         case DELETION_ATTEMPT_FAILED: {
             // a call to the deletion API route was completed with a failure
-            return registerFailedDeletion(state, action.deletedScheduleId);
+            return {
+                ...state,
+                deletedSchedules: state.deletedSchedules ? {
+                    ...state.deletedSchedules,
+                    [action.deletedScheduleId]: {
+                        attempts: state.deletedSchedules[action.deletedScheduleId].attempts + 1,
+                        deletionQueued: false,
+                    },
+                } : {
+                    [action.deletedScheduleId]: {
+                        attempts: 1,
+                        deletionQueued: false,
+                    },
+                },
+            };
         }
         case CHANGE_SCHEDULE:
             return {
