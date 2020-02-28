@@ -338,7 +338,7 @@ export const schedule = (state = initialState, action) => {
         case ENFORCE_SEMESTER:
             return Object.entries(state.schedules)
                 .filter(([_, { meetings }]) => containsOldSemester(meetings, action.semester))
-                .reduce((acc, [name, _]) => processScheduleDeletion(state, name, true),
+                .reduce((acc, [name, _]) => processScheduleDeletion(acc, name, true),
                     enforceCartSemester(action.semester, state));
         case MARK_SCHEDULE_SYNCED:
             return {
