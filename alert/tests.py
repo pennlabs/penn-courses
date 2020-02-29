@@ -1521,18 +1521,3 @@ class AlertRegistrationTestCase(TestCase):
                          Registration.objects.get(id=ids['fourth_id']).get_original_registration_sql())
         self.assertEqual(Registration.objects.get(id=ids['fifth_id']),
                          Registration.objects.get(id=ids['fifth_id']).get_original_registration_sql())
-
-
-# TESTING INCOMPLETE
-
-# replace recursive get most current with SQL query in gets / puts (change method), and resubscribe (add method)?
-
-# test manage.py loadhistory command
-
-# test course status update hook
-
-# fix plan list order
-
-# test UserDetail integration with other code, Davis
-
-# test post-save
