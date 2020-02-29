@@ -26,7 +26,8 @@ function Selector(props) {
         view,
     } = props;
 
-    const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && view === 0);
+    const isExpanded = view === 1;
+    const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
     const loadingIndicator = (
         <div
@@ -69,35 +70,20 @@ function Selector(props) {
 
 
     if (courses.length > 0 && !course) {
-        if (view === 0) {
-            element = courseList;
-        } else {
-            element = (
+        element = isExpanded
+            ? (
                 <div className="columns">
                     <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
                         {courseList}
                     </div>
                 </div>
-
-            );
-        }
+            )
+            : courseList;
     }
 
     if (course) {
-        if (view === 0) {
-            element = (
-                <CourseInfo
-                    getCourse={getCourse}
-                    course={course}
-                    back={clearCourse}
-                    manage={{
-                        addToSchedule,
-                        removeFromSchedule,
-                    }}
-                />
-            );
-        } else {
-            element = (
+        element = isExpanded
+            ? (
                 <div className="columns">
                     <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
                         {courseList}
@@ -119,8 +105,18 @@ function Selector(props) {
                     </div>
 
                 </div>
+            )
+            : (
+                <CourseInfo
+                    getCourse={getCourse}
+                    course={course}
+                    back={clearCourse}
+                    manage={{
+                        addToSchedule,
+                        removeFromSchedule,
+                    }}
+                />
             );
-        }
     }
     return (
         <>
