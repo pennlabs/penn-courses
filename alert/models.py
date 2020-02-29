@@ -149,9 +149,7 @@ class Registration(models.Model):
         be created.
         :return: Registration object for the resubscription
         """
-        most_recent_reg = self
-        while hasattr(most_recent_reg, 'resubscribed_to'):  # follow the chain of resubscriptions to the most recent one
-            most_recent_reg = most_recent_reg.resubscribed_to
+        most_recent_reg = self.get_most_current_rec()
 
         if not most_recent_reg.notification_sent:  # if a notification hasn't been sent on this recent one,
             return most_recent_reg  # don't create duplicate registrations for no reason.
