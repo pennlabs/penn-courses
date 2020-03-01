@@ -35,6 +35,7 @@
     ]
   },
   "devDependencies": {
-    "eslint-config-airbnb": "^18.0.1"
+    "eslint-config-airbnb": "^18.0.1",
+    "eslint-plugin-flowtype": "^4.6.0"
   }
 }
