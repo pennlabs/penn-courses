@@ -313,7 +313,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         elif res == RegStatus.NO_CONTACT_INFO:
             return Response(
                 {
-                    "notification": "You must set a phone number and/or an email address to register for an alert."
+                    "notification": "You must set a phone number and/or an email address to "
+                                    "register for an alert."
                 },
                 status=status.HTTP_406_NOT_ACCEPTABLE,
             )
@@ -367,7 +368,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 if not registration.notification_sent:
                     return Response(
                         {
-                            "detail": "You can only resubscribe to an alert that has already been sent."
+                            "detail": "You can only resubscribe to an alert that "
+                                      "has already been sent."
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )

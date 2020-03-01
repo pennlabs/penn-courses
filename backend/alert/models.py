@@ -45,12 +45,14 @@ class Registration(models.Model):
     api_key = models.ForeignKey("courses.APIKey", blank=True, null=True, on_delete=models.CASCADE)
 
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=True, null=True)
-    # going forward, email and phone will be None and contact information can be found in the user's UserData object
+    # going forward, email and phone will be None
+    # and contact information can be found in the user's UserData object
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(blank=True, null=True, max_length=100)
     # section that the user registered to be notified about
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
-    # changed to True if user deletes notification, never changed back (a new model is created on resubscription)
+    # changed to True if user deletes notification,
+    # never changed back (a new model is created on resubscription)
     deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(blank=True, null=True)
     # does the user have auto-mute enabled for this alert?
@@ -116,7 +118,8 @@ class Registration(models.Model):
 
     @property
     def is_active(self):
-        """Returns True iff the registration would send a notification when the watched section changes to open"""
+        """Returns True iff the registration would send a notification
+        when the watched section changes to open"""
         return not (self.notification_sent or self.deleted)
 
     @property
@@ -178,8 +181,8 @@ class Registration(models.Model):
         return new_registration
 
     def get_resubscribe_group_sql(self):
-        # This is an optimization that we can use if we need to but as of now it is unused.  Remove this comment
-        # if you use it.
+        # This is an optimization that we can use if we need to but as of now it is unused.
+        # Remove this comment if you use it.
         # DO NOT add variable parameters or reference external variables improperly
         # (to prevent against SQL injection attacks)
         # https://docs.djangoproject.com/en/3.0/topics/db/sql/
