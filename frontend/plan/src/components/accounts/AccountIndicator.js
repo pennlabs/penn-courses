@@ -11,37 +11,37 @@ import LoginButton from "./LoginButton";
  */
 
 const AccountIndicator = ({
-    user, setUser, onLeft, clearScheduleData,
+    user, login, logout, onLeft, clearScheduleData,
 }) => {
     useEffect(() => {
         fetch("/accounts/me/")
             .then((response) => {
-                if (response.ok) {
-                    response.json()
-                        .then(newUser => setUser(newUser));
-                } else {
-                    setUser(null);
+                if (!response.ok) {
+                    return;
                 }
+                response.json()
+                    .then(newUser => login(newUser));
             });
-    }, [setUser]);
+    }, []);
 
     return user
         ? (
             <UserSelector
                 user={user}
                 onLogout={() => {
-                    setUser(null);
+                    logout();
                     clearScheduleData();
                 }}
                 onLeft={onLeft}
             />
         )
-        : <LoginButton />;
+        : <LoginButton/>;
 };
 
 AccountIndicator.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
-    setUser: PropTypes.func,
+    login: PropTypes.func,
+    logout: PropTypes.func,
     onLeft: PropTypes.bool,
     clearScheduleData: PropTypes.func,
 };

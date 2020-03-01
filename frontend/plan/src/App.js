@@ -35,7 +35,7 @@ const loggerMiddleware = createLogger();
 
 const store = createStore(
     coursePlanApp,
-    { schedule: previousStateJSON },
+    { schedule: previousStateJSON, login: {user: null} },
     applyMiddleware(
         thunkMiddleware,
         loggerMiddleware,
@@ -48,7 +48,6 @@ store.subscribe(() => {
 });
 
 function App() {
-    const [currentUser, setCurrentUser] = useState(null);
     const [tab, setTab] = useState(0);
     const [view, setView] = useState(0);
     const containerRef = useRef();
@@ -73,25 +72,14 @@ function App() {
         return null;
     }, []);
 
-    useEffect(() => {
-        // ensure that the user is logged in before initiating the sync
-        if (currentUser) {
-            // returns a function for dismantling the sync loop
-            return initiateSync(store);
-        }
-        return () => {
-        };
-    }, [currentUser]);
-
     if (window.innerWidth < 800) {
         return (
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
                 <SearchBar
+                    initiateSync={() => initiateSync(store)}
                     setTab={setTab}
-                    user={currentUser}
-                    setUser={setCurrentUser}
                     mobileView
                 />
                 <Tabs value={tab} className="topTabs" centered>
@@ -151,9 +139,8 @@ function App() {
             {logPageView()}
             <div style={{ padding: "0px 2em 0px 2em" }}>
                 <SearchBar
+                    initiateSync={() => initiateSync(store)}
                     setView={setView}
-                    user={currentUser}
-                    setUser={setCurrentUser}
                     style={{ flexGrow: 0 }}
                     isExpanded={isExpanded}
                 />

@@ -53,9 +53,7 @@ const UserSelector = ({ user: { username, ...rest }, onLogout, onLeft }) => {
                                     method: "GET",
                                     redirect: "follow",
                                 })
-                                    .then(() => {
-                                        onLogout();
-                                    });
+                                    .then(onLogout());
                             }}
                         >
                             Logout
