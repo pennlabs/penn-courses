@@ -1,7 +1,7 @@
-import React, {useRef} from 'react';
-import './App.css';
-import styled from 'styled-components';
-import Logo from './assets/PCA_logo.svg'
+import React from "react";
+import "./App.css";
+import styled from "styled-components";
+import Logo from "./assets/PCA_logo.svg";
 
 
 const Container = styled.div`
@@ -9,8 +9,8 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   height:100vh;
-  background-color: rgba(244, 250, 255, 0.75);
-`
+  background: rgb(251, 252, 255);
+`;
 
 const Title = styled.div`
   width:100%;
@@ -18,23 +18,22 @@ const Title = styled.div`
   background: #FF3860;
   text-align: center;
   color:white;
-`
+`;
 
 const Grid = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
   margin-top: 2rem;
-`
+`;
 
 const Tagline = styled.h3`
     color: #4A4A4A;
     font-weight: normal;
-`
+`;
 const Header = styled.h1`
-  color: #4A4A4A;
-  font-size: 2rem;
-`
+  color: #4A4A4A
+`;
 
 const Input = styled.input`
   outline: none;
@@ -51,16 +50,13 @@ const Input = styled.input`
   ::placeholder{
     color: #D0D0D0;
   }
-`
+`;
 
-const Middle = styled.div`
-  position: absolute;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  top: 10%;
-`
+// eslint-disable-next-line
+const MiddleArea = styled.div`
+  background: rgb(251, 252, 255);
+  width: 100%;
+`;
 
 const Footer = styled.div`
   color: #999999;
@@ -72,7 +68,7 @@ const Footer = styled.div`
   padding-top: 3em;
   padding-bottom:3em;
   line-height:1.5;
-`
+`;
 
 const SubmitButton = styled.button`
   border-radius: 5px;
@@ -88,7 +84,7 @@ const SubmitButton = styled.button`
   :hover{
     background-color: #1496ed;
   }
-`
+`;
 
 const Toast = styled.div`
   position: absolute;
@@ -96,20 +92,21 @@ const Toast = styled.div`
   top: 10px;
   max-width: 300px;
   background-color:
-`
+`;
 
 const TopBanner = (
     <Title>
-      We're currently closed for signups. Come back after schedules have been posted!
+      We&#39;re currently closed for signups. Come back after schedules have been posted!
     </Title>
-  );
+);
 
 const LogoArea = (
   <Grid>
-    <img width="70px" height="70px" src={require("./assets/PCA_logo.svg")}/>
+    <img width="70px" height="70px" src={Logo}/>
     <Header>Penn Course Alert</Header>
   </Grid>
 )
+
 
 const NavContainer = styled.nav`
   margin: 20px;
@@ -142,14 +139,13 @@ const Nav = (
 )
 
 
-
 function App() {
-  const onSubmit = () => {console.log(this.CourseInput.value)};
-  return (
+    const onSubmit = () => { };
+    return (
     <Container>
         {}
         {Nav}
-        <Middle>
+        <MiddleArea>
             {LogoArea}
             <Tagline>Get alerted when a course opens up.</Tagline>
             <Input autocomplete="off" placeholder="Course"></Input>
@@ -157,7 +153,7 @@ function App() {
             <Input placeholder="Phone"></Input>
             <AlertText>Alert me <Dropdown>until I cancel</Dropdown></AlertText>
             <SubmitButton onClick={onSubmit}>Submit</SubmitButton>
-        </Middle>
+        </MiddleArea>
         <Footer>
           Made with
                 {" "}
@@ -165,16 +161,16 @@ function App() {
                 {" "}
                 by
                 {" "}
-                <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
+                <a href="http://pennlabs.org" rel="noopener noreferrer" target="_blank">Penn Labs</a>
                 {" "}
                 .
                 <br />
                 Have feedback about Penn Course Alert? Let us know
                 {" "}
                 <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
-        </Footer>
-    </Container>
-  );
+            </Footer>
+        </Container>
+    );
 }
 
 export default App;
