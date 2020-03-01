@@ -3,7 +3,7 @@ import {
     deleteSchedule,
     deleteScheduleOnBackend,
     fetchBackendSchedulesAndInitializeCart, enforceSemester,
-    updateScheduleOnBackend
+    updateScheduleOnBackend, openModal
 } from "./actions";
 import { SYNC_INTERVAL } from "./sync_constants";
 
@@ -53,7 +53,9 @@ const initiateSync = async (store) => {
                 handleSemester(options.SEMESTER);
             })
             .catch(() => {
-                handleSemester("2020C");
+                store.dispatch(openModal("SEMESTER_FETCH_ERROR",
+                    {},
+                    "An Error Occurred"));
             });
     });
 
