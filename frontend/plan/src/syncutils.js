@@ -53,7 +53,7 @@ const initiateSync = async (store) => {
                 handleSemester(options.SEMESTER);
             })
             .catch(() => {
-                handleSemester("2020A");
+                handleSemester("2020C");
             });
     });
 

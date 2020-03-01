@@ -15,7 +15,11 @@ import {
     MARK_SCHEDULE_SYNCED,
     DELETION_ATTEMPT_FAILED,
     DELETION_ATTEMPT_SUCCEEDED,
-    ATTEMPT_DELETION, ATTEMPT_SCHEDULE_CREATION, UNSUCCESSFUL_SCHEDULE_CREATION, ENFORCE_SEMESTER
+    ATTEMPT_DELETION,
+    ATTEMPT_SCHEDULE_CREATION,
+    UNSUCCESSFUL_SCHEDULE_CREATION,
+    ENFORCE_SEMESTER,
+    CLEAR_ALL_SCHEDULE_DATA
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 import {
@@ -341,6 +345,8 @@ const enforceCartSemester = (currentSemester, state) => {
 export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
     switch (action.type) {
+        case CLEAR_ALL_SCHEDULE_DATA:
+            return {...initialState};
         // restrict schedules to ones from the current semester
         case ENFORCE_SEMESTER:
             return Object.entries(state.schedules)

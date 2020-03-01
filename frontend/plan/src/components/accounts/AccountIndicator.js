@@ -10,7 +10,7 @@ import LoginButton from "./LoginButton";
  * information.
  */
 
-const AccountIndicator = ({ user, setUser, onLeft }) => {
+const AccountIndicator = ({ user, setUser, onLeft, clearScheduleData }) => {
     useEffect(() => {
         fetch("/accounts/me/")
             .then((response) => {
@@ -24,7 +24,10 @@ const AccountIndicator = ({ user, setUser, onLeft }) => {
     }, [setUser]);
 
     return user
-        ? <UserSelector user={user} onLogout={() => setUser(null)} onLeft={onLeft} />
+        ? <UserSelector user={user} onLogout={() => {
+            setUser(null);
+            clearScheduleData();
+        }} onLeft={onLeft}/>
         : <LoginButton />;
 };
 
@@ -32,6 +35,7 @@ AccountIndicator.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
     setUser: PropTypes.func,
     onLeft: PropTypes.bool,
+    clearScheduleData: PropTypes.func,
 };
 
 export default AccountIndicator;

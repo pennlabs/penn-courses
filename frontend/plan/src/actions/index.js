@@ -24,6 +24,7 @@ export const RENAME_SCHEDULE = "RENAME_SCHEDULE";
 export const DUPLICATE_SCHEDULE = "DUPLICATE_SCHEDULE";
 export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
 export const ENFORCE_SEMESTER = "ENFORCE_SEMESTER";
+export const CLEAR_ALL_SCHEDULE_DATA = "CLEAR_ALL_SCHEDULE_DATA";
 
 export const COURSE_SEARCH_ERROR = "COURSE_SEARCH_ERROR";
 export const COURSE_SEARCH_LOADING = "COURSE_SEARCH_LOADING";
@@ -178,6 +179,8 @@ export const createScheduleOnFrontend = scheduleName => (
         scheduleName,
     }
 );
+
+export const clearAllScheduleData = () => ({type: CLEAR_ALL_SCHEDULE_DATA });
 
 export const openModal = (modalKey, modalProps, modalTitle) => (
     {

@@ -18,7 +18,7 @@ import {
     updateCheckboxFilter,
     clearAll,
     clearFilter,
-    updateSearch
+    updateSearch, clearAllScheduleData
 } from "../../actions";
 import AccountIndicator from "../accounts/AccountIndicator";
 
@@ -45,7 +45,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
     // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab, setView, user, setUser, mobileView, isExpanded,
+    updateCheckboxFilter, setTab, setView, user, setUser, mobileView, isExpanded, clearScheduleData
 }) {
     useEffect(() => {
         loadRequirements();
@@ -257,7 +257,8 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <AccountIndicator user={user} setUser={setUser} onLeft={false} />
+                    <AccountIndicator user={user} setUser={setUser} onLeft={false}
+                                      clearScheduleData={clearScheduleData}/>
                 </div>
             </div>
         </div>
@@ -287,6 +288,7 @@ SearchBar.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
     setUser: PropTypes.func,
     mobileView: PropTypes.bool,
+    clearScheduleData: PropTypes.func,
 };
 
 const mapStateToProps = state => (
@@ -312,5 +314,6 @@ const mapDispatchToProps = dispatch => ({
     clearAll: () => dispatch(clearAll()),
     clearFilter: propertyName => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),
+    clearScheduleData: () => dispatch(clearAllScheduleData()),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);
