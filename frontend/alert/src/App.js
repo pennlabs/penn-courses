@@ -3,6 +3,7 @@ import "./App.css";
 import styled from "styled-components";
 import Logo from "./assets/PCA_logo.svg";
 
+import {maxWidth, minWidth, PHONE} from "./constants"
 
 const Container = styled.div`
   display: flex;
@@ -20,11 +21,10 @@ const Title = styled.div`
   color:white;
 `;
 
-const Grid = styled.div`
+const Flex = styled.div`
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  margin-top: 2rem;
+  flex-direction: ${props => props.col ? 'column' : 'row'};
+  align-items: ${props => props.align || 'center'};
 `;
 
 const Tagline = styled.h3`
@@ -32,7 +32,11 @@ const Tagline = styled.h3`
     font-weight: normal;
 `;
 const Header = styled.h1`
-  color: #4A4A4A
+  color: #4A4A4A;
+
+  ${maxWidth(PHONE)} {
+    font-size: 1.5rem;
+  }
 `;
 
 const Input = styled.input`
@@ -41,7 +45,6 @@ const Input = styled.input`
   color: #4A4A4A;
   font-size: 1.4rem;
   padding: 0.5rem 1rem;
-  width: 320px;
   border-radius: 5px;
   margin: 0.6rem;
   :focus {
@@ -50,13 +53,19 @@ const Input = styled.input`
   ::placeholder{
     color: #D0D0D0;
   }
+
+  ${maxWidth(PHONE)} {
+    max-width: 320px;
+  }
+
+  ${minWidth(PHONE)} {
+    width: 320px;
+  }
 `;
 
-// eslint-disable-next-line
-const MiddleArea = styled.div`
-  background: rgb(251, 252, 255);
-  width: 100%;
-`;
+const Center = styled.div`
+  text-align: center;
+`
 
 const Footer = styled.div`
   color: #999999;
@@ -91,7 +100,7 @@ const Toast = styled.div`
   right: 10px;
   top: 10px;
   max-width: 300px;
-  background-color:
+  /* background-color: */
 `;
 
 const TopBanner = (
@@ -100,11 +109,11 @@ const TopBanner = (
     </Title>
 );
 
-const LogoArea = (
-  <Grid>
+const LogoArea = () => (
+  <Flex>
     <img width="70px" height="70px" src={Logo}/>
     <Header>Penn Course Alert</Header>
-  </Grid>
+  </Flex>
 )
 
 
@@ -131,11 +140,30 @@ const Dropdown = styled.span`
   font-weight: bold;
 `;
 
-const Nav = (
+const Nav = () => (
   <NavContainer>
     <NavElt href="/">Home</NavElt>
     <NavElt href="/manage">Manage Alerts</NavElt>
   </NavContainer>
+)
+
+const Heading = () => (
+  <Center>
+    <LogoArea />
+    <Tagline>Get alerted when a course opens up.</Tagline>
+  </Center>
+)
+
+const AlertForm = ({ onSubmit }) => (
+  <>
+    <Input autocomplete="off" placeholder="Course"></Input>
+    <Input placeholder="Email"></Input>
+    <Input placeholder="Phone"></Input>
+    <Center>
+      <AlertText>Alert me <Dropdown>until I cancel</Dropdown></AlertText>
+      <SubmitButton onClick={onSubmit}>Submit</SubmitButton>
+    </Center>
+  </>
 )
 
 
@@ -143,17 +171,11 @@ function App() {
     const onSubmit = () => { };
     return (
     <Container>
-        {}
-        {Nav}
-        <MiddleArea>
-            {LogoArea}
-            <Tagline>Get alerted when a course opens up.</Tagline>
-            <Input autocomplete="off" placeholder="Course"></Input>
-            <Input placeholder="Email"></Input>
-            <Input placeholder="Phone"></Input>
-            <AlertText>Alert me <Dropdown>until I cancel</Dropdown></AlertText>
-            <SubmitButton onClick={onSubmit}>Submit</SubmitButton>
-        </MiddleArea>
+        <Nav />
+        <Flex col>
+            <Heading />
+            <AlertForm onSubmit={onSubmit}/>
+        </Flex>
         <Footer>
           Made with
                 {" "}
