@@ -53,12 +53,12 @@ function SearchBar({
         loadRequirements();
     }, [loadRequirements]);
 
-    useEffect( () => {
+    useEffect(() => {
         // ensure that the user is logged in before initiating the sync
         if (user) {
             initiateSync();
         }
-    }, [user]);
+    }, [initiateSync, user]);
 
     const [reqsShown, showHideReqs] = useState(false);
 

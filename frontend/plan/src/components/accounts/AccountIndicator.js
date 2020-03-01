@@ -22,7 +22,7 @@ const AccountIndicator = ({
                 response.json()
                     .then(newUser => login(newUser));
             });
-    }, []);
+    }, [login]);
 
     return user
         ? (
@@ -35,7 +35,7 @@ const AccountIndicator = ({
                 onLeft={onLeft}
             />
         )
-        : <LoginButton/>;
+        : <LoginButton />;
 };
 
 AccountIndicator.propTypes = {

@@ -5,12 +5,12 @@ export const login = (state = { user: null }, action) => {
         case LOGOUT:
             return {
                 ...state,
-                user: null
+                user: null,
             };
         case LOGIN:
             return {
                 ...state,
-                user: action.user
+                user: action.user,
             };
         default:
             return { ...state };

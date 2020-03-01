@@ -10,7 +10,7 @@ const coursePlanApp = combineReducers({
     sections,
     modals,
     filters,
-    login
+    login,
 });
 
 export default coursePlanApp;

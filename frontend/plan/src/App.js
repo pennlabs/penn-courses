@@ -35,7 +35,7 @@ const loggerMiddleware = createLogger();
 
 const store = createStore(
     coursePlanApp,
-    { schedule: previousStateJSON, login: {user: null} },
+    { schedule: previousStateJSON, login: { user: null } },
     applyMiddleware(
         thunkMiddleware,
         loggerMiddleware,
