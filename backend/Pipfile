@@ -42,6 +42,7 @@ django-runtime-options = "*"
 pyyaml = "*"
 uritemplate = "*"
 uwsgi = "*"
+ddt = "*"
 
 [requires]
 python_version = "3"
