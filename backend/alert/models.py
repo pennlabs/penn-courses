@@ -85,7 +85,9 @@ class Registration(models.Model):
         return "%s: %s" % (self.email or self.phone, self.section.__str__())
 
     def validate_phone(self):
-        """Store phone numbers in the format recommended by Twilio."""
+        """
+        Store phone numbers in the format recommended by Twilio.
+        """
         try:
             phone_number = phonenumbers.parse(self.phone, "US")
             self.phone = phonenumbers.format_number(
@@ -118,13 +120,17 @@ class Registration(models.Model):
 
     @property
     def is_active(self):
-        """Returns True iff the registration would send a notification
-        when the watched section changes to open"""
+        """
+        Returns True iff the registration would send a notification
+        when the watched section changes to open
+        """
         return not (self.notification_sent or self.deleted)
 
     @property
     def resub_url(self):
-        """Get the resubscribe URL associated with this registration"""
+        """
+        Get the resubscribe URL associated with this registration
+        """
         full_url = "%s%s" % (
             settings.PCA_URL,
             urls.reverse("resubscribe", kwargs={"id_": self.id}, urlconf="alert.urls"),
