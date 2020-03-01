@@ -189,9 +189,25 @@ def accept_webhook(request):
         and get_value("SEMESTER") == course_term
     )
 
+    alert_for_course_called = False
+    if should_send_alert:
+        try:
+            alert_for_course(course_id, semester=course_term, sent_by="WEB")
+            alert_for_course_called = True
+            response = JsonResponse({"message": "webhook recieved, alerts sent"})
+        except ValueError:
+            response = JsonResponse({"message": "course code could not be parsed"})
+    else:
+        response = JsonResponse({"message": "webhook recieved"})
+
     try:
         u = record_update(
-            course_id, course_term, prev_status, course_status, should_send_alert, request.body
+            course_id,
+            course_term,
+            prev_status,
+            course_status,
+            alert_for_course_called,
+            request.body,
         )
 
         update_course_from_record(u)
@@ -199,15 +215,7 @@ def accept_webhook(request):
         logger.error(e)
         return HttpResponse("We got an error but webhook should ignore it", status=200)
 
-    if should_send_alert:
-        try:
-            alert_for_course(course_id, semester=course_term, sent_by="WEB")
-            return JsonResponse({"message": "webhook recieved, alerts sent"})
-        except ValueError:
-            return JsonResponse({"message": "course code could not be parsed"})
-
-    else:
-        return JsonResponse({"message": "webhook recieved"})
+    return response
 
 
 @csrf_exempt
@@ -305,8 +313,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         elif res == RegStatus.NO_CONTACT_INFO:
             return Response(
                 {
-                    "notification": "You must set a phone number and/or an email address to\
-                    register for an alert."
+                    "notification": "You must set a phone number and/or an email address to register for an alert."
                 },
                 status=status.HTTP_406_NOT_ACCEPTABLE,
             )
@@ -347,20 +354,20 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
         try:
             if request.data.get("resubscribe", False):
-                if not registration.notification_sent:
-                    return Response(
-                        {
-                            "detail": "You can only resubscribe to an alert that has already been\
-                            sent."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
                 if registration.deleted:
                     return Response(
                         {
                             "detail": "You cannot resubscribe to a deleted alert "
-                            "(the user should not be able to do this; they can easily"
-                            "make a new registration)."
+                            "(the user should not be able to do this; we decided it just"
+                            "causes extra functionality clutter on the frontend and more "
+                            "complexity without affording much more convenience)."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if not registration.notification_sent:
+                    return Response(
+                        {
+                            "detail": "You can only resubscribe to an alert that has already been sent."
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -373,13 +380,18 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 changed = not registration.deleted
                 registration.deleted = True
                 registration.save()
-                if changed:
+                if changed:  # else taken care of in generic return statement
                     return Response({"detail": "Registration deleted"}, status=status.HTTP_200_OK)
             elif "auto_resubscribe" in request.data:
+                if registration.deleted:
+                    return Response(
+                        {"detail": "You cannot make changes to a deleted registration"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 changed = registration.auto_resubscribe != request.data.get("auto_resubscribe")
                 registration.auto_resubscribe = request.data.get("auto_resubscribe")
                 registration.save()
-                if changed:
+                if changed:  # else taken care of in generic return statement
                     return Response(
                         {
                             "detail": "auto_resubscribe updated to "
