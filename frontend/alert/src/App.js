@@ -87,7 +87,7 @@ const SubmitButton = styled.button`
 `;
 const TopBanner = (
     <Title>
-      We&#39re currently closed for signups. Come back after schedules have been posted!
+      We&#39;re currently closed for signups. Come back after schedules have been posted!
     </Title>
 );
 
