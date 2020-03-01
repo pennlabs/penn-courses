@@ -18,10 +18,10 @@ import {
     updateCheckboxFilter,
     clearAll,
     clearFilter,
-    updateSearch
+    updateSearch, clearAllScheduleData
 } from "../../actions";
 import AccountIndicator from "../accounts/AccountIndicator";
-
+import { login, logout } from "../../actions/login";
 
 function shouldSearch(filterData) {
     const searchString = filterData.searchString.length >= 3;
@@ -45,11 +45,20 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
     // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab, setView, user, setUser, mobileView, isExpanded,
+    updateCheckboxFilter, setTab, setView, user, login, logout,
+    // eslint-disable-next-line no-shadow
+    mobileView, isExpanded, clearScheduleData, initiateSync,
 }) {
     useEffect(() => {
         loadRequirements();
     }, [loadRequirements]);
+
+    useEffect(() => {
+        // ensure that the user is logged in before initiating the sync
+        if (user) {
+            initiateSync();
+        }
+    }, [initiateSync, user]);
 
     const [reqsShown, showHideReqs] = useState(false);
 
@@ -160,7 +169,7 @@ function SearchBar({
                     borderRadius: "6px",
                 }}
                 >
-                    <AccountIndicator user={user} setUser={setUser} onLeft={true} />
+                    <AccountIndicator user={user} login={login} logout={logout} onLeft={true} />
                     <SearchField
                         setTab={setTab}
                         startSearch={conditionalStartSearch}
@@ -257,7 +266,13 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <AccountIndicator user={user} setUser={setUser} onLeft={false} />
+                    <AccountIndicator
+                        user={user}
+                        login={login}
+                        logout={logout}
+                        onLeft={false}
+                        clearScheduleData={clearScheduleData}
+                    />
                 </div>
             </div>
         </div>
@@ -285,8 +300,11 @@ SearchBar.propTypes = {
     setTab: PropTypes.func,
     setView: PropTypes.func,
     user: PropTypes.objectOf(PropTypes.any),
-    setUser: PropTypes.func,
+    login: PropTypes.func,
+    logout: PropTypes.func,
     mobileView: PropTypes.bool,
+    clearScheduleData: PropTypes.func,
+    initiateSync: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = state => (
@@ -296,10 +314,13 @@ const mapStateToProps = state => (
         defaultReqs: state.filters.defaultReqs,
         isLoadingCourseInfo: state.sections.courseInfoLoading,
         isSearchingCourseInfo: state.sections.searchInfoLoading,
+        user: state.login.user,
     }
 );
 
 const mapDispatchToProps = dispatch => ({
+    login: user => dispatch(login(user)),
+    logout: () => dispatch(logout()),
     loadRequirements: () => dispatch(loadRequirements()),
     startSearch: filterData => dispatch(fetchCourseSearch(filterData)),
     addSchoolReq: reqID => dispatch(addSchoolReq(reqID)),
@@ -312,5 +333,6 @@ const mapDispatchToProps = dispatch => ({
     clearAll: () => dispatch(clearAll()),
     clearFilter: propertyName => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),
+    clearScheduleData: () => dispatch(clearAllScheduleData()),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

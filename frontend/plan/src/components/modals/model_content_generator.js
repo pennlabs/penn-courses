@@ -15,6 +15,14 @@ import WelcomeModalInterior from "./WelcomeModalInterior";
  */
 export const generateModalInterior = (reduxState) => {
     switch (reduxState.modals.modalKey) {
+        case "SEMESTER_FETCH_ERROR":
+            return (
+                <div>
+                    <p>
+                        Please refresh the page.
+                    </p>
+                </div>
+            );
         case "RENAME_SCHEDULE":
             return (
                 <NameScheduleModalInterior
