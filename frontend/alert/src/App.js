@@ -2,6 +2,7 @@ import React from "react";
 import "./App.css";
 import styled from "styled-components";
 import Logo from "./assets/PCA_logo.svg";
+import { Toast } from "./components/Toast";
 
 
 const Container = styled.div`
@@ -104,6 +105,7 @@ function App() {
     return (
         <Container>
             {TopBanner}
+            <Toast />
             {LogoArea}
             <Tagline>Get alerted when a course opens up, by text and email.</Tagline>
             <Input autocomplete="off" placeholder="Course" />
