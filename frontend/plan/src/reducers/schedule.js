@@ -27,7 +27,7 @@ import {
 const DEFAULT_SCHEDULE_NAME = "Schedule";
 
 // returns the default empty schedule
-const generateEmptySchedule = (isDefault=true) => (
+const generateEmptySchedule = (isDefault = true) => (
     {
         meetings: [],
         colorPalette: [],
@@ -248,7 +248,7 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
                 if (!updated || cloudUpdated > updated) {
                     newScheduleObject[name].meetings = sections;
                 }
-            } else if (!state.deletedSchedules[scheduleId]){
+            } else if (!state.deletedSchedules[scheduleId]) {
                 newScheduleObject[name] = {
                     meetings: sections,
                     semester,

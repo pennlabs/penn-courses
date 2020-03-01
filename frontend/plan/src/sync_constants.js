@@ -16,5 +16,5 @@ export const MAX_DELETION_ATTEMPTS = 2;
  required for the schedule's local version to be overridden before changes to it are pushed */
 export const MIN_TIME_DIFFERENCE = 10000;
 
-/*The maximum number of times to try creating a schedule before giving up*/
+/* The maximum number of times to try creating a schedule before giving up */
 export const MAX_CREATION_ATTEMPTS = 2;
