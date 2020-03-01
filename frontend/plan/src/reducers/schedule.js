@@ -346,7 +346,7 @@ export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
     switch (action.type) {
         case CLEAR_ALL_SCHEDULE_DATA:
-            return {...initialState};
+            return { ...initialState };
         // restrict schedules to ones from the current semester
         case ENFORCE_SEMESTER:
             return Object.entries(state.schedules)

@@ -180,7 +180,7 @@ export const createScheduleOnFrontend = scheduleName => (
     }
 );
 
-export const clearAllScheduleData = () => ({type: CLEAR_ALL_SCHEDULE_DATA });
+export const clearAllScheduleData = () => ({ type: CLEAR_ALL_SCHEDULE_DATA });
 
 export const openModal = (modalKey, modalProps, modalTitle) => (
     {

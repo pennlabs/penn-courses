@@ -45,7 +45,7 @@ function SearchBar({
     // eslint-disable-next-line no-shadow
     defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
     // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab, setView, user, setUser, mobileView, isExpanded, clearScheduleData
+    updateCheckboxFilter, setTab, setView, user, setUser, mobileView, isExpanded, clearScheduleData,
 }) {
     useEffect(() => {
         loadRequirements();
@@ -257,8 +257,12 @@ function SearchBar({
             </div>
             <div className="level-right">
                 <div className="level-item">
-                    <AccountIndicator user={user} setUser={setUser} onLeft={false}
-                                      clearScheduleData={clearScheduleData}/>
+                    <AccountIndicator
+                        user={user}
+                        setUser={setUser}
+                        onLeft={false}
+                        clearScheduleData={clearScheduleData}
+                    />
                 </div>
             </div>
         </div>
