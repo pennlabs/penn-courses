@@ -23,6 +23,8 @@ export const DELETE_SCHEDULE = "DELETE_SCHEDULE";
 export const RENAME_SCHEDULE = "RENAME_SCHEDULE";
 export const DUPLICATE_SCHEDULE = "DUPLICATE_SCHEDULE";
 export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
+export const ENFORCE_SEMESTER = "ENFORCE_SEMESTER";
+export const CLEAR_ALL_SCHEDULE_DATA = "CLEAR_ALL_SCHEDULE_DATA";
 
 export const COURSE_SEARCH_ERROR = "COURSE_SEARCH_ERROR";
 export const COURSE_SEARCH_LOADING = "COURSE_SEARCH_LOADING";
@@ -133,6 +135,11 @@ export const updateSearch = searchResults => (
     }
 );
 
+export const enforceSemester = semester => ({
+    type: ENFORCE_SEMESTER,
+    semester,
+});
+
 const updateSearchRequest = () => (
     {
         type: UPDATE_SEARCH_REQUEST,
@@ -172,6 +179,8 @@ export const createScheduleOnFrontend = scheduleName => (
         scheduleName,
     }
 );
+
+export const clearAllScheduleData = () => ({ type: CLEAR_ALL_SCHEDULE_DATA });
 
 export const openModal = (modalKey, modalProps, modalTitle) => (
     {
@@ -380,7 +389,7 @@ export function clearFilter(propertyName) {
     };
 }
 
-export const deletionAttemptCompleted = deletedScheduleId => ({
+export const deletionAttemptFailed = deletedScheduleId => ({
     type: DELETION_ATTEMPT_FAILED,
     deletedScheduleId,
 });
@@ -457,11 +466,12 @@ export function fetchCourseDetails(courseId) {
  * Pulls schedules from the backend
  * If the cart isn't included, it creates a cart
  * @param cart The courses in the cart
+ * @param shouldInitCart Whether to initialize the cart
  * @param onComplete The function to call when initialization has been completed (with the schedules
  * from the backend)
  * @returns {Function}
  */
-export const fetchBackendSchedulesAndInitializeCart = (cart,
+export const fetchBackendSchedulesAndInitializeCart = (cart, shouldInitCart,
     onComplete = () => null) => (dispatch) => {
     doAPIRequest("/schedules/")
         .then(res => res.json())
@@ -470,7 +480,7 @@ export const fetchBackendSchedulesAndInitializeCart = (cart,
                 dispatch(updateSchedules(schedules));
             }
             // if the cart doesn't exist on the backend, create it
-            if (!schedules.reduce((acc, { name }) => acc || name === "cart", false)) {
+            if (shouldInitCart && !schedules.reduce((acc, { name }) => acc || name === "cart", false)) {
                 dispatch(createScheduleOnBackend("cart", cart));
             }
             onComplete(schedules);
@@ -593,11 +603,12 @@ export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
             "X-CSRFToken": getCsrf(),
         },
     })
-        .then((response) => {
-            if (response.ok) {
-                dispatch(deletionSuccessful(deletedScheduleId));
-            } else {
-                dispatch(deletionAttemptCompleted(deletedScheduleId));
+        .then(() => {
+            dispatch(deletionSuccessful(deletedScheduleId));
+        })
+        .catch(({ message }) => {
+            if (message !== "minDelayNotElapsed") {
+                dispatch(deletionAttemptFailed(deletedScheduleId));
             }
         });
 };
