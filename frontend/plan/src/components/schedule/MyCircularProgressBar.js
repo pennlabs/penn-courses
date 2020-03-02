@@ -17,10 +17,10 @@ export default function MyCircularProgressBar(props) {
             color = "#FFC107";
             break;
         case props.value < 3:
-            color = "#6274F1";
+            color = "#5891FC";
             break;
         default:
-            color = "#76BF96";
+            color = "#55C093";
     }
     return (
         <CircularProgressbar
