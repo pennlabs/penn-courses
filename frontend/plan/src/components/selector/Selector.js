@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import PropTypes from "prop-types";
 
 import connect from "react-redux/es/connect/connect";
@@ -9,24 +9,23 @@ import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
 
 import {
-    fetchCourseDetails, updateCourseInfo, addSchedItem, removeSchedItem
+    fetchCourseDetails, updateCourseInfo, addSchedItem, removeSchedItem, updateScrollPos
 } from "../../actions";
 
-function Selector(props) {
-    const {
-        courses,
-        course,
-        getCourse,
-        clearCourse,
-        addToSchedule,
-        removeFromSchedule,
-        isLoadingCourseInfo,
-        isSearchingCourseInfo,
-        sortMode,
-        view,
-    } = props;
-
-    const [scrollPos, setScrollPos] = useState(0);
+const Selector = ({
+    courses,
+    course,
+    getCourse,
+    clearCourse,
+    addToSchedule,
+    removeFromSchedule,
+    isLoadingCourseInfo,
+    isSearchingCourseInfo,
+    sortMode,
+    view,
+    scrollPos,
+    setScrollPos
+}) => {
     const isExpanded = view === 1;
     const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
@@ -141,13 +140,23 @@ Selector.propTypes = {
     view: PropTypes.number,
 };
 
-const mapStateToProps = state => (
+const mapStateToProps = ({
+    sections: {
+        scrollPos,
+        sortMode,
+        searchResults,
+        course,
+        courseInfoLoading: isLoadingCourseInfo,
+        searchInfoLoading: isSearchingCourseInfo,
+    }
+}) => (
     {
-        courses: state.sections.searchResults.filter(course => course.num_sections > 0),
-        course: state.sections.course,
-        sortMode: state.sections.sortMode,
-        isLoadingCourseInfo: state.sections.courseInfoLoading,
-        isSearchingCourseInfo: state.sections.searchInfoLoading,
+        courses: searchResults.filter(({ num_sections: num }) => num > 0),
+        course,
+        scrollPos,
+        sortMode,
+        isLoadingCourseInfo,
+        isSearchingCourseInfo,
     }
 );
 
@@ -158,6 +167,7 @@ const mapDispatchToProps = dispatch => (
         clearCourse: () => dispatch(updateCourseInfo(null)),
         addToSchedule: section => dispatch(addSchedItem(section)),
         removeFromSchedule: id => dispatch(removeSchedItem(id)),
+        setScrollPos: scrollPos => dispatch(updateScrollPos(scrollPos))
     }
 );
 

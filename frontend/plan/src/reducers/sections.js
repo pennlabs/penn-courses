@@ -6,6 +6,7 @@ import {
     UPDATE_COURSE_INFO_SUCCESS,
     UPDATE_COURSE_INFO_REQUEST,
     UPDATE_SEARCH_REQUEST,
+    UPDATE_SCROLL_POS,
     CHANGE_SORT_TYPE
 } from "../actions";
 
@@ -25,10 +26,11 @@ const initialState = {
     courseInfoLoading: false,
     searchInfoLoading: false,
     sortMode: "Name",
+    scrollPos: 0,
 };
 
-export const sections = (state = initialState, action) => {
-    switch (action.type) {
+export const sections = (state = initialState, { type, ...action }) => {
+    switch (type) {
         case CHANGE_SORT_TYPE:
             return {
                 ...state,
@@ -68,7 +70,13 @@ export const sections = (state = initialState, action) => {
                 course: null,
                 searchInfoLoading: false,
             };
-
+        case UPDATE_SCROLL_POS: {
+            const { scrollPos = 0 } = action
+            return {
+                ...state,
+                scrollPos
+            }
+        }
         case COURSE_SEARCH_ERROR:
             // console.log(action.error);
             return state;

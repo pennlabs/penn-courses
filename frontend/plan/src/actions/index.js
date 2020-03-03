@@ -9,6 +9,8 @@ export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
 export const UPDATE_COURSE_INFO_SUCCESS = "UPDATE_COURSE_INFO_SUCCESS";
 export const UPDATE_COURSE_INFO_REQUEST = "UPDATE_COURSE_INFO_REQUEST";
 
+export const UPDATE_SCROLL_POS = "UPDATE_SCROLL_POS"
+
 export const UPDATE_SECTIONS = "UPDATE_SECTIONS";
 export const OPEN_SECTION_INFO = "OPEN_SECTION_INFO";
 export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
@@ -173,6 +175,13 @@ export const updateCourseInfo = course => (
     }
 );
 
+export const updateScrollPos = (scrollPos = 0) => (
+    {
+        type: UPDATE_SCROLL_POS,
+        scrollPos
+    }
+)
+
 export const createScheduleOnFrontend = scheduleName => (
     {
         type: CREATE_SCHEDULE,
@@ -304,7 +313,7 @@ function buildCourseSearchUrl(filterData) {
     return queryString;
 }
 
-const courseSearch = (dispatch, filterData) => (
+const courseSearch = (_, filterData) => (
     doAPIRequest(buildCourseSearchUrl(filterData))
 );
 
