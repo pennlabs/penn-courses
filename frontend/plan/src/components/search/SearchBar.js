@@ -83,7 +83,7 @@ function SearchBar({
         }
     };
     const dropDowns = (
-        <React.Fragment>
+        <>
             <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")}>
                 <SchoolReq
                     startSearch={conditionalStartSearch}
@@ -152,7 +152,7 @@ function SearchBar({
                     startSearch={conditionalStartSearch}
                 />
             </DropdownButton>
-        </React.Fragment>
+        </>
     );
     if (mobileView) {
         return (
