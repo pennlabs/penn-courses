@@ -1,5 +1,5 @@
 import React from "react";
-import { createSchedule, renameSchedule } from "../../actions";
+import { createScheduleOnFrontend, renameSchedule } from "../../actions";
 import NameScheduleModalInterior from "./NameScheduleModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
 
@@ -15,6 +15,14 @@ import WelcomeModalInterior from "./WelcomeModalInterior";
  */
 export const generateModalInterior = (reduxState) => {
     switch (reduxState.modals.modalKey) {
+        case "SEMESTER_FETCH_ERROR":
+            return (
+                <div>
+                    <p>
+                        Please refresh the page.
+                    </p>
+                </div>
+            );
         case "RENAME_SCHEDULE":
             return (
                 <NameScheduleModalInterior
@@ -32,6 +40,15 @@ export const generateModalInterior = (reduxState) => {
         case "WELCOME":
             return (
                 <WelcomeModalInterior />
+            );
+        case "MULTITAB":
+            return (
+                <div>
+                    <p>
+                        You have another tab of Penn Course Plan open. Please use Penn Course Plan
+                        in a single tab.
+                    </p>
+                </div>
             );
         default:
             return null;
@@ -54,7 +71,7 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             };
         case "CREATE_SCHEDULE":
             return {
-                namingFunction: newName => dispatch(createSchedule(newName)),
+                namingFunction: newName => dispatch(createScheduleOnFrontend(newName)),
             };
         default:
             return {};

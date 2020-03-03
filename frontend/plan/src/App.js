@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "bulma/css/bulma.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
 import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
@@ -10,7 +10,6 @@ import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { createLogger } from "redux-logger";
-import { isMobileOnly } from "react-device-detect";
 import SwipeableViews from "react-swipeable-views";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
@@ -24,9 +23,11 @@ import Footer from "./components/footer";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
-import { openModal } from "./actions";
-
-// import { fetchCourseSearch, fetchSectionInfo } from "./actions";
+import {
+    openModal
+} from "./actions";
+import initiateSync, { preventMultipleTabs } from "./syncutils";
+import { DISABLE_MULTIPLE_TABS } from "./sync_constants";
 
 const previousState = localStorage.getItem("coursePlanSchedules");
 const previousStateJSON = previousState ? JSON.parse(previousState) : undefined;
@@ -34,7 +35,7 @@ const loggerMiddleware = createLogger();
 
 const store = createStore(
     coursePlanApp,
-    { schedule: previousStateJSON },
+    { schedule: previousStateJSON, login: { user: null } },
     applyMiddleware(
         thunkMiddleware,
         loggerMiddleware,
@@ -47,28 +48,40 @@ store.subscribe(() => {
 });
 
 function App() {
-    const { hasVisited } = localStorage;
-    localStorage.hasVisited = true;
-    if (!hasVisited) {
-        store.dispatch(openModal("WELCOME",
-            {},
-            "Welcome to Penn Course Plan ✨"));
-    }
-
     const [tab, setTab] = useState(0);
-
+    const [view, setView] = useState(0);
     const containerRef = useRef();
+    const scrollTop = () => window.scrollTo(0, 0);
+    const isExpanded = view === 1;
 
-    const scrollTop = (index, action) => {
-        window.scrollTo(0, 0);
-    };
+    useEffect(() => {
+        if (!localStorage.hasVisited) {
+            store.dispatch(openModal("WELCOME",
+                {},
+                "Welcome to Penn Course Plan ✨"));
+            localStorage.hasVisited = true;
+        }
 
-    if (isMobileOnly) {
+        if (DISABLE_MULTIPLE_TABS) {
+            return preventMultipleTabs(() => {
+                store.dispatch(openModal("MULTITAB",
+                    {},
+                    "Multiple tabs"));
+            });
+        }
+        return null;
+    }, []);
+
+    if (window.innerWidth < 800) {
         return (
             <Provider store={store}>
                 {initGA()}
                 {logPageView()}
-                <SearchBar setTab={setTab} />
+                <SearchBar
+                    initiateSync={() => initiateSync(store)}
+                    setTab={setTab}
+                    mobileView
+                />
                 <Tabs value={tab} className="topTabs" centered>
                     <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
                     <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
@@ -81,7 +94,11 @@ function App() {
                     onSwitching={scrollTop}
                     onChangeIndex={setTab}
                 >
-                    <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                    <div style={{
+                        paddingLeft: "10px",
+                        paddingRight: "10px",
+                    }}
+                    >
                         <div>
                             <div style={{
                                 display: "flex",
@@ -99,15 +116,15 @@ function App() {
                                     paddingRight: 0,
                                 }}
                             >
-                                <Selector />
+                                <Selector mobileView view={0} />
                             </div>
                         </div>
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Cart setTab={setTab} />
+                        <Cart setTab={setTab} mobileView />
                     </div>
                     <div style={{ padding: "10px" }}>
-                        <Schedule setTab={setTab} />
+                        <Schedule setTab={setTab} mobileView />
                     </div>
                 </SwipeableViews>
                 <Footer />
@@ -121,9 +138,25 @@ function App() {
             {initGA()}
             {logPageView()}
             <div style={{ padding: "0px 2em 0px 2em" }}>
-                <SearchBar style={{ flexGrow: 0 }} />
-                <div className="App columns is-mobile is-multiline main" style={{ padding: 0 }}>
-                    <div className="column is-two-thirds-mobile is-one-quarter-tablet is-one-quarter-desktop">
+                <SearchBar
+                    initiateSync={() => initiateSync(store)}
+                    setView={setView}
+                    style={{ flexGrow: 0 }}
+                    isExpanded={isExpanded}
+                />
+                <div
+                    className="App columns is-mobile main smooth-transition"
+                    style={isExpanded ? {
+                        padding: 0,
+                        width: "123%",
+                    } : {
+                        padding: 0,
+                        width: "129%",
+                    }}
+                >
+                    <div
+                        className={isExpanded ? "column smooth-transition is-two-thirds" : "column smooth-transition is-one-fifth"}
+                    >
                         <span style={{
                             display: "flex",
                             flexDirection: "row",
@@ -153,11 +186,11 @@ function App() {
                                 paddingRight: 0,
                             }}
                         >
-                            <Selector />
+                            <Selector view={view} />
                         </div>
                     </div>
                     <div
-                        className="column is-one-fourth-mobile is-one-fifth-tablet is-one-fifth-desktop"
+                        className="column is-2"
                         style={
                             {
                                 display: "flex",
@@ -175,7 +208,14 @@ function App() {
                         </h3>
                         <Cart />
                     </div>
-                    <div className="column">
+                    <div
+                        style={{
+                            zIndex: 2,
+                            paddingRight: "0px",
+                            marginRight: "15px",
+                        }}
+                        className={isExpanded ? "smooth-transition column is-5 hidden" : "smooth-transition column is-5"}
+                    >
                         <Schedule />
                     </div>
                 </div>

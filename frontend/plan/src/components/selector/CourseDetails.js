@@ -1,15 +1,44 @@
 import React from "react";
-import ShowMoreText from "react-show-more-text";
 import PropTypes from "prop-types";
 import TagList from "./TagList";
 import Badge from "../Badge";
+import ShowMore from "../ShowMore";
 
 const getReqCode = (school, name) => `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
+const annotatePrerequisites = (text, onClick) => {
+    if (typeof text !== "string" || !/\S/.test(text)) return null;
+    const courseRegex = /((^|\W)[A-Z]{3}[A-Z]?(-|\s)[0-9]{3}($|(?=\W)))/;
+    const tokens = text.split(courseRegex).filter(elem => /\S/.test(elem));
+    tokens.unshift("Prerequisites: ");
+    return tokens.map(token => (courseRegex.test(token)
+        ? (
+            <a
+                role="button"
+                onClick={(e) => {
+                    e.preventDefault();
+                    onClick && onClick(token.trim().replace(/\s/g, "-"));
+                }}
+            >
+                {token}
+            </a>
+        )
+        : token));
+};
 
-export default function CourseDetails({ course, getCourse }) {
-    const requirements = course.requirements || [];
-    const crosslistings = course.crosslistings || [];
-    const { description } = course;
+
+export default function CourseDetails({
+    course: {
+        requirements = [],
+        crosslistings = [],
+        description,
+        prerequisites: prereqText,
+        course_quality: courseQuality,
+        difficulty,
+        id,
+    }, getCourse, view,
+}) {
+    const prerequisites = annotatePrerequisites(prereqText, getCourse);
+    const isExpandedView = view === 1;
     return (
         <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
             <li>
@@ -19,12 +48,12 @@ export default function CourseDetails({ course, getCourse }) {
                 &nbsp; Quality: &nbsp;
                 <Badge
                     baseColor={[43, 236, 56]}
-                    value={course.course_quality}
+                    value={courseQuality}
                 />
                 &nbsp; Difficulty: &nbsp;
                 <Badge
                     baseColor={[43, 236, 56]}
-                    value={course.difficulty}
+                    value={difficulty}
                 />
             </li>
             {requirements.length > 0
@@ -57,7 +86,7 @@ export default function CourseDetails({ course, getCourse }) {
                 target="_blank"
                 className="button is-small pcr-svg"
                 type="button"
-                href={`https://penncoursereview.com/course/${(course.id)}`}
+                href={`https://penncoursereview.com/course/${(id)}`}
                 style={{
                     fontWeight: "700",
                     fontSize: "0.8 em",
@@ -67,21 +96,38 @@ export default function CourseDetails({ course, getCourse }) {
             >
                 View on Penn Course Review
             </a>
-            {description ? (
+            {prerequisites && (
                 <li style={{
                     marginTop: "2em",
                     marginBottom: "2em",
                 }}
                 >
-                    <ShowMoreText
+                    <ShowMore
+                        disabled={isExpandedView}
+                        lines={2}
+                        more="See more"
+                        less="See less"
+                    >
+                        {prerequisites}
+                    </ShowMore>
+                </li>
+            )}
+            {description && (
+                <li style={{
+                    marginTop: "2em",
+                    marginBottom: "2em",
+                }}
+                >
+                    <ShowMore
+                        disabled={isExpandedView}
                         lines={2}
                         more="See more"
                         less="See less"
                     >
                         {description}
-                    </ShowMoreText>
+                    </ShowMore>
                 </li>
-            ) : null}
+            )}
         </ul>
     );
 }
@@ -89,4 +135,5 @@ export default function CourseDetails({ course, getCourse }) {
 CourseDetails.propTypes = {
     course: PropTypes.objectOf(PropTypes.any).isRequired,
     getCourse: PropTypes.func,
+    view: PropTypes.number,
 };

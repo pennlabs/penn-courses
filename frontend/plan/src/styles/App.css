@@ -1,3 +1,5 @@
+@import url('./fonts/Inter (Web)/inter.css');
+
 html {
   font-size: calc(100vw/95);
   width: 100%;
@@ -8,6 +10,57 @@ html {
     background: white;
     margin-top:-20px;
     margin-bottom: 10px;
+}
+
+.smooth-transition{
+    transition: all .5s ease-in-out;
+}
+
+.showScheduleButton{
+    position:fixed !important;
+    font-size: 3em;
+    top:48%;
+    right:-1.3%;
+    transition-duration: 0.2s;
+}
+
+.showScheduleButton:hover{
+    right:-1%;
+}
+
+.hidden{
+    opacity:0;
+}
+
+.hideScheduleButton{
+    position:absolute !important;
+    font-size: 3em;
+    top:48%;
+    right:0%;
+    transition-duration: 0.2s;
+}
+
+.hideScheduleButton .fa-arrow-alt-circle-right{
+    color:#8890d3;
+}
+
+
+.showScheduleButton .fa-arrow-alt-circle-left{
+    color:#8890d3;
+}
+/*
+.popover-content{
+  z-index:100;
+} */
+
+.hideScheduleButton:hover{
+    right:-0.5%;
+    z-index: 3;
+}
+
+
+.highlighted{
+    background: #e1e3f7 !important;
 }
 
 .topTab{
@@ -29,6 +82,7 @@ html {
   display: flex;
   font-weight: bold;
   margin-bottom: 0.5rem;
+  color: #333333;
 }
 
 .vertical-section {
@@ -88,14 +142,14 @@ i {
   right: 0;
   background-color: #F2F2F2;
   border-bottom-left-radius: 1.5em;
-  color: black;
+  color: #333333;
   line-height: 2em;
 }
 
 #MenuBar > a {
   margin-right: 1em;
   text-decoration: none;
-  color: black;
+  color: #333333;
 }
 
 h1 {
@@ -277,7 +331,7 @@ ul {
 #SectionList li:hover,
 #SectionInfo li:hover,
 .activeItem {
-  background-color: #E6E6E6;
+  background-color: #F9F9FF;
 }
 
 #CourseList li:active,
@@ -475,21 +529,12 @@ ul {
 
 
 .box{
-  height: calc(100vh - 9em - 2.5em);
+  height: calc(100vh - 9em - 3em);
   border-radius: 4px;
   box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.09);
 }
 
-@media all and (max-width: 768px){
-  .box{
-    height: 500px;
-  }
-  html{
-    font-size: calc(200vw/95);
-  }
-}
-
-@media all and (max-width: 480px){
+@media all and (max-width: 800px){
   .box{
     min-height: calc(100vh - 8em);
     height: 100%;
@@ -553,8 +598,7 @@ ul {
   height: 2.5em;
   line-height: 2.5em;
   text-align:center;
-  color: #87a2aa;
-  font-size:1.1em;
+  color: #333333;
   vertical-align:center;
 }
 
