@@ -24,7 +24,7 @@ const Selector = ({
     sortMode,
     view,
     scrollPos,
-    setScrollPos
+    setScrollPos,
 }) => {
     const isExpanded = view === 1;
     const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
@@ -125,7 +125,7 @@ const Selector = ({
             {isLoading ? loadingIndicator : element}
         </>
     );
-}
+};
 
 Selector.propTypes = {
     courses: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -138,6 +138,8 @@ Selector.propTypes = {
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
     view: PropTypes.number,
+    scrollPos: PropTypes.number,
+    setScrollPos: PropTypes.func,
 };
 
 const mapStateToProps = ({
@@ -148,7 +150,7 @@ const mapStateToProps = ({
         course,
         courseInfoLoading: isLoadingCourseInfo,
         searchInfoLoading: isSearchingCourseInfo,
-    }
+    },
 }) => (
     {
         courses: searchResults.filter(({ num_sections: num }) => num > 0),
@@ -167,7 +169,7 @@ const mapDispatchToProps = dispatch => (
         clearCourse: () => dispatch(updateCourseInfo(null)),
         addToSchedule: section => dispatch(addSchedItem(section)),
         removeFromSchedule: id => dispatch(removeSchedItem(id)),
-        setScrollPos: scrollPos => dispatch(updateScrollPos(scrollPos))
+        setScrollPos: scrollPos => dispatch(updateScrollPos(scrollPos)),
     }
 );
 
