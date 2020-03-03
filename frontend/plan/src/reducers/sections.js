@@ -71,11 +71,11 @@ export const sections = (state = initialState, { type, ...action }) => {
                 searchInfoLoading: false,
             };
         case UPDATE_SCROLL_POS: {
-            const { scrollPos = 0 } = action
+            const { scrollPos = 0 } = action;
             return {
                 ...state,
-                scrollPos
-            }
+                scrollPos,
+            };
         }
         case COURSE_SEARCH_ERROR:
             // console.log(action.error);
