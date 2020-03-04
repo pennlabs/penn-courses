@@ -35,8 +35,6 @@ CourseDetails.propTypes = {
     meetings: PropTypes.arrayOf(PropTypes.object).isRequired,
     code: PropTypes.string.isRequired,
     overlaps: PropTypes.bool,
-    starred: PropTypes.bool,
-    toggleStar: PropTypes.func,
 };
 
 
@@ -151,8 +149,6 @@ CartSection.propTypes = {
     remove: PropTypes.func.isRequired,
     courseInfo: PropTypes.func.isRequired,
     lastAdded: PropTypes.bool,
-    starred: PropTypes.bool,
-    toggleStar: PropTypes.func,
 };
 
 export default CartSection;
