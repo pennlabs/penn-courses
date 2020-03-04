@@ -23,7 +23,7 @@ export default function TagList({
                     </Tag>
                 )}
                 <span className="taglist" style={{ height: expanded ? "auto" : 0 }}>
-                    {hiddenTags.map(elt => <Tag>{elt}</Tag>)}
+                    {hiddenTags.map(elt => <Tag key={elt}>{elt}</Tag>)}
                 </span>
                 {expanded && (
                     <a role="button" onClick={() => setExpanded(false)}>
@@ -37,6 +37,7 @@ export default function TagList({
         <span>
             {visibleTags.map(elt => (
                 <Tag
+                    key={elt}
                     onClick={onClick && (() => onClick(elt.replace(/ /g, "-")))}
                 >
                     {elt}

@@ -44,10 +44,10 @@ export default function Section({
                                 ? (
                                     <>
                                         {instructors.map((elem, ind) => (
-                                            <>
+                                            <div key={elem}>
                                                 {ind !== 0 ? <br /> : null}
                                                 {ind !== instructors.length - 1 ? `${elem},` : elem}
-                                            </>
+                                            </div>
                                         ))}
                                     </>
                                 )

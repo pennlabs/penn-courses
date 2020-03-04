@@ -15,14 +15,15 @@ function SectionList({
     return (
         <div className="results">
             <ul>
-                {sections.map(s => (
-                    <Section
+                {sections.map(s => {
+                    return <Section
+                        key={s.id}
                         section={s}
                         view={view}
                         cart={manageCart(s)}
                         inCart={isInCart(s)}
                     />
-                ))}
+                })}
             </ul>
         </div>
     );
@@ -30,7 +31,7 @@ function SectionList({
 
 SectionList.propTypes = {
     sections: PropTypes.arrayOf(PropTypes.object).isRequired,
-    cartSections: PropTypes.arrayOf(PropTypes.String).isRequired,
+    cartSections: PropTypes.arrayOf(PropTypes.string).isRequired,
     manageCart: PropTypes.func,
     view: PropTypes.number,
 };

@@ -30,5 +30,5 @@ export default function Badge(props) {
 }
 
 Badge.propTypes = {
-    value: PropTypes.number.isRequired,
+    value: PropTypes.number,
 };
