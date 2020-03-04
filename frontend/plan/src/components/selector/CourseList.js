@@ -36,13 +36,12 @@ const CourseList = ({
 }) => {
     const listRef = useRef(null);
     useEffect(() => {
-        // If we have a snapshot value, we've just added new items.
-        // Adjust scroll so these new items don't push the old ones out of view.
-        // (snapshot here is the value returned from getSnapshotBeforeUpdate)
-        listRef.current.scrollTop = scrollPos;
-        // Return cleanup function
-        return () => setScrollPos(listRef.current.scrollTop);
-    });
+        // Set sections list scroll position to stored position
+        const { current: ref } = listRef;
+        ref.scrollTop = scrollPos;
+        // Return cleanup function that stores current sections scroll position
+        return () => setScrollPos(ref.scrollTop);
+    }, [scrollPos]);
 
     return (
         <div className="scroll-container">
