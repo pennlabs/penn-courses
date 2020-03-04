@@ -33,7 +33,7 @@ const previousStateJSON = previousState ? JSON.parse(previousState) : undefined;
 
 let middlewares = [thunkMiddleware, analyticsMiddleware];
 if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line global-require
+    // eslint-disable-next-line
     const { logger: loggerMiddleware } = require("redux-logger");
     middlewares = [thunkMiddleware, loggerMiddleware, analyticsMiddleware];
 }

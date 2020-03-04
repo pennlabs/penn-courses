@@ -15,15 +15,15 @@ function SectionList({
     return (
         <div className="results">
             <ul>
-                {sections.map(s => {
-                    return <Section
+                {sections.map(s => (
+                    <Section
                         key={s.id}
                         section={s}
                         view={view}
                         cart={manageCart(s)}
                         inCart={isInCart(s)}
                     />
-                })}
+                ))}
             </ul>
         </div>
     );
