@@ -41,7 +41,7 @@ const CourseList = ({
         ref.scrollTop = scrollPos;
         // Return cleanup function that stores current sections scroll position
         return () => setScrollPos(ref.scrollTop);
-    }, [scrollPos]);
+    }, [scrollPos, setScrollPos]);
 
     return (
         <div className="scroll-container">
