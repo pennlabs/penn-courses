@@ -21,7 +21,7 @@ const CartEmpty = () => (
         </h3>
         Click a course section&apos;s + icon to add it to the schedule.
         <br />
-        <img style={{ height: "60%" }} src="/static/empty-state-cart.svg" alt="" />
+        <img style={{ height: "60%" }} src="/icons/empty-state-cart.svg" alt="" />
     </div>
 );
 

@@ -46,7 +46,7 @@ const Selector = ({
             maxWidth: "45vh",
         }}
         >
-            <img src="/static/empty-state-search.svg" alt="" />
+            <img src="/icons/empty-state-search.svg" alt="" />
 
             <h3 style={{
                 fontWeight: "bold",
