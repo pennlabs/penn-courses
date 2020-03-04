@@ -64,13 +64,12 @@ function App() {
         }
 
         if (DISABLE_MULTIPLE_TABS) {
-            return preventMultipleTabs(() => {
+            preventMultipleTabs(() => {
                 store.dispatch(openModal("MULTITAB",
                     {},
                     "Multiple tabs"));
             });
         }
-        return null;
     }, []);
 
     if (window.innerWidth < 800) {
