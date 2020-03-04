@@ -1,5 +1,6 @@
 import fetch from "cross-fetch";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
+import { batch } from "react-redux";
 import getCsrf from "../csrf";
 import { MIN_FETCH_INTERVAL } from "../sync_constants";
 
@@ -8,6 +9,8 @@ export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
 
 export const UPDATE_COURSE_INFO_SUCCESS = "UPDATE_COURSE_INFO_SUCCESS";
 export const UPDATE_COURSE_INFO_REQUEST = "UPDATE_COURSE_INFO_REQUEST";
+
+export const UPDATE_SCROLL_POS = "UPDATE_SCROLL_POS";
 
 export const UPDATE_SECTIONS = "UPDATE_SECTIONS";
 export const OPEN_SECTION_INFO = "OPEN_SECTION_INFO";
@@ -173,6 +176,13 @@ export const updateCourseInfo = course => (
     }
 );
 
+export const updateScrollPos = (scrollPos = 0) => (
+    {
+        type: UPDATE_SCROLL_POS,
+        scrollPos,
+    }
+);
+
 export const createScheduleOnFrontend = scheduleName => (
     {
         type: CREATE_SCHEDULE,
@@ -304,7 +314,7 @@ function buildCourseSearchUrl(filterData) {
     return queryString;
 }
 
-const courseSearch = (dispatch, filterData) => (
+const courseSearch = (_, filterData) => (
     doAPIRequest(buildCourseSearchUrl(filterData))
 );
 
@@ -315,12 +325,11 @@ export function fetchCourseSearch(filterData) {
         dispatch(updateSearchRequest());
         debouncedCourseSearch(dispatch, filterData)
             .then(res => res.json())
-            .then((res) => {
+            .then(res => batch(() => {
+                dispatch(updateScrollPos());
                 dispatch(updateSearch(res));
-                if (res.length === 1) {
-                    dispatch(fetchCourseDetails(res[0].id));
-                }
-            })
+                if (res.length === 1) dispatch(fetchCourseDetails(res[0].id));
+            }))
             .catch(error => dispatch(courseSearchError(error)));
     };
 }
