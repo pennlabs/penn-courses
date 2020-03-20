@@ -3,7 +3,7 @@ import {
     deleteSchedule,
     deleteScheduleOnBackend,
     fetchBackendSchedulesAndInitializeCart, enforceSemester,
-    updateScheduleOnBackend
+    updateScheduleOnBackend, openModal
 } from "./actions";
 import { SYNC_INTERVAL } from "./sync_constants";
 
@@ -53,17 +53,14 @@ const initiateSync = async (store) => {
                 handleSemester(options.SEMESTER);
             })
             .catch(() => {
-                handleSemester("2020C");
+                store.dispatch(openModal("SEMESTER_FETCH_ERROR",
+                    {},
+                    "An Error Occurred"));
             });
     });
 
     let firstSync = !localStorage.getItem("usesBackendSync");
     localStorage.setItem("usesBackendSync", "true");
-
-    // A record of whether the sync has been terminated.
-    // Made this an array to avoid ambiguity with whether it's just a local copy of the variable
-    // being updated.
-    const syncTerminated = [false];
 
     const cloudPull = () => {
         const scheduleStateInit = store.getState().schedule;
@@ -161,7 +158,7 @@ const initiateSync = async (store) => {
     };
 
     const startSyncLoop = async () => {
-        while (!syncTerminated[0]) {
+        while (store.getState().login.user) {
             // ensure that the minimum distance between syncs is SYNC_INTERVAL
             // eslint-disable-line no-await-in-loop
             await Promise.all([syncLoop(), waitBeforeNextSync()]);
@@ -180,11 +177,6 @@ const initiateSync = async (store) => {
             cloudPush();
         }
     });
-
-    // return a function for dismantling the sync loop
-    return () => {
-        syncTerminated[0] = true;
-    };
 };
 
 export default initiateSync;

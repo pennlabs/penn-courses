@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import Course from "./Course";
 
 const goodEasy = ({ difficulty, course_quality: courseQuality }) => (!difficulty
-|| !courseQuality ? 0
+    || !courseQuality ? 0
     : Math.pow(courseQuality + 0.5, 1.5) / (difficulty + 1));
 
 /**
@@ -31,22 +31,40 @@ const courseSort = (courses, sortMode) => {
     return sorted;
 };
 
-export default function CourseList({
-    courses, getCourse, sortMode,
-}) {
+const CourseList = ({
+    courses, getCourse, sortMode, scrollPos, setScrollPos,
+}) => {
+    const listRef = useRef(null);
+    useEffect(() => {
+        // Set sections list scroll position to stored position
+        const { current: ref } = listRef;
+        ref.scrollTop = scrollPos;
+        // Return cleanup function that stores current sections scroll position
+        return () => setScrollPos(ref.scrollTop);
+    }, [scrollPos, setScrollPos]);
+
     return (
         <div className="scroll-container">
             <div style={{
-                display: "flex", flexDirection: "row", paddingBottom: "1em", paddingLeft: "2em",
+                display: "flex",
+                flexDirection: "row",
+                paddingBottom: "1em",
+                paddingLeft: "2em",
             }}
             >
-                <div className="header" style={{ overflow: "hidden", width: "60%" }}>
+                <div
+                    className="header"
+                    style={{
+                        overflow: "hidden",
+                        width: "60%",
+                    }}
+                >
                     COURSE
                 </div>
                 <div className="header" style={{ width: "20%" }}>QUAL</div>
                 <div className="header" style={{ width: "20%" }}>DIFF</div>
             </div>
-            <ul className="scrollable course-list">
+            <ul className="scrollable course-list" ref={listRef}>
                 {
                     courseSort(courses, sortMode)
                         .map(course => (
@@ -60,10 +78,14 @@ export default function CourseList({
             </ul>
         </div>
     );
-}
+};
+
+export default CourseList;
 
 CourseList.propTypes = {
     courses: PropTypes.arrayOf(PropTypes.object).isRequired,
     getCourse: PropTypes.func.isRequired,
     sortMode: PropTypes.string.isRequired,
+    scrollPos: PropTypes.number,
+    setScrollPos: PropTypes.func,
 };
