@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "../useOnClickOutside";
+import "../styles/accounts.css";
 
 const UserSelector = ({ user: { username, ...rest }, onLogout, onLeft }) => {
     const [selected, setSelected] = useState(false);

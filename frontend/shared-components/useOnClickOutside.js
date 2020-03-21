@@ -11,7 +11,6 @@ import { useEffect, useRef } from "react";
 
 export function useOnClickOutside(onClickOutside, disabled) {
     const ref = useRef();
-
     // eslint-disable-next-line consistent-return
     useEffect(() => {
         const checkClickOutside = (e) => {

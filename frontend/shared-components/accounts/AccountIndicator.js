@@ -35,7 +35,7 @@ const AccountIndicator = ({
                 onLeft={onLeft}
             />
         )
-        : <LoginButton />;
+        : <LoginButton/>;
 };
 
 AccountIndicator.propTypes = {
