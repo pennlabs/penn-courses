@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import PropTypes from "prop-types";
-import "bulma/css/bulma.css";
+import UserSelector from "./UserSelector";
 import LoginButton from "./LoginButton";
 
 /**
