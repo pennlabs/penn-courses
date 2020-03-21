@@ -65,7 +65,7 @@ workflows:
       - docker/publish:
           name: publish-plan
           requires:
-            - pcp-lint
+            - lint-frontends
           path: frontend/plan
           cache_from: "pennlabs/pcp-frontend:latest"
           image: "pennlabs/pcp-frontend"
@@ -75,7 +75,7 @@ workflows:
       - docker/publish:
           name: publish-alert
           requires:
-            - check-alert
+            - lint-frontends
           path: frontend/alert
           cache_from: "pennlabs/pca-frontend:latest"
           image: "pennlabs/pca-frontend"
