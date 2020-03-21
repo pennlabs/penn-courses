@@ -47,7 +47,7 @@ jobs:
       - save_cache:
           key: dependency-cache-{{ checksum "frontend/alert/package-lock.json" }}
           paths:
-            - frontend/plan/node_modules
+            - frontend/alert/node_modules
       - run:
           name: Lint PCA
           command: |
