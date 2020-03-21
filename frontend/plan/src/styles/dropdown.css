@@ -10,58 +10,58 @@
     transition-duration: 0.2s;
     margin: auto;
     font-weight: bold;
-    border: solid 2px #e1e1e1;
+    border: solid 0.1rem #dadada;
     color: #7e7e7e;
     flex-grow:1
 }
 
 .filterButton:hover {
-    background-color: #f0f0f0;
-    color: #7e7e7e;
+    background-color: #f7f7f7;
+    color: #5a5a5a;
 }
 
 .filterButton:active {
-    border: solid 1px #7b84e6;
+    border: solid 0.1rem #7876F3;
     position:relative;
     color: #7e7e7e;
     background-color: #e3e6ff;
 }
 
 .filterButton:focus {
-    color: #7b84e6;
-    border: solid 2px #7b84e6;
+    color: #7876F3;
+    border: solid 0.1rem #7876F3;
 }
 
 .filterButtonActive {
     font-weight: bold;
     position:relative;
-    background-color: #e3e6ff;
-    border: 2px solid #7b84e6;
-    color: #7b84e6;
+    background-color: #EBEBFD;
+    border: 0.1rem solid #7876F3;
+    color: #7876F3;
 }
 
 .filterButtonActive:hover {
     font-weight: bold;
     position:relative;
     background-color: #e3e6ff;
-    border: 2px solid #7b84e6;
-    color: #7b84e6;
+    border: 0.1rem solid #7876F3;
+    color: #7876F3;
 }
 
 .filterButtonActive:active {
     font-weight: bold;
     position:relative;
     background-color: #e3e6ff;
-    border: 2px solid #7b84e6;
-    color: #7b84e6;
+    border: 0.1rem solid #7876F3;
+    color: #7876F3;
 }
 
 .filterButtonActive:focus {
     font-weight: bold;
     position:relative;
-    background-color: #e3e6ff;
-    border: 2px solid #7b84e6;
-    color: #7b84e6;
+    background-color: #EBEBFD;
+    border: 0.1rem solid #7876F3;
+    color: #7876F3;
 }
 
 .dropdown-trigger {
@@ -82,7 +82,7 @@
 
 .classic .dropdown-item, .classic .dropdown-item * {
     font-size: 0.75rem;
-    color: #4a4a4a;
+    color: #333333;
 }
 
 .classic-dropdown-trigger {
@@ -118,11 +118,11 @@
 }
 
 .classic .dropdown-item.is-active, .add-schedule:active {
-    background: #e9e9e9;
+    background: #F5F6F8;
 }
 
 .classic .dropdown-item.is-active:hover {
-    background: #dadada;
+    background: #EBEDF1;
 }
 
 .classic .dropdown-menu {
@@ -130,7 +130,7 @@
 }
 
 .classic .dropdown-item:hover {
-    background: #f4f4f4;
+    background: #F5F6F8;
 }
 
 .classic .dropdown-content {
@@ -168,11 +168,11 @@
 }
 
 .schedule-options-container i {
-    color: #c0c0c0 !important;
+    color: #B2B2B2 !important;
 }
 
 .schedule-options-container i:hover {
-    color: #aeaeae !important;
+    color: #F5F6F8 !important;
 }
 
 .is-active i.fa.fa-chevron-down::before {

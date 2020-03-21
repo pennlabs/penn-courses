@@ -186,7 +186,6 @@ def upsert_course_from_opendata(info, semester):
         except IndexError:
             section.credits = 0
 
-    section.status = info.get("course_status", "C")
     section.capacity = int(info["max_enrollment"])
     section.activity = info["activity"]
     section.meeting_times = json.dumps(

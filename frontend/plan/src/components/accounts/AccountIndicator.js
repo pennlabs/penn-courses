@@ -10,28 +10,40 @@ import LoginButton from "./LoginButton";
  * information.
  */
 
-const AccountIndicator = ({ user, setUser, onLeft }) => {
+const AccountIndicator = ({
+    user, login, logout, onLeft, clearScheduleData,
+}) => {
     useEffect(() => {
         fetch("/accounts/me/")
             .then((response) => {
-                if (response.ok) {
-                    response.json()
-                        .then(newUser => setUser(newUser));
-                } else {
-                    setUser(null);
+                if (!response.ok) {
+                    return;
                 }
+                response.json()
+                    .then(newUser => login(newUser));
             });
-    }, [setUser]);
+    }, [login]);
 
     return user
-        ? <UserSelector user={user} onLogout={() => setUser(null)} onLeft={onLeft} />
+        ? (
+            <UserSelector
+                user={user}
+                onLogout={() => {
+                    logout();
+                    clearScheduleData();
+                }}
+                onLeft={onLeft}
+            />
+        )
         : <LoginButton />;
 };
 
 AccountIndicator.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
-    setUser: PropTypes.func,
+    login: PropTypes.func,
+    logout: PropTypes.func,
     onLeft: PropTypes.bool,
+    clearScheduleData: PropTypes.func,
 };
 
 export default AccountIndicator;
