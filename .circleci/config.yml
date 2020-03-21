@@ -11,7 +11,7 @@ branch-filters: &branch-filters
       only:
         - master
 jobs:
-  lint-frontends:
+  pcp-lint:
     working_directory: ~/pennlabs
     docker:
       - image: circleci/node:10
@@ -28,10 +28,26 @@ jobs:
           paths:
             - frontend/plan/node_modules
       - run:
-          name: Lint PCP
+          name: Lint
           command: |
             cd frontend/plan
             npm run lint
+  pca-lint:
+    working_directory: ~/pennlabs
+    docker:
+      - image: circleci/node:10
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "frontend/alert/package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: |
+            cd frontend/alert && npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "frontend/alert/package-lock.json" }}
+          paths:
+            - frontend/plan/node_modules
       - run:
           name: Lint PCA
           command: |
@@ -51,7 +67,8 @@ workflows:
       # - react-tools/check:
       #     name: check-plan
       #     project-location: frontend/plan
-      - lint-frontends
+      - pcp-lint
+      - pca-lint
       - docker/publish:
           name: publish-backend
           requires:
@@ -65,7 +82,7 @@ workflows:
       - docker/publish:
           name: publish-plan
           requires:
-            - lint-frontends
+            - pcp-lint
           path: frontend/plan
           cache_from: "pennlabs/pcp-frontend:latest"
           image: "pennlabs/pcp-frontend"
@@ -75,7 +92,7 @@ workflows:
       - docker/publish:
           name: publish-alert
           requires:
-            - lint-frontends
+            - pca-lint
           path: frontend/alert
           cache_from: "pennlabs/pca-frontend:latest"
           image: "pennlabs/pca-frontend"
