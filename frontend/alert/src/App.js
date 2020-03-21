@@ -111,6 +111,9 @@ const NavContainer = styled.nav`
 const NavElt = styled.a`
     padding: 20px;
     color: #4a4a4a;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     font-weight: ${(props) => (props.href
         === `/${
             window.location.href.split("/")[
