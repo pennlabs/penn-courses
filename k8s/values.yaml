@@ -34,9 +34,6 @@ applications:
       hosts:
         - host: penncourseplan.com
           paths: ["/"]
-    extraEnv:
-      - name: REACT_APP_BACKEND_URL
-        value: https://penncourseplan.com/api/plan
   - name: alert
     image: pennlabs/penn-courses-backend
     secret: penn-courses
@@ -49,3 +46,9 @@ applications:
         value: PennCourses.urls.pca
       - name: DJANGO_SETTINGS_MODULE
         value: PennCourses.settings.production
+  - name: alert-beta
+    image: pennlabs/pca-frontend
+    ingress:
+      hosts:
+        - host: beta.penncoursealert.com
+          paths: ["/"]
