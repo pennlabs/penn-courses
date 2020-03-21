@@ -2,6 +2,7 @@ import React from "react";
 import "./App.css";
 import styled from "styled-components";
 import Logo from "./assets/PCA_logo.svg";
+import Timeline from "./Timeline.js";
 
 import {maxWidth, minWidth, PHONE} from "./constants"
 
@@ -10,7 +11,7 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   height:100vh;
-  background: rgb(251, 252, 255);
+  background: #F7FBFF;
 `;
 
 const Title = styled.div`
@@ -169,6 +170,7 @@ const AlertForm = ({ onSubmit }) => (
 
 function App() {
     const onSubmit = () => { };
+    let [timeline, setTimeline] = React.useState(null);
     return (
     <Container>
         <Nav />
@@ -176,6 +178,9 @@ function App() {
             <Heading />
             <AlertForm onSubmit={onSubmit}/>
         </Flex>
+        <button onClick={()=>setTimeline("CIS-120")}>Check out cis-120 timeline! </button>
+        <button onClick={()=>setTimeline("MKTG-476")}>Check out mktg-476 timeline! </button>
+        <Timeline courseCode={timeline} setTimeline={setTimeline}/>
         <Footer>
           Made with
                 {" "}
