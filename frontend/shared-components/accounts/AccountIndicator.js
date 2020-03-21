@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
 import PropTypes from "prop-types";
-import UserSelector from "./UserSelector";
-import LoginButton from "./LoginButton";
 import "bulma/css/bulma.css";
+import LoginButton from "./LoginButton";
 
 /**
  * An indicator of whether the user is logged in, and what account they are logged into.

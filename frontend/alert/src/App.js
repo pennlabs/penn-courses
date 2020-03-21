@@ -134,13 +134,17 @@ const Dropdown = styled.span`
     font-weight: bold;
 `;
 
-const Nav = ({login, logout, user}) => (
+const Nav = ({ login, logout, user }) => (
     <NavContainer>
         <NavElt>
-            <AccountIndicator onLeft={true} user={user}
-                              backgroundColor={"dark"}
-                              nameLength={2}
-                              login={login} logout={logout}/>
+            <AccountIndicator
+                onLeft={true}
+                user={user}
+                backgroundColor="dark"
+                nameLength={2}
+                login={login}
+                logout={logout}
+            />
         </NavElt>
         <NavElt href="/">Home</NavElt>
         <NavElt href="/manage">Manage Alerts</NavElt>
@@ -148,9 +152,9 @@ const Nav = ({login, logout, user}) => (
 );
 
 Nav.propTypes = {
-  login: PropTypes.func.isRequired,
-  logout: PropTypes.func.isRequired,
-  user: PropTypes.objectOf(PropTypes.any)
+    login: PropTypes.func.isRequired,
+    logout: PropTypes.func.isRequired,
+    user: PropTypes.objectOf(PropTypes.any),
 };
 
 const Heading = () => (
@@ -182,7 +186,7 @@ function App() {
     const [user, setUser] = useState(null);
     return (
         <Container>
-            <Nav login={setUser} logout={() => setUser(null)} user={user}/>
+            <Nav login={setUser} logout={() => setUser(null)} user={user} />
             <Flex col>
                 <Heading />
                 <AlertForm onSubmit={onSubmit} />

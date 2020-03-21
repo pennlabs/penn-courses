@@ -1,4 +1,5 @@
 import React from "react";
+import "bulma/css/bulma.css";
 import "../styles/accounts.css";
 
 const LoginButton = () => (

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "../useOnClickOutside";
 import styled from "styled-components";
+import "bulma/css/bulma.css";
 import "../styles/accounts.css";
 
 const NameBubble = styled.div`
