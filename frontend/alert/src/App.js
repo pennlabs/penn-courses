@@ -138,6 +138,8 @@ const Nav = ({login, logout, user}) => (
     <NavContainer>
         <NavElt>
             <AccountIndicator onLeft={true} user={user}
+                              backgroundColor={"dark"}
+                              nameLength={2}
                               login={login} logout={logout}/>
         </NavElt>
         <NavElt href="/">Home</NavElt>

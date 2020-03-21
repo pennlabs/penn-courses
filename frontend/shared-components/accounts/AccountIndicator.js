@@ -12,7 +12,8 @@ import "bulma/css/bulma.css";
  */
 
 const AccountIndicator = ({
-    user, login, logout, onLeft,
+    user, login, logout,
+    onLeft, backgroundColor, nameLength,
 }) => {
     useEffect(() => {
         fetch("/accounts/me/")
@@ -28,6 +29,8 @@ const AccountIndicator = ({
     return user
         ? (
             <UserSelector
+                backgroundColor={backgroundColor}
+                nameLength={nameLength}
                 user={user}
                 onLogout={() => {
                     logout();
@@ -40,8 +43,10 @@ const AccountIndicator = ({
 
 AccountIndicator.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
-    login: PropTypes.func,
-    logout: PropTypes.func,
+    login: PropTypes.func.isRequired,
+    logout: PropTypes.func.isRequired,
+    backgroundColor: PropTypes.string,
+    nameLength: PropTypes.number,
     onLeft: PropTypes.bool,
 };
 

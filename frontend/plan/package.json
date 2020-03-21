@@ -29,7 +29,8 @@
     "redux": "^4.0.4",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
-    "scroll-into-view-if-needed": "^2.2.22"
+    "scroll-into-view-if-needed": "^2.2.22",
+    "styled-components": "^5.0.1"
   },
   "scripts": {
     "start": "cpx \"../shared-components/**/*\" src/components && react-scripts start && fg",

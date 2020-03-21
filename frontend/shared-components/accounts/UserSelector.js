@@ -2,8 +2,37 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "../useOnClickOutside";
 import "../styles/accounts.css";
+import styled from "styled-components";
 
-const UserSelector = ({ user: { username, ...rest }, onLogout, onLeft }) => {
+const NameBubble = styled.div`
+    color: white;
+    height: 2.5rem;
+    width: 2.5rem;
+    text-align: center;
+    border-radius: 1.25rem;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    user-select: none;
+    transition: 150ms ease background;
+    margin-right: 0.85rem;    
+    background: ${
+    props => props.color === "purple" ?
+        (props.selected ? "#6B73D0" :
+            "#c8cbed") :
+        (props.selected ? "#9a9a9a" :
+            "#656565")} ;
+    &:hover {
+        background: ${props => props.color === "purple" ? "#9399DB" : "#444444"};
+    }
+`;
+
+const UserSelector = ({
+    user: { username, ...rest }, onLogout,
+    onLeft, backgroundColor, nameLength
+}) => {
     const [selected, setSelected] = useState(false);
 
     const firstName = rest.first_name;
@@ -18,18 +47,20 @@ const UserSelector = ({ user: { username, ...rest }, onLogout, onLeft }) => {
             className={`dropdown${selected ? " is-active" : ""}`}
             ref={onClickOutside}
         >
-            <div
-                className={`dropdown-trigger${selected ? " user-selector-selected" : ""}`}
+            <NameBubble
+                selected={selected}
+                color={backgroundColor}
+                className={`dropdown-trigger`}
                 role="button"
                 id="user-selector"
                 onClick={() => setSelected(!selected)}
             >
                 <span>
                     {" "}
-                    {(firstName && firstName.charAt(0)) || "U"}
+                    {(firstName && firstName.substring(0, nameLength || 1)) || "U"}
                     {" "}
                 </span>
-            </div>
+            </NameBubble>
             <div className="logout dropdown-menu">
                 <div id="logout-dropdown-menu-container">
                     <div className="triangle-up" />
