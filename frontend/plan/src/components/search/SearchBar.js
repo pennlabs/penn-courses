@@ -269,7 +269,7 @@ function SearchBar({
                     <AccountIndicator
                         user={user}
                         login={login}
-                        backgroundColor={"purple"}
+                        backgroundColor="purple"
                         nameLength={1}
                         logout={() => {
                             logout();

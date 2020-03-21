@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { useOnClickOutside } from "../useOnClickOutside";
-import "../styles/accounts.css";
 import styled from "styled-components";
+import "../styles/accounts.css";
 
 const NameBubble = styled.div`
     color: white;
@@ -19,11 +19,15 @@ const NameBubble = styled.div`
     transition: 150ms ease background;
     margin-right: 0.85rem;    
     background: ${
-    props => props.color === "purple" ?
-        (props.selected ? "#6B73D0" :
-            "#c8cbed") :
-        (props.selected ? "#9a9a9a" :
-            "#656565")} ;
+    props => {
+        if (props.color === "purple") {
+            return props.selected ? "#6B73D0" :
+                "#c8cbed";
+        } else {
+            return props.selected ? "#9a9a9a" :
+                "#656565";
+        }
+    }}
     &:hover {
         background: ${props => props.color === "purple" ? "#9399DB" : "#444444"};
     }
@@ -104,6 +108,8 @@ UserSelector.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
     onLogout: PropTypes.func,
     onLeft: PropTypes.bool,
+    backgroundColor: PropTypes.string,
+    nameLength: PropTypes.number,
 };
 
 export default UserSelector;
