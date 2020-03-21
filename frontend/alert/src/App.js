@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import "./App.css";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
+import AccountIndicator from "./components/accounts/AccountIndicator";
 
 const Container = styled.div`
     display: flex;
@@ -130,12 +131,22 @@ const Dropdown = styled.span`
     font-weight: bold;
 `;
 
-const Nav = () => (
+const Nav = ({login, logout, user}) => (
     <NavContainer>
+        <NavElt>
+            <AccountIndicator onLeft={true} user={user}
+                              login={login} logout={logout}/>
+        </NavElt>
         <NavElt href="/">Home</NavElt>
         <NavElt href="/manage">Manage Alerts</NavElt>
     </NavContainer>
 );
+
+Nav.propTypes = {
+  login: PropTypes.func.isRequired,
+  logout: PropTypes.func.isRequired,
+  user: PropTypes.objectOf(PropTypes.any)
+};
 
 const Heading = () => (
     <Center>
@@ -163,9 +174,10 @@ AlertForm.propTypes = { onSubmit: PropTypes.func };
 
 function App() {
     const onSubmit = () => {};
+    const [user, setUser] = useState(null);
     return (
         <Container>
-            <Nav />
+            <Nav login={setUser} logout={() => setUser(null)} user={user}/>
             <Flex col>
                 <Heading />
                 <AlertForm onSubmit={onSubmit} />

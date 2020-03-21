@@ -269,9 +269,11 @@ function SearchBar({
                     <AccountIndicator
                         user={user}
                         login={login}
-                        logout={logout}
+                        logout={() => {
+                            logout();
+                            clearScheduleData();
+                        }}
                         onLeft={false}
-                        clearScheduleData={clearScheduleData}
                     />
                 </div>
             </div>

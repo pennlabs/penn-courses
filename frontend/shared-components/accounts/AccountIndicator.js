@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import PropTypes from "prop-types";
 import UserSelector from "./UserSelector";
 import LoginButton from "./LoginButton";
+import "bulma/css/bulma.css";
 
 /**
  * An indicator of whether the user is logged in, and what account they are logged into.
@@ -11,7 +12,7 @@ import LoginButton from "./LoginButton";
  */
 
 const AccountIndicator = ({
-    user, login, logout, onLeft, clearScheduleData,
+    user, login, logout, onLeft,
 }) => {
     useEffect(() => {
         fetch("/accounts/me/")
@@ -30,7 +31,6 @@ const AccountIndicator = ({
                 user={user}
                 onLogout={() => {
                     logout();
-                    clearScheduleData();
                 }}
                 onLeft={onLeft}
             />
@@ -43,7 +43,6 @@ AccountIndicator.propTypes = {
     login: PropTypes.func,
     logout: PropTypes.func,
     onLeft: PropTypes.bool,
-    clearScheduleData: PropTypes.func,
 };
 
 export default AccountIndicator;
