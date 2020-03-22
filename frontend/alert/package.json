@@ -15,13 +15,13 @@
     "bulma": "^0.7.5"
   },
   "scripts": {
-    "start": "cpx \"../shared-components/**/*\" src/components && react-scripts start && fg",
-    "sync-shared-components": "cpx \"../shared-components/**/*\" src/components --watch",
-    "build": "cpx \"../shared-components/**/*\" src/components; react-scripts build",
+    "start": "cpx \"../shared-components/src/**/*\" src/components && react-scripts start && fg",
+    "sync-shared-components": "cpx \"../shared-components/src/**/*\" src/components --watch",
+    "build": "cpx \"../shared-components/src/**/*\" src/components; react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint src",
-    "lint-fix": "eslint src --fix"
+    "lint": "eslint src ../shared-components/src",
+    "lint-fix": "eslint src ../shared-components/src --fix"
   },
   "eslintConfig": {
     "extends": "react-app"

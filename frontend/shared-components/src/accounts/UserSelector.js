@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { useOnClickOutside } from "../useOnClickOutside";
 import styled from "styled-components";
+import { useOnClickOutside } from "../useOnClickOutside";
 import "bulma/css/bulma.css";
 import "../styles/accounts.css";
 
@@ -20,23 +20,22 @@ const NameBubble = styled.div`
     transition: 150ms ease background;
     margin-right: 0.85rem;    
     background: ${
-    props => {
+    (props) => {
         if (props.color === "purple") {
-            return props.selected ? "#6B73D0" :
-                "#c8cbed";
-        } else {
-            return props.selected ? "#9a9a9a" :
-                "#656565";
+            return props.selected ? "#6B73D0"
+                : "#c8cbed";
         }
+        return props.selected ? "#9a9a9a"
+            : "#656565";
     }}
     &:hover {
-        background: ${props => props.color === "purple" ? "#9399DB" : "#444444"};
+        background: ${(props) => (props.color === "purple" ? "#9399DB" : "#444444")};
     }
 `;
 
 const UserSelector = ({
     user: { username, ...rest }, onLogout,
-    onLeft, backgroundColor, nameLength
+    onLeft, backgroundColor, nameLength,
 }) => {
     const [selected, setSelected] = useState(false);
 
@@ -55,7 +54,7 @@ const UserSelector = ({
             <NameBubble
                 selected={selected}
                 color={backgroundColor}
-                className={`dropdown-trigger`}
+                className="dropdown-trigger"
                 role="button"
                 id="user-selector"
                 onClick={() => setSelected(!selected)}
