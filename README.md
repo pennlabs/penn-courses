@@ -69,3 +69,14 @@ you'd like to load in **ALL** courses, omit the query parameter. Note
 that this will take a long time, as all sections in Penn's course catalog,
 along with rooms, buildings, and instructors will be loaded in.
 
+## Handling shared components
+
+There are several shared components between PCA and PCP, which are located in
+ `frontend/shared-components`. In order for linting of the shared components to work 
+ properly, run `npm install` within the `frontend/shared-components` directory.
+ This will automatically allow `frontend/shared-components` to be linted when
+ either PCP or PCA is linted. `npm start` and `npm run build` in the frontend
+ for either project will already sync the shared components with the actual
+ projects. However, the project files corresponding with the shared components
+ will not live update unless you run `npm run sync-shared-components` in the
+ frontend project you're working on.
