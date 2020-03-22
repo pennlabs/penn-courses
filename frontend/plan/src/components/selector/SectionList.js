@@ -17,6 +17,7 @@ function SectionList({
             <ul>
                 {sections.map(s => (
                     <Section
+                        key={s.id}
                         section={s}
                         view={view}
                         cart={manageCart(s)}
@@ -30,7 +31,7 @@ function SectionList({
 
 SectionList.propTypes = {
     sections: PropTypes.arrayOf(PropTypes.object).isRequired,
-    cartSections: PropTypes.arrayOf(PropTypes.String).isRequired,
+    cartSections: PropTypes.arrayOf(PropTypes.string).isRequired,
     manageCart: PropTypes.func,
     view: PropTypes.number,
 };

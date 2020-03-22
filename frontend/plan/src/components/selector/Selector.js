@@ -9,23 +9,23 @@ import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
 
 import {
-    fetchCourseDetails, updateCourseInfo, addSchedItem, removeSchedItem
+    fetchCourseDetails, updateCourseInfo, addSchedItem, removeSchedItem, updateScrollPos
 } from "../../actions";
 
-function Selector(props) {
-    const {
-        courses,
-        course,
-        getCourse,
-        clearCourse,
-        addToSchedule,
-        removeFromSchedule,
-        isLoadingCourseInfo,
-        isSearchingCourseInfo,
-        sortMode,
-        view,
-    } = props;
-
+const Selector = ({
+    courses,
+    course,
+    getCourse,
+    clearCourse,
+    addToSchedule,
+    removeFromSchedule,
+    isLoadingCourseInfo,
+    isSearchingCourseInfo,
+    sortMode,
+    view,
+    scrollPos,
+    setScrollPos,
+}) => {
     const isExpanded = view === 1;
     const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
@@ -46,7 +46,8 @@ function Selector(props) {
             maxWidth: "45vh",
         }}
         >
-            <img src="/icons/empty-state-search.svg" />
+            <img src="/icons/empty-state-search.svg" alt="" />
+
             <h3 style={{
                 fontWeight: "bold",
                 marginBottom: "0.5rem",
@@ -65,6 +66,8 @@ function Selector(props) {
             isLoading={isLoadingCourseInfo}
             courses={courses}
             getCourse={getCourse}
+            scrollPos={scrollPos}
+            setScrollPos={setScrollPos}
         />
     );
 
@@ -123,7 +126,7 @@ function Selector(props) {
             {isLoading ? loadingIndicator : element}
         </>
     );
-}
+};
 
 Selector.propTypes = {
     courses: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -136,15 +139,27 @@ Selector.propTypes = {
     isLoadingCourseInfo: PropTypes.bool,
     isSearchingCourseInfo: PropTypes.bool,
     view: PropTypes.number,
+    scrollPos: PropTypes.number,
+    setScrollPos: PropTypes.func,
 };
 
-const mapStateToProps = state => (
+const mapStateToProps = ({
+    sections: {
+        scrollPos,
+        sortMode,
+        searchResults,
+        course,
+        courseInfoLoading: isLoadingCourseInfo,
+        searchInfoLoading: isSearchingCourseInfo,
+    },
+}) => (
     {
-        courses: state.sections.searchResults.filter(course => course.num_sections > 0),
-        course: state.sections.course,
-        sortMode: state.sections.sortMode,
-        isLoadingCourseInfo: state.sections.courseInfoLoading,
-        isSearchingCourseInfo: state.sections.searchInfoLoading,
+        courses: searchResults.filter(({ num_sections: num }) => num > 0),
+        course,
+        scrollPos,
+        sortMode,
+        isLoadingCourseInfo,
+        isSearchingCourseInfo,
     }
 );
 
@@ -155,6 +170,7 @@ const mapDispatchToProps = dispatch => (
         clearCourse: () => dispatch(updateCourseInfo(null)),
         addToSchedule: section => dispatch(addSchedItem(section)),
         removeFromSchedule: id => dispatch(removeSchedItem(id)),
+        setScrollPos: scrollPos => dispatch(updateScrollPos(scrollPos)),
     }
 );
 

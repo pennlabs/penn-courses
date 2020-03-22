@@ -99,7 +99,14 @@ CourseTrashCan.propTypes = {
 };
 
 const CartSection = ({
-    toggleCheck, checked, code, meetings, remove, courseInfo, overlaps, lastAdded,
+    toggleCheck,
+    checked,
+    code,
+    meetings,
+    remove,
+    courseInfo,
+    overlaps,
+    lastAdded,
 }) => (
     <div
         role="switch"
@@ -112,12 +119,12 @@ const CartSection = ({
                 flexDirection: "row",
                 justifyContent: "space-around",
                 padding: "0.8rem",
-                borderBottom: "1px solid rgb(200, 200, 200)",
+                borderBottom: "1px solid #E5E8EB",
             } : {
                 display: "grid",
                 gridTemplateColumns: "20% 50% 15% 15%",
                 padding: "0.8rem",
-                borderBottom: "1px solid rgb(200, 200, 200)",
+                borderBottom: "1px solid #E5E8EB",
             }}
         onClick={(e) => {
             // ensure that it's not the trash can being clicked

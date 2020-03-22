@@ -10,24 +10,19 @@
     "bulma-extensions": "^6.2.7",
     "bulma-popover": "^1.0.0",
     "cross-fetch": "^3.0.4",
-    "eslint-config-airbnb": "^17.1.1",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-jsx-a11y": "^6.2.3",
-    "eslint-plugin-react": "^7.16.0",
     "prop-types": "^15.7.2",
     "rc-slider": "^8.7.1",
-    "react": "^16.11.0",
+    "react": "^16.13.0",
     "react-circular-progressbar": "^2.0.3",
     "react-device-detect": "^1.9.10",
     "react-dom": "^16.11.0",
     "react-ga": "^2.7.0",
-    "react-redux": "^6.0.0",
+    "react-redux": "^7.2.0",
     "react-scripts": "^3.4.0",
     "react-spring": "^8.0.27",
     "react-swipeable-views": "^0.13.3",
     "react-truncate-markup": "^4.1.0",
     "redux": "^4.0.4",
-    "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
     "scroll-into-view-if-needed": "^2.2.22"
   },
@@ -48,5 +43,11 @@
     "not ie <= 11",
     "not op_mini all"
   ],
-  "devDependencies": {}
+  "devDependencies": {
+    "eslint-config-airbnb": "^17.1.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.16.0",
+    "redux-logger": "^3.0.6"
+  }
 }
