@@ -27,10 +27,10 @@ const NameBubble = styled.div`
         }
         return props.selected ? "#9a9a9a"
             : "#656565";
-    }}
+    }};
     &:hover {
         background: ${(props) => (props.color === "purple" ? "#9399DB" : "#444444")};
-    }
+    };
 `;
 
 const UserSelector = ({
