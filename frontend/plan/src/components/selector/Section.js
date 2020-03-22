@@ -44,10 +44,10 @@ export default function Section({
                                 ? (
                                     <>
                                         {instructors.map((elem, ind) => (
-                                            <>
+                                            <div key={elem}>
                                                 {ind !== 0 ? <br /> : null}
                                                 {ind !== instructors.length - 1 ? `${elem},` : elem}
-                                            </>
+                                            </div>
                                         ))}
                                     </>
                                 )
@@ -105,7 +105,12 @@ export default function Section({
                     { status === "C"
                         ? (
                             <div className="popover is-popover-left">
-                                <a className="bell" target="_blank" href={`https://penncoursealert.com/?course=${section.id}`}>
+                                <a
+                                    className="bell"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    href={`https://penncoursealert.com/?course=${section.id}`}
+                                >
                                     <i style={{ fontSize: "1rem" }} className="far fa-bell" />
                                 </a>
 

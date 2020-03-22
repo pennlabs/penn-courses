@@ -99,7 +99,14 @@ CourseTrashCan.propTypes = {
 };
 
 const CartSection = ({
-    toggleCheck, checked, code, meetings, remove, courseInfo, overlaps, lastAdded,
+    toggleCheck,
+    checked,
+    code,
+    meetings,
+    remove,
+    courseInfo,
+    overlaps,
+    lastAdded,
 }) => (
     <div
         role="switch"

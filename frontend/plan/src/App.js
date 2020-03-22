@@ -9,7 +9,6 @@ import "./styles/dropdown.css";
 import Provider from "react-redux/es/components/Provider";
 import { applyMiddleware, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
-import { createLogger } from "redux-logger";
 import SwipeableViews from "react-swipeable-views";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
@@ -31,16 +30,18 @@ import { DISABLE_MULTIPLE_TABS } from "./sync_constants";
 
 const previousState = localStorage.getItem("coursePlanSchedules");
 const previousStateJSON = previousState ? JSON.parse(previousState) : undefined;
-const loggerMiddleware = createLogger();
+
+let middlewares = [thunkMiddleware, analyticsMiddleware];
+if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line
+    const { logger: loggerMiddleware } = require("redux-logger");
+    middlewares = [thunkMiddleware, loggerMiddleware, analyticsMiddleware];
+}
 
 const store = createStore(
     coursePlanApp,
     { schedule: previousStateJSON, login: { user: null } },
-    applyMiddleware(
-        thunkMiddleware,
-        loggerMiddleware,
-        analyticsMiddleware,
-    )
+    applyMiddleware(...middlewares)
 );
 
 store.subscribe(() => {
@@ -63,13 +64,12 @@ function App() {
         }
 
         if (DISABLE_MULTIPLE_TABS) {
-            return preventMultipleTabs(() => {
+            preventMultipleTabs(() => {
                 store.dispatch(openModal("MULTITAB",
                     {},
                     "Multiple tabs"));
             });
         }
-        return null;
     }, []);
 
     if (window.innerWidth < 800) {
