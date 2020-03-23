@@ -21,12 +21,19 @@ const CartEmpty = () => (
         </h3>
         Click a course section&apos;s + icon to add it to the schedule.
         <br />
-        <img style={{ height: "60%" }} src="/icons/empty-state-cart.svg" />
+        <img style={{ height: "60%" }} src="/icons/empty-state-cart.svg" alt="" />
     </div>
 );
 
 const Cart = ({
-    courses, toggleCourse, removeItem, courseInfo, courseInfoLoading, setTab, lastAdded, mobileView,
+    courses,
+    toggleCourse,
+    removeItem,
+    courseInfo,
+    courseInfoLoading,
+    setTab,
+    lastAdded,
+    mobileView,
 }) => (
     <section
         style={{
@@ -79,24 +86,24 @@ Cart.propTypes = {
 };
 
 // const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
-const mapStateToProps = (state) => {
-    const {
-        schedule: {
-            cartSections, schedules, scheduleSelected, lastAdded,
-        },
-    } = state;
-    return {
-        courseInfoLoading: state.sections.courseInfoLoading,
-        courses: (cartSections || []).map(course => ({
-            section: course,
-            checked: meetingsContainSection(schedules[scheduleSelected].meetings, course),
-            overlaps: meetingSetsIntersect(course.meetings, schedules[scheduleSelected].meetings
-                .filter(s => s.id !== course.id)
-                .map(s => s.meetings).flat()),
-        })),
-        lastAdded,
-    };
-};
+const mapStateToProps = ({
+    schedule: {
+        cartSections = [], schedules, scheduleSelected, lastAdded,
+    },
+    sections: {
+        courseInfoLoading,
+    },
+}) => ({
+    courseInfoLoading,
+    courses: (cartSections).map(course => ({
+        section: course,
+        checked: meetingsContainSection(schedules[scheduleSelected].meetings, course),
+        overlaps: meetingSetsIntersect(course.meetings, schedules[scheduleSelected].meetings
+            .filter(s => s.id !== course.id)
+            .map(s => s.meetings).flat()),
+    })),
+    lastAdded,
+});
 
 const mapDispatchToProps = dispatch => ({
     toggleCourse: courseId => dispatch(toggleCheck(courseId)),

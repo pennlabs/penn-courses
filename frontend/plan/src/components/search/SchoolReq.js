@@ -23,7 +23,7 @@ export function SchoolReq({
                 <p><strong>School</strong></p>
                 <ul className="field" style={{ marginTop: "0.5rem" }}>
                     {schools.map(school => (
-                        <li style={{ display: "table-row" }}>
+                        <li key={school} style={{ display: "table-row" }}>
                             <input
                                 style={{ display: "table-cell" }}
                                 className="is-checkradio is-small"
@@ -53,7 +53,7 @@ export function SchoolReq({
                         && <p> Nursing requirements are coming soon!</p>
                     }
                     {schoolReq[schoolCode.get(selSchool)].map(req => (
-                        <li>
+                        <li key={req.id}>
                             <input
                                 className="is-checkradio is-small"
                                 id={req.id}
@@ -93,5 +93,9 @@ SchoolReq.propTypes = {
     addSchoolReq: PropTypes.func,
     remSchoolReq: PropTypes.func,
     startSearch: PropTypes.func,
-    filterData: PropTypes.objectOf(PropTypes.number),
+    filterData: PropTypes.objectOf(PropTypes.oneOfType([
+        PropTypes.arrayOf(PropTypes.number),
+        PropTypes.objectOf(PropTypes.number),
+        PropTypes.string
+    ])),
 };

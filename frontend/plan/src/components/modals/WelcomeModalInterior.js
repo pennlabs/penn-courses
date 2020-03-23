@@ -21,7 +21,7 @@ const WelcomeModalInterior = ({ close }) => (
         <p>
             If you have any feedback, please let us know
             {" "}
-            <a target="_blank" href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
+            <a target="_blank" href="https://airtable.com/shra6mktROZJzcDIS" rel="noopener noreferrer">here!</a>
         </p>
         <br />
         <p>
@@ -32,11 +32,10 @@ const WelcomeModalInterior = ({ close }) => (
             <br />
             -
             {" "}
-            <a href="//pennlabs.org" target="_blank">Penn Labs</a>
+            <a href="//pennlabs.org" target="_blank" rel="noopener noreferrer">Penn Labs</a>
         </p>
         <button
             className="button is-link"
-            role="button"
             type="button"
             onClick={close}
         >
