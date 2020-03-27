@@ -3,6 +3,8 @@ import PropTypes from "prop-types";
 import styled from "styled-components";
 import x from "../assets/x.svg";
 import close from "../assets/close.svg";
+import bang from "../assets/bang.svg";
+import check from "../assets/check.svg";
 
 const Rectangle = styled.div`
   display: flex;
@@ -47,7 +49,7 @@ const CloseButton = styled.img`
 
 const ToastText = styled.p`
   color: ${(props) => props.color};
-  max-width: 60%;
+  max-width: 70%;
   font-size: 0.8rem;
   font-weight: 500;
   word-wrap: normal;
@@ -67,24 +69,28 @@ export const Toast = ({ type, course }) => {
     let secondary;
     let textcolor;
     let text;
+    let image;
 
     switch (type) {
         case 1:
             primary = "#78d381";
             secondary = "#e9f8eb";
             textcolor = "#4ab255";
+            image = check;
             text = `Your registration for ${course} was successful! Manage alerts`;
             break;
         case 2:
             primary = "#fbcd4c";
             secondary = "#fcf5e1";
             textcolor = "#e8ad06";
+            image = bang;
             text = `You've already registered to get alerts for ${course}`;
             break;
         case 3:
             primary = "#e8746a";
             secondary = "#fbebe9";
             textcolor = "#e8746a";
+            image = x;
             text = `${course} did not match any course in our database. Please try again!`;
             break;
         default:
@@ -95,7 +101,7 @@ export const Toast = ({ type, course }) => {
         <RightItem>
             <Rectangle border={primary} background={secondary}>
                 <IconDiv background={primary}>
-                    <Icon src={x} />
+                    <Icon src={image} />
                 </IconDiv>
                 <ToastText color={textcolor}>
                     {text}
