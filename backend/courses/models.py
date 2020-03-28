@@ -252,6 +252,9 @@ class StatusUpdate(models.Model):
     new_status = models.CharField(max_length=16, choices=STATUS_CHOICES)
     created_at = models.DateTimeField(default=timezone.now)
     alert_sent = models.BooleanField()
+    # ^^^ alert_sent is true iff alert_for_course was called in accept_webhook in alert/views.py
+    # equivalently, iff SEND_FROM_WEBHOOK == True and SEMESTER == course_term, or the request
+    # is otherwise invalid
     request_body = models.TextField()
 
     def __str__(self):

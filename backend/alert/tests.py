@@ -3,6 +3,7 @@ import importlib
 import json
 from unittest.mock import patch
 
+from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -41,22 +42,21 @@ def override_delay(modules_names, before_func, before_kwargs):
             modules_names list in the order that they will be executed.
             Also, note that each delay()ed function after the first must be
             triggered by the previous one (directly or indirectly).  Otherwise you could just
-            call this function multiple times.  If this condition is not met, an error will be
-            thrown. For more complicated use-cases (like patching functions between delay()ed
-            functions), you will have to implement the functionality of this function yourself,
-            in a custom way tailored to your
-            use-case.
+            call this function multiple times.  If this condition is not met,
+            an error will be thrown.  For more complicated use-cases (like patching functions
+            between delay()ed functions), you will have to implement the functionality of this
+            function yourself, in a custom way tailored to your use-case.
             Example of valid modules_names argument (from AlertRegistrationTestCase.simulate_alert):
                 [('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')]
         before_func: a function (not its name, the actual function as a variable) which will be
-            executed to trigger
-            the first delay()ed function in modules_names.  Note that this function MUST trigger
-            the first delay()ed function in modules_names or an error will be thrown.
+            executed to trigger the first delay()ed function in modules_names.
+            Note that this function MUST trigger the first delay()ed function in modules_names
+            or an error will be thrown.
             Example of a valid before_func argument (from AlertRegistrationTestCase.simulate_alert):
-                a function simulating the webhook firing which causes send_course_alerts.delay() to
-                be called
-        before_kwargs: a dictionary of keyword-value arguments which will be unpacked and passed
-            into before_func
+                a function simulating the webhook firing which causes send_course_alerts.delay()
+                to be called
+        before_kwargs: a dictionary of keyword-value arguments which will be
+            unpacked and passed into before_func
     """
     if len(modules_names) > 0:
         mn = modules_names[-1]
@@ -1020,6 +1020,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(403, response.status_code)
 
 
+@ddt
 @override_settings(ROOT_URLCONF="PennCourses.urls.pca")
 class AlertRegistrationTestCase(TestCase):
     def setUp(self):
@@ -1084,7 +1085,9 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(200, res.status_code)
         self.assertTrue("sent" in json.loads(res.content)["message"])
 
-    def simulate_alert(self, section, num_status_updates=1, contact_infos=None):
+    def simulate_alert(
+        self, section, num_status_updates=None, contact_infos=None, should_send=True
+    ):
         contact_infos = (
             [{"number": "+11234567890", "email": "j@gmail.com"}]
             if contact_infos is None
@@ -1097,22 +1100,32 @@ class AlertRegistrationTestCase(TestCase):
                     self.simulate_alert_helper_before,
                     {"section": section},
                 )
-                self.assertEqual(len(contact_infos), send_email_mock.call_count)
-                self.assertEqual(len(contact_infos), send_text_mock.call_count)
+                self.assertEqual(
+                    0 if not should_send else len(contact_infos), send_email_mock.call_count
+                )
+                self.assertEqual(
+                    0 if not should_send else len(contact_infos), send_text_mock.call_count
+                )
                 for c in contact_infos:
                     self.assertEqual(
-                        1, len([m for m in send_text_mock.call_args_list if m[0][0] == c["number"]])
+                        0 if not should_send else 1,
+                        len([m for m in send_text_mock.call_args_list if m[0][0] == c["number"]]),
                     )
                     self.assertEqual(
-                        1,
+                        0 if not should_send else 1,
                         len(
                             [m for m in send_email_mock.call_args_list if m[1]["to"] == c["email"]]
                         ),
                     )
                 for r in Registration.objects.filter(section=section):
-                    self.assertTrue(r.notification_sent)
-                    self.assertIsNotNone(r.notification_sent_at)
-                self.assertEqual(num_status_updates, StatusUpdate.objects.count())
+                    if hasattr(r, "resubscribed_to"):
+                        self.assertEquals(should_send, r.notification_sent)
+                        if should_send:
+                            self.assertIsNotNone(r.notification_sent_at)
+                        else:
+                            self.assertNone(r.notification_sent_at)
+                if num_status_updates is not None:
+                    self.assertEqual(num_status_updates, StatusUpdate.objects.count())
                 for u in StatusUpdate.objects.all():
                     self.assertTrue(u.alert_sent)
 
@@ -1128,7 +1141,7 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(f"/api/registrations/{second_id}/")
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
-        self.simulate_alert(self.cis120)
+        self.simulate_alert(self.cis120, 1)
         response = self.client.post(
             "/api/registrations/",
             json.dumps({"id": first_id, "resubscribe": True}),
@@ -1165,13 +1178,79 @@ class AlertRegistrationTestCase(TestCase):
             "fifth_id": fifth_id,
         }
 
+    def create_auto_resubscribe_group(self, put=False):
+        first_id = self.registration_cis120.id
+        if put:
+            response = self.client.put(
+                "/api/registrations/" + str(first_id) + "/",
+                json.dumps({"auto_resubscribe": True}),
+                content_type="application/json",
+            )
+        else:
+            response = self.client.post(
+                "/api/registrations/",
+                json.dumps({"id": first_id, "auto_resubscribe": True}),
+                content_type="application/json",
+            )
+        self.assertEqual(200, response.status_code)
+        response = self.client.get(f"/api/registrations/{first_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.check_model_with_response_data(Registration.objects.get(id=first_id), response.data)
+        response = self.client.post(
+            "/api/registrations/",
+            json.dumps({"section": "CIS-160-001", "auto_resubscribe": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        second_id = response.data["id"]
+        response = self.client.get(f"/api/registrations/{second_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
+        self.simulate_alert(self.cis120, 1)
+        first_ob = Registration.objects.get(id=first_id)
+        third_ob = first_ob.resubscribed_to
+        third_id = third_ob.id
+        response = self.client.get(f"/api/registrations/{third_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.check_model_with_response_data(third_ob, response.data)
+        response = self.client.get(f"/api/registrations/{third_id}/")
+        self.assertEqual(200, response.status_code)
+        self.check_model_with_response_data(third_ob, response.data)
+        self.simulate_alert(self.cis120, 2)
+        first_ob = Registration.objects.get(id=first_id)
+        third_ob = first_ob.resubscribed_to
+        fourth_ob = third_ob.resubscribed_to
+        fourth_id = fourth_ob.id
+        response = self.client.get(f"/api/registrations/{fourth_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.check_model_with_response_data(fourth_ob, response.data)
+        response = self.client.post(
+            "/api/registrations/",
+            json.dumps({"section": "CIS-121-001", "auto_resubscribe": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        fifth_id = response.data["id"]
+        response = self.client.get(f"/api/registrations/{fifth_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.check_model_with_response_data(Registration.objects.get(id=fifth_id), response.data)
+        # first is original CIS120 registration, second is disconnected CIS160 registration,
+        # third is auto-resubscribed from first, fourth is auto-resubscribed from third,
+        # and fifth is disconnected CIS121 registration
+        return {
+            "first_id": first_id,
+            "second_id": second_id,
+            "third_id": third_id,
+            "fourth_id": fourth_id,
+            "fifth_id": fifth_id,
+        }
+
     def test_registrations_get_simple(self):
         response = self.client.get(f"/api/registrations/{self.registration_cis120.pk}/")
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120, response.data)
 
-    def test_registrations_resubscribe_get_old_and_history(self):
-        ids = self.create_resubscribe_group()
+    def registrations_resubscribe_get_old_and_history_helper(self, ids):
         response = self.client.get("/api/registrations/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
@@ -1235,18 +1314,28 @@ class AlertRegistrationTestCase(TestCase):
         self.assertFalse(fifth_data["notification_sent"])
         self.assertIsNone(fifth_data["notification_sent_at"])
 
-    def test_resubscribe_to_old(self):
+    def test_registrations_resubscribe_get_old_and_history(self):
         ids = self.create_resubscribe_group()
+        self.registrations_resubscribe_get_old_and_history_helper(ids)
+
+    def test_registrations_resubscribe_get_old_and_history_autoresub(self):
+        ids = self.create_auto_resubscribe_group()
+        self.registrations_resubscribe_get_old_and_history_helper(ids)
+
+    def resubscribe_to_old_helper(self, ids, auto_resub=False):
         first_ob = Registration.objects.get(id=ids["first_id"])
         fourth_ob = Registration.objects.get(id=ids["fourth_id"])
         self.simulate_alert(self.cis120, 3)
-        response = self.client.post(
-            "/api/registrations/",
-            json.dumps({"id": ids["third_id"], "resubscribe": True}),
-            content_type="application/json",
-        )
-        self.assertEqual(200, response.status_code)
-        sixth_id = response.data["id"]
+        if auto_resub:
+            sixth_id = Registration.objects.get(id=ids["fourth_id"]).resubscribed_to.id
+        else:
+            response = self.client.post(
+                "/api/registrations/",
+                json.dumps({"id": ids["third_id"], "resubscribe": True}),
+                content_type="application/json",
+            )
+            self.assertEqual(200, response.status_code)
+            sixth_id = response.data["id"]
         response = self.client.get("/api/registrations/")
         sixth_data = next(item for item in response.data if item["id"] == sixth_id)
         sixth_ob = Registration.objects.get(id=sixth_id)
@@ -1258,8 +1347,15 @@ class AlertRegistrationTestCase(TestCase):
         self.assertFalse(sixth_data["notification_sent"])
         self.assertIsNone(sixth_data["notification_sent_at"])
 
-    def test_registrations_multiple_users(self):
+    def test_resubscribe_to_old(self):
         ids = self.create_resubscribe_group()
+        self.resubscribe_to_old_helper(ids)
+
+    def test_resubscribe_to_old_auto_resub(self):
+        ids = self.create_auto_resubscribe_group()
+        self.resubscribe_to_old_helper(ids, True)
+
+    def registrations_multiple_users_helper(self, ids, auto_resub=False):
         new_user = User.objects.create_user(username="new_jacob", password="top_secret")
         new_user.save()
         new_user.profile.email = "newj@gmail.com"
@@ -1270,14 +1366,14 @@ class AlertRegistrationTestCase(TestCase):
         create_mock_data("CIS-192-201", TEST_SEMESTER)
         response = new_client.post(
             "/api/registrations/",
-            json.dumps({"section": "CIS-192-201", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-192-201", "auto_resubscribe": auto_resub}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
         new_first_id = response.data["id"]
         response = new_client.post(
             "/api/registrations/",
-            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-120-001", "auto_resubscribe": auto_resub}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
@@ -1316,20 +1412,24 @@ class AlertRegistrationTestCase(TestCase):
                 {"number": "+12234567890", "email": "newj@gmail.com"},
             ],
         )
-        response = self.client.post(
-            "/api/registrations/",
-            json.dumps({"id": ids["fourth_id"], "resubscribe": True}),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 200)
-        sixth_id = response.data["id"]
-        response = new_client.post(
-            "/api/registrations/",
-            json.dumps({"id": new_second_id, "resubscribe": True}),
-            content_type="application/json",
-        )
-        self.assertEqual(200, response.status_code)
-        new_third_id = response.data["id"]
+        if auto_resub:
+            sixth_id = Registration.objects.get(id=ids["fourth_id"]).resubscribed_to.id
+            new_third_id = Registration.objects.get(id=new_second_id).resubscribed_to.id
+        else:
+            response = self.client.post(
+                "/api/registrations/",
+                json.dumps({"id": ids["fourth_id"], "resubscribe": True}),
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, 200)
+            sixth_id = response.data["id"]
+            response = new_client.post(
+                "/api/registrations/",
+                json.dumps({"id": new_second_id, "resubscribe": True}),
+                content_type="application/json",
+            )
+            self.assertEqual(200, response.status_code)
+            new_third_id = response.data["id"]
         response = self.client.get("/api/registrations/")
         self.assertEqual(3, len(response.data))
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_first_id]))
@@ -1364,20 +1464,212 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(3, len(response.data))
 
-    def test_registrations_auto_resubscribe(self):
-        pass
+    def test_registrations_multiple_users(self):
+        ids = self.create_resubscribe_group()
+        self.registrations_multiple_users_helper(ids)
 
-    def test_registrations_put(self):
-        pass
+    def test_registrations_multiple_users_autoresub(self):
+        ids = self.create_auto_resubscribe_group()
+        self.registrations_multiple_users_helper(ids, True)
 
-    def test_registrations_post_changeattrs(self):
-        pass
+    def test_registrations_put_resubscribe(self):
+        self.create_auto_resubscribe_group(put=True)
 
-    def test_registrations_post_delete(self):
-        pass
+    def delete_and_resub_helper(self, auto_resub, put, delete_before_sim_webhook):
+        first_id = self.registration_cis120.id
+        if auto_resub:
+            if put:
+                self.client.put(
+                    "/api/registrations/" + str(first_id) + "/",
+                    json.dumps({"auto_resubscribe": True}),
+                    content_type="application/json",
+                )
+            else:
+                self.client.post(
+                    "/api/registrations/",
+                    json.dumps({"id": first_id, "auto_resubscribe": True}),
+                    content_type="application/json",
+                )
+        if not delete_before_sim_webhook:
+            self.simulate_alert(self.cis120, 1, should_send=True)
+        if put:
+            response = self.client.put(
+                "/api/registrations/" + str(first_id) + "/",
+                json.dumps({"deleted": True}),
+                content_type="application/json",
+            )
+        else:
+            response = self.client.post(
+                "/api/registrations/",
+                json.dumps({"id": first_id, "deleted": True}),
+                content_type="application/json",
+            )
+        self.assertEqual(200, response.status_code)
+        if delete_before_sim_webhook:
+            self.simulate_alert(self.cis120, 1, should_send=False)
+        if not auto_resub:
+            if put:
+                response = self.client.put(
+                    "/api/registrations/" + str(first_id) + "/",
+                    json.dumps({"resubscribe": True}),
+                    content_type="application/json",
+                )
+            else:
+                response = self.client.post(
+                    "/api/registrations/",
+                    json.dumps({"id": first_id, "resubscribe": True}),
+                    content_type="application/json",
+                )
+            self.assertEqual(400, response.status_code)
+            self.assertEqual(
+                "You cannot resubscribe to a deleted alert "
+                "(the user should not be able to do this; we decided it just"
+                "causes extra functionality clutter on the frontend and more "
+                "complexity without affording much more convenience).",
+                response.data["detail"],
+            )
+        if not delete_before_sim_webhook:
+            self.assertTrue(Registration.objects.get(id=first_id).notification_sent)
+            if auto_resub:
+                self.assertFalse(
+                    hasattr(
+                        Registration.objects.get(id=first_id).resubscribed_to, "resubscribed_to"
+                    )
+                )
+                self.assertFalse(Registration.objects.get(id=first_id).deleted)
+                self.assertTrue(Registration.objects.get(id=first_id).resubscribed_to.deleted)
+                self.assertFalse(
+                    Registration.objects.get(id=first_id).resubscribed_to.notification_sent
+                )
+        else:
+            self.assertFalse(Registration.objects.get(id=first_id).notification_sent)
+            self.assertFalse(hasattr(Registration.objects.get(id=first_id), "resubscribed_to"))
+            self.assertTrue(Registration.objects.get(id=first_id).deleted)
 
-    def test_registrations_get_most_current_after_resubscribe(self):
-        pass
+    @data(
+        *(
+            ({"delete_before_sim_webhook": x, "auto_resub": y, "put": z}, None)
+            for x in (False, True)
+            for y in (False, True)
+            for z in (False, True)
+        )
+    )
+    @unpack
+    def test_delete_and_resub(self, value, result):
+        self.delete_and_resub_helper(**value)
+
+    def changeattrs_update_order_helper(self, put, update_field):
+        first_id = self.registration_cis120.id
+        if update_field == "resub":
+            self.simulate_alert(self.cis120, 1)
+            if put:
+                self.client.put(
+                    "/api/registrations/" + str(first_id) + "/",
+                    json.dumps({"resubscribe": True, "deleted": True, "auto_resubscribe": False}),
+                    content_type="application/json",
+                )
+            else:
+                self.client.post(
+                    "/api/registrations/",
+                    json.dumps(
+                        {
+                            "id": first_id,
+                            "resubscribe": True,
+                            "deleted": True,
+                            "auto_resubscribe": False,
+                        }
+                    ),
+                    content_type="application/json",
+                )
+            self.assertTrue(Registration.objects.get(id=first_id).notification_sent)
+            self.assertFalse(
+                Registration.objects.get(id=first_id).resubscribed_to.notification_sent
+            )
+            self.assertFalse(Registration.objects.get(id=first_id).deleted)
+            self.assertFalse(Registration.objects.get(id=first_id).resubscribed_to.deleted)
+            self.assertFalse(Registration.objects.get(id=first_id).auto_resubscribe)
+            self.assertFalse(Registration.objects.get(id=first_id).resubscribed_to.auto_resubscribe)
+        if update_field == "deleted":
+            if put:
+                self.client.put(
+                    "/api/registrations/" + str(first_id) + "/",
+                    json.dumps({"deleted": True, "auto_resubscribe": False}),
+                    content_type="application/json",
+                )
+            else:
+                self.client.post(
+                    "/api/registrations/",
+                    json.dumps({"id": first_id, "deleted": True, "auto_resubscribe": False}),
+                    content_type="application/json",
+                )
+            self.assertTrue(Registration.objects.get(id=first_id).deleted)
+            self.assertFalse(Registration.objects.get(id=first_id).auto_resubscribe)
+
+    @data(*(((b, v), None) for b in (True, False) for v in ("resub", "deleted")))
+    @unpack
+    def test_changeattrs_update_order(self, value, result):
+        self.changeattrs_update_order_helper(*value)
+
+    def resub_attrs_maintained_helper(self, put):
+        first_id = self.registration_cis120.id
+        if put:
+            self.client.put(
+                "/api/registrations/" + str(first_id) + "/",
+                json.dumps({"auto_resubscribe": True}),
+                content_type="application/json",
+            )
+        else:
+            self.client.post(
+                "/api/registrations/",
+                json.dumps({"id": first_id, "auto_resubscribe": True}),
+                content_type="application/json",
+            )
+        self.simulate_alert(self.cis120, 1)
+        self.assertTrue(Registration.objects.get(id=first_id).notification_sent)
+        self.assertFalse(Registration.objects.get(id=first_id).resubscribed_to.notification_sent)
+        self.assertTrue(Registration.objects.get(id=first_id).auto_resubscribe)
+        self.assertTrue(Registration.objects.get(id=first_id).resubscribed_to.auto_resubscribe)
+
+    @data((True, None), (False, None))
+    @unpack
+    def test_resub_attrs_maintained(self, value, result):
+        self.resub_attrs_maintained_helper(value)
+
+    def delete_and_change_attrs_helper(self, put):
+        first_id = self.registration_cis120.id
+        if put:
+            self.client.put(
+                "/api/registrations/" + str(first_id) + "/",
+                json.dumps({"deleted": True}),
+                content_type="application/json",
+            )
+            response = self.client.put(
+                "/api/registrations/" + str(first_id) + "/",
+                json.dumps({"auto_resubscribe": True}),
+                content_type="application/json",
+            )
+        else:
+            self.client.post(
+                "/api/registrations/",
+                json.dumps({"id": first_id, "deleted": True}),
+                content_type="application/json",
+            )
+            response = self.client.post(
+                "/api/registrations/",
+                json.dumps({"id": first_id, "auto_resubscribe": True}),
+                content_type="application/json",
+            )
+        self.assertTrue(Registration.objects.get(id=first_id).deleted)
+        self.assertFalse(Registration.objects.get(id=first_id).auto_resubscribe)
+        self.assertEquals(400, response.status_code)
+        self.assertEquals(
+            "You cannot make changes to a deleted registration", response.data["detail"]
+        )
+
+    @data((True, None), (False, None))
+    @unpack
+    def test_delete_and_change_attrs(self, value, result):
+        self.delete_and_change_attrs_helper(value)
 
     def test_get_most_current_rec(self):
         ids = self.create_resubscribe_group()
@@ -1425,12 +1717,11 @@ class AlertRegistrationTestCase(TestCase):
             Registration.objects.get(id=ids["fifth_id"]).get_original_registration_rec(),
         )
 
-    """
     def test_get_resubscribe_group_sql(self):
         ids = self.create_resubscribe_group()
-        first = Registration.objects.get(id=ids['first_id'])
-        third = Registration.objects.get(id=ids['third_id'])
-        fourth = Registration.objects.get(id=ids['third_id'])
+        first = Registration.objects.get(id=ids["first_id"])
+        third = Registration.objects.get(id=ids["third_id"])
+        fourth = Registration.objects.get(id=ids["third_id"])
         self.assertEqual(len(first.get_resubscribe_group_sql()), 3)
         self.assertEqual(len(third.get_resubscribe_group_sql()), 3)
         self.assertEqual(len(fourth.get_resubscribe_group_sql()), 3)
@@ -1442,24 +1733,47 @@ class AlertRegistrationTestCase(TestCase):
         self.assertTrue(fourth in third.get_resubscribe_group_sql())
 
     def test_get_most_current_sql(self):
-        pass
+        ids = self.create_resubscribe_group()
+        self.assertEqual(
+            Registration.objects.get(id=ids["fourth_id"]),
+            Registration.objects.get(id=ids["first_id"]).get_most_current_sql(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["second_id"]),
+            Registration.objects.get(id=ids["second_id"]).get_most_current_sql(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["fourth_id"]),
+            Registration.objects.get(id=ids["third_id"]).get_most_current_sql(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["fourth_id"]),
+            Registration.objects.get(id=ids["fourth_id"]).get_most_current_sql(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["fifth_id"]),
+            Registration.objects.get(id=ids["fifth_id"]).get_most_current_sql(),
+        )
 
     def test_get_original_registration_sql(self):
-        pass
-    """
-
-
-# TESTING INCOMPLETE
-
-# replace recursive get most current with SQL query in gets / puts (change method), and
-# resubscribe (add method)?
-
-# test manage.py loadhistory command
-
-# test course status update hook
-
-# fix plan list order
-
-# fix recursive SQL method tests on circleci
-
-# test UserDetail integration with other code, Davis
+        ids = self.create_resubscribe_group()
+        self.assertEqual(
+            Registration.objects.get(id=ids["first_id"]),
+            Registration.objects.get(id=ids["first_id"]).get_original_registration_sql(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["second_id"]),
+            Registration.objects.get(id=ids["second_id"]).get_original_registration_sql(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["first_id"]),
+            Registration.objects.get(id=ids["third_id"]).get_original_registration_sql(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["first_id"]),
+            Registration.objects.get(id=ids["fourth_id"]).get_original_registration_sql(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["fifth_id"]),
+            Registration.objects.get(id=ids["fifth_id"]).get_original_registration_sql(),
+        )
