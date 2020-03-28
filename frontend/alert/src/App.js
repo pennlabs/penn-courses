@@ -4,6 +4,7 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
 import { Toast, ToastType } from "./components/Toast";
+import { ManageAlert, ManageAlertHeader } from "./ManageAlert";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
 
@@ -169,10 +170,12 @@ function App() {
     return (
         <Container>
             <Nav />
-            <Flex col>
-                <Heading />
-                <AlertForm onSubmit={onSubmit} />
-            </Flex>
+            {/* <Flex col> */}
+            {/*     <Heading /> */}
+            {/*     <AlertForm onSubmit={onSubmit} /> */}
+            {/* </Flex> */}
+            <ManageAlertHeader />
+            <ManageAlert />
             <Footer>
                 Made with
                 {" "}

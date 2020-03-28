@@ -103,7 +103,7 @@ const Header = () => {
 };
 
 export const ManageAlertHeader = () => (
-    <Flex margin="-3.8rem 0rem 0rem 0rem">
+    <Flex margin="-3.4rem 0rem 0rem 0rem">
         <img
             alt="Penn Course Alert logo"
             src={Logo}
@@ -119,11 +119,15 @@ export const ManageAlertHeader = () => (
     </Flex>
 );
 
+export const AlertItem = (date, course, status, repeat, actions) => {
+
+}
+
 
 export const ManageAlert = () => {
     return (
         <Container>
-            <Flex margin="0.7rem 2rem 0.7rem 2rem">
+            <Flex margin="0.4rem 2rem 0.4rem 2rem" center>
                 <TitleText>Alert Management</TitleText>
                 <RightItem>
                     <p>Sort by</p>
