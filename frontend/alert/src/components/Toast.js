@@ -7,59 +7,59 @@ import bang from "../assets/bang.svg";
 import check from "../assets/check.svg";
 
 const Rectangle = styled.div`
-  display: flex;
-  flex-direction: row;
-  border-radius: 0.5rem;
-  border: solid 1px ${(props) => props.border};
-  background-color: ${(props) => props.background};
-  float: right;
-  width: 20rem;
-  height: 4rem;
+    display: flex;
+    flex-direction: row;
+    border-radius: 0.5rem;
+    border: solid 1px ${(props) => props.border};
+    background-color: ${(props) => props.background};
+    float: right;
+    width: 20rem;
+    height: 4rem;
 `;
 
 const Icon = styled.img`
-  width: 1rem;
-  height: 1rem;
-  margin: auto;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin: auto;
+    width: 1rem;
+    height: 1rem;
+    margin: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
 `;
 
 const IconDiv = styled.div`
-  width: 1.5rem;
-  height: 1.5rem;
-  margin-left: 1rem;
-  margin-top: 1rem;
-  background-color: ${(props) => props.background};
-  border-radius: 1rem;
-  position: relative;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-left: 1rem;
+    margin-top: 1rem;
+    background-color: ${(props) => props.background};
+    border-radius: 1rem;
+    position: relative;
 `;
 
 const CloseButton = styled.img`
-  width: 1rem;
-  height: 1rem;
-  margin-left:auto;
-  margin-right: 0.6em;
-  margin-top: 0.6em;
+    width: 1rem;
+    height: 1rem;
+    margin-left:auto;
+    margin-right: 0.6em;
+    margin-top: 0.6em;
 `;
 
 const ToastText = styled.p`
-  color: ${(props) => props.color};
-  max-width: 70%;
-  font-size: 0.8rem;
-  font-weight: 500;
-  word-wrap: normal;
-  margin-left: 1rem;
-  margin-right: 0.75rem;
-  margin-top: 0.85rem;
+    color: ${(props) => props.color};
+    max-width: 70%;
+    font-size: 0.8rem;
+    font-weight: 500;
+    word-wrap: normal;
+    margin-left: 1rem;
+    margin-right: 0.75rem;
+    margin-top: 0.85rem;
 `;
 
 const RightItem = styled.div`
-  margin-left: auto;
+    margin-left: auto;
 `;
 
 export const ToastType = Object.freeze({ Success: 1, Warning: 2, Error: 3 });
