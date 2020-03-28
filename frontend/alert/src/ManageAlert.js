@@ -8,12 +8,16 @@ const Container = styled.div`
     width: 80%;
     max-width: 80rem;
     min-height: 70%;
+    box-shadow: 0 0.1rem 0.2rem 0 rgba(0, 0, 0, 0.08);
 `;
 
 const Flex = styled.div`
     display: flex;
     margin: ${(props) => props.margin};
-    justify-content: ${(props) => (props.justify ? props.justify : "flex-start")};
+    padding: ${(props) => props.padding};
+    text-align: ${(props) => (props.center ? "center" : "initial")};
+    justify-content: ${(props) => (props.center ? "center" : "initial")};
+    align-items: ${(props) => (props.center ? "center" : "initial")};
     flex-direction: ${(props) => (props.col ? "column" : "row")};
 `;
 
@@ -29,7 +33,7 @@ const HeaderText = styled.p`
 
 const TitleText = styled.p`
     color: #333333;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     font-weight: bold;
 `;
 
@@ -48,6 +52,36 @@ const CenteredGridItem = styled(GridItem)`
     display: flex;
     align-items: center;
     justify-content: center;
+`;
+
+const Input = styled.input`
+    width: 16rem;
+    outline: none;
+    height: 1.8rem;
+    border: solid 0.5px #d6d6d6;
+    border-radius: 0.3rem 0rem 0rem 0.3rem;
+    font-size: 0.9rem;
+    padding-left: 0.5rem;
+`;
+
+const Button = styled.button`
+    outline: none;
+    width: 5rem;
+    border: solid 0.5px #489be8;
+    border-radius: 0rem 0.2rem 0.2rem 0rem;
+    background-color: #489be8;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    :hover {
+        background-color: #1496ed;
+    }
+`;
+
+const P = styled.p`
+    font-size: ${(props) => props.size};
+    margin: ${(props) => props.margin};
 `;
 
 const Header = () => {
@@ -69,12 +103,19 @@ const Header = () => {
 };
 
 export const ManageAlertHeader = () => (
-    <Flex>
+    <Flex margin="-3.8rem 0rem 0rem 0rem">
         <img
             alt="Penn Course Alert logo"
             src={Logo}
             width="50rem"
         />
+        <Flex col center margin="1.5rem 1.5rem 1.5rem 2rem" padding="2.2rem 0rem 0rem 0rem">
+            <Flex>
+                <Input placeholder="Course" />
+                <Button>Alert me</Button>
+            </Flex>
+            <P size="0.9rem" margin="1rem 0rem 0rem -3rem">Alert me until I cancel</P>
+        </Flex>
     </Flex>
 );
 
