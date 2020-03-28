@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
-import Logo from "./assets/PCA_logo.svg";
+import Logo from "../assets/PCA_logo.svg";
 
 const Container = styled.div`
     background: #ffffff;
@@ -119,9 +119,19 @@ export const ManageAlertHeader = () => (
     </Flex>
 );
 
-export const AlertItem = (date, course, status, repeat, actions) => {
+const ActionType = Object.freeze({Resubscribe: 0, Cancel: 1});
+
+const ActionButton = (type) => {
 
 }
+
+const AlertItem = (date, course, status, repeat, actions, rownum) => {
+    return (
+        <>
+            <CenteredGridItem column="1" row={rownum} />
+        </>
+    );
+};
 
 
 export const ManageAlert = () => {
