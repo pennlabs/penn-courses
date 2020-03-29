@@ -7,3 +7,12 @@
     display: block;
     margin: 0.2rem;
 }
+
+.search > * {
+    display: block;
+    margin: 0.1rem;
+}
+
+.alertmodifiers > * {
+    display: block;
+}

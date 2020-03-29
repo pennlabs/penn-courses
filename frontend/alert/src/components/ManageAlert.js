@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import Logo from "../assets/PCA_logo.svg";
 import Bell from "../assets/bell.svg";
 import XBell from "../assets/bell-off.svg";
+import Search from "../assets/search.svg";
 import styles from "./ManageAlert.module.css";
 
 const Container = styled.div`
@@ -30,8 +31,22 @@ const ActionFlex = styled(Flex)`
     cursor: pointer;
 `;
 
+const SearchFlex = styled(Flex)`
+    background-color: #f4f4f4;
+    border: solid 0.5px #dfe3e8;
+    border-radius: 0.2rem;
+`;
+
+const SearchInput = styled.input`
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 10rem;
+`;
+
 const RightItem = styled.div`
     display: flex;
+    align-items: center;
     margin-left: auto;
 `;
 
@@ -103,6 +118,11 @@ const StatusInd = styled.div`
     background-color: ${(props) => props.background};
 `;
 
+const Img = styled.img`
+    width: ${(props) => props.width};
+    height: ${(props) => props.height};
+`;
+
 const Header = () => {
     const headings = ["LAST NOTIFIED", "COURSE ID", "STATUS", "REPEAT", "ACTIONS"];
 
@@ -138,6 +158,15 @@ export const ManageAlertHeader = () => (
     </Flex>
 );
 
+const AlertSearch = () => (
+    <SearchFlex valign>
+        <Flex valign margin="0.2rem" className={styles.search}>
+            <Img src={Search} alt="" width="0.6rem" height="0.6rem" />
+            <SearchInput type="search" placeholder="Search" />
+        </Flex>
+    </SearchFlex>
+);
+
 const AlertAction = Object.freeze({ Resubscribe: 1, Cancel: 2 });
 const AlertStatus = Object.freeze({ Closed: 1, Open: 2 });
 const AlertRepeat = Object.freeze({ Inactive: 1, EOS: 2, Once: 3 });
@@ -168,7 +197,7 @@ const ActionButton = ({ type }) => {
         <ActionFlex valign halign background={secondary}>
             <Flex valign margin="0.3rem" className={styles.actionbutton}>
                 <P size="0.6rem" color={primary} weight="600">{text}</P>
-                <img src={img} style={{ width: "0.6rem", height: "0.6rem" }} alt="" />
+                <Img src={img} width="0.6rem" height="0.6rem" alt="" />
             </Flex>
         </ActionFlex>
     );
@@ -242,11 +271,11 @@ const AlertItem = ({ date, course, status, repeat, actions, rownum }) => {
 export const ManageAlert = () => {
     return (
         <Container>
-            <Flex margin="0.4rem 2rem 0.4rem 2rem" center valign halign>
+            <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign halign>
                 <TitleText>Alert Management</TitleText>
-                <RightItem>
-                    <P size="0.7rem">Sort by Last Notified</P>
-                    <p>Search</p>
+                <RightItem className={styles.alertmodifiers} >
+                    <P size="0.7rem" margin="0rem 2rem 0rem 0rem">Sort by Last Notified</P>
+                    <AlertSearch />
                 </RightItem>
             </Flex>
             <Grid>
