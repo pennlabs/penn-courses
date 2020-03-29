@@ -2,6 +2,9 @@ import React from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import Logo from "../assets/PCA_logo.svg";
+import Bell from "../assets/bell.svg";
+import XBell from "../assets/bell-off.svg";
+import styles from "./ManageAlert.module.css";
 
 const Container = styled.div`
     background: #ffffff;
@@ -15,13 +18,20 @@ const Flex = styled.div`
     display: flex;
     margin: ${(props) => props.margin};
     padding: ${(props) => props.padding};
-    text-align: ${(props) => (props.center ? "center" : "initial")};
-    justify-content: ${(props) => (props.center ? "center" : "initial")};
-    align-items: ${(props) => (props.center ? "center" : "initial")};
+    text-align: ${(props) => (props.center ? "center" : null)};
+    align-items: ${(props) => (props.valign ? "center" : null)};
+    justify-content: ${(props) => (props.halign ? "center" : null)};
     flex-direction: ${(props) => (props.col ? "column" : "row")};
 `;
 
+const ActionFlex = styled(Flex)`
+    background-color: ${(props) => props.background};
+    border-radius: 0.2rem;
+    cursor: pointer;
+`;
+
 const RightItem = styled.div`
+    display: flex;
     margin-left: auto;
 `;
 
@@ -40,18 +50,18 @@ const TitleText = styled.p`
 const Grid = styled.div`
     display: grid;
     grid-template-columns: 1fr 3fr 2fr 2fr 3fr 2fr;
+    grid-template-rows: 1.5rem;
+    grid-auto-rows: 3rem;
 `;
 
 const GridItem = styled.div`
+    display: flex;
+    align-items: ${(props) => (props.valign ? "center" : null)};
+    justify-content: ${(props) => (props.halign ? "center" : null)};
     grid-column: ${(props) => props.column};
     grid-row: ${(props) => props.row};
     background-color: ${(props) => (props.color ? props.color : "white")};
-`;
-
-const CenteredGridItem = styled(GridItem)`
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-bottom: ${(props) => (props.border ? "1px solid #ececec" : null)};
 `;
 
 const Input = styled.input`
@@ -81,7 +91,16 @@ const Button = styled.button`
 
 const P = styled.p`
     font-size: ${(props) => props.size};
+    font-weight: ${(props) => props.weight};
+    color: ${(props) => props.color};
     margin: ${(props) => props.margin};
+`;
+
+const StatusInd = styled.div`
+    border-radius: 1rem;
+    width: 0.4rem;
+    height: 0.4rem;
+    background-color: ${(props) => props.background};
 `;
 
 const Header = () => {
@@ -89,11 +108,11 @@ const Header = () => {
 
     return (
         <>
-            <CenteredGridItem column="1" row="1" color="#f8f8f8">
+            <GridItem column="1" row="1" color="#f8f8f8" halign valign>
                 <input type="checkbox" />
-            </CenteredGridItem>
+            </GridItem>
             {headings.map((heading, i) => (
-                <GridItem column={(i + 2).toString()} row="1" color="#f8f8f8">
+                <GridItem key={`header${i}`} column={(i + 2).toString()} row="1" color="#f8f8f8" valign>
                     <HeaderText>{heading}</HeaderText>
                 </GridItem>
             ))}
@@ -109,7 +128,7 @@ export const ManageAlertHeader = () => (
             src={Logo}
             width="50rem"
         />
-        <Flex col center margin="1.5rem 1.5rem 1.5rem 2rem" padding="2.2rem 0rem 0rem 0rem">
+        <Flex col center valign halign margin="1.5rem 1.5rem 1.5rem 2rem" padding="2.2rem 0rem 0rem 0rem">
             <Flex>
                 <Input placeholder="Course" />
                 <Button>Alert me</Button>
@@ -119,16 +138,102 @@ export const ManageAlertHeader = () => (
     </Flex>
 );
 
-const ActionType = Object.freeze({Resubscribe: 0, Cancel: 1});
+const AlertAction = Object.freeze({ Resubscribe: 1, Cancel: 2 });
+const AlertStatus = Object.freeze({ Closed: 1, Open: 2 });
+const AlertRepeat = Object.freeze({ Inactive: 1, EOS: 2, Once: 3 });
 
-const ActionButton = (type) => {
+const ActionButton = ({ type }) => {
+    let img;
+    let primary;
+    let secondary;
+    let text;
 
-}
+    switch (type) {
+        case 1:
+            primary = "#5891fc";
+            secondary = "rgba(88, 145, 252, 0.12)";
+            img = Bell;
+            text = "Resubscribe";
+            break;
+        case 2:
+            primary = "#646e7a";
+            secondary = "rgba(162, 169, 176, 0.15)";
+            img = XBell;
+            text = "Cancel";
+            break;
+        default:
+    }
 
-const AlertItem = (date, course, status, repeat, actions, rownum) => {
+    return (
+        <ActionFlex valign halign background={secondary}>
+            <Flex valign margin="0.3rem" className={styles.actionbutton}>
+                <P size="0.6rem" color={primary} weight="600">{text}</P>
+                <img src={img} style={{ width: "0.6rem", height: "0.6rem" }} alt="" />
+            </Flex>
+        </ActionFlex>
+    );
+};
+
+
+
+const AlertItem = ({ date, course, status, repeat, actions, rownum }) => {
+    let statustext;
+    let statuscolor;
+    let alerttext;
+    let alertcolor;
+
+    switch (status) {
+        case 1:
+            statustext = "Closed";
+            statuscolor = "#e1e6ea";
+            break;
+        case 2:
+            statustext = "Open";
+            statuscolor = "#78d381";
+            break;
+        default:
+    }
+
+    switch (repeat) {
+        case 1:
+            alerttext = "Inactive";
+            alertcolor = "#b2b2b2";
+            break;
+        case 2:
+            alerttext = "Until end of semester";
+            alertcolor = "#333333";
+            break;
+        case 3:
+            alerttext = "Once";
+            alertcolor = "#333333";
+            break;
+        default:
+    }
+
+
+
+
     return (
         <>
-            <CenteredGridItem column="1" row={rownum} />
+            <GridItem column="1" row={rownum} border halign valign>
+                <input type="checkbox" />
+            </GridItem>
+            <GridItem column="2" row={rownum} border valign>
+                <P size="0.7rem">{date}</P>
+            </GridItem>
+            <GridItem column="3" row={rownum} border valign>
+                <P size="0.7rem">{course}</P>
+            </GridItem>
+            <GridItem column="4" row={rownum} border valign className={styles.status}>
+                <StatusInd background={statuscolor} />
+                <P size="0.7rem">{statustext}</P>
+            </GridItem>
+            <GridItem column="5" row={rownum} border valign>
+                <P size="0.7rem" color={alertcolor}>{alerttext}</P>
+            </GridItem>
+            <GridItem border column="6" row={rownum} valign>
+                <ActionButton type={actions} />
+            </GridItem>
         </>
     );
 };
@@ -137,17 +242,31 @@ const AlertItem = (date, course, status, repeat, actions, rownum) => {
 export const ManageAlert = () => {
     return (
         <Container>
-            <Flex margin="0.4rem 2rem 0.4rem 2rem" center>
+            <Flex margin="0.4rem 2rem 0.4rem 2rem" center valign halign>
                 <TitleText>Alert Management</TitleText>
                 <RightItem>
-                    <p>Sort by</p>
-                </RightItem>
-                <div>
+                    <P size="0.7rem">Sort by Last Notified</P>
                     <p>Search</p>
-                </div>
+                </RightItem>
             </Flex>
             <Grid>
                 <Header />
+                <AlertItem
+                    rownum={2}
+                    date="9/12/2017 at 6:30PM"
+                    course="CIS-120-001"
+                    status={AlertStatus.Open}
+                    repeat={AlertRepeat.Inactive}
+                    actions={AlertAction.Cancel}
+                />
+                <AlertItem
+                    rownum={3}
+                    date="9/12/2017 at 6:30PM"
+                    course="CIS-120-001"
+                    status={AlertStatus.Closed}
+                    repeat={AlertRepeat.EOS}
+                    actions={AlertAction.Resubscribe}
+                />
             </Grid>
         </Container>
     );

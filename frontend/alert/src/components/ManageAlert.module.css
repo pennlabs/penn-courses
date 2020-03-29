@@ -1,0 +1,9 @@
+.actionbutton > * {
+    display: block;
+    margin: 0.1rem;
+}
+
+.status > * {
+    display: block;
+    margin: 0.2rem;
+}
