@@ -40,7 +40,7 @@ const InnerMenu = styled.div`
     padding: 0.32rem;
     font-size: 0.85rem;
     box-shadow: 0 0 5px 0 lightgrey;
-    right: ${(props) => props.onLeft ? "0%" : "61%"}
+    right: ${(props) => (props.onLeft ? "0%" : "61%")}
 `;
 
 const NameContainer = styled.p`
@@ -125,9 +125,9 @@ const UserSelector = ({
                     {" "}
                 </span>
             </NameBubble>
-            <LogoutDropdownMenu className={"dropdown-menu"}>
-                <LogoutDropdownContainer className={"dropdown-menu-container"}>
-                    <TriangleUp/>
+            <LogoutDropdownMenu className="dropdown-menu">
+                <LogoutDropdownContainer className="dropdown-menu-container">
+                    <TriangleUp />
                     <InnerMenu onLeft={onLeft}>
                         <NameContainer>
                             {" "}
@@ -153,7 +153,7 @@ const UserSelector = ({
                         >
                             Logout
                             <LogoutIconContainer>
-                                <i className="fas fa-sign-out-alt"/>
+                                <i className="fas fa-sign-out-alt" />
                             </LogoutIconContainer>
                         </LogoutButton>
                     </InnerMenu>
