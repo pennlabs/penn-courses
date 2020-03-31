@@ -1,9 +1,15 @@
 import React from "react";
 import "bulma/css/bulma.css";
-import "../styles/accounts.css";
+import styled from "styled-components";
+
+const LoginButtonStyles = styled.a`
+    font-size: 0.85rem !important;
+    padding: 0 1rem 0 1rem;
+    margin-right: 1rem;
+`;
 
 const LoginButton = () => (
-    <a
+    <LoginButtonStyles
         className="button is-link login"
         href={`/accounts/login/?next=${window.location.pathname}`}
         style={{
@@ -14,7 +20,7 @@ const LoginButton = () => (
         }}
     >
         Login
-    </a>
+    </LoginButtonStyles>
 );
 
 export default LoginButton;

@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 import styled from "styled-components";
 import { useOnClickOutside } from "../useOnClickOutside";
 import "bulma/css/bulma.css";
-import "../styles/accounts.css";
 
 const NameBubble = styled.div`
     color: white;
@@ -66,6 +65,34 @@ const LogoutButton = styled.div`
     }
 `;
 
+const TriangleUp = styled.div`
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 10px solid white;
+    position: relative;
+    left: 11%;
+    transition: 200ms ease border;
+    z-index: 5;
+`;
+
+const LogoutDropdownContainer = styled.div`
+    min-width: 7rem !important;
+    vertical-align: center;
+`;
+
+const LogoutDropdownMenu = styled.div`
+    min-width: 7rem !important;
+    margin-top: 0;
+`;
+
+const LogoutIconContainer = styled.div`
+    height: 100%;
+    float: right;
+    margin-right: 0.45rem;
+`;
+
 const UserSelector = ({
     user: { username, ...rest }, onLogout,
     onLeft, backgroundColor, nameLength,
@@ -98,9 +125,9 @@ const UserSelector = ({
                     {" "}
                 </span>
             </NameBubble>
-            <div className="logout dropdown-menu">
-                <div id="logout-dropdown-menu-container">
-                    <div className="triangle-up" />
+            <LogoutDropdownMenu className={"dropdown-menu"}>
+                <LogoutDropdownContainer className={"dropdown-menu-container"}>
+                    <TriangleUp/>
                     <InnerMenu onLeft={onLeft}>
                         <NameContainer>
                             {" "}
@@ -125,13 +152,13 @@ const UserSelector = ({
                             }}
                         >
                             Logout
-                            <div id="logout-icon-container">
-                                <i className="fas fa-sign-out-alt" />
-                            </div>
+                            <LogoutIconContainer>
+                                <i className="fas fa-sign-out-alt"/>
+                            </LogoutIconContainer>
                         </LogoutButton>
                     </InnerMenu>
-                </div>
-            </div>
+                </LogoutDropdownContainer>
+            </LogoutDropdownMenu>
         </div>
     );
 };
