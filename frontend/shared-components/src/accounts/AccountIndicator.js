@@ -21,7 +21,7 @@ const AccountIndicator = ({
                     return;
                 }
                 response.json()
-                    .then((newUser) => login(newUser));
+                    .then(newUser => login(newUser));
             });
     }, [login]);
 
