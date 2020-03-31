@@ -28,6 +28,11 @@ jobs:
           paths:
             - frontend/plan/node_modules
       - run:
+          name: Sync shared components
+          command: |
+            cd frontend/plan
+            cpx "../shared-components/src/**/*" src/components
+       - run:
           name: Lint
           command: |
             cd frontend/plan
@@ -49,6 +54,11 @@ jobs:
           key: dependency-cache-{{ checksum "frontend/alert/package-lock.json" }}
           paths:
             - frontend/alert/node_modules
+      - run:
+          name: Sync shared components
+          command: |
+            cd frontend/alert
+            cpx "../shared-components/src/**/*" src/components
       - run:
           name: Lint PCA
           command: |
