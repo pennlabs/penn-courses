@@ -164,11 +164,11 @@ const Heading = () => (
     </Center>
 );
 
-const AlertForm = ({ onSubmit }) => (
+const AlertForm = ({ onSubmit, user }) => (
     <>
         <Input autocomplete="off" placeholder="Course" />
-        <Input placeholder="Email" />
-        <Input placeholder="Phone" />
+        <Input placeholder="Email" value={user && user.profile.email} />
+        <Input placeholder="Phone" value={user && user.profile.phone} />
         <Center>
             <AlertText>
                 Alert me
@@ -179,7 +179,10 @@ const AlertForm = ({ onSubmit }) => (
     </>
 );
 
-AlertForm.propTypes = { onSubmit: PropTypes.func };
+AlertForm.propTypes = {
+    onSubmit: PropTypes.func,
+    user: PropTypes.objectOf(PropTypes.any),
+};
 
 function App() {
     const onSubmit = () => {};
@@ -189,7 +192,7 @@ function App() {
             <Nav login={setUser} logout={() => setUser(null)} user={user} />
             <Flex col>
                 <Heading />
-                <AlertForm onSubmit={onSubmit} />
+                <AlertForm onSubmit={onSubmit} user={user} />
             </Flex>
             <Footer>
                 Made with
