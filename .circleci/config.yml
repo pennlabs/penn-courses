@@ -26,14 +26,14 @@ jobs:
       - save_cache:
           key: dependency-cache-{{ checksum "frontend/plan/package-lock.json" }}
           paths:
-            - frontend/plan/node_modules
+            - frontend/alert/node_modules
       - run:
           name: Sync shared components
           command: |
-            cd frontend/plan
+            cd frontend/plan/
             cpx "../shared-components/src/**/*" src/components
-       - run:
-          name: Lint
+      - run:
+          name: Lint PCA
           command: |
             cd frontend/plan
             npm run lint
