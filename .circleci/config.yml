@@ -33,7 +33,7 @@ jobs:
             cd frontend/plan/
             npm run sync
       - run:
-          name: Lint PCA
+          name: Lint PCP
           command: |
             cd frontend/plan
             npm run lint

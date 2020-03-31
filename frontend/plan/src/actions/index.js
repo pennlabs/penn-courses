@@ -297,7 +297,7 @@ function buildCourseSearchUrl(filterData) {
             !== JSON.stringify(checkboxDefaultFields[i])) {
             const applied = [];
             Object.keys(filterData[checkboxFields[i]])
-                .map((item) => {
+                .map((item) => { // eslint-disable-line
                     if (filterData[checkboxFields[i]][item] === 1) {
                         applied.push(item);
                     }
@@ -494,7 +494,7 @@ export const fetchBackendSchedulesAndInitializeCart = (cart, shouldInitCart,
             }
             onComplete(schedules);
         })
-        .catch(error => console.log(error, "Not logged in"));
+        .catch(error => console.log(error, "Not logged in")); // eslint-disable-line
 };
 
 export const creationSuccessful = (name, id) => ({
