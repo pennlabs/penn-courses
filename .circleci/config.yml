@@ -26,7 +26,7 @@ jobs:
       - save_cache:
           key: dependency-cache-{{ checksum "frontend/plan/package-lock.json" }}
           paths:
-            - frontend/alert/node_modules
+            - frontend/plan/node_modules
       - run:
           name: Sync shared components
           command: |
