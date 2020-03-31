@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
-import AccountIndicator from "./components/accounts/AccountIndicator";
+import AccountIndicator from "./components/shared/accounts/AccountIndicator";
 
 const Container = styled.div`
     display: flex;

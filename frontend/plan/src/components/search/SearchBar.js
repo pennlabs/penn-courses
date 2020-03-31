@@ -20,7 +20,7 @@ import {
     clearFilter,
     updateSearch, clearAllScheduleData
 } from "../../actions";
-import AccountIndicator from "../accounts/AccountIndicator";
+import AccountIndicator from "../shared/accounts/AccountIndicator";
 import { login, logout } from "../../actions/login";
 
 function shouldSearch(filterData) {

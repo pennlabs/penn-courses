@@ -15,9 +15,9 @@
     "styled-components": "^5.0.1"
   },
   "scripts": {
-    "start": "cpx \"../shared-components/src/**/*\" src/components && react-scripts start && fg",
-    "sync-watch": "cpx \"../shared-components/src/**/*\" src/components --watch",
-    "sync": "cpx \"../shared-components/src/**/*\" src/components",
+    "start": "cpx \"../shared-components/src/**/*\" src/components/shared && react-scripts start && fg",
+    "sync-watch": "cpx \"../shared-components/src/**/*\" src/components/shared --watch",
+    "sync": "cpx \"../shared-components/src/**/*\" src/components/shared",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
