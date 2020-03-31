@@ -33,6 +33,39 @@ const NameBubble = styled.div`
     };
 `;
 
+const InnerMenu = styled.div`
+    background: white;
+    color: #4a4a4a;
+    border-radius: 4px;
+    position: relative;
+    padding: 0.32rem;
+    font-size: 0.85rem;
+    box-shadow: 0 0 5px 0 lightgrey;
+    right: ${(props) => props.onLeft ? "0%" : "61%"}
+`;
+
+const NameContainer = styled.p`
+    font-weight: bold;
+    margin: 0.5rem;
+    font-size: 1.25rem;
+`;
+
+const EmailContainer = styled.p`
+    font-size: 0.8rem;
+    margin: 0.5rem;
+    color: #828282;
+`;
+
+const LogoutButton = styled.div`
+    cursor: pointer;   
+    background: white;
+    transition: 200ms ease background;
+    margin: 0.5rem;
+    &:hover {
+        background: rgb(245, 245, 245);
+    }
+`;
+
 const UserSelector = ({
     user: { username, ...rest }, onLogout,
     onLeft, backgroundColor, nameLength,
@@ -68,22 +101,21 @@ const UserSelector = ({
             <div className="logout dropdown-menu">
                 <div id="logout-dropdown-menu-container">
                     <div className="triangle-up" />
-                    <div id="logout-dropdown-inner-menu" className={`${onLeft ? " on-left" : ""}`}>
-                        <p className="name-container">
+                    <InnerMenu onLeft={onLeft}>
+                        <NameContainer>
                             {" "}
                             {firstName}
                             {" "}
                             {lastName}
                             {" "}
-                        </p>
-                        <p className="email-container">
+                        </NameContainer>
+                        <EmailContainer>
                             {" "}
                             {username}
                             {" "}
-                        </p>
-                        <div
+                        </EmailContainer>
+                        <LogoutButton
                             role="button"
-                            id="logout-button"
                             onClick={() => {
                                 fetch("/accounts/logout/", {
                                     method: "GET",
@@ -96,8 +128,8 @@ const UserSelector = ({
                             <div id="logout-icon-container">
                                 <i className="fas fa-sign-out-alt" />
                             </div>
-                        </div>
-                    </div>
+                        </LogoutButton>
+                    </InnerMenu>
                 </div>
             </div>
         </div>
