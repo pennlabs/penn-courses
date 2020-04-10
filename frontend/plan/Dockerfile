@@ -9,7 +9,6 @@ COPY package*.json /app/
 RUN npm install
 
 COPY . /app/
-COPY ../shared-components/src /app/src/components
 RUN npm run build
 
 FROM nginx:1.12
