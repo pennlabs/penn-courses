@@ -10,8 +10,8 @@ const Rectangle = styled.div`
     display: flex;
     flex-direction: row;
     border-radius: 0.5rem;
-    border: solid 1px ${(props) => props.border};
-    background-color: ${(props) => props.background};
+    border: solid 1px ${props => props.border};
+    background-color: ${props => props.background};
     float: right;
     width: 20rem;
     height: 4rem;
@@ -34,7 +34,7 @@ const IconDiv = styled.div`
     height: 1.5rem;
     margin-left: 1rem;
     margin-top: 1rem;
-    background-color: ${(props) => props.background};
+    background-color: ${props => props.background};
     border-radius: 1rem;
     position: relative;
 `;
@@ -48,7 +48,7 @@ const CloseButton = styled.img`
 `;
 
 const ToastText = styled.p`
-    color: ${(props) => props.color};
+    color: ${props => props.color};
     max-width: 70%;
     font-size: 0.8rem;
     font-weight: 500;
