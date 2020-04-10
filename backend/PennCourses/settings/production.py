@@ -17,7 +17,7 @@ DATABASES["default"]["OPTIONS"] = {"charset": "utf8mb4"}
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Allow production host headers
-ALLOWED_HOSTS = ["penncourseplan.com", "penncoursealert.com"]
+ALLOWED_HOSTS = ["penncourseplan.com", "beta.penncoursealert.com"]
 
 # Make sure SECRET_KEY is set to a secret in production
 # SECRET_KEY = os.environ.get("SECRET_KEY", None)  # TODO: remove after testing
