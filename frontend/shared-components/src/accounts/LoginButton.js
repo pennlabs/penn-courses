@@ -1,5 +1,4 @@
 import React from "react";
-import "bulma/css/bulma.css";
 import styled from "styled-components";
 
 const LoginButtonStyles = styled.a`

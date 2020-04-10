@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 import { useOnClickOutside } from "../useOnClickOutside";
-import "bulma/css/bulma.css";
 
 const NameBubble = styled.div`
     color: white;
@@ -85,12 +84,25 @@ const LogoutDropdownContainer = styled.div`
 const LogoutDropdownMenu = styled.div`
     min-width: 7rem !important;
     margin-top: 0;
+    display: ${({selected}) => selected ? "block" : "none"};
+    left: 0;
+    min-width: 12rem;
+    padding-top: 4px;
+    position: absolute;
+    top: 100%;
+    z-index: 20;
 `;
 
 const LogoutIconContainer = styled.div`
     height: 100%;
     float: right;
     margin-right: 0.45rem;
+`;
+
+const Dropdown = styled.div`
+    display: inline-flex;
+    position: relative;
+    vertical-align: top;
 `;
 
 const UserSelector = ({
@@ -107,14 +119,12 @@ const UserSelector = ({
     }, !selected);
 
     return (
-        <div
-            className={`dropdown${selected ? " is-active" : ""}`}
+        <Dropdown
             ref={onClickOutside}
         >
             <NameBubble
                 selected={selected}
                 color={backgroundColor}
-                className="dropdown-trigger"
                 role="button"
                 id="user-selector"
                 onClick={() => setSelected(!selected)}
@@ -125,7 +135,7 @@ const UserSelector = ({
                     {" "}
                 </span>
             </NameBubble>
-            <LogoutDropdownMenu className="dropdown-menu">
+            <LogoutDropdownMenu selected={selected}>
                 <LogoutDropdownContainer className="dropdown-menu-container">
                     <TriangleUp />
                     <InnerMenu onLeft={onLeft}>
@@ -159,7 +169,7 @@ const UserSelector = ({
                     </InnerMenu>
                 </LogoutDropdownContainer>
             </LogoutDropdownMenu>
-        </div>
+        </Dropdown>
     );
 };
 
