@@ -84,7 +84,7 @@ const LogoutDropdownContainer = styled.div`
 const LogoutDropdownMenu = styled.div`
     min-width: 7rem !important;
     margin-top: 0;
-    display: ${({selected}) => selected ? "block" : "none"};
+    display: ${({ selected }) => (selected ? "block" : "none")};
     left: 0;
     min-width: 12rem;
     padding-top: 4px;
