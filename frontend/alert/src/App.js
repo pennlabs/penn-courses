@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./App.css";
 import styled from "styled-components";
 import PropTypes from "prop-types";
@@ -6,6 +6,7 @@ import Logo from "./assets/PCA_logo.svg";
 import { Toast, ToastType } from "./components/Toast";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
+import AccountIndicator from "./components/shared/accounts/AccountIndicator";
 
 const Container = styled.div`
     display: flex;
@@ -17,8 +18,8 @@ const Container = styled.div`
 
 const Flex = styled.div`
     display: flex;
-    flex-direction: ${(props) => (props.col ? "column" : "row")};
-    align-items: ${(props) => props.align || "center"};
+    flex-direction: ${props => (props.col ? "column" : "row")};
+    align-items: ${props => props.align || "center"};
 `;
 
 const Tagline = styled.h3`
@@ -111,7 +112,10 @@ const NavContainer = styled.nav`
 const NavElt = styled.a`
     padding: 20px;
     color: #4a4a4a;
-    font-weight: ${(props) => (props.href
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-weight: ${props => (props.href
         === `/${
             window.location.href.split("/")[
                 window.location.href.split("/").length - 1
@@ -131,14 +135,30 @@ const Dropdown = styled.span`
     font-weight: bold;
 `;
 
-const Nav = () => (
+const Nav = ({ login, logout, user }) => (
     <NavContainer>
+        <NavElt>
+            <AccountIndicator
+                onLeft={true}
+                user={user}
+                backgroundColor="dark"
+                nameLength={2}
+                login={login}
+                logout={logout}
+            />
+        </NavElt>
         <NavElt href="/">Home</NavElt>
         <NavElt href="/manage">Manage Alerts</NavElt>
         <Toast type={ToastType.Warning} course="CIS-160-001" />
 
     </NavContainer>
 );
+
+Nav.propTypes = {
+    login: PropTypes.func.isRequired,
+    logout: PropTypes.func.isRequired,
+    user: PropTypes.objectOf(PropTypes.any),
+};
 
 const Heading = () => (
     <Center>
@@ -147,11 +167,11 @@ const Heading = () => (
     </Center>
 );
 
-const AlertForm = ({ onSubmit }) => (
+const AlertForm = ({ onSubmit, user }) => (
     <>
         <Input autocomplete="off" placeholder="Course" />
-        <Input placeholder="Email" />
-        <Input placeholder="Phone" />
+        <Input placeholder="Email" value={user && user.profile.email} />
+        <Input placeholder="Phone" value={user && user.profile.phone} />
         <Center>
             <AlertText>
                 Alert me
@@ -162,16 +182,20 @@ const AlertForm = ({ onSubmit }) => (
     </>
 );
 
-AlertForm.propTypes = { onSubmit: PropTypes.func };
+AlertForm.propTypes = {
+    onSubmit: PropTypes.func,
+    user: PropTypes.objectOf(PropTypes.any),
+};
 
 function App() {
     const onSubmit = () => {};
+    const [user, setUser] = useState(null);
     return (
         <Container>
-            <Nav />
+            <Nav login={setUser} logout={() => setUser(null)} user={user} />
             <Flex col>
                 <Heading />
-                <AlertForm onSubmit={onSubmit} />
+                <AlertForm onSubmit={onSubmit} user={user} />
             </Flex>
             <Footer>
                 Made with
