@@ -7,7 +7,7 @@ export function CheckboxFilter({
     return (
         <div className="columns contained">
             {Object.keys(filterData[checkboxProperty]).sort().map(filterProperty => (
-                <div className="column">
+                <div key={filterProperty} className="column">
                     <div className="field" style={{ display: "table-row" }}>
                         <input
                             className="is-checkradio is-small"

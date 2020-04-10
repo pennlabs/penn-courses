@@ -15,11 +15,11 @@ export default function Footer() {
                 {" "}
                 by
                 {" "}
-                <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
+                <a href="http://pennlabs.org" target="_blank" rel="noopener noreferrer">Penn Labs</a>
                 {" "}
                 and
                 {" "}
-                <a href="https://github.com/benb116" target="_blank">Ben Bernstein</a>
+                <a href="https://github.com/benb116" target="_blank" rel="noopener noreferrer">Ben Bernstein</a>
                 <br />
                 Have feedback about Penn Course Plan? Let us know
                 {" "}

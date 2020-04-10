@@ -40,7 +40,7 @@ const ModalContainer = ({
 const bigModals = { WELCOME: true };
 
 ModalContainer.propTypes = {
-    title: PropTypes.string.isRequired,
+    title: PropTypes.string,
     close: PropTypes.func.isRequired,
     dispatch: PropTypes.func.isRequired,
     modalProps: PropTypes.objectOf(PropTypes.any),

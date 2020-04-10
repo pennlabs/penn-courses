@@ -297,7 +297,7 @@ function buildCourseSearchUrl(filterData) {
             !== JSON.stringify(checkboxDefaultFields[i])) {
             const applied = [];
             Object.keys(filterData[checkboxFields[i]])
-                .map((item) => { // eslint-disable-line
+                .forEach((item) => { // eslint-disable-line
                     if (filterData[checkboxFields[i]][item] === 1) {
                         applied.push(item);
                     }
@@ -494,7 +494,8 @@ export const fetchBackendSchedulesAndInitializeCart = (cart, shouldInitCart,
             }
             onComplete(schedules);
         })
-        .catch(error => console.log(error, "Not logged in")); // eslint-disable-line
+        // eslint-disable-next-line no-console
+        .catch(error => console.log(error, "Not logged in"));
 };
 
 export const creationSuccessful = (name, id) => ({

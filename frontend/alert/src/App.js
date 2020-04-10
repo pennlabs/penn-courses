@@ -3,6 +3,7 @@ import "./App.css";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
+import { Toast, ToastType } from "./components/Toast";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
@@ -148,6 +149,8 @@ const Nav = ({ login, logout, user }) => (
         </NavElt>
         <NavElt href="/">Home</NavElt>
         <NavElt href="/manage">Manage Alerts</NavElt>
+        <Toast type={ToastType.Warning} course="CIS-160-001" />
+
     </NavContainer>
 );
 

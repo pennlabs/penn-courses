@@ -84,6 +84,7 @@ export default function CourseDetails({
             }
             <a
                 target="_blank"
+                rel="noopener noreferrer"
                 className="button is-small pcr-svg"
                 type="button"
                 href={`https://penncoursereview.com/course/${(id)}`}
