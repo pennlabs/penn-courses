@@ -25,6 +25,8 @@ applications:
       hosts:
         - host: penncourseplan.com
           paths: ["/api", "/admin", "/accounts", "/assets"]
+        - host: beta.penncoursealert.com
+          paths: ["/api", "/admin", "/accounts", "/assets"]
     extraEnv:
       - name: DJANGO_SETTINGS_MODULE
         value: PennCourses.settings.production
