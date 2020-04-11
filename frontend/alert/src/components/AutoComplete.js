@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
+import AwesomeDebouncePromise from "awesome-debounce-promise";
 
-const suggestionsFor = (search) => [search];
+const suggestionsFor = (search) => fetch(`/api/alert/courses?search=${search}`)
+    .then(res => res.json());
+
+const suggestionsDebounced = AwesomeDebouncePromise(
+    suggestionsFor,
+    500,
+);
 
 const Suggestions = styled.div`
     position: absolute;
@@ -19,20 +26,23 @@ const Suggestions = styled.div`
 
 const AutoComplete = ({ children }) => {
     const inputRef = useRef();
-    const [inputVal, setInputVal] = useState("");
+    const [suggestions, setSuggestions] = useState([]);
     const childWithRef = React.cloneElement(children, { ref: inputRef });
 
     useEffect(() => {
         if (inputRef.current) {
-            inputRef.current.addEventListener("keyup", ({target: {value}}) => setInputVal(value));
+            inputRef.current.addEventListener("keyup", ({target: {value}}) => {
+                suggestionsDebounced(value).then(setSuggestions);
+            });
         }
     }, [inputRef]);
 
-    const suggestions = inputVal &&
+    return <>
+        {childWithRef}
         <Suggestions below={inputRef.current}>
-            {suggestionsFor(inputVal)}
-        </Suggestions>;
-    return <>{childWithRef} {suggestions}</>;
+            {suggestions.map(suggestion => <p>{suggestion}</p>)}
+        </Suggestions>
+    </>;
 };
 
 export default AutoComplete;
