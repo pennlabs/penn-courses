@@ -7,6 +7,7 @@ import { Toast, ToastType } from "./components/Toast";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
+import AutoComplete from "./components/AutoComplete";
 
 const Container = styled.div`
     display: flex;
@@ -169,7 +170,9 @@ const Heading = () => (
 
 const AlertForm = ({ onSubmit, user }) => (
     <>
-        <Input autocomplete="off" placeholder="Course" />
+        <AutoComplete>
+            <Input autocomplete="off" placeholder="Course" />
+        </AutoComplete>
         <Input placeholder="Email" value={user && user.profile.email} />
         <Input placeholder="Phone" value={user && user.profile.phone} />
         <Center>
