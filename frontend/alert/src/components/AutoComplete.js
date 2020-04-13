@@ -33,14 +33,49 @@ const Suggestions = styled.div`
     max-height: 20rem;
     overflow-y: scroll;
     background-color: white;
-    padding-top: 0.5rem;
+    padding-top: 0;
     z-index:5000;
     padding-bottom: 0.5rem;
     border-color: grey;
     border-width: 1px;
     border-style: solid;
-    text-align: center;
+    text-align: left;
 `;
+
+const SuggestionBox = styled.div`
+    border-bottom-style: solid;
+    border-width: 1px;
+    border-color: #d6d6d6;
+    padding-left: 0.5rem;
+    padding-bottom: 1rem;
+    cursor: pointer;
+    transition: 180ms ease background;
+    &:hover {
+        background-color: rgb(220, 220, 220);
+    }
+`;
+
+const SuggestionTitle = styled.div`
+   color: #282828;
+   font-size: 1.1rem;
+   font-family: Inter Medium;
+   padding-top: 0.5rem;
+`;
+
+const SuggestionSubtitle = styled.div`
+   color: #282828;
+   font-size: 1rem;
+   padding-top: 0.4rem;
+   font-family: Inter Regular;
+`;
+
+const Suggestion = ({courseCode, title, instructor}) => (
+    <SuggestionBox>
+        <SuggestionTitle>{courseCode}</SuggestionTitle>
+        <SuggestionSubtitle>{title}</SuggestionSubtitle>
+        <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
+    </SuggestionBox>
+);
 
 const AutoComplete = ({ children }) => {
     const inputRef = useRef();
@@ -77,7 +112,11 @@ const AutoComplete = ({ children }) => {
         <div ref={useOnClickOutside(() => setActive(false), !show)}>
             {childWithRef}
             <Suggestions below={inputRef.current} hidden={!show}>
-                {suggestions.map(suggestion => <p>{suggestion.section_id}</p>)}
+                {suggestions.map(suggestion =>
+                    <Suggestion courseCode={suggestion.section_id}
+                                title={suggestion.course_title}
+                                instructor={suggestion.instructors[0]}/>)
+                }
             </Suggestions>
         </div>
     );
