@@ -3,6 +3,8 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { useOnClickOutside } from "./shared/useOnClickOutside";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHistory } from "@fortawesome/free-solid-svg-icons";
 
 /* A function that takes in a search term and returns a promise with both the search term and
 the search results.
@@ -36,7 +38,7 @@ const Suggestions = styled.div`
     padding-top: 0;
     z-index:5000;
     padding-bottom: 0.5rem;
-    border-color: grey;
+    border-color: #d6d6d6;
     border-width: 1px;
     border-style: solid;
     text-align: left;
@@ -48,6 +50,9 @@ const SuggestionBox = styled.div`
     border-color: #d6d6d6;
     padding-left: 0.5rem;
     padding-bottom: 1rem;
+    display: flex;
+    justify-content: stretch;
+    flex-direction: row;
     cursor: pointer;
     transition: 180ms ease background;
     &:hover {
@@ -57,23 +62,43 @@ const SuggestionBox = styled.div`
 
 const SuggestionTitle = styled.div`
    color: #282828;
-   font-size: 1.1rem;
+   font-size: 1rem;
    font-family: Inter Medium;
    padding-top: 0.5rem;
 `;
 
 const SuggestionSubtitle = styled.div`
    color: #282828;
-   font-size: 1rem;
+   font-size: 0.9rem;
    padding-top: 0.4rem;
    font-family: Inter Regular;
 `;
 
+const IconContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    flex-basis: 20%;
+`;
+
+const SuggestionLeftCol = styled.div`
+   max-width: 80%;
+   flex-basis: 80%;
+   flex-grow: 1;
+`;
+
 const Suggestion = ({courseCode, title, instructor}) => (
     <SuggestionBox>
-        <SuggestionTitle>{courseCode}</SuggestionTitle>
-        <SuggestionSubtitle>{title}</SuggestionSubtitle>
-        <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
+        <SuggestionLeftCol>
+            <SuggestionTitle>{courseCode}</SuggestionTitle>
+            <SuggestionSubtitle>{title}</SuggestionSubtitle>
+            <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
+        </SuggestionLeftCol>
+        <IconContainer>
+            <FontAwesomeIcon icon={faHistory} color={"#c4c4c4"}/>
+        </IconContainer>
     </SuggestionBox>
 );
 
