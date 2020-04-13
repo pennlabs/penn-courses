@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
-import { useOnClickOutside } from "./shared/useOnClickOutside";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHistory } from "@fortawesome/free-solid-svg-icons";
+import { useOnClickOutside } from "./shared/useOnClickOutside";
 
 /* A function that takes in a search term and returns a promise with both the search term and
 the search results.
@@ -89,7 +89,7 @@ const SuggestionLeftCol = styled.div`
    flex-grow: 1;
 `;
 
-const Suggestion = ({courseCode, title, instructor}) => (
+const Suggestion = ({ courseCode, title, instructor }) => (
     <SuggestionBox>
         <SuggestionLeftCol>
             <SuggestionTitle>{courseCode}</SuggestionTitle>
@@ -97,10 +97,16 @@ const Suggestion = ({courseCode, title, instructor}) => (
             <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
         </SuggestionLeftCol>
         <IconContainer>
-            <FontAwesomeIcon icon={faHistory} color={"#c4c4c4"}/>
+            <FontAwesomeIcon icon={faHistory} color="#c4c4c4" />
         </IconContainer>
     </SuggestionBox>
 );
+
+Suggestion.propTypes = {
+    courseCode: PropTypes.string,
+    title: PropTypes.string,
+    instructor: PropTypes.string,
+};
 
 const AutoComplete = ({ children }) => {
     const inputRef = useRef();
@@ -137,10 +143,13 @@ const AutoComplete = ({ children }) => {
         <div ref={useOnClickOutside(() => setActive(false), !show)}>
             {childWithRef}
             <Suggestions below={inputRef.current} hidden={!show}>
-                {suggestions.map(suggestion =>
-                    <Suggestion courseCode={suggestion.section_id}
-                                title={suggestion.course_title}
-                                instructor={suggestion.instructors[0]}/>)
+                {suggestions.map(suggestion => (
+                    <Suggestion
+                        courseCode={suggestion.section_id}
+                        title={suggestion.course_title}
+                        instructor={suggestion.instructors[0]}
+                    />
+                ))
                 }
             </Suggestions>
         </div>
