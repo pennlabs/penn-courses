@@ -4,11 +4,15 @@ import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { useOnClickOutside } from "./shared/useOnClickOutside";
 
 const suggestionsFor = (search) => fetch(`/api/alert/courses?search=${search}`)
-    .then(res => res.json());
+    .then(res => res.json()
+        .then(searchResult => ({
+            searchResult,
+            searchTerm: search
+        })));
 
 const suggestionsDebounced = AwesomeDebouncePromise(
     suggestionsFor,
-    500,
+    250,
 );
 
 const Suggestions = styled.div`
@@ -41,8 +45,17 @@ const AutoComplete = ({ children }) => {
     useEffect(() => {
         if (inputRef.current) {
             inputRef.current.addEventListener("keyup", ({ target: { value } }) => {
-                suggestionsDebounced(value)
-                    .then(setSuggestions);
+                if (!value) {
+                    setSuggestions([]);
+                } else {
+                    suggestionsDebounced(value)
+                        .then(({searchResult, searchTerm}) => {
+                            // make sure the search term is not stale
+                            if (searchTerm === value) {
+                                setSuggestions(searchResult);
+                            }
+                        })
+                }
             });
         }
     }, [inputRef]);
