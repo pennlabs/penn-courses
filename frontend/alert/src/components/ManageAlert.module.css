@@ -22,3 +22,8 @@ input[type=search]{
    -webkit-appearance: none; /* safari, chrome, edge and ie mobile */
    appearance: none; /* rest */
 }
+
+.headerbuttons > * {
+    display: block;
+    margin-right: 0.4rem;
+}

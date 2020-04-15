@@ -4,6 +4,8 @@ import PropTypes from "prop-types";
 import Logo from "../assets/PCA_logo.svg";
 import Bell from "../assets/bell.svg";
 import XBell from "../assets/bell-off.svg";
+import Trash from "../assets/trash.svg";
+import ABell from "../assets/abell.svg";
 import Search from "../assets/search.svg";
 import styles from "./ManageAlert.module.css";
 
@@ -45,6 +47,7 @@ const SearchInput = styled.input`
 `;
 
 const RightItem = styled.div`
+    height: 100%;
     display: flex;
     align-items: center;
     margin-left: auto;
@@ -53,7 +56,12 @@ const RightItem = styled.div`
 const HeaderText = styled.p`
     font-size: 0.7rem;
     font-weight: bold;
-    color: #9ea0a7;
+    color: ${(props) => (props.color ? props.color : "#9ea0a7")};
+`;
+
+const HeaderAction = styled(HeaderText)`
+    margin-right: 1rem;
+    cursor: pointer;
 `;
 
 const TitleText = styled.p`
@@ -124,7 +132,7 @@ const Img = styled.img`
     height: ${(props) => props.height};
 `;
 
-const Header = () => {
+const Header = ({ selected }) => {
     const headings = ["LAST NOTIFIED", "COURSE ID", "STATUS", "REPEAT", "ACTIONS"];
 
     return (
@@ -132,15 +140,44 @@ const Header = () => {
             <GridItem column="1" row="1" color="#f8f8f8" halign valign>
                 <input type="checkbox" />
             </GridItem>
-            {headings.map((heading, i) => (
-                <GridItem key={`header${i}`} column={(i + 2).toString()} row="1" color="#f8f8f8" valign>
-                    <HeaderText>{heading}</HeaderText>
-                </GridItem>
-            ))}
+            {!selected
+             && headings.map((heading, i) => (
+                 // eslint-disable-next-line
+                 <GridItem key={`header${i}`} column={(i + 2).toString()} row="1" color="#f8f8f8" valign>
+                     <HeaderText>{heading}</HeaderText>
+                 </GridItem>
+             ))}
+
+            {selected
+             && (
+                 <>
+                     <GridItem column="2" row="1" color="#f8f8f8" valign>
+                         <HeaderText color="#489be8">{`${selected} SELECTED`}</HeaderText>
+                     </GridItem>
+                     <GridItem column="3/7" row="1" color="#f8f8f8" valign>
+                         <RightItem>
+                             <Flex valign className={styles.headerbuttons}>
+                                 <Img src={ABell} width="0.5rem" height="0.5rem" />
+                                 <HeaderAction>RESUBSCRIBE</HeaderAction>
+                             </Flex>
+                             <Flex valign className={styles.headerbuttons}>
+                                 <Img src={XBell} width="0.5rem" height="0.5rem" />
+                                 <HeaderAction>CANCEL</HeaderAction>
+                             </Flex>
+                             <Flex valign className={styles.headerbuttons}>
+                                 <Img src={Trash} width="0.5rem" height="0.5rem" />
+                                 <HeaderAction>DELETE</HeaderAction>
+                             </Flex>
+                         </RightItem>
+                     </GridItem>
+                 </>
+             )}
 
         </>
     );
 };
+
+Header.propTypes = { selected: PropTypes.number };
 
 export const ManageAlertHeader = () => (
     <Flex margin="-3.4rem 0rem 0rem 0rem">
@@ -204,9 +241,12 @@ const ActionButton = ({ type }) => {
     );
 };
 
+ActionButton.propTypes = { type: PropTypes.oneOf([1, 2]) };
 
 
-const AlertItem = ({ date, course, status, repeat, actions, rownum }) => {
+const AlertItem = ({
+    date, course, status, repeat, actions, rownum,
+}) => {
     let statustext;
     let statuscolor;
     let alerttext;
@@ -241,8 +281,6 @@ const AlertItem = ({ date, course, status, repeat, actions, rownum }) => {
     }
 
 
-
-
     return (
         <>
             <GridItem column="1" row={rownum} border halign valign>
@@ -268,36 +306,43 @@ const AlertItem = ({ date, course, status, repeat, actions, rownum }) => {
     );
 };
 
-
-export const ManageAlert = () => {
-    return (
-        <Container>
-            <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign halign>
-                <TitleText>Alert Management</TitleText>
-                <RightItem className={styles.alertmodifiers} >
-                    <P size="0.7rem" margin="0rem 2rem 0rem 0rem">Sort by Last Notified</P>
-                    <AlertSearch />
-                </RightItem>
-            </Flex>
-            <Grid>
-                <Header />
-                <AlertItem
-                    rownum={2}
-                    date="9/12/2017 at 6:30PM"
-                    course="CIS-120-001"
-                    status={AlertStatus.Open}
-                    repeat={AlertRepeat.Inactive}
-                    actions={AlertAction.Cancel}
-                />
-                <AlertItem
-                    rownum={3}
-                    date="9/12/2017 at 6:30PM"
-                    course="CIS-120-001"
-                    status={AlertStatus.Closed}
-                    repeat={AlertRepeat.EOS}
-                    actions={AlertAction.Resubscribe}
-                />               
-            </Grid>
-        </Container>
-    );
+AlertItem.propTypes = {
+    date: PropTypes.string,
+    course: PropTypes.string,
+    status: PropTypes.oneOf([1, 2]),
+    repeat: PropTypes.oneOf([1, 2, 3]),
+    actions: PropTypes.oneOf([1, 2]),
+    rownum: PropTypes.number,
 };
+
+
+export const ManageAlert = () => (
+    <Container>
+        <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign halign>
+            <TitleText>Alert Management</TitleText>
+            <RightItem className={styles.alertmodifiers}>
+                <P size="0.7rem" margin="0rem 2rem 0rem 0rem">Sort by Last Notified</P>
+                <AlertSearch />
+            </RightItem>
+        </Flex>
+        <Grid>
+            <Header selected={2} />
+            <AlertItem
+                rownum={2}
+                date="9/12/2017 at 6:30PM"
+                course="CIS-120-001"
+                status={AlertStatus.Open}
+                repeat={AlertRepeat.Inactive}
+                actions={AlertAction.Cancel}
+            />
+            <AlertItem
+                rownum={3}
+                date="9/12/2017 at 6:30PM"
+                course="CIS-120-001"
+                status={AlertStatus.Closed}
+                repeat={AlertRepeat.EOS}
+                actions={AlertAction.Resubscribe}
+            />
+        </Grid>
+    </Container>
+);
