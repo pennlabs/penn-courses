@@ -10,6 +10,11 @@
     "bulma-extensions": "^6.2.7",
     "bulma-popover": "^1.0.0",
     "cross-fetch": "^3.0.4",
+    "eslint-config-airbnb": "^17.1.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.16.0",
+    "eslint-plugin-flowtype": "^4.7.0",
     "prop-types": "^15.7.2",
     "rc-slider": "^8.7.1",
     "react": "^16.13.0",
@@ -24,10 +29,13 @@
     "react-truncate-markup": "^4.1.0",
     "redux": "^4.0.4",
     "redux-thunk": "^2.3.0",
-    "scroll-into-view-if-needed": "^2.2.22"
+    "scroll-into-view-if-needed": "^2.2.22",
+    "styled-components": "^5.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "cpx \"../shared-components/src/**/*\" src/components/shared && react-scripts start && fg",
+    "sync-watch": "cpx \"../shared-components/src/**/*\" src/components/shared --watch",
+    "sync": "cpx \"../shared-components/src/**/*\" src/components/shared",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -44,10 +52,7 @@
     "not op_mini all"
   ],
   "devDependencies": {
-    "eslint-config-airbnb": "^17.1.1",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-jsx-a11y": "^6.2.3",
-    "eslint-plugin-react": "^7.16.0",
+    "cpx": "^1.5.0",
     "redux-logger": "^3.0.6"
   }
 }

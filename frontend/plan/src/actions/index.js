@@ -297,7 +297,7 @@ function buildCourseSearchUrl(filterData) {
             !== JSON.stringify(checkboxDefaultFields[i])) {
             const applied = [];
             Object.keys(filterData[checkboxFields[i]])
-                .forEach((item) => {
+                .forEach((item) => { // eslint-disable-line
                     if (filterData[checkboxFields[i]][item] === 1) {
                         applied.push(item);
                     }

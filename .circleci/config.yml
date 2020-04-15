@@ -28,10 +28,16 @@ jobs:
           paths:
             - frontend/plan/node_modules
       - run:
-          name: Lint
+          name: Sync shared components
+          command: |
+            cd frontend/plan/
+            npm run sync
+      - run:
+          name: Lint PCP
           command: |
             cd frontend/plan
             npm run lint
+
   pca-lint:
     working_directory: ~/pennlabs
     docker:
@@ -49,10 +55,38 @@ jobs:
           paths:
             - frontend/alert/node_modules
       - run:
+          name: Sync shared components
+          command: |
+            cd frontend/alert
+            npm run sync
+      - run:
           name: Lint PCA
           command: |
             cd frontend/alert
             npm run lint
+
+  shared-lint:
+    working_directory: ~/pennlabs
+    docker:
+      - image: circleci/node:10
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "frontend/shared-components/package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: |
+            cd frontend/shared-components && npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "frontend/shared-components/package-lock.json" }}
+          paths:
+            - frontend/shared-components/node_modules
+      - run:
+          name: Lint Shared Components
+          command: |
+            cd frontend/shared-components
+            npm run lint
+
 
 workflows:
   version: 2
@@ -69,6 +103,7 @@ workflows:
       #     project-location: frontend/plan
       - pcp-lint
       - pca-lint
+      - shared-lint
       - docker/publish:
           name: publish-backend
           requires:
@@ -83,6 +118,7 @@ workflows:
           name: publish-plan
           requires:
             - pcp-lint
+            - shared-lint
           path: frontend/plan
           cache_from: "pennlabs/pcp-frontend:latest"
           image: "pennlabs/pcp-frontend"
@@ -93,6 +129,7 @@ workflows:
           name: publish-alert
           requires:
             - pca-lint
+            - shared-lint
           path: frontend/alert
           cache_from: "pennlabs/pca-frontend:latest"
           image: "pennlabs/pca-frontend"

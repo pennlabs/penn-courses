@@ -20,7 +20,7 @@ import {
     clearFilter,
     updateSearch, clearAllScheduleData
 } from "../../actions";
-import AccountIndicator from "../accounts/AccountIndicator";
+import AccountIndicator from "../shared/accounts/AccountIndicator";
 import { login, logout } from "../../actions/login";
 
 function shouldSearch(filterData) {
@@ -269,9 +269,13 @@ function SearchBar({
                     <AccountIndicator
                         user={user}
                         login={login}
-                        logout={logout}
+                        backgroundColor="purple"
+                        nameLength={1}
+                        logout={() => {
+                            logout();
+                            clearScheduleData();
+                        }}
                         onLeft={false}
-                        clearScheduleData={clearScheduleData}
                     />
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { useOnClickOutside } from "./useOnClickOutside";
+import { useOnClickOutside } from "./shared/useOnClickOutside";
 
 export function DropdownButton({
     title, children, filterData, defaultFilter, clearFilter,

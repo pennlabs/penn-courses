@@ -1,4 +1,4 @@
-.env
+.env*
 .vscode
 .idea/
 .DS_Store
@@ -15,3 +15,5 @@ PennCourses/settings/static/
 *-test.json
 celerybeat-schedule
 pcr-backup*
+
+# frontend/*/src/components/shared
