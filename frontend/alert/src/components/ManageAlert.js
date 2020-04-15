@@ -38,7 +38,7 @@ const SearchFlex = styled(Flex)`
 `;
 
 const SearchInput = styled.input`
-    background: transparent;
+    background-color: transparent;
     border: none;
     outline: none;
     width: 10rem;
@@ -91,6 +91,7 @@ const Input = styled.input`
 
 const Button = styled.button`
     outline: none;
+    height: 1.97rem;
     width: 5rem;
     border: solid 0.5px #489be8;
     border-radius: 0rem 0.2rem 0.2rem 0rem;
@@ -295,7 +296,7 @@ export const ManageAlert = () => {
                     status={AlertStatus.Closed}
                     repeat={AlertRepeat.EOS}
                     actions={AlertAction.Resubscribe}
-                />
+                />               
             </Grid>
         </Container>
     );

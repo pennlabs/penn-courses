@@ -4,7 +4,7 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
 import { Toast, ToastType } from "./components/Toast";
-import { ManageAlert, ManageAlertHeader } from "./ManageAlert";
+import { ManageAlert, ManageAlertHeader } from "./components/ManageAlert";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
 
@@ -136,8 +136,7 @@ const Nav = () => (
     <NavContainer>
         <NavElt href="/">Home</NavElt>
         <NavElt href="/manage">Manage Alerts</NavElt>
-        <Toast type={ToastType.Warning} course="CIS-160-001" />
-
+        {/* <Toast type={ToastType.Warning} course="CIS-160-001" /> */}
     </NavContainer>
 );
 
