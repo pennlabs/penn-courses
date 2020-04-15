@@ -27,7 +27,7 @@ const NameBubble = styled.div`
             : "#656565";
     }};
     &:hover {
-        background: ${(props) => (props.color === "purple" ? "#9399DB" : "#444444")};
+        background: ${props => (props.color === "purple" ? "#9399DB" : "#444444")};
     };
 `;
 
@@ -39,7 +39,7 @@ const InnerMenu = styled.div`
     padding: 0.32rem;
     font-size: 0.85rem;
     box-shadow: 0 0 5px 0 lightgrey;
-    right: ${(props) => (props.onLeft ? "0%" : "61%")}
+    right: ${props => (props.onLeft ? "0%" : "61%")}
 `;
 
 const NameContainer = styled.p`

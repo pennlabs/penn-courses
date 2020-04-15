@@ -18,8 +18,8 @@ const Container = styled.div`
 
 const Flex = styled.div`
     display: flex;
-    flex-direction: ${(props) => (props.col ? "column" : "row")};
-    align-items: ${(props) => props.align || "center"};
+    flex-direction: ${props => (props.col ? "column" : "row")};
+    align-items: ${props => props.align || "center"};
 `;
 
 const Tagline = styled.h3`
@@ -115,7 +115,7 @@ const NavElt = styled.a`
     display: flex;
     flex-direction: column;
     justify-content: center;
-    font-weight: ${(props) => (props.href
+    font-weight: ${props => (props.href
         === `/${
             window.location.href.split("/")[
                 window.location.href.split("/").length - 1
