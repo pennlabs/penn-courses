@@ -11,6 +11,7 @@ from courses.serializers import (
     CourseListSerializer,
     MiniSectionSerializer,
     RequirementListSerializer,
+    SectionDetailSerializer,
     StatusUpdateSerializer,
     UserSerializer,
 )
@@ -51,6 +52,12 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     @staticmethod
     def get_semester_field():
         return "course__semester"
+
+
+class SectionDetail(generics.ListAPIView, BaseCourseMixin):
+    serializer_class = SectionDetailSerializer
+    queryset = Section.with_reviews.all()
+    lookup_field = "full_code"
 
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
