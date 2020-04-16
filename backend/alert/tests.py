@@ -638,7 +638,7 @@ class CourseStatusUpdateTestCase(TestCase):
         self.client = APIClient()
 
     def test_cis120(self):
-        response = self.client.get("/statusupdate/CIS-120/")
+        response = self.client.get("/statusupdate/CIS-120-001/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[0]["old_status"], "O")
@@ -651,7 +651,7 @@ class CourseStatusUpdateTestCase(TestCase):
         self.assertFalse(hasattr(response.data[1], "request_body"))
 
     def test_cis160(self):
-        response = self.client.get("/statusupdate/CIS-160/")
+        response = self.client.get("/statusupdate/CIS-160-001/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]["old_status"], "C")

@@ -112,7 +112,7 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
 class StatusUpdateView(generics.ListAPIView):
     serializer_class = StatusUpdateSerializer
     http_method_names = ["get"]
-    lookup_field = "full_code"
+    lookup_field = "section__full_code"
 
     def get_queryset(self):
-        return StatusUpdate.objects.filter(Q(section__course__full_code=self.kwargs["full_code"]))
+        return StatusUpdate.objects.filter(Q(section__full_code=self.kwargs["full_code"]))
