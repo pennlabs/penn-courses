@@ -54,7 +54,7 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
         return "course__semester"
 
 
-class SectionDetail(generics.ListAPIView, BaseCourseMixin):
+class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     serializer_class = SectionDetailSerializer
     queryset = Section.with_reviews.all()
     lookup_field = "full_code"
