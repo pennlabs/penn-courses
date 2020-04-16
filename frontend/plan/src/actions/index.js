@@ -325,6 +325,7 @@ export function fetchCourseSearch(filterData) {
         dispatch(updateSearchRequest());
         debouncedCourseSearch(dispatch, filterData)
             .then(res => res.json())
+            .then(res => res.filter(course => course.num_sections > 0))
             .then(res => batch(() => {
                 dispatch(updateScrollPos());
                 dispatch(updateSearch(res));
