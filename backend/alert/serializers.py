@@ -31,4 +31,5 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "notification_sent",
             "notification_sent_at",
             "deleted_at",
+            "is_active",
         ]
