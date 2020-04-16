@@ -301,7 +301,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     "notification": "You've already registered to get alerts for %s!"
                     % normalized_course_code
                 },
-                status=status.HTTP_202_ACCEPTED,
+                status=status.HTTP_409_CONFLICT,
             )
         elif res == RegStatus.COURSE_NOT_FOUND:
             return Response(

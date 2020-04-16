@@ -1053,6 +1053,7 @@ class AlertRegistrationTestCase(TestCase):
     def check_model_with_response_data(self, model, data):
         self.assertEqual(model.id, data["id"])
         self.assertEqual(model.user.username, data["user"])
+        self.assertEqual(model.is_active, data["is_active"])
         self.assertEqual(model.section.full_code, data["section"])
         self.assertEqual(model.deleted, data["deleted"])
         self.assertEqual(model.deleted_at, self.convert_date(data["deleted_at"]))
@@ -1354,6 +1355,28 @@ class AlertRegistrationTestCase(TestCase):
     def test_resubscribe_to_old_auto_resub(self):
         ids = self.create_auto_resubscribe_group()
         self.resubscribe_to_old_helper(ids, True)
+
+    def register_for_existing_helper(self, ids):
+        response = self.client.post(
+            "/api/registrations/",
+            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(409, response.status_code)
+        self.assertTrue(Registration.objects.get(id=ids["first_id"]).is_active)
+        response = self.client.post(
+            "/api/registrations/",
+            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(409, response.status_code)
+        self.assertFalse(Registration.objects.get(id=ids["second_id"]).is_active)
+        self.assertFalse(Registration.objects.get(id=ids["third_id"]).is_active)
+        self.assertTrue(Registration.objects.get(id=ids["fourth_id"]).is_active)
+
+    def test_register_for_existing(self):
+        ids = self.create_resubscribe_group()
+        self.register_for_existing_helper(ids)
 
     def registrations_multiple_users_helper(self, ids, auto_resub=False):
         new_user = User.objects.create_user(username="new_jacob", password="top_secret")
