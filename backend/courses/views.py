@@ -11,6 +11,7 @@ from courses.serializers import (
     CourseListSerializer,
     MiniSectionSerializer,
     RequirementListSerializer,
+    SectionDetailSerializer,
     StatusUpdateSerializer,
     UserSerializer,
 )
@@ -50,6 +51,15 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
 
     @staticmethod
     def get_semester_field():
+        return "course__semester"
+
+
+class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
+    serializer_class = SectionDetailSerializer
+    queryset = Section.with_reviews.all()
+    lookup_field = "full_code"
+
+    def get_semester_field(self):
         return "course__semester"
 
 
@@ -112,7 +122,7 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
 class StatusUpdateView(generics.ListAPIView):
     serializer_class = StatusUpdateSerializer
     http_method_names = ["get"]
-    lookup_field = "full_code"
+    lookup_field = "section__full_code"
 
     def get_queryset(self):
-        return StatusUpdate.objects.filter(Q(section__course__full_code=self.kwargs["full_code"]))
+        return StatusUpdate.objects.filter(Q(section__full_code=self.kwargs["full_code"]))
