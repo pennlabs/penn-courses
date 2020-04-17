@@ -1357,7 +1357,6 @@ class AlertRegistrationTestCase(TestCase):
         self.resubscribe_to_old_helper(ids, True)
 
     def test_register_for_existing(self):
-        ids = self.create_resubscribe_group()
         num = Registration.objects.count()
         response = self.client.post(
             "/api/registrations/",
