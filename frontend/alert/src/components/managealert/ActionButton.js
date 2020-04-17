@@ -19,6 +19,8 @@ const ActionButtonFlex = styled(Flex)`
     }
 `;
 
+// Component associated with Resubscribe and Cancel buttons
+// for each alert
 export const ActionButton = ({ type }) => {
     let img;
     let primary;

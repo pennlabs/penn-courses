@@ -23,6 +23,8 @@ const SearchBarFlex = styled(Flex)`
     }
 `;
 
+// Component for search filter
+// in alert management
 export const AlertSearch = () => (
     <SearchFlex valign>
         <SearchBarFlex valign margin="0.2rem">

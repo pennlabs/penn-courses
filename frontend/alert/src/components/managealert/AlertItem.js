@@ -19,6 +19,7 @@ const StatusGridItem = styled(GridItem)`
     }
 `;
 
+// Component for an alert entry (renders as a row in CSS grid)
 export const AlertItem = ({
     date, course, status, repeat, actions, rownum,
 }) => {

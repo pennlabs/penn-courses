@@ -1,5 +1,8 @@
 import styled from "styled-components";
 
+// A collection of style components used in
+// alert management
+
 export const Flex = styled.div`
     display: flex;
     margin: ${props => props.margin};

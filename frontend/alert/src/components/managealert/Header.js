@@ -30,6 +30,9 @@ const HeaderRightItem = styled(RightItem)`
     margin-right: 0.5rem;
 `;
 
+// Component for table header in alert management
+// Renders column titles or "x selected" depending
+// on if alerts are selected
 const Header = ({ selected }) => {
     const headings = ["LAST NOTIFIED", "COURSE ID", "STATUS", "REPEAT", "ACTIONS"];
 
