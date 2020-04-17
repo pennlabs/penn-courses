@@ -272,8 +272,6 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
         section_code = request.data.get("section", None)
-        email_address = request.user.profile.email
-        phone = request.user.profile.phone
 
         if request.data.get("section", None) is None:
             return Response(
@@ -283,7 +281,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         res, normalized_course_code, reg = register_for_course(
             course_code=section_code, source="PCA", user=request.user,
-            auto_resub=request.data.get('auto_resubscribe', False)
+            auto_resub=request.data.get("auto_resubscribe", False)
         )
 
         if res == RegStatus.SUCCESS:
