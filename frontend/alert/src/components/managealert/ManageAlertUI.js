@@ -80,7 +80,7 @@ export const ManageAlertHeader = () => (
     </Flex>
 );
 
-export const ManageAlert = () => (
+export const ManageAlert = ({ alerts }) => (
     <Container>
         <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign halign>
             <TitleText>Alert Management</TitleText>
@@ -90,23 +90,19 @@ export const ManageAlert = () => (
             </RightItemAlertFilter>
         </Flex>
         <Grid>
-            <Header selected={2} />
-            <AlertItem
-                rownum={2}
-                date="9/12/2017 at 6:30PM"
-                course="CIS-120-001"
-                status={AlertStatus.Open}
-                repeat={AlertRepeat.Inactive}
-                actions={AlertAction.Cancel}
-            />
-            <AlertItem
-                rownum={3}
-                date="9/12/2017 at 6:30PM"
-                course="CIS-120-001"
-                status={AlertStatus.Closed}
-                repeat={AlertRepeat.EOS}
-                actions={AlertAction.Resubscribe}
-            />
+            <Header />
+            {alerts.map((alert,i) => {
+                console.log(alert);
+                return <AlertItem
+                    rownum={i+2}
+                    date={alert.date}
+                    course={alert.section}
+                    status={alert.status}
+                    repeat={alert.repeat}
+                    actions={alert.actions}
+                />
+            })}
+
         </Grid>
     </Container>
 );

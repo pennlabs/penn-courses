@@ -63,7 +63,18 @@ export const AlertItem = ({
                 <input type="checkbox" />
             </GridItem>
             <GridItem column="2" row={rownum} border valign>
-                <P size="0.7rem">{date}</P>
+                {
+                    date
+                        ? <P size="0.7rem">{date}</P>
+                        : (
+                            <P
+                                size="0.7rem"
+                                color="#b2b2b2"
+                            >
+                                No alerts sent yet
+                            </P>
+                        )
+                }
             </GridItem>
             <GridItem column="3" row={rownum} border valign>
                 <P size="0.7rem">{course}</P>

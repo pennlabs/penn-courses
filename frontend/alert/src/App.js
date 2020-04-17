@@ -3,6 +3,8 @@ import "./App.css";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
+import { ManageAlertHeader } from "./components/managealert/ManageAlertUI";
+import { ManageAlertWrapper } from "./components/ManageAlertLogic";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
@@ -191,11 +193,12 @@ function App() {
     return (
         <Container>
             <Nav login={setUser} logout={() => setUser(null)} user={user} />
-            <Flex col>
-                <Heading />
-                <AlertForm onSubmit={onSubmit} user={user} />
-            </Flex>
-            {/* <ManageAlertHeader /> */}
+            {/* <Flex col> */}
+            {/*     <Heading /> */}
+            {/*     <AlertForm onSubmit={onSubmit} user={user} /> */}
+            {/* </Flex> */}
+            <ManageAlertHeader />
+            <ManageAlertWrapper />
             {/* <ManageAlert /> */}
             <Footer>
                 Made with
