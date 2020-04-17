@@ -5,6 +5,8 @@ import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
+import Footer from "./components/Footer";
+
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
 
 const Container = styled.div`
@@ -19,6 +21,7 @@ const Flex = styled.div`
     display: flex;
     flex-direction: ${props => (props.col ? "column" : "row")};
     align-items: ${props => props.align || "center"};
+    flex-grow: ${props => props.grow || 0}
 `;
 
 const Tagline = styled.h3`
@@ -61,17 +64,7 @@ const Center = styled.div`
     text-align: center;
 `;
 
-const Footer = styled.div`
-    color: #999999;
-    font-size: 0.8rem;
-    text-align: center;
-    position: absolute;
-    bottom: 15px;
-    width: 100%;
-    padding-top: 3em;
-    padding-bottom: 3em;
-    line-height: 1.5;
-`;
+
 
 const SubmitButton = styled.button`
     border-radius: 5px;
@@ -191,35 +184,14 @@ function App() {
     return (
         <Container>
             <Nav login={setUser} logout={() => setUser(null)} user={user} />
-            <Flex col>
+            <Flex col grow={1}>
                 <Heading />
                 <AlertForm onSubmit={onSubmit} user={user} />
             </Flex>
             {/* <ManageAlertHeader /> */}
             {/* <ManageAlert /> */}
-            <Footer>
-                Made with
-                {" "}
-                <span className="icon is-small">
-                    <i className="fa fa-heart" style={{ color: "red" }} />
-                </span>
-                {" "}
-                by
-                {" "}
-                <a
-                    href="http://pennlabs.org"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                >
-                    Penn Labs
-                </a>
-                {" "}
-                .
-                <br />
-                Have feedback about Penn Course Alert? Let us know
-                {" "}
-                <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
-            </Footer>
+
+            <Footer />
         </Container>
     );
 }
