@@ -1358,22 +1358,20 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_register_for_existing(self):
         ids = self.create_resubscribe_group()
+        num = Registration.objects.count()
         response = self.client.post(
             "/api/registrations/",
             json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(409, response.status_code)
-        self.assertFalse(Registration.objects.get(id=ids["first_id"]).is_active)
         response = self.client.post(
             "/api/registrations/",
             json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(409, response.status_code)
-        self.assertFalse(Registration.objects.get(id=ids["second_id"]).is_active)
-        self.assertFalse(Registration.objects.get(id=ids["third_id"]).is_active)
-        self.assertTrue(Registration.objects.get(id=ids["fourth_id"]).is_active)
+        self.assertEqual(num, Registration.objects.count())
 
     def registrations_multiple_users_helper(self, ids, auto_resub=False):
         new_user = User.objects.create_user(username="new_jacob", password="top_secret")
