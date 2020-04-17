@@ -3,7 +3,7 @@ import "./App.css";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
-// import { ManageAlert, ManageAlertHeader } from "./components/ManageAlert";
+// import { ManageAlert, ManageAlertHeader } from "./components/ManageAlertUI";
 
 import { maxWidth, minWidth, PHONE } from "./constants";
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";

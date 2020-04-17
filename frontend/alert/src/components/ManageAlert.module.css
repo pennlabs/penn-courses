@@ -1,29 +1,6 @@
-.actionbutton > * {
-    display: block;
-    margin: 0.1rem;
-}
-
-.status > * {
-    display: block;
-    margin: 0.2rem;
-}
-
-.search > * {
-    display: block;
-    margin: 0.1rem;
-}
-
-.alertmodifiers > * {
-    display: block;
-}
-
 input[type=search]{
    -moz-appearance: none;/* older firefox */
    -webkit-appearance: none; /* safari, chrome, edge and ie mobile */
    appearance: none; /* rest */
 }
 
-.headerbuttons > * {
-    display: block;
-    margin-right: 0.4rem;
-}
