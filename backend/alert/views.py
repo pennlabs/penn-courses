@@ -272,8 +272,6 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
         section_code = request.data.get("section", None)
-        email_address = request.user.profile.email
-        phone = request.user.profile.phone
 
         if request.data.get("section", None) is None:
             return Response(
@@ -282,7 +280,10 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
         res, normalized_course_code, reg = register_for_course(
-            section_code, email_address, phone, "PCA", None, request
+            course_code=section_code,
+            source="PCA",
+            user=request.user,
+            auto_resub=request.data.get("auto_resubscribe", False),
         )
 
         if res == RegStatus.SUCCESS:
@@ -300,7 +301,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     "notification": "You've already registered to get alerts for %s!"
                     % normalized_course_code
                 },
-                status=status.HTTP_202_ACCEPTED,
+                status=status.HTTP_409_CONFLICT,
             )
         elif res == RegStatus.COURSE_NOT_FOUND:
             return Response(
