@@ -1,12 +1,12 @@
 import React from "react";
 import styled from "styled-components";
 // import PropTypes from "prop-types";
-import Header from "./managealert/Header";
-import Logo from "../assets/PCA_logo.svg";
-import { RightItem, P, Flex } from "./managealert/ManageAlertStyledComponents";
-import { AlertSearch } from "./managealert/AlertSearch";
-import { AlertItem } from "./managealert/AlertItem";
-import { AlertAction, AlertStatus, AlertRepeat } from "./managealert/AlertItemEnums";
+import Header from "./Header";
+import Logo from "../../assets/PCA_logo.svg";
+import { RightItem, P, Flex } from "./ManageAlertStyledComponents";
+import { AlertSearch } from "./AlertSearch";
+import { AlertItem } from "./AlertItem";
+import { AlertAction, AlertStatus, AlertRepeat } from "./AlertItemEnums";
 import "./ManageAlert.module.css";
 
 const Container = styled.div`
