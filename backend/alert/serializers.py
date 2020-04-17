@@ -7,6 +7,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
     section = serializers.SlugRelatedField(slug_field="full_code", read_only=True)
     user = serializers.SlugRelatedField(slug_field="username", read_only=True)
 
+    is_active = serializers.SerializerMethodField()
+
+    def get_is_active(self, o):
+        return o.is_active
+
     class Meta:
         model = Registration
         fields = [
@@ -21,6 +26,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "notification_sent",
             "notification_sent_at",
             "deleted_at",
+            "is_active",
         ]
         read_only_fields = [
             "created_at",
@@ -31,5 +37,4 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "notification_sent",
             "notification_sent_at",
             "deleted_at",
-            "is_active",
         ]

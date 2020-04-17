@@ -267,10 +267,15 @@ class Registration(models.Model):
 
 
 def register_for_course(
-    course_code, email_address=None, phone=None, source=SOURCE_PCA, api_key=None, user=None,
-        auto_resub=False
+    course_code,
+    email_address=None,
+    phone=None,
+    source=SOURCE_PCA,
+    api_key=None,
+    user=None,
+    auto_resub=False,
 ):
-    if not email_address and not phone:
+    if not email_address and not phone and not user:
         return RegStatus.NO_CONTACT_INFO, None, None
     try:
         course, section = get_course_and_section(course_code, get_current_semester())
@@ -282,16 +287,21 @@ def register_for_course(
         return RegStatus.COURSE_NOT_FOUND, None, None
 
     if user is None:
-        registration = Registration(section=section, email=email_address, phone=phone,
-                                    source=source)
+        registration = Registration(
+            section=section, email=email_address, phone=phone, source=source
+        )
         registration.validate_phone()
         if Registration.objects.filter(
-                section=section, email=email_address, phone=registration.phone, is_active=True
+            section=section,
+            email=email_address,
+            phone=registration.phone,
+            notification_sent=False,
+            deleted=False,
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
     else:
         if Registration.objects.filter(
-                section=section, user=user, is_active=True
+            section=section, user=user, notification_sent=False, deleted=False
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
         registration = Registration(section=section, user=user, source=source)

@@ -280,8 +280,10 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
         res, normalized_course_code, reg = register_for_course(
-            course_code=section_code, source="PCA", user=request.user,
-            auto_resub=request.data.get("auto_resubscribe", False)
+            course_code=section_code,
+            source="PCA",
+            user=request.user,
+            auto_resub=request.data.get("auto_resubscribe", False),
         )
 
         if res == RegStatus.SUCCESS:
