@@ -75,7 +75,8 @@ const DropdownItemBox = styled.div`
 const SuggestionTitle = styled.div`
    color: #282828;
    font-size: 1rem;
-   font-family: Inter Medium;
+   font-family: 'Inter', sans-serif;
+   font-weight: bold;
    padding-top: 0.5rem;
 `;
 
@@ -83,7 +84,7 @@ const SuggestionSubtitle = styled.div`
    color: #282828;
    font-size: 0.9rem;
    padding-top: 0.4rem;
-   font-family: Inter Regular;
+   font-family: 'Inter', sans-serif;
 `;
 
 const IconContainer = styled.div`
