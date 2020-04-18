@@ -147,7 +147,7 @@ const Heading = () => (
 
 const AlertForm = ({ onSubmit, user }) => (
     <>
-        <AutoComplete/>
+        <AutoComplete />
         <Input placeholder="Email" value={user && user.profile.email} />
         <Input placeholder="Phone" value={user && user.profile.phone} />
         <Center>

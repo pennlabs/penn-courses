@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
@@ -33,8 +33,7 @@ const SuggestionsContainer = styled.div`
     position: absolute;
     left: 0;
     top: 100%;
-    width: ${({ below }) =>
-    below && (below.getBoundingClientRect().width - AUTOCOMPLETE_BORDER_WIDTH * 2)}px;
+    width: ${({ below }) => below && (below.getBoundingClientRect().width - AUTOCOMPLETE_BORDER_WIDTH * 2)}px;
     visibility: ${({ hidden }) => (hidden ? "hidden" : "visible")};
     z-index:5000;
     text-align: left;
@@ -130,7 +129,7 @@ const Suggestion = ({ courseCode, title, instructor }) => (
             <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
         </SuggestionLeftCol>
         <IconContainer>
-            <FontAwesomeIcon icon={faHistory} color="#c4c4c4"/>
+            <FontAwesomeIcon icon={faHistory} color="#c4c4c4" />
         </IconContainer>
     </SuggestionBox>
 );
@@ -157,9 +156,8 @@ const generateBackdrop = (value, suggestions) => {
         .toLowerCase() === value.charAt(0);
     if (valueIsLower) {
         return suggestion.toLowerCase();
-    } else {
-        return suggestion;
     }
+    return suggestion;
 };
 
 const AutoComplete = () => {
@@ -191,15 +189,22 @@ const AutoComplete = () => {
 
     return (
         <AutoCompleteContainer
-            inputHeight={inputRef && inputRef.getBoundingClientRect().height + "px"}
-            ref={useOnClickOutside(() => setActive(false), !show)}>
-            <AutoCompleteInput autocomplete="off" placeholder="Course" ref={setInputRef}
-                               onClick={() => setActive(true)}/>
-            <AutoCompleteInputBackground autocomplete="off"
-                                         value={generateBackdrop(
-                                             inputRef && inputRef.value,
-                                             show && suggestions
-                                         )}/>
+            inputHeight={inputRef && `${inputRef.getBoundingClientRect().height}px`}
+            ref={useOnClickOutside(() => setActive(false), !show)}
+        >
+            <AutoCompleteInput
+                autocomplete="off"
+                placeholder="Course"
+                ref={setInputRef}
+                onClick={() => setActive(true)}
+            />
+            <AutoCompleteInputBackground
+                autocomplete="off"
+                value={generateBackdrop(
+                    inputRef && inputRef.value,
+                    show && suggestions
+                )}
+            />
             <SuggestionsContainer below={inputRef} hidden={!show}>
                 <SuggestionsBox>
                     {suggestions.map(suggestion => (
