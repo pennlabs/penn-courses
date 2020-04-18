@@ -15,6 +15,7 @@ const Container = styled.div`
     max-width: 80rem;
     min-height: 70%;
     box-shadow: 0 0.1rem 0.2rem 0 rgba(0, 0, 0, 0.08);
+    flex-grow: 1;
 `;
 
 const TitleText = styled.p`
