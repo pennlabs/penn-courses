@@ -121,8 +121,10 @@ const Container = styled.div`
     height: ${props => props.inputHeight};
 `;
 
-const Suggestion = ({ courseCode, title, instructor }) => (
-    <DropdownItemBox>
+const Suggestion = ({
+    onClick, courseCode, title, instructor,
+}) => (
+    <DropdownItemBox onClick={onClick}>
         <DropdownItemLeftCol>
             <SuggestionTitle>{courseCode}</SuggestionTitle>
             <SuggestionSubtitle>{title}</SuggestionSubtitle>
@@ -138,6 +140,7 @@ Suggestion.propTypes = {
     courseCode: PropTypes.string,
     title: PropTypes.string,
     instructor: PropTypes.string,
+    onClick: PropTypes.func,
 };
 
 /**
@@ -202,13 +205,14 @@ const AutoComplete = () => {
                 autocomplete="off"
                 placeholder="Course"
                 ref={setInputRef}
+                value={value}
                 onChange={({ target: { value: newValue } }) => {
                     setValue(newValue);
                 }}
                 onKeyDown={(e) => {
                     // autocomplete with backdrop when the right arrow key is pressed
                     if (e.keyCode === 39 && inputRef && suggestions && suggestions[0]) {
-                        inputRef.value = backdrop;
+                        setValue(backdrop);
                     }
                 }}
                 onClick={() => setActive(true)}
@@ -223,6 +227,7 @@ const AutoComplete = () => {
                         <Suggestion
                             key={suggestion.section_id}
                             courseCode={suggestion.section_id}
+                            onClick={() => { setValue(suggestion.section_id); }}
                             title={suggestion.course_title}
                             instructor={suggestion.instructors[0]}
                         />
