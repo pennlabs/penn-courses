@@ -29,7 +29,7 @@ const suggestionsDebounced = AwesomeDebouncePromise(
 
 const AUTOCOMPLETE_BORDER_WIDTH = 1;
 
-const SuggestionsContainer = styled.div`
+const DropdownContainer = styled.div`
     position: absolute;
     left: 0;
     top: 100%;
@@ -39,7 +39,7 @@ const SuggestionsContainer = styled.div`
     text-align: left;
 `;
 
-const SuggestionsBox = styled.div`
+const DropdownBox = styled.div`
     padding-bottom: 0.5rem;
     border-color: #d6d6d6;
     border-width: ${AUTOCOMPLETE_BORDER_WIDTH}px;
@@ -56,7 +56,7 @@ const SuggestionsBox = styled.div`
     }
 `;
 
-const SuggestionBox = styled.div`
+const DropdownItemBox = styled.div`
     border-bottom-style: solid;
     border-width: 1px;
     border-color: #d6d6d6;
@@ -95,7 +95,7 @@ const IconContainer = styled.div`
     flex-basis: 20%;
 `;
 
-const SuggestionLeftCol = styled.div`
+const DropdownItemLeftCol = styled.div`
    max-width: 80%;
    flex-basis: 80%;
    flex-grow: 1;
@@ -113,7 +113,7 @@ const AutoCompleteInputBackground = styled(AutoCompleteInput)`
     color: grey;
 `;
 
-const AutoCompleteContainer = styled.div`
+const Container = styled.div`
     position: relative;
     display: block;
     margin-bottom: 1rem;
@@ -122,16 +122,16 @@ const AutoCompleteContainer = styled.div`
 `;
 
 const Suggestion = ({ courseCode, title, instructor }) => (
-    <SuggestionBox>
-        <SuggestionLeftCol>
+    <DropdownItemBox>
+        <DropdownItemLeftCol>
             <SuggestionTitle>{courseCode}</SuggestionTitle>
             <SuggestionSubtitle>{title}</SuggestionSubtitle>
             <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
-        </SuggestionLeftCol>
+        </DropdownItemLeftCol>
         <IconContainer>
             <FontAwesomeIcon icon={faHistory} color="#c4c4c4" />
         </IconContainer>
-    </SuggestionBox>
+    </DropdownItemBox>
 );
 
 Suggestion.propTypes = {
@@ -194,7 +194,7 @@ const AutoComplete = () => {
 
 
     return (
-        <AutoCompleteContainer
+        <Container
             inputHeight={inputRef && `${inputRef.getBoundingClientRect().height}px`}
             ref={useOnClickOutside(() => setActive(false), !show)}
         >
@@ -217,8 +217,8 @@ const AutoComplete = () => {
                 autocomplete="off"
                 value={backdrop}
             />
-            <SuggestionsContainer below={inputRef} hidden={!show}>
-                <SuggestionsBox>
+            <DropdownContainer below={inputRef} hidden={!show}>
+                <DropdownBox>
                     {suggestions.map(suggestion => (
                         <Suggestion
                             key={suggestion.section_id}
@@ -228,9 +228,9 @@ const AutoComplete = () => {
                         />
                     ))
                     }
-                </SuggestionsBox>
-            </SuggestionsContainer>
-        </AutoCompleteContainer>
+                </DropdownBox>
+            </DropdownContainer>
+        </Container>
     );
 };
 
