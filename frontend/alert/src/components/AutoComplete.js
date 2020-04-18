@@ -57,21 +57,6 @@ const SuggestionsBox = styled.div`
     }
 `;
 
-const SuggestionBackdrop = styled.div`
-    position: absolute;
-    left: ${({ behind }) => behind && behind.getBoundingClientRect().left}px;
-    top: ${({ behind }) => behind && behind.getBoundingClientRect().top}px;
-    width: ${({ behind }) => behind && behind.getBoundingClientRect().width}px;
-    height: ${({ behind }) => behind && behind.getBoundingClientRect().height}px;
-    color: #d1d1d1;
-    font-family: Inter Regular;
-    font-size: 1rem;
-    padding: 0.4rem 1rem;
-    border-radius: 5px;
-    margin-top: 0.5rem;
-    z-index: -1;
-`;
-
 const SuggestionBox = styled.div`
     border-bottom-style: solid;
     border-width: 1px;
@@ -119,6 +104,14 @@ const SuggestionLeftCol = styled.div`
 
 const AutoCompleteInput = styled(Input)`
     position: absolute;
+    background: transparent;
+    z-index: 1;
+`;
+
+const AutoCompleteInputBackground = styled(AutoCompleteInput)`
+    background: white;
+    z-index: 0;
+    color: grey;
 `;
 
 const AutoCompleteContainer = styled.div`
@@ -146,6 +139,27 @@ Suggestion.propTypes = {
     courseCode: PropTypes.string,
     title: PropTypes.string,
     instructor: PropTypes.string,
+};
+
+/**
+ * Given a current input value and a list of suggestions, generates the backdrop text for the
+ * autocomplete input
+ * @param value
+ * @param suggestions
+ * @return {string|*}
+ */
+const generateBackdrop = (value, suggestions) => {
+    if (!value || !suggestions || !suggestions[0]) {
+        return "";
+    }
+    const suggestion = suggestions[0].section_id;
+    const valueIsLower = value.charAt(0)
+        .toLowerCase() === value.charAt(0);
+    if (valueIsLower) {
+        return suggestion.toLowerCase();
+    } else {
+        return suggestion;
+    }
 };
 
 const AutoComplete = () => {
@@ -181,6 +195,11 @@ const AutoComplete = () => {
             ref={useOnClickOutside(() => setActive(false), !show)}>
             <AutoCompleteInput autocomplete="off" placeholder="Course" ref={setInputRef}
                                onClick={() => setActive(true)}/>
+            <AutoCompleteInputBackground autocomplete="off"
+                                         value={generateBackdrop(
+                                             inputRef && inputRef.value,
+                                             show && suggestions
+                                         )}/>
             <SuggestionsContainer below={inputRef} hidden={!show}>
                 <SuggestionsBox>
                     {suggestions.map(suggestion => (
