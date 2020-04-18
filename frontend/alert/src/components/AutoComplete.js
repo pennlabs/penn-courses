@@ -170,6 +170,7 @@ const AutoComplete = () => {
     const [inputRef, setInputRef] = useState(null);
     const [value, setValue] = useState("");
     const [suggestions, setSuggestions] = useState([]);
+    const [rawSuggestions, setRawSuggestions] = useState(null);
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
 
@@ -183,16 +184,20 @@ const AutoComplete = () => {
     }, [inputRef, show, suggestions, value]);
 
     useEffect(() => {
+        if (rawSuggestions) {
+            const {searchResult, searchTerm} = rawSuggestions;
+            if (searchTerm === value) {
+                setSuggestions(searchResult);
+            }
+        }
+    }, [rawSuggestions, value]);
+
+    useEffect(() => {
         if (!value) {
             setSuggestions([]);
         } else {
             suggestionsDebounced(value)
-                .then(({ searchResult, searchTerm }) => {
-                    // make sure the search term is not stale
-                    if (searchTerm === value) {
-                        setSuggestions(searchResult);
-                    }
-                });
+                .then(setRawSuggestions);
         }
     }, [value]);
 
