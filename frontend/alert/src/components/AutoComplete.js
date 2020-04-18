@@ -129,7 +129,7 @@ const Suggestion = ({ courseCode, title, instructor }) => (
             <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
         </SuggestionLeftCol>
         <IconContainer>
-            <FontAwesomeIcon icon={faHistory} color="#c4c4c4" />
+            <FontAwesomeIcon icon={faHistory} color="#c4c4c4"/>
         </IconContainer>
     </SuggestionBox>
 );
@@ -151,41 +151,47 @@ const generateBackdrop = (value, suggestions) => {
     if (!value || !suggestions || !suggestions[0]) {
         return "";
     }
-    const suggestion = suggestions[0].section_id;
+    let suggestion = suggestions[0].section_id;
     const valueIsLower = value.charAt(0)
         .toLowerCase() === value.charAt(0);
     if (valueIsLower) {
-        return suggestion.toLowerCase();
+        suggestion = suggestion.toLowerCase();
     }
+    // prevent issues where a lag in suggestions updating causes weird overlap
+    suggestion = value + suggestion.substring(value.length);
     return suggestion;
 };
 
 const AutoComplete = () => {
     const [inputRef, setInputRef] = useState(null);
+    const [value, setValue] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [active, setActive] = useState(false);
-
-    /* Wait for the input ref to be ready, and then add a listener for when the user types in the
-    search box */
-    useEffect(() => {
-        if (inputRef) {
-            inputRef.addEventListener("keyup", ({ target: { value } }) => {
-                if (!value) {
-                    setSuggestions([]);
-                } else {
-                    suggestionsDebounced(value)
-                        .then(({ searchResult, searchTerm }) => {
-                            // make sure the search term is not stale
-                            if (searchTerm === value) {
-                                setSuggestions(searchResult);
-                            }
-                        });
-                }
-            });
-        }
-    }, [inputRef]);
+    const [backdrop, setBackdrop] = useState("");
 
     const show = active && suggestions.length > 0;
+
+    useEffect(() => {
+        setBackdrop(generateBackdrop(
+            inputRef && value,
+            show && suggestions
+        ));
+    }, [show, suggestions, value]);
+
+    useEffect(() => {
+        if (!value) {
+            setSuggestions([]);
+        } else {
+            suggestionsDebounced(value)
+                .then(({ searchResult, searchTerm }) => {
+                    // make sure the search term is not stale
+                    if (searchTerm === value) {
+                        setSuggestions(searchResult);
+                    }
+                });
+        }
+    }, [value]);
+
 
     return (
         <AutoCompleteContainer
@@ -196,20 +202,20 @@ const AutoComplete = () => {
                 autocomplete="off"
                 placeholder="Course"
                 ref={setInputRef}
+                onChange={({ target: { value: newValue } }) => {
+                    setValue(newValue);
+                }}
                 onKeyDown={e => {
                     // autocomplete with backdrop when the right arrow key is pressed
                     if (e.keyCode === 39 && inputRef && suggestions && suggestions[0]) {
-                        inputRef.value = generateBackdrop(inputRef.value, suggestions);
+                        inputRef.value = backdrop;
                     }
                 }}
                 onClick={() => setActive(true)}
             />
             <AutoCompleteInputBackground
                 autocomplete="off"
-                value={generateBackdrop(
-                    inputRef && inputRef.value,
-                    show && suggestions
-                )}
+                value={backdrop}
             />
             <SuggestionsContainer below={inputRef} hidden={!show}>
                 <SuggestionsBox>
