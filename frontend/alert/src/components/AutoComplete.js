@@ -196,6 +196,12 @@ const AutoComplete = () => {
                 autocomplete="off"
                 placeholder="Course"
                 ref={setInputRef}
+                onKeyDown={e => {
+                    // autocomplete with backdrop when the right arrow key is pressed
+                    if (e.keyCode === 39 && inputRef && suggestions && suggestions[0]) {
+                        inputRef.value = generateBackdrop(inputRef.value, suggestions);
+                    }
+                }}
                 onClick={() => setActive(true)}
             />
             <AutoCompleteInputBackground
