@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ManageAlert, ManageAlertHeader } from "./managealert/ManageAlertUI";
 import { AlertStatus, AlertRepeat, AlertAction } from "./managealert/AlertItemEnums";
+import getCsrf from "../csrf";
 
 const fetchAlerts = () => {
     return fetch("/api/alert/api/registrationhistory")
@@ -67,6 +68,38 @@ const filterAlerts = (alerts, filter) => (
     })
 );
 
+// callback is now specifically used to refresh the registration alert list
+// TODO: This might cause race conditions if people click on the action
+// buttons in succession, which triggers multiple refreshes
+// Can be solved by wrapping the fetchAlerts query with a debouncer
+//
+// Side note: how should errors be handled here?
+const actionHandler = callback => (id, actionenum) => {
+    let body;
+    switch (actionenum) {
+        case AlertAction.Resubscribe:
+            body = { deleted: false, auto_resubscribe: true, notification_sent: true };
+            break;
+        case AlertAction.Cancel:
+            body = { deleted: true, auto_resubscribe: false, notification_sent: true };
+            break;
+        default:
+    }
+
+    fetch(`/api/alert/api/registrations/${id}/`, {
+        method: "PUT",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(body),
+    })
+        .then(res => callback());
+};
+
 export const ManageAlertWrapper = () => {
     // alerts processed directly from registrationhistory
     const [alerts, setAlerts] = useState([]);
@@ -106,6 +139,7 @@ export const ManageAlertWrapper = () => {
                 alerts={currAlerts}
                 alertSel={alertSel}
                 setAlertSel={setAlertSel}
+                actionHandler={actionHandler(() => processAlerts(setAlerts))}
             />
         </>
     );

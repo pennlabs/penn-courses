@@ -85,7 +85,7 @@ export const ManageAlertHeader = () => {
 
 
 
-export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter }) => {
+export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter, actionHandler }) => {
     const toggleAlert = id => () => {
         setAlertSel({ ...alertSel, [id]: !alertSel[id] });
     };
@@ -126,6 +126,7 @@ export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter }
                         repeat={alert.repeat}
                         actions={alert.actions}
                         toggleAlert={toggleAlert(alert.id)}
+                        actionHandler={() => actionHandler(alert.id, alert.actions)}
                     />
                 ))}
 
