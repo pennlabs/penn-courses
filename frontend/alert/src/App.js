@@ -4,7 +4,7 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
 
-import { maxWidth, minWidth, PHONE } from "./constants";
+import { maxWidth, PHONE } from "./constants";
 import Footer from "./components/Footer";
 
 import { ManageAlert } from "./components/managealert/ManageAlertUI";
