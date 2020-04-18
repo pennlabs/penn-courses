@@ -27,22 +27,24 @@ const suggestionsDebounced = AwesomeDebouncePromise(
     SUGGESTION_INTERVAL,
 );
 
+const AUTOCOMPLETE_BORDER_WIDTH = 1;
+
 const SuggestionsContainer = styled.div`
     position: absolute;
     left: 0;
     top: 100%;
-    width: ${({ below }) => below && below.getBoundingClientRect().width}px;
+    width: ${({ below }) =>
+    below && (below.getBoundingClientRect().width - AUTOCOMPLETE_BORDER_WIDTH * 2)}px;
     visibility: ${({ hidden }) => (hidden ? "hidden" : "visible")};
     z-index:5000;
     text-align: left;
 `;
 
 const SuggestionsBox = styled.div`
-    margin-left: 0.5rem;
     padding-bottom: 0.5rem;
     border-color: #d6d6d6;
-    border-width: 1px;
-    margin-top: 0.5rem;
+    border-width: ${AUTOCOMPLETE_BORDER_WIDTH}px;
+    margin-top: 0.7rem;
     margin-right: 0;
     width: 100%;
     border-style: solid;
@@ -179,13 +181,11 @@ const AutoComplete = () => {
             ref={useOnClickOutside(() => setActive(false), !show)}>
             <AutoCompleteInput autocomplete="off" placeholder="Course" ref={setInputRef}
                                onClick={() => setActive(true)}/>
-            {suggestions.length > 0 &&
-            <SuggestionBackdrop
-                behind={inputRef}>{suggestions[0].section_id}</SuggestionBackdrop>}
             <SuggestionsContainer below={inputRef} hidden={!show}>
                 <SuggestionsBox>
                     {suggestions.map(suggestion => (
                         <Suggestion
+                            key={suggestion.section_id}
                             courseCode={suggestion.section_id}
                             title={suggestion.course_title}
                             instructor={suggestion.instructors[0]}

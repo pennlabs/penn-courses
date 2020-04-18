@@ -8,7 +8,8 @@ export const Input = styled.input`
     font-size: 1.4rem;
     padding: 0.5rem 1rem;
     border-radius: 5px;
-    margin: 0.6rem;
+    margin-bottom: 0.6rem;
+    margin-top: 0.6rem;
     :focus {
         box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.25);
     }
