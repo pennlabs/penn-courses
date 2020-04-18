@@ -6,8 +6,14 @@ import Logo from "./assets/PCA_logo.svg";
 import { ManageAlertHeader } from "./components/managealert/ManageAlertUI";
 import { ManageAlertWrapper } from "./components/ManageAlertLogic";
 
-import { maxWidth, minWidth, PHONE } from "./constants";
+import { maxWidth, PHONE } from "./constants";
+import Footer from "./components/Footer";
+
+import { ManageAlert } from "./components/managealert/ManageAlertUI";
+
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
+import AutoComplete from "./components/AutoComplete";
+import { Input } from "./components/Input";
 
 const Container = styled.div`
     display: flex;
@@ -21,6 +27,7 @@ const Flex = styled.div`
     display: flex;
     flex-direction: ${props => (props.col ? "column" : "row")};
     align-items: ${props => props.align || "center"};
+    flex-grow: ${props => props.grow || 0}
 `;
 
 const Tagline = styled.h3`
@@ -35,45 +42,10 @@ const Header = styled.h1`
     }
 `;
 
-const Input = styled.input`
-    outline: none;
-    border: 1px solid #d6d6d6;
-    color: #4a4a4a;
-    font-size: 1.4rem;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    margin: 0.6rem;
-    :focus {
-        box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.25);
-    }
-    ::placeholder {
-        color: #d0d0d0;
-    }
-
-    ${maxWidth(PHONE)} {
-        max-width: 320px;
-    }
-
-    ${minWidth(PHONE)} {
-        width: 320px;
-    }
-`;
-
 const Center = styled.div`
     text-align: center;
 `;
 
-const Footer = styled.div`
-    color: #999999;
-    font-size: 0.8rem;
-    text-align: center;
-    position: absolute;
-    bottom: 15px;
-    width: 100%;
-    padding-top: 3em;
-    padding-bottom: 3em;
-    line-height: 1.5;
-`;
 
 const SubmitButton = styled.button`
     border-radius: 5px;
@@ -116,14 +88,7 @@ const NavElt = styled.a`
     display: flex;
     flex-direction: column;
     justify-content: center;
-    font-weight: ${props => (props.href
-        === `/${
-            window.location.href.split("/")[
-                window.location.href.split("/").length - 1
-            ]
-        }`
-        ? "bold"
-        : "normal")};
+    font-weight: ${props => (props.active ? "bold" : "normal")};
 `;
 
 const AlertText = styled.div`
@@ -136,7 +101,9 @@ const Dropdown = styled.span`
     font-weight: bold;
 `;
 
-const Nav = ({ login, logout, user }) => (
+const Nav = ({
+    login, logout, user, page, setPage,
+}) => (
     <NavContainer>
         <NavElt>
             <AccountIndicator
@@ -148,8 +115,8 @@ const Nav = ({ login, logout, user }) => (
                 logout={logout}
             />
         </NavElt>
-        <NavElt href="/">Home</NavElt>
-        <NavElt href="/manage">Manage Alerts</NavElt>
+        <NavElt href="/" active={page === "home"} onClick={(e) => { e.preventDefault(); setPage("home"); }}>Home</NavElt>
+        <NavElt href="/manage" active={page === "manage"} onClick={(e) => { e.preventDefault(); setPage("manage"); }}>Manage Alerts</NavElt>
         {/* <Toast type={ToastType.Warning} course="CIS-160-001" /> */}
     </NavContainer>
 );
@@ -157,6 +124,8 @@ const Nav = ({ login, logout, user }) => (
 Nav.propTypes = {
     login: PropTypes.func.isRequired,
     logout: PropTypes.func.isRequired,
+    page: PropTypes.string.isRequired,
+    setPage: PropTypes.func.isRequired,
     user: PropTypes.objectOf(PropTypes.any),
 };
 
@@ -169,7 +138,7 @@ const Heading = () => (
 
 const AlertForm = ({ onSubmit, user }) => (
     <>
-        <Input autocomplete="off" placeholder="Course" />
+        <AutoComplete />
         <Input placeholder="Email" value={user && user.profile.email} />
         <Input placeholder="Phone" value={user && user.profile.phone} />
         <Center>
@@ -190,38 +159,30 @@ AlertForm.propTypes = {
 function App() {
     const onSubmit = () => {};
     const [user, setUser] = useState(null);
+    const [page, setPage] = useState("home");
     return (
         <Container>
-            <Nav login={setUser} logout={() => setUser(null)} user={user} />
-            {/* <Flex col> */}
-            {/*     <Heading /> */}
-            {/*     <AlertForm onSubmit={onSubmit} user={user} /> */}
-            {/* </Flex> */}
-            <ManageAlertWrapper />
-            {/* <ManageAlert /> */}
-            <Footer>
-                Made with
-                {" "}
-                <span className="icon is-small">
-                    <i className="fa fa-heart" style={{ color: "red" }} />
-                </span>
-                {" "}
-                by
-                {" "}
-                <a
-                    href="http://pennlabs.org"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                >
-                    Penn Labs
-                </a>
-                {" "}
-                .
-                <br />
-                Have feedback about Penn Course Alert? Let us know
-                {" "}
-                <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
-            </Footer>
+            <Nav
+                login={setUser}
+                logout={() => setUser(null)}
+                user={user}
+                page={page}
+                setPage={setPage}
+            />
+            {page === "home" ? (
+                <Flex col grow={1}>
+                    <Heading />
+                    <AlertForm onSubmit={onSubmit} user={user} />
+                </Flex>
+            )
+                : (
+                    <>
+                        <ManageAlertWrapper />
+                    </>
+                )}
+
+
+            <Footer />
         </Container>
     );
 }

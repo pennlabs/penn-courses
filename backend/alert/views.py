@@ -431,4 +431,4 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Registration.objects.filter(user=self.request.user)
+        return Registration.objects.filter(user=self.request.user).prefetch_related("section")
