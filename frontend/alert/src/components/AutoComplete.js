@@ -129,7 +129,7 @@ const Suggestion = ({ courseCode, title, instructor }) => (
             <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
         </SuggestionLeftCol>
         <IconContainer>
-            <FontAwesomeIcon icon={faHistory} color="#c4c4c4"/>
+            <FontAwesomeIcon icon={faHistory} color="#c4c4c4" />
         </IconContainer>
     </SuggestionBox>
 );
@@ -176,7 +176,7 @@ const AutoComplete = () => {
             inputRef && value,
             show && suggestions
         ));
-    }, [show, suggestions, value]);
+    }, [inputRef, show, suggestions, value]);
 
     useEffect(() => {
         if (!value) {
@@ -205,7 +205,7 @@ const AutoComplete = () => {
                 onChange={({ target: { value: newValue } }) => {
                     setValue(newValue);
                 }}
-                onKeyDown={e => {
+                onKeyDown={(e) => {
                     // autocomplete with backdrop when the right arrow key is pressed
                     if (e.keyCode === 39 && inputRef && suggestions && suggestions[0]) {
                         inputRef.value = backdrop;
