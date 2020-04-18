@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
-// import PropTypes from "prop-types";
+import PropTypes from "prop-types";
 import Header from "./Header";
 import Logo from "../../assets/PCA_logo.svg";
 import { RightItem, P, Flex } from "./ManageAlertStyledComponents";
@@ -63,46 +63,76 @@ const RightItemAlertFilter = styled(RightItem)`
     }
 `;
 
-export const ManageAlertHeader = () => (
-    <Flex margin="-3.4rem 0rem 0rem 0rem">
-        <img
-            alt="Penn Course Alert logo"
-            src={Logo}
-            width="50rem"
-        />
-        <Flex col center valign halign margin="1.5rem 1.5rem 1.5rem 2rem" padding="2.2rem 0rem 0rem 0rem">
-            <Flex>
-                <Input placeholder="Course" />
-                <Button>Alert me</Button>
+export const ManageAlertHeader = () => {
+    return (
+        <Flex margin="-3.4rem 0rem 0rem 0rem">
+            <img
+                alt="Penn Course Alert logo"
+                src={Logo}
+                width="50rem"
+            />
+            <Flex col center valign halign margin="1.5rem 1.5rem 1.5rem 2rem" padding="2.2rem 0rem 0rem 0rem">
+                <Flex>
+                    <Input placeholder="Course" />
+                    <Button>Alert me</Button>
+                </Flex>
+                <P size="0.9rem" margin="1rem 0rem 0rem -3rem">Alert me until I cancel</P>
             </Flex>
-            <P size="0.9rem" margin="1rem 0rem 0rem -3rem">Alert me until I cancel</P>
         </Flex>
-    </Flex>
-);
+    );
+};
 
-export const ManageAlert = ({ alerts }) => (
-    <Container>
-        <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign halign>
-            <TitleText>Alert Management</TitleText>
-            <RightItemAlertFilter>
-                <P size="0.7rem" margin="0rem 2rem 0rem 0rem">Sort by Last Notified</P>
-                <AlertSearch />
-            </RightItemAlertFilter>
-        </Flex>
-        <Grid>
-            <Header />
-            {alerts.map((alert,i) => {
-                console.log(alert);
-                return <AlertItem
-                    rownum={i+2}
-                    date={alert.date}
-                    course={alert.section}
-                    status={alert.status}
-                    repeat={alert.repeat}
-                    actions={alert.actions}
-                />
-            })}
 
-        </Grid>
-    </Container>
-);
+
+export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter }) => {
+    const toggleAlert = id => () => {
+        setAlertSel({ ...alertSel, [id]: !alertSel[id] });
+    };
+
+    const [searchValue, setSearchValue] = useState("");
+    const [searchTimeout, setSearchTimeout] = useState();
+
+    const handleChange = (event) => {
+        const searchText = event.target.value;
+        setSearchValue(searchText);
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        setSearchTimeout(setTimeout(() => {
+            setFilter({ search: searchText });
+        }, 100));
+    };
+
+    return (
+        <Container>
+            <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign halign>
+                <TitleText>Alert Management</TitleText>
+                <RightItemAlertFilter>
+                    <P size="0.7rem" margin="0rem 2rem 0rem 0rem">Sort by Last Notified</P>
+                    <AlertSearch value={searchValue} onChange={handleChange}/>
+                </RightItemAlertFilter>
+            </Flex>
+            <Grid>
+                <Header selected={numSel} />
+                {alerts.map((alert, i) => (
+                    <AlertItem
+                        key={alert.id}
+                        checked={alertSel[alert.id]}
+                        rownum={i + 2}
+                        date={alert.date}
+                        course={alert.section}
+                        status={alert.status}
+                        repeat={alert.repeat}
+                        actions={alert.actions}
+                        toggleAlert={toggleAlert(alert.id)}
+                    />
+                ))}
+
+            </Grid>
+        </Container>
+    );
+};
+
+ManageAlert.propTypes = {
+    alerts: PropTypes.arrayOf(PropTypes.object),
+};

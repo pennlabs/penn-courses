@@ -21,7 +21,7 @@ const StatusGridItem = styled(GridItem)`
 
 // Component for an alert entry (renders as a row in CSS grid)
 export const AlertItem = ({
-    date, course, status, repeat, actions, rownum,
+    date, course, status, repeat, actions, rownum, checked, toggleAlert
 }) => {
     let statustext;
     let statuscolor;
@@ -60,7 +60,7 @@ export const AlertItem = ({
     return (
         <>
             <GridItem column="1" row={rownum} border halign valign>
-                <input type="checkbox" />
+                <input type="checkbox" checked={checked} onChange={toggleAlert} />
             </GridItem>
             <GridItem column="2" row={rownum} border valign>
                 {

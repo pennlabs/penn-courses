@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ManageAlert } from "./managealert/ManageAlertUI";
+import { ManageAlert, ManageAlertHeader } from "./managealert/ManageAlertUI";
 import { AlertStatus, AlertRepeat, AlertAction } from "./managealert/AlertItemEnums";
 
 const fetchAlerts = () => {
@@ -53,7 +53,7 @@ const processAlerts = (setAlerts) => {
                                 hour: "numeric",
                                 minute: "numeric",
                                 hour12: true,
-                            }).format(section.notification_sent_at);
+                            }).format(new Date(section.notification_sent_at));
                             datetime = `${date} at ${time}`;
                         }
 
@@ -72,6 +72,7 @@ const processAlerts = (setAlerts) => {
                         }
 
                         return {
+                            id: section.id,
                             section: section.section,
                             date: datetime,
                             status,
@@ -85,13 +86,56 @@ const processAlerts = (setAlerts) => {
         });
 };
 
+const filterAlerts = (alerts, filter) => (
+    alerts.filter((alert) => {
+        if (filter.search.length > 0) {
+            return alert.section.includes(filter.search.toUpperCase());
+        } else {
+            return true;
+        }
+    })
+);
 
 export const ManageAlertWrapper = () => {
+    // alerts processed directly from registrationhistory
     const [alerts, setAlerts] = useState([]);
+    // state tracking which alert has been selected/ticked
+    const [alertSel, setAlertSel] = useState({});
+    // alerts after passing through frontend filters
+    const [currAlerts, setCurrAlerts] = useState([]);
+    const [numSelected, setNumSelected] = useState(0);
+    const [filter, setFilter] = useState({ search: "" });
+
+    useEffect(() => {
+        setCurrAlerts(filterAlerts(alerts, filter));
+    }, [alerts, filter, setCurrAlerts]);
+
+    useEffect(() => {
+        const selMap = {};
+        alerts.forEach((alert) => {
+            selMap[alert.id] = false;
+        });
+        setAlertSel(selMap);
+    }, [alerts, setAlertSel]);
+
+    useEffect(() => {
+        setNumSelected(Object.values(alertSel).reduce((acc, x) => acc + x, 0));
+    }, [alertSel]);
+
     useEffect(() => {
         processAlerts(setAlerts);
     }, []);
 
-
-    return <ManageAlert alerts={alerts} />;
+    return (
+        <>
+            <ManageAlertHeader />
+            <ManageAlert
+                setFilter={setFilter}
+                numSel={numSelected}
+                alerts={currAlerts}
+                alertSel={alertSel}
+                setAlertSel={setAlertSel}
+            />
+        </>
+    );
 };

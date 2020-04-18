@@ -197,7 +197,6 @@ function App() {
             {/*     <Heading /> */}
             {/*     <AlertForm onSubmit={onSubmit} user={user} /> */}
             {/* </Flex> */}
-            <ManageAlertHeader />
             <ManageAlertWrapper />
             {/* <ManageAlert /> */}
             <Footer>

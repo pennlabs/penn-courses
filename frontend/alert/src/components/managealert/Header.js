@@ -41,7 +41,7 @@ const Header = ({ selected }) => {
             <GridItem column="1" row="1" color="#f8f8f8" halign valign>
                 <input type="checkbox" />
             </GridItem>
-            {!selected
+            {selected === 0
              && headings.map((heading, i) => (
                  // eslint-disable-next-line
                  <GridItem key={`header${i}`} column={(i + 2).toString()} row="1" color="#f8f8f8" valign>
@@ -49,7 +49,7 @@ const Header = ({ selected }) => {
                  </GridItem>
              ))}
 
-            {selected
+            {selected !== 0
              && (
                  <>
                      <GridItem column="2" row="1" color="#f8f8f8" valign>
