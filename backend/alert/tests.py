@@ -638,7 +638,7 @@ class CourseStatusUpdateTestCase(TestCase):
         self.client = APIClient()
 
     def test_cis120(self):
-        response = self.client.get("/statusupdate/CIS-120/")
+        response = self.client.get("/statusupdate/CIS-120-001/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[0]["old_status"], "O")
@@ -651,7 +651,7 @@ class CourseStatusUpdateTestCase(TestCase):
         self.assertFalse(hasattr(response.data[1], "request_body"))
 
     def test_cis160(self):
-        response = self.client.get("/statusupdate/CIS-160/")
+        response = self.client.get("/statusupdate/CIS-160-001/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]["old_status"], "C")
@@ -1053,6 +1053,7 @@ class AlertRegistrationTestCase(TestCase):
     def check_model_with_response_data(self, model, data):
         self.assertEqual(model.id, data["id"])
         self.assertEqual(model.user.username, data["user"])
+        self.assertEqual(model.is_active, data["is_active"])
         self.assertEqual(model.section.full_code, data["section"])
         self.assertEqual(model.deleted, data["deleted"])
         self.assertEqual(model.deleted_at, self.convert_date(data["deleted_at"]))
@@ -1354,6 +1355,23 @@ class AlertRegistrationTestCase(TestCase):
     def test_resubscribe_to_old_auto_resub(self):
         ids = self.create_auto_resubscribe_group()
         self.resubscribe_to_old_helper(ids, True)
+
+    def test_register_for_existing(self):
+        self.create_resubscribe_group()
+        num = Registration.objects.count()
+        response = self.client.post(
+            "/api/registrations/",
+            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(409, response.status_code)
+        response = self.client.post(
+            "/api/registrations/",
+            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(409, response.status_code)
+        self.assertEqual(num, Registration.objects.count())
 
     def registrations_multiple_users_helper(self, ids, auto_resub=False):
         new_user = User.objects.create_user(username="new_jacob", password="top_secret")
