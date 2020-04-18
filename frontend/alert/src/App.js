@@ -5,9 +5,10 @@ import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
 import { Toast, ToastType } from "./components/Toast";
 
-import { maxWidth, minWidth, PHONE } from "./constants";
+import { maxWidth, PHONE } from "./constants";
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
 import AutoComplete from "./components/AutoComplete";
+import { Input } from "./components/Input";
 
 const Container = styled.div`
     display: flex;
@@ -32,30 +33,6 @@ const Header = styled.h1`
 
     ${maxWidth(PHONE)} {
         font-size: 1.5rem;
-    }
-`;
-
-const Input = styled.input`
-    outline: none;
-    border: 1px solid #d6d6d6;
-    color: #4a4a4a;
-    font-size: 1.4rem;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    margin: 0.6rem;
-    :focus {
-        box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.25);
-    }
-    ::placeholder {
-        color: #d0d0d0;
-    }
-
-    ${maxWidth(PHONE)} {
-        max-width: 320px;
-    }
-
-    ${minWidth(PHONE)} {
-        width: 320px;
     }
 `;
 
@@ -170,9 +147,7 @@ const Heading = () => (
 
 const AlertForm = ({ onSubmit, user }) => (
     <>
-        <AutoComplete>
-            <Input autocomplete="off" placeholder="Course" />
-        </AutoComplete>
+        <AutoComplete/>
         <Input placeholder="Email" value={user && user.profile.email} />
         <Input placeholder="Phone" value={user && user.profile.phone} />
         <Center>
