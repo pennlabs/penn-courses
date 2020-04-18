@@ -7,6 +7,8 @@ import Logo from "./assets/PCA_logo.svg";
 import { maxWidth, minWidth, PHONE } from "./constants";
 import Footer from "./components/Footer";
 
+import { ManageAlert } from "./components/managealert/ManageAlertUI";
+
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
 
 const Container = styled.div`
@@ -65,7 +67,6 @@ const Center = styled.div`
 `;
 
 
-
 const SubmitButton = styled.button`
     border-radius: 5px;
     background-color: #209cee;
@@ -107,14 +108,7 @@ const NavElt = styled.a`
     display: flex;
     flex-direction: column;
     justify-content: center;
-    font-weight: ${props => (props.href
-        === `/${
-            window.location.href.split("/")[
-                window.location.href.split("/").length - 1
-            ]
-        }`
-        ? "bold"
-        : "normal")};
+    font-weight: ${props => (props.active ? "bold" : "normal")};
 `;
 
 const AlertText = styled.div`
@@ -127,7 +121,9 @@ const Dropdown = styled.span`
     font-weight: bold;
 `;
 
-const Nav = ({ login, logout, user }) => (
+const Nav = ({
+    login, logout, user, page, setPage,
+}) => (
     <NavContainer>
         <NavElt>
             <AccountIndicator
@@ -139,8 +135,8 @@ const Nav = ({ login, logout, user }) => (
                 logout={logout}
             />
         </NavElt>
-        <NavElt href="/">Home</NavElt>
-        <NavElt href="/manage">Manage Alerts</NavElt>
+        <NavElt href="/" active={page === "home"} onClick={(e) => { e.preventDefault(); setPage("home"); }}>Home</NavElt>
+        <NavElt href="/manage" active={page === "manage"} onClick={(e) => { e.preventDefault(); setPage("manage"); }}>Manage Alerts</NavElt>
         {/* <Toast type={ToastType.Warning} course="CIS-160-001" /> */}
     </NavContainer>
 );
@@ -148,6 +144,8 @@ const Nav = ({ login, logout, user }) => (
 Nav.propTypes = {
     login: PropTypes.func.isRequired,
     logout: PropTypes.func.isRequired,
+    page: PropTypes.string.isRequired,
+    setPage: PropTypes.func.isRequired,
     user: PropTypes.objectOf(PropTypes.any),
 };
 
@@ -181,15 +179,28 @@ AlertForm.propTypes = {
 function App() {
     const onSubmit = () => {};
     const [user, setUser] = useState(null);
+    const [page, setPage] = useState("home");
     return (
         <Container>
-            <Nav login={setUser} logout={() => setUser(null)} user={user} />
-            <Flex col grow={1}>
-                <Heading />
-                <AlertForm onSubmit={onSubmit} user={user} />
-            </Flex>
-            {/* <ManageAlertHeader /> */}
-            {/* <ManageAlert /> */}
+            <Nav
+                login={setUser}
+                logout={() => setUser(null)}
+                user={user}
+                page={page}
+                setPage={setPage}
+            />
+            {page === "home" ? (
+                <Flex col grow={1}>
+                    <Heading />
+                    <AlertForm onSubmit={onSubmit} user={user} />
+                </Flex>
+            )
+                : (
+                    <>
+                        <ManageAlert />
+                    </>
+                )}
+
 
             <Footer />
         </Container>
