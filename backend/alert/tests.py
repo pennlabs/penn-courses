@@ -1580,7 +1580,7 @@ class AlertRegistrationTestCase(TestCase):
     def test_registrations_no_deleted(self):
         ids = self.create_auto_resubscribe_group()
         response = self.client.put(
-            "/api/registrations/" + str(ids['fifth_id']) + "/",
+            "/api/registrations/" + str(ids["fifth_id"]) + "/",
             json.dumps({"deleted": True}),
             content_type="application/json",
         )
@@ -1588,8 +1588,8 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get("/api/registrations/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
-        self.assertEqual(0, len([r for r in response.data if str(r['id']) == str(ids['fifth_id'])]))
-        response = self.client.get("/api/registrations/" + str(ids['fifth_id']) + "/")
+        self.assertEqual(0, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])]))
+        response = self.client.get("/api/registrations/" + str(ids["fifth_id"]) + "/")
         self.assertEqual(200, response.status_code)
 
     def cancel_and_resub_helper(self, auto_resub, put, cancel_before_sim_webhook):
@@ -1716,7 +1716,7 @@ class AlertRegistrationTestCase(TestCase):
     def test_registrations_contain_canceled(self):
         ids = self.create_auto_resubscribe_group()
         response = self.client.put(
-            "/api/registrations/" + str(ids['fifth_id']) + "/",
+            "/api/registrations/" + str(ids["fifth_id"]) + "/",
             json.dumps({"canceled": True}),
             content_type="application/json",
         )
@@ -1724,8 +1724,8 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get("/api/registrations/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
-        self.assertEqual(1, len([r for r in response.data if str(r['id']) == str(ids['fifth_id'])]))
-        response = self.client.get("/api/registrations/" + str(ids['fifth_id']) + "/")
+        self.assertEqual(1, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])]))
+        response = self.client.get("/api/registrations/" + str(ids["fifth_id"]) + "/")
         self.assertEqual(200, response.status_code)
 
     def changeattrs_update_order_helper(self, put, update_field):
