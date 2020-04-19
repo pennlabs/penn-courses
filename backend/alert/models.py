@@ -51,6 +51,8 @@ class Registration(models.Model):
     phone = models.CharField(blank=True, null=True, max_length=100)
     # section that the user registered to be notified about
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
+    canceled = models.BooleanField(default=False)
+    canceled_at = models.DateTimeField(blank=True, null=True)
     # changed to True if user deletes notification,
     # never changed back (a new model is created on resubscription)
     deleted = models.BooleanField(default=False)
@@ -82,7 +84,10 @@ class Registration(models.Model):
     )
 
     def __str__(self):
-        return "%s: %s" % (self.email or self.phone, self.section.__str__())
+        return "%s: %s" % (
+            (self.user.__str__() if self.user is not None else None) or self.email or self.phone,
+            self.section.__str__(),
+        )
 
     def validate_phone(self):
         """
@@ -124,7 +129,7 @@ class Registration(models.Model):
         Returns True iff the registration would send a notification
         when the watched section changes to open
         """
-        return not (self.notification_sent or self.deleted)
+        return not (self.notification_sent or self.deleted or self.canceled)
 
     @property
     def resub_url(self):
@@ -170,7 +175,7 @@ class Registration(models.Model):
         most_recent_reg = self.get_most_current_rec()
 
         if (
-            not most_recent_reg.notification_sent
+            not most_recent_reg.notification_sent and not most_recent_reg.canceled
         ):  # if a notification hasn't been sent on this recent one,
             return most_recent_reg  # don't create duplicate registrations for no reason.
 
@@ -188,9 +193,9 @@ class Registration(models.Model):
 
     def get_resubscribe_group_sql(self):
         # This is an optimization that we can use if we need to but as of now it is unused.
-        # Remove this comment if you use it.
+        # ^ Remove this comment if you use it.
         # DO NOT add variable parameters or reference external variables improperly
-        # (to prevent against SQL injection attacks)
+        # (beware of SQL injection attacks)
         # https://docs.djangoproject.com/en/3.0/topics/db/sql/
         if not isinstance(self.id, int):
             raise ValueError("ID must be an int")
@@ -297,11 +302,12 @@ def register_for_course(
             phone=registration.phone,
             notification_sent=False,
             deleted=False,
+            canceled=False,
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
     else:
         if Registration.objects.filter(
-            section=section, user=user, notification_sent=False, deleted=False
+            section=section, user=user, notification_sent=False, deleted=False, canceled=False,
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
         registration = Registration(section=section, user=user, source=source)
