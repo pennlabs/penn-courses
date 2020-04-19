@@ -176,7 +176,7 @@ class Registration(models.Model):
 
         if (
             not most_recent_reg.notification_sent and not most_recent_reg.canceled
-        ):  # if a notification hasn't been sent on this recent one,
+        ):  # if a notification hasn't been sent on this recent one (and it hasn't been canceled),
             return most_recent_reg  # don't create duplicate registrations for no reason.
 
         new_registration = Registration(
