@@ -85,7 +85,7 @@ export const ManageAlertHeader = () => {
 
 
 
-export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter, actionHandler }) => {
+export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter, actionHandler, batchActionHandler }) => {
     const toggleAlert = id => () => {
         setAlertSel({ ...alertSel, [id]: !alertSel[id] });
     };
@@ -114,7 +114,7 @@ export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter, 
                 </RightItemAlertFilter>
             </Flex>
             <Grid>
-                <Header selected={numSel} />
+                <Header selected={numSel} batchActionHandler={(action) => batchActionHandler(action)} />
                 {alerts.map((alert, i) => (
                     <AlertItem
                         key={alert.id}

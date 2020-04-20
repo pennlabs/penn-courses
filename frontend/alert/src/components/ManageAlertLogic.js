@@ -4,7 +4,7 @@ import { AlertStatus, AlertRepeat, AlertAction } from "./managealert/AlertItemEn
 import getCsrf from "../csrf";
 
 const fetchAlerts = () => {
-    return fetch("/api/alert/api/registrationhistory")
+    return fetch("/api/alert/api/registrations")
         .then(res => res.json());
 };
 
@@ -46,11 +46,12 @@ const processAlerts = (setAlerts) => {
 
                 return {
                     id: section.id,
+                    original_created_at: section.original_created_at,
                     section: section.section,
                     date: datetime,
                     status,
                     repeat,
-                    actions: repeat === AlertRepeat.Once
+                    actions: (repeat === AlertRepeat.Once || repeat === AlertRepeat.EOS)
                         ? AlertAction.Cancel : AlertAction.Resubscribe,
                 };
             })
@@ -58,35 +59,43 @@ const processAlerts = (setAlerts) => {
         .then(alerts => setAlerts(alerts));
 };
 
-const filterAlerts = (alerts, filter) => (
-    alerts.filter((alert) => {
+const filterAlerts = (alerts, filter) => {
+    const sortedAlerts = alerts.sort((a, b) => {
+        let d1 = new Date(a.original_created_at);
+        let d2 = new Date(b.original_created_at);
+        if (d1 > d2) {
+            // if d1 is later, a should come first
+            return -1;
+        } else {
+            return 1;
+        }
+    });
+
+    return sortedAlerts.filter((alert) => {
         if (filter.search.length > 0) {
             return alert.section.includes(filter.search.toUpperCase());
         } else {
             return true;
         }
-    })
-);
+    });
+};
 
-// callback is now specifically used to refresh the registration alert list
-// TODO: This might cause race conditions if people click on the action
-// buttons in succession, which triggers multiple refreshes
-// Can be solved by wrapping the fetchAlerts query with a debouncer
-//
-// Side note: how should errors be handled here?
-const actionHandler = callback => (id, actionenum) => {
+const getActionPromise = (id, actionenum) => {
     let body;
     switch (actionenum) {
         case AlertAction.Resubscribe:
-            body = { deleted: false, auto_resubscribe: true, notification_sent: true };
+            body = { resubscribe: true };
             break;
         case AlertAction.Cancel:
-            body = { deleted: true, auto_resubscribe: false, notification_sent: true };
+            body = { cancelled: true };
+            break;
+        case AlertAction.Delete:
+            body = { deleted: true };
             break;
         default:
     }
 
-    fetch(`/api/alert/api/registrations/${id}/`, {
+    return fetch(`/api/alert/api/registrations/${id}/`, {
         method: "PUT",
         credentials: "include",
         mode: "same-origin",
@@ -96,7 +105,24 @@ const actionHandler = callback => (id, actionenum) => {
             "X-CSRFToken": getCsrf(),
         },
         body: JSON.stringify(body),
-    })
+    });
+};
+
+
+// callback is now specifically used to refresh the registration alert list
+// TODO: This might cause race conditions if people click on the action
+// buttons in succession, which triggers multiple refreshes
+// Can be solved by wrapping the fetchAlerts query with a debouncer
+//
+// Side note: how should errors be handled here?
+const actionHandler = callback => (id, actionenum) => {
+    getActionPromise(id, actionenum)
+        .then(res => callback());
+};
+
+// id_list is an array of ids
+const batchActionHandler = (callback, idList) => (actionenum) => {
+    Promise.all(idList.map(id => getActionPromise(id, actionenum)))
         .then(res => callback());
 };
 
@@ -140,6 +166,10 @@ export const ManageAlertWrapper = () => {
                 alertSel={alertSel}
                 setAlertSel={setAlertSel}
                 actionHandler={actionHandler(() => processAlerts(setAlerts))}
+                batchActionHandler={
+                    batchActionHandler(() => processAlerts(setAlerts),
+                        Object.keys(alertSel).filter(id => alertSel[id]))
+                }
             />
         </>
     );

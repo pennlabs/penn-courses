@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import XBell from "../../assets/bell-off.svg";
 import Trash from "../../assets/trash.svg";
 import ABell from "../../assets/abell.svg";
+import { AlertAction } from "./AlertItemEnums";
 import {
     GridItem, Flex, RightItem, Img
 } from "./ManageAlertStyledComponents";
@@ -33,7 +34,7 @@ const HeaderRightItem = styled(RightItem)`
 // Component for table header in alert management
 // Renders column titles or "x selected" depending
 // on if alerts are selected
-const Header = ({ selected }) => {
+const Header = ({ selected, batchActionHandler }) => {
     const headings = ["LAST NOTIFIED", "COURSE ID", "STATUS", "REPEAT", "ACTIONS"];
 
     return (
@@ -59,15 +60,21 @@ const Header = ({ selected }) => {
                          <HeaderRightItem>
                              <HeaderButtonsFlex valign>
                                  <Img src={ABell} width="0.5rem" height="0.5rem" />
-                                 <HeaderAction>RESUBSCRIBE</HeaderAction>
+                                 <HeaderAction onClick={() => batchActionHandler(AlertAction.Resubscribe)}>
+                                     RESUBSCRIBE
+                                 </HeaderAction>
                              </HeaderButtonsFlex>
                              <HeaderButtonsFlex valign>
                                  <Img src={XBell} width="0.5rem" height="0.5rem" />
-                                 <HeaderAction>CANCEL</HeaderAction>
+                                 <HeaderAction onClick={() => batchActionHandler(AlertAction.Cancel)}>
+                                     CANCEL
+                                 </HeaderAction>
                              </HeaderButtonsFlex>
                              <HeaderButtonsFlex valign>
                                  <Img src={Trash} width="0.5rem" height="0.5rem" />
-                                 <HeaderAction>DELETE</HeaderAction>
+                                 <HeaderAction onClick={() => batchActionHandler(AlertAction.Delete)}>
+                                     DELETE
+                                 </HeaderAction>
                              </HeaderButtonsFlex>
                          </HeaderRightItem>
                      </GridItem>
