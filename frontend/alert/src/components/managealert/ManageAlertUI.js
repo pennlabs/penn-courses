@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import Header from "./Header";
@@ -82,8 +82,8 @@ export const ManageAlertHeader = () => (
 
 
 export const ManageAlert = ({
-    alerts, alertSel, setAlertSel, numSel, setFilter,
-    actionHandler, batchActionHandler, batchSelectHandler,
+    alerts, alertSel, setAlertSel, setFilter,
+    actionButtonHandler, batchActionHandler, batchSelectHandler,
     batchSelected, setBatchSelected,
 }) => {
     const toggleAlert = id => () => {
@@ -92,6 +92,11 @@ export const ManageAlert = ({
 
     const [searchValue, setSearchValue] = useState("");
     const [searchTimeout, setSearchTimeout] = useState();
+    const [numSelected, setNumSelected] = useState(0);
+
+    useEffect(() => {
+        setNumSelected(Object.values(alertSel).reduce((acc, x) => acc + x, 0));
+    }, [alertSel]);
 
     const handleChange = (event) => {
         const searchText = event.target.value;
@@ -115,7 +120,7 @@ export const ManageAlert = ({
             </Flex>
             <Grid>
                 <Header
-                    selected={numSel}
+                    selected={numSelected}
                     batchSelected={batchSelected}
                     setBatchSelected={setBatchSelected}
                     batchActionHandler={batchActionHandler}
@@ -126,13 +131,13 @@ export const ManageAlert = ({
                         key={alert.id}
                         checked={alertSel[alert.id]}
                         rownum={i + 2}
-                        date={alert.date}
+                        alertLastSent={alert.alertLastSent}
                         course={alert.section}
                         status={alert.status}
                         repeat={alert.repeat}
                         actions={alert.actions}
                         toggleAlert={toggleAlert(alert.id)}
-                        actionHandler={() => actionHandler(alert.id, alert.actions)}
+                        actionButtonHandler={() => actionButtonHandler(alert.id, alert.actions)}
                     />
                 ))}
 
@@ -143,7 +148,7 @@ export const ManageAlert = ({
 
 ManageAlert.propTypes = {
     alerts: PropTypes.arrayOf(PropTypes.object),
-    actionHandler: PropTypes.func,
+    actionButtonHandler: PropTypes.func,
     batchActionHandler: PropTypes.func,
     batchSelectHandler: PropTypes.func,
     batchSelected: PropTypes.bool,
@@ -153,5 +158,4 @@ ManageAlert.propTypes = {
     // alertSel is an object with potentially many fields, since it is used as a map
     // eslint-disable-next-line
     alertSel: PropTypes.object,
-    numSel: PropTypes.number,
 };

@@ -21,7 +21,8 @@ const StatusGridItem = styled(GridItem)`
 
 // Component for an alert entry (renders as a row in CSS grid)
 export const AlertItem = ({
-    date, course, status, repeat, actions, rownum, checked, toggleAlert, actionHandler,
+    alertLastSent, course, status, repeat, actions, rownum,
+    checked, toggleAlert, actionButtonHandler,
 }) => {
     let statustext;
     let statuscolor;
@@ -64,8 +65,8 @@ export const AlertItem = ({
             </GridItem>
             <GridItem column="2" row={rownum} border valign>
                 {
-                    date
-                        ? <P size="0.7rem">{date}</P>
+                    alertLastSent
+                        ? <P size="0.7rem">{alertLastSent}</P>
                         : (
                             <P
                                 size="0.7rem"
@@ -87,14 +88,14 @@ export const AlertItem = ({
                 <P size="0.7rem" color={alertcolor}>{alerttext}</P>
             </GridItem>
             <GridItem border column="6" row={rownum} valign>
-                <ActionButton type={actions} onClick={actionHandler} />
+                <ActionButton type={actions} onClick={actionButtonHandler} />
             </GridItem>
         </>
     );
 };
 
 AlertItem.propTypes = {
-    date: PropTypes.string,
+    alertLastSent: PropTypes.string,
     course: PropTypes.string,
     status: PropTypes.oneOf([AlertStatus.Closed, AlertStatus.Open]),
     repeat: PropTypes.oneOf([AlertRepeat.EOS, AlertRepeat.Inactive, AlertRepeat.Once]),
@@ -102,5 +103,5 @@ AlertItem.propTypes = {
     rownum: PropTypes.number,
     checked: PropTypes.bool,
     toggleAlert: PropTypes.func,
-    actionHandler: PropTypes.func,
+    actionButtonHandler: PropTypes.func,
 };

@@ -13,27 +13,27 @@ const processAlerts = (setAlerts) => {
     const fetchPromise = () => (
         fetchAlerts()
             .then(res => (
-                res.map((section) => {
+                res.map((registration) => {
                     let datetime = null;
-                    if (section.notification_sent) {
+                    if (registration.notification_sent) {
                         const date = Intl.DateTimeFormat("en-US")
                             .format(new Date(
-                                section.notification_sent_at
+                                registration.notification_sent_at
                             ));
                         const time = Intl.DateTimeFormat("en-US", {
                             hour: "numeric",
                             minute: "numeric",
                             hour12: true,
-                        }).format(new Date(section.notification_sent_at));
+                        }).format(new Date(registration.notification_sent_at));
                         datetime = `${date} at ${time}`;
                     }
 
-                    const status = section.section_status
+                    const status = registration.section_status
                         ? AlertStatus.Open : AlertStatus.Closed;
 
                     let repeat;
-                    if (section.is_active) {
-                        if (section.auto_resubscribe) {
+                    if (registration.is_active) {
+                        if (registration.auto_resubscribe) {
                             repeat = AlertRepeat.EOS;
                         } else {
                             repeat = AlertRepeat.Once;
@@ -43,10 +43,10 @@ const processAlerts = (setAlerts) => {
                     }
 
                     return {
-                        id: section.id,
-                        original_created_at: section.original_created_at,
-                        section: section.section,
-                        date: datetime,
+                        id: registration.id,
+                        originalCreatedAt: registration.original_created_at,
+                        section: registration.section,
+                        alertLastSent: datetime,
                         status,
                         repeat,
                         actions: (repeat === AlertRepeat.Once || repeat === AlertRepeat.EOS)
@@ -61,8 +61,8 @@ const processAlerts = (setAlerts) => {
 
 const filterAlerts = (alerts, filter) => {
     const sortedAlerts = alerts.sort((a, b) => {
-        const d1 = new Date(a.original_created_at);
-        const d2 = new Date(b.original_created_at);
+        const d1 = new Date(a.originalCreatedAt);
+        const d2 = new Date(b.originalCreatedAt);
         if (d1 > d2) {
             // if d1 is later, a should come first
             return -1;
@@ -106,13 +106,33 @@ const getActionPromise = (id, actionenum) => {
     });
 };
 
-
+/**
+ * A generic alert item action handler that takes in a
+ * callback, executes the alert item action (ex. AlertAction.Resubscribe)
+ * for the alert with id "id", and calls the callback
+ *
+ * @param {func} callback - The callback to execute after request is fulfilled
+ * @returns {func} - The function which executes the action which expects
+ * id {number} and actionenum {AlertAction}
+ *
+ */
 const actionHandler = callback => (id, actionenum) => {
     getActionPromise(id, actionenum)
         .then(res => callback());
 };
 
-// id_list is an array of ids
+
+/**
+ * A generic batch alert item action handler that takes in
+ * a callback and a list of alert IDs, executes the
+ * action specified by actionenum for all alerts in idList,
+ * and calls the callback
+ *
+ * @param {func} callback - The callback to execute after request is fulfilled
+ * @param {number[]} idList - The list of alert IDs to execute the action for
+ * @returns {func} - The function which expects the actionenum and
+ * executes the action on idList
+ */
 const batchActionHandler = (callback, idList) => (actionenum) => {
     Promise.all(idList.map(id => getActionPromise(id, actionenum)))
         .then(res => callback());
@@ -140,7 +160,6 @@ const ManageAlertWrapper = () => {
     const [alertSel, setAlertSel] = useState({});
     // alerts after passing through frontend filters
     const [currAlerts, setCurrAlerts] = useState([]);
-    const [numSelected, setNumSelected] = useState(0);
     const [filter, setFilter] = useState({ search: "" });
 
     useEffect(() => {
@@ -157,10 +176,6 @@ const ManageAlertWrapper = () => {
     }, [alerts, setAlertSel]);
 
     useEffect(() => {
-        setNumSelected(Object.values(alertSel).reduce((acc, x) => acc + x, 0));
-    }, [alertSel]);
-
-    useEffect(() => {
         processAlerts(setAlerts);
     }, []);
 
@@ -169,13 +184,12 @@ const ManageAlertWrapper = () => {
             <ManageAlertHeader />
             <ManageAlert
                 setFilter={setFilter}
-                numSel={numSelected}
                 alerts={currAlerts}
                 alertSel={alertSel}
                 setAlertSel={setAlertSel}
                 batchSelected={batchSelected}
                 setBatchSelected={setBatchSelected}
-                actionHandler={actionHandler(() => processAlerts(setAlerts))}
+                actionButtonHandler={actionHandler(() => processAlerts(setAlerts))}
                 batchSelectHandler={batchSelectHandler(setAlertSel, currAlerts, alerts)}
                 batchActionHandler={
                     batchActionHandler(() => processAlerts(setAlerts),
