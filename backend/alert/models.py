@@ -51,8 +51,8 @@ class Registration(models.Model):
     phone = models.CharField(blank=True, null=True, max_length=100)
     # section that the user registered to be notified about
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
-    canceled = models.BooleanField(default=False)
-    canceled_at = models.DateTimeField(blank=True, null=True)
+    cancelled = models.BooleanField(default=False)
+    cancelled_at = models.DateTimeField(blank=True, null=True)
     # changed to True if user deletes notification,
     # never changed back (a new model is created on resubscription)
     deleted = models.BooleanField(default=False)
@@ -129,7 +129,7 @@ class Registration(models.Model):
         Returns True iff the registration would send a notification
         when the watched section changes to open
         """
-        return not (self.notification_sent or self.deleted or self.canceled)
+        return not (self.notification_sent or self.deleted or self.cancelled)
 
     @property
     def resub_url(self):
@@ -175,8 +175,8 @@ class Registration(models.Model):
         most_recent_reg = self.get_most_current_rec()
 
         if (
-            not most_recent_reg.notification_sent and not most_recent_reg.canceled
-        ):  # if a notification hasn't been sent on this recent one (and it hasn't been canceled),
+            not most_recent_reg.notification_sent and not most_recent_reg.cancelled
+        ):  # if a notification hasn't been sent on this recent one (and it hasn't been cancelled),
             return most_recent_reg  # don't create duplicate registrations for no reason.
 
         new_registration = Registration(
@@ -302,12 +302,12 @@ def register_for_course(
             phone=registration.phone,
             notification_sent=False,
             deleted=False,
-            canceled=False,
+            cancelled=False,
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
     else:
         if Registration.objects.filter(
-            section=section, user=user, notification_sent=False, deleted=False, canceled=False,
+            section=section, user=user, notification_sent=False, deleted=False, cancelled=False,
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
         registration = Registration(section=section, user=user, source=source)

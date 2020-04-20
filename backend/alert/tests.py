@@ -1612,13 +1612,13 @@ class AlertRegistrationTestCase(TestCase):
         if put:
             response = self.client.put(
                 "/api/registrations/" + str(first_id) + "/",
-                json.dumps({"canceled": True}),
+                json.dumps({"cancelled": True}),
                 content_type="application/json",
             )
         else:
             response = self.client.post(
                 "/api/registrations/",
-                json.dumps({"id": first_id, "canceled": True}),
+                json.dumps({"id": first_id, "cancelled": True}),
                 content_type="application/json",
             )
         if not cancel_before_sim_webhook and not auto_resub:
@@ -1626,7 +1626,7 @@ class AlertRegistrationTestCase(TestCase):
             self.assertEqual("You cannot cancel a sent registration.", response.data["detail"])
         else:
             self.assertEqual(200, response.status_code)
-            self.assertEqual("Registration canceled", response.data["detail"])
+            self.assertEqual("Registration cancelled", response.data["detail"])
         if cancel_before_sim_webhook:
             self.simulate_alert(self.cis120, 1, should_send=False)
         if not auto_resub:
@@ -1652,11 +1652,11 @@ class AlertRegistrationTestCase(TestCase):
                         Registration.objects.get(id=first_id).resubscribed_to, "resubscribed_to",
                     )
                 )
-                self.assertFalse(Registration.objects.get(id=first_id).canceled)
-                self.assertIsNone(Registration.objects.get(id=first_id).canceled_at)
-                self.assertTrue(Registration.objects.get(id=first_id).resubscribed_to.canceled)
+                self.assertFalse(Registration.objects.get(id=first_id).cancelled)
+                self.assertIsNone(Registration.objects.get(id=first_id).cancelled_at)
+                self.assertTrue(Registration.objects.get(id=first_id).resubscribed_to.cancelled)
                 self.assertIsNotNone(
-                    Registration.objects.get(id=first_id).resubscribed_to.canceled_at
+                    Registration.objects.get(id=first_id).resubscribed_to.cancelled_at
                 )
                 self.assertFalse(
                     Registration.objects.get(id=first_id).resubscribed_to.notification_sent
@@ -1672,8 +1672,8 @@ class AlertRegistrationTestCase(TestCase):
                 self.assertFalse(
                     Registration.objects.get(id=first_id).resubscribed_to.notification_sent
                 )
-            self.assertTrue(Registration.objects.get(id=first_id).canceled)
-            self.assertIsNotNone(Registration.objects.get(id=first_id).canceled_at)
+            self.assertTrue(Registration.objects.get(id=first_id).cancelled)
+            self.assertIsNotNone(Registration.objects.get(id=first_id).cancelled_at)
 
     @data(
         *(
@@ -1696,7 +1696,7 @@ class AlertRegistrationTestCase(TestCase):
         )
         response = self.client.put(
             "/api/registrations/" + str(first_id) + "/",
-            json.dumps({"canceled": True}),
+            json.dumps({"cancelled": True}),
             content_type="application/json",
         )
         self.assertEquals(400, response.status_code)
@@ -1707,17 +1707,17 @@ class AlertRegistrationTestCase(TestCase):
         self.simulate_alert(self.cis120, 1, should_send=True)
         response = self.client.put(
             "/api/registrations/" + str(first_id) + "/",
-            json.dumps({"canceled": True}),
+            json.dumps({"cancelled": True}),
             content_type="application/json",
         )
         self.assertEquals(400, response.status_code)
         self.assertEquals("You cannot cancel a sent registration.", response.data["detail"])
 
-    def test_registrations_contain_canceled(self):
+    def test_registrations_contain_cancelled(self):
         ids = self.create_auto_resubscribe_group()
         response = self.client.put(
             "/api/registrations/" + str(ids["fifth_id"]) + "/",
-            json.dumps({"canceled": True}),
+            json.dumps({"cancelled": True}),
             content_type="application/json",
         )
         self.assertEqual(200, response.status_code)

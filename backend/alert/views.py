@@ -364,11 +364,11 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                         {"detail": "You cannot resubscribe to a deleted registration."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                if not registration.notification_sent and not registration.canceled:
+                if not registration.notification_sent and not registration.cancelled:
                     return Response(
                         {
                             "detail": "You can only resubscribe to a registration that "
-                            "has already been sent or has been canceled."
+                            "has already been sent or has been cancelled."
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -385,7 +385,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     registration.deleted_at = timezone.now()
                     registration.save()
                     return Response({"detail": "Registration deleted"}, status=status.HTTP_200_OK)
-            elif request.data.get("canceled", False):
+            elif request.data.get("cancelled", False):
                 if registration.deleted:
                     return Response(
                         {"detail": "You cannot cancel a deleted registration."},
@@ -396,13 +396,13 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                         {"detail": "You cannot cancel a sent registration."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                changed = not registration.canceled
-                registration.canceled = True
+                changed = not registration.cancelled
+                registration.cancelled = True
                 registration.save()
                 if changed:  # else taken care of in generic return statement
-                    registration.canceled_at = timezone.now()
+                    registration.cancelled_at = timezone.now()
                     registration.save()
-                    return Response({"detail": "Registration canceled"}, status=status.HTTP_200_OK)
+                    return Response({"detail": "Registration cancelled"}, status=status.HTTP_200_OK)
             elif "auto_resubscribe" in request.data:
                 if registration.deleted:
                     return Response(
@@ -438,7 +438,9 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
 
-    def get_queryset_current(self,):  # NOT the same as all active registrations (includes canceled)
+    def get_queryset_current(
+        self,
+    ):  # NOT the same as all active registrations (includes cancelled)
         return Registration.objects.filter(
             user=self.request.user, notification_sent=False, deleted=False
         )
