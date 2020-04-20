@@ -66,7 +66,7 @@ const DropdownItemBox = styled.div`
     justify-content: stretch;
     flex-direction: row;
     cursor: pointer;
-    ${props => props.selected ? "background-color: rgb(235, 235, 235);" : ""}
+    ${props => (props.selected ? "background-color: rgb(235, 235, 235);" : "")}
     &:hover {
         background-color: rgb(220, 220, 220);
     }
@@ -129,15 +129,15 @@ const Suggestion = ({
     useEffect(() => {
         if (selected && ref.current) {
             const { bottom, top } = ref.current.getBoundingClientRect();
-            const parentElement = ref.current.parentElement;
+            const { parentElement } = ref.current;
             const {
                 bottom: parentBottom,
-                top: parentTop
+                top: parentTop,
             } = parentElement.getBoundingClientRect();
             if (bottom > parentBottom) {
-                   parentElement.scrollBy({top: bottom - parentBottom});
+                parentElement.scrollBy({ top: bottom - parentBottom });
             } else if (top < parentTop) {
-                parentElement.scrollBy({top: top - parentTop});
+                parentElement.scrollBy({ top: top - parentTop });
             }
         }
     }, [selected, ref]);
@@ -149,7 +149,7 @@ const Suggestion = ({
                 <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
             </DropdownItemLeftCol>
             <IconContainer>
-                <FontAwesomeIcon icon={faHistory} color="#c4c4c4"/>
+                <FontAwesomeIcon icon={faHistory} color="#c4c4c4" />
             </IconContainer>
         </DropdownItemBox>
     );
@@ -216,9 +216,9 @@ const AutoComplete = () => {
      * @param newSelectedSuggestion
      */
     const handleSuggestionSelect = (newSelectedSuggestion) => {
-        const newSelectedSuggestionValue = newSelectedSuggestion !== -1 && suggestions[newSelectedSuggestion];
-        if (newSelectedSuggestionValue) {
-            const newValue = newSelectedSuggestionValue.section_id;
+        const newVal = newSelectedSuggestion !== -1 && suggestions[newSelectedSuggestion];
+        if (newVal) {
+            const newValue = newVal.section_id;
             setValue(newValue);
             inputRef.value = newValue;
         }
@@ -248,14 +248,12 @@ const AutoComplete = () => {
                         inputRef.value = backdrop;
                     } else if (e.keyCode === 40 && suggestions) {
                         // select a suggestion when the down arrow key is pressed
-                        let newIndex = getCurrentIndex() + 1;
-                        const newSelectedSuggestion =
-                            Math.min(newIndex, suggestions.length - 1);
+                        const newIndex = getCurrentIndex() + 1;
+                        const newSelectedSuggestion = Math.min(newIndex, suggestions.length - 1);
                         handleSuggestionSelect(newSelectedSuggestion);
                     } else if (e.keyCode === 38 && suggestions) {
                         // select a suggestion when the down arrow key is pressed
-                        const newSelectedSuggestion =
-                            Math.max(getCurrentIndex() - 1, -1);
+                        const newSelectedSuggestion = Math.max(getCurrentIndex() - 1, -1);
                         handleSuggestionSelect(newSelectedSuggestion);
                     } else {
                         const newValue = e.target.value;
