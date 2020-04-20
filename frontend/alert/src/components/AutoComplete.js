@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
@@ -66,7 +66,6 @@ const DropdownItemBox = styled.div`
     justify-content: stretch;
     flex-direction: row;
     cursor: pointer;
-    transition: 180ms ease background;
     ${props => props.selected ? "background-color: rgb(235, 235, 235);" : ""}
     &:hover {
         background-color: rgb(220, 220, 220);
@@ -125,18 +124,36 @@ const Container = styled.div`
 
 const Suggestion = ({
     onClick, courseCode, title, instructor, selected,
-}) => (
-    <DropdownItemBox onClick={onClick} selected={selected} requestFocus={selected}>
-        <DropdownItemLeftCol>
-            <SuggestionTitle>{courseCode}</SuggestionTitle>
-            <SuggestionSubtitle>{title}</SuggestionSubtitle>
-            <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
-        </DropdownItemLeftCol>
-        <IconContainer>
-            <FontAwesomeIcon icon={faHistory} color="#c4c4c4"/>
-        </IconContainer>
-    </DropdownItemBox>
-);
+}) => {
+    const ref = useRef();
+    useEffect(() => {
+        if (selected && ref.current) {
+            const { bottom, top } = ref.current.getBoundingClientRect();
+            const parentElement = ref.current.parentElement;
+            const {
+                bottom: parentBottom,
+                top: parentTop
+            } = parentElement.getBoundingClientRect();
+            if (bottom > parentBottom) {
+                   parentElement.scrollBy({top: bottom - parentBottom});
+            } else if (top < parentTop) {
+                parentElement.scrollBy({top: top - parentTop});
+            }
+        }
+    }, [selected, ref]);
+    return (
+        <DropdownItemBox onClick={onClick} selected={selected} ref={ref}>
+            <DropdownItemLeftCol>
+                <SuggestionTitle>{courseCode}</SuggestionTitle>
+                <SuggestionSubtitle>{title}</SuggestionSubtitle>
+                <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
+            </DropdownItemLeftCol>
+            <IconContainer>
+                <FontAwesomeIcon icon={faHistory} color="#c4c4c4"/>
+            </IconContainer>
+        </DropdownItemBox>
+    );
+};
 
 Suggestion.propTypes = {
     courseCode: PropTypes.string,
@@ -175,7 +192,6 @@ const AutoComplete = () => {
     const [rawSuggestions, setRawSuggestions] = useState(null);
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
-    const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
 
     const show = active && suggestions.length > 0;
 
@@ -200,7 +216,6 @@ const AutoComplete = () => {
      * @param newSelectedSuggestion
      */
     const handleSuggestionSelect = (newSelectedSuggestion) => {
-        setSelectedSuggestion(newSelectedSuggestion);
         const newSelectedSuggestionValue = newSelectedSuggestion !== -1 && suggestions[newSelectedSuggestion];
         if (newSelectedSuggestionValue) {
             const newValue = newSelectedSuggestionValue.section_id;
@@ -208,6 +223,14 @@ const AutoComplete = () => {
             inputRef.value = newValue;
         }
     };
+
+    /**
+     * Returns the index of the currently suggested suggestion
+     * @return {number}
+     */
+    const getCurrentIndex = () => suggestions
+        .map(suggestion => suggestion.section_id.toLowerCase())
+        .indexOf(value.toLowerCase());
 
     return (
         <Container
@@ -225,18 +248,14 @@ const AutoComplete = () => {
                         inputRef.value = backdrop;
                     } else if (e.keyCode === 40 && suggestions) {
                         // select a suggestion when the down arrow key is pressed
-                        let newIndex = selectedSuggestion + 1;
-                        if (suggestions[newIndex] && suggestions[newIndex].section_id === value) {
-                            // newIndex is already selected; increment
-                            ++newIndex;
-                        }
+                        let newIndex = getCurrentIndex() + 1;
                         const newSelectedSuggestion =
                             Math.min(newIndex, suggestions.length - 1);
                         handleSuggestionSelect(newSelectedSuggestion);
                     } else if (e.keyCode === 38 && suggestions) {
                         // select a suggestion when the down arrow key is pressed
                         const newSelectedSuggestion =
-                            Math.max(selectedSuggestion - 1, -1);
+                            Math.max(getCurrentIndex() - 1, -1);
                         handleSuggestionSelect(newSelectedSuggestion);
                     } else {
                         const newValue = e.target.value;
@@ -260,8 +279,7 @@ const AutoComplete = () => {
                     {suggestions.map((suggestion, index) => (
                         <Suggestion
                             key={suggestion.section_id}
-                            selected={index === selectedSuggestion ||
-                            suggestion.section_id.toLowerCase() === value.toLowerCase()}
+                            selected={suggestion.section_id.toLowerCase() === value.toLowerCase()}
                             courseCode={suggestion.section_id}
                             onClick={() => {
                                 inputRef.value = suggestion.section_id;
