@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { ManageAlert, ManageAlertHeader } from "./managealert/ManageAlertUI";
 import { AlertStatus, AlertRepeat, AlertAction } from "./managealert/AlertItemEnums";
 import getCsrf from "../csrf";
@@ -8,75 +9,72 @@ const fetchAlerts = () => {
         .then(res => res.json());
 };
 
-const getStatusPromise = (sectionId) => {
-    return fetch(`/api/courses/current/sections/${sectionId}`);
-};
-
 const processAlerts = (setAlerts) => {
-    fetchAlerts()
-        .then(res => (
-            res.map((section) => {
-                let datetime = null;
-                if (section.notification_sent) {
-                    const date = Intl.DateTimeFormat("en-US")
-                        .format(new Date(
-                            section.notification_sent_at
-                        ));
-                    const time = Intl.DateTimeFormat("en-US", {
-                        hour: "numeric",
-                        minute: "numeric",
-                        hour12: true,
-                    }).format(new Date(section.notification_sent_at));
-                    datetime = `${date} at ${time}`;
-                }
-
-                const status = section.section_status
-                    ? AlertStatus.Open : AlertStatus.Closed;
-
-                let repeat;
-                if (section.is_active) {
-                    if (section.auto_resubscribe) {
-                        repeat = AlertRepeat.EOS;
-                    } else {
-                        repeat = AlertRepeat.Once;
+    const fetchPromise = () => (
+        fetchAlerts()
+            .then(res => (
+                res.map((section) => {
+                    let datetime = null;
+                    if (section.notification_sent) {
+                        const date = Intl.DateTimeFormat("en-US")
+                            .format(new Date(
+                                section.notification_sent_at
+                            ));
+                        const time = Intl.DateTimeFormat("en-US", {
+                            hour: "numeric",
+                            minute: "numeric",
+                            hour12: true,
+                        }).format(new Date(section.notification_sent_at));
+                        datetime = `${date} at ${time}`;
                     }
-                } else {
-                    repeat = AlertRepeat.Inactive;
-                }
 
-                return {
-                    id: section.id,
-                    original_created_at: section.original_created_at,
-                    section: section.section,
-                    date: datetime,
-                    status,
-                    repeat,
-                    actions: (repeat === AlertRepeat.Once || repeat === AlertRepeat.EOS)
-                        ? AlertAction.Cancel : AlertAction.Resubscribe,
-                };
-            })
-        ))
+                    const status = section.section_status
+                        ? AlertStatus.Open : AlertStatus.Closed;
+
+                    let repeat;
+                    if (section.is_active) {
+                        if (section.auto_resubscribe) {
+                            repeat = AlertRepeat.EOS;
+                        } else {
+                            repeat = AlertRepeat.Once;
+                        }
+                    } else {
+                        repeat = AlertRepeat.Inactive;
+                    }
+
+                    return {
+                        id: section.id,
+                        original_created_at: section.original_created_at,
+                        section: section.section,
+                        date: datetime,
+                        status,
+                        repeat,
+                        actions: (repeat === AlertRepeat.Once || repeat === AlertRepeat.EOS)
+                            ? AlertAction.Cancel : AlertAction.Resubscribe,
+                    };
+                })
+            )));
+
+    AwesomeDebouncePromise(fetchPromise, 300)()
         .then(alerts => setAlerts(alerts));
 };
 
 const filterAlerts = (alerts, filter) => {
     const sortedAlerts = alerts.sort((a, b) => {
-        let d1 = new Date(a.original_created_at);
-        let d2 = new Date(b.original_created_at);
+        const d1 = new Date(a.original_created_at);
+        const d2 = new Date(b.original_created_at);
         if (d1 > d2) {
             // if d1 is later, a should come first
             return -1;
-        } else {
-            return 1;
         }
+        return 1;
     });
 
     return sortedAlerts.filter((alert) => {
         if (filter.search.length > 0) {
             return alert.section.includes(filter.search.toUpperCase());
-        } else {
-            return true;
         }
+        return true;
     });
 };
 
@@ -109,12 +107,6 @@ const getActionPromise = (id, actionenum) => {
 };
 
 
-// callback is now specifically used to refresh the registration alert list
-// TODO: This might cause race conditions if people click on the action
-// buttons in succession, which triggers multiple refreshes
-// Can be solved by wrapping the fetchAlerts query with a debouncer
-//
-// Side note: how should errors be handled here?
 const actionHandler = callback => (id, actionenum) => {
     getActionPromise(id, actionenum)
         .then(res => callback());
@@ -126,9 +118,24 @@ const batchActionHandler = (callback, idList) => (actionenum) => {
         .then(res => callback());
 };
 
+const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
+    const selMap = {};
+    alerts.forEach((alert) => {
+        selMap[alert.id] = false;
+    });
+    if (!checked) {
+        currAlerts.forEach((alert) => {
+            selMap[alert.id] = true;
+        });
+    }
+    setAlertSel(selMap);
+};
+
 export const ManageAlertWrapper = () => {
     // alerts processed directly from registrationhistory
     const [alerts, setAlerts] = useState([]);
+    //state tracking the batch select button
+    const [batchSelected, setBatchSelected] = useState(false);
     // state tracking which alert has been selected/ticked
     const [alertSel, setAlertSel] = useState({});
     // alerts after passing through frontend filters
@@ -146,6 +153,7 @@ export const ManageAlertWrapper = () => {
             selMap[alert.id] = false;
         });
         setAlertSel(selMap);
+        setBatchSelected(false);
     }, [alerts, setAlertSel]);
 
     useEffect(() => {
@@ -165,7 +173,10 @@ export const ManageAlertWrapper = () => {
                 alerts={currAlerts}
                 alertSel={alertSel}
                 setAlertSel={setAlertSel}
+                batchSelected={batchSelected}
+                setBatchSelected={setBatchSelected}
                 actionHandler={actionHandler(() => processAlerts(setAlerts))}
+                batchSelectHandler={batchSelectHandler(setAlertSel, currAlerts, alerts)}
                 batchActionHandler={
                     batchActionHandler(() => processAlerts(setAlerts),
                         Object.keys(alertSel).filter(id => alertSel[id]))

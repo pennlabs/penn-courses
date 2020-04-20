@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import XBell from "../../assets/bell-off.svg";
@@ -34,13 +34,16 @@ const HeaderRightItem = styled(RightItem)`
 // Component for table header in alert management
 // Renders column titles or "x selected" depending
 // on if alerts are selected
-const Header = ({ selected, batchActionHandler }) => {
+const Header = ({ selected, batchActionHandler, batchSelectHandler, batchSelected, setBatchSelected }) => {
     const headings = ["LAST NOTIFIED", "COURSE ID", "STATUS", "REPEAT", "ACTIONS"];
-
     return (
         <>
             <GridItem column="1" row="1" color="#f8f8f8" halign valign>
-                <input type="checkbox" />
+                <input type="checkbox" checked={batchSelected}
+                       onClick={() => {
+                           batchSelectHandler(batchSelected);
+                           setBatchSelected(!batchSelected);
+                       }} />
             </GridItem>
             {selected === 0
              && headings.map((heading, i) => (
