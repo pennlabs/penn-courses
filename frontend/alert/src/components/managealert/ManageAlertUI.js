@@ -6,7 +6,6 @@ import Logo from "../../assets/PCA_logo.svg";
 import { RightItem, P, Flex } from "./ManageAlertStyledComponents";
 import { AlertSearch } from "./AlertSearch";
 import { AlertItem } from "./AlertItem";
-import { AlertAction, AlertStatus, AlertRepeat } from "./AlertItemEnums";
 import "./ManageAlert.module.css";
 
 const Container = styled.div`
@@ -64,27 +63,29 @@ const RightItemAlertFilter = styled(RightItem)`
     }
 `;
 
-export const ManageAlertHeader = () => {
-    return (
-        <Flex margin="-3.4rem 0rem 0rem 0rem">
-            <img
-                alt="Penn Course Alert logo"
-                src={Logo}
-                width="50rem"
-            />
-            <Flex col center valign halign margin="1.5rem 1.5rem 1.5rem 2rem" padding="2.2rem 0rem 0rem 0rem">
-                <Flex>
-                    <Input placeholder="Course" />
-                    <Button>Alert me</Button>
-                </Flex>
-                <P size="0.9rem" margin="1rem 0rem 0rem -3rem">Alert me until I cancel</P>
+export const ManageAlertHeader = () => (
+    <Flex margin="-3.4rem 0rem 0rem 0rem">
+        <img
+            alt="Penn Course Alert logo"
+            src={Logo}
+            width="50rem"
+        />
+        <Flex col center valign halign margin="1.5rem 1.5rem 1.5rem 2rem" padding="2.2rem 0rem 0rem 0rem">
+            <Flex>
+                <Input placeholder="Course" />
+                <Button>Alert me</Button>
             </Flex>
+            <P size="0.9rem" margin="1rem 0rem 0rem -3rem">Alert me until I cancel</P>
         </Flex>
-    );
-};
+    </Flex>
+);
 
 
-export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter, actionHandler, batchActionHandler, batchSelectHandler, batchSelected, setBatchSelected }) => {
+export const ManageAlert = ({
+    alerts, alertSel, setAlertSel, numSel, setFilter,
+    actionHandler, batchActionHandler, batchSelectHandler,
+    batchSelected, setBatchSelected,
+}) => {
     const toggleAlert = id => () => {
         setAlertSel({ ...alertSel, [id]: !alertSel[id] });
     };
@@ -109,7 +110,7 @@ export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter, 
                 <TitleText>Alert Management</TitleText>
                 <RightItemAlertFilter>
                     <P size="0.7rem" margin="0rem 2rem 0rem 0rem">Sort by Last Notified</P>
-                    <AlertSearch value={searchValue} onChange={handleChange}/>
+                    <AlertSearch value={searchValue} onChange={handleChange} />
                 </RightItemAlertFilter>
             </Flex>
             <Grid>
@@ -142,4 +143,15 @@ export const ManageAlert = ({ alerts, alertSel, setAlertSel, numSel, setFilter, 
 
 ManageAlert.propTypes = {
     alerts: PropTypes.arrayOf(PropTypes.object),
+    actionHandler: PropTypes.func,
+    batchActionHandler: PropTypes.func,
+    batchSelectHandler: PropTypes.func,
+    batchSelected: PropTypes.bool,
+    setBatchSelected: PropTypes.func,
+    setAlertSel: PropTypes.func,
+    setFilter: PropTypes.func,
+    // alertSel is an object with potentially many fields, since it is used as a map
+    // eslint-disable-next-line
+    alertSel: PropTypes.object,
+    numSel: PropTypes.number,
 };

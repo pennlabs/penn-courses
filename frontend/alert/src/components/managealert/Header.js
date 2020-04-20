@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import XBell from "../../assets/bell-off.svg";
@@ -34,16 +34,22 @@ const HeaderRightItem = styled(RightItem)`
 // Component for table header in alert management
 // Renders column titles or "x selected" depending
 // on if alerts are selected
-const Header = ({ selected, batchActionHandler, batchSelectHandler, batchSelected, setBatchSelected }) => {
+const Header = ({
+    selected, batchActionHandler, batchSelectHandler,
+    batchSelected, setBatchSelected,
+}) => {
     const headings = ["LAST NOTIFIED", "COURSE ID", "STATUS", "REPEAT", "ACTIONS"];
     return (
         <>
             <GridItem column="1" row="1" color="#f8f8f8" halign valign>
-                <input type="checkbox" checked={batchSelected}
-                       onClick={() => {
-                           batchSelectHandler(batchSelected);
-                           setBatchSelected(!batchSelected);
-                       }} />
+                <input
+                    type="checkbox"
+                    checked={batchSelected}
+                    onClick={() => {
+                        batchSelectHandler(batchSelected);
+                        setBatchSelected(!batchSelected);
+                    }}
+                />
             </GridItem>
             {selected === 0
              && headings.map((heading, i) => (
@@ -63,19 +69,25 @@ const Header = ({ selected, batchActionHandler, batchSelectHandler, batchSelecte
                          <HeaderRightItem>
                              <HeaderButtonsFlex valign>
                                  <Img src={ABell} width="0.5rem" height="0.5rem" />
-                                 <HeaderAction onClick={() => batchActionHandler(AlertAction.Resubscribe)}>
+                                 <HeaderAction
+                                     onClick={() => batchActionHandler(AlertAction.Resubscribe)}
+                                 >
                                      RESUBSCRIBE
                                  </HeaderAction>
                              </HeaderButtonsFlex>
                              <HeaderButtonsFlex valign>
                                  <Img src={XBell} width="0.5rem" height="0.5rem" />
-                                 <HeaderAction onClick={() => batchActionHandler(AlertAction.Cancel)}>
+                                 <HeaderAction
+                                     onClick={() => batchActionHandler(AlertAction.Cancel)}
+                                 >
                                      CANCEL
                                  </HeaderAction>
                              </HeaderButtonsFlex>
                              <HeaderButtonsFlex valign>
                                  <Img src={Trash} width="0.5rem" height="0.5rem" />
-                                 <HeaderAction onClick={() => batchActionHandler(AlertAction.Delete)}>
+                                 <HeaderAction
+                                     onClick={() => batchActionHandler(AlertAction.Delete)}
+                                 >
                                      DELETE
                                  </HeaderAction>
                              </HeaderButtonsFlex>
@@ -87,6 +99,13 @@ const Header = ({ selected, batchActionHandler, batchSelectHandler, batchSelecte
     );
 };
 
-Header.propTypes = { selected: PropTypes.number };
+Header.propTypes = {
+    selected: PropTypes.number,
+    batchActionHandler: PropTypes.func,
+    batchSelectHandler: PropTypes.func,
+    setBatchSelected: PropTypes.func,
+    batchSelected: PropTypes.bool,
+
+};
 
 export default Header;

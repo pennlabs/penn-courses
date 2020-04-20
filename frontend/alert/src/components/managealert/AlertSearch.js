@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import styled from "styled-components";
 import Search from "../../assets/search.svg";
 import { Flex, Img } from "./ManageAlertStyledComponents";
@@ -33,3 +34,8 @@ export const AlertSearch = ({ value, onChange }) => (
         </SearchBarFlex>
     </SearchFlex>
 );
+
+AlertSearch.propTypes = {
+    value: PropTypes.string,
+    onChange: PropTypes.func,
+};

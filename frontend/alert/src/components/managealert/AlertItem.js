@@ -21,7 +21,7 @@ const StatusGridItem = styled(GridItem)`
 
 // Component for an alert entry (renders as a row in CSS grid)
 export const AlertItem = ({
-    date, course, status, repeat, actions, rownum, checked, toggleAlert, actionHandler
+    date, course, status, repeat, actions, rownum, checked, toggleAlert, actionHandler,
 }) => {
     let statustext;
     let statuscolor;
@@ -100,4 +100,7 @@ AlertItem.propTypes = {
     repeat: PropTypes.oneOf([AlertRepeat.EOS, AlertRepeat.Inactive, AlertRepeat.Once]),
     actions: PropTypes.oneOf([AlertAction.Resubscribe, AlertAction.Cancel]),
     rownum: PropTypes.number,
+    checked: PropTypes.bool,
+    toggleAlert: PropTypes.func,
+    actionHandler: PropTypes.func,
 };

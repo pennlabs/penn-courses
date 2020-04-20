@@ -55,4 +55,5 @@ export const ActionButton = ({ type, onClick }) => {
 
 ActionButton.propTypes = {
     type: PropTypes.oneOf([AlertAction.Resubscribe, AlertAction.Cancel]),
+    onClick: PropTypes.func,
 };
