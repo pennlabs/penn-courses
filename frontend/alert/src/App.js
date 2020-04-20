@@ -3,12 +3,9 @@ import "./App.css";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import Logo from "./assets/PCA_logo.svg";
-
+import ManageAlertWrapper from "./components/managealert";
 import { maxWidth, PHONE } from "./constants";
 import Footer from "./components/Footer";
-
-import { ManageAlert } from "./components/managealert/ManageAlertUI";
-
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
 import AutoComplete from "./components/AutoComplete";
 import { Input } from "./components/Input";
@@ -175,7 +172,7 @@ function App() {
             )
                 : (
                     <>
-                        <ManageAlert />
+                        <ManageAlertWrapper />
                     </>
                 )}
 
