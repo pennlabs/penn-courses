@@ -181,6 +181,17 @@ const ManageAlertWrapper = () => {
 
     return (
         <>
+            {
+                // TODO: Daniel 1
+                // ManageAlertHeader is the UI componet for the search bar
+                // for alert registration on the Alerts Management page
+                // State logic should probably be in this component so
+                // you can just call processAlerts(setAlerts) to refresh
+                // the registration list after an alert is registered
+                //
+                // value and onChange can be passed to the search bar via props
+                // here
+            }
             <ManageAlertHeader />
             <ManageAlert
                 setFilter={setFilter}
