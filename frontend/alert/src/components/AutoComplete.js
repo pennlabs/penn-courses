@@ -67,6 +67,7 @@ const DropdownItemBox = styled.div`
     flex-direction: row;
     cursor: pointer;
     transition: 180ms ease background;
+    ${props => props.selected ? "background-color: rgb(235, 235, 235);" : ""}
     &:hover {
         background-color: rgb(220, 220, 220);
     }
@@ -123,16 +124,16 @@ const Container = styled.div`
 `;
 
 const Suggestion = ({
-    onClick, courseCode, title, instructor,
+    onClick, courseCode, title, instructor, selected,
 }) => (
-    <DropdownItemBox onClick={onClick}>
+    <DropdownItemBox onClick={onClick} selected={selected} requestFocus={selected}>
         <DropdownItemLeftCol>
             <SuggestionTitle>{courseCode}</SuggestionTitle>
             <SuggestionSubtitle>{title}</SuggestionSubtitle>
             <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
         </DropdownItemLeftCol>
         <IconContainer>
-            <FontAwesomeIcon icon={faHistory} color="#c4c4c4" />
+            <FontAwesomeIcon icon={faHistory} color="#c4c4c4"/>
         </IconContainer>
     </DropdownItemBox>
 );
@@ -142,6 +143,7 @@ Suggestion.propTypes = {
     title: PropTypes.string,
     instructor: PropTypes.string,
     onClick: PropTypes.func,
+    selected: PropTypes.bool,
 };
 
 /**
@@ -173,6 +175,7 @@ const AutoComplete = () => {
     const [rawSuggestions, setRawSuggestions] = useState(null);
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
+    const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
 
     const show = active && suggestions.length > 0;
 
@@ -185,22 +188,26 @@ const AutoComplete = () => {
 
     useEffect(() => {
         if (rawSuggestions) {
-            const {searchResult, searchTerm} = rawSuggestions;
+            const { searchResult, searchTerm } = rawSuggestions;
             if (searchTerm === value) {
                 setSuggestions(searchResult);
             }
         }
     }, [rawSuggestions, value]);
 
-    useEffect(() => {
-        if (!value) {
-            setSuggestions([]);
-        } else {
-            suggestionsDebounced(value)
-                .then(setRawSuggestions);
+    /**
+     * Takes in the index of a new selected suggestion and updates state accordingly
+     * @param newSelectedSuggestion
+     */
+    const handleSuggestionSelect = (newSelectedSuggestion) => {
+        setSelectedSuggestion(newSelectedSuggestion);
+        const newSelectedSuggestionValue = newSelectedSuggestion !== -1 && suggestions[newSelectedSuggestion];
+        if (newSelectedSuggestionValue) {
+            const newValue = newSelectedSuggestionValue.section_id;
+            setValue(newValue);
+            inputRef.value = newValue;
         }
-    }, [value]);
-
+    };
 
     return (
         <Container
@@ -211,14 +218,35 @@ const AutoComplete = () => {
                 autocomplete="off"
                 placeholder="Course"
                 ref={setInputRef}
-                value={value}
-                onChange={({ target: { value: newValue } }) => {
-                    setValue(newValue);
-                }}
-                onKeyDown={(e) => {
-                    // autocomplete with backdrop when the right arrow key is pressed
+                onKeyUp={(e) => {
                     if (e.keyCode === 39 && inputRef && suggestions && suggestions[0]) {
+                        // autocomplete with backdrop when the right arrow key is pressed
                         setValue(backdrop);
+                        inputRef.value = backdrop;
+                    } else if (e.keyCode === 40 && suggestions) {
+                        // select a suggestion when the down arrow key is pressed
+                        let newIndex = selectedSuggestion + 1;
+                        if (suggestions[newIndex] && suggestions[newIndex].section_id === value) {
+                            // newIndex is already selected; increment
+                            ++newIndex;
+                        }
+                        const newSelectedSuggestion =
+                            Math.min(newIndex, suggestions.length - 1);
+                        handleSuggestionSelect(newSelectedSuggestion);
+                    } else if (e.keyCode === 38 && suggestions) {
+                        // select a suggestion when the down arrow key is pressed
+                        const newSelectedSuggestion =
+                            Math.max(selectedSuggestion - 1, -1);
+                        handleSuggestionSelect(newSelectedSuggestion);
+                    } else {
+                        const newValue = e.target.value;
+                        setValue(newValue);
+                        if (!newValue) {
+                            setSuggestions([]);
+                        } else {
+                            suggestionsDebounced(newValue)
+                                .then(setRawSuggestions);
+                        }
                     }
                 }}
                 onClick={() => setActive(true)}
@@ -229,11 +257,16 @@ const AutoComplete = () => {
             />
             <DropdownContainer below={inputRef} hidden={!show}>
                 <DropdownBox>
-                    {suggestions.map(suggestion => (
+                    {suggestions.map((suggestion, index) => (
                         <Suggestion
                             key={suggestion.section_id}
+                            selected={index === selectedSuggestion ||
+                            suggestion.section_id.toLowerCase() === value.toLowerCase()}
                             courseCode={suggestion.section_id}
-                            onClick={() => { setValue(suggestion.section_id); }}
+                            onClick={() => {
+                                inputRef.value = suggestion.section_id;
+                                setValue(suggestion.section_id);
+                            }}
                             title={suggestion.course_title}
                             instructor={suggestion.instructors[0]}
                         />
