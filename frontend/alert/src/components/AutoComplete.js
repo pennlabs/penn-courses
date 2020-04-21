@@ -29,6 +29,10 @@ const suggestionsDebounced = AwesomeDebouncePromise(
 
 const AUTOCOMPLETE_BORDER_WIDTH = 1;
 
+const UP_ARROW = 38;
+const RIGHT_ARROW= 39;
+const DOWN_ARROW = 40;
+
 const DropdownContainer = styled.div`
     position: absolute;
     left: 0;
@@ -126,6 +130,8 @@ const Suggestion = ({
     onClick, courseCode, title, instructor, selected,
 }) => {
     const ref = useRef();
+    // If the suggestion becomes selected, make sure that it is
+    // not fully or partially scrolled out of view
     useEffect(() => {
         if (selected && ref.current) {
             const { bottom, top } = ref.current.getBoundingClientRect();
@@ -189,7 +195,7 @@ const AutoComplete = () => {
     const [inputRef, setInputRef] = useState(null);
     const [value, setValue] = useState("");
     const [suggestions, setSuggestions] = useState([]);
-    const [rawSuggestions, setRawSuggestions] = useState(null);
+    const [suggestionsFromBackend, setSuggestionsFromBackend] = useState(null);
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
 
@@ -202,14 +208,16 @@ const AutoComplete = () => {
         ));
     }, [inputRef, show, suggestions, value]);
 
+
+    // Make sure that the suggestions from the backend are up-to-date before displaying them
     useEffect(() => {
-        if (rawSuggestions) {
-            const { searchResult, searchTerm } = rawSuggestions;
+        if (suggestionsFromBackend) {
+            const { searchResult, searchTerm } = suggestionsFromBackend;
             if (searchTerm === value) {
                 setSuggestions(searchResult);
             }
         }
-    }, [rawSuggestions, value]);
+    }, [suggestionsFromBackend, value]);
 
     /**
      * Takes in the index of a new selected suggestion and updates state accordingly
@@ -242,17 +250,17 @@ const AutoComplete = () => {
                 placeholder="Course"
                 ref={setInputRef}
                 onKeyUp={(e) => {
-                    if (e.keyCode === 39 && inputRef && suggestions && suggestions[0]) {
+                    if (e.keyCode === RIGHT_ARROW && inputRef && suggestions && suggestions[0]) {
                         // autocomplete with backdrop when the right arrow key is pressed
                         setValue(backdrop);
                         inputRef.value = backdrop;
-                    } else if (e.keyCode === 40 && suggestions) {
+                    } else if (e.keyCode === DOWN_ARROW && suggestions) {
                         // select a suggestion when the down arrow key is pressed
                         const newIndex = getCurrentIndex() + 1;
                         const newSelectedSuggestion = Math.min(newIndex, suggestions.length - 1);
                         handleSuggestionSelect(newSelectedSuggestion);
-                    } else if (e.keyCode === 38 && suggestions) {
-                        // select a suggestion when the down arrow key is pressed
+                    } else if (e.keyCode === UP_ARROW && suggestions) {
+                        // select a suggestion when the up arrow key is pressed
                         const newSelectedSuggestion = Math.max(getCurrentIndex() - 1, -1);
                         handleSuggestionSelect(newSelectedSuggestion);
                     } else {
@@ -262,7 +270,7 @@ const AutoComplete = () => {
                             setSuggestions([]);
                         } else {
                             suggestionsDebounced(newValue)
-                                .then(setRawSuggestions);
+                                .then(setSuggestionsFromBackend);
                         }
                     }
                 }}
