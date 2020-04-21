@@ -242,7 +242,7 @@ const AutoComplete = () => {
                 placeholder="Course"
                 ref={setInputRef}
                 onKeyUp={(e) => {
-                    if (e.keyCode === 39 && inputRef && suggestions && suggestions[0]) {
+                    if (e.keyCode === RIGHT_ARROW && inputRef && suggestions && suggestions[0]) {
                         // autocomplete with backdrop when the right arrow key is pressed
                         setValue(backdrop);
                         inputRef.value = backdrop;
