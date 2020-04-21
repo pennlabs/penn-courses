@@ -30,7 +30,7 @@ const suggestionsDebounced = AwesomeDebouncePromise(
 const AUTOCOMPLETE_BORDER_WIDTH = 1;
 
 const UP_ARROW = 38;
-const RIGHT_ARROW= 39;
+const RIGHT_ARROW = 39;
 const DOWN_ARROW = 40;
 
 const DropdownContainer = styled.div`
