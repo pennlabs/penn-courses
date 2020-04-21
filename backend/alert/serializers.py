@@ -6,9 +6,12 @@ from alert.models import Registration
 class RegistrationSerializer(serializers.ModelSerializer):
     section = serializers.SlugRelatedField(slug_field="full_code", read_only=True)
     user = serializers.SlugRelatedField(slug_field="username", read_only=True)
-    section_status = serializers.ReadOnlyField(source="section__status")
+    section_status = serializers.SerializerMethodField()
 
     is_active = serializers.SerializerMethodField()
+
+    def get_section_status(self, o):
+        return o.section.status
 
     def get_is_active(self, o):
         return o.is_active
@@ -39,4 +42,5 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "notification_sent",
             "notification_sent_at",
             "deleted_at",
+            "section_status",
         ]

@@ -7,6 +7,7 @@ from django.db import IntegrityError
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_bool, get_value
@@ -60,15 +61,16 @@ def do_register(course_code, email_address, phone, source, make_response, api_ke
 
     if res == RegStatus.SUCCESS:
         return make_response(
-            "success", "Your registration for %s was successful!" % normalized_course_code
+            "success", "Your registration for %s was successful!" % normalized_course_code,
         )
     elif res == RegStatus.OPEN_REG_EXISTS:
         return make_response(
-            "warning", "You've already registered to get alerts for %s!" % normalized_course_code
+            "warning", "You've already registered to get alerts for %s!" % normalized_course_code,
         )
     elif res == RegStatus.COURSE_NOT_FOUND:
         return make_response(
-            "danger", "%s did not match any course in our database. Please try again!" % course_code
+            "danger",
+            "%s did not match any course in our database. Please try again!" % course_code,
         )
     elif res == RegStatus.NO_CONTACT_INFO:
         return make_response("danger", "Please enter either a phone number or an email address.")
@@ -235,7 +237,7 @@ def third_party_register(request):
 
     if not key.privileges.filter(code=PCA_REGISTRATION).exists():
         return JsonResponse(
-            {"message": "API key does not have permission to register on PCA."}, status=401
+            {"message": "API key does not have permission to register on PCA."}, status=401,
         )
 
     if not get_bool("REGISTRATION_OPEN", True):
@@ -268,7 +270,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def handle_registration(request):
         if not get_bool("REGISTRATION_OPEN", True):
             return Response(
-                {"message": "Registration is not open."}, status=status.HTTP_503_SERVICE_UNAVAILABLE
+                {"message": "Registration is not open."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
         section_code = request.data.get("section", None)
@@ -358,19 +361,14 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             if request.data.get("resubscribe", False):
                 if registration.deleted:
                     return Response(
-                        {
-                            "detail": "You cannot resubscribe to a deleted alert "
-                            "(the user should not be able to do this; we decided it just"
-                            "causes extra functionality clutter on the frontend and more "
-                            "complexity without affording much more convenience)."
-                        },
+                        {"detail": "You cannot resubscribe to a deleted registration."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                if not registration.notification_sent:
+                if not registration.notification_sent and not registration.cancelled:
                     return Response(
                         {
-                            "detail": "You can only resubscribe to an alert that "
-                            "has already been sent."
+                            "detail": "You can only resubscribe to a registration that "
+                            "has already been sent or has been cancelled."
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -384,11 +382,31 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 registration.deleted = True
                 registration.save()
                 if changed:  # else taken care of in generic return statement
+                    registration.deleted_at = timezone.now()
+                    registration.save()
                     return Response({"detail": "Registration deleted"}, status=status.HTTP_200_OK)
+            elif request.data.get("cancelled", False):
+                if registration.deleted:
+                    return Response(
+                        {"detail": "You cannot cancel a deleted registration."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if registration.notification_sent:
+                    return Response(
+                        {"detail": "You cannot cancel a sent registration."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                changed = not registration.cancelled
+                registration.cancelled = True
+                registration.save()
+                if changed:  # else taken care of in generic return statement
+                    registration.cancelled_at = timezone.now()
+                    registration.save()
+                    return Response({"detail": "Registration cancelled"}, status=status.HTTP_200_OK)
             elif "auto_resubscribe" in request.data:
                 if registration.deleted:
                     return Response(
-                        {"detail": "You cannot make changes to a deleted registration"},
+                        {"detail": "You cannot make changes to a deleted registration."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 changed = registration.auto_resubscribe != request.data.get("auto_resubscribe")
@@ -420,9 +438,14 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
 
-    def get_queryset_current(self):
+    def get_queryset_current(
+        self,
+    ):  # NOT the same as all active registrations (includes cancelled)
         return Registration.objects.filter(
-            user=self.request.user, notification_sent=False, deleted=False
+            user=self.request.user,
+            notification_sent=False,
+            deleted=False,
+            resubscribed_to__isnull=True,
         )
 
 
@@ -431,4 +454,4 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Registration.objects.filter(user=self.request.user)
+        return Registration.objects.filter(user=self.request.user).prefetch_related("section")

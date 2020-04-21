@@ -21,7 +21,7 @@ const ActionButtonFlex = styled(Flex)`
 
 // Component associated with Resubscribe and Cancel buttons
 // for each alert
-export const ActionButton = ({ type }) => {
+export const ActionButton = ({ type, onClick }) => {
     let img;
     let primary;
     let secondary;
@@ -45,7 +45,7 @@ export const ActionButton = ({ type }) => {
 
     return (
         <ActionFlex valign halign background={secondary}>
-            <ActionButtonFlex valign margin="0.3rem">
+            <ActionButtonFlex valign margin="0.3rem" onClick={onClick}>
                 <P size="0.6rem" color={primary} weight="600">{text}</P>
                 <Img src={img} width="0.6rem" height="0.6rem" alt="" />
             </ActionButtonFlex>
@@ -55,4 +55,5 @@ export const ActionButton = ({ type }) => {
 
 ActionButton.propTypes = {
     type: PropTypes.oneOf([AlertAction.Resubscribe, AlertAction.Cancel]),
+    onClick: PropTypes.func,
 };
