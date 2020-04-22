@@ -89,7 +89,9 @@ const AlertForm = ({ user, setResponse }) => {
             <Input placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} />
             <Center>
                 <AlertText>
-                Alert me {" "}
+                Alert me
+                    {" "}
+                    {" "}
                     <Dropdown>until I cancel</Dropdown>
                 </AlertText>
                 <SubmitButton onClick={(e) => {

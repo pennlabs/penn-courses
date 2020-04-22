@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
-import { ManageAlert, ManageAlertHeader } from "./ManageAlertUI";
+import { ManageAlert } from "./ManageAlertUI";
 import { AlertStatus, AlertRepeat, AlertAction } from "./AlertItemEnums";
 import getCsrf from "../../csrf";
 
