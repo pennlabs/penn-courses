@@ -292,8 +292,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if res == RegStatus.SUCCESS:
             return Response(
                 {
-                    "message": "Your registration for %s was successful!"
-                    % normalized_course_code,
+                    "message": "Your registration for %s was successful!" % normalized_course_code,
                     "id": reg.pk,
                 },
                 status=status.HTTP_201_CREATED,

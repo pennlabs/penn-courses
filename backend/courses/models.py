@@ -437,6 +437,6 @@ class UserProfile(models.Model):
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     _, created = UserProfile.objects.get_or_create(user=instance)
-    if created and instance.email != '':
+    if created and instance.email != "":
         instance.profile.email = instance.email
     instance.profile.save()
