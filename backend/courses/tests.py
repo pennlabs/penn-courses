@@ -2,10 +2,11 @@ import json
 import os
 
 from django.test import TestCase, override_settings
+from django.contrib.auth.models import User
 from options.models import Option
 from rest_framework.test import APIClient
 
-from courses.models import Course, Department, Instructor, Meeting, Requirement, Section
+from courses.models import Course, Department, Instructor, Meeting, Requirement, Section, UserProfile
 from courses.util import (
     create_mock_data,
     get_or_create_course,
@@ -522,3 +523,11 @@ class SectionSearchTestCase(TestCase):
     def test_nomatch(self):
         res = self.client.get("/courses/", {"search": "123bdfsh3wq!@#"})
         self.assertEqual(0, len(res.data))
+
+
+class UserProfileTestCase(TestCase):
+    def test_profile_created(self):
+        u = User.objects.create_user(username="test", password="top_secret", email="test@example.com")
+        self.assertTrue(UserProfile.objects.filter(user=u).exists())
+        p = UserProfile.objects.get(user=u)
+        self.assertEqual(u.email, p.email)

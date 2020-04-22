@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 
@@ -33,25 +33,39 @@ const Dropdown = styled.span`
     font-weight: bold;
 `;
 
-const submitRegistration = ({ sectionId, autoResubscribe }) => {
-
+const submitRegistration = ({ section, autoResubscribe = false }) => {
+    alert("submitting alert for: " + section);
 };
+
+const Form = styled.form`
+display: flex;
+flex-direction: column;
+`;
 
 const AlertForm = ({ user }) => {
     const [section, setSection] = useState("");
+    const [email, setEmail] = useState(user && user.profile.email);
+    const [phone, setPhone] = useState(user && user.profile.phone);
+    console.log(user);
     return (
-        <form>
-            <AutoComplete />
-            <Input placeholder="Email" value={user && user.profile.email} />
-            <Input placeholder="Phone" value={user && user.profile.phone} />
+        <Form>
+            <AutoComplete onValueChange={setSection} />
+            <Input placeholder="Email" value={email} />
+            <Input placeholder="Phone" value={phone} />
             <Center>
                 <AlertText>
                 Alert me
                     <Dropdown>until I cancel</Dropdown>
                 </AlertText>
-                <SubmitButton onClick={onSubmit}>Submit</SubmitButton>
+                <SubmitButton onClick={(e) => {
+                    e.preventDefault();
+                    submitRegistration({ section });
+                }}
+                >
+Submit
+                </SubmitButton>
             </Center>
-        </form>
+        </Form>
     );
 };
 

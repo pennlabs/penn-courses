@@ -105,7 +105,7 @@ function App() {
                     <Heading />
                     <AlertForm user={user} />
                 </Flex>
-            ) : <ManageAlertWrapper/>
+            ) : <ManageAlertWrapper />
             }
             <Footer />
         </Container>
