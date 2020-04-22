@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import styled from "styled-components";
 import Search from "../../assets/search.svg";
 import { Flex, Img } from "./ManageAlertStyledComponents";
@@ -25,11 +26,16 @@ const SearchBarFlex = styled(Flex)`
 
 // Component for search filter
 // in alert management
-export const AlertSearch = () => (
+export const AlertSearch = ({ value, onChange }) => (
     <SearchFlex valign>
         <SearchBarFlex valign margin="0.2rem">
             <Img src={Search} alt="" width="0.6rem" height="0.6rem" />
-            <SearchInput type="search" placeholder="Search" />
+            <SearchInput type="search" placeholder="Search" value={value} onChange={onChange} />
         </SearchBarFlex>
     </SearchFlex>
 );
+
+AlertSearch.propTypes = {
+    value: PropTypes.string,
+    onChange: PropTypes.func,
+};

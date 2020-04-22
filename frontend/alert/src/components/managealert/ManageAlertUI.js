@@ -1,12 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-// import PropTypes from "prop-types";
+import PropTypes from "prop-types";
 import Header from "./Header";
 import Logo from "../../assets/PCA_logo.svg";
 import { RightItem, P, Flex } from "./ManageAlertStyledComponents";
 import { AlertSearch } from "./AlertSearch";
 import { AlertItem } from "./AlertItem";
-import { AlertAction, AlertStatus, AlertRepeat } from "./AlertItemEnums";
 import "./ManageAlert.module.css";
 
 const Container = styled.div`
@@ -81,33 +80,82 @@ export const ManageAlertHeader = () => (
     </Flex>
 );
 
-export const ManageAlert = () => (
-    <Container>
-        <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign halign>
-            <TitleText>Alert Management</TitleText>
-            <RightItemAlertFilter>
-                <P size="0.7rem" margin="0rem 2rem 0rem 0rem">Sort by Last Notified</P>
-                <AlertSearch />
-            </RightItemAlertFilter>
-        </Flex>
-        <Grid>
-            <Header selected={2} />
-            <AlertItem
-                rownum={2}
-                date="9/12/2017 at 6:30PM"
-                course="CIS-120-001"
-                status={AlertStatus.Open}
-                repeat={AlertRepeat.Inactive}
-                actions={AlertAction.Cancel}
-            />
-            <AlertItem
-                rownum={3}
-                date="9/12/2017 at 6:30PM"
-                course="CIS-120-001"
-                status={AlertStatus.Closed}
-                repeat={AlertRepeat.EOS}
-                actions={AlertAction.Resubscribe}
-            />
-        </Grid>
-    </Container>
-);
+
+export const ManageAlert = ({
+    alerts, alertSel, setAlertSel, setFilter,
+    actionButtonHandler, batchActionHandler, batchSelectHandler,
+    batchSelected, setBatchSelected,
+}) => {
+    const toggleAlert = id => () => {
+        setAlertSel({ ...alertSel, [id]: !alertSel[id] });
+    };
+
+    const [searchValue, setSearchValue] = useState("");
+    const [searchTimeout, setSearchTimeout] = useState();
+    const [numSelected, setNumSelected] = useState(0);
+
+    useEffect(() => {
+        setNumSelected(Object.values(alertSel).reduce((acc, x) => acc + x, 0));
+    }, [alertSel]);
+
+    const handleChange = (event) => {
+        const searchText = event.target.value;
+        setSearchValue(searchText);
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        setSearchTimeout(setTimeout(() => {
+            setFilter({ search: searchText });
+        }, 100));
+    };
+
+    return (
+        <Container>
+            <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign halign>
+                <TitleText>Alert Management</TitleText>
+                <RightItemAlertFilter>
+                    <P size="0.7rem" margin="0rem 2rem 0rem 0rem">Sort by Last Notified</P>
+                    <AlertSearch value={searchValue} onChange={handleChange} />
+                </RightItemAlertFilter>
+            </Flex>
+            <Grid>
+                <Header
+                    selected={numSelected}
+                    batchSelected={batchSelected}
+                    setBatchSelected={setBatchSelected}
+                    batchActionHandler={batchActionHandler}
+                    batchSelectHandler={batchSelectHandler}
+                />
+                {alerts.map((alert, i) => (
+                    <AlertItem
+                        key={alert.id}
+                        checked={alertSel[alert.id]}
+                        rownum={i + 2}
+                        alertLastSent={alert.alertLastSent}
+                        course={alert.section}
+                        status={alert.status}
+                        repeat={alert.repeat}
+                        actions={alert.actions}
+                        toggleAlert={toggleAlert(alert.id)}
+                        actionButtonHandler={() => actionButtonHandler(alert.id, alert.actions)}
+                    />
+                ))}
+
+            </Grid>
+        </Container>
+    );
+};
+
+ManageAlert.propTypes = {
+    alerts: PropTypes.arrayOf(PropTypes.object),
+    actionButtonHandler: PropTypes.func,
+    batchActionHandler: PropTypes.func,
+    batchSelectHandler: PropTypes.func,
+    batchSelected: PropTypes.bool,
+    setBatchSelected: PropTypes.func,
+    setAlertSel: PropTypes.func,
+    setFilter: PropTypes.func,
+    // alertSel is an object with potentially many fields, since it is used as a map
+    // eslint-disable-next-line
+    alertSel: PropTypes.object,
+};
