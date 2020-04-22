@@ -53,6 +53,7 @@ const doAPIRequest = (url, method = "GET", body = {}, extraHeaders = {}) => fetc
     body: JSON.stringify(body),
 });
 
+
 const AlertForm = ({ user, setResponse }) => {
     const [section, setSection] = useState("");
     const [email, setEmail] = useState(user && user.profile.email);
@@ -64,7 +65,7 @@ const AlertForm = ({ user, setResponse }) => {
     const submitRegistration = () => {
         doAPIRequest("/api/alert/api/registrations/", "POST", { section })
             .then(res => setResponse(res))
-            .catch(e => alert(e));
+            .catch(e => alert("There was an unexpected error. Please try again!"));
     };
     const onSubmit = () => {
         if (contactInfoChanged()) {
@@ -88,7 +89,7 @@ const AlertForm = ({ user, setResponse }) => {
             <Input placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} />
             <Center>
                 <AlertText>
-                Alert me
+                Alert me {" "}
                     <Dropdown>until I cancel</Dropdown>
                 </AlertText>
                 <SubmitButton onClick={(e) => {

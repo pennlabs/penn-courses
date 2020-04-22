@@ -92,7 +92,7 @@ const genId = (() => { let counter = 0; return () => counter++; })(); // eslint-
 
 function App() {
     const [user, setUser] = useState(null);
-    const [page, setPage] = useState("home");
+    const [page, setPage] = useState(window.location.hash === "#manage" ? "manage" : "home");
     const [messages, setMessages] = useState([]);
 
     const removeMessage = k => setMessages(msgs => msgs.filter(m => m.key !== k));
@@ -115,9 +115,9 @@ function App() {
                 setPage={setPage}
             />
             <MessageList messages={messages} removeMessage={removeMessage} />
+            <Heading />
             {page === "home" ? (
                 <Flex col grow={1}>
-                    <Heading />
                     { user ? <AlertForm user={user} setResponse={setResponse} /> : null }
                 </Flex>
             ) : <ManageAlertWrapper />

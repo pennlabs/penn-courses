@@ -192,7 +192,7 @@ const ManageAlertWrapper = () => {
                 // value and onChange can be passed to the search bar via props
                 // here
             }
-            <ManageAlertHeader />
+            {/* <ManageAlertHeader /> */}
             <ManageAlert
                 setFilter={setFilter}
                 alerts={currAlerts}
