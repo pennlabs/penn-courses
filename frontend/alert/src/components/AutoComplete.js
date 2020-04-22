@@ -166,7 +166,7 @@ const generateBackdrop = (value, suggestions) => {
     return suggestion;
 };
 
-const AutoComplete = () => {
+const AutoComplete = ({ onChange }) => {
     const [inputRef, setInputRef] = useState(null);
     const [value, setValue] = useState("");
     const [suggestions, setSuggestions] = useState([]);
@@ -238,6 +238,10 @@ const AutoComplete = () => {
             </DropdownContainer>
         </Container>
     );
+};
+
+AutoComplete.propTypes = {
+    onChange: PropTypes.func,
 };
 
 export default AutoComplete;

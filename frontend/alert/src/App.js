@@ -10,23 +10,9 @@ import Footer from "./components/Footer";
 import { ManageAlert } from "./components/managealert/ManageAlertUI";
 
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
-import AutoComplete from "./components/AutoComplete";
-import { Input } from "./components/Input";
+import AlertForm from "./components/AlertForm";
 
-const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100vh;
-    background: rgb(251, 252, 255);
-`;
-
-const Flex = styled.div`
-    display: flex;
-    flex-direction: ${props => (props.col ? "column" : "row")};
-    align-items: ${props => props.align || "center"};
-    flex-grow: ${props => props.grow || 0}
-`;
+import { Center, Container, Flex } from "./components/common/layout";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
@@ -37,27 +23,6 @@ const Header = styled.h1`
 
     ${maxWidth(PHONE)} {
         font-size: 1.5rem;
-    }
-`;
-
-const Center = styled.div`
-    text-align: center;
-`;
-
-
-const SubmitButton = styled.button`
-    border-radius: 5px;
-    background-color: #209cee;
-    color: white;
-    font-size: 1em;
-    margin: 1em;
-    width: 5em;
-    padding: 0.7em 1em;
-    transition: 0.2s all;
-    border: none;
-    cursor: pointer;
-    :hover {
-        background-color: #1496ed;
     }
 `;
 
@@ -89,15 +54,6 @@ const NavElt = styled.a`
     font-weight: ${props => (props.active ? "bold" : "normal")};
 `;
 
-const AlertText = styled.div`
-    padding-top: 1rem;
-    color: #555555;
-`;
-const Dropdown = styled.span`
-    color: #4a4a4a;
-    cursor: pointer;
-    font-weight: bold;
-`;
 
 const Nav = ({
     login, logout, user, page, setPage,
@@ -134,28 +90,8 @@ const Heading = () => (
     </Center>
 );
 
-const AlertForm = ({ onSubmit, user }) => (
-    <>
-        <AutoComplete />
-        <Input placeholder="Email" value={user && user.profile.email} />
-        <Input placeholder="Phone" value={user && user.profile.phone} />
-        <Center>
-            <AlertText>
-                Alert me
-                <Dropdown>until I cancel</Dropdown>
-            </AlertText>
-            <SubmitButton onClick={onSubmit}>Submit</SubmitButton>
-        </Center>
-    </>
-);
-
-AlertForm.propTypes = {
-    onSubmit: PropTypes.func,
-    user: PropTypes.objectOf(PropTypes.any),
-};
 
 function App() {
-    const onSubmit = () => {};
     const [user, setUser] = useState(null);
     const [page, setPage] = useState("home");
     return (
@@ -170,16 +106,10 @@ function App() {
             {page === "home" ? (
                 <Flex col grow={1}>
                     <Heading />
-                    <AlertForm onSubmit={onSubmit} user={user} />
+                    <AlertForm user={user} />
                 </Flex>
-            )
-                : (
-                    <>
-                        <ManageAlert />
-                    </>
-                )}
-
-
+            ) : <ManageAlert />
+            }
             <Footer />
         </Container>
     );
