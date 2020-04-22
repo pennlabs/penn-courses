@@ -68,7 +68,7 @@ const AlertForm = ({ user, setResponse }) => {
     };
     const onSubmit = () => {
         if (contactInfoChanged()) {
-            doAPIRequest("/accounts/me/", "PATCH", { profile: { user, phone } })
+            doAPIRequest("/accounts/me/", "PATCH", { profile: { email, phone } })
                 .then((res) => {
                     if (!res.ok) {
                         throw new Error("bad thing");
