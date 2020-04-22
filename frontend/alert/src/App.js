@@ -103,7 +103,7 @@ function App() {
             {page === "home" ? (
                 <Flex col grow={1}>
                     <Heading />
-                    <AlertForm user={user} />
+                    { user ? <AlertForm user={user} /> : null }
                 </Flex>
             ) : <ManageAlertWrapper />
             }

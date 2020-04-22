@@ -33,7 +33,7 @@ const Dropdown = styled.span`
     font-weight: bold;
 `;
 
-const submitRegistration = ({ section, autoResubscribe = false }) => {
+const submitRegistration = ({ section, phone, email, autoResubscribe = false }) => {
     alert("submitting alert for: " + section);
 };
 
@@ -46,12 +46,14 @@ const AlertForm = ({ user }) => {
     const [section, setSection] = useState("");
     const [email, setEmail] = useState(user && user.profile.email);
     const [phone, setPhone] = useState(user && user.profile.phone);
-    console.log(user);
+
+    const contactInfoChanged = () => !user || user.profile.email !== email || user.profile.phone !== phone;
+
     return (
         <Form>
             <AutoComplete onValueChange={setSection} />
-            <Input placeholder="Email" value={email} />
-            <Input placeholder="Phone" value={phone} />
+            <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
             <Center>
                 <AlertText>
                 Alert me
@@ -59,7 +61,7 @@ const AlertForm = ({ user }) => {
                 </AlertText>
                 <SubmitButton onClick={(e) => {
                     e.preventDefault();
-                    submitRegistration({ section });
+                    submitRegistration({ section, phone, email });
                 }}
                 >
 Submit
