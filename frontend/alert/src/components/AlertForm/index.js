@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { Input } from "../Input";
 import AutoComplete from "../AutoComplete";
 import { Center } from "../common/layout";
+import getCsrf from "../../csrf";
 
 const SubmitButton = styled.button`
     border-radius: 5px;
@@ -33,27 +34,58 @@ const Dropdown = styled.span`
     font-weight: bold;
 `;
 
-const submitRegistration = ({ section, phone, email, autoResubscribe = false }) => {
-    alert("submitting alert for: " + section);
-};
-
 const Form = styled.form`
 display: flex;
 flex-direction: column;
 `;
 
-const AlertForm = ({ user }) => {
+
+const doAPIRequest = (url, method = "GET", body = {}, extraHeaders = {}) => fetch(url, {
+    method,
+    credentials: "include",
+    mode: "same-origin",
+    headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrf(),
+        ...extraHeaders,
+    },
+    body: JSON.stringify(body),
+});
+
+const AlertForm = ({ user, setResponse }) => {
     const [section, setSection] = useState("");
     const [email, setEmail] = useState(user && user.profile.email);
     const [phone, setPhone] = useState(user && user.profile.phone);
 
-    const contactInfoChanged = () => !user || user.profile.email !== email || user.profile.phone !== phone;
+    const contactInfoChanged = () => (
+        !user || user.profile.email !== email || user.profile.phone !== phone);
+
+    const submitRegistration = () => {
+        doAPIRequest("/api/alert/api/registrations/", "POST", { section })
+            .then(res => setResponse(res))
+            .catch(e => alert(e));
+    };
+    const onSubmit = () => {
+        if (contactInfoChanged()) {
+            doAPIRequest("/accounts/me/", "PATCH", { profile: { user, phone } })
+                .then((res) => {
+                    if (!res.ok) {
+                        throw new Error("bad thing");
+                    } else {
+                        return submitRegistration();
+                    }
+                });
+        } else {
+            submitRegistration();
+        }
+    };
 
     return (
         <Form>
             <AutoComplete onValueChange={setSection} />
-            <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+            <Input placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} />
             <Center>
                 <AlertText>
                 Alert me
@@ -61,7 +93,7 @@ const AlertForm = ({ user }) => {
                 </AlertText>
                 <SubmitButton onClick={(e) => {
                     e.preventDefault();
-                    submitRegistration({ section, phone, email });
+                    onSubmit();
                 }}
                 >
 Submit
@@ -73,6 +105,7 @@ Submit
 
 AlertForm.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
+    setResponse: PropTypes.func,
 };
 
 export default AlertForm;

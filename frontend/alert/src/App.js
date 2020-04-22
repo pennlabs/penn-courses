@@ -10,6 +10,7 @@ import AccountIndicator from "./components/shared/accounts/AccountIndicator";
 import AlertForm from "./components/AlertForm";
 
 import { Center, Container, Flex } from "./components/common/layout";
+import MessageList from "./components/MessageList";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
@@ -68,7 +69,6 @@ const Nav = ({
         </NavElt>
         <NavElt href="/" active={page === "home"} onClick={(e) => { e.preventDefault(); setPage("home"); }}>Home</NavElt>
         <NavElt href="/manage" active={page === "manage"} onClick={(e) => { e.preventDefault(); setPage("manage"); }}>Manage Alerts</NavElt>
-        {/* <Toast type={ToastType.Warning} course="CIS-160-001" /> */}
     </NavContainer>
 );
 
@@ -88,9 +88,23 @@ const Heading = () => (
 );
 
 
+const genId = (() => { let counter = 0; return () => counter++; })(); // eslint-disable-line
+
 function App() {
     const [user, setUser] = useState(null);
     const [page, setPage] = useState("home");
+    const [messages, setMessages] = useState([]);
+
+    const removeMessage = k => setMessages(msgs => msgs.filter(m => m.key !== k));
+    const addMessage = ({ message, status }) => {
+        setMessages(msgs => [{ message, status, key: genId() }].concat(msgs));
+    };
+
+    const setResponse = (res) => {
+        const { status } = res;
+        res.json()
+            .then(j => addMessage({ message: j.message, status }));
+    };
     return (
         <Container>
             <Nav
@@ -100,10 +114,11 @@ function App() {
                 page={page}
                 setPage={setPage}
             />
+            <MessageList messages={messages} removeMessage={removeMessage} />
             {page === "home" ? (
                 <Flex col grow={1}>
                     <Heading />
-                    { user ? <AlertForm user={user} /> : null }
+                    { user ? <AlertForm user={user} setResponse={setResponse} /> : null }
                 </Flex>
             ) : <ManageAlertWrapper />
             }

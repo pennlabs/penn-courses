@@ -278,7 +278,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         if request.data.get("section", None) is None:
             return Response(
-                {"notification": "You must include a not null section"},
+                {"message": "You must include a not null section"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -292,7 +292,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if res == RegStatus.SUCCESS:
             return Response(
                 {
-                    "notification": "Your registration for %s was successful!"
+                    "message": "Your registration for %s was successful!"
                     % normalized_course_code,
                     "id": reg.pk,
                 },
@@ -301,7 +301,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         elif res == RegStatus.OPEN_REG_EXISTS:
             return Response(
                 {
-                    "notification": "You've already registered to get alerts for %s!"
+                    "message": "You've already registered to get alerts for %s!"
                     % normalized_course_code
                 },
                 status=status.HTTP_409_CONFLICT,
@@ -309,7 +309,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         elif res == RegStatus.COURSE_NOT_FOUND:
             return Response(
                 {
-                    "notification": "%s did not match any course in our database. Please try again!"
+                    "message": "%s did not match any course in our database. Please try again!"
                     % section_code
                 },
                 status=status.HTTP_404_NOT_FOUND,
@@ -317,14 +317,14 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         elif res == RegStatus.NO_CONTACT_INFO:
             return Response(
                 {
-                    "notification": "You must set a phone number and/or an email address to "
+                    "message": "You must set a phone number and/or an email address to "
                     "register for an alert."
                 },
                 status=status.HTTP_406_NOT_ACCEPTABLE,
             )
         else:
             return Response(
-                {"notification": "There was an error on our end. Please try again!"},
+                {"message": "There was an error on our end. Please try again!"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
