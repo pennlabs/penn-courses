@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 
+import { parsePhoneNumberFromString } from "libphonenumber-js/min";
+
 import { Input } from "../Input";
 import AutoComplete from "../AutoComplete";
 import { Center } from "../common/layout";
@@ -77,12 +79,18 @@ const doAPIRequest = (url, method = "GET", body = {}, extraHeaders = {}) => fetc
 
 
 const AlertForm = ({ user, setResponse }) => {
+    const phonenumber = user && parsePhoneNumberFromString(user.profile.phone || "");
     const [section, setSection] = useState("");
     const [email, setEmail] = useState(user && user.profile.email);
-    const [phone, setPhone] = useState(user && user.profile.phone);
+
+    const [phone, setPhone] = useState(
+        phonenumber ? phonenumber.formatNational() : user && user.profile.phone
+    );
+    const [isPhoneDirty, setPhoneDirty] = useState(false);
+
     const [autoResub, setAutoResub] = useState("false");
     const contactInfoChanged = () => (
-        !user || user.profile.email !== email || user.profile.phone !== phone);
+        !user || user.profile.email !== email || isPhoneDirty);
 
     const submitRegistration = () => {
         doAPIRequest("/api/alert/api/registrations/", "POST", { section, auto_resubscribe: autoResub === "true" })
@@ -91,13 +99,21 @@ const AlertForm = ({ user, setResponse }) => {
     };
     const onSubmit = () => {
         if (contactInfoChanged()) {
+            if (phone.length !== 0 && !parsePhoneNumberFromString(phone, "US")) {
+                const blob = new Blob([JSON.stringify({ message: "Please enter a valid phone US # (or leave the field blank)." })], { type: "application/json" });
+                setResponse(new Response(blob, { status: 400 }));
+                return;
+            }
             doAPIRequest("/accounts/me/", "PATCH", { profile: { email, phone } })
                 .then((res) => {
                     if (!res.ok) {
-                        throw new Error("bad thing");
+                        throw new Error(res);
                     } else {
                         return submitRegistration();
                     }
+                })
+                .catch((e) => {
+                    alert("an error occurred. please try again!");
                 });
         } else {
             submitRegistration();
@@ -108,7 +124,7 @@ const AlertForm = ({ user, setResponse }) => {
         <Form>
             <AutoComplete onValueChange={setSection} />
             <Input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-            <Input placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} />
+            <Input placeholder="Phone" value={phone} onChange={(e) => { setPhone(e.target.value); setPhoneDirty(true); }} />
             <Center>
                 <AlertText>
                 Alert me
