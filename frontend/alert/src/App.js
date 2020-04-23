@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import "./App.css";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
+import ReactGA from "react-ga";
+
+import "./App.css";
 import Logo from "./assets/PCA_logo.svg";
 import ManageAlertWrapper from "./components/managealert";
 import { maxWidth, PHONE } from "./constants";
@@ -94,6 +96,10 @@ function App() {
     const [user, setUser] = useState(null);
     const [page, setPage] = useState(window.location.hash === "#manage" ? "manage" : "home");
     const [messages, setMessages] = useState([]);
+    useEffect(() => {
+        ReactGA.initialize("UA-21029575-12");
+        ReactGA.pageview(window.location.pathname + window.location.search);
+    }, []);
 
     const MESSAGE_EXPIRATION_MILLIS = 8000;
     const removeMessage = k => setMessages(msgs => msgs.filter(m => m.key !== k));
@@ -115,7 +121,9 @@ function App() {
                 logout={() => setUser(null)}
                 user={user}
                 page={page}
-                setPage={setPage}
+                setPage={(p) => {
+                    ReactGA.event({ category: "Navigation", action: "Changed Page", label: p }); setPage(p);
+                }}
             />
             <MessageList messages={messages} removeMessage={removeMessage} />
             <Heading />
