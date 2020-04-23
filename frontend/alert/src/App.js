@@ -95,9 +95,12 @@ function App() {
     const [page, setPage] = useState(window.location.hash === "#manage" ? "manage" : "home");
     const [messages, setMessages] = useState([]);
 
+    const MESSAGE_EXPIRATION_MILLIS = 8000;
     const removeMessage = k => setMessages(msgs => msgs.filter(m => m.key !== k));
     const addMessage = ({ message, status }) => {
-        setMessages(msgs => [{ message, status, key: genId() }].concat(msgs));
+        const id = genId();
+        setMessages(msgs => [{ message, status, key: id }].concat(msgs));
+        setTimeout(() => removeMessage(id), MESSAGE_EXPIRATION_MILLIS);
     };
 
     const setResponse = (res) => {

@@ -14,7 +14,6 @@ const Container = styled.div`
     background: #ffffff;
     width: 80%;
     max-width: 80rem;
-    min-height: 20%;
     box-shadow: 0 0.1rem 0.2rem 0 rgba(0, 0, 0, 0.08);
     flex-grow: 1;
     ${maxWidth(PHONE)} {

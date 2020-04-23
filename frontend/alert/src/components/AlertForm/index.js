@@ -28,16 +28,38 @@ const AlertText = styled.div`
     color: #555555;
 `;
 
-const Dropdown = styled.span`
-    color: #4a4a4a;
-    cursor: pointer;
-    font-weight: bold;
-`;
 
 const Form = styled.form`
 display: flex;
 flex-direction: column;
 `;
+
+
+const RadioSet = ({ selected, options, setSelected }) => (
+    <span>
+        {options.map(({ label, value }) => (
+            <>
+                <label htmlFor={value}>
+                    <input
+                        type="radio"
+                        name="name"
+                        id={value}
+                        value={value}
+                        onChange={e => setSelected(e.target.value)}
+                        checked={value === selected}
+                    />
+                    { label }
+                </label>
+            </>
+        ))}
+    </span>
+);
+
+RadioSet.propTypes = {
+    selected: PropTypes.string,
+    options: PropTypes.arrayOf(PropTypes.string),
+    setSelected: PropTypes.func,
+};
 
 
 const doAPIRequest = (url, method = "GET", body = {}, extraHeaders = {}) => fetch(url, {
@@ -58,12 +80,12 @@ const AlertForm = ({ user, setResponse }) => {
     const [section, setSection] = useState("");
     const [email, setEmail] = useState(user && user.profile.email);
     const [phone, setPhone] = useState(user && user.profile.phone);
-
+    const [autoResub, setAutoResub] = useState("false");
     const contactInfoChanged = () => (
         !user || user.profile.email !== email || user.profile.phone !== phone);
 
     const submitRegistration = () => {
-        doAPIRequest("/api/alert/api/registrations/", "POST", { section })
+        doAPIRequest("/api/alert/api/registrations/", "POST", { section, auto_resubscribe: autoResub === "true" })
             .then(res => setResponse(res))
             .catch(e => alert("There was an unexpected error. Please try again!"));
     };
@@ -90,9 +112,7 @@ const AlertForm = ({ user, setResponse }) => {
             <Center>
                 <AlertText>
                 Alert me
-                    {" "}
-                    {" "}
-                    <Dropdown>until I cancel</Dropdown>
+                    <RadioSet options={[{ label: "once", value: "false" }, { label: "until I cancel", value: "true" }]} setSelected={setAutoResub} selected={autoResub} />
                 </AlertText>
                 <SubmitButton onClick={(e) => {
                     e.preventDefault();

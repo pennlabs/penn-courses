@@ -3,12 +3,21 @@ import PropTypes from "prop-types";
 import styled from "styled-components";
 
 import Toast, { ToastType } from "./Toast";
+import { minWidth, TABLET } from "../constants";
 
 const ToastContainer = styled.div`
-position: absolute;
 display: flex;
-right: 0;
 flex-direction: column;
+
+div {
+margin-bottom: .25rem;
+}
+${minWidth(TABLET)} {
+position: absolute;
+right: 0;
+margin-top: 1rem;
+margin-right: 2rem;
+}
 `;
 
 const MessageToast = ({ message, status, onClose }) => {

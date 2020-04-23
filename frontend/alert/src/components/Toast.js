@@ -3,10 +3,13 @@ import PropTypes from "prop-types";
 import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
+
 import x from "../assets/x.svg";
 import close from "../assets/close.svg";
 import bang from "../assets/bang.svg";
 import check from "../assets/check.svg";
+
+import { between, TABLET, SMALLDESKTOP } from "../constants";
 
 const Rectangle = styled.div`
     display: flex;
@@ -16,7 +19,11 @@ const Rectangle = styled.div`
     background-color: ${props => props.background};
     float: right;
     width: 20rem;
-    height: 4rem;
+    min-height: 4rem;
+
+    ${between(TABLET, SMALLDESKTOP)} {
+       width: 15rem;
+    }
 `;
 
 const Icon = styled.img`
@@ -51,7 +58,7 @@ const CloseButton = styled(FontAwesomeIcon).attrs(props => ({ icon: faTimes }))`
 
 const ToastText = styled.p`
     color: ${props => props.color};
-    max-width: 70%;
+    width: 60%;
     font-size: 0.8rem;
     font-weight: 500;
     word-wrap: normal;
@@ -67,24 +74,24 @@ const RightItem = styled.div`
 export const ToastType = Object.freeze({ Success: 1, Warning: 2, Error: 3 });
 
 const Toast = ({
-    onClose, children, isSuccess, isWarning, isError, type,
+    onClose, children, type,
 }) => {
     let primary;
     let secondary;
     let textcolor;
     let image;
 
-    if (isSuccess || type === ToastType.Success) {
+    if (type === ToastType.Success) {
         primary = "#78d381";
         secondary = "#e9f8eb";
         textcolor = "#4ab255";
         image = check;
-    } else if (isWarning || type === ToastType.Warning) {
+    } else if (type === ToastType.Warning) {
         primary = "#fbcd4c";
         secondary = "#fcf5e1";
         textcolor = "#e8ad06";
         image = bang;
-    } else if (isError || type === ToastType.Error) {
+    } else if (type === ToastType.Error) {
         primary = "#e8746a";
         secondary = "#fbebe9";
         textcolor = "#e8746a";
@@ -107,9 +114,6 @@ const Toast = ({
 };
 
 Toast.propTypes = {
-    isSuccess: PropTypes.any, // eslint-disable-line
-    isWarning: PropTypes.any, // eslint-disable-line
-    isError: PropTypes.any,   // eslint-disable-line
     children: PropTypes.arrayOf(PropTypes.element),
     onClose: PropTypes.func,
     type: PropTypes.number,
