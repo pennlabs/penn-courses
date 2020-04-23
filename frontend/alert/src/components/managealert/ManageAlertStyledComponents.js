@@ -9,7 +9,7 @@ export const Flex = styled.div`
     padding: ${props => props.padding};
     text-align: ${props => (props.center ? "center" : null)};
     align-items: ${props => (props.valign ? "center" : null)};
-    justify-content: ${props => (props.halign ? "center" : null)};
+    justify-content: ${props => (props.halign ? "center" : props.spaceBetween ? "space-between" : null) /*eslint-disable-line*/};
     flex-direction: ${props => (props.col ? "column" : "row")};
 `;
 

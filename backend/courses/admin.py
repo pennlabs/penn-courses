@@ -17,9 +17,8 @@ from courses.models import (
     Room,
     Section,
     StatusUpdate,
+    UserProfile,
 )
-
-from .models import UserProfile
 
 
 # User Profile: https://github.com/sibtc/django-admin-user-profile

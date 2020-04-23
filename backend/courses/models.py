@@ -412,6 +412,8 @@ class UserProfile(models.Model):
     # phone field defined underneath validate_phone function below
 
     def validate_phone(value):
+        if value.strip() == "":
+            return
         try:
             phonenumbers.parse(value, "US")
         except phonenumbers.phonenumberutil.NumberParseException:
@@ -423,6 +425,8 @@ class UserProfile(models.Model):
         return "Data from User: %s" % self.user
 
     def save(self, *args, **kwargs):
+        if self.phone is not None and self.phone.strip() == "":
+            self.phone = None
         if self.phone is not None:
             try:
                 phone_number = phonenumbers.parse(self.phone, "US")
@@ -436,5 +440,7 @@ class UserProfile(models.Model):
 
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
-    UserProfile.objects.get_or_create(user=instance)
+    _, created = UserProfile.objects.get_or_create(user=instance)
+    if created and instance.email != "":
+        instance.profile.email = instance.email
     instance.profile.save()

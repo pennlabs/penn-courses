@@ -7,23 +7,10 @@ import ManageAlertWrapper from "./components/managealert";
 import { maxWidth, PHONE } from "./constants";
 import Footer from "./components/Footer";
 import AccountIndicator from "./components/shared/accounts/AccountIndicator";
-import AutoComplete from "./components/AutoComplete";
-import { Input } from "./components/Input";
+import AlertForm from "./components/AlertForm";
 
-const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100vh;
-    background: rgb(251, 252, 255);
-`;
-
-const Flex = styled.div`
-    display: flex;
-    flex-direction: ${props => (props.col ? "column" : "row")};
-    align-items: ${props => props.align || "center"};
-    flex-grow: ${props => props.grow || 0}
-`;
+import { Center, Container, Flex } from "./components/common/layout";
+import MessageList from "./components/MessageList";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
@@ -34,27 +21,6 @@ const Header = styled.h1`
 
     ${maxWidth(PHONE)} {
         font-size: 1.5rem;
-    }
-`;
-
-const Center = styled.div`
-    text-align: center;
-`;
-
-
-const SubmitButton = styled.button`
-    border-radius: 5px;
-    background-color: #209cee;
-    color: white;
-    font-size: 1em;
-    margin: 1em;
-    width: 5em;
-    padding: 0.7em 1em;
-    transition: 0.2s all;
-    border: none;
-    cursor: pointer;
-    :hover {
-        background-color: #1496ed;
     }
 `;
 
@@ -86,15 +52,6 @@ const NavElt = styled.a`
     font-weight: ${props => (props.active ? "bold" : "normal")};
 `;
 
-const AlertText = styled.div`
-    padding-top: 1rem;
-    color: #555555;
-`;
-const Dropdown = styled.span`
-    color: #4a4a4a;
-    cursor: pointer;
-    font-weight: bold;
-`;
 
 const Nav = ({
     login, logout, user, page, setPage,
@@ -112,7 +69,6 @@ const Nav = ({
         </NavElt>
         <NavElt href="/" active={page === "home"} onClick={(e) => { e.preventDefault(); setPage("home"); }}>Home</NavElt>
         <NavElt href="/manage" active={page === "manage"} onClick={(e) => { e.preventDefault(); setPage("manage"); }}>Manage Alerts</NavElt>
-        {/* <Toast type={ToastType.Warning} course="CIS-160-001" /> */}
     </NavContainer>
 );
 
@@ -131,30 +87,27 @@ const Heading = () => (
     </Center>
 );
 
-const AlertForm = ({ onSubmit, user }) => (
-    <>
-        <AutoComplete />
-        <Input placeholder="Email" value={user && user.profile.email} />
-        <Input placeholder="Phone" value={user && user.profile.phone} />
-        <Center>
-            <AlertText>
-                Alert me
-                <Dropdown>until I cancel</Dropdown>
-            </AlertText>
-            <SubmitButton onClick={onSubmit}>Submit</SubmitButton>
-        </Center>
-    </>
-);
 
-AlertForm.propTypes = {
-    onSubmit: PropTypes.func,
-    user: PropTypes.objectOf(PropTypes.any),
-};
+const genId = (() => { let counter = 0; return () => counter++; })(); // eslint-disable-line
 
 function App() {
-    const onSubmit = () => {};
     const [user, setUser] = useState(null);
-    const [page, setPage] = useState("home");
+    const [page, setPage] = useState(window.location.hash === "#manage" ? "manage" : "home");
+    const [messages, setMessages] = useState([]);
+
+    const MESSAGE_EXPIRATION_MILLIS = 8000;
+    const removeMessage = k => setMessages(msgs => msgs.filter(m => m.key !== k));
+    const addMessage = ({ message, status }) => {
+        const id = genId();
+        setMessages(msgs => [{ message, status, key: id }].concat(msgs));
+        setTimeout(() => removeMessage(id), MESSAGE_EXPIRATION_MILLIS);
+    };
+
+    const setResponse = (res) => {
+        const { status } = res;
+        res.json()
+            .then(j => addMessage({ message: j.message, status }));
+    };
     return (
         <Container>
             <Nav
@@ -164,19 +117,14 @@ function App() {
                 page={page}
                 setPage={setPage}
             />
+            <MessageList messages={messages} removeMessage={removeMessage} />
+            <Heading />
             {page === "home" ? (
                 <Flex col grow={1}>
-                    <Heading />
-                    <AlertForm onSubmit={onSubmit} user={user} />
+                    { user ? <AlertForm user={user} setResponse={setResponse} /> : null }
                 </Flex>
-            )
-                : (
-                    <>
-                        <ManageAlertWrapper />
-                    </>
-                )}
-
-
+            ) : <ManageAlertWrapper />
+            }
             <Footer />
         </Container>
     );

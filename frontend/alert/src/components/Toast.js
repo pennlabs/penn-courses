@@ -1,10 +1,15 @@
 import React from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
+
 import x from "../assets/x.svg";
 import close from "../assets/close.svg";
 import bang from "../assets/bang.svg";
 import check from "../assets/check.svg";
+
+import { between, TABLET, SMALLDESKTOP } from "../constants";
 
 const Rectangle = styled.div`
     display: flex;
@@ -14,7 +19,11 @@ const Rectangle = styled.div`
     background-color: ${props => props.background};
     float: right;
     width: 20rem;
-    height: 4rem;
+    min-height: 4rem;
+
+    ${between(TABLET, SMALLDESKTOP)} {
+       width: 15rem;
+    }
 `;
 
 const Icon = styled.img`
@@ -39,23 +48,23 @@ const IconDiv = styled.div`
     position: relative;
 `;
 
-const CloseButton = styled.img`
-    width: 1rem;
-    height: 1rem;
+const CloseButton = styled(FontAwesomeIcon).attrs(props => ({ icon: faTimes }))`
     margin-left:auto;
     margin-right: 0.6em;
     margin-top: 0.6em;
+    cursor: pointer;
 `;
+
 
 const ToastText = styled.p`
     color: ${props => props.color};
-    max-width: 70%;
+    width: 60%;
     font-size: 0.8rem;
     font-weight: 500;
     word-wrap: normal;
     margin-left: 1rem;
     margin-right: 0.75rem;
-    margin-top: 0.85rem;
+    margin-top: .85rem;
 `;
 
 const RightItem = styled.div`
@@ -64,38 +73,30 @@ const RightItem = styled.div`
 
 export const ToastType = Object.freeze({ Success: 1, Warning: 2, Error: 3 });
 
-export const Toast = ({ type, course }) => {
+const Toast = ({
+    onClose, children, type,
+}) => {
     let primary;
     let secondary;
     let textcolor;
-    let text;
     let image;
 
-    switch (type) {
-        case 1:
-            primary = "#78d381";
-            secondary = "#e9f8eb";
-            textcolor = "#4ab255";
-            image = check;
-            text = `Your registration for ${course} was successful! Manage alerts`;
-            break;
-        case 2:
-            primary = "#fbcd4c";
-            secondary = "#fcf5e1";
-            textcolor = "#e8ad06";
-            image = bang;
-            text = `You've already registered to get alerts for ${course}`;
-            break;
-        case 3:
-            primary = "#e8746a";
-            secondary = "#fbebe9";
-            textcolor = "#e8746a";
-            image = x;
-            text = `${course} did not match any course in our database. Please try again!`;
-            break;
-        default:
+    if (type === ToastType.Success) {
+        primary = "#78d381";
+        secondary = "#e9f8eb";
+        textcolor = "#4ab255";
+        image = check;
+    } else if (type === ToastType.Warning) {
+        primary = "#fbcd4c";
+        secondary = "#fcf5e1";
+        textcolor = "#e8ad06";
+        image = bang;
+    } else if (type === ToastType.Error) {
+        primary = "#e8746a";
+        secondary = "#fbebe9";
+        textcolor = "#e8746a";
+        image = x;
     }
-
 
     return (
         <RightItem>
@@ -104,12 +105,18 @@ export const Toast = ({ type, course }) => {
                     <Icon src={image} />
                 </IconDiv>
                 <ToastText color={textcolor}>
-                    {text}
+                    {children}
                 </ToastText>
-                <CloseButton src={close} />
+                <CloseButton src={close} color={textcolor} onClick={onClose} />
             </Rectangle>
         </RightItem>
     );
 };
 
-Toast.propTypes = { type: PropTypes.number, course: PropTypes.string };
+Toast.propTypes = {
+    children: PropTypes.arrayOf(PropTypes.element),
+    onClose: PropTypes.func,
+    type: PropTypes.number,
+};
+
+export default Toast;

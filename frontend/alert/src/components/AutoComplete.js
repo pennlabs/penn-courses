@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
+
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHistory } from "@fortawesome/free-solid-svg-icons";
+
 import { useOnClickOutside } from "./shared/useOnClickOutside";
 import { Input } from "./Input";
 
@@ -122,7 +124,6 @@ const Container = styled.div`
     position: relative;
     display: block;
     margin-bottom: 1rem;
-    left: -50%;
     height: ${props => props.inputHeight};
 `;
 
@@ -191,15 +192,20 @@ const generateBackdrop = (value, suggestions) => {
     return suggestion;
 };
 
-const AutoComplete = () => {
+const AutoComplete = ({ onValueChange }) => {
     const [inputRef, setInputRef] = useState(null);
-    const [value, setValue] = useState("");
+    const [value, setInternalValue] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [suggestionsFromBackend, setSuggestionsFromBackend] = useState(null);
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
 
     const show = active && suggestions.length > 0;
+
+    const setValue = (v) => {
+        onValueChange(v);
+        return setInternalValue(v);
+    };
 
     useEffect(() => {
         setBackdrop(generateBackdrop(
@@ -300,6 +306,10 @@ const AutoComplete = () => {
             </DropdownContainer>
         </Container>
     );
+};
+
+AutoComplete.propTypes = {
+    onValueChange: PropTypes.func,
 };
 
 export default AutoComplete;
