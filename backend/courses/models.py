@@ -412,7 +412,7 @@ class UserProfile(models.Model):
     # phone field defined underneath validate_phone function below
 
     def validate_phone(value):
-        if (value.strip() == ""):
+        if value.strip() == "":
             return
         try:
             phonenumbers.parse(value, "US")
