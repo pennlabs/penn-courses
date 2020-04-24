@@ -69,16 +69,22 @@ const ModalCardBody = styled.div`
 
 const Modal = ({ children, title, headerIcon }) => (
     <ModalContainer>
-        <ModalBackground/>
+        <ModalBackground />
         <ModalCard>
             <ModalCardHead>
-                <header> {title} </header>
-                {headerIcon && <img alt="" src={headerIcon}/>}
+                <header>
+                    {" "}
+                    {title}
+                    {" "}
+                </header>
+                {headerIcon && <img alt="" src={headerIcon} />}
             </ModalCardHead>
-            {children &&
-            <ModalCardBody>
-                {children}
-            </ModalCardBody>}
+            {children
+            && (
+                <ModalCardBody>
+                    {children}
+                </ModalCardBody>
+            )}
         </ModalCard>
     </ModalContainer>
 );

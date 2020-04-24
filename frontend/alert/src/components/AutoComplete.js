@@ -110,12 +110,12 @@ const DropdownItemLeftCol = styled.div`
 
 const AutoCompleteInput = styled(Input)`
     position: absolute;
-    ${props => props.disabled ? "" : "background: transparent;"}
+    ${props => (props.disabled ? "" : "background: transparent;")}
     z-index: 1;
 `;
 
 const AutoCompleteInputBackground = styled(AutoCompleteInput)`
-    ${props => props.disabled ? "" : "background: white;"}
+    ${props => (props.disabled ? "" : "background: white;")}
     z-index: 0;
     color: grey;
 `;

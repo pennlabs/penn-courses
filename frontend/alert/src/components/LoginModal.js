@@ -12,13 +12,15 @@ const LoginButtonContainer = styled.div`
 const bell = require("../assets/abell.svg");
 
 const LoginModal = () => (
-    <Modal title={"Please log in!"} headerIcon={bell}>
-        <p> Penn Course Alert now requires login.
+    <Modal title="Please log in!" headerIcon={bell}>
+        <p>
+            {" "}
+Penn Course Alert now requires login.
             Please sign in with your Pennkey by clicking the button below.
         </p>
-        <br/>
+        <br />
         <LoginButtonContainer>
-            <LoginButton/>
+            <LoginButton />
         </LoginButtonContainer>
     </Modal>
 );

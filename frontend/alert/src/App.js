@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
 import styled from "styled-components";
 import PropTypes from "prop-types";
@@ -112,20 +112,20 @@ function App() {
     };
 
     // Separates showLoginModal from state so that the login modal doesn't show up on page load
-    const updateUser = user => {
-        if (!user) {
+    const updateUser = (newUserVal) => {
+        if (!newUserVal) {
             // the user has logged out; show the login modal
             setShowLoginModal(true);
         } else {
             // the user has logged in; hide the login modal
             setShowLoginModal(false);
         }
-        setUser(user);
+        setUser(newUserVal);
     };
     return (
         <>
             <Container>
-                {showLoginModal && <LoginModal/>}
+                {showLoginModal && <LoginModal />}
                 <Nav
                     login={updateUser}
                     logout={() => updateUser(null)}
@@ -133,15 +133,15 @@ function App() {
                     page={page}
                     setPage={setPage}
                 />
-                <MessageList messages={messages} removeMessage={removeMessage}/>
-                <Heading/>
+                <MessageList messages={messages} removeMessage={removeMessage} />
+                <Heading />
                 {page === "home" ? (
                     <Flex col grow={1}>
-                        {user ? <AlertForm user={user} setResponse={setResponse}/> : null}
+                        {user ? <AlertForm user={user} setResponse={setResponse} /> : null}
                     </Flex>
-                ) : <ManageAlertWrapper/>
+                ) : <ManageAlertWrapper />
                 }
-                <Footer/>
+                <Footer />
             </Container>
         </>
     );
