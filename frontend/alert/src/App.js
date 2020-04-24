@@ -122,13 +122,16 @@ function App() {
         }
         setUser(newUserVal);
     };
+
+    const logout = () => updateUser(null);
+
     return (
         <>
             <Container>
                 {showLoginModal && <LoginModal />}
                 <Nav
                     login={updateUser}
-                    logout={() => updateUser(null)}
+                    logout={logout}
                     user={user}
                     page={page}
                     setPage={setPage}

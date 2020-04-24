@@ -15,17 +15,20 @@ const AccountIndicator = ({
     onLeft, backgroundColor, nameLength,
 }) => {
     useEffect(() => {
+        if (user) {
+            return;
+        }
         fetch("/accounts/me/")
             .then((response) => {
                 if (!response.ok) {
-                    login(null);
+                    logout();
                     return;
                 }
                 response.json()
                     .then(newUser => login(newUser));
             })
-            .catch(() => login(null));
-    }, [login]);
+            .catch(logout);
+    }, [login, logout, user]);
 
     return user
         ? (
