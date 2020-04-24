@@ -110,12 +110,12 @@ const DropdownItemLeftCol = styled.div`
 
 const AutoCompleteInput = styled(Input)`
     position: absolute;
-    background: transparent;
+    ${props => props.disabled ? "" : "background: transparent;"}
     z-index: 1;
 `;
 
 const AutoCompleteInputBackground = styled(AutoCompleteInput)`
-    background: white;
+    ${props => props.disabled ? "" : "background: white;"}
     z-index: 0;
     color: grey;
 `;
@@ -192,7 +192,7 @@ const generateBackdrop = (value, suggestions) => {
     return suggestion;
 };
 
-const AutoComplete = ({ onValueChange }) => {
+const AutoComplete = ({ onValueChange, disabled }) => {
     const [inputRef, setInputRef] = useState(null);
     const [value, setInternalValue] = useState("");
     const [suggestions, setSuggestions] = useState([]);
@@ -252,6 +252,7 @@ const AutoComplete = ({ onValueChange }) => {
             ref={useOnClickOutside(() => setActive(false), !show)}
         >
             <AutoCompleteInput
+                disabled={disabled}
                 autocomplete="off"
                 placeholder="Course"
                 ref={setInputRef}
@@ -284,6 +285,7 @@ const AutoComplete = ({ onValueChange }) => {
             />
             <AutoCompleteInputBackground
                 autocomplete="off"
+                disabled={disabled}
                 value={backdrop}
             />
             <DropdownContainer below={inputRef} hidden={!show}>
@@ -310,6 +312,7 @@ const AutoComplete = ({ onValueChange }) => {
 
 AutoComplete.propTypes = {
     onValueChange: PropTypes.func,
+    disabled: PropTypes.bool,
 };
 
 export default AutoComplete;

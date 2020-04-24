@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import styled from "styled-components";
 import PropTypes from "prop-types";
@@ -11,6 +11,7 @@ import AlertForm from "./components/AlertForm";
 
 import { Center, Container, Flex } from "./components/common/layout";
 import MessageList from "./components/MessageList";
+import LoginModal from "./components/LoginModal";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
@@ -109,24 +110,27 @@ function App() {
             .then(j => addMessage({ message: j.message, status }));
     };
     return (
-        <Container>
-            <Nav
-                login={setUser}
-                logout={() => setUser(null)}
-                user={user}
-                page={page}
-                setPage={setPage}
-            />
-            <MessageList messages={messages} removeMessage={removeMessage} />
-            <Heading />
-            {page === "home" ? (
-                <Flex col grow={1}>
-                    { user ? <AlertForm user={user} setResponse={setResponse} /> : null }
-                </Flex>
-            ) : <ManageAlertWrapper />
-            }
-            <Footer />
-        </Container>
+        <>
+            <Container>
+                {!user && <LoginModal/>}
+                <Nav
+                    login={setUser}
+                    logout={() => setUser(null)}
+                    user={user}
+                    page={page}
+                    setPage={setPage}
+                />
+                <MessageList messages={messages} removeMessage={removeMessage}/>
+                <Heading/>
+                {page === "home" ? (
+                    <Flex col grow={1}>
+                        {user ? <AlertForm user={user} setResponse={setResponse}/> : null}
+                    </Flex>
+                ) : <ManageAlertWrapper/>
+                }
+                <Footer/>
+            </Container>
+        </>
     );
 }
 
