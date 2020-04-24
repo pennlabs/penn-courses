@@ -1,12 +1,12 @@
 import React from "react";
 import styled from "styled-components";
+import PropTypes from "prop-types";
 
 const LoginButtonStyles = styled.a`
     font-size: 0.85rem !important;
     padding: 0 1rem 0 1rem;
-    margin-right: 1rem;
+    margin-right: ${({noMargin}) => noMargin ? 0 : "1rem"};
     font-size: .85rem!important;
-    margin-right: 1rem;
     background-color: #3273dc;
     border-color: transparent;
     color: #fff;
@@ -33,20 +33,23 @@ const LoginButtonStyles = styled.a`
     &:active {
         background-color: #2366d1;
     }
+    padding: "0.5rem",
+    fontSize: "1rem!important",
+    paddingRight: "1rem",
+    paddingLeft: "1rem",
 `;
 
-const LoginButton = () => (
+const LoginButton = ({noMargin}) => (
     <LoginButtonStyles
+        noMargin={noMargin}
         href={`/accounts/login/?next=${window.location.pathname}`}
-        style={{
-            padding: "0.5rem",
-            fontSize: "1rem!important",
-            paddingRight: "1rem",
-            paddingLeft: "1rem",
-        }}
     >
         Login
     </LoginButtonStyles>
 );
+
+LoginButton.propTypes = {
+  noMargin: PropTypes.bool,
+};
 
 export default LoginButton;

@@ -20,7 +20,7 @@ Penn Course Alert now requires login.
         </p>
         <br />
         <LoginButtonContainer>
-            <LoginButton />
+            <LoginButton noMargin/>
         </LoginButtonContainer>
     </Modal>
 );
