@@ -103,7 +103,7 @@ const AlertForm = ({ user, setResponse }) => {
     };
 
     const handleError = (e) => {
-        Sentry.captureError(e);
+        Sentry.captureException(e);
         sendError(500, "We're sorry, but there was an error sending your request to our servers. Please try again!");
     };
 
