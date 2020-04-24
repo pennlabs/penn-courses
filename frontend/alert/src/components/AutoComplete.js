@@ -94,14 +94,14 @@ const SuggestionSubtitle = styled.div`
    font-family: 'Inter', sans-serif;
 `;
 
-const IconContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    flex-grow: 1;
-    flex-basis: 20%;
-`;
+// const IconContainer = styled.div`
+//     display: flex;
+//     flex-direction: column;
+//     justify-content: center;
+//     align-items: center;
+//     flex-grow: 1;
+//     flex-basis: 20%;
+// `;
 
 const DropdownItemLeftCol = styled.div`
    max-width: 80%;
@@ -263,7 +263,9 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                     }
                 }}
                 onKeyUp={(e) => {
-                    if ((e.keyCode === RIGHT_ARROW || e.keyCode === RETURN_KEY) && inputRef && suggestions && suggestions[0]) {
+                    if (
+                        (e.keyCode === RIGHT_ARROW || e.keyCode === RETURN_KEY)
+                            && inputRef && suggestions && suggestions[0]) {
                         // autocomplete with backdrop when the right arrow key is pressed
                         setValue(backdrop);
                         setActive(false);
