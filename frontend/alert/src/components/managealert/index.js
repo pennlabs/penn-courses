@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactGA from "react-ga";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { ManageAlert } from "./ManageAlertUI";
 import { AlertStatus, AlertRepeat, AlertAction } from "./AlertItemEnums";
@@ -194,7 +195,10 @@ const ManageAlertWrapper = () => {
             }
             {/* <ManageAlertHeader /> */}
             <ManageAlert
-                setFilter={setFilter}
+                setFilter={(f) => {
+                    ReactGA.event({ category: "Manage Alerts", action: "filter", value: f });
+                    setFilter(f);
+                }}
                 alerts={currAlerts}
                 alertSel={alertSel}
                 setAlertSel={setAlertSel}
