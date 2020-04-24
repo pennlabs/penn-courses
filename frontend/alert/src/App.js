@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import ReactGA from "react-ga";
+import * as Sentry from "@sentry/browser";
 
 import "./App.css";
 import Logo from "./assets/PCA_logo.svg";
@@ -116,7 +117,12 @@ function App() {
     const setResponse = (res) => {
         const { status } = res;
         res.json()
-            .then(j => addMessage({ message: j.message, status }));
+            .then(j => addMessage({ message: j.message, status }))
+            .catch((e) => {
+                addMessage({ message: "We're sorry, there was an error in sending your message to our servers.", status: 500 });
+                console.log(e); // eslint-ignore-line
+                Sentry.captureException(e);
+            });
     };
 
     // Separates showLoginModal from state so that the login modal doesn't show up on page load

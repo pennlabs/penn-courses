@@ -29,7 +29,6 @@ const Footer = () => (
         >
             Penn Labs
         </a>
-        {" "}
         .
         <br />
         Have feedback about Penn Course Alert? Let us know

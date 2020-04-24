@@ -3,8 +3,8 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 
 import AwesomeDebouncePromise from "awesome-debounce-promise";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHistory } from "@fortawesome/free-solid-svg-icons";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faHistory } from "@fortawesome/free-solid-svg-icons";
 
 import { useOnClickOutside } from "./shared/useOnClickOutside";
 import { Input } from "./Input";
@@ -34,6 +34,7 @@ const AUTOCOMPLETE_BORDER_WIDTH = 1;
 const UP_ARROW = 38;
 const RIGHT_ARROW = 39;
 const DOWN_ARROW = 40;
+const RETURN_KEY = 13;
 
 const DropdownContainer = styled.div`
     position: absolute;
@@ -93,14 +94,14 @@ const SuggestionSubtitle = styled.div`
    font-family: 'Inter', sans-serif;
 `;
 
-const IconContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    flex-grow: 1;
-    flex-basis: 20%;
-`;
+// const IconContainer = styled.div`
+//     display: flex;
+//     flex-direction: column;
+//     justify-content: center;
+//     align-items: center;
+//     flex-grow: 1;
+//     flex-basis: 20%;
+// `;
 
 const DropdownItemLeftCol = styled.div`
    max-width: 80%;
@@ -155,9 +156,9 @@ const Suggestion = ({
                 <SuggestionSubtitle>{title}</SuggestionSubtitle>
                 <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
             </DropdownItemLeftCol>
-            <IconContainer>
-                <FontAwesomeIcon icon={faHistory} color="#c4c4c4" />
-            </IconContainer>
+            {/* <IconContainer> */}
+            {/*     <FontAwesomeIcon icon={faHistory} color="#c4c4c4" /> */}
+            {/* </IconContainer> */}
         </DropdownItemBox>
     );
 };
@@ -256,10 +257,18 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                 autocomplete="off"
                 placeholder="Course"
                 ref={setInputRef}
+                onKeyDown={(e) => {
+                    if (e.keyCode === RETURN_KEY && suggestions) {
+                        e.preventDefault();
+                    }
+                }}
                 onKeyUp={(e) => {
-                    if (e.keyCode === RIGHT_ARROW && inputRef && suggestions && suggestions[0]) {
+                    if (
+                        (e.keyCode === RIGHT_ARROW || e.keyCode === RETURN_KEY)
+                            && inputRef && suggestions && suggestions[0]) {
                         // autocomplete with backdrop when the right arrow key is pressed
                         setValue(backdrop);
+                        setActive(false);
                         inputRef.value = backdrop;
                     } else if (e.keyCode === DOWN_ARROW && suggestions) {
                         // select a suggestion when the down arrow key is pressed
@@ -273,7 +282,7 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                     } else {
                         const newValue = e.target.value;
                         setValue(newValue);
-                        if (!newValue) {
+                        if (!newValue || newValue.length < 3) {
                             setSuggestions([]);
                         } else {
                             suggestionsDebounced(newValue)
@@ -290,19 +299,24 @@ const AutoComplete = ({ onValueChange, disabled }) => {
             />
             <DropdownContainer below={inputRef} hidden={!show}>
                 <DropdownBox>
-                    {suggestions.map((suggestion, index) => (
-                        <Suggestion
-                            key={suggestion.section_id}
-                            selected={suggestion.section_id.toLowerCase() === value.toLowerCase()}
-                            courseCode={suggestion.section_id}
-                            onClick={() => {
-                                inputRef.value = suggestion.section_id;
-                                setValue(suggestion.section_id);
-                            }}
-                            title={suggestion.course_title}
-                            instructor={suggestion.instructors[0]}
-                        />
-                    ))
+                    {suggestions
+                        .sort((a, b) => a.section_id.localeCompare(b.section_id))
+                        .map((suggestion, index) => (
+                            <Suggestion
+                                key={suggestion.section_id}
+                                selected={
+                                    suggestion.section_id.toLowerCase() === value.toLowerCase()
+                                }
+                                courseCode={suggestion.section_id}
+                                onClick={() => {
+                                    inputRef.value = suggestion.section_id;
+                                    setActive(false);
+                                    setValue(suggestion.section_id);
+                                }}
+                                title={suggestion.course_title}
+                                instructor={suggestion.instructors[0]}
+                            />
+                        ))
                     }
                 </DropdownBox>
             </DropdownContainer>

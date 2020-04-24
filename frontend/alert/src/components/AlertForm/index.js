@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
+import * as Sentry from "@sentry/browser";
 
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
@@ -80,34 +81,49 @@ const doAPIRequest = (url, method = "GET", body = {}, extraHeaders = {}) => fetc
 
 const AlertForm = ({ user, setResponse }) => {
     const [section, setSection] = useState("");
-    const [email, setEmail] = useState(null);
+    const [email, setEmail] = useState("");
 
-    const [phone, setPhone] = useState(null);
+    const [phone, setPhone] = useState("");
     const [isPhoneDirty, setPhoneDirty] = useState(false);
 
     const [autoResub, setAutoResub] = useState("false");
 
     useEffect(() => {
         const phonenumber = user && parsePhoneNumberFromString(user.profile.phone || "");
-        setPhone(phonenumber ? phonenumber.formatNational() : user && user.profile.phone);
-        setEmail(user && user.profile.email);
+        setPhone(phonenumber ? phonenumber.formatNational() : (user && user.profile.phone) || "");
+        setEmail((user && user.profile.email) || "");
     }, [user]);
 
     const contactInfoChanged = () => (
         !user || user.profile.email !== email || isPhoneDirty);
 
+    const sendError = (status, message) => {
+        const blob = new Blob([JSON.stringify({ message })], { type: "application/json" });
+        setResponse(new Response(blob, { status }));
+    };
+
+    const handleError = (e) => {
+        Sentry.captureException(e);
+        sendError(500, "We're sorry, but there was an error sending your request to our servers. Please try again!");
+    };
+
     const submitRegistration = () => {
         doAPIRequest("/api/alert/api/registrations/", "POST", { section, auto_resubscribe: autoResub === "true" })
             .then(res => setResponse(res))
-            .catch(e => alert("There was an unexpected error. Please try again!"));
+            .catch(handleError);
     };
+
     const onSubmit = () => {
+        if (phone.length === 0 && email.length === 0) {
+            sendError(400, "Please add at least one contact method (either email or phone number).");
+            return;
+        }
+        if (phone.length !== 0 && !parsePhoneNumberFromString(phone, "US")) {
+            sendError(400, "Please enter a valid phone US # (or leave the field blank).");
+            return;
+        }
+
         if (contactInfoChanged()) {
-            if (phone.length !== 0 && !parsePhoneNumberFromString(phone, "US")) {
-                const blob = new Blob([JSON.stringify({ message: "Please enter a valid phone US # (or leave the field blank)." })], { type: "application/json" });
-                setResponse(new Response(blob, { status: 400 }));
-                return;
-            }
             doAPIRequest("/accounts/me/", "PATCH", { profile: { email, phone } })
                 .then((res) => {
                     if (!res.ok) {
@@ -116,9 +132,7 @@ const AlertForm = ({ user, setResponse }) => {
                         return submitRegistration();
                     }
                 })
-                .catch((e) => {
-                    alert("an error occurred. please try again!");
-                });
+                .catch(handleError);
         } else {
             submitRegistration();
         }
