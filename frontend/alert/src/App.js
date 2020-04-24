@@ -95,6 +95,7 @@ function App() {
     const [user, setUser] = useState(null);
     const [page, setPage] = useState(window.location.hash === "#manage" ? "manage" : "home");
     const [messages, setMessages] = useState([]);
+    const [showLoginModal, setShowLoginModal] = useState(false);
 
     const MESSAGE_EXPIRATION_MILLIS = 8000;
     const removeMessage = k => setMessages(msgs => msgs.filter(m => m.key !== k));
@@ -109,13 +110,25 @@ function App() {
         res.json()
             .then(j => addMessage({ message: j.message, status }));
     };
+
+    // Separates showLoginModal from state so that the login modal doesn't show up on page load
+    const updateUser = user => {
+        if (!user) {
+            // the user has logged out; show the login modal
+            setShowLoginModal(true);
+        } else {
+            // the user has logged in; hide the login modal
+            setShowLoginModal(false);
+        }
+        setUser(user);
+    };
     return (
         <>
             <Container>
-                {!user && <LoginModal/>}
+                {showLoginModal && <LoginModal/>}
                 <Nav
-                    login={setUser}
-                    logout={() => setUser(null)}
+                    login={updateUser}
+                    logout={() => updateUser(null)}
                     user={user}
                     page={page}
                     setPage={setPage}
