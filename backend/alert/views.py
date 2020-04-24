@@ -441,9 +441,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         self,
     ):  # NOT the same as all active registrations (includes cancelled)
         return Registration.objects.filter(
-            user=self.request.user,
-            deleted=False,
-            resubscribed_to__isnull=True,
+            user=self.request.user, deleted=False, resubscribed_to__isnull=True,
         )
 
 
