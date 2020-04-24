@@ -3,8 +3,8 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 
 import AwesomeDebouncePromise from "awesome-debounce-promise";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHistory } from "@fortawesome/free-solid-svg-icons";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faHistory } from "@fortawesome/free-solid-svg-icons";
 
 import { useOnClickOutside } from "./shared/useOnClickOutside";
 import { Input } from "./Input";
@@ -34,6 +34,7 @@ const AUTOCOMPLETE_BORDER_WIDTH = 1;
 const UP_ARROW = 38;
 const RIGHT_ARROW = 39;
 const DOWN_ARROW = 40;
+const RETURN_KEY = 13;
 
 const DropdownContainer = styled.div`
     position: absolute;
@@ -155,9 +156,9 @@ const Suggestion = ({
                 <SuggestionSubtitle>{title}</SuggestionSubtitle>
                 <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
             </DropdownItemLeftCol>
-            <IconContainer>
-                <FontAwesomeIcon icon={faHistory} color="#c4c4c4" />
-            </IconContainer>
+            {/* <IconContainer> */}
+            {/*     <FontAwesomeIcon icon={faHistory} color="#c4c4c4" /> */}
+            {/* </IconContainer> */}
         </DropdownItemBox>
     );
 };
@@ -256,8 +257,13 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                 autocomplete="off"
                 placeholder="Course"
                 ref={setInputRef}
+                onKeyDown={(e) => {
+                    if (e.keyCode === RETURN_KEY && suggestions) {
+                        e.preventDefault();
+                    }
+                }}
                 onKeyUp={(e) => {
-                    if (e.keyCode === RIGHT_ARROW && inputRef && suggestions && suggestions[0]) {
+                    if ((e.keyCode === RIGHT_ARROW || e.keyCode === RETURN_KEY) && inputRef && suggestions && suggestions[0]) {
                         // autocomplete with backdrop when the right arrow key is pressed
                         setValue(backdrop);
                         setActive(false);
