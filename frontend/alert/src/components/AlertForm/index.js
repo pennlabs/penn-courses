@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 
@@ -79,16 +79,20 @@ const doAPIRequest = (url, method = "GET", body = {}, extraHeaders = {}) => fetc
 
 
 const AlertForm = ({ user, setResponse }) => {
-    const phonenumber = user && parsePhoneNumberFromString(user.profile.phone || "");
     const [section, setSection] = useState("");
-    const [email, setEmail] = useState(user && user.profile.email);
+    const [email, setEmail] = useState(null);
 
-    const [phone, setPhone] = useState(
-        phonenumber ? phonenumber.formatNational() : user && user.profile.phone
-    );
+    const [phone, setPhone] = useState(null);
     const [isPhoneDirty, setPhoneDirty] = useState(false);
 
     const [autoResub, setAutoResub] = useState("false");
+
+    useEffect(() => {
+        const phonenumber = user && parsePhoneNumberFromString(user.profile.phone || "");
+        setPhone(phonenumber ? phonenumber.formatNational() : user && user.profile.phone);
+        setEmail(user && user.profile.email);
+    }, [user]);
+
     const contactInfoChanged = () => (
         !user || user.profile.email !== email || isPhoneDirty);
 
