@@ -48,7 +48,7 @@ const ModalCardHead = styled.header`
     align-items: center;
     display: flex;
     flex-shrink: 0;
-    justify-content: space-between;
+    justify-content: ${({ center }) => (center ? "center" : "space-between")};
     padding: 20px;
     padding-bottom: 0.2rem;
     position: relative;
@@ -71,11 +71,9 @@ const Modal = ({ children, title, headerIcon }) => (
     <ModalContainer>
         <ModalBackground />
         <ModalCard>
-            <ModalCardHead>
+            <ModalCardHead center={!headerIcon}>
                 <header>
-                    {" "}
                     {title}
-                    {" "}
                 </header>
                 {headerIcon && <img alt="" src={headerIcon} />}
             </ModalCardHead>
