@@ -25,7 +25,7 @@ applications:
       hosts:
         - host: penncourseplan.com
           paths: ["/api", "/admin", "/accounts", "/assets"]
-        - host: beta.penncoursealert.com
+        - host: penncoursealert.com
           paths: ["/api", "/admin", "/accounts", "/assets"]
     extraEnv:
       - name: DJANGO_SETTINGS_MODULE
@@ -36,21 +36,21 @@ applications:
       hosts:
         - host: penncourseplan.com
           paths: ["/"]
-  - name: alert
-    image: pennlabs/penn-courses-backend
-    secret: penn-courses
-    ingress:
-      hosts:
-        - host: penncoursealert.com
-          paths: ["/"]
-    extraEnv:
-      - name: ROOT_URLCONF
-        value: PennCourses.urls.pca
-      - name: DJANGO_SETTINGS_MODULE
-        value: PennCourses.settings.production
-  - name: alert-beta
+  # - name: alert
+  #   image: pennlabs/penn-courses-backend
+  #   secret: penn-courses
+  #   ingress:
+  #     hosts:
+  #       - host: penncoursealert.com
+  #         paths: ["/"]
+  #   extraEnv:
+  #     - name: ROOT_URLCONF
+  #       value: PennCourses.urls.pca
+  #     - name: DJANGO_SETTINGS_MODULE
+  #       value: PennCourses.settings.production
+  - name: alert-react
     image: pennlabs/pca-frontend
     ingress:
       hosts:
-        - host: beta.penncoursealert.com
+        - host: penncoursealert.com
           paths: ["/"]
