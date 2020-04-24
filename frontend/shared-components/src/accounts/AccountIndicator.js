@@ -18,11 +18,13 @@ const AccountIndicator = ({
         fetch("/accounts/me/")
             .then((response) => {
                 if (!response.ok) {
+                    login(null);
                     return;
                 }
                 response.json()
                     .then(newUser => login(newUser));
-            });
+            })
+            .catch(() => login(null));
     }, [login]);
 
     return user
