@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import ReactGA from "react-ga";
+import * as Sentry from "@sentry/browser";
 
 import "./App.css";
 import Logo from "./assets/PCA_logo.svg";
@@ -13,6 +14,7 @@ import AlertForm from "./components/AlertForm";
 
 import { Center, Container, Flex } from "./components/common/layout";
 import MessageList from "./components/MessageList";
+import LoginModal from "./components/LoginModal";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
@@ -96,10 +98,13 @@ function App() {
     const [user, setUser] = useState(null);
     const [page, setPage] = useState(window.location.hash === "#manage" ? "manage" : "home");
     const [messages, setMessages] = useState([]);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
         ReactGA.pageview(window.location.pathname + window.location.search);
     }, []);
+
 
     const MESSAGE_EXPIRATION_MILLIS = 8000;
     const removeMessage = k => setMessages(msgs => msgs.filter(m => m.key !== k));
@@ -112,29 +117,52 @@ function App() {
     const setResponse = (res) => {
         const { status } = res;
         res.json()
-            .then(j => addMessage({ message: j.message, status }));
+            .then(j => addMessage({ message: j.message, status }))
+            .catch((e) => {
+                addMessage({ message: "We're sorry, there was an error in sending your message to our servers.", status: 500 });
+                console.log(e); // eslint-ignore-line
+                Sentry.captureException(e);
+            });
     };
+
+    // Separates showLoginModal from state so that the login modal doesn't show up on page load
+    const updateUser = (newUserVal) => {
+        if (!newUserVal) {
+            // the user has logged out; show the login modal
+            setShowLoginModal(true);
+        } else {
+            // the user has logged in; hide the login modal
+            setShowLoginModal(false);
+        }
+        setUser(newUserVal);
+    };
+
+    const logout = () => updateUser(null);
+
     return (
-        <Container>
-            <Nav
-                login={setUser}
-                logout={() => setUser(null)}
-                user={user}
-                page={page}
-                setPage={(p) => {
-                    ReactGA.event({ category: "Navigation", action: "Changed Page", label: p }); setPage(p);
-                }}
-            />
-            <MessageList messages={messages} removeMessage={removeMessage} />
-            <Heading />
-            {page === "home" ? (
-                <Flex col grow={1}>
-                    { user ? <AlertForm user={user} setResponse={setResponse} /> : null }
-                </Flex>
-            ) : <ManageAlertWrapper />
-            }
-            <Footer />
-        </Container>
+        <>
+            <Container>
+                {showLoginModal && <LoginModal />}
+                <Nav
+                    login={updateUser}
+                    logout={logout}
+                    user={user}
+                    page={page}
+                    setPage={(p) => {
+                        ReactGA.event({ category: "Navigation", action: "Changed Page", label: p }); setPage(p);
+                    }}
+                />
+                <MessageList messages={messages} removeMessage={removeMessage} />
+                <Heading />
+                {page === "home" ? (
+                    <Flex col grow={1}>
+                        {user ? <AlertForm user={user} setResponse={setResponse} /> : null}
+                    </Flex>
+                ) : <ManageAlertWrapper />
+                }
+                <Footer />
+            </Container>
+        </>
     );
 }
 
