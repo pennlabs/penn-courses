@@ -56,7 +56,7 @@ Spring, Summer and Fall are `A`, `B` and `C`, respectively.
 
 This project isn't too useful without Penn course data. To load in
 course data, set the environment variables `API_KEY` and `API_SECRET` to
-the `Bearer` and `Token` credentials, respectively, that you recieve
+the `Bearer` and `Token` credentials, respectively, that you receive
 from the Penn OpenData API when you register for an API key. After those
 have been set, run
 

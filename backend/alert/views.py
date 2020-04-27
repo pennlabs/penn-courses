@@ -196,11 +196,11 @@ def accept_webhook(request):
         try:
             alert_for_course(course_id, semester=course_term, sent_by="WEB")
             alert_for_course_called = True
-            response = JsonResponse({"message": "webhook recieved, alerts sent"})
+            response = JsonResponse({"message": "webhook received, alerts sent"})
         except ValueError:
             response = JsonResponse({"message": "course code could not be parsed"})
     else:
-        response = JsonResponse({"message": "webhook recieved"})
+        response = JsonResponse({"message": "webhook received"})
 
     try:
         u = record_update(

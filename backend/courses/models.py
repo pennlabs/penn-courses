@@ -382,7 +382,7 @@ PCA_REGISTRATION = "PCA_REGISTRATION"
 
 class APIPrivilege(models.Model):
     """
-    Describes a type of access privelege that an API key can have.
+    Describes a type of access privilege that an API key can have.
     """
 
     code = models.CharField(max_length=255, unique=True)
