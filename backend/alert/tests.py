@@ -74,7 +74,7 @@ def override_delay(modules_names, before_func, before_kwargs):
 class SendAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
-        course, section = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
+        course, section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
         self.r = Registration(email="yo@example.com", phone="+15555555555", section=section)
 
         self.r.save()
@@ -204,7 +204,7 @@ class RegisterTestCase(TestCase):
 class ResubscribeTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
+        _, self.section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
         self.base_reg = Registration(
             email="e@example.com", phone="+15555555555", section=self.section
         )
@@ -285,7 +285,7 @@ class ResubscribeTestCase(TestCase):
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
+        _, self.section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
         self.r1 = Registration(email="e@example.com", phone="+15555555555", section=self.section)
         self.r2 = Registration(email="f@example.com", phone="+15555555556", section=self.section)
         self.r3 = Registration(email="g@example.com", phone="+15555555557", section=self.section)
@@ -540,7 +540,9 @@ class APIRegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
         self.client = Client()
-        self.course, self.section = get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        self.course, self.section, _, _ = get_or_create_course_and_section(
+            "CIS-120-001", TEST_SEMESTER
+        )
         self.permission = APIPrivilege.objects.create(code=PCA_REGISTRATION)
         self.key = APIKey.objects.get_or_create(email="contact@penncoursenotify.com")[0]
         self.key.privileges.add(self.permission)

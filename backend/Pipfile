@@ -43,7 +43,10 @@ pyyaml = "*"
 uritemplate = "*"
 uwsgi = "*"
 ddt = "*"
+lark-parser = "*"
 tqdm = "*"
+boto3 = "*"
+importlib-metadata = "*"
 
 [requires]
 python_version = "3"
