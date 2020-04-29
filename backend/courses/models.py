@@ -68,14 +68,15 @@ all of our Course and Section data in two queries.
 
 # Annotations are basically the same for Course and Section, save a few of the subfilters,
 # so generalize it out.
-def review_averages(queryset, subfilters):
+def review_averages(queryset, subfilters, fields=None, prefix=""):
     """
     Annotate the queryset with the average of all reviews matching the subfilters.
     """
-    fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
+    if fields is None:
+        fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
     return queryset.annotate(
         **{
-            field: Subquery(
+            (prefix + field): Subquery(
                 ReviewBit.objects.filter(field=field, **subfilters)
                 .values("field")
                 .order_by()
