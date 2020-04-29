@@ -1,5 +1,4 @@
 import re
-import sys
 from datetime import datetime
 
 from lark import Lark, Transformer
@@ -126,7 +125,7 @@ def parse_row(s, T=SQLDumpTransformer):
     return row
 
 
-def process_file(fo, process_row=None, T=SQLDumpTransformer, progress=sys.stderr):
+def process_file(fo, process_row=None, T=SQLDumpTransformer, progress=True):
     """
     Read in and parse a SQL dump, with each row as a Python dictionary.
     tqdm shows a progress bar in the shell, and the process_row callback
@@ -140,13 +139,13 @@ def process_file(fo, process_row=None, T=SQLDumpTransformer, progress=sys.stderr
     )
     contents = fo.read()
     matches = list(regex.finditer(contents))
-    for x in tqdm(matches, file=progress):
+    for x in tqdm(matches, disable=(not progress)):
         row = parse_row(x.group(), T)
         if process_row is not None:
             process_row(row)
 
 
-def load_sql_dump(fo, progress=sys.stderr):
+def load_sql_dump(fo, progress=True):
     """
     Synchronously return all the rows from the database, in dictionary format.
     """

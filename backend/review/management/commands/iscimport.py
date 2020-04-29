@@ -85,7 +85,8 @@ class Command(BaseCommand):
 
         parser.add_argument(
             "--no-progress-bar",
-            action="store_true",
+            action="store_false",
+            dest="show_progress_bar",
             help="Show dynamic progress bars during execution",
         )
 
@@ -129,6 +130,7 @@ class Command(BaseCommand):
         is_zip_file = kwargs["zip"] or s3_bucket is not None
         summary_file = kwargs["summary_file"]
         import_details = kwargs["import_details"]
+        show_progress_bar = kwargs["show_progress_bar"]
 
         if src is None:
             raise CommandError("source directory or zip must be defined.")
@@ -155,7 +157,7 @@ class Command(BaseCommand):
         summary_fo = files[0]
         self.display(f"Loading summary file...")
         summary_rows = load_sql_dump(
-            summary_fo, progress=self.stderr
+            summary_fo, show_progress_bar
         )  # This will show a progress bar.
         self.display(f"SQL parsed and loaded!")
 
@@ -186,19 +188,19 @@ class Command(BaseCommand):
         self.display(
             f"Importing reviews for semester(s) {', '.join(semesters) if not kwargs['import_all'] else 'all'}"  # noqa E501
         )
-        stats = import_summary_rows(summary_rows, progress=self.stderr)
+        stats = import_summary_rows(summary_rows, show_progress_bar)
         self.display(stats)
 
         if import_details:
             self.display("Loading details file...")
-            detail_rows = load_sql_dump(files[1], progress=self.stderr)
+            detail_rows = load_sql_dump(files[1], show_progress_bar)
             self.display("SQL parsed and loaded!")
             if not import_all:
                 full_len = len(detail_rows)
                 detail_rows = [r for r in detail_rows if r["TERM"] in semesters]
                 filtered_len = len(detail_rows)
                 self.display(f"Filtered {full_len} rows down to {filtered_len} rows.")
-            stats = import_ratings_rows(detail_rows, progress=self.stderr)
+            stats = import_ratings_rows(detail_rows, show_progress_bar)
             self.display(stats)
 
         self.close_files(files)

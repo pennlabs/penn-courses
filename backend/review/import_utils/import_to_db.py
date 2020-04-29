@@ -1,5 +1,4 @@
 import re
-import sys
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -292,7 +291,7 @@ def import_ratings_row(row, stat):
     stat("detail_count")
 
 
-def import_rows(rows, import_func, progress=sys.stderr):
+def import_rows(rows, import_func, show_progress_bar=True):
     """
     Given a list of SQL rows, import them using the given import function
     """
@@ -306,15 +305,15 @@ def import_rows(rows, import_func, progress=sys.stderr):
         value = stats.get(key, 0)
         stats[key] = value + amt
 
-    for row in tqdm(rows, file=progress):
+    for row in tqdm(rows, disable=(not show_progress_bar)):
         import_func(row, stat)
 
     return stats
 
 
-def import_summary_rows(summaries, progress=sys.stderr):
-    import_rows(summaries, import_summary_row, progress)
+def import_summary_rows(summaries, show_progress_bar=True):
+    import_rows(summaries, import_summary_row, show_progress_bar)
 
 
-def import_ratings_rows(ratings, progress=sys.stderr):
-    import_rows(ratings, import_ratings_row, progress)
+def import_ratings_rows(ratings, show_progress_bar=True):
+    import_rows(ratings, import_ratings_row, show_progress_bar)

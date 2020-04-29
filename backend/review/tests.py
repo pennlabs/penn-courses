@@ -218,6 +218,7 @@ class ReviewImportCommandTestCase(TestCase):
             "hi.zip",
             "--zip",
             f"--semester={TEST_SEMESTER}",
+            show_progress_bar=False,
             stdout=self.out,
             stderr=self.err,
         )
@@ -229,7 +230,12 @@ class ReviewImportCommandTestCase(TestCase):
     def test_no_semester_defined(self, mock_get_files, mock_close_files):
         with self.assertRaises(CommandError):
             management.call_command(
-                self.COMMAND_NAME, "hi.zip", "--zip", stdout=self.out, stderr=self.err
+                self.COMMAND_NAME,
+                "hi.zip",
+                "--zip",
+                stdout=self.out,
+                stderr=self.err,
+                show_progress_bar=False,
             ),
 
     @patch("review.management.commands.iscimport.input")
@@ -248,6 +254,7 @@ class ReviewImportCommandTestCase(TestCase):
             f"--semester={TEST_SEMESTER}",
             stdout=self.out,
             stderr=self.err,
+            show_progress_bar=False,
         )
         self.assertEqual(1, Review.objects.count())
         self.assertEqual(r.pk, Review.objects.get().pk)
@@ -268,6 +275,7 @@ class ReviewImportCommandTestCase(TestCase):
             f"--semester={TEST_SEMESTER}",
             stdout=self.out,
             stderr=self.err,
+            show_progress_bar=False,
         )
         self.assertEqual(1, Review.objects.count())
         self.assertNotEqual(r.pk, Review.objects.get().pk)
@@ -282,6 +290,7 @@ class ReviewImportCommandTestCase(TestCase):
             "--import-details",
             stdout=self.out,
             stderr=self.err,
+            show_progress_bar=False,
         )
         self.assertEqual(0, res)
         c = Course.objects.get()
@@ -313,6 +322,7 @@ class ReviewImportCommandTestCase(TestCase):
             "--import-details",
             stdout=self.out,
             stderr=self.err,
+            show_progress_bar=False,
         )
         self.assertEqual(0, res)
         for T in [Instructor, Course, Section, Review, ReviewBit]:
