@@ -50,9 +50,7 @@ class Command(BaseCommand):
 
             # _, section = get_course_and_section(course_id, semester)
 
-            should_send_alert = (
-                course_status == "O" and semester == course_term
-            )
+            should_send_alert = course_status == "O" and semester == course_term
 
             if should_send_alert:
                 try:
