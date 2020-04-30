@@ -54,9 +54,9 @@ applications:
       hosts:
         - host: penncoursealert.com
           paths: ["/"]
-cronjobs:
-  - name: send_alerts
-    schedule: "*/5 * * * *"
-    secret: penn-courses
-    image: pennlabs/penn-courses-backend
-    cmd: ["./manage.py", "webhookbackup"]
+# cronjobs:
+#   - name: send_alerts
+#     schedule: "*/5 * * * *"
+#     secret: penn-courses
+#     image: pennlabs/penn-courses-backend
+#     cmd: ["./manage.py", "webhookbackup"]
