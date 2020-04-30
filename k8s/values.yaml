@@ -26,7 +26,7 @@ applications:
         - host: penncourseplan.com
           paths: ["/api", "/admin", "/accounts", "/assets"]
         - host: penncoursealert.com
-          paths: ["/api", "/admin", "/accounts", "/assets"]
+          paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"]
     extraEnv:
       - name: DJANGO_SETTINGS_MODULE
         value: PennCourses.settings.production
@@ -54,3 +54,9 @@ applications:
       hosts:
         - host: penncoursealert.com
           paths: ["/"]
+cronjobs:
+  - name: send_alerts
+    schedule: "*/5 * * * *"
+    secret: penn-courses
+    image: pennlabs/penn-courses-backend
+    cmd: ["./manage.py", "webhookbackup"]
