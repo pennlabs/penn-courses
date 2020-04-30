@@ -4,6 +4,7 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 from rest_framework.schemas import get_schema_view
 
+from alert.views import accept_webhook
 from courses.views import UserView
 
 
@@ -31,6 +32,7 @@ urlpatterns = [
     path("accounts/me/", UserView.as_view()),
     path("accounts/", include("accounts.urls", namespace="accounts")),
     path("api/", include(urlpatterns)),
+    path("webhook", accept_webhook, name="webhook"),
 ]
 
 if settings.DEBUG:
