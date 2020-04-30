@@ -1,4 +1,3 @@
-import json
 import logging
 
 from django.core.management.base import BaseCommand
@@ -7,7 +6,6 @@ from tqdm import tqdm
 
 from alert.views import alert_for_course
 from courses import registrar
-from courses.util import get_course_and_section, record_update, update_course_from_record
 
 
 class Command(BaseCommand):
@@ -56,11 +54,9 @@ class Command(BaseCommand):
                 course_status == "O" and semester == course_term
             )
 
-            alert_for_course_called = False
             if should_send_alert:
                 try:
                     alert_for_course(course_id, semester=course_term, sent_by="WEB")
-                    alert_for_course_called = True
                     stats["sent"] += 1
                 except ValueError:
                     stats["parse_error"] += 1
