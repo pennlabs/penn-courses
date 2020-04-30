@@ -127,7 +127,7 @@ const AlertForm = ({ user, setResponse }) => {
             doAPIRequest("/accounts/me/", "PATCH", { profile: { email, phone } })
                 .then((res) => {
                     if (!res.ok) {
-                        throw new Error(res);
+                        throw new Error(JSON.stringify(res));
                     } else {
                         return submitRegistration();
                     }
