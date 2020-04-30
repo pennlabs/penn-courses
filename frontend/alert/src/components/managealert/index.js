@@ -29,7 +29,7 @@ const processAlerts = (setAlerts) => {
                         datetime = `${date} at ${time}`;
                     }
 
-                    const status = registration.section_status
+                    const status = registration.section_status && registration.section_status === "O"
                         ? AlertStatus.Open : AlertStatus.Closed;
 
                     let repeat;
