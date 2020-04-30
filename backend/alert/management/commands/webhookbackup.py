@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from alert.views import alert_for_course
 from courses import registrar
-from courses.util import record_update, update_course_from_record
+from courses.util import get_course_and_section, record_update, update_course_from_record
 
 
 class Command(BaseCommand):
@@ -50,7 +50,11 @@ class Command(BaseCommand):
                 stats["missing_data"] += 1
                 continue
 
-            should_send_alert = True and course_status == "O" and semester == course_term
+            # _, section = get_course_and_section(course_id, semester)
+
+            should_send_alert = (
+                course_status == "O" and semester == course_term
+            )
 
             alert_for_course_called = False
             if should_send_alert:
@@ -62,19 +66,5 @@ class Command(BaseCommand):
                     stats["parse_error"] += 1
             else:
                 stats["skipped"] += 1
-
-            try:
-                u = record_update(
-                    course_id,
-                    course_term,
-                    prev_status,
-                    course_status,
-                    alert_for_course_called,
-                    json.dumps(data),
-                )
-
-                update_course_from_record(u)
-            except Exception:
-                stats["error"] += 1
 
         print(stats)
