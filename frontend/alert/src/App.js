@@ -97,7 +97,7 @@ const genId = (() => { let counter = 0; return () => counter++; })(); // eslint-
 function App() {
     const [user, setUser] = useState(null);
     const [page, setPage] = useState(window.location.hash === "#manage" ? "manage" : "home");
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState([{ message: "Unfortunately, the University's servers are experiencing technical difficulties which are affecting Penn Course Alert. You can continue registering for alerts in the interim. We sincerely appologize for the inconvenience, and hope to be back shortly!", key: genId(), status: 500 }]);
     const [showLoginModal, setShowLoginModal] = useState(false);
 
     useEffect(() => {
