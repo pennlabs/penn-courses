@@ -43,6 +43,7 @@ pyyaml = "*"
 uritemplate = "*"
 uwsgi = "*"
 ddt = "*"
+tqdm = "*"
 
 [requires]
 python_version = "3"
