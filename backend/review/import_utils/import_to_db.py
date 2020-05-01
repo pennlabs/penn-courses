@@ -312,8 +312,8 @@ def import_rows(rows, import_func, show_progress_bar=True):
 
 
 def import_summary_rows(summaries, show_progress_bar=True):
-    import_rows(summaries, import_summary_row, show_progress_bar)
+    return import_rows(summaries, import_summary_row, show_progress_bar)
 
 
 def import_ratings_rows(ratings, show_progress_bar=True):
-    import_rows(ratings, import_ratings_row, show_progress_bar)
+    return import_rows(ratings, import_ratings_row, show_progress_bar)
