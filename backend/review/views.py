@@ -1,8 +1,9 @@
 # from django.shortcuts import render
+from django.db.models import F, Max, OuterRef, Q, Subquery
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from courses.models import Course, Instructor, review_averages, Section
-from django.db.models import Avg, F, Max, OuterRef, Prefetch, Q, Subquery
+
+from courses.models import Course, Instructor, review_averages
 from review.models import Review
 
 
@@ -10,7 +11,8 @@ def make_subdict(field_prefix, d):
     r = dict()
     for k, v in d.items():
         if k.startswith(field_prefix):
-            new_k = k[len(field_prefix) :]
+            start_at = len(field_prefix)
+            new_k = k[start_at:]
             r[new_k] = v
     return r
 
@@ -38,8 +40,7 @@ def annotate_average_and_recent(qs, match_on):
 
 
 @api_view(["GET"])
-def course_reviews(request):
-    course_code = "CIS-120"
+def course_reviews(request, course_code):
     qs = annotate_average_and_recent(
         Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
         match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
