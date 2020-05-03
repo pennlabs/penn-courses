@@ -135,7 +135,7 @@ def process_file(fo, process_row=None, T=SQLDumpTransformer, progress=True):
     place, and not just always polluting sys.stderr.
     """
     regex = re.compile(
-        r"Insert into [\w\.]*\W*\(([\n ,\w]*)\)\W*Values\W*\((['\w, \&\n.:/\(\)!?$%*]*)\);"
+        r"Insert into [\w\.]*\W*\(([\n ,\w]*)\)\W*Values\W*\((['\w, \&\n.:/\(\)!?$%*-+#]*)\);"
     )
     contents = fo.read()
     matches = list(regex.finditer(contents))
