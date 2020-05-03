@@ -68,7 +68,7 @@ class ReviewBit(models.Model):
     """
 
     review = models.ForeignKey(Review, on_delete=models.CASCADE)
-    field = models.CharField(max_length=32)
+    field = models.CharField(max_length=32, db_index=True)
 
     average = models.DecimalField(max_digits=6, decimal_places=5)
     median = models.DecimalField(max_digits=6, decimal_places=5, null=True, blank=True)
