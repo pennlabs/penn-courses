@@ -4,7 +4,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from tqdm import tqdm
 
-from courses.models import Instructor
+from courses.models import Course, Instructor
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
@@ -317,3 +317,40 @@ def import_summary_rows(summaries, show_progress_bar=True):
 
 def import_ratings_rows(ratings, show_progress_bar=True):
     return import_rows(ratings, import_ratings_row, show_progress_bar)
+
+
+def import_description_rows(rows, semesters=None, show_progress_bar=True):
+    descriptions = dict()
+
+    stats = dict()
+
+    def stat(key, amt=1):
+        """
+        Helper function to keep track of how many rows we are adding to the DB,
+        along with any errors in processing the incoming rows.
+        """
+        value = stats.get(key, 0)
+        stats[key] = value + amt
+
+    for row in tqdm(rows, disable=(not show_progress_bar)):
+        course_code = row.get("COURSE_ID")
+        paragraph_num = row.get("PARAGRAPH_NUMBER")
+        description_paragraph = row.get("COURSE_DESCRIPTION")
+
+        desc = descriptions.get(course_code, dict())
+        desc[int(paragraph_num)] = description_paragraph
+        descriptions[course_code] = desc
+
+    # The course_id we get from the description doesn't have a section code, which is needed
+    # for separate_course_code.
+    for course_id, paragraphs in tqdm(descriptions.items(), disable=(not show_progress_bar)):
+        dept_code, course_code, _ = separate_course_code(course_id + "000")
+        courses = Course.objects.filter(department__code=dept_code, code=course_code)
+
+        if semesters is not None:
+            courses = courses.filter(semester__in=semesters)
+
+        paragraphs = list(paragraphs.items())
+        paragraphs.sort(key=lambda x: x[0])
+        description = "\n".join([p for _, p in paragraphs])
+        courses.update(description=description)

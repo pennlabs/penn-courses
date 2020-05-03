@@ -7,9 +7,10 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 
 from courses.models import Course, Instructor, Section
-from courses.util import get_or_create_course_and_section
+from courses.util import get_or_create_course, get_or_create_course_and_section
 from review.import_utils.import_to_db import (
     import_course_and_section,
+    import_description_rows,
     import_instructor,
     import_summary_row,
     titleize,
@@ -77,6 +78,13 @@ Insert into PCRDEV.TEST_PCR_RATING_V
     2, 0);
 """
 
+raw_descriptions = f"""
+Insert into PCRDEV.TEST_PCR_COURSE_DESC_V
+   (COURSE_ID, PARAGRAPH_NUMBER, COURSE_DESCRIPTION)
+ Values
+   ('CIS 120', '1', 'Hello, world!');
+"""
+
 
 class SQLParseTestCase(TestCase):
     def test_parse_key_value(self):
@@ -96,6 +104,16 @@ class SQLParseTestCase(TestCase):
     def test_parse_ratings(self):
         parse = parse_row(raw_ratings)
         self.assertIsInstance(parse, dict)
+
+    def test_parse_descriptions(self):
+        parse = parse_row(raw_descriptions)
+        expected = {
+            "COURSE_ID": "CIS 120",
+            "PARAGRAPH_NUMBER": "1",
+            "COURSE_DESCRIPTION": "Hello, world!",
+        }
+        self.assertIsInstance(parse, dict)
+        self.assertDictEqual(expected, parse)
 
 
 class ReviewImportTestCase(TestCase):
@@ -200,6 +218,54 @@ class ReviewImportTestCase(TestCase):
         self.assertEqual(user.id, inst3.user.id)
 
 
+class DescriptionImportTestCase(TestCase):
+    def test_one_paragraph(self):
+        get_or_create_course("CIS", "120", TEST_SEMESTER)
+        rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
+        import_description_rows(rows, show_progress_bar=False)
+        self.assertEqual(1, Course.objects.count())
+        self.assertEqual("Hello", Course.objects.get().description)
+
+    def test_no_course(self):
+        rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
+        import_description_rows(rows, show_progress_bar=False)
+        self.assertEqual(0, Course.objects.count())
+
+    def test_two_paragraphs(self):
+        get_or_create_course("CIS", "120", TEST_SEMESTER)
+        rows = [
+            {"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "2", "COURSE_DESCRIPTION": "world!"},
+            {"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"},
+        ]
+        import_description_rows(rows, show_progress_bar=False)
+        self.assertEqual(1, Course.objects.count())
+        self.assertEqual("Hello\nworld!", Course.objects.get().description)
+
+    def test_two_semesters(self):
+        get_or_create_course("CIS", "120", TEST_SEMESTER)
+        get_or_create_course("CIS", "120", "3008A")
+
+        rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
+        import_description_rows(rows, show_progress_bar=False)
+        self.assertEqual(2, Course.objects.count())
+        c1 = Course.objects.get(semester=TEST_SEMESTER)
+        c2 = Course.objects.get(semester="3008A")
+        for c in [c1, c2]:
+            self.assertEqual("Hello", c.description)
+
+    def test_two_courses(self):
+        get_or_create_course("CIS", "120", TEST_SEMESTER)
+        get_or_create_course("CIS", "121", TEST_SEMESTER)
+        rows = [
+            {"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "World"},
+            {"COURSE_ID": "CIS121", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"},
+        ]
+        import_description_rows(rows, show_progress_bar=False)
+        c120 = Course.objects.get(code="120")
+        c121 = Course.objects.get(code="121")
+        self.assertEqual("World", c120.description)
+        self.assertEqual("Hello", c121.description)
+
 @patch("review.management.commands.iscimport.Command.close_files")
 @patch("review.management.commands.iscimport.Command.get_files")
 class ReviewImportCommandTestCase(TestCase):
@@ -208,6 +274,7 @@ class ReviewImportCommandTestCase(TestCase):
     def setUp(self):
         self.summary_fo = StringIO(raw_summary)
         self.ratings_fo = StringIO(raw_ratings)
+        self.description_fo = StringIO(raw_descriptions)
         self.out = StringIO()
         self.err = StringIO()
 
@@ -327,3 +394,37 @@ class ReviewImportCommandTestCase(TestCase):
         self.assertEqual(0, res)
         for T in [Instructor, Course, Section, Review, ReviewBit]:
             self.assertEqual(0, T.objects.count())
+
+    def test_load_descriptions_current_semester(self, mock_get_files, mock_close_files):
+        mock_get_files.return_value = [self.summary_fo, self.description_fo]
+        get_or_create_course("CIS", "120", "3008A")
+        res = management.call_command(
+            self.COMMAND_NAME,
+            "hi.zip",
+            "--zip",
+            f"--semester={TEST_SEMESTER}",
+            "--import-descriptions",
+            stdout=self.out,
+            stderr=self.err,
+            show_progress_bar=False,
+        )
+        self.assertEqual(0, res)
+        self.assertEqual("Hello, world!", Course.objects.get(semester=TEST_SEMESTER).description)
+        self.assertNotEqual("Hello, world!", Course.objects.get(semester="3008A").description)
+
+    def test_load_descriptions_all_semester(self, mock_get_files, mock_close_files):
+        mock_get_files.return_value = [self.summary_fo, self.description_fo]
+        get_or_create_course("CIS", "120", "3008A")
+        res = management.call_command(
+            self.COMMAND_NAME,
+            "hi.zip",
+            "--zip",
+            "--all",
+            "--import-descriptions",
+            stdout=self.out,
+            stderr=self.err,
+            show_progress_bar=False,
+        )
+        self.assertEqual(0, res)
+        self.assertEqual("Hello, world!", Course.objects.get(semester=TEST_SEMESTER).description)
+        self.assertEqual("Hello, world!", Course.objects.get(semester="3008A").description)

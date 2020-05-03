@@ -5,7 +5,11 @@ import zipfile
 import boto3
 from django.core.management.base import BaseCommand, CommandError
 
-from review.import_utils.import_to_db import import_ratings_rows, import_summary_rows
+from review.import_utils.import_to_db import (
+    import_description_rows,
+    import_ratings_rows,
+    import_summary_rows,
+)
 from review.import_utils.parse_sql import load_sql_dump
 from review.models import Review
 
@@ -82,6 +86,11 @@ class Command(BaseCommand):
             action="store_true",
             help="import crosslistings from supplemental CROSSLIST table.",
         )
+        parser.add_argument(
+            "--import-descriptions",
+            action="store_true",
+            help="import course descriptions from the DESCRIPTIONS table.",
+        )
 
         parser.add_argument(
             "--no-progress-bar",
@@ -130,6 +139,7 @@ class Command(BaseCommand):
         is_zip_file = kwargs["zip"] or s3_bucket is not None
         summary_file = kwargs["summary_file"]
         import_details = kwargs["import_details"]
+        import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
 
         if src is None:
@@ -144,13 +154,24 @@ class Command(BaseCommand):
             fp = "/tmp/pcrdump.zip"
             # Make sure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
             # are loaded in as environment variables.
+            self.display(f"downloading zip from s3 bucket: {src}")
             boto3.client("s3").download_file(kwargs["s3_bucket"], src, fp)
             src = fp
 
         # TODO: When we import details and crosslistings, get their data here too.
         tables_to_get = [summary_file]
+        idx = 1
+        detail_idx = -1
         if import_details:
             tables_to_get.append(ISC_RATING_TABLE)
+            detail_idx = idx
+            idx += 1
+
+        description_idx = -1
+        if import_descriptions:
+            tables_to_get.append(ISC_DESC_TABLE)
+            description_idx = idx
+            idx += 1
 
         files = self.get_files(src, is_zip_file, tables_to_get)
 
@@ -193,7 +214,7 @@ class Command(BaseCommand):
 
         if import_details:
             self.display("Loading details file...")
-            detail_rows = load_sql_dump(files[1], show_progress_bar)
+            detail_rows = load_sql_dump(files[detail_idx], show_progress_bar)
             self.display("SQL parsed and loaded!")
             if not import_all:
                 full_len = len(detail_rows)
@@ -201,6 +222,13 @@ class Command(BaseCommand):
                 filtered_len = len(detail_rows)
                 self.display(f"Filtered {full_len} rows down to {filtered_len} rows.")
             stats = import_ratings_rows(detail_rows, show_progress_bar)
+            self.display(stats)
+
+        if import_descriptions:
+            self.display("Loading descriptions file...")
+            description_rows = load_sql_dump(files[description_idx], show_progress_bar)
+            self.display("SQL parsed and loaded!")
+            stats = import_description_rows(description_rows, semesters, show_progress_bar)
             self.display(stats)
 
         self.close_files(files)
