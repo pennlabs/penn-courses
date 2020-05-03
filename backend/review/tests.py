@@ -266,6 +266,7 @@ class DescriptionImportTestCase(TestCase):
         self.assertEqual("World", c120.description)
         self.assertEqual("Hello", c121.description)
 
+
 @patch("review.management.commands.iscimport.Command.close_files")
 @patch("review.management.commands.iscimport.Command.get_files")
 class ReviewImportCommandTestCase(TestCase):
