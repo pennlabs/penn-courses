@@ -118,7 +118,7 @@ class Course(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="courses")
-    code = models.CharField(max_length=8)
+    code = models.CharField(max_length=8, db_index=True)
     semester = models.CharField(max_length=5, db_index=True)
 
     title = models.TextField()
@@ -210,7 +210,7 @@ class Section(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    code = models.CharField(max_length=16)
+    code = models.CharField(max_length=16, db_index=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
     full_code = models.CharField(max_length=32, blank=True, db_index=True)
 
