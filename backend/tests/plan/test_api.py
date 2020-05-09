@@ -2,9 +2,9 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
+from tests.courses.util import create_mock_data
 
 from courses.models import Instructor, Requirement
-from courses.util import create_mock_data
 from plan.search import TypedCourseSearchBackend
 from review.models import Review
 

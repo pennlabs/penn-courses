@@ -4,8 +4,9 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
+from tests.courses.util import create_mock_data_with_reviews
 
-from courses.util import create_mock_data_with_reviews, get_average_reviews
+from courses.util import get_average_reviews
 from plan.models import Schedule
 
 

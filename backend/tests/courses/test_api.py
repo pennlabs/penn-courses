@@ -2,9 +2,10 @@ from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
+from tests.courses.util import create_mock_data
 
 from courses.models import Department, Instructor, Requirement
-from courses.util import create_mock_data, get_or_create_course
+from courses.util import get_or_create_course
 
 
 TEST_SEMESTER = "2019A"

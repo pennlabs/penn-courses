@@ -2,10 +2,10 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
+from tests.courses.util import create_mock_data
 
 from courses.models import Course, Department, Requirement, Section, UserProfile
 from courses.util import (
-    create_mock_data,
     get_or_create_course,
     get_or_create_course_and_section,
     record_update,
