@@ -13,8 +13,7 @@ router.register(r"registrationhistory", RegistrationHistoryViewSet, basename="re
 
 urlpatterns = [
     path("", views.index, name="index"),
-    path("courses/", courses.views.SectionList.as_view()),
-    path("statusupdate/<slug:full_code>/", StatusUpdateView.as_view()),
+    path("courses/", courses.views.SectionList.as_view(), name="section-search"),
     path("submitted", views.register, name="register"),
     path("resubscribe/<int:id_>", views.resubscribe, name="resubscribe"),
     path("webhook", views.accept_webhook, name="webhook"),
