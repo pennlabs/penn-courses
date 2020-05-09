@@ -1,20 +1,20 @@
 import json
 
 from django.contrib.auth.models import User
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
-from courses.models import Instructor, Requirement
-from courses.util import create_mock_data, create_mock_data_with_reviews, get_average_reviews
+from courses.util import create_mock_data_with_reviews, get_average_reviews
 from plan.models import Schedule
-from plan.search import TypedCourseSearchBackend
-from review.models import Review
+
 
 TEST_SEMESTER = "2019C"
 
+
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+
 
 class ScheduleTest(TestCase):
     def setUp(self):

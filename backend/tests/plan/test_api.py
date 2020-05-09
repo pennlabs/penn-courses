@@ -1,15 +1,10 @@
-import json
-
-from django.contrib.auth.models import User
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
-
 from options.models import Option
 from rest_framework.test import APIClient
 
 from courses.models import Instructor, Requirement
-from courses.util import create_mock_data, create_mock_data_with_reviews, get_average_reviews
-from plan.models import Schedule
+from courses.util import create_mock_data
 from plan.search import TypedCourseSearchBackend
 from review.models import Review
 
@@ -59,7 +54,9 @@ class CourseSearchTestCase(TestCase):
         set_semester()
 
     def test_search_by_dept(self):
-        response = self.client.get(reverse("courses-current-list"), {"search": "math", "type": "auto"})
+        response = self.client.get(
+            reverse("courses-current-list"), {"search": "math", "type": "auto"}
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(len(response.data), 1)
         course_codes = [d["id"] for d in response.data]
@@ -70,7 +67,9 @@ class CourseSearchTestCase(TestCase):
         self.math1.instructors.add(Instructor.objects.get_or_create(name="Josh Doman")[0])
         searches = ["Tiffany", "Chang"]
         for search in searches:
-            response = self.client.get(reverse("courses-current-list"), {"search": search, "type": "auto"})
+            response = self.client.get(
+                reverse("courses-current-list"), {"search": search, "type": "auto"}
+            )
             self.assertEqual(200, response.status_code)
             self.assertEqual(len(response.data), 1)
             course_codes = [d["id"] for d in response.data]
@@ -133,14 +132,18 @@ class RequirementFilterTestCase(TestCase):
         req2.save()
         req2.courses.add(course3)
 
-        response = self.client.get(reverse("courses-current-list"), {"requirements": "REQ@SAS,REQ2@SEAS"})
+        response = self.client.get(
+            reverse("courses-current-list"), {"requirements": "REQ@SAS,REQ2@SEAS"}
+        )
         self.assertEqual(0, len(response.data))
 
     def test_double_count_req(self):
         req2 = Requirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
         req2.save()
         req2.courses.add(self.math)
-        response = self.client.get(reverse("courses-current-list"), {"requirements": "REQ@SAS,REQ2@SEAS"})
+        response = self.client.get(
+            reverse("courses-current-list"), {"requirements": "REQ@SAS,REQ2@SEAS"}
+        )
         self.assertEqual(1, len(response.data))
         self.assertEqual("MATH-114", response.data[0]["id"])
 
@@ -211,6 +214,3 @@ class CourseReviewAverageTestCase(TestCase):
         response = self.client.get(reverse("courses-current-list"), {"difficulty": "0-2"})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
-
-
-

@@ -5,15 +5,15 @@ from unittest.mock import patch
 
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
-from django.test import Client, TestCase, override_settings
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from options.models import Option
 from rest_framework.test import APIClient
 
 from alert import tasks
-from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, register_for_course
-from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
+from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course
+from courses.models import StatusUpdate
 from courses.util import create_mock_data, get_or_create_course_and_section
 
 

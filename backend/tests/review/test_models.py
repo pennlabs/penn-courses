@@ -2,7 +2,6 @@ from django.test import TestCase
 
 from courses.models import Instructor
 from courses.util import get_or_create_course_and_section
-
 from review.models import Review, ReviewBit
 
 

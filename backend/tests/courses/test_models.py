@@ -1,31 +1,19 @@
-import json
-import os
-
 from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
-from courses.models import (
-    Course,
-    Department,
-    Instructor,
-    Meeting,
-    Requirement,
-    Section,
-    UserProfile,
-)
+from courses.models import Course, Department, Requirement, Section, UserProfile
 from courses.util import (
     create_mock_data,
     get_or_create_course,
     get_or_create_course_and_section,
     record_update,
-    relocate_reqs_from_restrictions,
     separate_course_code,
     set_crosslistings,
     update_course_from_record,
-    upsert_course_from_opendata,
 )
+
 
 TEST_SEMESTER = "2019A"
 
@@ -227,4 +215,3 @@ class UserProfileTestCase(TestCase):
         self.assertTrue(UserProfile.objects.filter(user=u).exists())
         p = UserProfile.objects.get(user=u)
         self.assertEqual(u.email, p.email)
-

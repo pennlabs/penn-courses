@@ -1,32 +1,10 @@
-import json
-import os
-
-from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
-from courses.models import (
-    Course,
-    Department,
-    Instructor,
-    Meeting,
-    Requirement,
-    Section,
-    UserProfile,
-)
-from courses.util import (
-    create_mock_data,
-    get_or_create_course,
-    get_or_create_course_and_section,
-    record_update,
-    relocate_reqs_from_restrictions,
-    separate_course_code,
-    set_crosslistings,
-    update_course_from_record,
-    upsert_course_from_opendata,
-)
+from courses.models import Department, Instructor, Requirement
+from courses.util import create_mock_data, get_or_create_course
 
 
 TEST_SEMESTER = "2019A"
@@ -34,6 +12,7 @@ TEST_SEMESTER = "2019A"
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+
 
 class CourseListTestCase(TestCase):
     def setUp(self):
@@ -193,7 +172,6 @@ class SectionSearchTestCase(TestCase):
 
 
 class RequirementListTestCase(TestCase):
-
     def setUp(self):
         set_semester()
         get_or_create_course(
