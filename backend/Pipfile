@@ -45,6 +45,7 @@ uwsgi = "*"
 ddt = "*"
 tqdm = "*"
 nose = "*"
+importlib-metadata = "*"
 
 [requires]
 python_version = "3"
