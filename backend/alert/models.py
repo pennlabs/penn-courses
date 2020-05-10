@@ -131,17 +131,6 @@ class Registration(models.Model):
         """
         return not (self.notification_sent or self.deleted or self.cancelled)
 
-    @property
-    def resub_url(self):
-        """
-        Get the resubscribe URL associated with this registration
-        """
-        full_url = "%s%s" % (
-            settings.PCA_URL,
-            urls.reverse("resubscribe", kwargs={"id_": self.id}, urlconf="alert.urls"),
-        )
-        url, _ = Url.objects.get_or_create(full_url)
-        return "{}/s/{}".format(settings.PCA_URL, url.short_id)
 
     def alert(self, forced=False, sent_by=""):
         if forced or self.is_active:

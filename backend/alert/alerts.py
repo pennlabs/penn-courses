@@ -44,7 +44,6 @@ class Alert(ABC):
         self.text = t.render(
             {
                 "course": reg.section.full_code,
-                "signup_url": reg.resub_url,
                 "brand": "Penn Course Alert",
             }
         )
