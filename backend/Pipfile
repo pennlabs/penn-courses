@@ -45,7 +45,8 @@ uwsgi = "*"
 ddt = "*"
 lark-parser = "*"
 tqdm = "*"
-boto3 = "*"
+"boto3" = "*"
+nose = "*"
 importlib-metadata = "*"
 
 [requires]

@@ -5,16 +5,17 @@ from unittest.mock import patch
 
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
-from django.test import Client, TestCase, override_settings
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from options.models import Option
 from rest_framework.test import APIClient
+from tests.courses.util import create_mock_data
 
 from alert import tasks
-from alert.models import SOURCE_API, SOURCE_PCA, Registration, RegStatus, register_for_course
-from courses.models import PCA_REGISTRATION, APIKey, APIPrivilege, Course, StatusUpdate
-from courses.util import create_mock_data, get_or_create_course_and_section
+from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course
+from courses.models import StatusUpdate
+from courses.util import get_or_create_course_and_section
 
 
 TEST_SEMESTER = "2019A"
@@ -70,7 +71,6 @@ def override_delay(modules_names, before_func, before_kwargs):
 
 @patch("alert.models.Text.send_alert")
 @patch("alert.models.Email.send_alert")
-@override_settings(ROOT_URLCONF="PennCourses.urls.pca")
 class SendAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -102,7 +102,6 @@ class SendAlertTestCase(TestCase):
         self.assertTrue(mock_text.called)
 
 
-@override_settings(ROOT_URLCONF="PennCourses.urls.pca")
 class RegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -200,7 +199,6 @@ class RegisterTestCase(TestCase):
         self.assertEqual(0, len(Registration.objects.all()))
 
 
-@override_settings(ROOT_URLCONF="PennCourses.urls.pca")
 class ResubscribeTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -281,7 +279,6 @@ class ResubscribeTestCase(TestCase):
         self.assertEqual(result, reg3)
 
 
-@override_settings(ROOT_URLCONF="PennCourses.urls.pca")
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -336,7 +333,6 @@ class WebhookTriggeredAlertTestCase(TestCase):
 
 
 @patch("alert.views.alert_for_course")
-@override_settings(ROOT_URLCONF="PennCourses.urls.pca")
 class WebhookViewTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -535,96 +531,6 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(0, StatusUpdate.objects.count())
 
 
-@override_settings(ROOT_URLCONF="PennCourses.urls.pca")
-class APIRegisterTestCase(TestCase):
-    def setUp(self):
-        set_semester()
-        self.client = Client()
-        self.course, self.section, _, _ = get_or_create_course_and_section(
-            "CIS-120-001", TEST_SEMESTER
-        )
-        self.permission = APIPrivilege.objects.create(code=PCA_REGISTRATION)
-        self.key = APIKey.objects.get_or_create(email="contact@penncoursenotify.com")[0]
-        self.key.privileges.add(self.permission)
-        self.headers = {"Authorization": "Bearer " + str(self.key.code)}
-
-    def test_successful_registration(self):
-        body = {
-            "email": "student@example.com",
-            "course": "CIS 120 001",
-        }
-        res = self.client.post(
-            reverse("api-register", urlconf="alert.urls"),
-            data=json.dumps(body),
-            content_type="application/json",
-            **self.headers,
-        )
-        self.assertEqual(200, res.status_code)
-        self.assertEqual(1, Registration.objects.count())
-        self.assertEqual(1, Course.objects.count())
-        self.assertEqual(SOURCE_API, Registration.objects.get().source)
-        self.assertEqual(self.key, Registration.objects.get().api_key)
-
-    def test_invalid_api_key(self):
-        body = {
-            "email": "student@example.com",
-            "course": "CIS 120 001",
-        }
-        res = self.client.post(
-            reverse("api-register", urlconf="alert.urls"),
-            data=json.dumps(body),
-            content_type="application/json",
-            **{"Authorization": "Bearer blargh"},
-        )
-        self.assertEqual(401, res.status_code)
-        self.assertEqual(0, Registration.objects.count())
-
-    def test_no_api_key(self):
-        body = {
-            "email": "student@example.com",
-            "course": "CIS 120 001",
-        }
-        res = self.client.post(
-            reverse("api-register", urlconf="alert.urls"),
-            data=json.dumps(body),
-            content_type="application/json",
-        )
-        self.assertEqual(401, res.status_code)
-        self.assertEqual(0, Registration.objects.count())
-
-    def test_inactive_key(self):
-        self.key.active = False
-        self.key.save()
-        body = {
-            "email": "student@example.com",
-            "course": "CIS 120 001",
-        }
-        res = self.client.post(
-            reverse("api-register", urlconf="alert.urls"),
-            data=json.dumps(body),
-            content_type="application/json",
-            **self.headers,
-        )
-        self.assertEqual(401, res.status_code)
-        self.assertEqual(0, Registration.objects.count())
-
-    def test_no_permission(self):
-        self.key.privileges.clear()
-        body = {
-            "email": "student@example.com",
-            "course": "CIS 120 001",
-        }
-        res = self.client.post(
-            reverse("api-register", urlconf="alert.urls"),
-            data=json.dumps(body),
-            content_type="application/json",
-            **self.headers,
-        )
-        self.assertEqual(401, res.status_code)
-        self.assertEqual(0, Registration.objects.count())
-
-
-@override_settings(ROOT_URLCONF="PennCourses.urls.pca")
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -640,7 +546,7 @@ class CourseStatusUpdateTestCase(TestCase):
         self.client = APIClient()
 
     def test_cis120(self):
-        response = self.client.get("/statusupdate/CIS-120-001/")
+        response = self.client.get(reverse("statusupdate", args=["CIS-120-001"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[0]["old_status"], "O")
@@ -653,7 +559,7 @@ class CourseStatusUpdateTestCase(TestCase):
         self.assertFalse(hasattr(response.data[1], "request_body"))
 
     def test_cis160(self):
-        response = self.client.get("/statusupdate/CIS-160-001/")
+        response = self.client.get(reverse("statusupdate", args=["CIS-160-001"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]["old_status"], "C")
@@ -662,12 +568,11 @@ class CourseStatusUpdateTestCase(TestCase):
         self.assertFalse(hasattr(response.data[0], "request_body"))
 
     def test_cis121_missing(self):
-        response = self.client.get("/statusupdate/CIS-121/")
+        response = self.client.get(reverse("statusupdate", args=["CIS-121"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
 
-@override_settings(ROOT_URLCONF="PennCourses.urls.pca")
 class UserDetailTestCase(TestCase):
     def setUp(self):
         User.objects.create_user(username="jacob", password="top_secret")
@@ -675,7 +580,7 @@ class UserDetailTestCase(TestCase):
         self.client.login(username="jacob", password="top_secret")
 
     def test_settings_before_create(self):
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual("jacob", response.data["username"])
         self.assertEqual("", response.data["first_name"])
@@ -685,7 +590,7 @@ class UserDetailTestCase(TestCase):
 
     def test_update_settings(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": "example@email.com", "phone": "3131234567"}}),
             content_type="application/json",
         )
@@ -695,7 +600,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
@@ -705,7 +610,7 @@ class UserDetailTestCase(TestCase):
 
     def test_update_settings_change_first_name(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps(
                 {
                     "first_name": "newname",
@@ -721,7 +626,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "newname")
         self.assertEqual(response.data["last_name"], "")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
@@ -731,7 +636,7 @@ class UserDetailTestCase(TestCase):
 
     def test_update_settings_change_last_name(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps(
                 {
                     "first_name": "",
@@ -747,7 +652,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "newname")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
@@ -757,7 +662,7 @@ class UserDetailTestCase(TestCase):
 
     def test_update_settings_change_username(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps(
                 {
                     "username": "newusername",
@@ -774,7 +679,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
@@ -784,7 +689,7 @@ class UserDetailTestCase(TestCase):
 
     def test_add_fields(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps(
                 {
                     "first_name": "",
@@ -807,7 +712,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
         self.assertFalse("middle_name" in response.data)
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
@@ -819,7 +724,7 @@ class UserDetailTestCase(TestCase):
 
     def test_ignore_fields_email_update(self):
         self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps(
                 {
                     "first_name": "fname",
@@ -830,7 +735,7 @@ class UserDetailTestCase(TestCase):
             content_type="application/json",
         )
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": "example2@email.com"}}),
             content_type="application/json",
         )
@@ -840,7 +745,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "fname")
         self.assertEqual(response.data["last_name"], "lname")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example2@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
@@ -850,7 +755,7 @@ class UserDetailTestCase(TestCase):
 
     def test_ignore_fields_phone_update(self):
         self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps(
                 {
                     "first_name": "fname",
@@ -861,7 +766,7 @@ class UserDetailTestCase(TestCase):
             content_type="application/json",
         )
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"phone": "2121234567"}}),
             content_type="application/json",
         )
@@ -871,7 +776,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "fname")
         self.assertEqual(response.data["last_name"], "lname")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["phone"], "+12121234567")
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
@@ -881,12 +786,12 @@ class UserDetailTestCase(TestCase):
 
     def test_invalid_phone(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": "example@email.com", "phone": "abc"}}),
             content_type="application/json",
         )
         self.assertEqual(400, response.status_code)
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(None, response.data["profile"]["email"])
         self.assertEqual(None, response.data["profile"]["phone"])
@@ -896,12 +801,12 @@ class UserDetailTestCase(TestCase):
 
     def test_invalid_email(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": "example@", "phone": "3131234567"}}),
             content_type="application/json",
         )
         self.assertEqual(400, response.status_code)
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(None, response.data["profile"]["email"])
         self.assertEqual(None, response.data["profile"]["phone"])
@@ -911,7 +816,7 @@ class UserDetailTestCase(TestCase):
 
     def test_null_email(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": None, "phone": "3131234567"}}),
             content_type="application/json",
         )
@@ -921,7 +826,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], None)
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
@@ -931,7 +836,7 @@ class UserDetailTestCase(TestCase):
 
     def test_null_phone(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": "example@email.com", "phone": None}}),
             content_type="application/json",
         )
@@ -941,7 +846,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], None)
@@ -951,7 +856,7 @@ class UserDetailTestCase(TestCase):
 
     def test_both_null(self):
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": None, "phone": None}}),
             content_type="application/json",
         )
@@ -961,7 +866,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], None)
         self.assertEqual(response.data["profile"]["phone"], None)
@@ -974,7 +879,7 @@ class UserDetailTestCase(TestCase):
         client2 = APIClient()
         client2.login(username="murey", password="top_secret")
         response = self.client.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": "example@email.com", "phone": "3131234567"}}),
             content_type="application/json",
         )
@@ -984,7 +889,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
-        response = self.client.get("/api/settings/")
+        response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
@@ -992,7 +897,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
         response = client2.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": "example2@email.com", "phone": "2121234567"}}),
             content_type="application/json",
         )
@@ -1002,7 +907,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["username"], "murey")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
-        response = client2.get("/api/settings/")
+        response = client2.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example2@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+12121234567")
@@ -1013,17 +918,16 @@ class UserDetailTestCase(TestCase):
     def test_user_not_logged_in(self):
         client2 = APIClient()
         response = client2.put(
-            "/api/settings/",
+            reverse("user-profile"),
             json.dumps({"profile": {"email": "example2@email.com", "phone": "2121234567"}}),
             content_type="application/json",
         )
         self.assertEqual(403, response.status_code)
-        response = client2.get("/api/settings/")
+        response = client2.get(reverse("user-profile"))
         self.assertEqual(403, response.status_code)
 
 
 @ddt
-@override_settings(ROOT_URLCONF="PennCourses.urls.pca")
 class AlertRegistrationTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -1041,7 +945,7 @@ class AlertRegistrationTestCase(TestCase):
         _, self.cis160 = create_mock_data("CIS-160-001", TEST_SEMESTER)
         _, self.cis121 = create_mock_data("CIS-121-001", TEST_SEMESTER)
         response = self.client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
@@ -1135,36 +1039,36 @@ class AlertRegistrationTestCase(TestCase):
     def create_resubscribe_group(self):
         first_id = self.registration_cis120.id
         response = self.client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
         second_id = response.data["id"]
-        response = self.client.get(f"/api/registrations/{second_id}/")
+        response = self.client.get(reverse("registrations-detail", args=[second_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
         self.simulate_alert(self.cis120, 1)
         response = self.client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"id": first_id, "resubscribe": True}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         third_id = response.data["id"]
-        response = self.client.get(f"/api/registrations/{third_id}/")
+        response = self.client.get(reverse("registrations-detail", args=[third_id]))
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120.resubscribed_to, response.data)
         self.simulate_alert(self.cis120, 2)
         response = self.client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"id": third_id, "resubscribe": True}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         fourth_id = response.data["id"]
         response = self.client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"section": "CIS-121-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
@@ -1185,38 +1089,38 @@ class AlertRegistrationTestCase(TestCase):
         first_id = self.registration_cis120.id
         if put:
             response = self.client.put(
-                "/api/registrations/" + str(first_id) + "/",
+                reverse("registrations-detail", args=[first_id]),
                 json.dumps({"auto_resubscribe": True}),
                 content_type="application/json",
             )
         else:
             response = self.client.post(
-                "/api/registrations/",
+                reverse("registrations-list"),
                 json.dumps({"id": first_id, "auto_resubscribe": True}),
                 content_type="application/json",
             )
         self.assertEqual(200, response.status_code)
-        response = self.client.get(f"/api/registrations/{first_id}/")
+        response = self.client.get(reverse("registrations-detail", args=[first_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=first_id), response.data)
         response = self.client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"section": "CIS-160-001", "auto_resubscribe": True}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
         second_id = response.data["id"]
-        response = self.client.get(f"/api/registrations/{second_id}/")
+        response = self.client.get(reverse("registrations-detail", args=[second_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
         self.simulate_alert(self.cis120, 1)
         first_ob = Registration.objects.get(id=first_id)
         third_ob = first_ob.resubscribed_to
         third_id = third_ob.id
-        response = self.client.get(f"/api/registrations/{third_id}/")
+        response = self.client.get(reverse("registrations-detail", args=[third_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(third_ob, response.data)
-        response = self.client.get(f"/api/registrations/{third_id}/")
+        response = self.client.get(reverse("registrations-detail", args=[third_id]))
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(third_ob, response.data)
         self.simulate_alert(self.cis120, 2)
@@ -1224,17 +1128,17 @@ class AlertRegistrationTestCase(TestCase):
         third_ob = first_ob.resubscribed_to
         fourth_ob = third_ob.resubscribed_to
         fourth_id = fourth_ob.id
-        response = self.client.get(f"/api/registrations/{fourth_id}/")
+        response = self.client.get(reverse("registrations-detail", args=[fourth_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(fourth_ob, response.data)
         response = self.client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"section": "CIS-121-001", "auto_resubscribe": True}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
         fifth_id = response.data["id"]
-        response = self.client.get(f"/api/registrations/{fifth_id}/")
+        response = self.client.get(reverse("registrations-detail", args=[fifth_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=fifth_id), response.data)
         # first is original CIS120 registration, second is disconnected CIS160 registration,
@@ -1249,12 +1153,14 @@ class AlertRegistrationTestCase(TestCase):
         }
 
     def test_registrations_get_simple(self):
-        response = self.client.get(f"/api/registrations/{self.registration_cis120.pk}/")
+        response = self.client.get(
+            reverse("registrations-detail", args=[self.registration_cis120.pk])
+        )
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120, response.data)
 
     def registrations_resubscribe_get_old_and_history_helper(self, ids):
-        response = self.client.get("/api/registrations/")
+        response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
         fourth_data = next(item for item in response.data if item["id"] == ids["fourth_id"])
@@ -1269,7 +1175,7 @@ class AlertRegistrationTestCase(TestCase):
         self.check_model_with_response_data(
             Registration.objects.get(id=ids["fifth_id"]), fifth_data
         )
-        response = self.client.get("/api/registrationhistory/")
+        response = self.client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(5, len(response.data))
         first_data = next(item for item in response.data if item["id"] == ids["first_id"])
@@ -1333,13 +1239,13 @@ class AlertRegistrationTestCase(TestCase):
             sixth_id = Registration.objects.get(id=ids["fourth_id"]).resubscribed_to.id
         else:
             response = self.client.post(
-                "/api/registrations/",
+                reverse("registrations-list"),
                 json.dumps({"id": ids["third_id"], "resubscribe": True}),
                 content_type="application/json",
             )
             self.assertEqual(200, response.status_code)
             sixth_id = response.data["id"]
-        response = self.client.get("/api/registrations/")
+        response = self.client.get(reverse("registrations-list"))
         sixth_data = next(item for item in response.data if item["id"] == sixth_id)
         sixth_ob = Registration.objects.get(id=sixth_id)
         self.assertEqual(fourth_ob.resubscribed_to, sixth_ob)
@@ -1362,13 +1268,13 @@ class AlertRegistrationTestCase(TestCase):
         self.create_resubscribe_group()
         num = Registration.objects.count()
         response = self.client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(409, response.status_code)
         response = self.client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
@@ -1385,20 +1291,20 @@ class AlertRegistrationTestCase(TestCase):
         new_client.login(username="new_jacob", password="top_secret")
         create_mock_data("CIS-192-201", TEST_SEMESTER)
         response = new_client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"section": "CIS-192-201", "auto_resubscribe": auto_resub}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
         new_first_id = response.data["id"]
         response = new_client.post(
-            "/api/registrations/",
+            reverse("registrations-list"),
             json.dumps({"section": "CIS-120-001", "auto_resubscribe": auto_resub}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
         new_second_id = response.data["id"]
-        response = new_client.get("/api/registrations/")
+        response = new_client.get(reverse("registrations-list"))
         self.assertEqual(2, len(response.data))
         self.assertEqual(200, response.status_code)
         new_first_data = next(item for item in response.data if item["id"] == new_first_id)
@@ -1407,18 +1313,18 @@ class AlertRegistrationTestCase(TestCase):
         new_second_data = next(item for item in response.data if item["id"] == new_second_id)
         new_second_ob = Registration.objects.get(id=new_second_id)
         self.check_model_with_response_data(new_second_ob, new_second_data)
-        response = new_client.get("/api/registrationhistory/")
+        response = new_client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(
             0, len([item for item in response.data if item["id"] in [id for id in ids.values()]]),
         )
         self.assertEqual(2, len(response.data))
-        response = self.client.get("/api/registrations/")
+        response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_first_id]))
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
         self.assertEqual(3, len(response.data))
-        response = self.client.get("/api/registrationhistory/")
+        response = self.client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_first_id]))
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
@@ -1437,20 +1343,20 @@ class AlertRegistrationTestCase(TestCase):
             new_third_id = Registration.objects.get(id=new_second_id).resubscribed_to.id
         else:
             response = self.client.post(
-                "/api/registrations/",
+                reverse("registrations-list"),
                 json.dumps({"id": ids["fourth_id"], "resubscribe": True}),
                 content_type="application/json",
             )
             self.assertEqual(response.status_code, 200)
             sixth_id = response.data["id"]
             response = new_client.post(
-                "/api/registrations/",
+                reverse("registrations-list"),
                 json.dumps({"id": new_second_id, "resubscribe": True}),
                 content_type="application/json",
             )
             self.assertEqual(200, response.status_code)
             new_third_id = response.data["id"]
-        response = self.client.get("/api/registrations/")
+        response = self.client.get(reverse("registrations-list"))
         self.assertEqual(3, len(response.data))
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_first_id]))
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
@@ -1461,12 +1367,12 @@ class AlertRegistrationTestCase(TestCase):
         self.assertFalse(hasattr(sixth_ob, "resubscribed_to"))
         self.assertFalse(sixth_data["notification_sent"])
         self.assertIsNone(sixth_data["notification_sent_at"])
-        response = self.client.get("/api/registrationhistory/")
+        response = self.client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_first_id]))
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
         self.assertEqual(6, len(response.data))
-        response = new_client.get("/api/registrations/")
+        response = new_client.get(reverse("registrations-list"))
         self.assertEqual(2, len(response.data))
         self.assertEqual(200, response.status_code)
         next(item for item in response.data if item["id"] == new_third_id)
@@ -1477,7 +1383,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertFalse(hasattr(new_third_ob, "resubscribed_to"))
         self.assertFalse(new_third_data["notification_sent"])
         self.assertIsNone(new_third_data["notification_sent_at"])
-        response = new_client.get("/api/registrationhistory/")
+        response = new_client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(
             0, len([item for item in response.data if item["id"] in [id for id in ids.values()]]),
@@ -1500,13 +1406,13 @@ class AlertRegistrationTestCase(TestCase):
         if auto_resub:
             if put:
                 self.client.put(
-                    "/api/registrations/" + str(first_id) + "/",
+                    reverse("registrations-detail", args=[first_id]),
                     json.dumps({"auto_resubscribe": True}),
                     content_type="application/json",
                 )
             else:
                 self.client.post(
-                    "/api/registrations/",
+                    reverse("registrations-list"),
                     json.dumps({"id": first_id, "auto_resubscribe": True}),
                     content_type="application/json",
                 )
@@ -1514,13 +1420,13 @@ class AlertRegistrationTestCase(TestCase):
             self.simulate_alert(self.cis120, 1, should_send=True)
         if put:
             response = self.client.put(
-                "/api/registrations/" + str(first_id) + "/",
+                reverse("registrations-detail", args=[first_id]),
                 json.dumps({"deleted": True}),
                 content_type="application/json",
             )
         else:
             response = self.client.post(
-                "/api/registrations/",
+                reverse("registrations-list"),
                 json.dumps({"id": first_id, "deleted": True}),
                 content_type="application/json",
             )
@@ -1530,13 +1436,13 @@ class AlertRegistrationTestCase(TestCase):
         if not auto_resub:
             if put:
                 response = self.client.put(
-                    "/api/registrations/" + str(first_id) + "/",
+                    reverse("registrations-detail", args=[first_id]),
                     json.dumps({"resubscribe": True}),
                     content_type="application/json",
                 )
             else:
                 response = self.client.post(
-                    "/api/registrations/",
+                    reverse("registrations-list"),
                     json.dumps({"id": first_id, "resubscribe": True}),
                     content_type="application/json",
                 )
@@ -1582,39 +1488,39 @@ class AlertRegistrationTestCase(TestCase):
     def test_registrations_no_deleted(self):
         ids = self.create_auto_resubscribe_group()
         response = self.client.put(
-            "/api/registrations/" + str(ids["fifth_id"]) + "/",
+            reverse("registrations-detail", args=[ids["fifth_id"]]),
             json.dumps({"deleted": True}),
             content_type="application/json",
         )
         self.assertEqual(200, response.status_code)
-        response = self.client.get("/api/registrations/")
+        response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(0, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])]))
-        response = self.client.get("/api/registrations/" + str(ids["fifth_id"]) + "/")
+        response = self.client.get(reverse("registrations-detail", args=[ids["fifth_id"]]))
         self.assertEqual(200, response.status_code)
 
     def test_cancel_resubscribe_current_group(self):
         ids = self.create_auto_resubscribe_group()
         response = self.client.put(
-            "/api/registrations/" + str(ids["fifth_id"]) + "/",
+            reverse("registrations-detail", args=[ids["fifth_id"]]),
             json.dumps({"cancelled": True}),
             content_type="application/json",
         )
         self.assertEqual(200, response.status_code)
         response = self.client.put(
-            "/api/registrations/" + str(ids["fifth_id"]) + "/",
+            reverse("registrations-detail", args=[ids["fifth_id"]]),
             json.dumps({"resubscribe": True}),
             content_type="application/json",
         )
         self.assertEqual(200, response.status_code)
         sixth_id = Registration.objects.get(id=ids["fifth_id"]).resubscribed_to.id
-        response = self.client.get("/api/registrations/")
+        response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
         self.assertEqual(0, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])]))
         self.assertEqual(1, len([r for r in response.data if str(r["id"]) == str(sixth_id)]))
-        response = self.client.get("/api/registrations/" + str(ids["fifth_id"]) + "/")
+        response = self.client.get(reverse("registrations-detail", args=[ids["fifth_id"]]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(sixth_id, response.data["id"])
 
@@ -1623,13 +1529,13 @@ class AlertRegistrationTestCase(TestCase):
         if auto_resub:
             if put:
                 self.client.put(
-                    "/api/registrations/" + str(first_id) + "/",
+                    reverse("registrations-detail", args=[first_id]),
                     json.dumps({"auto_resubscribe": True}),
                     content_type="application/json",
                 )
             else:
                 self.client.post(
-                    "/api/registrations/",
+                    reverse("registrations-list"),
                     json.dumps({"id": first_id, "auto_resubscribe": True}),
                     content_type="application/json",
                 )
@@ -1637,13 +1543,13 @@ class AlertRegistrationTestCase(TestCase):
             self.simulate_alert(self.cis120, 1, should_send=True)
         if put:
             response = self.client.put(
-                "/api/registrations/" + str(first_id) + "/",
+                reverse("registrations-detail", args=[first_id]),
                 json.dumps({"cancelled": True}),
                 content_type="application/json",
             )
         else:
             response = self.client.post(
-                "/api/registrations/",
+                reverse("registrations-list"),
                 json.dumps({"id": first_id, "cancelled": True}),
                 content_type="application/json",
             )
@@ -1658,13 +1564,13 @@ class AlertRegistrationTestCase(TestCase):
         if not auto_resub:
             if put:
                 response = self.client.put(
-                    "/api/registrations/" + str(first_id) + "/",
+                    reverse("registrations-detail", args=[first_id]),
                     json.dumps({"resubscribe": True}),
                     content_type="application/json",
                 )
             else:
                 response = self.client.post(
-                    "/api/registrations/",
+                    reverse("registrations-list"),
                     json.dumps({"id": first_id, "resubscribe": True}),
                     content_type="application/json",
                 )
@@ -1716,12 +1622,12 @@ class AlertRegistrationTestCase(TestCase):
     def test_cancel_deleted(self):
         first_id = self.registration_cis120.id
         self.client.put(
-            "/api/registrations/" + str(first_id) + "/",
+            reverse("registrations-detail", args=[first_id]),
             json.dumps({"deleted": True}),
             content_type="application/json",
         )
         response = self.client.put(
-            "/api/registrations/" + str(first_id) + "/",
+            reverse("registrations-detail", args=[first_id]),
             json.dumps({"cancelled": True}),
             content_type="application/json",
         )
@@ -1732,7 +1638,7 @@ class AlertRegistrationTestCase(TestCase):
         first_id = self.registration_cis120.id
         self.simulate_alert(self.cis120, 1, should_send=True)
         response = self.client.put(
-            "/api/registrations/" + str(first_id) + "/",
+            reverse("registrations-detail", args=[first_id]),
             json.dumps({"cancelled": True}),
             content_type="application/json",
         )
@@ -1742,13 +1648,13 @@ class AlertRegistrationTestCase(TestCase):
     def test_delete_cancelled(self):
         first_id = self.registration_cis120.id
         response = self.client.put(
-            "/api/registrations/" + str(first_id) + "/",
+            reverse("registrations-detail", args=[first_id]),
             json.dumps({"cancelled": True}),
             content_type="application/json",
         )
         self.assertEquals(200, response.status_code)
         response = self.client.put(
-            "/api/registrations/" + str(first_id) + "/",
+            reverse("registrations-detail", args=[first_id]),
             json.dumps({"deleted": True}),
             content_type="application/json",
         )
@@ -1757,16 +1663,16 @@ class AlertRegistrationTestCase(TestCase):
     def test_registrations_contain_cancelled(self):
         ids = self.create_auto_resubscribe_group()
         response = self.client.put(
-            "/api/registrations/" + str(ids["fifth_id"]) + "/",
+            reverse("registrations-detail", args=[ids["fifth_id"]]),
             json.dumps({"cancelled": True}),
             content_type="application/json",
         )
         self.assertEqual(200, response.status_code)
-        response = self.client.get("/api/registrations/")
+        response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
         self.assertEqual(1, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])]))
-        response = self.client.get("/api/registrations/" + str(ids["fifth_id"]) + "/")
+        response = self.client.get(reverse("registrations-detail", args=[ids["fifth_id"]]))
         self.assertEqual(200, response.status_code)
 
     def changeattrs_update_order_helper(self, put, update_field):
@@ -1775,13 +1681,13 @@ class AlertRegistrationTestCase(TestCase):
             self.simulate_alert(self.cis120, 1)
             if put:
                 self.client.put(
-                    "/api/registrations/" + str(first_id) + "/",
+                    reverse("registrations-detail", args=[first_id]),
                     json.dumps({"resubscribe": True, "deleted": True, "auto_resubscribe": False,}),
                     content_type="application/json",
                 )
             else:
                 self.client.post(
-                    "/api/registrations/",
+                    reverse("registrations-list"),
                     json.dumps(
                         {
                             "id": first_id,
@@ -1805,13 +1711,13 @@ class AlertRegistrationTestCase(TestCase):
         if update_field == "deleted":
             if put:
                 self.client.put(
-                    "/api/registrations/" + str(first_id) + "/",
+                    reverse("registrations-detail", args=[first_id]),
                     json.dumps({"deleted": True, "auto_resubscribe": False}),
                     content_type="application/json",
                 )
             else:
                 self.client.post(
-                    "/api/registrations/",
+                    reverse("registrations-list"),
                     json.dumps({"id": first_id, "deleted": True, "auto_resubscribe": False}),
                     content_type="application/json",
                 )
@@ -1828,13 +1734,13 @@ class AlertRegistrationTestCase(TestCase):
         first_id = self.registration_cis120.id
         if put:
             self.client.put(
-                "/api/registrations/" + str(first_id) + "/",
+                reverse("registrations-detail", args=[first_id]),
                 json.dumps({"auto_resubscribe": True}),
                 content_type="application/json",
             )
         else:
             self.client.post(
-                "/api/registrations/",
+                reverse("registrations-list"),
                 json.dumps({"id": first_id, "auto_resubscribe": True}),
                 content_type="application/json",
             )
@@ -1853,23 +1759,23 @@ class AlertRegistrationTestCase(TestCase):
         first_id = self.registration_cis120.id
         if put:
             self.client.put(
-                "/api/registrations/" + str(first_id) + "/",
+                reverse("registrations-detail", args=[first_id]),
                 json.dumps({"deleted": True}),
                 content_type="application/json",
             )
             response = self.client.put(
-                "/api/registrations/" + str(first_id) + "/",
+                reverse("registrations-detail", args=[first_id]),
                 json.dumps({"auto_resubscribe": True}),
                 content_type="application/json",
             )
         else:
             self.client.post(
-                "/api/registrations/",
+                reverse("registrations-list"),
                 json.dumps({"id": first_id, "deleted": True}),
                 content_type="application/json",
             )
             response = self.client.post(
-                "/api/registrations/",
+                reverse("registrations-list"),
                 json.dumps({"id": first_id, "auto_resubscribe": True}),
                 content_type="application/json",
             )
