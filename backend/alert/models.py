@@ -2,13 +2,10 @@ import logging
 from enum import Enum, auto
 
 import phonenumbers  # library for parsing and formatting phone numbers.
-from django import urls
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
-from shortener.models import Url
 
 from alert.alerts import Email, Text
 from courses.models import Course, Section, UserProfile, get_current_semester
@@ -130,7 +127,6 @@ class Registration(models.Model):
         when the watched section changes to open
         """
         return not (self.notification_sent or self.deleted or self.cancelled)
-
 
     def alert(self, forced=False, sent_by=""):
         if forced or self.is_active:

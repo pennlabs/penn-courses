@@ -4,9 +4,7 @@ import logging
 
 from django.conf import settings
 from django.db import IntegrityError
-from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import render
-from django.urls import reverse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
@@ -15,10 +13,9 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from alert.models import SOURCE_API, Registration, RegStatus, register_for_course
+from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import RegistrationSerializer
 from alert.tasks import send_course_alerts
-from courses.models import PCA_REGISTRATION, APIKey
 from courses.util import record_update, update_course_from_record
 
 
