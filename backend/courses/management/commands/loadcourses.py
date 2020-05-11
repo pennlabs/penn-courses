@@ -1,8 +1,13 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from options.models import get_value
+from tqdm import tqdm
 
-from courses.tasks import load_courses, load_requirements, set_all_status
+from courses import registrar
+from courses.management.commands.loadrequirements import load_requirements
+from courses.management.commands.loadstatus import set_all_status
+from courses.util import upsert_course_from_opendata
 
 
 class Command(BaseCommand):
@@ -15,7 +20,21 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
-        load_courses(query=kwargs["query"], semester=kwargs["semester"])
-        load_requirements(school="SEAS", semester=kwargs["semester"])
-        load_requirements(school="WH", semester=kwargs["semester"])
-        set_all_status(semester=kwargs["semester"])
+        semester = kwargs.get("semester")
+        query = kwargs.get("query")
+
+        if semester is None:
+            semester = get_value("SEMESTER")
+
+        print("loading in courses with prefix %s from %s..." % (query, semester))
+        results = registrar.get_courses(query, semester)
+
+        for course in tqdm(results):
+            upsert_course_from_opendata(course, semester)
+
+        print("loading requirements from SEAS...")
+        load_requirements(school="SEAS", semester=semester)
+        print("loading requirements from Wharton...")
+        load_requirements(school="WH", semester=semester)
+        print("loading course statuses from registrar...")
+        set_all_status(semester=semester)
