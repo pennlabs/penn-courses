@@ -26,6 +26,7 @@
     "sync": "cpx \"../shared-components/src/**/*\" src/components/shared",
     "build": "react-scripts build",
     "test": "echo no tests yet",
+    "codecov": "echo no codecov",
     "eject": "react-scripts eject",
     "lint": "eslint src",
     "lint-fix": "eslint src --fix"
