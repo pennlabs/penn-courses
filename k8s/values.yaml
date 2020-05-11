@@ -42,3 +42,10 @@ applications:
       hosts:
         - host: penncoursealert.com
           paths: ["/"]
+
+cronjobs:
+  - name: load-courses
+    schedule: "0 3 * * *"
+    image: pennlabs/penn-courses-backend
+    secret: penn-courses
+    cmd: ["python", "manage.py", "loadcourses"]
