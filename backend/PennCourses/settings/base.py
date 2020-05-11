@@ -41,14 +41,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "rest_framework",
     "debug_toolbar",
     "corsheaders",
     "shortener.apps.ShortenerConfig",
     "accounts.apps.AccountsConfig",
     "options.apps.OptionsConfig",
-
     "alert",
     "courses",
     "plan",
