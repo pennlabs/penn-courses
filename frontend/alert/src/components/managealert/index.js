@@ -6,7 +6,7 @@ import { AlertStatus, AlertRepeat, AlertAction } from "./AlertItemEnums";
 import getCsrf from "../../csrf";
 
 const fetchAlerts = () => (
-    fetch("/api/alert/api/registrations")
+    fetch("/api/alert/registrations/")
         .then(res => res.json())
 );
 
@@ -94,7 +94,7 @@ const getActionPromise = (id, actionenum) => {
         default:
     }
 
-    return fetch(`/api/alert/api/registrations/${id}/`, {
+    return fetch(`/api/alert/registrations/${id}/`, {
         method: "PUT",
         credentials: "include",
         mode: "same-origin",

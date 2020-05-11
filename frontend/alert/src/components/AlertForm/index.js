@@ -108,7 +108,7 @@ const AlertForm = ({ user, setResponse }) => {
     };
 
     const submitRegistration = () => {
-        doAPIRequest("/api/alert/api/registrations/", "POST", { section, auto_resubscribe: autoResub === "true" })
+        doAPIRequest("/api/alert/registrations/", "POST", { section, auto_resubscribe: autoResub === "true" })
             .then(res => setResponse(res))
             .catch(handleError);
     };
