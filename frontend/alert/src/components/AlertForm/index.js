@@ -108,7 +108,7 @@ const AlertForm = ({ user, setResponse }) => {
     };
 
     const submitRegistration = () => {
-        doAPIRequest("/api/alert/api/registrations/", "POST", { section, auto_resubscribe: autoResub === "true" })
+        doAPIRequest("/api/alert/registrations/", "POST", { section, auto_resubscribe: autoResub === "true" })
             .then(res => setResponse(res))
             .catch(handleError);
     };
@@ -145,7 +145,7 @@ const AlertForm = ({ user, setResponse }) => {
             <Input placeholder="Phone" value={phone} onChange={(e) => { setPhone(e.target.value); setPhoneDirty(true); }} />
             <Center>
                 <AlertText>
-                Alert me
+                    Alert me
                     <RadioSet options={[{ label: "once", value: "false" }, { label: "until I cancel", value: "true" }]} setSelected={setAutoResub} selected={autoResub} />
                 </AlertText>
                 <SubmitButton onClick={(e) => {
@@ -153,7 +153,7 @@ const AlertForm = ({ user, setResponse }) => {
                     onSubmit();
                 }}
                 >
-Submit
+                    Submit
                 </SubmitButton>
             </Center>
         </Form>
