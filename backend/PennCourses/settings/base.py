@@ -174,7 +174,6 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost")
 
 # Celery
 MESSAGE_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = "django-db"
 
 # Django REST Framework
 REST_FRAMEWORK = {
