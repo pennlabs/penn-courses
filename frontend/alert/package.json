@@ -25,7 +25,7 @@
     "sync-watch": "cpx \"../shared-components/src/**/*\" src/components/shared --watch",
     "sync": "cpx \"../shared-components/src/**/*\" src/components/shared",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "echo no tests yet",
     "eject": "react-scripts eject",
     "lint": "eslint src",
     "lint-fix": "eslint src --fix"
