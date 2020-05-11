@@ -41,14 +41,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_celery_results",
-    "django_celery_beat",
+
     "rest_framework",
     "debug_toolbar",
     "corsheaders",
     "shortener.apps.ShortenerConfig",
     "accounts.apps.AccountsConfig",
     "options.apps.OptionsConfig",
+
     "alert",
     "courses",
     "plan",
