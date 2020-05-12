@@ -6,8 +6,9 @@ import Trash from "../../assets/trash.svg";
 import ABell from "../../assets/abell.svg";
 import { AlertAction } from "./AlertItemEnums";
 import {
-    GridItem, Flex, RightItem, Img
-} from "./ManageAlertStyledComponents";
+    GridItem, Flex, RightItem
+} from "../common/layout";
+import { Img } from "../common/common";
 
 const HeaderText = styled.p`
     font-size: 0.7rem;
