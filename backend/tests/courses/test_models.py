@@ -62,7 +62,7 @@ class GetCourseSectionTest(TestCase):
         self.s.save()
 
     def assertCourseSame(self, s):
-        course, section = get_or_create_course_and_section(s, TEST_SEMESTER)
+        course, section, _, _ = get_or_create_course_and_section(s, TEST_SEMESTER)
         self.assertEqual(course, self.c, s)
         self.assertEqual(section, self.s, s)
 
@@ -80,7 +80,7 @@ class GetCourseSectionTest(TestCase):
             self.assertCourseSame(test)
 
     def test_create_course(self):
-        course, section = get_or_create_course_and_section("CIS 120 001", TEST_SEMESTER)
+        course, section, _, _ = get_or_create_course_and_section("CIS 120 001", TEST_SEMESTER)
         self.assertEqual("CIS-120-001", section.full_code)
         self.assertEqual(Course.objects.count(), 2)
         self.assertEqual(course.department.code, "CIS")
@@ -140,8 +140,8 @@ class RequirementTestCase(TestCase):
         get_or_create_course(
             "CIS", "120", "2012A"
         )  # dummy course to make sure we're filtering by semester
-        self.course = get_or_create_course("CIS", "120", TEST_SEMESTER)
-        self.course2 = get_or_create_course("CIS", "125", TEST_SEMESTER)
+        self.course, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
         self.department = Department.objects.get(code="CIS")
 
         self.req1 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1")
@@ -178,7 +178,7 @@ class RequirementTestCase(TestCase):
     def test_satisfying_courses(self):
         # make it so req1 has one department-level requirement, one course-level one,
         # and one override.
-        c1 = get_or_create_course("MEAM", "101", TEST_SEMESTER)
+        c1, _ = get_or_create_course("MEAM", "101", TEST_SEMESTER)
         self.req1.courses.add(c1)
         courses = self.req1.satisfying_courses.all()
         self.assertEqual(2, len(courses))
@@ -195,16 +195,6 @@ class RequirementTestCase(TestCase):
         reqs = self.course2.requirements
         self.assertEqual(1, len(reqs))
         self.assertEqual(self.req2, reqs[0])
-
-    def test_requirement_route(self):
-        response = self.client.get(f"/api/courses/current/requirements/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(2, len(response.data))
-
-    def test_requirement_route_other_sem(self):
-        response = self.client.get(f"/api/courses/XXXXX/requirements/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(1, len(response.data))
 
 
 class UserProfileTestCase(TestCase):

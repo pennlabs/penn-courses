@@ -4,7 +4,7 @@ from review.models import Review
 
 
 def create_mock_data(code, semester):
-    course, section = get_or_create_course_and_section(code, semester)
+    course, section, _, _ = get_or_create_course_and_section(code, semester)
     section.credits = 1
     section.status = "O"
     section.activity = "LEC"
@@ -40,7 +40,7 @@ def create_mock_data_with_reviews(code, semester, number_of_instructors):
         section.instructors.add(instr)
         review = Review(section=section, instructor=instr)
         review.save()
-        review.set_scores(
+        review.set_averages(
             {
                 "course_quality": 4 / i,
                 "instructor_quality": 4 / (i + 1),
