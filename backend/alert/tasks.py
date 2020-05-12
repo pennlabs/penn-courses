@@ -14,16 +14,6 @@ logger = logging.getLogger(__name__)
 r = redis.Redis.from_url(settings.REDIS_URL)
 
 
-@shared_task(name="pca.tasks.demo_alert")
-def demo_alert():
-    return {"result": "executed", "name": "pca.tasks.demo_alert"}
-
-
-@shared_task(name="pca.tasks.demo_task")
-def demo_task():
-    return {"result": "executed", "name": "pca.tasks.demo_task"}
-
-
 @shared_task(name="pca.tasks.run_course_updates")
 def run_course_updates(semester=None):
     if semester is None:

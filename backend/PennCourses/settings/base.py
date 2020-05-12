@@ -41,8 +41,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_celery_results",
-    "django_celery_beat",
     "rest_framework",
     "debug_toolbar",
     "corsheaders",
@@ -176,7 +174,6 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost")
 
 # Celery
 MESSAGE_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = "django-db"
 
 # Django REST Framework
 REST_FRAMEWORK = {
