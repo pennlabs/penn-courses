@@ -134,6 +134,10 @@ def process_file(fo, process_row=None, T=SQLDumpTransformer, progress=True):
     The `progess` option ensures we're piping the progress bar to the right
     place, and not just always polluting sys.stderr.
     """
+    # This regex will extract strings in the form
+    # INSERT INTO <table> (<columns>) VALUES (<values>).
+    # The values regex is kind of funky because it is manually including punctuation
+    # that may appear in course descriptions.
     regex = re.compile(
         r"Insert into [\w\.]*\W*\(([\n ,\w]*)\)\W*Values\W*\((['\w, \&\n.:/\(\)!?$%*-+#]*)\);"
     )

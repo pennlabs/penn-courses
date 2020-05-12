@@ -176,11 +176,11 @@ class Command(BaseCommand):
         files = self.get_files(src, is_zip_file, tables_to_get)
 
         summary_fo = files[0]
-        self.display(f"Loading summary file...")
+        self.display("Loading summary file...")
         summary_rows = load_sql_dump(
             summary_fo, show_progress_bar
         )  # This will show a progress bar.
-        self.display(f"SQL parsed and loaded!")
+        self.display("SQL parsed and loaded!")
 
         if not import_all:
             full_len = len(summary_rows)

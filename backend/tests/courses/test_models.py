@@ -196,16 +196,6 @@ class RequirementTestCase(TestCase):
         self.assertEqual(1, len(reqs))
         self.assertEqual(self.req2, reqs[0])
 
-    def test_requirement_route(self):
-        response = self.client.get(f"/api/courses/current/requirements/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(2, len(response.data))
-
-    def test_requirement_route_other_sem(self):
-        response = self.client.get(f"/api/courses/XXXXX/requirements/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(1, len(response.data))
-
 
 class UserProfileTestCase(TestCase):
     def test_profile_created(self):

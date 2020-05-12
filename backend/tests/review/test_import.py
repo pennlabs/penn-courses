@@ -44,7 +44,7 @@ Insert into PCRDEV.TEST_PCR_RATING_V
     2, 0);
 """
 
-raw_descriptions = f"""
+raw_descriptions = """
 Insert into PCRDEV.TEST_PCR_COURSE_DESC_V
    (COURSE_ID, PARAGRAPH_NUMBER, COURSE_DESCRIPTION)
  Values
