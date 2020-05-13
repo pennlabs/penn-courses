@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from courses.models import Course, Instructor, review_averages
 from review.models import ALL_FIELD_SLUGS, Review
+from django.shortcuts import get_object_or_404
 
 
 def to_r_camel(s):
@@ -81,17 +82,52 @@ def course_reviews(request, course_code):
     c = course.values()[0]
     return Response(
         {
-            "num_semesters": c["average_semester_count"],
             "average_reviews": make_subdict("average_", c),
             "recent_reviews": make_subdict("recent_", c),
+            "num_semesters": c["average_semester_count"],
             "instructors": {
                 i["name"]: {
                     "name": i["name"],
                     "average_reviews": make_subdict("average_", i),
                     "recent_reviews": make_subdict("recent_", i),
                     "latest_semester": i["recent_semester_calc"],
+                    "num_semesters": i["average_semester_count"]
                 }
                 for i in instructors.values()
             },
+        }
+    )
+
+
+@api_view(["GET"])
+def instructor_reviews(request, instructor_id):
+    instructor = get_object_or_404(Instructor, pk=instructor_id)
+    instructor_qs = annotate_average_and_recent(
+        Instructor.objects.filter(pk=instructor.pk),
+        match_on=Q(instructor__pk=OuterRef(OuterRef("pk"))),
+    )
+
+    courses = annotate_average_and_recent(
+        Course.objects.filter(section__instructor__pk=instructor.pk),
+        match_on=Q(
+            section__course__full_code=OuterRef(OuterRef("full_code")),
+            instructor__pk=instructor.pk,
+        ),
+    )
+    i = instructor.values()[0]
+    return Response(
+        {
+            "average_reviews": make_subdict("average_", i),
+            "recent_reviews": make_subdict("recent_", i),
+            "courses": {
+                c["full_code"]: {
+                    "code": c["full_code"],
+                    "average_reviews": make_subdict("average_", c),
+                    "recent_reviews": make_subdict("recent_", c),
+                    "latest_semester": c["recent_semester_calc"],
+                    "num_semesters": c["average_semester_count"]
+                }
+                for c in courses.values()
+            }
         }
     )
