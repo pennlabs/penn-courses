@@ -48,3 +48,18 @@ class CourseTestCase(TestCase):
         self.assertEqual(4, recent.get("rInstructorQuality"))
         self.assertEqual(3, i1_averages.get("rInstructorQuality"))
         self.assertEqual(4, i1_recents.get("rInstructorQuality"))
+
+    def test_semester_most_recent_with_future_course(self):
+        create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review("CIS-160-001", "3008C", self.instructor_name, {"instructor_quality": 2})
+        res = self.client.get(reverse("course-reviews", kwargs={"course_code": "CIS-120"}))
+        self.assertEqual(200, res.status_code)
+        averages = res.data.get("average_reviews")
+        recent = res.data.get("recent_reviews")
+        i1 = res.data.get("instructors").get(self.instructor_name)
+        i1_averages = i1.get("average_reviews")
+        i1_recents = i1.get("recent_reviews")
+        self.assertEqual(3, averages.get("rInstructorQuality"))
+        self.assertEqual(4, recent.get("rInstructorQuality"))
+        self.assertEqual(3, i1_averages.get("rInstructorQuality"))
+        self.assertEqual(4, i1_recents.get("rInstructorQuality"))
