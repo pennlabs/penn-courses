@@ -31,6 +31,7 @@ class CourseTestCase(TestCase):
         i1 = res.data.get("instructors").get(self.instructor_name)
         i1_averages = i1.get("average_reviews")
         i1_recents = i1.get("recent_reviews")
+        self.assertEqual(1, res.data.get("num_semesters"))
         for d in [averages, recent, i1_averages, i1_recents]:
             for dp in [averages, recent, i1_averages, i1_recents]:
                 self.assertDictEqual(d, dp)
@@ -44,10 +45,12 @@ class CourseTestCase(TestCase):
         i1 = res.data.get("instructors").get(self.instructor_name)
         i1_averages = i1.get("average_reviews")
         i1_recents = i1.get("recent_reviews")
+        self.assertEqual(2, res.data.get("num_semesters"))
         self.assertEqual(3, averages.get("rInstructorQuality"))
         self.assertEqual(4, recent.get("rInstructorQuality"))
         self.assertEqual(3, i1_averages.get("rInstructorQuality"))
         self.assertEqual(4, i1_recents.get("rInstructorQuality"))
+        self.assertEqual(TEST_SEMESTER, i1.get("latest_semester"))
 
     def test_semester_most_recent_with_future_course(self):
         create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
@@ -59,7 +62,9 @@ class CourseTestCase(TestCase):
         i1 = res.data.get("instructors").get(self.instructor_name)
         i1_averages = i1.get("average_reviews")
         i1_recents = i1.get("recent_reviews")
+        self.assertEqual(2, res.data.get("num_semesters"))
         self.assertEqual(3, averages.get("rInstructorQuality"))
         self.assertEqual(4, recent.get("rInstructorQuality"))
         self.assertEqual(3, i1_averages.get("rInstructorQuality"))
         self.assertEqual(4, i1_recents.get("rInstructorQuality"))
+        self.assertEqual(TEST_SEMESTER, i1.get("latest_semester"))

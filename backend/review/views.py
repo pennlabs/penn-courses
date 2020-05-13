@@ -50,7 +50,7 @@ def annotate_with_matching_reviews(qs, match_on, most_recent=False, fields=None,
             .values("max_semester")[:1]
         )
 
-    return review_averages(qs, filters, fields, prefix,)
+    return review_averages(qs, filters, fields, prefix, semester_aggregations=True)
 
 
 def annotate_average_and_recent(qs, match_on):
@@ -68,30 +68,30 @@ def annotate_average_and_recent(qs, match_on):
 
 @api_view(["GET"])
 def course_reviews(request, course_code):
-    qs = annotate_average_and_recent(
+    course = annotate_average_and_recent(
         Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
         match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
     )
-    c = qs.values()[0]
 
-    insns = annotate_average_and_recent(
+    instructors = annotate_average_and_recent(
         Instructor.objects.filter(section__course__full_code=course_code).distinct(),
         match_on=Q(section__course__full_code=course_code, instructor__pk=OuterRef(OuterRef("pk"))),
     )
 
-    iss = {
-        i["name"]: {
-            "name": i["name"],
-            "average_reviews": make_subdict("average_", i),
-            "recent_reviews": make_subdict("recent_", i),
-        }
-        for i in insns.values()
-    }
-
+    c = course.values()[0]
     return Response(
         {
+            "num_semesters": c["average_semester_count"],
             "average_reviews": make_subdict("average_", c),
             "recent_reviews": make_subdict("recent_", c),
-            "instructors": iss,
+            "instructors": {
+                i["name"]: {
+                    "name": i["name"],
+                    "average_reviews": make_subdict("average_", i),
+                    "recent_reviews": make_subdict("recent_", i),
+                    "latest_semester": i["recent_semester_calc"],
+                }
+                for i in instructors.values()
+            },
         }
     )

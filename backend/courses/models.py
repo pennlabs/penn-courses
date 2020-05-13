@@ -5,7 +5,7 @@ import phonenumbers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Avg, FloatField, OuterRef, Q, Subquery
+from django.db.models import Avg, Count, FloatField, OuterRef, Q, Subquery
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -68,13 +68,13 @@ all of our Course and Section data in two queries.
 
 # Annotations are basically the same for Course and Section, save a few of the subfilters,
 # so generalize it out.
-def review_averages(queryset, subfilters, fields=None, prefix=""):
+def review_averages(queryset, subfilters, fields=None, prefix="", semester_aggregations=False):
     """
     Annotate the queryset with the average of all reviews matching the subfilters.
     """
     if fields is None:
         fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
-    return queryset.annotate(
+    queryset = queryset.annotate(
         **{
             (prefix + field): Subquery(
                 ReviewBit.objects.filter(field=field, **subfilters)
@@ -87,6 +87,24 @@ def review_averages(queryset, subfilters, fields=None, prefix=""):
             for field in fields
         }
     )
+    if semester_aggregations:
+        queryset = queryset.annotate(
+            **{
+                (prefix + "semester_calc"): Subquery(
+                    ReviewBit.objects.filter(**subfilters).values(
+                        "review__section__course__semester"
+                    )[:1]
+                ),
+                (prefix + "semester_count"): Subquery(
+                    ReviewBit.objects.filter(**subfilters)
+                    .values("field")
+                    .order_by()
+                    .annotate(count=Count("review__section__course__semester"))
+                    .values("count")[:1]
+                ),
+            }
+        )
+    return queryset
 
 
 def sections_with_reviews(queryset):
