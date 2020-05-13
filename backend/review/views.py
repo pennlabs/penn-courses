@@ -1,39 +1,66 @@
-# from django.shortcuts import render
-from django.db.models import F, Max, OuterRef, Q, Subquery
+from django.db.models import Max, OuterRef, Q, Subquery, Value
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from courses.models import Course, Instructor, review_averages
-from review.models import Review
+from review.models import ALL_FIELD_SLUGS, Review
+
+
+def to_r_camel(s):
+    return "r" + "".join([x.title() for x in s.split("_")])
 
 
 def make_subdict(field_prefix, d):
-    r = dict()
-    for k, v in d.items():
-        if k.startswith(field_prefix):
-            start_at = len(field_prefix)
-            new_k = k[start_at:]
-            r[new_k] = v
-    return r
-
-
-fields = ["course_quality", "difficulty", "instructor_quality"]
+    """
+    Rows in a queryset that don't represent related database models are flat. But we want
+    our JSON to have a nested structure that makes more sense to the client. This function
+    takes fields from a flat dictionary with a certain prefix
+    """
+    start_at = len(field_prefix)
+    return {
+        to_r_camel(k[start_at:]): v
+        for k, v in d.items()
+        if k.startswith(field_prefix) and v is not None
+    }
 
 
 def annotate_with_matching_reviews(qs, match_on, most_recent=False, fields=None, prefix=""):
+    """
+    Annotate each element the passed-in queryset with a subset of all review averages.
+    :param qs: queryset to annotate.
+    :param match_on: `Q()` expression representing a filtered subset of reviews to aggregate
+        for each row. Use `OuterRef(OuterRef('<field>'))` to refer to <field> on the row
+        in the queryset.
+    :param most_recent: If `True`, only aggregate results for the most recent semester.
+    :param fields: list of fields to aggregate.
+    :param prefix: prefix of annotated fields on the queryset.
+    """
+
+    if fields is None:
+        fields = ALL_FIELD_SLUGS
+
     matching_reviews = Review.objects.filter(match_on)
+    filters = {"review__pk__in": Subquery(matching_reviews.values("pk"))}
     if most_recent:
         # Filter the queryset to include only rows from the most recent semester.
-        matching_reviews = matching_reviews.annotate(
-            max_semester=Max("section__course__semester")
-        ).filter(section__course__semester=F("max_semester"))
+        filters["review__section__course__semester"] = Subquery(
+            matching_reviews.annotate(common=Value(1))
+            .values("common")
+            .annotate(max_semester=Max("section__course__semester"))
+            .values("max_semester")[:1]
+        )
 
-    return review_averages(
-        qs, {"review__pk__in": Subquery(matching_reviews.values("pk"))}, fields, prefix,
-    )
+    return review_averages(qs, filters, fields, prefix,)
 
 
 def annotate_average_and_recent(qs, match_on):
+    """
+    Annotate queryset with both all reviews and recent reviews.
+    :param qs: Queryset to annotate.
+    :param match_on: `Q()` expression representing a filtered subset of reviews to aggregate
+        for each row. Use `OuterRef(OuterRef('<field>'))` to refer to <field> on the row
+        in the queryset.
+    """
     qs = annotate_with_matching_reviews(qs, match_on, most_recent=False, prefix="average_")
     qs = annotate_with_matching_reviews(qs, match_on, most_recent=True, prefix="recent_")
     return qs
@@ -68,6 +95,3 @@ def course_reviews(request, course_code):
             "instructors": iss,
         }
     )
-
-
-# Create your views here.
