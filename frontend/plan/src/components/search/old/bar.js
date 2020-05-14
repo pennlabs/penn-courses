@@ -4,7 +4,10 @@ import connect from "react-redux/es/connect/connect";
 import { ScheduleSelectorDropdown } from "../../schedule/ScheduleSelectorDropdown";
 import SummaryDropdown from "./summary";
 import {
-    changeSchedule, fetchCourseSearch, openModal, toggleSearchFilterShown
+    changeSchedule,
+    fetchCourseSearch,
+    openModal,
+    toggleSearchFilterShown,
 } from "../../../actions";
 import { NEW_SCHEDULE_MODAL_NAME } from "../../modals/old/new_schedule_modal";
 import SchedulesDropdown from "./SchedulesDropdown";
@@ -24,13 +27,9 @@ class SearchBar extends Component {
     }
 
     handleChangeVal = (event) => {
-        const {
-            startSearch,
-        } = this.props;
+        const { startSearch } = this.props;
 
-        const {
-            timeout,
-        } = this.state;
+        const { timeout } = this.state;
 
         const searchText = event.target.value;
         this.setState({ searchBarValue: searchText });
@@ -39,26 +38,31 @@ class SearchBar extends Component {
         }
         if (searchText.length >= 3) {
             this.state.timeout = setTimeout(() => {
-                startSearch({ searchType: "courseIDSearch", param: searchText });
+                startSearch({
+                    searchType: "courseIDSearch",
+                    param: searchText,
+                });
             }, 200);
         }
-    }
+    };
 
     searchToggler = () => {
-        const {
-            searchFilterOpened,
-        } = this.state;
+        const { searchFilterOpened } = this.state;
 
         const {
             // eslint-disable-next-line no-shadow
             toggleSearchFilterShown,
         } = this.props;
-        const selectedBackground = searchFilterOpened ? "images/filter_b.png" : "images/filter_a.png";
+        const selectedBackground = searchFilterOpened
+            ? "images/filter_b.png"
+            : "images/filter_a.png";
         let node;
         return (
             <div
                 id="filter_search_toggler"
-                ref={(c) => { node = c; }}
+                ref={(c) => {
+                    node = c;
+                }}
                 onClick={() => {
                     this.setState({ searchFilterOpened: !searchFilterOpened });
                     toggleSearchFilterShown(node.getBoundingClientRect());
@@ -67,7 +71,7 @@ class SearchBar extends Component {
                 role="button"
             />
         );
-    }
+    };
 
     render() {
         /* eslint-disable no-shadow */
@@ -82,9 +86,7 @@ class SearchBar extends Component {
             changeSchedule,
         } = this.props;
 
-        const {
-            searchBarValue,
-        } = this.state;
+        const { searchBarValue } = this.state;
 
         /* eslint-enable no-shadow */
         return (
@@ -109,23 +111,37 @@ class SearchBar extends Component {
                             id="scheduleDropdown"
                             defText="Schedule Options"
                             contents={[
-                                ["New", () => {
-                                    showNewScheduleModal();
-                                }],
-                                ["Download", () => {
-                                }],
-                                ["Duplicate", () => {
-                                    showDuplicateScheduleModal();
-                                }],
-                                ["Rename", () => {
-                                    showRenameScheduleModal();
-                                }],
-                                ["Clear", () => {
-                                    showClearScheduleModal();
-                                }],
-                                ["Delete", () => {
-                                    showDeleteScheduleModal();
-                                }]
+                                [
+                                    "New",
+                                    () => {
+                                        showNewScheduleModal();
+                                    },
+                                ],
+                                ["Download", () => {}],
+                                [
+                                    "Duplicate",
+                                    () => {
+                                        showDuplicateScheduleModal();
+                                    },
+                                ],
+                                [
+                                    "Rename",
+                                    () => {
+                                        showRenameScheduleModal();
+                                    },
+                                ],
+                                [
+                                    "Clear",
+                                    () => {
+                                        showClearScheduleModal();
+                                    },
+                                ],
+                                [
+                                    "Delete",
+                                    () => {
+                                        showDeleteScheduleModal();
+                                    },
+                                ],
                             ]}
                         />
                     </div>
@@ -133,16 +149,23 @@ class SearchBar extends Component {
                         <span>Show Stars</span>
                     </button>
                     <a className="button" href="#UploadModal" id="ImportButton">
-                    Import
+                        Import
                     </a>
                     <button className="button" type="button">
                         <span>Clear Search</span>
                     </button>
                     <div className="dropdown">
                         <div className="dropdown-trigger">
-                            <button className="button" aria-haspopup="true" aria-controls="dropdown-menu" type="button">
+                            <button
+                                className="button"
+                                aria-haspopup="true"
+                                aria-controls="dropdown-menu"
+                                type="button"
+                            >
                                 <span>
-                                    <span className="selected_name">Schedules</span>
+                                    <span className="selected_name">
+                                        Schedules
+                                    </span>
                                     <span className="icon is-small">
                                         <i className="fa fa-angle-down" />
                                     </span>
@@ -164,23 +187,24 @@ class SearchBar extends Component {
     }
 }
 
-const mapStateToProps = state => (
-    {
-        scheduleNames: Object.keys(state.schedule.schedules),
-        scheduleSelected: state.schedule.scheduleSelected,
-    }
-);
+const mapStateToProps = (state) => ({
+    scheduleNames: Object.keys(state.schedule.schedules),
+    scheduleSelected: state.schedule.scheduleSelected,
+});
 
-
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
     toggleSearchFilterShown: () => {},
     showNewScheduleModal: () => dispatch(openModal(NEW_SCHEDULE_MODAL_NAME)),
-    showDeleteScheduleModal: () => dispatch(openModal(DELETE_SCHEDULE_MODAL_NAME)),
-    showRenameScheduleModal: () => dispatch(openModal(RENAME_SCHEDULE_MODAL_NAME)),
-    showDuplicateScheduleModal: () => dispatch(openModal(DUPLICATE_SCHEDULE_MODAL_NAME)),
-    changeSchedule: scheduleName => dispatch(changeSchedule(scheduleName)),
-    showClearScheduleModal: () => dispatch(openModal(CLEAR_SCHEDULE_MODAL_NAME)),
-    startSearch: searchObj => dispatch(fetchCourseSearch(searchObj)),
+    showDeleteScheduleModal: () =>
+        dispatch(openModal(DELETE_SCHEDULE_MODAL_NAME)),
+    showRenameScheduleModal: () =>
+        dispatch(openModal(RENAME_SCHEDULE_MODAL_NAME)),
+    showDuplicateScheduleModal: () =>
+        dispatch(openModal(DUPLICATE_SCHEDULE_MODAL_NAME)),
+    changeSchedule: (scheduleName) => dispatch(changeSchedule(scheduleName)),
+    showClearScheduleModal: () =>
+        dispatch(openModal(CLEAR_SCHEDULE_MODAL_NAME)),
+    startSearch: (searchObj) => dispatch(fetchCourseSearch(searchObj)),
 });
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);
 

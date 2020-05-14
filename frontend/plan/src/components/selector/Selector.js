@@ -9,7 +9,11 @@ import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
 
 import {
-    fetchCourseDetails, updateCourseInfo, addSchedItem, removeSchedItem, updateScrollPos
+    fetchCourseDetails,
+    updateCourseInfo,
+    addSchedItem,
+    removeSchedItem,
+    updateScrollPos,
 } from "../../actions";
 
 const Selector = ({
@@ -27,36 +31,41 @@ const Selector = ({
     setScrollPos,
 }) => {
     const isExpanded = view === 1;
-    const isLoading = isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
+    const isLoading =
+        isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
     const loadingIndicator = (
         <div
             className="button is-loading"
             style={{
-                height: "100%", width: "100%", border: "none", fontSize: "3rem",
+                height: "100%",
+                width: "100%",
+                border: "none",
+                fontSize: "3rem",
             }}
         />
     );
 
     let element = (
-        <div style={{
-            fontSize: "0.8em",
-            textAlign: "center",
-            marginTop: "5vh",
-            maxWidth: "45vh",
-        }}
+        <div
+            style={{
+                fontSize: "0.8em",
+                textAlign: "center",
+                marginTop: "5vh",
+                maxWidth: "45vh",
+            }}
         >
             <img src="/icons/empty-state-search.svg" alt="" />
-
-            <h3 style={{
-                fontWeight: "bold",
-                marginBottom: "0.5rem",
-            }}
+            <h3
+                style={{
+                    fontWeight: "bold",
+                    marginBottom: "0.5rem",
+                }}
             >
                 No result found
             </h3>
-            Search for courses, departments, or instructors above.
-            Looking for something specific? Try using the filters!
+            Search for courses, departments, or instructors above. Looking for
+            something specific? Try using the filters!
         </div>
     );
 
@@ -71,61 +80,68 @@ const Selector = ({
         />
     );
 
-
     if (courses.length > 0 && !course) {
-        element = isExpanded
-            ? (
-                <div className="columns">
-                    <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
-                        {courseList}
-                    </div>
+        element = isExpanded ? (
+            <div className="columns">
+                <div
+                    className="column is-one-third"
+                    style={{
+                        height: "calc(100vh - 12.5em)",
+                        borderRight: "1px solid #dddddd",
+                    }}
+                >
+                    {courseList}
                 </div>
-            )
-            : courseList;
+            </div>
+        ) : (
+            courseList
+        );
     }
 
     if (course) {
-        element = isExpanded
-            ? (
-                <div className="columns">
-                    <div className="column is-one-third" style={{ height: "calc(100vh - 12.5em)", borderRight: "1px solid #dddddd" }}>
-                        {courseList}
-                    </div>
-                    <div className="column is-two-thirds" style={{ height: "calc(100vh - 12.5em)" }}>
-                        {isLoadingCourseInfo ? loadingIndicator
-                            : (
-                                <CourseInfo
-                                    getCourse={getCourse}
-                                    course={course}
-                                    view={view}
-                                    manage={{
-                                        addToSchedule,
-                                        removeFromSchedule,
-                                    }}
-                                />
-                            )
-                        }
-                    </div>
-
-                </div>
-            )
-            : (
-                <CourseInfo
-                    getCourse={getCourse}
-                    course={course}
-                    back={clearCourse}
-                    manage={{
-                        addToSchedule,
-                        removeFromSchedule,
+        element = isExpanded ? (
+            <div className="columns">
+                <div
+                    className="column is-one-third"
+                    style={{
+                        height: "calc(100vh - 12.5em)",
+                        borderRight: "1px solid #dddddd",
                     }}
-                />
-            );
+                >
+                    {courseList}
+                </div>
+                <div
+                    className="column is-two-thirds"
+                    style={{ height: "calc(100vh - 12.5em)" }}
+                >
+                    {isLoadingCourseInfo ? (
+                        loadingIndicator
+                    ) : (
+                        <CourseInfo
+                            getCourse={getCourse}
+                            course={course}
+                            view={view}
+                            manage={{
+                                addToSchedule,
+                                removeFromSchedule,
+                            }}
+                        />
+                    )}
+                </div>
+            </div>
+        ) : (
+            <CourseInfo
+                getCourse={getCourse}
+                course={course}
+                back={clearCourse}
+                manage={{
+                    addToSchedule,
+                    removeFromSchedule,
+                }}
+            />
+        );
     }
-    return (
-        <>
-            {isLoading ? loadingIndicator : element}
-        </>
-    );
+    return <>{isLoading ? loadingIndicator : element}</>;
 };
 
 Selector.propTypes = {
@@ -152,26 +168,21 @@ const mapStateToProps = ({
         courseInfoLoading: isLoadingCourseInfo,
         searchInfoLoading: isSearchingCourseInfo,
     },
-}) => (
-    {
-        courses: searchResults.filter(({ num_sections: num }) => num > 0),
-        course,
-        scrollPos,
-        sortMode,
-        isLoadingCourseInfo,
-        isSearchingCourseInfo,
-    }
-);
+}) => ({
+    courses: searchResults.filter(({ num_sections: num }) => num > 0),
+    course,
+    scrollPos,
+    sortMode,
+    isLoadingCourseInfo,
+    isSearchingCourseInfo,
+});
 
-
-const mapDispatchToProps = dispatch => (
-    {
-        getCourse: courseId => dispatch(fetchCourseDetails(courseId)),
-        clearCourse: () => dispatch(updateCourseInfo(null)),
-        addToSchedule: section => dispatch(addSchedItem(section)),
-        removeFromSchedule: id => dispatch(removeSchedItem(id)),
-        setScrollPos: scrollPos => dispatch(updateScrollPos(scrollPos)),
-    }
-);
+const mapDispatchToProps = (dispatch) => ({
+    getCourse: (courseId) => dispatch(fetchCourseDetails(courseId)),
+    clearCourse: () => dispatch(updateCourseInfo(null)),
+    addToSchedule: (section) => dispatch(addSchedItem(section)),
+    removeFromSchedule: (id) => dispatch(removeSchedItem(id)),
+    setScrollPos: (scrollPos) => dispatch(updateScrollPos(scrollPos)),
+});
 
 export default connect(mapStateToProps, mapDispatchToProps)(Selector);

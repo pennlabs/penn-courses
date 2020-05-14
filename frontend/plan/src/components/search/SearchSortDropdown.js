@@ -3,9 +3,7 @@ import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 import { changeSortType } from "../../actions";
 
-const DropdownButton = ({
-    isActive, text, onClick, makeActive,
-}) => (
+const DropdownButton = ({ isActive, text, onClick, makeActive }) => (
     <div
         role="button"
         onClick={() => {
@@ -49,9 +47,8 @@ const SearchSortDropdown = ({ updateSort }) => {
     });
     return (
         <div
-            ref={node => setRef(node)}
-            className={`classic dropdown${isActive
-                ? " is-active" : ""}`}
+            ref={(node) => setRef(node)}
+            className={`classic dropdown${isActive ? " is-active" : ""}`}
         >
             <span className="selected_name">Sort by</span>
             <div
@@ -59,10 +56,7 @@ const SearchSortDropdown = ({ updateSort }) => {
                 onClick={() => setIsActive(!isActive)}
                 role="button"
             >
-                <div
-                    aria-haspopup={true}
-                    aria-controls="dropdown-menu"
-                >
+                <div aria-haspopup={true} aria-controls="dropdown-menu">
                     <span className="icon is-small">
                         <i className="fa fa-chevron-down" aria-hidden="true" />
                     </span>
@@ -70,19 +64,18 @@ const SearchSortDropdown = ({ updateSort }) => {
             </div>
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content" style={{ width: "6rem" }}>
-                    {Array.from(contents.entries())
-                        .map(([index, sortType]) => (
-                            <DropdownButton
-                                key={index}
-                                isActive={activeItem === index}
-                                makeActive={() => {
-                                    setActiveItem(index);
-                                    setIsActive(false);
-                                }}
-                                onClick={() => updateSort(sortType)}
-                                text={sortType}
-                            />
-                        ))}
+                    {Array.from(contents.entries()).map(([index, sortType]) => (
+                        <DropdownButton
+                            key={index}
+                            isActive={activeItem === index}
+                            makeActive={() => {
+                                setActiveItem(index);
+                                setIsActive(false);
+                            }}
+                            onClick={() => updateSort(sortType)}
+                            text={sortType}
+                        />
+                    ))}
                 </div>
             </div>
         </div>
@@ -94,8 +87,8 @@ SearchSortDropdown.propTypes = {
 };
 
 const mapStateToProps = () => ({});
-const mapDispatchToProps = dispatch => ({
-    updateSort: sortMode => dispatch(changeSortType(sortMode)),
+const mapDispatchToProps = (dispatch) => ({
+    updateSort: (sortMode) => dispatch(changeSortType(sortMode)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(SearchSortDropdown);

@@ -11,33 +11,41 @@ import LoginButton from "./LoginButton";
  */
 
 const AccountIndicator = ({
-    user, login, logout,
-    onLeft, backgroundColor, nameLength,
+    user,
+    login,
+    logout,
+    onLeft,
+    backgroundColor,
+    nameLength,
 }) => {
     useEffect(() => {
+        if (user) {
+            return;
+        }
         fetch("/accounts/me/")
             .then((response) => {
                 if (!response.ok) {
+                    logout();
                     return;
                 }
-                response.json()
-                    .then(newUser => login(newUser));
-            });
-    }, [login]);
+                response.json().then((newUser) => login(newUser));
+            })
+            .catch(logout);
+    }, [login, logout, user]);
 
-    return user
-        ? (
-            <UserSelector
-                backgroundColor={backgroundColor}
-                nameLength={nameLength}
-                user={user}
-                onLogout={() => {
-                    logout();
-                }}
-                onLeft={onLeft}
-            />
-        )
-        : <LoginButton />;
+    return user ? (
+        <UserSelector
+            backgroundColor={backgroundColor}
+            nameLength={nameLength}
+            user={user}
+            onLogout={() => {
+                logout();
+            }}
+            onLeft={onLeft}
+        />
+    ) : (
+        <LoginButton />
+    );
 };
 
 AccountIndicator.propTypes = {

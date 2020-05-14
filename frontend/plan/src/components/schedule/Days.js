@@ -3,7 +3,9 @@ import PropTypes from "prop-types";
 
 export default function Days(props) {
     const { offset, weekend } = props;
-    const days = weekend ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] : ["Mon", "Tue", "Wed", "Thu", "Fri"];
+    const days = weekend
+        ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        : ["Mon", "Tue", "Wed", "Thu", "Fri"];
     const style = {
         display: "grid",
         gridColumnStart: 1 + offset,
@@ -14,7 +16,11 @@ export default function Days(props) {
     };
     return (
         <div style={style}>
-            {days.map(e => <span className="day" key={e}>{e}</span>)}
+            {days.map((e) => (
+                <span className="day" key={e}>
+                    {e}
+                </span>
+            ))}
         </div>
     );
 }

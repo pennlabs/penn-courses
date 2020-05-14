@@ -2,9 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 
 export default function Times(props) {
-    const {
-        startTime, endTime, offset, numRow,
-    } = props;
+    const { startTime, endTime, offset, numRow } = props;
     const timestamps = [];
 
     const intToTime = (t) => {
@@ -26,18 +24,18 @@ export default function Times(props) {
     };
 
     for (let i = startTime; i <= endTime; i += 1) {
-        timestamps.push((
+        timestamps.push(
             <span
                 className="time"
                 style={{
-                    gridRow: ((i - startTime) * 2) + 1,
+                    gridRow: (i - startTime) * 2 + 1,
                     gridColumn: 1,
                 }}
                 key={i}
             >
                 {intToTime(i)}
             </span>
-        ));
+        );
     }
 
     const style = {
@@ -48,11 +46,7 @@ export default function Times(props) {
         gridRowEnd: numRow + 1,
         position: "relative",
     };
-    return (
-        <div style={style}>
-            {timestamps}
-        </div>
-    );
+    return <div style={style}>{timestamps}</div>;
 }
 
 Times.propTypes = {

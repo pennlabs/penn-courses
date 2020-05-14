@@ -40,9 +40,7 @@ export const getConflictGroups = (meetings) => {
     // with at least one meeting m3 which is also in the set (m3 can be m1 or m2).
     const conflicts = {};
     const merge = (m1, m2) => {
-        conflicts[m2.id] = new Set(
-            [...conflicts[m1.id], ...conflicts[m2.id]]
-        );
+        conflicts[m2.id] = new Set([...conflicts[m1.id], ...conflicts[m2.id]]);
         conflicts[m1.id] = conflicts[m2.id];
     };
 
@@ -60,12 +58,11 @@ export const getConflictGroups = (meetings) => {
     }
 
     // remove sets of size 1 from the results; they're not conflicting with anything.
-    Object.keys(conflicts)
-        .forEach((key) => {
-            if (conflicts[key].size <= 1) {
-                delete conflicts[key];
-            }
-        });
+    Object.keys(conflicts).forEach((key) => {
+        if (conflicts[key].size <= 1) {
+            delete conflicts[key];
+        }
+    });
     // use a Set to remove duplicates, so we get only unique conflict sets.
     return Array.from(new Set(Object.values(conflicts)).values());
 };
@@ -121,5 +118,7 @@ export const getTimeString = (meetings) => {
         });
     });
 
-    return `${intToTime(maxrange.split("-")[0])}-${intToTime(maxrange.split("-")[1])} ${daySet}`;
+    return `${intToTime(maxrange.split("-")[0])}-${intToTime(
+        maxrange.split("-")[1]
+    )} ${daySet}`;
 };

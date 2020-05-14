@@ -4,9 +4,7 @@ import { isMobile } from "react-device-detect";
 
 export default function Block(props) {
     const days = ["M", "T", "W", "R", "F", "S", "U"];
-    const {
-        offsets, meeting, course, remove, style, focusSection,
-    } = props;
+    const { offsets, meeting, course, remove, style, focusSection } = props;
     const { day, start, end } = meeting;
     const { id, color, coreqFulfilled } = course;
     const pos = {
@@ -34,8 +32,7 @@ export default function Block(props) {
                         >
                             <i className="fas fa-times" />
                         </span>
-                    )
-                    }
+                    )}
                     <span
                         className={coreqFulfilled ? "hide" : ""}
                         title="Registration is required for an associated section."
@@ -46,7 +43,6 @@ export default function Block(props) {
                 </div>
             </div>
         </div>
-
     );
 }
 

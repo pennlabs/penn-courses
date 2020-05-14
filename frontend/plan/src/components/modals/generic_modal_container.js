@@ -2,13 +2,22 @@ import React from "react";
 import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 import { closeModal } from "../../actions";
-import { generateModalInterior, generateModalActions } from "./model_content_generator";
+import {
+    generateModalInterior,
+    generateModalActions,
+} from "./model_content_generator";
 
 /**
  * A generic container for modals
  * */
 const ModalContainer = ({
-    children, title, close, dispatch, modalKey, modalProps, isBig,
+    children,
+    title,
+    close,
+    dispatch,
+    modalKey,
+    modalProps,
+    isBig,
 }) => (
     <div className={`modal ${title ? "is-active" : ""}`}>
         <div className="modal-background" />
@@ -27,11 +36,18 @@ const ModalContainer = ({
                 </div>
             </header>
             <section className="modal-card-body">
-                {modalKey && React.Children.map(children, child => React.cloneElement(child, {
-                    close,
-                    ...modalProps,
-                    ...generateModalActions(dispatch, modalKey, modalProps),
-                }))}
+                {modalKey &&
+                    React.Children.map(children, (child) =>
+                        React.cloneElement(child, {
+                            close,
+                            ...modalProps,
+                            ...generateModalActions(
+                                dispatch,
+                                modalKey,
+                                modalProps
+                            ),
+                        })
+                    )}
             </section>
         </div>
     </div>
@@ -47,12 +63,12 @@ ModalContainer.propTypes = {
     isBig: PropTypes.bool,
     children: PropTypes.oneOfType([
         PropTypes.arrayOf(PropTypes.node),
-        PropTypes.node
+        PropTypes.node,
     ]),
     modalKey: PropTypes.string,
 };
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
     children: generateModalInterior(state),
     title: state.modals.modalTitle,
     modalKey: state.modals.modalKey,
@@ -60,7 +76,7 @@ const mapStateToProps = state => ({
     isBig: bigModals[state.modals.modalKey],
 });
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
     close: () => dispatch(closeModal()),
     dispatch,
 });

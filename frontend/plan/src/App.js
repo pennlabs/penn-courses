@@ -22,9 +22,7 @@ import Footer from "./components/footer";
 import Cart from "./components/Cart";
 import ModalContainer from "./components/modals/generic_modal_container";
 import SearchSortDropdown from "./components/search/SearchSortDropdown";
-import {
-    openModal
-} from "./actions";
+import { openModal } from "./actions";
 import initiateSync, { preventMultipleTabs } from "./syncutils";
 import { DISABLE_MULTIPLE_TABS } from "./sync_constants";
 
@@ -45,7 +43,10 @@ const store = createStore(
 );
 
 store.subscribe(() => {
-    localStorage.setItem("coursePlanSchedules", JSON.stringify(store.getState().schedule));
+    localStorage.setItem(
+        "coursePlanSchedules",
+        JSON.stringify(store.getState().schedule)
+    );
 });
 
 function App() {
@@ -57,17 +58,15 @@ function App() {
 
     useEffect(() => {
         if (!localStorage.hasVisited) {
-            store.dispatch(openModal("WELCOME",
-                {},
-                "Welcome to Penn Course Plan ✨"));
+            store.dispatch(
+                openModal("WELCOME", {}, "Welcome to Penn Course Plan ✨")
+            );
             localStorage.hasVisited = true;
         }
 
         if (DISABLE_MULTIPLE_TABS) {
             preventMultipleTabs(() => {
-                store.dispatch(openModal("MULTITAB",
-                    {},
-                    "Multiple tabs"));
+                store.dispatch(openModal("MULTITAB", {}, "Multiple tabs"));
             });
         }
     }, []);
@@ -83,9 +82,21 @@ function App() {
                     mobileView
                 />
                 <Tabs value={tab} className="topTabs" centered>
-                    <Tab className="topTab" label="Search" onClick={() => setTab(0)} />
-                    <Tab className="topTab" label="Cart" onClick={() => setTab(1)} />
-                    <Tab className="topTab" label="Schedule" onClick={() => setTab(2)} />
+                    <Tab
+                        className="topTab"
+                        label="Search"
+                        onClick={() => setTab(0)}
+                    />
+                    <Tab
+                        className="topTab"
+                        label="Cart"
+                        onClick={() => setTab(1)}
+                    />
+                    <Tab
+                        className="topTab"
+                        label="Schedule"
+                        onClick={() => setTab(2)}
+                    />
                 </Tabs>
                 <SwipeableViews
                     index={tab}
@@ -94,18 +105,20 @@ function App() {
                     onSwitching={scrollTop}
                     onChangeIndex={setTab}
                 >
-                    <div style={{
-                        paddingLeft: "10px",
-                        paddingRight: "10px",
-                    }}
+                    <div
+                        style={{
+                            paddingLeft: "10px",
+                            paddingRight: "10px",
+                        }}
                     >
                         <div>
-                            <div style={{
-                                display: "flex",
-                                flexDirection: "row",
-                                justifyContent: "space-around",
-                                margin: "10px",
-                            }}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "row",
+                                    justifyContent: "space-around",
+                                    margin: "10px",
+                                }}
                             >
                                 <SearchSortDropdown />
                             </div>
@@ -146,35 +159,46 @@ function App() {
                 />
                 <div
                     className="App columns is-mobile main smooth-transition"
-                    style={isExpanded ? {
-                        padding: 0,
-                        width: "123%",
-                    } : {
-                        padding: 0,
-                        width: "129%",
-                    }}
+                    style={
+                        isExpanded
+                            ? {
+                                  padding: 0,
+                                  width: "123%",
+                              }
+                            : {
+                                  padding: 0,
+                                  width: "129%",
+                              }
+                    }
                 >
                     <div
-                        className={isExpanded ? "column smooth-transition is-two-thirds" : "column smooth-transition is-one-fifth"}
+                        className={
+                            isExpanded
+                                ? "column smooth-transition is-two-thirds"
+                                : "column smooth-transition is-one-fifth"
+                        }
                     >
-                        <span style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                        }}
-                        >
-                            <h3 style={{
+                        <span
+                            style={{
                                 display: "flex",
-                                fontWeight: "bold",
-                                marginBottom: "0.5rem",
+                                flexDirection: "row",
+                                justifyContent: "space-between",
                             }}
+                        >
+                            <h3
+                                style={{
+                                    display: "flex",
+                                    fontWeight: "bold",
+                                    marginBottom: "0.5rem",
+                                }}
                             >
                                 Search Results
                             </h3>
-                            <div style={{
-                                float: "right",
-                                display: "flex",
-                            }}
+                            <div
+                                style={{
+                                    float: "right",
+                                    display: "flex",
+                                }}
                             >
                                 <SearchSortDropdown />
                             </div>
@@ -191,18 +215,17 @@ function App() {
                     </div>
                     <div
                         className="column is-2"
-                        style={
-                            {
-                                display: "flex",
-                                flexDirection: "column",
-                            }
-                        }
-                    >
-                        <h3 style={{
+                        style={{
                             display: "flex",
-                            fontWeight: "bold",
-                            marginBottom: "0.5rem",
+                            flexDirection: "column",
                         }}
+                    >
+                        <h3
+                            style={{
+                                display: "flex",
+                                fontWeight: "bold",
+                                marginBottom: "0.5rem",
+                            }}
                         >
                             Cart
                         </h3>
@@ -214,7 +237,11 @@ function App() {
                             paddingRight: "0px",
                             marginRight: "15px",
                         }}
-                        className={isExpanded ? "smooth-transition column is-5 hidden" : "smooth-transition column is-5"}
+                        className={
+                            isExpanded
+                                ? "smooth-transition column is-5 hidden"
+                                : "smooth-transition column is-5"
+                        }
                     >
                         <Schedule />
                     </div>

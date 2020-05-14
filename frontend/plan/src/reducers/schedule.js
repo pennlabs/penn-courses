@@ -19,31 +19,29 @@ import {
     ATTEMPT_SCHEDULE_CREATION,
     UNSUCCESSFUL_SCHEDULE_CREATION,
     ENFORCE_SEMESTER,
-    CLEAR_ALL_SCHEDULE_DATA
+    CLEAR_ALL_SCHEDULE_DATA,
 } from "../actions";
 import { meetingsContainSection } from "../meetUtil";
 import {
     MAX_CREATION_ATTEMPTS,
     MAX_DELETION_ATTEMPTS,
-    MIN_TIME_DIFFERENCE
+    MIN_TIME_DIFFERENCE,
 } from "../sync_constants";
 
 const DEFAULT_SCHEDULE_NAME = "Schedule";
 
 // returns the default empty schedule
-const generateEmptySchedule = (isDefault = true) => (
-    {
-        meetings: [],
-        colorPalette: [],
-        LocAdded: false,
-        pushedToBackend: isDefault,
-        backendCreationState: {
-            creationQueued: false,
-            creationAttempts: 0,
-        },
-        updated_at: 1,
-    }
-);
+const generateEmptySchedule = (isDefault = true) => ({
+    meetings: [],
+    colorPalette: [],
+    LocAdded: false,
+    pushedToBackend: isDefault,
+    backendCreationState: {
+        creationQueued: false,
+        creationAttempts: 0,
+    },
+    updated_at: 1,
+});
 
 // the state contains the following two pieces of data:
 //  1. An object associating each schedule name with the schedule objecct
@@ -72,12 +70,13 @@ const resetCartId = (state) => {
  * @param state The old state
  * @return {{cartSections: [], cartPushedToBackend: boolean, cartUpdated: boolean}} New state
  */
-const resetCart = state => (resetCartId({
-    ...state,
-    cartSections: [],
-    cartPushedToBackend: true,
-    cartUpdated: false,
-}));
+const resetCart = (state) =>
+    resetCartId({
+        ...state,
+        cartSections: [],
+        cartPushedToBackend: true,
+        cartUpdated: false,
+    });
 
 /**
  * A helper method for removing a schedule from a schedules object
@@ -87,7 +86,7 @@ const resetCart = state => (resetCartId({
 const removeSchedule = (scheduleKey, initialSchedule) => {
     const newSchedules = {};
     Object.keys(initialSchedule)
-        .filter(schedName => schedName !== scheduleKey)
+        .filter((schedName) => schedName !== scheduleKey)
         .forEach((schedName) => {
             newSchedules[schedName] = initialSchedule[schedName];
         });
@@ -101,7 +100,7 @@ const removeSchedule = (scheduleKey, initialSchedule) => {
  */
 const toggleSection = (meetings, section) => {
     if (meetingsContainSection(meetings, section)) {
-        return meetings.filter(m => m.id !== section.id);
+        return meetings.filter((m) => m.id !== section.id);
     }
     return [...meetings, section];
 };
@@ -128,16 +127,24 @@ const nextAvailable = (scheduleName, used) => {
     let endNum = 0;
     let numDigits = 0;
     let selectionIndex = newScheduleName.length - 1;
-    while (selectionIndex >= 0 && newScheduleName.charAt(selectionIndex) >= "0"
-    && newScheduleName.charAt(selectionIndex) <= 9) {
-        endNum += Math.pow(10, numDigits) * parseInt(newScheduleName.charAt(selectionIndex), 10);
+    while (
+        selectionIndex >= 0 &&
+        newScheduleName.charAt(selectionIndex) >= "0" &&
+        newScheduleName.charAt(selectionIndex) <= 9
+    ) {
+        endNum +=
+            Math.pow(10, numDigits) *
+            parseInt(newScheduleName.charAt(selectionIndex), 10);
         numDigits += 1;
         selectionIndex -= 1;
     }
     // prevent double arithmetic issues
     endNum = Math.round(endNum);
     // search for the next available number
-    const baseName = newScheduleName.substring(0, newScheduleName.length - numDigits);
+    const baseName = newScheduleName.substring(
+        0,
+        newScheduleName.length - numDigits
+    );
     while (used[newScheduleName]) {
         endNum += 1;
         newScheduleName = baseName + endNum;
@@ -153,7 +160,9 @@ const nextAvailable = (scheduleName, used) => {
  */
 const processScheduleCreation = (state, scheduleName) => {
     const schedule = state.schedules[scheduleName];
-    if (schedule.backendCreationState.creationAttempts >= MAX_CREATION_ATTEMPTS) {
+    if (
+        schedule.backendCreationState.creationAttempts >= MAX_CREATION_ATTEMPTS
+    ) {
         return processScheduleDeletion(state, scheduleName, true);
     }
     return {
@@ -164,7 +173,8 @@ const processScheduleCreation = (state, scheduleName) => {
                 ...schedule,
                 backendCreationState: {
                     creationQueued: true,
-                    creationAttempts: schedule.backendCreationState.creationAttempts + 1,
+                    creationAttempts:
+                        schedule.backendCreationState.creationAttempts + 1,
                 },
             },
         },
@@ -194,7 +204,9 @@ const registerSuccessfulDeletion = (state, deletedScheduleId) => {
  */
 const registerFailedDeletion = (state, deletedScheduleId) => {
     const oldDeletedSchedules = state.deletedSchedules || {};
-    const oldDeletionState = oldDeletedSchedules[deletedScheduleId] || { attempts: 0 };
+    const oldDeletionState = oldDeletedSchedules[deletedScheduleId] || {
+        attempts: 0,
+    };
     const { attempts: oldAttempts } = oldDeletionState;
     if (oldAttempts >= MAX_DELETION_ATTEMPTS) {
         // assume this was a successful deletion and end attempts at deleting the schedule
@@ -225,14 +237,21 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
     const newState = { ...state };
     if (schedulesFromBackend) {
         for (const {
-            id: scheduleId, name, sections, semester, ...rest
+            id: scheduleId,
+            name,
+            sections,
+            semester,
+            ...rest
         } of schedulesFromBackend) {
             const cloudUpdated = new Date(rest.updated_at).getTime();
             if (name === "cart") {
                 const { cartUpdated } = state;
                 const cartPushed = state.cartPushedToBackend;
                 // If changes to the cart are still syncing, ignore the requested update
-                if (!cartPushed && (cloudUpdated - cartUpdated) < MIN_TIME_DIFFERENCE) {
+                if (
+                    !cartPushed &&
+                    cloudUpdated - cartUpdated < MIN_TIME_DIFFERENCE
+                ) {
                     return state;
                 }
                 newState.cartId = scheduleId;
@@ -244,7 +263,11 @@ const processScheduleUpdate = (state, schedulesFromBackend) => {
                 const updated = selectedSched.updated_at;
                 // If changes to the schedule are still syncing, ignore the requested update
                 const pushed = selectedSched.pushedToBackend;
-                if (!pushed && updated && (updated - cloudUpdated) < MIN_TIME_DIFFERENCE) {
+                if (
+                    !pushed &&
+                    updated &&
+                    updated - cloudUpdated < MIN_TIME_DIFFERENCE
+                ) {
                     return state;
                 }
                 newScheduleObject[name].id = scheduleId;
@@ -288,17 +311,20 @@ const processScheduleDeletion = (state, scheduleName, localOnly = false) => {
     }
     return {
         ...state,
-        deletedSchedules: localOnly ? state.deletedSchedules
+        deletedSchedules: localOnly
+            ? state.deletedSchedules
             : {
-                ...(state.deletedSchedules || {}),
-                [state.schedules[scheduleName].id]: {
-                    deletionQueued: false,
-                    attempts: 0,
-                },
-            },
+                  ...(state.deletedSchedules || {}),
+                  [state.schedules[scheduleName].id]: {
+                      deletionQueued: false,
+                      attempts: 0,
+                  },
+              },
         schedules: newSchedules,
-        scheduleSelected: scheduleName === state.scheduleSelected
-            ? Object.keys(newSchedules)[0] : state.scheduleSelected,
+        scheduleSelected:
+            scheduleName === state.scheduleSelected
+                ? Object.keys(newSchedules)[0]
+                : state.scheduleSelected,
     };
 };
 
@@ -308,8 +334,12 @@ const processScheduleDeletion = (state, scheduleName, localOnly = false) => {
  * @param meetings
  * @param currentSemester
  */
-const containsOldSemester = (meetings, currentSemester) => meetings
-    .reduce((acc, { semester }) => acc || (semester && (semester !== currentSemester)), false);
+const containsOldSemester = (meetings, currentSemester) =>
+    meetings.reduce(
+        (acc, { semester }) =>
+            acc || (semester && semester !== currentSemester),
+        false
+    );
 
 /**
  * Handles removal of an item from the cart
@@ -332,15 +362,20 @@ const handleRemoveCartItem = (sectionId, state) => ({
  * @return {{cartSections: *[], cartPushedToBackend: boolean, cartUpdated: boolean}|*}
  */
 const enforceCartSemester = (currentSemester, state) => {
-    const hasOldCartSections = containsOldSemester(state.cartSections, currentSemester);
+    const hasOldCartSections = containsOldSemester(
+        state.cartSections,
+        currentSemester
+    );
     if (hasOldCartSections) {
         return state.cartSections
-            .filter(({ semester }) => semester && (semester !== currentSemester))
-            .reduce((acc, { id }) => handleRemoveCartItem(id, acc), resetCartId(state));
+            .filter(({ semester }) => semester && semester !== currentSemester)
+            .reduce(
+                (acc, { id }) => handleRemoveCartItem(id, acc),
+                resetCartId(state)
+            );
     }
     return state;
 };
-
 
 export const schedule = (state = initialState, action) => {
     const { cartSections } = state;
@@ -350,9 +385,14 @@ export const schedule = (state = initialState, action) => {
         // restrict schedules to ones from the current semester
         case ENFORCE_SEMESTER:
             return Object.entries(state.schedules)
-                .filter(([_, { meetings }]) => containsOldSemester(meetings, action.semester))
-                .reduce((acc, [name, _]) => processScheduleDeletion(acc, name, true),
-                    enforceCartSemester(action.semester, state));
+                .filter(([_, { meetings }]) =>
+                    containsOldSemester(meetings, action.semester)
+                )
+                .reduce(
+                    (acc, [name, _]) =>
+                        processScheduleDeletion(acc, name, true),
+                    enforceCartSemester(action.semester, state)
+                );
         case MARK_SCHEDULE_SYNCED:
             return {
                 ...state,
@@ -417,24 +457,25 @@ export const schedule = (state = initialState, action) => {
                         pushedToBackend: false,
                     },
                 },
-                scheduleSelected: state.scheduleSelected === action.oldName
-                    ? action.newName : state.scheduleSelected,
+                scheduleSelected:
+                    state.scheduleSelected === action.oldName
+                        ? action.newName
+                        : state.scheduleSelected,
             };
         case DUPLICATE_SCHEDULE:
             return {
                 ...state,
                 schedules: {
                     ...state.schedules,
-                    [nextAvailable(action.scheduleName, state.schedules)]:
-                        {
-                            ...withoutId(state.schedules[action.scheduleName]),
-                            pushedToBackend: false,
-                            updated_at: Date.now(),
-                            backendCreationState: {
-                                creationQueued: false,
-                                creationAttempts: 0,
-                            },
+                    [nextAvailable(action.scheduleName, state.schedules)]: {
+                        ...withoutId(state.schedules[action.scheduleName]),
+                        pushedToBackend: false,
+                        updated_at: Date.now(),
+                        backendCreationState: {
+                            creationQueued: false,
+                            creationAttempts: 0,
                         },
+                    },
                 },
             };
         case CREATE_SCHEDULE:
@@ -462,7 +503,8 @@ export const schedule = (state = initialState, action) => {
                     [action.scheduleName]: {
                         ...state.schedules[action.scheduleName],
                         backendCreationState: {
-                            ...state.schedules[action.scheduleName].backendCreationState,
+                            ...state.schedules[action.scheduleName]
+                                .backendCreationState,
                             creationQueued: false,
                         },
                     },
@@ -478,8 +520,10 @@ export const schedule = (state = initialState, action) => {
                     ...state.deletedSchedules,
                     [action.deletedScheduleId]: {
                         deletionQueued: true,
-                        attempts: (state.deletedSchedules[action.deletedScheduleId]
-                            && state.deletedSchedules[action.deletedScheduleId].attempts) + 1,
+                        attempts:
+                            (state.deletedSchedules[action.deletedScheduleId] &&
+                                state.deletedSchedules[action.deletedScheduleId]
+                                    .attempts) + 1,
                     },
                 },
             };
@@ -504,8 +548,10 @@ export const schedule = (state = initialState, action) => {
                     [state.scheduleSelected]: {
                         ...state.schedules[state.scheduleSelected],
                         updated_at: Date.now(),
-                        meetings: toggleSection(state.schedules[state.scheduleSelected].meetings,
-                            action.course),
+                        meetings: toggleSection(
+                            state.schedules[state.scheduleSelected].meetings,
+                            action.course
+                        ),
                         pushedToBackend: false,
                     },
                 },
@@ -519,8 +565,9 @@ export const schedule = (state = initialState, action) => {
                         ...state.schedules[state.scheduleSelected],
                         updated_at: Date.now(),
                         pushedToBackend: false,
-                        meetings: state.schedules[state.scheduleSelected].meetings
-                            .filter(m => m.id !== action.id),
+                        meetings: state.schedules[
+                            state.scheduleSelected
+                        ].meetings.filter((m) => m.id !== action.id),
                     },
                 },
             };

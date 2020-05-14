@@ -2,13 +2,17 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
 const DropdownButton = ({
-    isActive, text, onClick, makeActive, mutators: { copy, remove, rename },
+    isActive,
+    text,
+    onClick,
+    makeActive,
+    mutators: { copy, remove, rename },
 }) => (
     <div
         role="button"
         onClick={(e) => {
             const targetClass = e.target.getAttribute("class");
-            if (targetClass && (targetClass.indexOf("s-option") !== -1)) {
+            if (targetClass && targetClass.indexOf("s-option") !== -1) {
                 // one of the icons has been clicked
                 return;
             }
@@ -21,33 +25,19 @@ const DropdownButton = ({
         }}
         className={`dropdown-item${isActive ? " is-active" : ""}`}
     >
-        <div className="schedule-name-container">
-            {text}
-        </div>
+        <div className="schedule-name-container">{text}</div>
         <div className="schedule-options-container">
-            <div
-                onClick={rename}
-                className="s-option-copy"
-                role="button"
-            >
+            <div onClick={rename} className="s-option-copy" role="button">
                 <span className="icon is-small">
                     <i className="far fa-edit" aria-hidden="true" />
                 </span>
             </div>
-            <div
-                onClick={copy}
-                className="s-option-copy"
-                role="button"
-            >
+            <div onClick={copy} className="s-option-copy" role="button">
                 <span className="icon is-small">
                     <i className="far fa-copy" aria-hidden="true" />
                 </span>
             </div>
-            <div
-                onClick={remove}
-                className="s-option-copy"
-                role="button"
-            >
+            <div onClick={remove} className="s-option-copy" role="button">
                 <span className="icon is-small">
                     <i className="fa fa-trash" aria-hidden="true" />
                 </span>
@@ -69,9 +59,9 @@ DropdownButton.propTypes = {
 };
 
 const ScheduleSelectorDropdown = ({
-    activeName, contents, mutators: {
-        copy, remove, rename, create,
-    },
+    activeName,
+    contents,
+    mutators: { copy, remove, rename, create },
 }) => {
     const [isActive, setIsActive] = useState(false);
     const [ref, setRef] = useState(null);
@@ -89,9 +79,8 @@ const ScheduleSelectorDropdown = ({
     });
     return (
         <div
-            ref={node => setRef(node)}
-            className={`classic dropdown${isActive
-                ? " is-active" : ""}`}
+            ref={(node) => setRef(node)}
+            className={`classic dropdown${isActive ? " is-active" : ""}`}
         >
             <span className="selected_name">{activeName}</span>
             <div
@@ -99,10 +88,7 @@ const ScheduleSelectorDropdown = ({
                 onClick={() => setIsActive(!isActive)}
                 role="button"
             >
-                <div
-                    aria-haspopup={true}
-                    aria-controls="dropdown-menu"
-                >
+                <div aria-haspopup={true} aria-controls="dropdown-menu">
                     <span className="icon is-small">
                         <i className="fa fa-chevron-down" aria-hidden="true" />
                     </span>
@@ -110,8 +96,8 @@ const ScheduleSelectorDropdown = ({
             </div>
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content">
-                    {Array.from(contents.entries())
-                        .map(([index, { onClick, text: scheduleName }]) => (
+                    {Array.from(contents.entries()).map(
+                        ([index, { onClick, text: scheduleName }]) => (
                             <DropdownButton
                                 key={index}
                                 isActive={scheduleName === activeName}
@@ -126,7 +112,8 @@ const ScheduleSelectorDropdown = ({
                                     rename: () => rename(scheduleName),
                                 }}
                             />
-                        ))}
+                        )
+                    )}
                     <a
                         onClick={create}
                         role="button"
@@ -154,6 +141,5 @@ ScheduleSelectorDropdown.propTypes = {
         rename: PropTypes.func.isRequired,
     }),
 };
-
 
 export default ScheduleSelectorDropdown;
