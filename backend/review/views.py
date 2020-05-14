@@ -1,10 +1,10 @@
 from django.db.models import F, Max, OuterRef, Q, Subquery, Value
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from courses.models import Course, Department, Instructor, review_averages
 from review.models import ALL_FIELD_SLUGS, Review
-from django.shortcuts import get_object_or_404
 
 
 def to_r_camel(s):
@@ -105,7 +105,6 @@ def course_reviews(request, course_code):
         match_on=Q(section__course__full_code=course_code, instructor__pk=OuterRef(OuterRef("pk"))),
     )
 
-    c = course.values()[0]
     return make_review_response(course.values()[0], instructors.values(), "instructors", "name")
 
 
@@ -164,9 +163,11 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         Review.objects.filter(section__course__full_code=course_code, instructor=instructor),
         {"review__pk": OuterRef("pk")},
         fields=ALL_FIELD_SLUGS,
-        prefix="bit_"
+        prefix="bit_",
     )
-    reviews = reviews.annotate(course_name=F("section__course__name"), semester=F("section__course__semester"))
+    reviews = reviews.annotate(
+        course_name=F("section__course__name"), semester=F("section__course__semester")
+    )
 
     return Response(
         {
@@ -183,11 +184,13 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         }
     )
 
+
 @api_view(["GET"])
 def live_course(request, course_code):
-    semester = '2020C'
-    course = get_object_or_404(Course, full_code=course_code, semester=semester)
+    # semester = "2020C"
+    # course = get_object_or_404(Course, full_code=course_code, semester=semester)
     pass
+
 
 @api_view(["GET"])
 def autocomplete(request):

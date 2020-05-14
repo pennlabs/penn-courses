@@ -143,7 +143,7 @@ class CourseTestCase(TestCase):
             .get("rInstructorQuality"),
         )
 
-    def test_two_instructors_one_section(self):
+    def test_two_instructors_multiple_semesters(self):
         create_review("CIS-120-900", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review("CIS-120-003", "2012C", "Instructor Two", {"instructor_quality": 1})
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
