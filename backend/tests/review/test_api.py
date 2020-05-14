@@ -77,10 +77,34 @@ class CourseTestCase(TestCase):
         recent = res.data.get("recent_reviews")
         self.assertEqual(3, averages.get("rInstructorQuality"))
         self.assertEqual(3, recent.get("rInstructorQuality"))
-        self.assertEqual(4, res.data.get("instructors").get(self.instructor_name).get("average_reviews").get("rInstructorQuality"))
-        self.assertEqual(4, res.data.get("instructors").get(self.instructor_name).get("recent_reviews").get("rInstructorQuality"))
-        self.assertEqual(2, res.data.get("instructors").get("Instructor Two").get("average_reviews").get("rInstructorQuality"))
-        self.assertEqual(2, res.data.get("instructors").get("Instructor Two").get("recent_reviews").get("rInstructorQuality"))
+        self.assertEqual(
+            4,
+            res.data.get("instructors")
+            .get(self.instructor_name)
+            .get("average_reviews")
+            .get("rInstructorQuality"),
+        )
+        self.assertEqual(
+            4,
+            res.data.get("instructors")
+            .get(self.instructor_name)
+            .get("recent_reviews")
+            .get("rInstructorQuality"),
+        )
+        self.assertEqual(
+            2,
+            res.data.get("instructors")
+            .get("Instructor Two")
+            .get("average_reviews")
+            .get("rInstructorQuality"),
+        )
+        self.assertEqual(
+            2,
+            res.data.get("instructors")
+            .get("Instructor Two")
+            .get("recent_reviews")
+            .get("rInstructorQuality"),
+        )
 
     def test_two_sections(self):
         create_review("CIS-120-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
@@ -90,22 +114,70 @@ class CourseTestCase(TestCase):
         recent = res.data.get("recent_reviews")
         self.assertEqual(3, averages.get("rInstructorQuality"))
         self.assertEqual(3, recent.get("rInstructorQuality"))
-        self.assertEqual(4, res.data.get("instructors").get(self.instructor_name).get("average_reviews").get("rInstructorQuality"))
-        self.assertEqual(4, res.data.get("instructors").get(self.instructor_name).get("recent_reviews").get("rInstructorQuality"))
-        self.assertEqual(2, res.data.get("instructors").get("Instructor Two").get("average_reviews").get("rInstructorQuality"))
-        self.assertEqual(2, res.data.get("instructors").get("Instructor Two").get("recent_reviews").get("rInstructorQuality"))
+        self.assertEqual(
+            4,
+            res.data.get("instructors")
+            .get(self.instructor_name)
+            .get("average_reviews")
+            .get("rInstructorQuality"),
+        )
+        self.assertEqual(
+            4,
+            res.data.get("instructors")
+            .get(self.instructor_name)
+            .get("recent_reviews")
+            .get("rInstructorQuality"),
+        )
+        self.assertEqual(
+            2,
+            res.data.get("instructors")
+            .get("Instructor Two")
+            .get("average_reviews")
+            .get("rInstructorQuality"),
+        )
+        self.assertEqual(
+            2,
+            res.data.get("instructors")
+            .get("Instructor Two")
+            .get("recent_reviews")
+            .get("rInstructorQuality"),
+        )
 
     def test_two_instructors_one_section(self):
         create_review("CIS-120-900", "2012A", self.instructor_name, {"instructor_quality": 2})
-        create_review("CIS-120-003", "2012C", "Instructor Two", {"instructor_quality": 4})
+        create_review("CIS-120-003", "2012C", "Instructor Two", {"instructor_quality": 1})
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         res = self.client.get(reverse("course-reviews", kwargs={"course_code": "CIS-120"}))
         self.assertEqual(200, res.status_code)
         averages = res.data.get("average_reviews")
         recent = res.data.get("recent_reviews")
-        self.assertEqual(3, averages.get("rInstructorQuality"))
-        self.assertEqual(3, recent.get("rInstructorQuality"))
-        self.assertEqual(4, res.data.get("instructors").get(self.instructor_name).get("average_reviews").get("rInstructorQuality"))
-        self.assertEqual(4, res.data.get("instructors").get(self.instructor_name).get("recent_reviews").get("rInstructorQuality"))
-        self.assertEqual(2, res.data.get("instructors").get("Instructor Two").get("average_reviews").get("rInstructorQuality"))
-        self.assertEqual(2, res.data.get("instructors").get("Instructor Two").get("recent_reviews").get("rInstructorQuality"))
+        self.assertEqual(2.25, averages.get("rInstructorQuality"))
+        self.assertEqual(2.25, recent.get("rInstructorQuality"))
+        self.assertEqual(
+            3,
+            res.data.get("instructors")
+            .get(self.instructor_name)
+            .get("average_reviews")
+            .get("rInstructorQuality"),
+        )
+        self.assertEqual(
+            3,
+            res.data.get("instructors")
+            .get(self.instructor_name)
+            .get("recent_reviews")
+            .get("rInstructorQuality"),
+        )
+        self.assertEqual(
+            1.5,
+            res.data.get("instructors")
+            .get("Instructor Two")
+            .get("average_reviews")
+            .get("rInstructorQuality"),
+        )
+        self.assertEqual(
+            1.5,
+            res.data.get("instructors")
+            .get("Instructor Two")
+            .get("recent_reviews")
+            .get("rInstructorQuality"),
+        )
