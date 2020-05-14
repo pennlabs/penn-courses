@@ -13,6 +13,7 @@
     "@testing-library/user-event": "^7.1.2",
     "awesome-debounce-promise": "^2.1.0",
     "libphonenumber-js": "^1.7.50",
+    "prettier": "^2.0.5",
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -31,9 +32,6 @@
     "lint": "eslint src",
     "lint-fix": "eslint src --fix"
   },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -47,11 +45,12 @@
     ]
   },
   "devDependencies": {
+    "cpx": "^1.5.0",
     "eslint-config-airbnb": "^17.1.1",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-flowtype": "^4.7.0",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-jsx-a11y": "^6.2.3",
-    "eslint-plugin-react": "^7.16.0",
-    "eslint-plugin-flowtype": "^4.7.0",
-    "cpx": "^1.5.0"
+    "eslint-plugin-react": "^7.16.0"
   }
 }
