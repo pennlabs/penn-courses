@@ -6,5 +6,4 @@ patch:
     properties:
       id:
         type: string
-        readOnly: true
 ---

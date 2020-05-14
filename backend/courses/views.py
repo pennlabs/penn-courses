@@ -141,4 +141,4 @@ class StatusUpdateView(generics.ListAPIView):
 
 def open_api(request):
     data = open("openapi/openapi.yaml", "r").read()
-    return HttpResponse(data, mimetype="application/vnd.oai.openapi")
+    return HttpResponse(data, content_type="application/vnd.oai.openapi")
