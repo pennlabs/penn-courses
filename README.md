@@ -26,10 +26,10 @@ Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
 5. Make sure everything works by running `python manage.py test` and
 ensuring all tests pass.
 
-### Setting up the Penn Course Plan Frontend
+### Setting up the the frontends
 Make sure you have `nodejs` installed, which will also install `npm`
-along with it.
-1. `cd frontend/plan`
+along with it. Current frontend directories are `frontend/plan` and `frontend/alert`.
+1. `cd frontend/<>`
 2. `npm install`
 
 ## Run in development
@@ -40,7 +40,7 @@ To run the backend server, run
 `pipenv run python manage.py runserver 8000`
 
 To run a frontend development server (for example, Penn Course Plan),
-1. `cd frontend/plan`
+1. `cd frontend/<>`
 2. `npm start`
 
 The local version of the site should open in your default browser, and

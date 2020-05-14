@@ -1,9 +1,8 @@
 from django.db.models import Q
-
+from options.models import get_value
 from rest_framework import filters
 
 from courses.models import Requirement
-from options.models import get_value
 
 
 def requirement_filter(queryset, req_ids, semester):
@@ -75,7 +74,8 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "name": "type",
                 "required": False,
                 "in": "query",
-                "description": "Can specify what kind of query to run. Course queries are faster, keyword queries look against professor name and course title.",
+                "description": "Can specify what kind of query to run. Course queries are faster, "
+                "keyword queries look against professor name and course title.",
                 "schema": {
                     "type": "string",
                     "default": "auto",
@@ -86,7 +86,8 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "name": "requirements",
                 "required": False,
                 "in": "query",
-                "description": "Filter courses by comma-separated requirements, ANDed together. Use `/requirements` endpoint to get requirement IDs.",
+                "description": "Filter courses by comma-separated requirements, ANDed together. "
+                "Use `/requirements` endpoint to get requirement IDs.",
                 "schema": {"type": "string"},
                 "example": "SS@SEAS,H@SEAS",
             },

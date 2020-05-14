@@ -1,10 +1,11 @@
 from rest_framework import serializers
 
 from alert.models import Registration
+from courses.models import Section
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    section = serializers.SlugRelatedField(slug_field="full_code", read_only=True)
+    section = serializers.SlugRelatedField(slug_field="full_code", queryset=Section.objects.none())
     user = serializers.SlugRelatedField(slug_field="username", read_only=True)
     section_status = serializers.SerializerMethodField()
 
@@ -44,3 +45,15 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "deleted_at",
             "section_status",
         ]
+
+
+class RegistrationCreateSerializer(serializers.Serializer):
+    section = serializers.CharField(max_length=16)
+    auto_resubscribe = serializers.BooleanField()
+
+
+class RegistrationUpdateSerializer(serializers.Serializer):
+    resubscribe = serializers.BooleanField()
+    deleted = serializers.BooleanField()
+    cancelled = serializers.BooleanField()
+    auto_resubscribe = serializers.BooleanField()

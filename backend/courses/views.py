@@ -16,7 +16,6 @@ from courses.serializers import (
     UserSerializer,
 )
 from plan.search import TypedSectionSearchBackend
-from django.http import HttpResponse
 
 
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
@@ -137,8 +136,3 @@ class StatusUpdateView(generics.ListAPIView):
 
     def get_queryset(self):
         return StatusUpdate.objects.filter(Q(section__full_code=self.kwargs["full_code"]))
-
-
-def open_api(request):
-    data = open("openapi/openapi.yaml", "r").read()
-    return HttpResponse(data, content_type="application/vnd.oai.openapi")

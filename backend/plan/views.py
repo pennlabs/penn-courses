@@ -6,6 +6,7 @@ from options.models import get_value
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.schemas.openapi import AutoSchema
 
 from courses.models import Section
 from courses.util import get_course_and_section
@@ -14,8 +15,6 @@ from plan.filters import CourseSearchFilterBackend
 from plan.models import Schedule
 from plan.search import TypedCourseSearchBackend
 from plan.serializers import ScheduleSerializer
-
-from rest_framework.schemas.openapi import AutoSchema
 
 
 class CourseListSchema(AutoSchema):

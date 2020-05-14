@@ -14,7 +14,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from alert.models import Registration, RegStatus, register_for_course
-from alert.serializers import RegistrationSerializer
+from alert.serializers import (
+    RegistrationCreateSerializer,
+    RegistrationSerializer,
+    RegistrationUpdateSerializer,
+)
 from alert.tasks import send_course_alerts
 from courses.util import record_update, update_course_from_record
 
@@ -119,9 +123,16 @@ def accept_webhook(request):
 
 
 class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
-    serializer_class = RegistrationSerializer
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return RegistrationCreateSerializer
+        elif self.action == "update":
+            return RegistrationUpdateSerializer
+        else:
+            return RegistrationSerializer
 
     @staticmethod
     def handle_registration(request):

@@ -19,7 +19,8 @@ class TypedCourseSearchBackend(filters.SearchFilter):
                 "schema": {"type": "string"},
                 "required": False,
                 "in": "query",
-                "description": "Search query. Can be either a fragment of a course code, or any keyword/professor name.",
+                "description": "Search query. Can be either a fragment of a course code, or any "
+                "keyword/professor name.",
             },
         ]
 
