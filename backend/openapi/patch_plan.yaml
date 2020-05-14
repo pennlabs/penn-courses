@@ -1,0 +1,10 @@
+---
+path: "paths./api/plan/schedules/.post.requestBody.content.application/json.schema.properties.sections"
+patch:
+  type: array
+  items:
+    properties:
+      id:
+        type: string
+        readOnly: true
+---

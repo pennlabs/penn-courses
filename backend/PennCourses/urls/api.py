@@ -5,7 +5,7 @@ from django.views.generic import TemplateView
 from rest_framework.schemas import get_schema_view
 
 from alert.views import accept_webhook
-from courses.views import UserView
+from courses.views import UserView, open_api
 
 
 urlpatterns = [
@@ -15,7 +15,7 @@ urlpatterns = [
     path("options/", include("options.urls", namespace="options")),
     path(
         "openapi/",
-        get_schema_view(title="Penn Courses Documentation", public=True),
+        open_api,
         name="openapi-schema",
     ),
     path(
