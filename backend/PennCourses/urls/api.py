@@ -2,7 +2,6 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import TemplateView
-from rest_framework.schemas import get_schema_view
 
 from alert.views import accept_webhook
 from courses.views import UserView, open_api
