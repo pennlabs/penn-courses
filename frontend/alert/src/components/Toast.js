@@ -15,14 +15,14 @@ const Rectangle = styled.div`
     display: flex;
     flex-direction: row;
     border-radius: 0.5rem;
-    border: solid 1px ${props => props.border};
-    background-color: ${props => props.background};
+    border: solid 1px ${(props) => props.border};
+    background-color: ${(props) => props.background};
     float: right;
     width: 20rem;
     min-height: 4rem;
 
     ${between(TABLET, SMALLDESKTOP)} {
-       width: 15rem;
+        width: 15rem;
     }
 `;
 
@@ -43,28 +43,29 @@ const IconDiv = styled.div`
     height: 1.5rem;
     margin-left: 1rem;
     margin-top: 1rem;
-    background-color: ${props => props.background};
+    background-color: ${(props) => props.background};
     border-radius: 1rem;
     position: relative;
 `;
 
-const CloseButton = styled(FontAwesomeIcon).attrs(props => ({ icon: faTimes }))`
-    margin-left:auto;
+const CloseButton = styled(FontAwesomeIcon).attrs((props) => ({
+    icon: faTimes,
+}))`
+    margin-left: auto;
     margin-right: 0.6em;
     margin-top: 0.6em;
     cursor: pointer;
 `;
 
-
 const ToastText = styled.p`
-    color: ${props => props.color};
+    color: ${(props) => props.color};
     width: 60%;
     font-size: 0.8rem;
     font-weight: 500;
     word-wrap: normal;
     margin-left: 1rem;
     margin-right: 0.75rem;
-    margin-top: .85rem;
+    margin-top: 0.85rem;
 `;
 
 const RightItem = styled.div`
@@ -73,9 +74,7 @@ const RightItem = styled.div`
 
 export const ToastType = Object.freeze({ Success: 1, Warning: 2, Error: 3 });
 
-const Toast = ({
-    onClose, children, type,
-}) => {
+const Toast = ({ onClose, children, type }) => {
     let primary;
     let secondary;
     let textcolor;
@@ -104,9 +103,7 @@ const Toast = ({
                 <IconDiv background={primary}>
                     <Icon src={image} />
                 </IconDiv>
-                <ToastText color={textcolor}>
-                    {children}
-                </ToastText>
+                <ToastText color={textcolor}>{children}</ToastText>
                 <CloseButton src={close} color={textcolor} onClick={onClose} />
             </Rectangle>
         </RightItem>

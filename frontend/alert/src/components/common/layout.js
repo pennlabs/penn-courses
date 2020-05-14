@@ -11,9 +11,9 @@ export const Container = styled.div`
 
 export const Flex = styled.div`
     display: flex;
-    flex-direction: ${props => (props.col ? "column" : "row")};
-    align-items: ${props => props.align || "center"};
-    flex-grow: ${props => props.grow || 0}
+    flex-direction: ${(props) => (props.col ? "column" : "row")};
+    align-items: ${(props) => props.align || "center"};
+    flex-grow: ${(props) => props.grow || 0};
 `;
 
 export const Center = styled.div`

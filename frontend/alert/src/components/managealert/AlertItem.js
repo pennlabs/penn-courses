@@ -9,7 +9,7 @@ const StatusInd = styled.div`
     border-radius: 1rem;
     width: 0.4rem;
     height: 0.4rem;
-    background-color: ${props => props.background};
+    background-color: ${(props) => props.background};
 `;
 
 const StatusGridItem = styled(GridItem)`
@@ -21,8 +21,15 @@ const StatusGridItem = styled(GridItem)`
 
 // Component for an alert entry (renders as a row in CSS grid)
 export const AlertItem = ({
-    alertLastSent, course, status, repeat, actions, rownum,
-    checked, toggleAlert, actionButtonHandler,
+    alertLastSent,
+    course,
+    status,
+    repeat,
+    actions,
+    rownum,
+    checked,
+    toggleAlert,
+    actionButtonHandler,
 }) => {
     let statustext;
     let statuscolor;
@@ -57,25 +64,23 @@ export const AlertItem = ({
         default:
     }
 
-
     return (
         <>
             <GridItem column="1" row={rownum} border halign valign>
-                <input type="checkbox" checked={checked} onChange={toggleAlert} />
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={toggleAlert}
+                />
             </GridItem>
             <GridItem column="2" row={rownum} border valign>
-                {
-                    alertLastSent
-                        ? <P size="0.7rem">{alertLastSent}</P>
-                        : (
-                            <P
-                                size="0.7rem"
-                                color="#b2b2b2"
-                            >
-                                No alerts sent yet
-                            </P>
-                        )
-                }
+                {alertLastSent ? (
+                    <P size="0.7rem">{alertLastSent}</P>
+                ) : (
+                    <P size="0.7rem" color="#b2b2b2">
+                        No alerts sent yet
+                    </P>
+                )}
             </GridItem>
             <GridItem column="3" row={rownum} border valign>
                 <P size="0.7rem">{course}</P>
@@ -85,7 +90,9 @@ export const AlertItem = ({
                 <P size="0.7rem">{statustext}</P>
             </StatusGridItem>
             <GridItem column="5" row={rownum} border valign>
-                <P size="0.7rem" color={alertcolor}>{alerttext}</P>
+                <P size="0.7rem" color={alertcolor}>
+                    {alerttext}
+                </P>
             </GridItem>
             <GridItem border column="6" row={rownum} valign>
                 <ActionButton type={actions} onClick={actionButtonHandler} />
@@ -98,7 +105,11 @@ AlertItem.propTypes = {
     alertLastSent: PropTypes.string,
     course: PropTypes.string,
     status: PropTypes.oneOf([AlertStatus.Closed, AlertStatus.Open]),
-    repeat: PropTypes.oneOf([AlertRepeat.EOS, AlertRepeat.Inactive, AlertRepeat.Once]),
+    repeat: PropTypes.oneOf([
+        AlertRepeat.EOS,
+        AlertRepeat.Inactive,
+        AlertRepeat.Once,
+    ]),
     actions: PropTypes.oneOf([AlertAction.Resubscribe, AlertAction.Cancel]),
     rownum: PropTypes.number,
     checked: PropTypes.bool,

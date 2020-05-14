@@ -7,7 +7,7 @@ import { Flex, Img, P } from "./ManageAlertStyledComponents";
 import { AlertAction } from "./AlertItemEnums";
 
 const ActionFlex = styled(Flex)`
-    background-color: ${props => props.background};
+    background-color: ${(props) => props.background};
     border-radius: 0.2rem;
     cursor: pointer;
 `;
@@ -46,7 +46,9 @@ export const ActionButton = ({ type, onClick }) => {
     return (
         <ActionFlex valign halign background={secondary}>
             <ActionButtonFlex valign margin="0.3rem" onClick={onClick}>
-                <P size="0.6rem" color={primary} weight="600">{text}</P>
+                <P size="0.6rem" color={primary} weight="600">
+                    {text}
+                </P>
                 <Img src={img} width="0.6rem" height="0.6rem" alt="" />
             </ActionButtonFlex>
         </ActionFlex>

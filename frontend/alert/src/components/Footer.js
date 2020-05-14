@@ -14,25 +14,17 @@ const Wrapper = styled.div`
 
 const Footer = () => (
     <Wrapper>
-        Made with
-        {" "}
+        Made with{" "}
         <span className="icon is-small">
             <i className="fa fa-heart" style={{ color: "red" }} />
-        </span>
-        {" "}
-        by
-        {" "}
-        <a
-            href="http://pennlabs.org"
-            rel="noopener noreferrer"
-            target="_blank"
-        >
+        </span>{" "}
+        by{" "}
+        <a href="http://pennlabs.org" rel="noopener noreferrer" target="_blank">
             Penn Labs
         </a>
         .
         <br />
-        Have feedback about Penn Course Alert? Let us know
-        {" "}
+        Have feedback about Penn Course Alert? Let us know{" "}
         <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
     </Wrapper>
 );

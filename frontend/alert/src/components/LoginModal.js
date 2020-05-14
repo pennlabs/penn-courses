@@ -13,8 +13,8 @@ const LoginButtonContainer = styled.div`
 const LoginModal = () => (
     <Modal title="Please log in!">
         <Center>
-            Penn Course Alert now requires login.
-            Please sign in with your Pennkey by clicking the button below.
+            Penn Course Alert now requires login. Please sign in with your
+            Pennkey by clicking the button below.
         </Center>
         <br />
         <LoginButtonContainer>

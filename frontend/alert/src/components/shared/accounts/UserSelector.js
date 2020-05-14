@@ -16,19 +16,17 @@ const NameBubble = styled.div`
     justify-content: center;
     user-select: none;
     transition: 150ms ease background;
-    margin-right: 0.85rem;    
-    background: ${
-    (props) => {
+    margin-right: 0.85rem;
+    background: ${(props) => {
         if (props.color === "purple") {
-            return props.selected ? "#6B73D0"
-                : "#c8cbed";
+            return props.selected ? "#6B73D0" : "#c8cbed";
         }
-        return props.selected ? "#9a9a9a"
-            : "#656565";
+        return props.selected ? "#9a9a9a" : "#656565";
     }};
     &:hover {
-        background: ${props => (props.color === "purple" ? "#9399DB" : "#444444")};
-    };
+        background: ${(props) =>
+            props.color === "purple" ? "#9399DB" : "#444444"};
+    }
 `;
 
 const InnerMenu = styled.div`
@@ -39,7 +37,7 @@ const InnerMenu = styled.div`
     padding: 0.32rem;
     font-size: 0.85rem;
     box-shadow: 0 0 5px 0 lightgrey;
-    right: ${props => (props.onLeft ? "0%" : "61%")}
+    right: ${(props) => (props.onLeft ? "0%" : "61%")};
 `;
 
 const NameContainer = styled.p`
@@ -55,7 +53,7 @@ const EmailContainer = styled.p`
 `;
 
 const LogoutButton = styled.div`
-    cursor: pointer;   
+    cursor: pointer;
     background: white;
     transition: 200ms ease background;
     margin: 0.5rem;
@@ -106,8 +104,11 @@ const Dropdown = styled.div`
 `;
 
 const UserSelector = ({
-    user: { username, ...rest }, onLogout,
-    onLeft, backgroundColor, nameLength,
+    user: { username, ...rest },
+    onLogout,
+    onLeft,
+    backgroundColor,
+    nameLength,
 }) => {
     const [selected, setSelected] = useState(false);
 
@@ -119,9 +120,7 @@ const UserSelector = ({
     }, !selected);
 
     return (
-        <Dropdown
-            ref={onClickOutside}
-        >
+        <Dropdown ref={onClickOutside}>
             <NameBubble
                 selected={selected}
                 color={backgroundColor}
@@ -131,8 +130,8 @@ const UserSelector = ({
             >
                 <span>
                     {" "}
-                    {(firstName && firstName.substring(0, nameLength || 1)) || "U"}
-                    {" "}
+                    {(firstName && firstName.substring(0, nameLength || 1)) ||
+                        "U"}{" "}
                 </span>
             </NameBubble>
             <LogoutDropdownMenu selected={selected}>
@@ -141,24 +140,16 @@ const UserSelector = ({
                     <InnerMenu onLeft={onLeft}>
                         <NameContainer>
                             {" "}
-                            {firstName}
-                            {" "}
-                            {lastName}
-                            {" "}
+                            {firstName} {lastName}{" "}
                         </NameContainer>
-                        <EmailContainer>
-                            {" "}
-                            {username}
-                            {" "}
-                        </EmailContainer>
+                        <EmailContainer> {username} </EmailContainer>
                         <LogoutButton
                             role="button"
                             onClick={() => {
                                 fetch("/accounts/logout/", {
                                     method: "GET",
                                     redirect: "follow",
-                                })
-                                    .then(onLogout);
+                                }).then(onLogout);
                             }}
                         >
                             Logout

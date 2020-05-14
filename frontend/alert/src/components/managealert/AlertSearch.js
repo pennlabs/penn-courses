@@ -30,7 +30,12 @@ export const AlertSearch = ({ value, onChange }) => (
     <SearchFlex valign>
         <SearchBarFlex valign margin="0.2rem">
             <Img src={Search} alt="" width="0.6rem" height="0.6rem" />
-            <SearchInput type="search" placeholder="Search" value={value} onChange={onChange} />
+            <SearchInput
+                type="search"
+                placeholder="Search"
+                value={value}
+                onChange={onChange}
+            />
         </SearchBarFlex>
     </SearchFlex>
 );
