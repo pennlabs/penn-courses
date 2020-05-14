@@ -1,16 +1,15 @@
 from django.db.models import Q
-from options.models import get_value
 from rest_framework import filters
 
 from courses.models import Requirement
 
 
-def requirement_filter(queryset, req_ids, semester):
+def requirement_filter(queryset, req_ids):
     query = Q()
     for req_id in req_ids.split(","):
         code, school = req_id.split("@")
         try:
-            requirement = Requirement.objects.get(semester=semester, code=code, school=school)
+            requirement = Requirement.objects.get(code=code, school=school)
         except Requirement.DoesNotExist:
             continue
         query &= Q(id__in=requirement.satisfying_courses.all())
@@ -20,7 +19,7 @@ def requirement_filter(queryset, req_ids, semester):
 
 
 def bound_filter(field):
-    def filter_bounds(queryset, bounds, semester=None):
+    def filter_bounds(queryset, bounds):
         lower_bound, upper_bound = bounds.split("-")
         lower_bound = float(lower_bound)
         upper_bound = float(upper_bound)
@@ -34,7 +33,7 @@ def bound_filter(field):
 
 
 def choice_filter(field):
-    def filter_choices(queryset, choices, semester=None):
+    def filter_choices(queryset, choices):
         query = Q()
         for choice in choices.split(","):
             query = query | Q(**{field: choice})
@@ -44,13 +43,6 @@ def choice_filter(field):
 
 
 class CourseSearchFilterBackend(filters.BaseFilterBackend):
-    def get_semester(self, request):
-        semester = self.kwargs.get("semester", "current")
-        if semester == "current":
-            semester = get_value("SEMESTER", "all")
-
-        return semester
-
     def filter_queryset(self, request, queryset, view):
         filters = {
             "requirements": requirement_filter,
@@ -64,7 +56,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         for field, filter_func in filters.items():
             param = request.query_params.get(field)
             if param is not None:
-                queryset = filter_func(queryset, param, self.get_semester())
+                queryset = filter_func(queryset, param)
 
         return queryset.distinct()
 
