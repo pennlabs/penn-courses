@@ -6,7 +6,7 @@ import AwesomeDebouncePromise from "awesome-debounce-promise";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { faHistory } from "@fortawesome/free-solid-svg-icons";
 
-import { useOnClickOutside } from "./shared/useOnClickOutside";
+import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { Input } from "./Input";
 
 /* A function that takes in a search term and returns a promise with both the search term and

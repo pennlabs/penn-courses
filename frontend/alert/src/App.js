@@ -5,11 +5,11 @@ import ReactGA from "react-ga";
 import * as Sentry from "@sentry/browser";
 
 import "./App.css";
+import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import Logo from "./assets/PCA_logo.svg";
 import ManageAlertWrapper from "./components/managealert";
 import { maxWidth, PHONE } from "./constants";
 import Footer from "./components/Footer";
-import AccountIndicator from "./components/shared/accounts/AccountIndicator";
 import AlertForm from "./components/AlertForm";
 
 import { Center, Container, Flex } from "./components/common/layout";

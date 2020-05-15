@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
+import LoginButton from "pcx-shared-components/src/accounts/LoginButton";
 import Modal from "./common/modal";
-import LoginButton from "./shared/accounts/LoginButton";
 import { Center } from "./common/layout";
 
 const LoginButtonContainer = styled.div`
