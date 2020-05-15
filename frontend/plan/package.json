@@ -32,8 +32,7 @@
     "redux": "^4.0.4",
     "redux-thunk": "^2.3.0",
     "scroll-into-view-if-needed": "^2.2.22",
-    "styled-components": "^5.0.1",
-    "precommit": "lint-staged"
+    "styled-components": "^5.0.1"
   },
   "scripts": {
     "start": "cpx \"../shared-components/src/**/*\" src/components/shared && react-scripts start && fg",
@@ -44,7 +43,8 @@
     "codecov": "echo no codecov",
     "eject": "react-scripts eject",
     "lint": "eslint src",
-    "lint-fix": "eslint src --fix"
+    "lint-fix": "eslint src --fix",
+    "precommit": "lint-staged"
   },
   "eslintConfig": {
     "extends": "react-app"
