@@ -1,10 +1,12 @@
 {
     "parser": "babel-eslint",
+    "plugins": ["prettier"],
     "extends": ["airbnb", "react-app", "prettier", "prettier/react"],
     "env": {
         "browser": true
     },
     "rules": {
+        "prettier/prettier": "error",
         "quotes": ["error", "double", "avoid-escape"],
         "no-unused-vars": ["error", {"args": "none"}],
         "import/prefer-default-export": 0,
