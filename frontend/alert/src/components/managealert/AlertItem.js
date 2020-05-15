@@ -1,7 +1,8 @@
 import React from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
-import { GridItem, P } from "./ManageAlertStyledComponents";
+import { GridItem } from "../common/layout";
+import { P } from "../common/common";
 import { ActionButton } from "./ActionButton";
 import { AlertStatus, AlertAction, AlertRepeat } from "./AlertItemEnums";
 
