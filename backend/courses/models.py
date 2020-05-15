@@ -3,7 +3,6 @@ import uuid
 
 import phonenumbers
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Avg, FloatField, OuterRef, Q, Subquery
@@ -13,6 +12,9 @@ from django.utils import timezone
 from options.models import get_value
 
 from review.models import ReviewBit
+
+
+User = get_user_model()
 
 
 def get_current_semester():
@@ -36,6 +38,7 @@ class Instructor(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     name = models.CharField(max_length=255, unique=True, db_index=True)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
@@ -76,7 +79,7 @@ def review_averages(queryset, subfilters):
                 ReviewBit.objects.filter(field=field, **subfilters)
                 .values("field")
                 .order_by()
-                .annotate(avg=Avg("score"))
+                .annotate(avg=Avg("average"))
                 .values("avg")[:1],
                 output_field=FloatField(),
             )
@@ -115,7 +118,7 @@ class Course(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="courses")
-    code = models.CharField(max_length=8)
+    code = models.CharField(max_length=8, db_index=True)
     semester = models.CharField(max_length=5, db_index=True)
 
     title = models.TextField()
@@ -207,7 +210,7 @@ class Section(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    code = models.CharField(max_length=16)
+    code = models.CharField(max_length=16, db_index=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
     full_code = models.CharField(max_length=32, blank=True, db_index=True)
 

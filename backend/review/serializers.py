@@ -7,7 +7,7 @@ from review.models import Review, ReviewBit
 class ReviewBitSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReviewBit
-        fields = ("field", "score")
+        fields = ("field", "average")
 
 
 class ReviewSerializer(serializers.ModelSerializer):

@@ -23,7 +23,7 @@ class CourseListTestCase(TestCase):
         set_semester()
 
     def test_get_courses(self):
-        response = self.client.get("/api/courses/all/courses/")
+        response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))
         self.assertEqual(len(response.data), 2)
         course_codes = [d["id"] for d in response.data]
         self.assertTrue("CIS-120" in course_codes and "MATH-114" in course_codes)
@@ -34,30 +34,30 @@ class CourseListTestCase(TestCase):
         new_sem = TEST_SEMESTER[:-1] + "Z"
         create_mock_data("MATH-104-001", new_sem)
 
-        response = self.client.get(f"/api/courses/{TEST_SEMESTER}/courses/")
+        response = self.client.get(reverse("courses-list", kwargs={"semester": TEST_SEMESTER}))
         self.assertEqual(len(response.data), 2)
 
-        response = self.client.get(f"/api/courses/{new_sem}/courses/")
+        response = self.client.get(reverse("courses-list", kwargs={"semester": new_sem}))
         self.assertEqual(len(response.data), 1)
 
-        response = self.client.get("/api/courses/all/courses/")
+        response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))
         self.assertEqual(len(response.data), 3)
 
     def test_current_semester(self):
         new_sem = TEST_SEMESTER[:-1] + "Z"
+        response = self.client.get(reverse("courses-list", kwargs={"semester": "current"}))
         create_mock_data("MATH-104-001", new_sem)
-        response = self.client.get(f"/api/courses/current/courses/")
         self.assertEqual(len(response.data), 2)
 
     def test_course_with_no_sections_not_in_list(self):
         self.math.sections.all().delete()
-        response = self.client.get("/api/courses/all/courses/")
+        response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))
         self.assertEqual(len(response.data), 1, response.data)
 
     def test_course_with_cancelled_sections_not_in_list(self):
         self.math1.status = "X"
         self.math1.save()
-        response = self.client.get("/api/courses/all/courses/")
+        response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))
         self.assertEqual(response.data[1]["num_sections"], 0, response.data)
 
 
@@ -73,7 +73,9 @@ class CourseDetailTestCase(TestCase):
 
     def test_get_course(self):
         course, section = create_mock_data("CIS-120-201", TEST_SEMESTER)
-        response = self.client.get("/api/courses/all/courses/CIS-120/")
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["id"], "CIS-120")
         self.assertEqual(len(response.data["sections"]), 2)
@@ -84,7 +86,9 @@ class CourseDetailTestCase(TestCase):
         section.credits = 1
         section.status = "X"
         section.save()
-        response = self.client.get("/api/courses/all/courses/CIS-120/")
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["id"], "CIS-120")
         self.assertEqual(len(response.data["sections"]), 1, response.data["sections"])
@@ -93,7 +97,9 @@ class CourseDetailTestCase(TestCase):
         course, section = create_mock_data("CIS-120-201", TEST_SEMESTER)
         section.credits = None
         section.save()
-        response = self.client.get("/api/courses/all/courses/CIS-120/")
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["id"], "CIS-120")
         self.assertEqual(len(response.data["sections"]), 1, response.data["sections"])
@@ -101,13 +107,17 @@ class CourseDetailTestCase(TestCase):
     def test_course_no_good_sections(self):
         self.section.status = "X"
         self.section.save()
-        response = self.client.get("/api/courses/all/courses/CIS-120/")
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["id"], "CIS-120")
         self.assertEqual(len(response.data["sections"]), 0)
 
     def test_not_get_course(self):
-        response = self.client.get("/api/courses/all/courses/CIS-160/")
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-160"})
+        )
         self.assertEqual(response.status_code, 404)
 
 
@@ -178,8 +188,8 @@ class RequirementListTestCase(TestCase):
         get_or_create_course(
             "CIS", "120", "2012A"
         )  # dummy course to make sure we're filtering by semester
-        self.course = get_or_create_course("CIS", "120", TEST_SEMESTER)
-        self.course2 = get_or_create_course("CIS", "125", TEST_SEMESTER)
+        self.course, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
         self.department = Department.objects.get(code="CIS")
 
         self.req1 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1")

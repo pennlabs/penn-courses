@@ -5,6 +5,7 @@
 *.pyc
 __pycache__/
 .coverage
+.log
 node_modules/
 npm-debug.log*
 yarn-debug.log*
