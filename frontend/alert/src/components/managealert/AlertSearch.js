@@ -2,7 +2,8 @@ import React from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 import Search from "../../assets/search.svg";
-import { Flex, Img } from "./ManageAlertStyledComponents";
+import { Flex } from "../common/layout";
+import { Img } from "../common/common";
 
 const SearchFlex = styled(Flex)`
     background-color: #f4f4f4;

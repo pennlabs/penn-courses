@@ -3,7 +3,7 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 import Header from "./Header";
 import Logo from "../../assets/PCA_logo.svg";
-import { Flex } from "./ManageAlertStyledComponents";
+import { Flex } from "../common/layout";
 import { AlertSearch } from "./AlertSearch";
 import { AlertItem } from "./AlertItem";
 import "./ManageAlert.module.css";
