@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 import "./Search.css";
+import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
@@ -21,7 +22,6 @@ import {
     updateSearch,
     clearAllScheduleData,
 } from "../../actions";
-import AccountIndicator from "../shared/accounts/AccountIndicator";
 import { login, logout } from "../../actions/login";
 
 function shouldSearch(filterData) {

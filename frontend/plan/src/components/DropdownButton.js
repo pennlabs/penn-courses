@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { useOnClickOutside } from "./shared/useOnClickOutside";
+import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 
 export function DropdownButton({
     title,
