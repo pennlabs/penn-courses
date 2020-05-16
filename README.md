@@ -69,14 +69,65 @@ you'd like to load in **ALL** courses, omit the query parameter. Note
 that this will take a long time, as all sections in Penn's course catalog,
 along with rooms, buildings, and instructors will be loaded in.
 
-## Handling shared components
+## Frontend Monorepo Infrastructure
 
-There are several shared components between PCA and PCP, which are located in
- `frontend/shared-components`. In order for linting of the shared components to work 
- properly, run `npm install` within the `frontend/shared-components` directory.
- This will automatically allow `frontend/shared-components` to be linted when
- either PCP or PCA is linted. `npm start` and `npm run build` in the frontend
- for either project will already sync the shared components with the actual
- projects. However, the project files corresponding with the shared components
- will not live update unless you run `npm run sync-shared-components` in the
- frontend project you're working on.
+Since our frontend codebase for Penn Courses products are closely related, we've
+decided to opt for a monorepo version control system to allow for easier 
+code-sharing and aid future development. Currently, the `frontend/` directory 
+houses 3 projects, namely `Penn Course Alert`, `Penn Course Plan` and 
+`pcx-shared-components`, a library containing reusable React components/hooks 
+that are used in both PCA and PCP. 
+
+### Setting Up Development Environment 
+We use [Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/) 
+to handle development dependency installation/resolution. In 
+`frontend/package.json`, we have defined the directories of each project 
+as a workspace, and running `yarn install` in `frontend/` will install 
+dependencies for each project to `frontend/node_modules`. Note that currently,
+both PCA and PCP have `pcx-shared-components` as a dependency as defined in 
+their respective `package.json` configurations, so `yarn` will automatically 
+symlink `frontend/node_modules/pcx-shared-components` to `frontend/pcx-shared-components`
+and both PCA and PCP codebases can use shared components simply by 
+doing `import _ from "pcx-shared-components"`. 
+
+### Modifications to CRA 
+By using Yarn Workspaces as described above, dependencies from another project 
+are treated as an outside dependency, and therefore should be built and transpiled
+in order to make use of them. However, having to rebuild shared dependencies 
+while working on another project introduces another layer to the build process
+during development, and cannot make use of hot-reloading directly. Therefore, 
+we opted to modify CRA default Babel configurations to include all projects 
+defined in the Yarn Workspace during transpilation, making it possible for 
+hot-reloading set up in CRA to work as usual, even for editing code from 
+another project that is set up as a dependency. 
+
+There are however some caveats. This makes use of `react-app-rewired`
+and `customize-cra`, which come with warnings that using these 
+packages will "break the guarantees that CRA provides" and 
+"no support will be provided". This will no longer be 
+a concern when we move to `next.js`, since they support custom Webpack
+configurations out of the box. We also use `get-yarn-workspaces` 
+in our Babel configurations to automatically include all projects 
+defined in our Yarn Workspace as transpilation sources.
+
+### Pre-commit Hooks
+To ensure our code base is consistent and adheres to good style, 
+we also set up a pre-commit hook using `husky` to run 
+Prettier and ESLint on all staged Javascript files. This makes
+use of `lint-staged`. Note that a commit will not succeed if 
+it does not pass ESLint. It is important to note that 
+`eslint-disable next-line` might not work as intended sometimes, 
+since Prettier might reformat code such that the offending line
+is no longer directly below the ESLint hint. One can avoid this 
+issue by using `eslint-disable` and `eslint-enable` for 
+a block of code instead. 
+
+Pre-commit hooks are executed by `lerna`, which runs the 
+script `precommit` in each workspace defined in their 
+respective `package.json` configurations. These scripts 
+all use `lint-staged`, which are configured in 
+`.lintstagedrc.yml`.
+
+
+
+
