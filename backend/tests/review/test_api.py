@@ -22,62 +22,104 @@ def create_review(section_code, semester, instructor_name, bits):
     import_review(section, instructor, None, None, None, bits, lambda x, y: None)
 
 
-class OneReviewTestCase(TestCase):
+class PCRTestMixin(object):
+    """
+    This mixin class contains a utility function for quickly writing new tests.
+    """
+
+    def assertDictContains(self, entire, subdict, path=list()):
+        """
+        Assert that one dictionary is the subset of another.
+        """
+        if isinstance(entire, dict) and isinstance(subdict, dict):
+            sublist = subdict.items()
+        elif isinstance(entire, list) and isinstance(subdict, list):
+            sublist = enumerate(subdict)
+        else:
+            return self.assertEqual(entire, subdict, "/".join(path))
+
+        for k, v in sublist:
+            self.assertDictContains(entire[k], subdict[k], path + [str(k)])
+
+    def assertRequestContains(self, url, args, expected):
+        """
+        Do the equivalent of a "subset" check on the response from an API endpoint.
+        :param url: `name` of django view
+        :param args: single or multiple arguments for view.
+        :param expected: expected values from view.
+        """
+        if not isinstance(args, list):
+            args = [args]
+        res = self.client.get(reverse(url, args=args))
+        self.assertEqual(200, res.status_code)
+        self.assertDictContains(res.data, expected)
+
+
+"""
+Below are some utility functions that make writing out the response.data dictionaries
+a bit easier to do. All of the tests use instructor_quality as the reviewbit to test.
+these helper functions cut down on a lot of the repeated characters in the responses.
+"""
+
+
+def ratings_dict(lbl, n):
+    return {lbl: {"rInstructorQuality": n}}
+
+
+def average(n):
+    return ratings_dict("average_reviews", n)
+
+
+def recent(n):
+    return ratings_dict("recent_reviews", n)
+
+
+def rating(n):
+    return ratings_dict("ratings", n)
+
+
+def average_and_recent(a, r):
+    return {**average(a), **recent(r)}
+
+
+class OneReviewTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
 
     def test_course(self):
-        res = self.client.get(reverse("course-reviews", kwargs={"course_code": "CIS-120"}))
-        self.assertEqual(200, res.status_code)
-        averages = res.data.get("average_reviews")
-        recent = res.data.get("recent_reviews")
-        i1 = res.data.get("instructors").get(self.instructor_name)
-        i1_averages = i1.get("average_reviews")
-        i1_recents = i1.get("recent_reviews")
-        self.assertEqual(1, res.data.get("num_semesters"))
-        for d in [averages, recent, i1_averages, i1_recents]:
-            for dp in [averages, recent, i1_averages, i1_recents]:
-                self.assertDictEqual(d, dp)
+        self.assertRequestContains(
+            "course-reviews",
+            "CIS-120",
+            {
+                **average_and_recent(4, 4),
+                "instructors": {self.instructor_name: {**average_and_recent(4, 4)}},
+            },
+        )
 
     def test_instructor(self):
-        res = self.client.get(reverse("instructor-reviews", args=[Instructor.objects.get().pk]))
-        self.assertEqual(200, res.status_code)
-        averages = res.data.get("average_reviews")
-        recent = res.data.get("recent_reviews")
-        c1 = res.data.get("courses").get("CIS-120")
-        c1_averages = c1.get("average_reviews")
-        c1_recents = c1.get("recent_reviews")
-        self.assertEqual(1, len(res.data.get("courses")))
-        for d in [averages, recent, c1_averages, c1_recents]:
-            for dp in [averages, recent, c1_averages, c1_recents]:
-                self.assertDictEqual(d, dp)
+        self.assertRequestContains(
+            "instructor-reviews",
+            Instructor.objects.get().pk,
+            {**average_and_recent(4, 4), "courses": {"CIS-120": {**average_and_recent(4, 4)}}},
+        )
 
     def test_department(self):
-        res = self.client.get(reverse("department-reviews", args=["CIS"]))
-        self.assertEqual(200, res.status_code)
-        self.assertEqual(1, len(res.data.get("courses")))
-        self.assertEqual(
-            4, res.data.get("courses")[0].get("average_reviews").get("rInstructorQuality")
-        )
-        self.assertEqual(
-            4, res.data.get("courses")[0].get("recent_reviews").get("rInstructorQuality")
+        self.assertRequestContains(
+            "department-reviews", "CIS", {"courses": [average_and_recent(4, 4)]}
         )
 
     def test_history(self):
-        res = self.client.get(
-            reverse("course-history", args=["CIS-120", Instructor.objects.get().pk])
+        self.assertRequestContains(
+            "course-history", ["CIS-120", Instructor.objects.get().pk], {"sections": [rating(4)]}
         )
-        self.assertEqual(200, res.status_code)
-        self.assertEqual(1, len(res.data.get("sections")))
-        self.assertEqual(4, res.data.get("sections")[0].get("ratings").get("rInstructorQuality"))
 
     def test_autocomplete(self):
         set_semester()
-        res = self.client.get(reverse("review-autocomplete"))
-        self.assertEqual(200, res.status_code)
-        self.assertDictEqual(
+        self.assertRequestContains(
+            "review-autocomplete",
+            [],
             {
                 "instructors": [
                     {
@@ -97,11 +139,10 @@ class OneReviewTestCase(TestCase):
                     {"title": "CIS", "desc": "", "url": reverse("department-reviews", args=["CIS"])}
                 ],
             },
-            res.data,
         )
 
 
-class TwoSemestersOneInstructorTestCase(TestCase):
+class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
@@ -109,22 +150,42 @@ class TwoSemestersOneInstructorTestCase(TestCase):
         create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
 
     def test_course(self):
-        res = self.client.get(reverse("course-reviews", kwargs={"course_code": "CIS-120"}))
-        self.assertEqual(200, res.status_code)
-        averages = res.data.get("average_reviews")
-        recent = res.data.get("recent_reviews")
-        i1 = res.data.get("instructors").get(self.instructor_name)
-        i1_averages = i1.get("average_reviews")
-        i1_recents = i1.get("recent_reviews")
-        self.assertEqual(2, res.data.get("num_semesters"))
-        self.assertEqual(3, averages.get("rInstructorQuality"))
-        self.assertEqual(4, recent.get("rInstructorQuality"))
-        self.assertEqual(3, i1_averages.get("rInstructorQuality"))
-        self.assertEqual(4, i1_recents.get("rInstructorQuality"))
-        self.assertEqual(TEST_SEMESTER, i1.get("latest_semester"))
+        self.assertRequestContains(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 2,
+                **average_and_recent(3, 4),
+                "instructors": {
+                    self.instructor_name: {
+                        **average_and_recent(3, 4),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+        )
+
+    def test_instructor(self):
+        self.assertRequestContains(
+            "instructor-reviews",
+            Instructor.objects.get().pk,
+            {**average_and_recent(3, 4), "courses": {"CIS-120": average_and_recent(3, 4)}},
+        )
+
+    def test_department(self):
+        self.assertRequestContains(
+            "department-reviews", "CIS", {"courses": [average_and_recent(3, 4)]}
+        )
+
+    def test_history(self):
+        self.assertRequestContains(
+            "course-history",
+            ["CIS-120", Instructor.objects.get().pk],
+            {"sections": [rating(4), rating(2)]},
+        )
 
 
-class SemesterWithFutureCourseTestCase(TestCase):
+class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
@@ -133,150 +194,196 @@ class SemesterWithFutureCourseTestCase(TestCase):
         create_review("CIS-160-001", "3008C", self.instructor_name, {"instructor_quality": 2})
 
     def test_course(self):
-        res = self.client.get(reverse("course-reviews", kwargs={"course_code": "CIS-120"}))
-        self.assertEqual(200, res.status_code)
-        averages = res.data.get("average_reviews")
-        recent = res.data.get("recent_reviews")
-        i1 = res.data.get("instructors").get(self.instructor_name)
-        i1_averages = i1.get("average_reviews")
-        i1_recents = i1.get("recent_reviews")
-        self.assertEqual(2, res.data.get("num_semesters"))
-        self.assertEqual(3, averages.get("rInstructorQuality"))
-        self.assertEqual(4, recent.get("rInstructorQuality"))
-        self.assertEqual(3, i1_averages.get("rInstructorQuality"))
-        self.assertEqual(4, i1_recents.get("rInstructorQuality"))
-        self.assertEqual(TEST_SEMESTER, i1.get("latest_semester"))
+        self.assertRequestContains(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 2,
+                **average_and_recent(3, 4),
+                "instructors": {
+                    self.instructor_name: {
+                        **average_and_recent(3, 4),
+                        "latest_semester": TEST_SEMESTER,
+                    }
+                },
+            },
+        )
 
 
-class TwoInstructorsOneSectionTestCase(TestCase):
+class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
+        self.instructor1 = Instructor.objects.get(name=self.instructor_name)
+        self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
-        res = self.client.get(reverse("course-reviews", kwargs={"course_code": "CIS-120"}))
-        self.assertEqual(200, res.status_code)
-        averages = res.data.get("average_reviews")
-        recent = res.data.get("recent_reviews")
-        self.assertEqual(3, averages.get("rInstructorQuality"))
-        self.assertEqual(3, recent.get("rInstructorQuality"))
-        self.assertEqual(
-            4,
-            res.data.get("instructors")
-            .get(self.instructor_name)
-            .get("average_reviews")
-            .get("rInstructorQuality"),
+        self.assertRequestContains(
+            "course-reviews",
+            "CIS-120",
+            {
+                **average_and_recent(3, 3),
+                "instructors": {
+                    self.instructor_name: average_and_recent(4, 4),
+                    "Instructor Two": average_and_recent(2, 2),
+                },
+            },
         )
-        self.assertEqual(
-            4,
-            res.data.get("instructors")
-            .get(self.instructor_name)
-            .get("recent_reviews")
-            .get("rInstructorQuality"),
+
+    def test_instructor(self):
+        self.assertRequestContains(
+            "instructor-reviews",
+            self.instructor1.pk,
+            {**average_and_recent(4, 4), "courses": {"CIS-120": average_and_recent(4, 4)}},
         )
-        self.assertEqual(
-            2,
-            res.data.get("instructors")
-            .get("Instructor Two")
-            .get("average_reviews")
-            .get("rInstructorQuality"),
-        )
-        self.assertEqual(
-            2,
-            res.data.get("instructors")
-            .get("Instructor Two")
-            .get("recent_reviews")
-            .get("rInstructorQuality"),
+
+        self.assertRequestContains(
+            "instructor-reviews",
+            self.instructor2.pk,
+            {**average_and_recent(2, 2), "courses": {"CIS-120": average_and_recent(2, 2)}},
         )
 
 
-class TwoSectionTestCase(TestCase):
+class TwoSectionTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
+        self.instructor1 = Instructor.objects.get(name=self.instructor_name)
+        self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
-        res = self.client.get(reverse("course-reviews", kwargs={"course_code": "CIS-120"}))
-        self.assertEqual(200, res.status_code)
-        averages = res.data.get("average_reviews")
-        recent = res.data.get("recent_reviews")
-        self.assertEqual(3, averages.get("rInstructorQuality"))
-        self.assertEqual(3, recent.get("rInstructorQuality"))
-        self.assertEqual(
-            4,
-            res.data.get("instructors")
-            .get(self.instructor_name)
-            .get("average_reviews")
-            .get("rInstructorQuality"),
+        self.assertRequestContains(
+            "course-reviews",
+            "CIS-120",
+            {
+                **average_and_recent(3, 3),
+                "instructors": {
+                    self.instructor_name: average_and_recent(4, 4),
+                    "Instructor Two": average_and_recent(2, 2),
+                },
+            },
         )
-        self.assertEqual(
-            4,
-            res.data.get("instructors")
-            .get(self.instructor_name)
-            .get("recent_reviews")
-            .get("rInstructorQuality"),
+
+    def test_instructor(self):
+        self.assertRequestContains(
+            "instructor-reviews",
+            self.instructor1.pk,
+            {**average_and_recent(4, 4), "courses": {"CIS-120": average_and_recent(4, 4)}},
         )
-        self.assertEqual(
-            2,
-            res.data.get("instructors")
-            .get("Instructor Two")
-            .get("average_reviews")
-            .get("rInstructorQuality"),
-        )
-        self.assertEqual(
-            2,
-            res.data.get("instructors")
-            .get("Instructor Two")
-            .get("recent_reviews")
-            .get("rInstructorQuality"),
+
+        self.assertRequestContains(
+            "instructor-reviews",
+            self.instructor2.pk,
+            {**average_and_recent(2, 2), "courses": {"CIS-120": average_and_recent(2, 2)}},
         )
 
 
-def TwoInstructorsMultipleSemestersTestCase(TestCase):
+class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("CIS-120-001", "2017A", "Instructor Two", {"instructor_quality": 2})
+
         create_review("CIS-120-900", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review("CIS-120-003", "2012C", "Instructor Two", {"instructor_quality": 1})
-        create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
 
     def test_course(self):
-        res = self.client.get(reverse("course-reviews", kwargs={"course_code": "CIS-120"}))
-        self.assertEqual(200, res.status_code)
-        averages = res.data.get("average_reviews")
-        recent = res.data.get("recent_reviews")
-        self.assertEqual(2.25, averages.get("rInstructorQuality"))
-        self.assertEqual(2.25, recent.get("rInstructorQuality"))
-        self.assertEqual(
-            3,
-            res.data.get("instructors")
-            .get(self.instructor_name)
-            .get("average_reviews")
-            .get("rInstructorQuality"),
+        self.assertRequestContains(
+            "course-reviews",
+            "CIS-120",
+            {
+                **average_and_recent(2.25, 4),
+                "instructors": {
+                    self.instructor_name: {
+                        **average_and_recent(3, 4),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                    "Instructor Two": {**average_and_recent(1.5, 2), "latest_semester": "2017A"},
+                },
+            },
         )
-        self.assertEqual(
-            3,
-            res.data.get("instructors")
-            .get(self.instructor_name)
-            .get("recent_reviews")
-            .get("rInstructorQuality"),
+
+
+class TwoDepartmentTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+        create_review("MATH-114-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
+        create_review("ENM-211-003", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 3})
+        self.instructor1 = Instructor.objects.get(name="Instructor One")
+        self.instructor2 = Instructor.objects.get(name="Instructor Two")
+
+    def test_course(self):
+        self.assertRequestContains(
+            "course-reviews",
+            "MATH-114",
+            {
+                **average_and_recent(2, 2),
+                "instructors": {self.instructor2.name: average_and_recent(2, 2)},
+            },
         )
-        self.assertEqual(
-            1.5,
-            res.data.get("instructors")
-            .get("Instructor Two")
-            .get("average_reviews")
-            .get("rInstructorQuality"),
+
+    def test_instructor(self):
+        self.assertRequestContains(
+            "instructor-reviews",
+            self.instructor2.pk,
+            {
+                **average_and_recent(2.5, 2.5),
+                "courses": {
+                    "MATH-114": average_and_recent(2, 2),
+                    "ENM-211": average_and_recent(3, 3),
+                },
+            },
         )
-        self.assertEqual(
-            1.5,
-            res.data.get("instructors")
-            .get("Instructor Two")
-            .get("recent_reviews")
-            .get("rInstructorQuality"),
+
+    def test_autocomplete(self):
+        set_semester()
+        self.assertRequestContains(
+            "review-autocomplete",
+            [],
+            {
+                "instructors": [
+                    {
+                        "title": "Instructor One",
+                        "desc": "CIS",
+                        "url": reverse("instructor-reviews", args=[self.instructor1.pk]),
+                    },
+                    {
+                        "title": "Instructor Two",
+                        "desc": "ENM,MATH",
+                        "url": reverse("instructor-reviews", args=[self.instructor2.pk]),
+                    },
+                ],
+                "courses": [
+                    {
+                        "title": "CIS-120",
+                        "desc": [""],
+                        "url": reverse("course-reviews", args=["CIS-120"]),
+                    }
+                ],
+                "departments": [
+                    {"title": "CIS", "desc": "", "url": reverse("department-reviews", args=["CIS"])}
+                ],
+            },
         )
+
+
+class NotFoundTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_course(self):
+        self.assertEqual(404, self.client.get("course-reviews", args=["BLAH"]).status_code)
+
+    def test_instructor(self):
+        self.assertEqual(404, self.client.get("instructor-reviews", args=["BLAH"]).status_code)
+
+    def test_department(self):
+        self.assertEqual(404, self.client.get("department-reviews", args=["BLAH"]).status_code)
+
+    def test_history(self):
+        self.assertEqual(404, self.client.get("course-history", args=["BLAH"]).status_code)

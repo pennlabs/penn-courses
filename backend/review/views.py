@@ -1,4 +1,5 @@
 from django.db.models import F, OuterRef, Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from options.models import get_value
@@ -60,6 +61,8 @@ def course_reviews(request, course_code):
     """
     Get all reviews for a given course, aggregated by instructor.
     """
+    if not Course.objects.filter(full_code=course_code).exists():
+        raise Http404()
     course = annotate_average_and_recent(
         Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
         match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
@@ -189,7 +192,7 @@ def autocomplete(request):
             }
         instructor_set[inst["id"]]["desc"].add(inst["section__course__department__code"])
     instructor_set = [
-        {"title": v["title"], "desc": ",".join(list(v["desc"])), "url": v["url"],}
+        {"title": v["title"], "desc": ",".join(sorted(list(v["desc"]))), "url": v["url"],}
         for k, v in instructor_set.items()
     ]
 
