@@ -3,7 +3,8 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 import Bell from "../../assets/bell.svg";
 import XBell from "../../assets/bell-off.svg";
-import { Flex, Img, P } from "./ManageAlertStyledComponents";
+import { Flex } from "../common/layout";
+import { Img, P } from "../common/common";
 import { AlertAction } from "./AlertItemEnums";
 
 const ActionFlex = styled(Flex)`
