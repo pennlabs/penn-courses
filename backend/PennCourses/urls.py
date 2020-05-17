@@ -8,7 +8,7 @@ from alert.views import accept_webhook
 from courses.views import UserView
 
 
-urlpatterns = [
+api_urlpatterns = [
     path("plan/", include("plan.urls")),
     path("alert/", include("alert.urls")),
     path("courses/", include("courses.urls")),
@@ -31,7 +31,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/me/", UserView.as_view()),
     path("accounts/", include("accounts.urls", namespace="accounts")),
-    path("api/", include(urlpatterns)),
+    path("api/", include(api_urlpatterns)),
     path("webhook", accept_webhook, name="webhook"),
 ]
 

@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "debug_toolbar",
     "corsheaders",
     "shortener.apps.ShortenerConfig",
     "accounts.apps.AccountsConfig",
@@ -55,7 +54,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -66,7 +64,7 @@ MIDDLEWARE = [
     # 'accounts.middleware.OAuth2TokenMiddleware',
 ]
 
-ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls.api")
+ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls")
 
 TEMPLATES = [
     {
@@ -179,6 +177,3 @@ MESSAGE_BROKER_URL = REDIS_URL
 REST_FRAMEWORK = {
     "COERCE_DECIMAL_TO_STRING": False,
 }
-
-# Django Debug Toolbar
-INTERNAL_IPS = ["127.0.0.1"]
