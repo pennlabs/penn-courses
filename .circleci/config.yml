@@ -35,7 +35,8 @@ workflows:
           name: publish-plan
           requires:
             - check-frontend
-          path: frontend/plan
+          path: frontend
+          dockerfile: frontend/plan
           cache_from: "pennlabs/pcp-frontend:latest"
           image: "pennlabs/pcp-frontend"
           tag: "${CIRCLE_SHA1},latest"
@@ -45,7 +46,8 @@ workflows:
           name: publish-alert
           requires:
             - check-frontend
-          path: frontend/alert
+          path: frontend
+          dockerfile: frontend/alert
           cache_from: "pennlabs/pca-frontend:latest"
           image: "pennlabs/pca-frontend"
           tag: "${CIRCLE_SHA1},latest"
