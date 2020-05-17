@@ -66,7 +66,7 @@ MIDDLEWARE = [
     # 'accounts.middleware.OAuth2TokenMiddleware',
 ]
 
-ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls.api")
+ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls")
 
 TEMPLATES = [
     {
