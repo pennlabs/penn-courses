@@ -19,14 +19,8 @@ workflows:
           project-name: "PennCourses"
           project-location: backend
       - react-tools/check:
-          name: check-alert
-          project-location: frontend/alert
-      - react-tools/check:
-          name: check-plan
-          project-location: frontend/plan
-      - react-tools/check:
-          name: check-shared
-          project-location: frontend/shared-components
+          name: check-frontend
+          project-location: frontend
       - docker/publish:
           name: publish-backend
           requires:

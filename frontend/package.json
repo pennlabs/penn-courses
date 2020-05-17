@@ -6,6 +6,9 @@
     "plan"
   ],
   "private": true,
+  "scripts": {
+    "lint": "lerna run lint"
+  },
   "devDependencies": {
     "husky": "^4.2.5",
     "lerna": "^3.21.0"
