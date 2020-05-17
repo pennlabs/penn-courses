@@ -34,8 +34,7 @@ workflows:
       - docker/publish:
           name: publish-plan
           requires:
-            - check-plan
-            - check-shared
+            - check-frontend
           path: frontend/plan
           cache_from: "pennlabs/pcp-frontend:latest"
           image: "pennlabs/pcp-frontend"
@@ -45,8 +44,7 @@ workflows:
       - docker/publish:
           name: publish-alert
           requires:
-            - check-alert
-            - check-shared
+            - check-frontend
           path: frontend/alert
           cache_from: "pennlabs/pca-frontend:latest"
           image: "pennlabs/pca-frontend"
