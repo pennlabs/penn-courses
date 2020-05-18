@@ -36,7 +36,7 @@ workflows:
           requires:
             - check-frontend
           path: frontend
-          dockerfile: frontend/plan
+          dockerfile: frontend/plan/Dockerfile
           cache_from: "pennlabs/pcp-frontend:latest"
           image: "pennlabs/pcp-frontend"
           tag: "${CIRCLE_SHA1},latest"
@@ -47,7 +47,7 @@ workflows:
           requires:
             - check-frontend
           path: frontend
-          dockerfile: frontend/alert
+          dockerfile: frontend/alert/Dockerfile
           cache_from: "pennlabs/pca-frontend:latest"
           image: "pennlabs/pca-frontend"
           tag: "${CIRCLE_SHA1},latest"
