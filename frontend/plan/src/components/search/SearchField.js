@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 export function SearchField({
-    startSearch, updateSearchText, filterData, isDisabled, setTab, mobileView,
+    startSearch,
+    updateSearchText,
+    filterData,
+    isDisabled,
+    setTab,
+    mobileView,
 }) {
     const [searchValue, setSearchValue] = useState("");
 
@@ -17,7 +22,11 @@ export function SearchField({
     };
 
     return (
-        <div role="button" onClick={() => (mobileView ? setTab(0) : null)} className="control has-icons-left">
+        <div
+            role="button"
+            onClick={() => (mobileView ? setTab(0) : null)}
+            className="control has-icons-left"
+        >
             <input
                 id="searchbar"
                 type="text"

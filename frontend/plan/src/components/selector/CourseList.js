@@ -2,9 +2,10 @@ import React, { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import Course from "./Course";
 
-const goodEasy = ({ difficulty, course_quality: courseQuality }) => (!difficulty
-    || !courseQuality ? 0
-    : Math.pow(courseQuality + 0.5, 1.5) / (difficulty + 1));
+const goodEasy = ({ difficulty, course_quality: courseQuality }) =>
+    !difficulty || !courseQuality
+        ? 0
+        : Math.pow(courseQuality + 0.5, 1.5) / (difficulty + 1);
 
 /**
  * Sorts courses by the given sort mode
@@ -17,10 +18,12 @@ const courseSort = (courses, sortMode) => {
     sorted.sort((courseA, courseB) => {
         switch (sortMode && sortMode.toLowerCase()) {
             case "quality":
-                return !courseB.course_quality ? -1
+                return !courseB.course_quality
+                    ? -1
                     : courseB.course_quality - courseA.course_quality;
             case "difficulty":
-                return !courseB.difficulty ? -1
+                return !courseB.difficulty
+                    ? -1
                     : courseA.difficulty - courseB.difficulty;
             case "good & easy":
                 return goodEasy(courseB) - goodEasy(courseA);
@@ -32,7 +35,11 @@ const courseSort = (courses, sortMode) => {
 };
 
 const CourseList = ({
-    courses, getCourse, sortMode, scrollPos, setScrollPos,
+    courses,
+    getCourse,
+    sortMode,
+    scrollPos,
+    setScrollPos,
 }) => {
     const listRef = useRef(null);
     useEffect(() => {
@@ -45,12 +52,13 @@ const CourseList = ({
 
     return (
         <div className="scroll-container">
-            <div style={{
-                display: "flex",
-                flexDirection: "row",
-                paddingBottom: "1em",
-                paddingLeft: "2em",
-            }}
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    paddingBottom: "1em",
+                    paddingLeft: "2em",
+                }}
             >
                 <div
                     className="header"
@@ -61,20 +69,21 @@ const CourseList = ({
                 >
                     COURSE
                 </div>
-                <div className="header" style={{ width: "20%" }}>QUAL</div>
-                <div className="header" style={{ width: "20%" }}>DIFF</div>
+                <div className="header" style={{ width: "20%" }}>
+                    QUAL
+                </div>
+                <div className="header" style={{ width: "20%" }}>
+                    DIFF
+                </div>
             </div>
             <ul className="scrollable course-list" ref={listRef}>
-                {
-                    courseSort(courses, sortMode)
-                        .map(course => (
-                            <Course
-                                key={course.id}
-                                course={course}
-                                onClick={() => getCourse(course.id)}
-                            />
-                        ))
-                }
+                {courseSort(courses, sortMode).map((course) => (
+                    <Course
+                        key={course.id}
+                        course={course}
+                        onClick={() => getCourse(course.id)}
+                    />
+                ))}
             </ul>
         </div>
     );

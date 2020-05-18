@@ -5,7 +5,10 @@ import Tag from "./Tag";
 import "bulma-popover/css/bulma-popver.min.css";
 
 export default function TagList({
-    elements, onClick = null, limit = 1, select = null,
+    elements,
+    onClick = null,
+    limit = 1,
+    select = null,
 }) {
     const [expanded, setExpanded] = useState(false);
     const visibleTags = elements.slice(0, limit);
@@ -15,15 +18,19 @@ export default function TagList({
         tagPopover = (
             <span>
                 {!expanded && (
-                    <Tag
-                        isAdder
-                        onClick={() => setExpanded(true)}
-                    >
-                        {expanded ? "Hide requirements" : `+${hiddenTags.length}`}
+                    <Tag isAdder onClick={() => setExpanded(true)}>
+                        {expanded
+                            ? "Hide requirements"
+                            : `+${hiddenTags.length}`}
                     </Tag>
                 )}
-                <span className="taglist" style={{ height: expanded ? "auto" : 0 }}>
-                    {hiddenTags.map(elt => <Tag key={elt}>{elt}</Tag>)}
+                <span
+                    className="taglist"
+                    style={{ height: expanded ? "auto" : 0 }}
+                >
+                    {hiddenTags.map((elt) => (
+                        <Tag key={elt}>{elt}</Tag>
+                    ))}
                 </span>
                 {expanded && (
                     <a role="button" onClick={() => setExpanded(false)}>
@@ -35,7 +42,7 @@ export default function TagList({
     }
     return (
         <span>
-            {visibleTags.map(elt => (
+            {visibleTags.map((elt) => (
                 <Tag
                     key={elt}
                     onClick={onClick && (() => onClick(elt.replace(/ /g, "-")))}

@@ -5,11 +5,11 @@ import ReactGA from "react-ga";
 import * as Sentry from "@sentry/browser";
 
 import "./App.css";
+import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import Logo from "./assets/PCA_logo.svg";
 import ManageAlertWrapper from "./components/managealert";
 import { maxWidth, PHONE } from "./constants";
 import Footer from "./components/Footer";
-import AccountIndicator from "./components/shared/accounts/AccountIndicator";
 import AlertForm from "./components/AlertForm";
 
 import { Center, Container, Flex } from "./components/common/layout";
@@ -53,13 +53,10 @@ const NavElt = styled.a`
     display: flex;
     flex-direction: column;
     justify-content: center;
-    font-weight: ${props => (props.active ? "bold" : "normal")};
+    font-weight: ${(props) => (props.active ? "bold" : "normal")};
 `;
 
-
-const Nav = ({
-    login, logout, user, page, setPage,
-}) => (
+const Nav = ({ login, logout, user, page, setPage }) => (
     <NavContainer>
         <NavElt>
             <AccountIndicator
@@ -71,8 +68,26 @@ const Nav = ({
                 logout={logout}
             />
         </NavElt>
-        <NavElt href="/" active={page === "home"} onClick={(e) => { e.preventDefault(); setPage("home"); }}>Home</NavElt>
-        <NavElt href="/manage" active={page === "manage"} onClick={(e) => { e.preventDefault(); setPage("manage"); }}>Manage Alerts</NavElt>
+        <NavElt
+            href="/"
+            active={page === "home"}
+            onClick={(e) => {
+                e.preventDefault();
+                setPage("home");
+            }}
+        >
+            Home
+        </NavElt>
+        <NavElt
+            href="/manage"
+            active={page === "manage"}
+            onClick={(e) => {
+                e.preventDefault();
+                setPage("manage");
+            }}
+        >
+            Manage Alerts
+        </NavElt>
     </NavContainer>
 );
 
@@ -91,12 +106,17 @@ const Heading = () => (
     </Center>
 );
 
-
-const genId = (() => { let counter = 0; return () => counter++; })(); // eslint-disable-line
+const genId = (() => {
+    let counter = 0;
+    // eslint-disable-next-line
+    return () => counter++;
+})();
 
 function App() {
     const [user, setUser] = useState(null);
-    const [page, setPage] = useState(window.location.hash === "#manage" ? "manage" : "home");
+    const [page, setPage] = useState(
+        window.location.hash === "#manage" ? "manage" : "home"
+    );
     const [messages, setMessages] = useState([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -105,21 +125,25 @@ function App() {
         ReactGA.pageview(window.location.pathname + window.location.search);
     }, []);
 
-
     const MESSAGE_EXPIRATION_MILLIS = 8000;
-    const removeMessage = k => setMessages(msgs => msgs.filter(m => m.key !== k));
+    const removeMessage = (k) =>
+        setMessages((msgs) => msgs.filter((m) => m.key !== k));
     const addMessage = ({ message, status }) => {
         const id = genId();
-        setMessages(msgs => [{ message, status, key: id }].concat(msgs));
+        setMessages((msgs) => [{ message, status, key: id }].concat(msgs));
         setTimeout(() => removeMessage(id), MESSAGE_EXPIRATION_MILLIS);
     };
 
     const setResponse = (res) => {
         const { status } = res;
         res.json()
-            .then(j => addMessage({ message: j.message, status }))
+            .then((j) => addMessage({ message: j.message, status }))
             .catch((e) => {
-                addMessage({ message: "We're sorry, there was an error in sending your message to our servers.", status: 500 });
+                addMessage({
+                    message:
+                        "We're sorry, there was an error in sending your message to our servers.",
+                    status: 500,
+                });
                 console.log(e); // eslint-ignore-line
                 Sentry.captureException(e);
             });
@@ -149,17 +173,28 @@ function App() {
                     user={user}
                     page={page}
                     setPage={(p) => {
-                        ReactGA.event({ category: "Navigation", action: "Changed Page", label: p }); setPage(p);
+                        ReactGA.event({
+                            category: "Navigation",
+                            action: "Changed Page",
+                            label: p,
+                        });
+                        setPage(p);
                     }}
                 />
-                <MessageList messages={messages} removeMessage={removeMessage} />
+                <MessageList
+                    messages={messages}
+                    removeMessage={removeMessage}
+                />
                 <Heading />
                 {page === "home" ? (
                     <Flex col grow={1}>
-                        {user ? <AlertForm user={user} setResponse={setResponse} /> : null}
+                        {user ? (
+                            <AlertForm user={user} setResponse={setResponse} />
+                        ) : null}
                     </Flex>
-                ) : <ManageAlertWrapper />
-                }
+                ) : (
+                    <ManageAlertWrapper />
+                )}
                 <Footer />
             </Container>
         </>

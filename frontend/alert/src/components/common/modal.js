@@ -19,7 +19,7 @@ const ModalContainer = styled.div`
 
 const ModalBackground = styled.div`
     background-color: #707070;
-    opacity: .75;
+    opacity: 0.75;
     bottom: 0;
     left: 0;
     position: absolute;
@@ -28,8 +28,8 @@ const ModalBackground = styled.div`
 `;
 
 const ModalCard = styled.div`
-    max-width: 400px!important;
-    max-height: 400px!important;
+    max-width: 400px !important;
+    max-height: 400px !important;
     border-radius: 4px;
     display: flex;
     flex-direction: column;
@@ -40,8 +40,8 @@ const ModalCard = styled.div`
 `;
 
 const ModalCardHead = styled.header`
-    border-bottom: none!important;
-    background-color: #fff!important;
+    border-bottom: none !important;
+    background-color: #fff !important;
     font-weight: 700;
     padding-left: 2rem;
     padding-right: 2rem;
@@ -72,17 +72,10 @@ const Modal = ({ children, title, headerIcon }) => (
         <ModalBackground />
         <ModalCard>
             <ModalCardHead center={!headerIcon}>
-                <header>
-                    {title}
-                </header>
+                <header>{title}</header>
                 {headerIcon && <img alt="" src={headerIcon} />}
             </ModalCardHead>
-            {children
-            && (
-                <ModalCardBody>
-                    {children}
-                </ModalCardBody>
-            )}
+            {children && <ModalCardBody>{children}</ModalCardBody>}
         </ModalCard>
     </ModalContainer>
 );

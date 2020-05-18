@@ -5,9 +5,7 @@ import { ScheduleSelectorDropdown } from "../../schedule/ScheduleSelectorDropdow
 
 class SummaryDropdown extends Component {
     computeStats = () => {
-        const {
-            schedData,
-        } = this.props;
+        const { schedData } = this.props;
 
         // Computes the following statistics from schedule from props
         // 1. Average hours per day
@@ -33,12 +31,7 @@ class SummaryDropdown extends Component {
         const dayHoursMap = new Map();
 
         courseList.forEach((course) => {
-            const {
-                meetHour,
-                hourLength,
-                revs,
-                meetDay,
-            } = course;
+            const { meetHour, hourLength, revs, meetDay } = course;
             data.earlyt = Math.min(data.earlyt, meetHour);
             data.latet = Math.max(data.latet, meetHour + hourLength);
             data.avgdf += revs.cD;
@@ -57,7 +50,7 @@ class SummaryDropdown extends Component {
         data.avgdf /= numCourses;
 
         return data;
-    }
+    };
 
     parseTime = (time) => {
         if (time > 11) {
@@ -67,7 +60,7 @@ class SummaryDropdown extends Component {
             return `${time} PM`;
         }
         return `${time} AM`;
-    }
+    };
 
     render() {
         const data = this.computeStats();
@@ -75,22 +68,47 @@ class SummaryDropdown extends Component {
             <Dropdown
                 defText="Summary"
                 contents={[
-                    [`Earliest Class: ${(data === null ? "N/A" : this.parseTime(data.earlyt))}`, () => {}],
-                    [`Latest Class: ${(data === null ? "N/A" : this.parseTime(data.latet))}`, () => {}],
-                    [`Longest Day: ${(data === null ? "N/A" : `${data.maxhoursd} hours`)}`, () => {}],
-                    [`Average Hours/Day: ${(data === null ? "N/A" : data.avghr.toFixed(2))}`, () => {}],
-                    [`Average Difficulty: ${(data === null ? "N/A" : data.avgdf.toFixed(2))}`, () => {}]
+                    [
+                        `Earliest Class: ${
+                            data === null ? "N/A" : this.parseTime(data.earlyt)
+                        }`,
+                        () => {},
+                    ],
+                    [
+                        `Latest Class: ${
+                            data === null ? "N/A" : this.parseTime(data.latet)
+                        }`,
+                        () => {},
+                    ],
+                    [
+                        `Longest Day: ${
+                            data === null ? "N/A" : `${data.maxhoursd} hours`
+                        }`,
+                        () => {},
+                    ],
+                    [
+                        `Average Hours/Day: ${
+                            data === null ? "N/A" : data.avghr.toFixed(2)
+                        }`,
+                        () => {},
+                    ],
+                    [
+                        `Average Difficulty: ${
+                            data === null ? "N/A" : data.avgdf.toFixed(2)
+                        }`,
+                        () => {},
+                    ],
                 ]}
             />
         );
     }
 }
 
-const mapStateToProps = state => (
-    {
-        schedData: state ? state.schedule.schedules[state.schedule.scheduleSelected] : undefined,
-    }
-);
+const mapStateToProps = (state) => ({
+    schedData: state
+        ? state.schedule.schedules[state.schedule.scheduleSelected]
+        : undefined,
+});
 
 export default connect(mapStateToProps, null)(SummaryDropdown);
 

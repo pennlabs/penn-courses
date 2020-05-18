@@ -24,11 +24,11 @@ export default function MyCircularProgressBar(props) {
     }
     return (
         <CircularProgressbar
-            value={value / 4 * 100}
+            value={(value / 4) * 100}
             strokeWidth="14"
-            text={(value === 0) ? "N/A" : `${parseFloat(value.toFixed(2))}`}
+            text={value === 0 ? "N/A" : `${parseFloat(value.toFixed(2))}`}
             styles={buildStyles({
-            // Rotation of path and trail, in number of turns (0-1)
+                // Rotation of path and trail, in number of turns (0-1)
                 rotation: 0,
 
                 // Whether to use rounded or flat corners on the ends - can use 'butt' or 'round'
@@ -52,7 +52,6 @@ export default function MyCircularProgressBar(props) {
         />
     );
 }
-
 
 MyCircularProgressBar.propTypes = {
     value: PropTypes.number,

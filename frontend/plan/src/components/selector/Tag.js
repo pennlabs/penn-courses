@@ -6,7 +6,9 @@ export default function Tag({ children, onClick = null, isAdder = false }) {
         <span
             role="button"
             onClick={onClick}
-            className={`tag is-rounded is-light detail-tag${isAdder ? " is-adder" : ""}`}
+            className={`tag is-rounded is-light detail-tag${
+                isAdder ? " is-adder" : ""
+            }`}
         >
             {children}
         </span>

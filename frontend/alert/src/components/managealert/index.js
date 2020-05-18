@@ -5,59 +5,62 @@ import { ManageAlert } from "./ManageAlertUI";
 import { AlertStatus, AlertRepeat, AlertAction } from "./AlertItemEnums";
 import getCsrf from "../../csrf";
 
-const fetchAlerts = () => (
-    fetch("/api/alert/registrations/")
-        .then(res => res.json())
-);
+const fetchAlerts = () =>
+    fetch("/api/alert/registrations/").then((res) => res.json());
 
 const processAlerts = (setAlerts) => {
-    const fetchPromise = () => (
-        fetchAlerts()
-            .then(res => (
-                res.map((registration) => {
-                    let datetime = null;
-                    if (registration.notification_sent) {
-                        const date = Intl.DateTimeFormat("en-US")
-                            .format(new Date(
-                                registration.notification_sent_at
-                            ));
-                        const time = Intl.DateTimeFormat("en-US", {
-                            hour: "numeric",
-                            minute: "numeric",
-                            hour12: true,
-                        }).format(new Date(registration.notification_sent_at));
-                        datetime = `${date} at ${time}`;
-                    }
+    const fetchPromise = () =>
+        fetchAlerts().then((res) =>
+            res.map((registration) => {
+                let datetime = null;
+                if (registration.notification_sent) {
+                    const date = Intl.DateTimeFormat("en-US").format(
+                        new Date(registration.notification_sent_at)
+                    );
+                    const time = Intl.DateTimeFormat("en-US", {
+                        hour: "numeric",
+                        minute: "numeric",
+                        hour12: true,
+                    }).format(new Date(registration.notification_sent_at));
+                    datetime = `${date} at ${time}`;
+                }
 
-                    const status = registration.section_status && registration.section_status === "O"
-                        ? AlertStatus.Open : AlertStatus.Closed;
+                const status =
+                    registration.section_status &&
+                    registration.section_status === "O"
+                        ? AlertStatus.Open
+                        : AlertStatus.Closed;
 
-                    let repeat;
-                    if (registration.is_active) {
-                        if (registration.auto_resubscribe) {
-                            repeat = AlertRepeat.EOS;
-                        } else {
-                            repeat = AlertRepeat.Once;
-                        }
+                let repeat;
+                if (registration.is_active) {
+                    if (registration.auto_resubscribe) {
+                        repeat = AlertRepeat.EOS;
                     } else {
-                        repeat = AlertRepeat.Inactive;
+                        repeat = AlertRepeat.Once;
                     }
+                } else {
+                    repeat = AlertRepeat.Inactive;
+                }
 
-                    return {
-                        id: registration.id,
-                        originalCreatedAt: registration.original_created_at,
-                        section: registration.section,
-                        alertLastSent: datetime,
-                        status,
-                        repeat,
-                        actions: (repeat === AlertRepeat.Once || repeat === AlertRepeat.EOS)
-                            ? AlertAction.Cancel : AlertAction.Resubscribe,
-                    };
-                })
-            )));
+                return {
+                    id: registration.id,
+                    originalCreatedAt: registration.original_created_at,
+                    section: registration.section,
+                    alertLastSent: datetime,
+                    status,
+                    repeat,
+                    actions:
+                        repeat === AlertRepeat.Once ||
+                        repeat === AlertRepeat.EOS
+                            ? AlertAction.Cancel
+                            : AlertAction.Resubscribe,
+                };
+            })
+        );
 
-    AwesomeDebouncePromise(fetchPromise, 300)()
-        .then(alerts => setAlerts(alerts));
+    AwesomeDebouncePromise(fetchPromise, 300)().then((alerts) =>
+        setAlerts(alerts)
+    );
 };
 
 const filterAlerts = (alerts, filter) => {
@@ -117,11 +120,9 @@ const getActionPromise = (id, actionenum) => {
  * id {number} and actionenum {AlertAction}
  *
  */
-const actionHandler = callback => (id, actionenum) => {
-    getActionPromise(id, actionenum)
-        .then(res => callback());
+const actionHandler = (callback) => (id, actionenum) => {
+    getActionPromise(id, actionenum).then((res) => callback());
 };
-
 
 /**
  * A generic batch alert item action handler that takes in
@@ -135,8 +136,9 @@ const actionHandler = callback => (id, actionenum) => {
  * executes the action on idList
  */
 const batchActionHandler = (callback, idList) => (actionenum) => {
-    Promise.all(idList.map(id => getActionPromise(id, actionenum)))
-        .then(res => callback());
+    Promise.all(
+        idList.map((id) => getActionPromise(id, actionenum))
+    ).then((res) => callback());
 };
 
 const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
@@ -196,7 +198,11 @@ const ManageAlertWrapper = () => {
             {/* <ManageAlertHeader /> */}
             <ManageAlert
                 setFilter={(f) => {
-                    ReactGA.event({ category: "Manage Alerts", action: "filter", value: f });
+                    ReactGA.event({
+                        category: "Manage Alerts",
+                        action: "filter",
+                        value: f,
+                    });
                     setFilter(f);
                 }}
                 alerts={currAlerts}
@@ -204,12 +210,18 @@ const ManageAlertWrapper = () => {
                 setAlertSel={setAlertSel}
                 batchSelected={batchSelected}
                 setBatchSelected={setBatchSelected}
-                actionButtonHandler={actionHandler(() => processAlerts(setAlerts))}
-                batchSelectHandler={batchSelectHandler(setAlertSel, currAlerts, alerts)}
-                batchActionHandler={
-                    batchActionHandler(() => processAlerts(setAlerts),
-                        Object.keys(alertSel).filter(id => alertSel[id]))
-                }
+                actionButtonHandler={actionHandler(() =>
+                    processAlerts(setAlerts)
+                )}
+                batchSelectHandler={batchSelectHandler(
+                    setAlertSel,
+                    currAlerts,
+                    alerts
+                )}
+                batchActionHandler={batchActionHandler(
+                    () => processAlerts(setAlerts),
+                    Object.keys(alertSel).filter((id) => alertSel[id])
+                )}
             />
         </>
     );

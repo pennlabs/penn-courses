@@ -11,8 +11,12 @@ import LoginButton from "./LoginButton";
  */
 
 const AccountIndicator = ({
-    user, login, logout,
-    onLeft, backgroundColor, nameLength,
+    user,
+    login,
+    logout,
+    onLeft,
+    backgroundColor,
+    nameLength,
 }) => {
     useEffect(() => {
         if (user) {
@@ -24,25 +28,24 @@ const AccountIndicator = ({
                     logout();
                     return;
                 }
-                response.json()
-                    .then(newUser => login(newUser));
+                response.json().then((newUser) => login(newUser));
             })
             .catch(logout);
     }, [login, logout, user]);
 
-    return user
-        ? (
-            <UserSelector
-                backgroundColor={backgroundColor}
-                nameLength={nameLength}
-                user={user}
-                onLogout={() => {
-                    logout();
-                }}
-                onLeft={onLeft}
-            />
-        )
-        : <LoginButton />;
+    return user ? (
+        <UserSelector
+            backgroundColor={backgroundColor}
+            nameLength={nameLength}
+            user={user}
+            onLogout={() => {
+                logout();
+            }}
+            onLeft={onLeft}
+        />
+    ) : (
+        <LoginButton />
+    );
 };
 
 AccountIndicator.propTypes = {

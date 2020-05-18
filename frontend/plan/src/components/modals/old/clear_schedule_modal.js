@@ -4,8 +4,11 @@ import GenericModal from "../generic_modal_container";
 
 export const CLEAR_SCHEDULE_MODAL_NAME = "clear_schedule_modal";
 
-
-function ClearScheduleModalInterior({ modalActionState, clearSchedule, close }) {
+function ClearScheduleModalInterior({
+    modalActionState,
+    clearSchedule,
+    close,
+}) {
     if (modalActionState === "success") {
         clearSchedule();
         close();

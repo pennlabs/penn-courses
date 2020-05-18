@@ -64,189 +64,145 @@ export const ATTEMPT_DELETION = "ATTEMPT_DELETION";
 export const ATTEMPT_SCHEDULE_CREATION = "ATTEMPT_SCHEDULE_CREATION";
 export const UNSUCCESSFUL_SCHEDULE_CREATION = "UNSUCCESSFUL_SCHEDULE_CREATION";
 
+export const markScheduleSynced = (scheduleName) => ({
+    scheduleName,
+    type: MARK_SCHEDULE_SYNCED,
+});
 
-export const markScheduleSynced = scheduleName => (
-    {
-        scheduleName,
-        type: MARK_SCHEDULE_SYNCED,
-    }
-);
-
-export const markCartSynced = () => (
-    {
-        type: MARK_CART_SYNCED,
-    }
-);
+export const markCartSynced = () => ({
+    type: MARK_CART_SYNCED,
+});
 
 const doAPIRequest = (path, options = {}) => fetch(`/api/plan${path}`, options);
 
+export const duplicateSchedule = (scheduleName) => ({
+    type: DUPLICATE_SCHEDULE,
+    scheduleName,
+});
 
-export const duplicateSchedule = scheduleName => (
-    {
-        type: DUPLICATE_SCHEDULE,
-        scheduleName,
-    }
-);
+export const deleteSchedule = (scheduleName) => ({
+    type: DELETE_SCHEDULE,
+    scheduleName,
+});
 
-export const deleteSchedule = scheduleName => (
-    {
-        type: DELETE_SCHEDULE,
-        scheduleName,
-    }
-);
+export const renameSchedule = (oldName, newName) => ({
+    type: RENAME_SCHEDULE,
+    oldName,
+    newName,
+});
 
-export const renameSchedule = (oldName, newName) => (
-    {
-        type: RENAME_SCHEDULE,
-        oldName,
-        newName,
-    }
-);
+export const changeSchedule = (scheduleId) => ({
+    type: CHANGE_SCHEDULE,
+    scheduleId,
+});
 
-export const changeSchedule = scheduleId => (
-    {
-        type: CHANGE_SCHEDULE,
-        scheduleId,
-    }
-);
+export const addSchedItem = (section) => ({
+    type: ADD_SCHED_ITEM,
+    section,
+});
 
-export const addSchedItem = section => (
-    {
-        type: ADD_SCHED_ITEM,
-        section,
-    }
-);
+export const addCartItem = (section) => ({
+    type: ADD_CART_ITEM,
+    section,
+});
 
-export const addCartItem = section => (
-    {
-        type: ADD_CART_ITEM,
-        section,
-    }
-);
+export const removeSchedItem = (id) => ({
+    type: REMOVE_SCHED_ITEM,
+    id,
+});
 
-export const removeSchedItem = id => (
-    {
-        type: REMOVE_SCHED_ITEM,
-        id,
-    }
-);
+export const updateSearch = (searchResults) => ({
+    type: UPDATE_SEARCH,
+    searchResults,
+});
 
-export const updateSearch = searchResults => (
-    {
-        type: UPDATE_SEARCH,
-        searchResults,
-    }
-);
-
-export const enforceSemester = semester => ({
+export const enforceSemester = (semester) => ({
     type: ENFORCE_SEMESTER,
     semester,
 });
 
-const updateSearchRequest = () => (
-    {
-        type: UPDATE_SEARCH_REQUEST,
-    }
-);
+const updateSearchRequest = () => ({
+    type: UPDATE_SEARCH_REQUEST,
+});
 
-export const updateSections = sections => (
-    {
-        type: UPDATE_SECTIONS,
-        sections,
-    }
-);
+export const updateSections = (sections) => ({
+    type: UPDATE_SECTIONS,
+    sections,
+});
 
-export const updateSectionInfo = sectionInfo => (
-    {
-        type: OPEN_SECTION_INFO,
-        sectionInfo,
-    }
-);
+export const updateSectionInfo = (sectionInfo) => ({
+    type: OPEN_SECTION_INFO,
+    sectionInfo,
+});
 
-const updateCourseInfoRequest = () => (
-    {
-        type: UPDATE_COURSE_INFO_REQUEST,
-    }
-);
+const updateCourseInfoRequest = () => ({
+    type: UPDATE_COURSE_INFO_REQUEST,
+});
 
-export const updateCourseInfo = course => (
-    {
-        type: UPDATE_COURSE_INFO_SUCCESS,
-        course,
-    }
-);
+export const updateCourseInfo = (course) => ({
+    type: UPDATE_COURSE_INFO_SUCCESS,
+    course,
+});
 
-export const updateScrollPos = (scrollPos = 0) => (
-    {
-        type: UPDATE_SCROLL_POS,
-        scrollPos,
-    }
-);
+export const updateScrollPos = (scrollPos = 0) => ({
+    type: UPDATE_SCROLL_POS,
+    scrollPos,
+});
 
-export const createScheduleOnFrontend = scheduleName => (
-    {
-        type: CREATE_SCHEDULE,
-        scheduleName,
-    }
-);
+export const createScheduleOnFrontend = (scheduleName) => ({
+    type: CREATE_SCHEDULE,
+    scheduleName,
+});
 
 export const clearAllScheduleData = () => ({ type: CLEAR_ALL_SCHEDULE_DATA });
 
-export const openModal = (modalKey, modalProps, modalTitle) => (
-    {
-        type: OPEN_MODAL,
-        modalKey,
-        modalProps,
-        modalTitle,
-    }
-);
+export const openModal = (modalKey, modalProps, modalTitle) => ({
+    type: OPEN_MODAL,
+    modalKey,
+    modalProps,
+    modalTitle,
+});
 
+export const closeModal = () => ({
+    type: CLOSE_MODAL,
+});
 
-export const closeModal = () => (
-    {
-        type: CLOSE_MODAL,
-    }
-);
+export const clearSchedule = () => ({
+    type: CLEAR_SCHEDULE,
+});
 
-export const clearSchedule = () => (
-    {
-        type: CLEAR_SCHEDULE,
-    }
-);
-
-export const loadRequirements = () => (
-    dispatch => (
-        doAPIRequest("/requirements")
-            .then(
-                response => response.json()
-                    .then((data) => {
-                        const obj = {
-                            SAS: [],
-                            SEAS: [],
-                            WH: [],
-                            NURS: [],
-                        };
-                        const selObj = {};
-                        data.forEach((element) => {
-                            obj[element.school].push(element);
-                            selObj[element.id] = 0;
-                        });
-                        dispatch({
-                            type: LOAD_REQUIREMENTS,
-                            obj,
-                            selObj,
-                        });
-                    }, (error) => {
-                        // eslint-disable-next-line no-console
-                        console.log(error);
-                    }),
+export const loadRequirements = () => (dispatch) =>
+    doAPIRequest("/requirements").then(
+        (response) =>
+            response.json().then(
+                (data) => {
+                    const obj = {
+                        SAS: [],
+                        SEAS: [],
+                        WH: [],
+                        NURS: [],
+                    };
+                    const selObj = {};
+                    data.forEach((element) => {
+                        obj[element.school].push(element);
+                        selObj[element.id] = 0;
+                    });
+                    dispatch({
+                        type: LOAD_REQUIREMENTS,
+                        obj,
+                        selObj,
+                    });
+                },
                 (error) => {
                     // eslint-disable-next-line no-console
                     console.log(error);
                 }
-            )
-    )
-);
+            ),
+        (error) => {
+            // eslint-disable-next-line no-console
+            console.log(error);
+        }
+    );
 
 function buildCourseSearchUrl(filterData) {
     let queryString = `/courses/?search=${filterData.searchString}`;
@@ -270,10 +226,18 @@ function buildCourseSearchUrl(filterData) {
 
     // Range filters
     const filterFields = ["difficulty", "course_quality", "instructor_quality"];
-    const defaultFilters = [[0, 4], [0, 4], [0, 4], [0.5, 2]];
+    const defaultFilters = [
+        [0, 4],
+        [0, 4],
+        [0, 4],
+        [0.5, 2],
+    ];
     for (let i = 0; i < filterFields.length; i += 1) {
-        if (filterData[filterFields[i]]
-            && JSON.stringify(filterData[filterFields[i]]) !== JSON.stringify(defaultFilters[i])) {
+        if (
+            filterData[filterFields[i]] &&
+            JSON.stringify(filterData[filterFields[i]]) !==
+                JSON.stringify(defaultFilters[i])
+        ) {
             const filterRange = filterData[filterFields[i]];
             queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
         }
@@ -281,27 +245,32 @@ function buildCourseSearchUrl(filterData) {
 
     // Checkbox Filters
     const checkboxFields = ["cu", "activity"];
-    const checkboxDefaultFields = [{
-        0.5: 0,
-        1: 0,
-        1.5: 0,
-    }, {
-        LAB: 0,
-        REC: 0,
-        SEM: 0,
-        STU: 0,
-    }];
+    const checkboxDefaultFields = [
+        {
+            0.5: 0,
+            1: 0,
+            1.5: 0,
+        },
+        {
+            LAB: 0,
+            REC: 0,
+            SEM: 0,
+            STU: 0,
+        },
+    ];
     for (let i = 0; i < checkboxFields.length; i += 1) {
-        if (filterData[checkboxFields[i]]
-            && JSON.stringify(filterData[checkboxFields[i]])
-            !== JSON.stringify(checkboxDefaultFields[i])) {
+        if (
+            filterData[checkboxFields[i]] &&
+            JSON.stringify(filterData[checkboxFields[i]]) !==
+                JSON.stringify(checkboxDefaultFields[i])
+        ) {
             const applied = [];
-            Object.keys(filterData[checkboxFields[i]])
-                .forEach((item) => { // eslint-disable-line
-                    if (filterData[checkboxFields[i]][item] === 1) {
-                        applied.push(item);
-                    }
-                });
+            Object.keys(filterData[checkboxFields[i]]).forEach((item) => {
+                // eslint-disable-line
+                if (filterData[checkboxFields[i]][item] === 1) {
+                    applied.push(item);
+                }
+            });
             if (applied.length > 0) {
                 queryString += `&${checkboxFields[i]}=${applied[0]}`;
                 for (let j = 1; j < applied.length; j += 1) {
@@ -314,9 +283,8 @@ function buildCourseSearchUrl(filterData) {
     return queryString;
 }
 
-const courseSearch = (_, filterData) => (
-    doAPIRequest(buildCourseSearchUrl(filterData))
-);
+const courseSearch = (_, filterData) =>
+    doAPIRequest(buildCourseSearchUrl(filterData));
 
 const debouncedCourseSearch = AwesomeDebouncePromise(courseSearch, 500);
 
@@ -324,14 +292,17 @@ export function fetchCourseSearch(filterData) {
     return (dispatch) => {
         dispatch(updateSearchRequest());
         debouncedCourseSearch(dispatch, filterData)
-            .then(res => res.json())
-            .then(res => res.filter(course => course.num_sections > 0))
-            .then(res => batch(() => {
-                dispatch(updateScrollPos());
-                dispatch(updateSearch(res));
-                if (res.length === 1) dispatch(fetchCourseDetails(res[0].id));
-            }))
-            .catch(error => dispatch(courseSearchError(error)));
+            .then((res) => res.json())
+            .then((res) => res.filter((course) => course.num_sections > 0))
+            .then((res) =>
+                batch(() => {
+                    dispatch(updateScrollPos());
+                    dispatch(updateSearch(res));
+                    if (res.length === 1)
+                        dispatch(fetchCourseDetails(res[0].id));
+                })
+            )
+            .catch((error) => dispatch(courseSearchError(error)));
     };
 }
 
@@ -345,7 +316,6 @@ export function updateSearchText(s) {
 function buildSectionInfoSearchUrl(searchData) {
     return `/courses/${searchData.param}`;
 }
-
 
 export function courseSearchError(error) {
     return {
@@ -399,27 +369,27 @@ export function clearFilter(propertyName) {
     };
 }
 
-export const deletionAttemptFailed = deletedScheduleId => ({
+export const deletionAttemptFailed = (deletedScheduleId) => ({
     type: DELETION_ATTEMPT_FAILED,
     deletedScheduleId,
 });
 
-export const deletionSuccessful = deletedScheduleId => ({
+export const deletionSuccessful = (deletedScheduleId) => ({
     type: DELETION_ATTEMPT_SUCCEEDED,
     deletedScheduleId,
 });
 
-export const creationUnsuccessful = createdScheduleName => ({
+export const creationUnsuccessful = (createdScheduleName) => ({
     type: UNSUCCESSFUL_SCHEDULE_CREATION,
     scheduleName: createdScheduleName,
 });
 
-export const creationAttempted = createdScheduleName => ({
+export const creationAttempted = (createdScheduleName) => ({
     type: UNSUCCESSFUL_SCHEDULE_CREATION,
     scheduleName: createdScheduleName,
 });
 
-export const attemptDeletion = deletedScheduleId => ({
+export const attemptDeletion = (deletedScheduleId) => ({
     type: ATTEMPT_DELETION,
     deletedScheduleId,
 });
@@ -430,7 +400,7 @@ export function clearAll() {
     };
 }
 
-export const updateSchedules = schedulesFromBackend => ({
+export const updateSchedules = (schedulesFromBackend) => ({
     type: UPDATE_SCHEDULES,
     schedulesFromBackend,
 });
@@ -444,31 +414,32 @@ let lastFetched = 0;
  * @returns {Promise<unknown>}
  */
 
-const rateLimitedFetch = (url, init) => new Promise(((resolve, reject) => {
-    // Wraps the fetch in a new promise that conditionally rejects if
-    // the required amount of time has not elapsed
-    const now = Date.now();
-    if (now - lastFetched > MIN_FETCH_INTERVAL) {
-        doAPIRequest(url, init)
-            .then((result) => {
-                resolve(result);
-            })
-            .catch((err) => {
-                reject(err);
-            });
-        lastFetched = now;
-    } else {
-        reject(new Error("minDelayNotElapsed"));
-    }
-}));
+const rateLimitedFetch = (url, init) =>
+    new Promise((resolve, reject) => {
+        // Wraps the fetch in a new promise that conditionally rejects if
+        // the required amount of time has not elapsed
+        const now = Date.now();
+        if (now - lastFetched > MIN_FETCH_INTERVAL) {
+            doAPIRequest(url, init)
+                .then((result) => {
+                    resolve(result);
+                })
+                .catch((err) => {
+                    reject(err);
+                });
+            lastFetched = now;
+        } else {
+            reject(new Error("minDelayNotElapsed"));
+        }
+    });
 
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
         doAPIRequest(`/courses/${courseId}`)
-            .then(res => res.json())
-            .then(course => dispatch(updateCourseInfo(course)))
-            .catch(error => dispatch(sectionInfoSearchError(error)));
+            .then((res) => res.json())
+            .then((course) => dispatch(updateCourseInfo(course)))
+            .catch((error) => dispatch(sectionInfoSearchError(error)));
     };
 }
 
@@ -481,22 +452,31 @@ export function fetchCourseDetails(courseId) {
  * from the backend)
  * @returns {Function}
  */
-export const fetchBackendSchedulesAndInitializeCart = (cart, shouldInitCart,
-    onComplete = () => null) => (dispatch) => {
+export const fetchBackendSchedulesAndInitializeCart = (
+    cart,
+    shouldInitCart,
+    onComplete = () => null
+) => (dispatch) => {
     doAPIRequest("/schedules/")
-        .then(res => res.json())
+        .then((res) => res.json())
         .then((schedules) => {
             if (schedules) {
                 dispatch(updateSchedules(schedules));
             }
             // if the cart doesn't exist on the backend, create it
-            if (shouldInitCart && !schedules.reduce((acc, { name }) => acc || name === "cart", false)) {
+            if (
+                shouldInitCart &&
+                !schedules.reduce(
+                    (acc, { name }) => acc || name === "cart",
+                    false
+                )
+            ) {
                 dispatch(createScheduleOnBackend("cart", cart));
             }
             onComplete(schedules);
         })
         // eslint-disable-next-line no-console
-        .catch(error => console.log(error, "Not logged in"));
+        .catch((error) => console.log(error, "Not logged in"));
 };
 
 export const creationSuccessful = (name, id) => ({
@@ -540,32 +520,28 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
                 dispatch(markScheduleSynced(name));
             }
         })
-        .catch(() => {
-        });
+        .catch(() => {});
 };
 
 export function fetchSectionInfo(searchData) {
-    return dispatch => (
-        doAPIRequest(buildSectionInfoSearchUrl(searchData))
-            .then(
-                response => response.json()
-                    .then(
-                        (json) => {
-                            const info = {
-                                id: json.id,
-                                description: json.description,
-                                crosslistings: json.crosslistings,
-                            };
-                            const { sections } = json;
-                            dispatch(updateCourseInfo(sections, info));
-                        },
-                        error => dispatch(sectionInfoSearchError(error)),
-                    ),
-                error => dispatch(sectionInfoSearchError(error)),
-            )
-    );
+    return (dispatch) =>
+        doAPIRequest(buildSectionInfoSearchUrl(searchData)).then(
+            (response) =>
+                response.json().then(
+                    (json) => {
+                        const info = {
+                            id: json.id,
+                            description: json.description,
+                            crosslistings: json.crosslistings,
+                        };
+                        const { sections } = json;
+                        dispatch(updateCourseInfo(sections, info));
+                    },
+                    (error) => dispatch(sectionInfoSearchError(error))
+                ),
+            (error) => dispatch(sectionInfoSearchError(error))
+        );
 }
-
 
 /**
  * Creates a schedule on the backend
@@ -589,7 +565,7 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
             sections,
         }),
     })
-        .then(response => response.json())
+        .then((response) => response.json())
         .then(({ id }) => {
             if (id) {
                 dispatch(creationSuccessful(name, id));
@@ -602,7 +578,7 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
         });
 };
 
-export const deleteScheduleOnBackend = deletedScheduleId => (dispatch) => {
+export const deleteScheduleOnBackend = (deletedScheduleId) => (dispatch) => {
     dispatch(attemptDeletion(deletedScheduleId));
     rateLimitedFetch(`/schedules/${deletedScheduleId}/`, {
         method: "DELETE",
@@ -637,17 +613,17 @@ export function courseSearchSuccess(items) {
     };
 }
 
-export const toggleCheck = course => ({
+export const toggleCheck = (course) => ({
     type: TOGGLE_CHECK,
     course,
 });
 
-export const removeCartItem = sectionId => ({
+export const removeCartItem = (sectionId) => ({
     type: REMOVE_CART_ITEM,
     sectionId,
 });
 
-export const changeSortType = sortMode => ({
+export const changeSortType = (sortMode) => ({
     type: CHANGE_SORT_TYPE,
     sortMode,
 });

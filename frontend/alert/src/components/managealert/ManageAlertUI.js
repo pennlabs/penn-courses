@@ -9,7 +9,6 @@ import { AlertItem } from "./AlertItem";
 import "./ManageAlert.module.css";
 import { maxWidth, PHONE } from "../../constants";
 
-
 const Container = styled.div`
     background: #ffffff;
     width: 80%;
@@ -18,7 +17,7 @@ const Container = styled.div`
     flex-grow: 1;
     ${maxWidth(PHONE)} {
         width: 95%;
-        padding: .25rem;
+        padding: 0.25rem;
     }
 `;
 
@@ -37,17 +36,16 @@ const Grid = styled.div`
     grid-template-rows: 1.5rem;
     grid-auto-rows: 3rem;
 
-   ${maxWidth(PHONE)} {
+    ${maxWidth(PHONE)} {
         grid-template-columns: 0fr 0fr 2fr 2fr 3fr 2fr;
-        & > div:nth-child(6n+1) {
+        & > div:nth-child(6n + 1) {
             display: none;
         }
-        & > div:nth-child(6n+2) {
+        & > div:nth-child(6n + 2) {
             display: none;
         }
     }
 `;
-
 
 // const Input = styled.input`
 //     width: 16rem;
@@ -83,11 +81,7 @@ const Grid = styled.div`
 
 export const ManageAlertHeader = () => (
     <Flex margin="-3.4rem 0rem 0rem 0rem">
-        <img
-            alt="Penn Course Alert logo"
-            src={Logo}
-            width="50rem"
-        />
+        <img alt="Penn Course Alert logo" src={Logo} width="50rem" />
 
         {/*     <Flex> */}
         {/*         <Input placeholder="Course" /> */}
@@ -97,13 +91,18 @@ export const ManageAlertHeader = () => (
     </Flex>
 );
 
-
 export const ManageAlert = ({
-    alerts, alertSel, setAlertSel, setFilter,
-    actionButtonHandler, batchActionHandler, batchSelectHandler,
-    batchSelected, setBatchSelected,
+    alerts,
+    alertSel,
+    setAlertSel,
+    setFilter,
+    actionButtonHandler,
+    batchActionHandler,
+    batchSelectHandler,
+    batchSelected,
+    setBatchSelected,
 }) => {
-    const toggleAlert = id => () => {
+    const toggleAlert = (id) => () => {
         setAlertSel({ ...alertSel, [id]: !alertSel[id] });
     };
 
@@ -121,9 +120,11 @@ export const ManageAlert = ({
         if (searchTimeout) {
             clearTimeout(searchTimeout);
         }
-        setSearchTimeout(setTimeout(() => {
-            setFilter({ search: searchText });
-        }, 100));
+        setSearchTimeout(
+            setTimeout(() => {
+                setFilter({ search: searchText });
+            }, 100)
+        );
     };
 
     return (
@@ -151,10 +152,11 @@ export const ManageAlert = ({
                         repeat={alert.repeat}
                         actions={alert.actions}
                         toggleAlert={toggleAlert(alert.id)}
-                        actionButtonHandler={() => actionButtonHandler(alert.id, alert.actions)}
+                        actionButtonHandler={() =>
+                            actionButtonHandler(alert.id, alert.actions)
+                        }
                     />
                 ))}
-
             </Grid>
         </Container>
     );
