@@ -6,18 +6,18 @@ import Toast, { ToastType } from "./Toast";
 import { minWidth, TABLET } from "../constants";
 
 const ToastContainer = styled.div`
-display: flex;
-flex-direction: column;
+    display: flex;
+    flex-direction: column;
 
-div {
-margin-bottom: .25rem;
-}
-${minWidth(TABLET)} {
-position: absolute;
-right: 0;
-margin-top: 1rem;
-margin-right: 2rem;
-}
+    div {
+        margin-bottom: 0.25rem;
+    }
+    ${minWidth(TABLET)} {
+        position: absolute;
+        right: 0;
+        margin-top: 1rem;
+        margin-right: 2rem;
+    }
 `;
 
 const MessageToast = ({ message, status, onClose }) => {
@@ -48,10 +48,7 @@ const MessageToast = ({ message, status, onClose }) => {
             type = ToastType.Warning;
     }
     return (
-        <Toast
-            type={type}
-            onClose={onClose}
-        >
+        <Toast type={type} onClose={onClose}>
             {message}
         </Toast>
     );
@@ -65,16 +62,14 @@ MessageToast.propTypes = {
 
 const MessageList = ({ messages, removeMessage }) => (
     <ToastContainer>
-        {messages.map(
-            ({ message, status, key }) => (
-                <MessageToast
-                    key={key}
-                    status={status}
-                    message={message}
-                    onClose={() => removeMessage(key)}
-                />
-            )
-        )}
+        {messages.map(({ message, status, key }) => (
+            <MessageToast
+                key={key}
+                status={status}
+                message={message}
+                onClose={() => removeMessage(key)}
+            />
+        ))}
     </ToastContainer>
 );
 

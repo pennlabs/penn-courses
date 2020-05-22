@@ -1,24 +1,16 @@
 {
     "parser": "babel-eslint",
-    "extends": ["airbnb", "react-app"],
+    "plugins": ["prettier"],
+    "extends": ["airbnb", "react-app", "prettier", "prettier/react"],
     "env": {
         "browser": true
     },
     "rules": {
-        "indent": ["error", 4, {
-            "SwitchCase": 1
-        }],
+        "prettier/prettier": "error",
         "quotes": ["error", "double", "avoid-escape"],
-        "comma-dangle": ["error", {
-            "objects": "always-multiline",
-            "functions": "ignore"
-        }],
         "no-unused-vars": ["error", {"args": "none"}],
         "import/prefer-default-export": 0,
         "react/jsx-filename-extension": 0,
-        "react/jsx-indent": ["error", 4 ],
-        "react/jsx-indent-props": ["error", 4],
-        "jsx-a11y/anchor-is-valid": 0,
         "jsx-a11y/click-events-have-key-events": 0,
         "jsx-a11y/interactive-supports-focus": 0,
         "react/require-default-props": 0,

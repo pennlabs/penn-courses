@@ -15,14 +15,18 @@ export default function Badge(props) {
     return (
         <span
             className="tag is-rounded"
-            style={value ? {
-                background: `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.15)`,
-                color: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
-                marginRight: "0px",
-            } : {
-                background: "transparent",
-                color: "#ACAEB5",
-            }}
+            style={
+                value
+                    ? {
+                          background: `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.15)`,
+                          color: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
+                          marginRight: "0px",
+                      }
+                    : {
+                          background: "transparent",
+                          color: "#ACAEB5",
+                      }
+            }
         >
             <b>{value ? value.toFixed(1) : "—"}</b>
         </span>

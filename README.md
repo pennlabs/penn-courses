@@ -26,11 +26,8 @@ Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
 5. Make sure everything works by running `python manage.py test` and
 ensuring all tests pass.
 
-### Setting up the the frontends
-Make sure you have `nodejs` installed, which will also install `npm`
-along with it. Current frontend directories are `frontend/plan` and `frontend/alert`.
-1. `cd frontend/<>`
-2. `npm install`
+### Setting up the frontend development environment.
+See [Frontend Monorepo Infrastructure](frontend/README.md).
 
 ## Run in development
 Make sure you're in the base directory of the project.
@@ -40,8 +37,8 @@ To run the backend server, run
 `pipenv run python manage.py runserver 8000`
 
 To run a frontend development server (for example, Penn Course Plan),
-1. `cd frontend/<>`
-2. `npm start`
+1. `cd frontend/plan`
+2. `yarn start`
 
 The local version of the site should open in your default browser, and
 as long as the back-end is running on port 8000, requests will be
@@ -68,15 +65,3 @@ load in. If you're just interested in the CIS department, put `CIS`. If
 you'd like to load in **ALL** courses, omit the query parameter. Note
 that this will take a long time, as all sections in Penn's course catalog,
 along with rooms, buildings, and instructors will be loaded in.
-
-## Handling shared components
-
-There are several shared components between PCA and PCP, which are located in
- `frontend/shared-components`. In order for linting of the shared components to work 
- properly, run `npm install` within the `frontend/shared-components` directory.
- This will automatically allow `frontend/shared-components` to be linted when
- either PCP or PCA is linted. `npm start` and `npm run build` in the frontend
- for either project will already sync the shared components with the actual
- projects. However, the project files corresponding with the shared components
- will not live update unless you run `npm run sync-shared-components` in the
- frontend project you're working on.

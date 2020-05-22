@@ -1,10 +1,9 @@
 /* eslint-disable */
-import React, {Component} from 'react';
-import Line from './Line'
-import Block from './Block'
+import React, { Component } from "react";
+import Line from "./Line";
+import Block from "./Block";
 import connect from "react-redux/es/connect/connect";
-import {removeSchedItem} from "../../actions";
-
+import { removeSchedItem } from "../../actions";
 
 //possible color classes (corresponds with CSS classes)
 const top_colors_recitation_save = ["red", "orange", "pink"];
@@ -54,7 +53,10 @@ const generate_color = (day, hour, name) => {
                 chosen_list = top_colors_other;
             }
         }
-        const index = (["M", "T", "W", "H", "F"].indexOf(day) % 2 + Math.round(hour * 2)) % chosen_list.length;
+        const index =
+            ((["M", "T", "W", "H", "F"].indexOf(day) % 2) +
+                Math.round(hour * 2)) %
+            chosen_list.length;
         const result = chosen_list[index];
         chosen_list.splice(index, 1);
         class_colors[name] = result;
@@ -63,7 +65,6 @@ const generate_color = (day, hour, name) => {
 };
 
 class Schedule extends Component {
-
     constructor(props) {
         super(props);
     }
@@ -73,8 +74,14 @@ class Schedule extends Component {
             return EmptySchedule();
         }
         const courseSched = this.props.schedData.meetings;
-        let weekdays = ['M', 'T', 'W', 'R', 'F'];
-        let fullWeekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        let weekdays = ["M", "T", "W", "R", "F"];
+        let fullWeekdays = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+        ];
         let startHour = 10; // start at 10
         let endHour = 15; // end at 3pm
         let incSun = 0; // no weekends
@@ -91,11 +98,11 @@ class Schedule extends Component {
                     // Push back latest hour if necessary
                     endHour = Math.ceil(secMeetHour + sec.hourLength);
                 }
-                if (sec.meetDay === 'U') {
+                if (sec.meetDay === "U") {
                     // If there are sunday classes
                     incSun = 1;
                 }
-                if (sec.meetDay === 'S') {
+                if (sec.meetDay === "S") {
                     // If there are saturday classes
                     incSat = 1;
                 }
@@ -103,12 +110,12 @@ class Schedule extends Component {
         }
 
         if (incSun === 1) {
-            weekdays.unshift('U');
-            fullWeekdays.unshift('Sunday');
+            weekdays.unshift("U");
+            fullWeekdays.unshift("Sunday");
         } // Update weekdays array if necessary
         if (incSat === 1) {
-            weekdays.push('S');
-            fullWeekdays.push('Saturday');
+            weekdays.push("S");
+            fullWeekdays.push("Saturday");
         }
         let percentWidth = 100 / weekdays.length; // Update the block width if necessary
         let halfScale = 95 / (endHour - startHour + 1); // This defines the scale to be used throughout the scheduling process
@@ -129,8 +136,12 @@ class Schedule extends Component {
                 } else {
                     hourtext += "AM";
                 }
-                lines.push(<Line key={h} y={toppos}/>);
-                timeblocks.push(<div className="TimeBlock" style={{top:toppos+"%"}}>{hourtext}</div>);
+                lines.push(<Line key={h} y={toppos} />);
+                timeblocks.push(
+                    <div className="TimeBlock" style={{ top: toppos + "%" }}>
+                        {hourtext}
+                    </div>
+                );
             }
         }
 
@@ -138,21 +149,31 @@ class Schedule extends Component {
             const blocks = [];
             const meetLetterDay = sec.meetDay; // On which day does this meeting take place?
             const meetRoom = sec.meetLoc;
-            const newid = sec.idDashed + '-' + meetLetterDay + sec.meetHour.toString().replace(".", "");
+            const newid =
+                sec.idDashed +
+                "-" +
+                meetLetterDay +
+                sec.meetHour.toString().replace(".", "");
             const asscsecs = sec.SchedAsscSecs;
 
             const newblock = {
-                'class': sec.idDashed,
-                'letterday': meetLetterDay,
-                'id': newid,
-                'startHr': sec.meetHour,
-                'duration': sec.hourLength,
-                'name': sec.idSpaced,
-                'room': meetRoom,
-                'asscsecs': asscsecs,
-                "topc": "blue",
-                'showWarning': asscsecs.filter(value => -1 !==
-                    courseSched.map((course) => course.idDashed).indexOf(value)).length === 0
+                class: sec.idDashed,
+                letterday: meetLetterDay,
+                id: newid,
+                startHr: sec.meetHour,
+                duration: sec.hourLength,
+                name: sec.idSpaced,
+                room: meetRoom,
+                asscsecs: asscsecs,
+                topc: "blue",
+                showWarning:
+                    asscsecs.filter(
+                        (value) =>
+                            -1 !==
+                            courseSched
+                                .map((course) => course.idDashed)
+                                .indexOf(value)
+                    ).length === 0,
             };
             blocks.push(newblock);
             return blocks;
@@ -172,7 +193,11 @@ class Schedule extends Component {
             block.top = (block.startHr - startHour) * halfScale + 9; // determine top spacing based on time from startHour (offset for prettiness)
             block.height = block.duration * halfScale;
             block.width = percentWidth;
-            block.topc = generate_color(block.letterday, block.startHr, block.name);
+            block.topc = generate_color(
+                block.letterday,
+                block.startHr,
+                block.name
+            );
             return block;
         }
 
@@ -188,18 +213,18 @@ class Schedule extends Component {
         function TwoOverlap(block1, block2) {
             // Thank you to Stack Overflow user BC. for the function this is based on.
             // http://stackoverflow.com/questions/5419134/how-to-detect-if-two-divs-touch-with-jquery
-            var y1 = (block1.startHr || block1.top);
-            var h1 = (block1.duration || block1.height);
+            var y1 = block1.startHr || block1.top;
+            var h1 = block1.duration || block1.height;
             var b1 = y1 + h1;
 
-            var y2 = (block2.startHr || block2.top);
-            var h2 = (block2.duration || block2.height);
+            var y2 = block2.startHr || block2.top;
+            var h2 = block2.duration || block2.height;
             var b2 = y2 + h2;
 
             // This checks if the top of block 2 is lower down (higher value) than the bottom of block 1...
             // or if the top of block 1 is lower down (higher value) than the bottom of block 2.
             // In this case, they are not overlapping, so return false
-            return !(b1 <= (y2 + 0.0000001) || b2 <= (y1 + 0.0000001));
+            return !(b1 <= y2 + 0.0000001 || b2 <= y1 + 0.0000001);
         }
 
         let newSchedBlocks = [];
@@ -218,7 +243,8 @@ class Schedule extends Component {
                     if (TwoOverlap(dayblocks[i], dayblocks[j])) {
                         dayblocks[i].width = dayblocks[i].width / 2;
                         dayblocks[j].width = dayblocks[j].width / 2;
-                        dayblocks[j].left = dayblocks[j].left + dayblocks[i].width;
+                        dayblocks[j].left =
+                            dayblocks[j].left + dayblocks[i].width;
                     }
                 }
             }
@@ -231,63 +257,80 @@ class Schedule extends Component {
         for (let i = 0; i < schedBlocks.length; i++) {
             const block = schedBlocks[i];
             // TODO: Check for associated section
-            blocks.push(<Block topC={block.topc} id={block.id}
-                               assignedClass={block.class} letterDay={block.letterday}
-                               key={i} y={block.top} x={block.left} width={block.width}
-                               height={block.height} name={block.name}
-                               showWarning={block.showWarning}
-                               removeSchedItem={this.props.removeSchedItem}/>);
+            blocks.push(
+                <Block
+                    topC={block.topc}
+                    id={block.id}
+                    assignedClass={block.class}
+                    letterDay={block.letterday}
+                    key={i}
+                    y={block.top}
+                    x={block.left}
+                    width={block.width}
+                    height={block.height}
+                    name={block.name}
+                    showWarning={block.showWarning}
+                    removeSchedItem={this.props.removeSchedItem}
+                />
+            );
         }
         if (blocks.length === 0) {
-            return <EmptySchedule/>
+            return <EmptySchedule />;
         } else {
             let weekdays = [];
             const weekdayNames = fullWeekdays;
             for (let i = 0; i < weekdayNames.length; i++) {
                 var weekday = weekdayNames[i];
-                let label = <div key={i} className="DayName"
-                                 style={{width: percentWidth + "%"}}>
-                    {weekday}
-                </div>;
+                let label = (
+                    <div
+                        key={i}
+                        className="DayName"
+                        style={{ width: percentWidth + "%" }}
+                    >
+                        {weekday}
+                    </div>
+                );
                 weekdays.push(label);
             }
-            return <div id={"SchedGraph"} className={"box"}>
-                <div id={"TimeCol"} style={{position:"relative"}}>
-                    {timeblocks}
-                </div>
-                <div id="Schedule" style={{position: 'relative'}}>
-                    {weekdays}
-                    <div id={"SchedGrid"}>
-                        {lines}{blocks}
+            return (
+                <div id={"SchedGraph"} className={"box"}>
+                    <div id={"TimeCol"} style={{ position: "relative" }}>
+                        {timeblocks}
+                    </div>
+                    <div id="Schedule" style={{ position: "relative" }}>
+                        {weekdays}
+                        <div id={"SchedGrid"}>
+                            {lines}
+                            {blocks}
+                        </div>
                     </div>
                 </div>
-            </div>;
+            );
         }
     }
 }
 
 const mapStateToProps = (state) => {
     return {
-        schedData: state.schedule.schedules[state.schedule.scheduleSelected]
+        schedData: state.schedule.schedules[state.schedule.scheduleSelected],
     };
 };
 
-const mapDispatchToProps = (dispatch) => (
-    {
-        removeSchedItem: idDashed => dispatch(removeSchedItem(idDashed))
-    }
-);
+const mapDispatchToProps = (dispatch) => ({
+    removeSchedItem: (idDashed) => dispatch(removeSchedItem(idDashed)),
+});
 
 export default connect(mapStateToProps, mapDispatchToProps)(Schedule);
 
 const EmptySchedule = () => (
     <div>
-        <p style={{fontSize: "1.5em", marginTop: "7em", display: "block"}}>
-            Search for courses above <br/>then click a section's + icon to add it to the schedule.
+        <p style={{ fontSize: "1.5em", marginTop: "7em", display: "block" }}>
+            Search for courses above <br />
+            then click a section's + icon to add it to the schedule.
         </p>
-        <p style={{fontSize: "1em"}}>
+        <p style={{ fontSize: "1em" }}>
             These are mock schedules.
-            <br/>
+            <br />
             You still need to register for your classes on Penn InTouch.
         </p>
     </div>

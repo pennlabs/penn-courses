@@ -2,7 +2,8 @@ import React from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 import Search from "../../assets/search.svg";
-import { Flex, Img } from "./ManageAlertStyledComponents";
+import { Flex } from "../common/layout";
+import { Img } from "../common/common";
 
 const SearchFlex = styled(Flex)`
     background-color: #f4f4f4;
@@ -30,7 +31,12 @@ export const AlertSearch = ({ value, onChange }) => (
     <SearchFlex valign>
         <SearchBarFlex valign margin="0.2rem">
             <Img src={Search} alt="" width="0.6rem" height="0.6rem" />
-            <SearchInput type="search" placeholder="Search" value={value} onChange={onChange} />
+            <SearchInput
+                type="search"
+                placeholder="Search"
+                value={value}
+                onChange={onChange}
+            />
         </SearchBarFlex>
     </SearchFlex>
 );

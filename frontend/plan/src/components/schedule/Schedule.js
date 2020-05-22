@@ -8,7 +8,9 @@ import {
     removeSchedItem,
     fetchCourseDetails,
     changeSchedule,
-    duplicateSchedule, deleteSchedule, openModal
+    duplicateSchedule,
+    deleteSchedule,
+    openModal,
 } from "../../actions";
 import { getConflictGroups } from "../../meetUtil";
 
@@ -27,7 +29,7 @@ const hashString = (s) => {
     if (s.length === 0) return hash;
     for (let i = 0; i < s.length; i += 1) {
         const chr = s.charCodeAt(i);
-        hash = ((hash << 5) - hash) + chr;
+        hash = (hash << 5) - hash + chr;
         hash |= 0; // Convert to 32bit integer
     }
     return hash;
@@ -43,13 +45,17 @@ const transformTime = (t, roundUp) => {
     return Math.floor(timeDec * 2) / 2;
 };
 
-
 class Schedule extends Component {
     render() {
         const {
-            schedData, removeSection, focusSection,
-            scheduleNames, switchSchedule, schedulesMutator,
-            activeScheduleName, setTab,
+            schedData,
+            removeSection,
+            focusSection,
+            scheduleNames,
+            switchSchedule,
+            schedulesMutator,
+            activeScheduleName,
+            setTab,
         } = this.props;
         const sections = schedData.meetings || [];
 
@@ -59,9 +65,9 @@ class Schedule extends Component {
         let endHour = 16;
 
         // show the weekend days only if there's a section which meets on saturday (S) or sunday (U)
-        const showWeekend = sections.filter(
-            sec => sec.day === "S" || sec.day === "U"
-        ).length > 0;
+        const showWeekend =
+            sections.filter((sec) => sec.day === "S" || sec.day === "U")
+                .length > 0;
 
         // actual schedule elements are offset by the row/col offset since
         // days/times take up a row/col respectively.
@@ -75,7 +81,16 @@ class Schedule extends Component {
         // hash every section to a color, but if that color is taken, try the next color in the
         // colors array. Only start reusing colors when all the colors are used.
         const getColor = (() => {
-            const colors = ["blue", "red", "aqua", "orange", "green", "pink", "sea", "indigo"];
+            const colors = [
+                "blue",
+                "red",
+                "aqua",
+                "orange",
+                "green",
+                "pink",
+                "sea",
+                "indigo",
+            ];
             // some CIS120: `used` is a *closure* storing the colors currently in the schedule
             let used = [];
             return (c) => {
@@ -92,56 +107,54 @@ class Schedule extends Component {
                 return color;
             };
         })();
-        const sectionIds = sections.map(x => x.id);
+        const sectionIds = sections.map((x) => x.id);
         // a meeting is the data that represents a single block on the schedule.
         const meetings = [];
         sections.forEach((s) => {
             const color = getColor(s.id);
-            meetings.push(...s.meetings.map(m => (
-                {
+            meetings.push(
+                ...s.meetings.map((m) => ({
                     day: m.day,
                     start: transformTime(m.start, false),
                     end: transformTime(m.end, true),
                     course: {
                         color,
                         id: s.id,
-                        coreqFulfilled: s.associated_sections.length === 0
-                            || s.associated_sections.filter(
-                                coreq => sectionIds.indexOf(coreq.id) !== -1
+                        coreqFulfilled:
+                            s.associated_sections.length === 0 ||
+                            s.associated_sections.filter(
+                                (coreq) => sectionIds.indexOf(coreq.id) !== -1
                             ).length > 0,
                     },
                     style: {
                         width: "100%",
                         left: 0,
                     },
-                }
-            )));
+                }))
+            );
         });
         // get the minimum start hour and the max end hour to set bounds on the schedule.
         startHour = Math.floor(
-            Math.min(startHour, ...meetings.map(m => m.start))
+            Math.min(startHour, ...meetings.map((m) => m.start))
         );
-        endHour = Math.ceil(
-            Math.max(endHour, ...meetings.map(m => m.end))
-        );
+        endHour = Math.ceil(Math.max(endHour, ...meetings.map((m) => m.end)));
 
-        getConflictGroups(meetings)
-            .forEach((conflict) => {
-                // for every conflict of size k, make the meetings in that conflict
-                // take up (100/k) % of the square, and use `left` to place them
-                // next to each other.
-                const group = Array.from(conflict.values());
-                const w = 100 / group.length;
-                for (let j = 0; j < group.length; j += 1) {
-                    group[j].style = {
-                        width: `${w}%`,
-                        left: `${w * j}%`,
-                    };
-                }
-            });
+        getConflictGroups(meetings).forEach((conflict) => {
+            // for every conflict of size k, make the meetings in that conflict
+            // take up (100/k) % of the square, and use `left` to place them
+            // next to each other.
+            const group = Array.from(conflict.values());
+            const w = 100 / group.length;
+            for (let j = 0; j < group.length; j += 1) {
+                group[j].style = {
+                    width: `${w}%`,
+                    left: `${w * j}%`,
+                };
+            }
+        });
         // generate actual block components.
         // position in grid is determined by the block given the meeting info and grid offsets.
-        const blocks = meetings.map(meeting => (
+        const blocks = meetings.map((meeting) => (
             <Block
                 meeting={meeting}
                 course={meeting.course}
@@ -170,11 +183,14 @@ class Schedule extends Component {
         };
 
         return (
-            <div className="column vertical-section" style={{ paddingRight: "100px !important" }}>
+            <div
+                className="column vertical-section"
+                style={{ paddingRight: "100px !important" }}
+            >
                 <h3 className="section-header">
                     <ScheduleSelectorDropdown
                         activeName={activeScheduleName}
-                        contents={scheduleNames.map(scheduleName => ({
+                        contents={scheduleNames.map((scheduleName) => ({
                             text: scheduleName,
                             onClick: () => switchSchedule(scheduleName),
                         }))}
@@ -187,14 +203,15 @@ class Schedule extends Component {
                         className="schedule vertical-section-contents"
                         style={notEmpty ? dims : { padding: "1rem" }}
                     >
-                        {notEmpty && <Days offset={colOffset} weekend={showWeekend} />}
+                        {notEmpty && (
+                            <Days offset={colOffset} weekend={showWeekend} />
+                        )}
                         {notEmpty && (
                             <Times
                                 startTime={startHour}
                                 endTime={endHour}
                                 numRow={getNumRows() - 2}
                                 offset={rowOffset}
-
                             />
                         )}
                         {notEmpty && (
@@ -229,45 +246,52 @@ Schedule.propTypes = {
     setTab: PropTypes.func,
 };
 
-const mapStateToProps = state => (
-    {
-        schedData: state.schedule.schedules[state.schedule.scheduleSelected],
-        scheduleNames: Object.keys(state.schedule.schedules),
-        activeScheduleName: state.schedule.scheduleSelected,
-    }
-);
+const mapStateToProps = (state) => ({
+    schedData: state.schedule.schedules[state.schedule.scheduleSelected],
+    scheduleNames: Object.keys(state.schedule.schedules),
+    activeScheduleName: state.schedule.scheduleSelected,
+});
 
-
-const mapDispatchToProps = dispatch => (
-    {
-        removeSection: idDashed => dispatch(removeSchedItem(idDashed)),
-        focusSection: id => dispatch(fetchCourseDetails(id)),
-        switchSchedule: scheduleName => dispatch(changeSchedule(scheduleName)),
-        schedulesMutator: {
-            copy: scheduleName => dispatch(duplicateSchedule(scheduleName)),
-            remove: scheduleName => dispatch(deleteSchedule(scheduleName)),
-            rename: oldName => dispatch(openModal("RENAME_SCHEDULE",
-                { scheduleName: oldName, defaultValue: oldName },
-                "Rename Schedule")),
-            create: () => dispatch(openModal("CREATE_SCHEDULE",
-                { defaultValue: "Schedule name", overwriteDefault: true },
-                "Create Schedule")),
-        },
-    }
-);
+const mapDispatchToProps = (dispatch) => ({
+    removeSection: (idDashed) => dispatch(removeSchedItem(idDashed)),
+    focusSection: (id) => dispatch(fetchCourseDetails(id)),
+    switchSchedule: (scheduleName) => dispatch(changeSchedule(scheduleName)),
+    schedulesMutator: {
+        copy: (scheduleName) => dispatch(duplicateSchedule(scheduleName)),
+        remove: (scheduleName) => dispatch(deleteSchedule(scheduleName)),
+        rename: (oldName) =>
+            dispatch(
+                openModal(
+                    "RENAME_SCHEDULE",
+                    { scheduleName: oldName, defaultValue: oldName },
+                    "Rename Schedule"
+                )
+            ),
+        create: () =>
+            dispatch(
+                openModal(
+                    "CREATE_SCHEDULE",
+                    { defaultValue: "Schedule name", overwriteDefault: true },
+                    "Create Schedule"
+                )
+            ),
+    },
+});
 
 const EmptySchedule = () => (
-    <div style={{
-        fontSize: "0.8em",
-        textAlign: "center",
-        marginTop: "5vh",
-    }}
+    <div
+        style={{
+            fontSize: "0.8em",
+            textAlign: "center",
+            marginTop: "5vh",
+        }}
     >
         <img style={{ width: "65%" }} src="/icons/empty-state-cal.svg" alt="" />
-        <h3 style={{
-            fontWeight: "bold",
-            marginBottom: "0.5rem",
-        }}
+        <h3
+            style={{
+                fontWeight: "bold",
+                marginBottom: "0.5rem",
+            }}
         >
             No courses added
         </h3>

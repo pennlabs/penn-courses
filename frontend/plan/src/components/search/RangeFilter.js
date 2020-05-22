@@ -4,8 +4,14 @@ import "rc-slider/assets/index.css";
 import PropTypes from "prop-types";
 
 export function RangeFilter({
-    setIsActive, minRange, maxRange, filterData,
-    updateRangeFilter, startSearch, rangeProperty, step,
+    setIsActive,
+    minRange,
+    maxRange,
+    filterData,
+    updateRangeFilter,
+    startSearch,
+    rangeProperty,
+    step,
 }) {
     const onSliderChange = (value) => {
         updateRangeFilter(value);
@@ -14,7 +20,6 @@ export function RangeFilter({
             [rangeProperty]: value,
         });
     };
-
 
     return (
         <div
@@ -26,7 +31,10 @@ export function RangeFilter({
                     min={minRange}
                     max={maxRange}
                     value={filterData[rangeProperty]}
-                    marks={{ 0: filterData[rangeProperty][0], 4: filterData[rangeProperty][1] }}
+                    marks={{
+                        0: filterData[rangeProperty][0],
+                        4: filterData[rangeProperty][1],
+                    }}
                     step={step}
                     allowCross={false}
                     onChange={onSliderChange}

@@ -7,7 +7,7 @@ import {
     UPDATE_COURSE_INFO_REQUEST,
     UPDATE_SEARCH_REQUEST,
     UPDATE_SCROLL_POS,
-    CHANGE_SORT_TYPE
+    CHANGE_SORT_TYPE,
 } from "../actions";
 
 // This file contains the reducers for everything related to sections and courses

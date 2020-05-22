@@ -18,35 +18,35 @@ export const generateModalInterior = (reduxState) => {
         case "SEMESTER_FETCH_ERROR":
             return (
                 <div>
-                    <p>
-                        Please refresh the page.
-                    </p>
+                    <p>Please refresh the page.</p>
                 </div>
             );
         case "RENAME_SCHEDULE":
             return (
                 <NameScheduleModalInterior
                     buttonName="Rename"
-                    usedScheduleNames={Object.keys(reduxState.schedule.schedules)}
+                    usedScheduleNames={Object.keys(
+                        reduxState.schedule.schedules
+                    )}
                 />
             );
         case "CREATE_SCHEDULE":
             return (
                 <NameScheduleModalInterior
                     buttonName="Create"
-                    usedScheduleNames={Object.keys(reduxState.schedule.schedules)}
+                    usedScheduleNames={Object.keys(
+                        reduxState.schedule.schedules
+                    )}
                 />
             );
         case "WELCOME":
-            return (
-                <WelcomeModalInterior />
-            );
+            return <WelcomeModalInterior />;
         case "MULTITAB":
             return (
                 <div>
                     <p>
-                        You have another tab of Penn Course Plan open. Please use Penn Course Plan
-                        in a single tab.
+                        You have another tab of Penn Course Plan open. Please
+                        use Penn Course Plan in a single tab.
                     </p>
                 </div>
             );
@@ -65,13 +65,13 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
     switch (modalKey) {
         case "RENAME_SCHEDULE":
             return {
-                namingFunction: newName => dispatch(
-                    renameSchedule(modalProps.scheduleName, newName)
-                ),
+                namingFunction: (newName) =>
+                    dispatch(renameSchedule(modalProps.scheduleName, newName)),
             };
         case "CREATE_SCHEDULE":
             return {
-                namingFunction: newName => dispatch(createScheduleOnFrontend(newName)),
+                namingFunction: (newName) =>
+                    dispatch(createScheduleOnFrontend(newName)),
             };
         default:
             return {};

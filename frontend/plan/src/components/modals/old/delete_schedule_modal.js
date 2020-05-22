@@ -4,10 +4,13 @@ import GenericModal from "../generic_modal_container";
 
 export const DELETE_SCHEDULE_MODAL_NAME = "delete_schedule_modal";
 
-
 function DeleteScheduleModalInterior({
-    existingScheduleNames, modalActionState,
-    deleteSchedule, close, restoreAction, clearAction,
+    existingScheduleNames,
+    modalActionState,
+    deleteSchedule,
+    close,
+    restoreAction,
+    clearAction,
 }) {
     if (existingScheduleNames.length > 1) {
         if (modalActionState === "success") {

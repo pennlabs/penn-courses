@@ -2,10 +2,17 @@ import React from "react";
 import PropTypes from "prop-types";
 import { ScheduleSelectorDropdown } from "../../schedule/ScheduleSelectorDropdown";
 
-export default function SchedulesDropdown({ scheduleNames, changeSchedule, scheduleSelected }) {
+export default function SchedulesDropdown({
+    scheduleNames,
+    changeSchedule,
+    scheduleSelected,
+}) {
     return (
         <Dropdown
-            contents={scheduleNames.map(name => [name, () => changeSchedule(name)])}
+            contents={scheduleNames.map((name) => [
+                name,
+                () => changeSchedule(name),
+            ])}
             updateLabel={true}
             defActive={scheduleNames.indexOf(scheduleSelected)}
             defText={scheduleSelected}

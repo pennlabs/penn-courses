@@ -19,14 +19,8 @@ workflows:
           project-name: "PennCourses"
           project-location: backend
       - react-tools/check:
-          name: check-alert
-          project-location: frontend/alert
-      - react-tools/check:
-          name: check-plan
-          project-location: frontend/plan
-      - react-tools/check:
-          name: check-shared
-          project-location: frontend/shared-components
+          name: check-frontend
+          project-location: frontend
       - docker/publish:
           name: publish-backend
           requires:
@@ -40,9 +34,9 @@ workflows:
       - docker/publish:
           name: publish-plan
           requires:
-            - check-plan
-            - check-shared
-          path: frontend/plan
+            - check-frontend
+          path: frontend
+          dockerfile: plan/Dockerfile
           cache_from: "pennlabs/pcp-frontend:latest"
           image: "pennlabs/pcp-frontend"
           tag: "${CIRCLE_SHA1},latest"
@@ -51,9 +45,9 @@ workflows:
       - docker/publish:
           name: publish-alert
           requires:
-            - check-alert
-            - check-shared
-          path: frontend/alert
+            - check-frontend
+          path: frontend
+          dockerfile: alert/Dockerfile
           cache_from: "pennlabs/pca-frontend:latest"
           image: "pennlabs/pca-frontend"
           tag: "${CIRCLE_SHA1},latest"

@@ -5,7 +5,6 @@ import { validateScheduleName } from "../../schedule/schedule_name_validation";
 
 export const RENAME_SCHEDULE_MODAL_NAME = "rename_schedule_modal";
 
-
 class RenameScheduleModalInterior extends Component {
     constructor(props) {
         super(props);
@@ -13,9 +12,7 @@ class RenameScheduleModalInterior extends Component {
     }
 
     render() {
-        const {
-            currentName,
-        } = this.state;
+        const { currentName } = this.state;
 
         const {
             existingScheduleNames,
@@ -28,7 +25,10 @@ class RenameScheduleModalInterior extends Component {
         const storeInputRef = (ref) => {
             newScheduleNameInput = ref;
         };
-        const feedbackString = validateScheduleName(currentName, existingScheduleNames);
+        const feedbackString = validateScheduleName(
+            currentName,
+            existingScheduleNames
+        );
         if (modalActionState === "success") {
             if (feedbackString.length === 0) {
                 renameSchedule(currentName);
@@ -43,15 +43,15 @@ class RenameScheduleModalInterior extends Component {
                     type="text"
                     ref={storeInputRef}
                     onKeyUp={(e) => {
-                        this.setState({ currentName: newScheduleNameInput.value });
+                        this.setState({
+                            currentName: newScheduleNameInput.value,
+                        });
                         if (e.key === "Enter") {
                             triggerModalAction("success");
                         }
                     }}
                 />
-                <div>
-                    {feedbackString}
-                </div>
+                <div>{feedbackString}</div>
             </div>
         );
     }

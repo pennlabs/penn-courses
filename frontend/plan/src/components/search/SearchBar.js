@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import connect from "react-redux/es/connect/connect";
 import "./Search.css";
+import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
@@ -18,9 +19,9 @@ import {
     updateCheckboxFilter,
     clearAll,
     clearFilter,
-    updateSearch, clearAllScheduleData
+    updateSearch,
+    clearAllScheduleData,
 } from "../../actions";
-import AccountIndicator from "../shared/accounts/AccountIndicator";
 import { login, logout } from "../../actions/login";
 
 function shouldSearch(filterData) {
@@ -38,16 +39,32 @@ function shouldSearch(filterData) {
 }
 
 function SearchBar({
-    // eslint-disable-next-line no-shadow
-    startSearch, loadRequirements, schoolReq, filterData, addSchoolReq,
-    // eslint-disable-next-line no-shadow
-    remSchoolReq, updateSearchText, updateRangeFilter, clearAll, clearFilter,
-    // eslint-disable-next-line no-shadow
-    defaultReqs, clearSearchResults, isLoadingCourseInfo, isSearchingCourseInfo,
-    // eslint-disable-next-line no-shadow
-    updateCheckboxFilter, setTab, setView, user, login, logout,
-    // eslint-disable-next-line no-shadow
-    mobileView, isExpanded, clearScheduleData, initiateSync,
+    /* eslint-disable no-shadow */
+    startSearch,
+    loadRequirements,
+    schoolReq,
+    filterData,
+    addSchoolReq,
+    remSchoolReq,
+    updateSearchText,
+    updateRangeFilter,
+    clearAll,
+    clearFilter,
+    defaultReqs,
+    clearSearchResults,
+    isLoadingCourseInfo,
+    isSearchingCourseInfo,
+    updateCheckboxFilter,
+    setTab,
+    setView,
+    user,
+    login,
+    logout,
+    mobileView,
+    isExpanded,
+    clearScheduleData,
+    initiateSync,
+    /* eslint-enable no-shadow */
 }) {
     useEffect(() => {
         loadRequirements();
@@ -68,7 +85,7 @@ function SearchBar({
         }
     };
 
-    const clearFilterSearch = property => () => {
+    const clearFilterSearch = (property) => () => {
         clearFilter(property);
         if (property === "selectedReq") {
             conditionalStartSearch({
@@ -84,7 +101,12 @@ function SearchBar({
     };
     const dropDowns = (
         <>
-            <DropdownButton title="Requirements" filterData={filterData.selectedReq} defaultFilter={defaultReqs} clearFilter={clearFilterSearch("selectedReq")}>
+            <DropdownButton
+                title="Requirements"
+                filterData={filterData.selectedReq}
+                defaultFilter={defaultReqs}
+                clearFilter={clearFilterSearch("selectedReq")}
+            >
                 <SchoolReq
                     startSearch={conditionalStartSearch}
                     schoolReq={schoolReq}
@@ -93,7 +115,12 @@ function SearchBar({
                     remSchoolReq={remSchoolReq}
                 />
             </DropdownButton>
-            <DropdownButton title="Difficulty" filterData={filterData.difficulty} defaultFilter={defaultFilters.filterData.difficulty} clearFilter={clearFilterSearch("difficulty")}>
+            <DropdownButton
+                title="Difficulty"
+                filterData={filterData.difficulty}
+                defaultFilter={defaultFilters.filterData.difficulty}
+                clearFilter={clearFilterSearch("difficulty")}
+            >
                 <RangeFilter
                     minRange={0}
                     maxRange={4}
@@ -104,7 +131,12 @@ function SearchBar({
                     rangeProperty="difficulty"
                 />
             </DropdownButton>
-            <DropdownButton title="Course Quality" filterData={filterData.course_quality} defaultFilter={defaultFilters.filterData.course_quality} clearFilter={clearFilterSearch("course_quality")}>
+            <DropdownButton
+                title="Course Quality"
+                filterData={filterData.course_quality}
+                defaultFilter={defaultFilters.filterData.course_quality}
+                clearFilter={clearFilterSearch("course_quality")}
+            >
                 <RangeFilter
                     minRange={0}
                     maxRange={4}
@@ -115,7 +147,12 @@ function SearchBar({
                     rangeProperty="course_quality"
                 />
             </DropdownButton>
-            <DropdownButton title="Instructor Quality" filterData={filterData.instructor_quality} defaultFilter={defaultFilters.filterData.instructor_quality} clearFilter={clearFilterSearch("instructor_quality")}>
+            <DropdownButton
+                title="Instructor Quality"
+                filterData={filterData.instructor_quality}
+                defaultFilter={defaultFilters.filterData.instructor_quality}
+                clearFilter={clearFilterSearch("instructor_quality")}
+            >
                 <RangeFilter
                     minRange={0}
                     maxRange={4}
@@ -157,19 +194,25 @@ function SearchBar({
     if (mobileView) {
         return (
             <div style={{ marginTop: "0px" }}>
-                <div style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    background: "white",
-                    paddingTop: "20px",
-                    paddingBottom: "10px",
-                    marginBottom: "10px",
-                    borderRadius: "6px",
-                }}
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        background: "white",
+                        paddingTop: "20px",
+                        paddingBottom: "10px",
+                        marginBottom: "10px",
+                        borderRadius: "6px",
+                    }}
                 >
-                    <AccountIndicator user={user} login={login} logout={logout} onLeft={true} />
+                    <AccountIndicator
+                        user={user}
+                        login={login}
+                        logout={logout}
+                        onLeft={true}
+                    />
                     <SearchField
                         setTab={setTab}
                         startSearch={conditionalStartSearch}
@@ -185,18 +228,19 @@ function SearchBar({
                     </div>
                 </div>
                 {reqsShown && (
-                    <div style={{
-                        zIndex: "100",
-                        marginTop: "-20px",
-                        padding: "10px",
-                        marginBottom: "20px",
-                        display: "flex",
-                        width: "100vw",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        background: "white",
-                        justifyContent: "flex-start",
-                    }}
+                    <div
+                        style={{
+                            zIndex: "100",
+                            marginTop: "-20px",
+                            padding: "10px",
+                            marginBottom: "20px",
+                            display: "flex",
+                            width: "100vw",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                            background: "white",
+                            justifyContent: "flex-start",
+                        }}
                     >
                         {dropDowns}
                     </div>
@@ -225,12 +269,39 @@ function SearchBar({
                         updateSearchText={updateSearchText}
                     />
                 </div>
-                <div className="level-item filterContainer" style={{ marginLeft: ".5em" }}>
-                    <a role="button" onClick={() => setView(0)} style={{ backgroundColor: isExpanded ? "white" : "#f0f1f3", padding: ".5em", paddingBottom: "0" }}>
-                        <img style={{ width: "1.5em" }} src="/icons/toggle-norm.svg" alt="logo" />
+                <div
+                    className="level-item filterContainer"
+                    style={{ marginLeft: ".5em" }}
+                >
+                    <a
+                        role="button"
+                        onClick={() => setView(0)}
+                        style={{
+                            backgroundColor: isExpanded ? "white" : "#f0f1f3",
+                            padding: ".5em",
+                            paddingBottom: "0",
+                        }}
+                    >
+                        <img
+                            style={{ width: "1.5em" }}
+                            src="/icons/toggle-norm.svg"
+                            alt="logo"
+                        />
                     </a>
-                    <a role="button" onClick={() => setView(1)} style={{ backgroundColor: isExpanded ? "#f0f1f3" : "white", padding: ".5em", paddingBottom: "0" }}>
-                        <img style={{ width: "1.5em" }} src="/icons/toggle-expanded.svg" alt="logo" />
+                    <a
+                        role="button"
+                        onClick={() => setView(1)}
+                        style={{
+                            backgroundColor: isExpanded ? "#f0f1f3" : "white",
+                            padding: ".5em",
+                            paddingBottom: "0",
+                        }}
+                    >
+                        <img
+                            style={{ width: "1.5em" }}
+                            src="/icons/toggle-expanded.svg"
+                            alt="logo"
+                        />
                     </a>
                 </div>
                 <div className="level-item filterContainer" id="filterdiv">
@@ -311,31 +382,29 @@ SearchBar.propTypes = {
     initiateSync: PropTypes.func.isRequired,
 };
 
-const mapStateToProps = state => (
-    {
-        schoolReq: state.filters.schoolReq,
-        filterData: state.filters.filterData,
-        defaultReqs: state.filters.defaultReqs,
-        isLoadingCourseInfo: state.sections.courseInfoLoading,
-        isSearchingCourseInfo: state.sections.searchInfoLoading,
-        user: state.login.user,
-    }
-);
+const mapStateToProps = (state) => ({
+    schoolReq: state.filters.schoolReq,
+    filterData: state.filters.filterData,
+    defaultReqs: state.filters.defaultReqs,
+    isLoadingCourseInfo: state.sections.courseInfoLoading,
+    isSearchingCourseInfo: state.sections.searchInfoLoading,
+    user: state.login.user,
+});
 
-const mapDispatchToProps = dispatch => ({
-    login: user => dispatch(login(user)),
+const mapDispatchToProps = (dispatch) => ({
+    login: (user) => dispatch(login(user)),
     logout: () => dispatch(logout()),
     loadRequirements: () => dispatch(loadRequirements()),
-    startSearch: filterData => dispatch(fetchCourseSearch(filterData)),
-    addSchoolReq: reqID => dispatch(addSchoolReq(reqID)),
-    remSchoolReq: reqID => dispatch(remSchoolReq(reqID)),
-    updateSearchText: s => dispatch(updateSearchText(s)),
-    updateRangeFilter: field => values => dispatch(updateRangeFilter(field, values)),
-    updateCheckboxFilter: (field, value, toggleState) => dispatch(
-        updateCheckboxFilter(field, value, toggleState)
-    ),
+    startSearch: (filterData) => dispatch(fetchCourseSearch(filterData)),
+    addSchoolReq: (reqID) => dispatch(addSchoolReq(reqID)),
+    remSchoolReq: (reqID) => dispatch(remSchoolReq(reqID)),
+    updateSearchText: (s) => dispatch(updateSearchText(s)),
+    updateRangeFilter: (field) => (values) =>
+        dispatch(updateRangeFilter(field, values)),
+    updateCheckboxFilter: (field, value, toggleState) =>
+        dispatch(updateCheckboxFilter(field, value, toggleState)),
     clearAll: () => dispatch(clearAll()),
-    clearFilter: propertyName => dispatch(clearFilter(propertyName)),
+    clearFilter: (propertyName) => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),
     clearScheduleData: () => dispatch(clearAllScheduleData()),
 });

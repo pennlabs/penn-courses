@@ -3,11 +3,19 @@ import PropTypes from "prop-types";
 import { validateScheduleName } from "../schedule/schedule_name_validation";
 
 const NameScheduleModalInterior = ({
-    usedScheduleNames, namingFunction, close, buttonName, defaultValue, overwriteDefault = false,
+    usedScheduleNames,
+    namingFunction,
+    close,
+    buttonName,
+    defaultValue,
+    overwriteDefault = false,
 }) => {
     const [inputRef, setInputRef] = useState(null);
     const [userInput, setUserInput] = useState(defaultValue);
-    const { error, message: errorMessage } = validateScheduleName(userInput, usedScheduleNames);
+    const { error, message: errorMessage } = validateScheduleName(
+        userInput,
+        usedScheduleNames
+    );
     useEffect(() => {
         const listener = (event) => {
             if (!userInput && inputRef && !inputRef.contains(event.target)) {
@@ -31,7 +39,7 @@ const NameScheduleModalInterior = ({
             <input
                 value={userInput}
                 type="text"
-                ref={ref => setInputRef(ref)}
+                ref={(ref) => setInputRef(ref)}
                 style={{ backgroundColor: error ? "#f9dcda" : "#f1f1f1" }}
                 onChange={() => setUserInput(inputRef.value)}
                 onClick={() => {

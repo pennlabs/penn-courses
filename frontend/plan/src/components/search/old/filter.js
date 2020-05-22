@@ -5,15 +5,10 @@ import { OutClickable } from "../../schedule/ScheduleSelectorDropdown";
 
 class SearchFilter extends OutClickable {
     // This has to be there for OutClickable to work
-    collapse = () => (
-        this.props.initiateCollapse()
-    )
+    collapse = () => this.props.initiateCollapse();
 
     render() {
-        const {
-            show,
-            location,
-        } = this.props;
+        const { show, location } = this.props;
 
         const visibility = show ? "visible" : "hidden";
         const opacity = show ? 1 : 0;
@@ -23,12 +18,14 @@ class SearchFilter extends OutClickable {
                 className="content_dropdown box"
                 ref={this.setWrapperRef} // this function does not exist
                 style={
-                    location ? {
-                        opacity,
-                        visibility,
-                        left: `${1.5 * location.left - location.right}px`,
-                        top: `${location.bottom + 10}px`,
-                    } : {}
+                    location
+                        ? {
+                              opacity,
+                              visibility,
+                              left: `${1.5 * location.left - location.right}px`,
+                              top: `${location.bottom + 10}px`,
+                          }
+                        : {}
                 }
             >
                 <div className="FilterPanel" style={{ width: "60%" }}>
@@ -43,13 +40,20 @@ class SearchFilter extends OutClickable {
 
                 <div className="FilterPanel">
                     <div className="FilterBlock">
-                        <input type="checkbox" id="closedCheck" value="ClosedSec" checked />
+                        <input
+                            type="checkbox"
+                            id="closedCheck"
+                            value="ClosedSec"
+                            checked
+                        />
                         Show closed sections
                     </div>
 
                     <div className="FilterBlock">
                         <select id="actFilter">
-                            <option value="noFilter">Filter by section type</option>
+                            <option value="noFilter">
+                                Filter by section type
+                            </option>
                             <option value="LEC">Lecture</option>
                             <option value="REC">Recitation</option>
                             <option value="LAB">Laboratory</option>
@@ -76,12 +80,20 @@ class SearchFilter extends OutClickable {
                             <option value="noFilter">Filter by program</option>
                             <option value="MSL">ABCS Courses</option>
                             <option value="BFS">Ben Franklin Seminars</option>
-                            <option value="CGS">College of Liberal &amp; Professional Studies</option>
-                            <option value="CRS">Critical Writing Seminars</option>
-                            <option value="FORB">Freshman-Friendly courses</option>
+                            <option value="CGS">
+                                College of Liberal &amp; Professional Studies
+                            </option>
+                            <option value="CRS">
+                                Critical Writing Seminars
+                            </option>
+                            <option value="FORB">
+                                Freshman-Friendly courses
+                            </option>
                             <option value="MFS">Freshman Seminars</option>
                             <option value="PLC">Penn Language Center</option>
-                            <option value="SS">Summer Sessions I &amp; II</option>
+                            <option value="SS">
+                                Summer Sessions I &amp; II
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -90,12 +102,12 @@ class SearchFilter extends OutClickable {
     }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
     show: state.sections.showSearchFilter,
     location: state.sections.showSearchFilterLocation,
 });
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
     // initiateCollapse: () => dispatch(toggleSearchFilterShown()),
 });
 

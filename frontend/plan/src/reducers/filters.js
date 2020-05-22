@@ -1,6 +1,12 @@
 import {
-    LOAD_REQUIREMENTS, ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_SEARCH_TEXT,
-    UPDATE_RANGE_FILTER, CLEAR_FILTER, CLEAR_ALL, UPDATE_CHECKBOX_FILTER
+    LOAD_REQUIREMENTS,
+    ADD_SCHOOL_REQ,
+    REM_SCHOOL_REQ,
+    UPDATE_SEARCH_TEXT,
+    UPDATE_RANGE_FILTER,
+    CLEAR_FILTER,
+    CLEAR_ALL,
+    UPDATE_CHECKBOX_FILTER,
 } from "../actions";
 
 export const initialState = {
@@ -115,7 +121,8 @@ export const filters = (state = initialState, action) => {
                 ...state,
                 filterData: {
                     ...state.filterData,
-                    [action.propertyName]: initialState.filterData[action.propertyName],
+                    [action.propertyName]:
+                        initialState.filterData[action.propertyName],
                 },
             };
 

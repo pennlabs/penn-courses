@@ -2,11 +2,12 @@ import {
     createScheduleOnBackend,
     deleteSchedule,
     deleteScheduleOnBackend,
-    fetchBackendSchedulesAndInitializeCart, enforceSemester,
-    updateScheduleOnBackend, openModal
+    fetchBackendSchedulesAndInitializeCart,
+    enforceSemester,
+    updateScheduleOnBackend,
+    openModal,
 } from "./actions";
 import { SYNC_INTERVAL } from "./sync_constants";
-
 
 /**
  * Returns whether all schedules have been pushed to the backend
@@ -15,8 +16,10 @@ const allPushed = (scheduleState) => {
     if (!scheduleState.cartPushedToBackend) {
         return false;
     }
-    return Object.values(scheduleState.schedules)
-        .reduce((acc, { pushedToBackend }) => acc && pushedToBackend, true);
+    return Object.values(scheduleState.schedules).reduce(
+        (acc, { pushedToBackend }) => acc && pushedToBackend,
+        true
+    );
 };
 
 /**
@@ -30,7 +33,9 @@ const initiateSync = async (store) => {
     // the backend at any point in time.
     // This ensures that schedules can be safely deleted without randomly returning.
     let schedulesObserved;
-    const localStorageSchedulesObserved = localStorage.getItem("coursePlanObservedSchedules");
+    const localStorageSchedulesObserved = localStorage.getItem(
+        "coursePlanObservedSchedules"
+    );
     if (localStorageSchedulesObserved) {
         try {
             schedulesObserved = JSON.parse(localStorageSchedulesObserved) || {};
@@ -48,14 +53,14 @@ const initiateSync = async (store) => {
             resolve();
         };
         fetch("/api/options")
-            .then(response => response.json())
+            .then((response) => response.json())
             .then((options) => {
                 handleSemester(options.SEMESTER);
             })
             .catch(() => {
-                store.dispatch(openModal("SEMESTER_FETCH_ERROR",
-                    {},
-                    "An Error Occurred"));
+                store.dispatch(
+                    openModal("SEMESTER_FETCH_ERROR", {}, "An Error Occurred")
+                );
             });
     });
 
@@ -66,35 +71,39 @@ const initiateSync = async (store) => {
         const scheduleStateInit = store.getState().schedule;
         const shouldInitCart = !scheduleStateInit.cartPushedToBackend;
         return new Promise((resolve) => {
-            store.dispatch(fetchBackendSchedulesAndInitializeCart(scheduleStateInit.cartSections,
-                shouldInitCart,
-                (newSchedulesObserved) => {
-                    // record the new schedules that have been observed
-                    const newSchedulesObservedSet = {};
-                    let cartFound = false;
-                    newSchedulesObserved.forEach(({ id, name }) => {
-                        if (name === "cart") {
-                            cartFound = true;
+            store.dispatch(
+                fetchBackendSchedulesAndInitializeCart(
+                    scheduleStateInit.cartSections,
+                    shouldInitCart,
+                    (newSchedulesObserved) => {
+                        // record the new schedules that have been observed
+                        const newSchedulesObservedSet = {};
+                        let cartFound = false;
+                        newSchedulesObserved.forEach(({ id, name }) => {
+                            if (name === "cart") {
+                                cartFound = true;
+                            }
+                            schedulesObserved[id] = true;
+                            newSchedulesObservedSet[id] = true;
+                        });
+
+                        if (!cartFound && !shouldInitCart) {
+                            // the cart was deleted on the backend; reset it
+                            store.dispatch(deleteSchedule("cart"));
                         }
-                        schedulesObserved[id] = true;
-                        newSchedulesObservedSet[id] = true;
-                    });
 
-                    if (!cartFound && !shouldInitCart) {
-                        // the cart was deleted on the backend; reset it
-                        store.dispatch(deleteSchedule("cart"));
-                    }
-
-                    const scheduleState = store.getState().schedule;
-                    Object.keys(schedulesObserved)
-                        .forEach((id) => {
+                        const scheduleState = store.getState().schedule;
+                        Object.keys(schedulesObserved).forEach((id) => {
                             // The schedule has been observed from the backend before,
                             // but is no longer being observed; Should be deleted locally.
                             if (!newSchedulesObservedSet[id]) {
                                 // find the name of the schedule with the deleted id
-                                const schedName = Object.entries(scheduleState.schedules)
+                                const schedName = Object.entries(
+                                    scheduleState.schedules
+                                )
                                     .filter(
-                                        ([_, { id: selectedId }]) => (`${selectedId}`) === (`${id}`)
+                                        ([_, { id: selectedId }]) =>
+                                            `${selectedId}` === `${id}`
                                     )
                                     .map(([name, _]) => name)[0];
                                 if (schedName) {
@@ -102,55 +111,68 @@ const initiateSync = async (store) => {
                                 }
                             }
                         });
-                    localStorage.setItem("coursePlanObservedSchedules", JSON.stringify(schedulesObserved));
-                    resolve();
-                }));
+                        localStorage.setItem(
+                            "coursePlanObservedSchedules",
+                            JSON.stringify(schedulesObserved)
+                        );
+                        resolve();
+                    }
+                )
+            );
         });
     };
 
     const cloudPush = () => {
         const scheduleState = store.getState().schedule || {};
         // Delete all schedules (on the backend) that have been deleted
-        Object.keys(scheduleState.deletedSchedules || {})
-            .forEach((deletedScheduleId) => {
+        Object.keys(scheduleState.deletedSchedules || {}).forEach(
+            (deletedScheduleId) => {
                 // Don't queue a deletion on the backend if it has already been queued
-                const deletionState = scheduleState.deletedSchedules[deletedScheduleId];
+                const deletionState =
+                    scheduleState.deletedSchedules[deletedScheduleId];
                 if (deletionState && deletionState.deletionQueued) {
                     return;
                 }
                 store.dispatch(deleteScheduleOnBackend(deletedScheduleId));
-            });
+            }
+        );
 
         // Update the server if the cart has been updated
-        if (!scheduleState.cartPushedToBackend && ("cartId" in scheduleState)) {
-            store.dispatch(updateScheduleOnBackend("cart",
-                {
+        if (!scheduleState.cartPushedToBackend && "cartId" in scheduleState) {
+            store.dispatch(
+                updateScheduleOnBackend("cart", {
                     id: scheduleState.cartId,
                     meetings: scheduleState.cartSections,
-                }));
+                })
+            );
         }
 
         // Update the server with any new changes to schedules
-        Object.keys(scheduleState.schedules)
-            .forEach((scheduleName) => {
-                const schedule = scheduleState.schedules[scheduleName];
-                if (!schedule.pushedToBackend) {
-                    const shouldCreateOnBackend = schedule.backendCreationState
-                        && !schedule.backendCreationState.creationQueued && !("id" in schedule);
-                    if (shouldCreateOnBackend || firstSync) {
-                        store.dispatch(createScheduleOnBackend(scheduleName,
-                            schedule.meetings));
-                    } else {
-                        store.dispatch(updateScheduleOnBackend(scheduleName, schedule));
-                    }
+        Object.keys(scheduleState.schedules).forEach((scheduleName) => {
+            const schedule = scheduleState.schedules[scheduleName];
+            if (!schedule.pushedToBackend) {
+                const shouldCreateOnBackend =
+                    schedule.backendCreationState &&
+                    !schedule.backendCreationState.creationQueued &&
+                    !("id" in schedule);
+                if (shouldCreateOnBackend || firstSync) {
+                    store.dispatch(
+                        createScheduleOnBackend(scheduleName, schedule.meetings)
+                    );
+                } else {
+                    store.dispatch(
+                        updateScheduleOnBackend(scheduleName, schedule)
+                    );
                 }
-            });
+            }
+        });
         firstSync = false;
     };
 
-    const waitBeforeNextSync = () => new Promise((resolve) => {
-        setTimeout(resolve, SYNC_INTERVAL);
-    });
+    const waitBeforeNextSync = () =>
+        new Promise((resolve) => {
+            setTimeout(resolve, SYNC_INTERVAL);
+        });
 
     const syncLoop = async () => {
         await cloudPull();
@@ -165,8 +187,7 @@ const initiateSync = async (store) => {
         }
     };
 
-    startSyncLoop()
-        .then();
+    startSyncLoop().then();
 
     window.addEventListener("beforeunload", (e) => {
         if (!allPushed(store.getState().schedule)) {
@@ -189,14 +210,18 @@ export default initiateSync;
 export const preventMultipleTabs = (callback) => {
     const sessionId = `${Date.now()}`;
     localStorage.setItem("openPages", sessionId);
-    window.addEventListener("storage", ({ key }) => {
-        if (key === "openPages") {
-            // Listen if anybody else is opening the same page
-            localStorage.setItem("pageAvailable", sessionId);
-        }
-        if (key === "pageAvailable") {
-            // The page is already open somewhere else
-            callback();
-        }
-    }, false);
+    window.addEventListener(
+        "storage",
+        ({ key }) => {
+            if (key === "openPages") {
+                // Listen if anybody else is opening the same page
+                localStorage.setItem("pageAvailable", sessionId);
+            }
+            if (key === "pageAvailable") {
+                // The page is already open somewhere else
+                callback();
+            }
+        },
+        false
+    );
 };
