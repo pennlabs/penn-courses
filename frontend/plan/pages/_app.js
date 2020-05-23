@@ -55,6 +55,9 @@ function App() {
             applyMiddleware(...middlewares)
         )
     );
+
+    // FIXME: Hacky, I'm sure next has some better way to
+    // handle this
     const [innerWidth, setInnerWidth] = useState(800);
     const containerRef = useRef();
     const scrollTop = () => window.scrollTo(0, 0);
