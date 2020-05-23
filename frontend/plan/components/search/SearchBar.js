@@ -352,6 +352,7 @@ function SearchBar({
                             clearScheduleData();
                         }}
                         onLeft={false}
+                        pathname={router.pathname}
                     />
                 </div>
             </div>
