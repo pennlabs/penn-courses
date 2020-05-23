@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
+import { useRouter } from "next/router";
 import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
@@ -66,6 +67,8 @@ function SearchBar({
     store,
     /* eslint-enable no-shadow */
 }) {
+    const router = useRouter();
+
     useEffect(() => {
         loadRequirements();
     }, [loadRequirements]);
@@ -212,6 +215,7 @@ function SearchBar({
                         login={login}
                         logout={logout}
                         onLeft={true}
+                        pathname={router.pathname}
                     />
                     <SearchField
                         setTab={setTab}

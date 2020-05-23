@@ -47,7 +47,14 @@ if (process.env.NODE_ENV === "development") {
 function App() {
     const [tab, setTab] = useState(0);
     const [view, setView] = useState(0);
-    const [store, setStore] = useState(null);
+    // FIXME: Hacky, maybe look into redux-persist?
+    const [store, setStore] = useState(
+        createStore(
+            coursePlanApp,
+            { schedule: undefined, login: { user: null } },
+            applyMiddleware(...middlewares)
+        )
+    );
     const [innerWidth, setInnerWidth] = useState(800);
     const containerRef = useRef();
     const scrollTop = () => window.scrollTo(0, 0);
