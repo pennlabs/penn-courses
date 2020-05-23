@@ -3,10 +3,10 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import TemplateView
 from rest_framework.schemas import get_schema_view
+from PennCourses.docs_settings import openapi_description, JSONOpenAPICustomTagGroupsRenderer
 
 from alert.views import accept_webhook
 from courses.views import UserView
-
 
 api_urlpatterns = [
     path("plan/", include("plan.urls")),
@@ -15,7 +15,9 @@ api_urlpatterns = [
     path("options/", include("options.urls", namespace="options")),
     path(
         "openapi/",
-        get_schema_view(title="Penn Courses Documentation", public=True),
+        get_schema_view(title="Penn Courses Documentation", public=True,
+                        description=openapi_description,
+                        renderer_classes=[JSONOpenAPICustomTagGroupsRenderer]),
         name="openapi-schema",
     ),
     path(

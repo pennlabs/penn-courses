@@ -6,8 +6,8 @@ from options.models import get_value
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.schemas.openapi import AutoSchema
 
+from PennCourses.docs_settings import PcxAutoSchema
 from courses.models import Section
 from courses.util import get_course_and_section
 from courses.views import CourseList
@@ -17,7 +17,7 @@ from plan.search import TypedCourseSearchBackend
 from plan.serializers import ScheduleSerializer
 
 
-class CourseListSchema(AutoSchema):
+class CourseListSchema(PcxAutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == "GET":
@@ -32,7 +32,7 @@ class CourseListSearch(CourseList):
     a given semester.
     """
 
-    # schema = CourseListSchema()
+    schema = CourseListSchema()
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")
@@ -49,6 +49,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     """
 
+    schema = PcxAutoSchema()
     serializer_class = ScheduleSerializer
     http_method_names = ["get", "post", "delete", "put"]
     permission_classes = [IsAuthenticated]

@@ -4,7 +4,9 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_value
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.schemas.openapi import AutoSchema
 
+from PennCourses.docs_settings import PcxAutoSchema
 from courses.models import Course, Requirement, Section, StatusUpdate
 from courses.serializers import (
     CourseDetailSerializer,
@@ -19,6 +21,8 @@ from plan.search import TypedSectionSearchBackend
 
 
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
+    schema = PcxAutoSchema()
+
     @staticmethod
     def get_semester_field():
         return "semester"
@@ -119,6 +123,7 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
 
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
+    schema = PcxAutoSchema()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
@@ -130,6 +135,7 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
 
 
 class StatusUpdateView(generics.ListAPIView):
+    schema = PcxAutoSchema()
     serializer_class = StatusUpdateSerializer
     http_method_names = ["get"]
     lookup_field = "section__full_code"

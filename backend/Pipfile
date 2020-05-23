@@ -16,7 +16,6 @@ pytest-django = "*"
 django-debug-toolbar = "*"
 
 [packages]
-django = "*"
 mysqlclient = "*"
 requests = "*"
 twilio = "*"
@@ -46,6 +45,7 @@ tqdm = "*"
 "boto3" = "*"
 nose = "*"
 importlib-metadata = "*"
+django = "*"
 
 [requires]
 python_version = "3"
