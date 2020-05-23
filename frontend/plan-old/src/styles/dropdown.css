@@ -1,0 +1,190 @@
+.filterContainer {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.3em 0em;
+    justify-content: flex-start;
+    max-width: calc(100% - 17rem);
+}
+
+.filterButton {
+    transition-duration: 0.2s;
+    margin: auto;
+    font-weight: bold;
+    border: solid 0.1rem #dadada;
+    color: #7e7e7e;
+    flex-grow:1
+}
+
+.filterButton:hover {
+    background-color: #f7f7f7;
+    color: #5a5a5a;
+}
+
+.filterButton:active {
+    border: solid 0.1rem #7876F3;
+    position:relative;
+    color: #7e7e7e;
+    background-color: #e3e6ff;
+}
+
+.filterButton:focus {
+    color: #7876F3;
+    border: solid 0.1rem #7876F3;
+}
+
+.filterButtonActive {
+    font-weight: bold;
+    position:relative;
+    background-color: #EBEBFD;
+    border: 0.1rem solid #7876F3;
+    color: #7876F3;
+}
+
+.filterButtonActive:hover {
+    font-weight: bold;
+    position:relative;
+    background-color: #e3e6ff;
+    border: 0.1rem solid #7876F3;
+    color: #7876F3;
+}
+
+.filterButtonActive:active {
+    font-weight: bold;
+    position:relative;
+    background-color: #e3e6ff;
+    border: 0.1rem solid #7876F3;
+    color: #7876F3;
+}
+
+.filterButtonActive:focus {
+    font-weight: bold;
+    position:relative;
+    background-color: #EBEBFD;
+    border: 0.1rem solid #7876F3;
+    color: #7876F3;
+}
+
+.dropdown-trigger {
+    margin:0.2em;
+}
+
+.classic, .classic * {
+    border: 0;
+    outline: none;
+}
+
+.classic .dropdown-item {
+    border-radius: 0 !important;
+    cursor: pointer;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    transition: 100ms ease background;
+}
+
+.classic .dropdown-item, .classic .dropdown-item * {
+    font-size: 0.75rem;
+    color: #333333;
+}
+
+.classic-dropdown-trigger {
+    margin-left: 0.75rem;
+    outline: none !important;
+    border: none !important;
+    background: transparent;
+}
+
+.classic-dropdown-trigger div {
+    border-radius: 0 !important;
+    height: 1.5rem;
+    width: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    padding: 0 !important;
+    outline: none !important;
+    border: none !important;
+    background: transparent;
+    transition: 150ms ease background;
+}
+
+.classic-dropdown-trigger div span i {
+    margin-bottom: 0.25rem;
+}
+
+.classic-dropdown-trigger div:hover {
+    background: rgba(175, 194, 255, 0.27);
+}
+
+.classic.is-active .classic-dropdown-trigger div {
+    background: rgba(162, 180, 237, 0.38);
+}
+
+.classic .dropdown-item.is-active, .add-schedule:active {
+    background: #F5F6F8;
+}
+
+.classic .dropdown-item.is-active:hover {
+    background: #EBEDF1;
+}
+
+.classic .dropdown-menu {
+    margin-top: 0.1rem !important;
+}
+
+.classic .dropdown-item:hover {
+    background: #F5F6F8;
+}
+
+.classic .dropdown-content {
+    padding: 0 !important;
+
+}
+
+.classic.dropdown {
+    border-radius: 0.5rem;
+}
+
+.classic .dropdown-item {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.schedule-name-container, .schedule-options-container {
+    display: flex;
+}
+
+.schedule-name-container {
+    flex-grow: 1;
+    font-weight: 400;
+    max-width: 50%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.schedule-options-container {
+    flex-grow: 0.5;
+    justify-content: flex-end;
+    width: 25%;
+}
+
+.schedule-options-container i {
+    color: #B2B2B2 !important;
+}
+
+.schedule-options-container i:hover {
+    color: #F5F6F8 !important;
+}
+
+.is-active i.fa.fa-chevron-down::before {
+    content: "\f077" !important;
+}
+
+.add-schedule {
+    text-align: left;
+}
+
+.add-schedule span, .add-schedule span i {
+    float: left;
+    text-align: left;
+    color: #669afb!important;
+}
