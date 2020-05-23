@@ -4,6 +4,31 @@ from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.schemas.utils import is_list_view
 import re
 
+"""
+This file includes code and settings for our PCx autodocumentation
+(based on a Django-generated OpenAPI schema and Redoc, which formats that schema into a 
+readable documentation web page).  Some useful links:
+https://github.com/Redocly/redoc
+https://github.com/Redocly/redoc/blob/master/docs/redoc-vendor-extensions.md#tagGroupObject
+https://www.django-rest-framework.org/api-guide/schemas
+A Redoc example from which many of the concepts in this file were taken from:
+https://redocly.github.io/redoc/
+https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
+
+IMPORTANT NOTE: for the auto-documentation to work, you need to include the line:
+schema = PcxAutoSchema()
+in all views (this will allow for proper tag and operation_id generation; see below).
+PcxAutoSchema (defined below) is a subclass of Django's AutoSchema,
+and it makes some improvements on that class as well as customizations specific to Labs PCX.
+
+Maintenence: besides including schema = PcxAutoSchema(), the only maintenance we
+need to do when writing new code is including docstrings in views (see
+https://www.django-rest-framework.org/coreapi/from-documenting-your-api/#documenting-your-views).
+Also, if necessary you can add more documentation to tag groups, app sections, or the introductory
+description (see openapi_description).
+You can also manually change any operation_id, tag, or tag group name (see below).
+"""
+
 openapi_description = """
 # Introduction
 Penn Courses (<a href="https://github.com/pennlabs/penn-courses">GitHub</a>) is the umbrella 
