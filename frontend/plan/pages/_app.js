@@ -56,6 +56,8 @@ function App() {
         )
     );
 
+    const [storeLoaded, setStoreLoaded] = useState(false);
+
     // FIXME: Hacky, I'm sure next has some better way to
     // handle this
     const [innerWidth, setInnerWidth] = useState(800);
@@ -84,6 +86,7 @@ function App() {
         );
 
         setStore(newStore);
+        setStoreLoaded(true);
 
         newStore.subscribe(() => {
             localStorage.setItem(
@@ -112,7 +115,12 @@ function App() {
         return (
             <Provider store={store}>
                 {initGA()}
-                <SearchBar store={store} setTab={setTab} mobileView />
+                <SearchBar
+                    store={store}
+                    setTab={setTab}
+                    mobileView
+                    storeLoaded={storeLoaded}
+                />
                 <Tabs value={tab} className="topTabs" centered>
                     <Tab
                         className="topTab"
@@ -183,6 +191,7 @@ function App() {
             {initGA()}
             <div style={{ padding: "0px 2em 0px 2em" }}>
                 <SearchBar
+                    storeLoaded={storeLoaded}
                     store={store}
                     setView={setView}
                     style={{ flexGrow: 0 }}

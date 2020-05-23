@@ -65,6 +65,7 @@ function SearchBar({
     isExpanded,
     clearScheduleData,
     store,
+    storeLoaded,
     /* eslint-enable no-shadow */
 }) {
     const router = useRouter();
@@ -75,10 +76,10 @@ function SearchBar({
 
     useEffect(() => {
         // ensure that the user is logged in before initiating the sync
-        if (user && store) {
+        if (user && storeLoaded) {
             initiateSync(store);
         }
-    }, [user, store]);
+    }, [user, store, storeLoaded]);
 
     const [reqsShown, showHideReqs] = useState(false);
 
@@ -385,6 +386,7 @@ SearchBar.propTypes = {
     logout: PropTypes.func,
     mobileView: PropTypes.bool,
     clearScheduleData: PropTypes.func,
+    storeLoaded: PropTypes.bool,
 };
 
 const mapStateToProps = (state) => ({
