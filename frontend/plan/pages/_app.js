@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import Head from "next/head";
 import "bulma/css/bulma.css";
 import "bulma-popover/css/bulma-popver.min.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
@@ -111,10 +112,55 @@ function App() {
         }
     }, [store]);
 
+    const headPreamble = (
+        <Head>
+            <meta charSet="utf-8" />
+            <link
+                href="https://fonts.googleapis.com/css?family=Nunito"
+                rel="stylesheet"
+            />
+            <link
+                rel="stylesheet"
+                href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
+                integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/"
+                crossOrigin="anonymous"
+            />
+            <link rel="shortcut icon" href="/icons/favicon.ico" />
+            <link rel="apple-touch-icon-precomposed" sizes="57x57" />
+            <link rel="apple-touch-icon-precomposed" sizes="114x114" />
+            <link rel="apple-touch-icon-precomposed" sizes="72x72" />
+            <link rel="apple-touch-icon-precomposed" sizes="144x144" />
+            <link rel="apple-touch-icon-precomposed" sizes="60x60" />
+            <link rel="apple-touch-icon-precomposed" sizes="120x120" />
+            <link rel="apple-touch-icon-precomposed" sizes="76x76" />
+            <link rel="apple-touch-icon-precomposed" sizes="152x152" />
+            <link rel="icon" type="image/png" sizes="196x196" />
+            <link rel="icon" type="image/png" sizes="96x96" />
+            <link rel="icon" type="image/png" sizes="32x32" />
+            <link rel="icon" type="image/png" sizes="16x16" />
+            <link rel="icon" type="image/png" sizes="128x128" />
+            <meta name="application-name" content="&nbsp;" />
+            <meta name="msapplication-TileColor" content="#FFFFFF" />
+            <meta name="msapplication-TileImage" />
+            <meta name="msapplication-square70x70logo" />
+            <meta name="msapplication-square150x150logo" />
+            <meta name="msapplication-wide310x150logo" />
+            <meta name="msapplication-square310x310logo" />
+
+            <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1, shrink-to-fit=no"
+            />
+            <meta name="theme-color" content="#000000" />
+            <title>Penn Course Plan</title>
+        </Head>
+    );
+
     if (innerWidth < 800) {
         return (
             <Provider store={store}>
                 {initGA()}
+                {headPreamble}
                 <SearchBar
                     store={store}
                     setTab={setTab}
@@ -189,6 +235,7 @@ function App() {
     return (
         <Provider store={store}>
             {initGA()}
+            {headPreamble}
             <div style={{ padding: "0px 2em 0px 2em" }}>
                 <SearchBar
                     storeLoaded={storeLoaded}
