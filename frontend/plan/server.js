@@ -7,6 +7,10 @@ const devProxy = {
         target: "http://localhost:8000",
         changeOrigin: true,
     },
+    "/accounts": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+    },
 };
 
 const port = parseInt(process.env.PORT, 10) || 3000;
