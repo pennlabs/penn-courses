@@ -53,15 +53,14 @@ def nest_related(nested_data, nested_key, other_fields):
     }
 
 
-def make_review_response(top_level, nested, nested_name, nested_key):
+def make_review_response(top_level, nested, nested_name, nested_key, other_keys=dict()):
     """
     Instructor and course responses are formatted exactly the same. Factor out the
     response to remove duplicated code.
     """
-    return Response(
-        {
-            "average_reviews": make_subdict("average_", top_level),
-            "recent_reviews": make_subdict("recent_", top_level),
+    return {
+            "average_ratings": make_subdict("average_", top_level),
+            "recent_ratings": make_subdict("recent_", top_level),
             "num_semesters": top_level["average_semester_count"],
             nested_name: nest_related(
                 nested,
@@ -69,10 +68,11 @@ def make_review_response(top_level, nested, nested_name, nested_key):
                 {
                     "latest_semester": "recent_semester_calc",
                     "num_semesters": "average_semester_count",
+                    **other_keys,
                 },
             ),
         }
-    )
+   
 
 
 """
@@ -98,7 +98,7 @@ def course_reviews(request, course_code):
     """
     if not Course.objects.filter(full_code=course_code).exists():
         raise Http404()
-    course = annotate_average_and_recent(
+    course_qs = annotate_average_and_recent(
         Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
         match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
     )
@@ -108,8 +108,15 @@ def course_reviews(request, course_code):
         match_on=Q(section__course__full_code=course_code, instructor__pk=OuterRef(OuterRef("pk"))),
     )
 
-    return make_review_response(course.values()[0], instructors.values(), "instructors", "name")
+    course = course_qs.values()[0]
 
+    response = make_review_response(course, instructors.values(), "instructors", "name")
+
+    return Response({
+        "code": course["full_code"],
+        "name": course["title"],
+        **response
+    })
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -130,7 +137,16 @@ def instructor_reviews(request, instructor_id):
             instructor__pk=instructor.pk,
         ),
     )
-    return make_review_response(instructor_qs.values()[0], courses.values(), "courses", "full_code")
+
+    review_response = make_review_response(instructor_qs.values()[0], courses.values(), "courses", "full_code", {"code": "full_code", "name": "title"})
+
+    return Response({
+        "name": instructor.name,
+        "num_sections_recent": len(review_response["courses"]),
+        # "num_sections_recent": len(course_vals),
+        # "num_sections":
+        **review_response,
+    })
 
 
 @api_view(["GET"])
@@ -192,12 +208,12 @@ def autocomplete(request):
     Courses, departments, instructors. All objects are title, desc, url.
     """
 
-    courses = Course.objects.filter(semester=get_value("SEMESTER")).values("full_code", "title")
+    courses = Course.objects.filter().values("full_code", "title")
     course_set = [
         {
             "title": course["full_code"],
             "desc": [course["title"]],
-            "url": reverse("course-reviews", args=[course["full_code"]]),
+            "url": f"/course/{course['full_code']}",
         }
         for course in courses
     ]
@@ -206,7 +222,7 @@ def autocomplete(request):
         {
             "title": dept["code"],
             "desc": dept["name"],
-            "url": reverse("department-reviews", args=[dept["code"]]),
+            "url": f"/department/{dept['code']}",
         }
         for dept in departments
     ]
@@ -218,7 +234,7 @@ def autocomplete(request):
             instructor_set[inst["id"]] = {
                 "title": inst["name"],
                 "desc": set([inst["section__course__department__code"]]),
-                "url": reverse("instructor-reviews", args=[inst["id"]]),
+                "url": f"/instructor/{inst['id']}"
             }
         instructor_set[inst["id"]]["desc"].add(inst["section__course__department__code"])
     instructor_set = [

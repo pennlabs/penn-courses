@@ -10,11 +10,11 @@ from review.views import (
 
 
 urlpatterns = [
-    path("courses/<slug:course_code>", course_reviews, name="course-reviews"),
+    path("course/<slug:course_code>", course_reviews, name="course-reviews"),
     path("instructor/<slug:instructor_id>", instructor_reviews, name="instructor-reviews"),
     path("department/<slug:department_code>", department_reviews, name="department-reviews"),
     path(
-        "courses/<slug:course_code>/<slug:instructor_id>",
+        "course/<slug:course_code>/<slug:instructor_id>",
         instructor_for_course_reviews,
         name="course-history",
     ),
