@@ -38,6 +38,12 @@ applications:
       hosts:
         - host: penncoursealert.com
           paths: ["/"]
+  - name: review
+    image: pennlabs/pcr-frontend
+    ingress:
+      hosts:
+      - host: review.penncourses.org
+        paths: ["/"]
 
 cronjobs:
   - name: load-courses
