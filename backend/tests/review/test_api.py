@@ -107,7 +107,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
 
     def test_department(self):
         self.assertRequestContains(
-            "department-reviews", "CIS", {"courses": [average_and_recent(4, 4)]}
+            "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(4, 4)}}
         )
 
     def test_history(self):
@@ -174,7 +174,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
 
     def test_department(self):
         self.assertRequestContains(
-            "department-reviews", "CIS", {"courses": [average_and_recent(3, 4)]}
+            "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(3, 4)}}
         )
 
     def test_history(self):

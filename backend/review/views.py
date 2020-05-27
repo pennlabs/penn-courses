@@ -32,6 +32,18 @@ def make_subdict(field_prefix, d):
     }
 
 
+def make_list_response(nested_data, nested_key, other_fields):
+    return {
+        r[nested_key]: {
+            nested_key: r[nested_key],
+            "average_reviews": make_subdict("average_", r),
+            "recent_reviews": make_subdict("recent_", r),
+            **{k: r[v] for k, v in other_fields.items()},
+        }
+        for r in nested_data
+    }
+
+
 def make_review_response(top_level, nested, nested_name, nested_key):
     """
     Instructor and course responses are formatted exactly the same. Factor out the
@@ -42,16 +54,14 @@ def make_review_response(top_level, nested, nested_name, nested_key):
             "average_reviews": make_subdict("average_", top_level),
             "recent_reviews": make_subdict("recent_", top_level),
             "num_semesters": top_level["average_semester_count"],
-            nested_name: {
-                r[nested_key]: {
-                    nested_key: r[nested_key],
-                    "average_reviews": make_subdict("average_", r),
-                    "recent_reviews": make_subdict("recent_", r),
-                    "latest_semester": r["recent_semester_calc"],
-                    "num_semesters": r["average_semester_count"],
-                }
-                for r in nested
-            },
+            nested_name: make_list_response(
+                nested,
+                nested_key,
+                {
+                    "latest_semester": "recent_semester_calc",
+                    "num_semesters": "average_semester_count",
+                },
+            )
         }
     )
 
@@ -111,15 +121,7 @@ def department_reviews(request, department_code):
         {
             "code": department.code,
             "name": department.name,
-            "courses": [
-                {
-                    "code": course["full_code"],
-                    "name": course["title"],
-                    "average_reviews": make_subdict("average_", course),
-                    "recent_reviews": make_subdict("recent_", course),
-                }
-                for course in courses
-            ],
+            "courses": make_list_response(courses, "full_code", {"code": "full_code", "name": "title"})
         }
     )
 
