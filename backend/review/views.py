@@ -3,7 +3,8 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from options.models import get_value
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Course, Department, Instructor
@@ -90,6 +91,7 @@ it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def course_reviews(request, course_code):
     """
     Get all reviews for a given course, aggregated by instructor.
@@ -110,6 +112,7 @@ def course_reviews(request, course_code):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def instructor_reviews(request, instructor_id):
     """
     Get all reviews for a given instructor, aggregated by course.
@@ -131,6 +134,7 @@ def instructor_reviews(request, instructor_id):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def department_reviews(request, department_code):
     """
     Get reviews for all courses in a department.
@@ -150,6 +154,7 @@ def department_reviews(request, department_code):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def instructor_for_course_reviews(request, course_code, instructor_id):
     """
     Get the review history of an instructor teaching a course. No aggregations here.

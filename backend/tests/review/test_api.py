@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
@@ -86,6 +87,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
 
     def test_course(self):
@@ -146,6 +148,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
 
@@ -189,6 +192,7 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review("CIS-160-001", "3008C", self.instructor_name, {"instructor_quality": 2})
@@ -214,6 +218,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         self.instructor1 = Instructor.objects.get(name=self.instructor_name)
@@ -250,6 +255,7 @@ class TwoSectionTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         self.instructor1 = Instructor.objects.get(name=self.instructor_name)
@@ -286,6 +292,7 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", "2017A", "Instructor Two", {"instructor_quality": 2})
 
@@ -314,6 +321,8 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
         create_review("MATH-114-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         create_review("ENM-211-003", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 3})
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
         self.instructor1 = Instructor.objects.get(name="Instructor One")
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
@@ -375,15 +384,41 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
 class NotFoundTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
 
     def test_course(self):
-        self.assertEqual(404, self.client.get("course-reviews", args=["BLAH"]).status_code)
+        self.assertEqual(404, self.client.get(reverse("course-reviews", args=["BLAH"])).status_code)
 
     def test_instructor(self):
-        self.assertEqual(404, self.client.get("instructor-reviews", args=["BLAH"]).status_code)
+        self.assertEqual(404, self.client.get(reverse("instructor-reviews", args=[0])).status_code)
 
     def test_department(self):
-        self.assertEqual(404, self.client.get("department-reviews", args=["BLAH"]).status_code)
+        self.assertEqual(
+            404, self.client.get(reverse("department-reviews", args=["BLAH"])).status_code
+        )
 
     def test_history(self):
-        self.assertEqual(404, self.client.get("course-history", args=["BLAH"]).status_code)
+        self.assertEqual(
+            404, self.client.get(reverse("course-history", args=["BLAH", 123])).status_code
+        )
+
+
+class NoAuthTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_course(self):
+        self.assertEqual(403, self.client.get(reverse("course-reviews", args=["BLAH"])).status_code)
+
+    def test_instructor(self):
+        self.assertEqual(403, self.client.get(reverse("instructor-reviews", args=[0])).status_code)
+
+    def test_department(self):
+        self.assertEqual(
+            403, self.client.get(reverse("department-reviews", args=["BLAH"])).status_code
+        )
+
+    def test_history(self):
+        self.assertEqual(
+            403, self.client.get(reverse("course-history", args=["BLAH", 0])).status_code
+        )
