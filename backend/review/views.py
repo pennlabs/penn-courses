@@ -59,8 +59,8 @@ def make_review_response(top_level, nested, nested_name, nested_key, other_keys=
     response to remove duplicated code.
     """
     return {
-            "average_ratings": make_subdict("average_", top_level),
-            "recent_ratings": make_subdict("recent_", top_level),
+            "average_reviews": make_subdict("average_", top_level),
+            "recent_reviews": make_subdict("recent_", top_level),
             "num_semesters": top_level["average_semester_count"],
             nested_name: nest_related(
                 nested,

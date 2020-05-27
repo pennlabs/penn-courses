@@ -14,8 +14,8 @@ import { apiContact } from '../../utils/api'
 const InfoBox = ({
   type,
   data: {
-    average_ratings: average = {},
-    recent_ratings: recent = {},
+    average_reviews: average = {},
+    recent_reviews: recent = {},
     code = '',
     aliases,
     description,
