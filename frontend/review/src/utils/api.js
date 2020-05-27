@@ -8,7 +8,7 @@ function apiFetch(url) {
 
 export function redirectForAuth() {
   window.location.href = `${API_DOMAIN}/accounts/login/?next=${encodeURIComponent(
-    window.location.href
+    window.location.pathname
   )}`
 }
 
@@ -24,6 +24,16 @@ export function apiAutocomplete() {
       PUBLIC_API_TOKEN
     )}`
   )
+}
+
+export async function apiCheckAuth() {
+  const res = await fetch(`${API_DOMAIN}/accounts/me/`)
+  if (res.status < 300 && res.status >= 200) {
+    return true
+  }
+  else {
+    return false
+  }
 }
 
 export function apiIsAuthenticated(func) {
