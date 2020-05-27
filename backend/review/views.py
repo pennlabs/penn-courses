@@ -1,8 +1,6 @@
 from django.db.models import F, OuterRef, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
-from options.models import get_value
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -59,20 +57,19 @@ def make_review_response(top_level, nested, nested_name, nested_key, other_keys=
     response to remove duplicated code.
     """
     return {
-            "average_reviews": make_subdict("average_", top_level),
-            "recent_reviews": make_subdict("recent_", top_level),
-            "num_semesters": top_level["average_semester_count"],
-            nested_name: nest_related(
-                nested,
-                nested_key,
-                {
-                    "latest_semester": "recent_semester_calc",
-                    "num_semesters": "average_semester_count",
-                    **other_keys,
-                },
-            ),
-        }
-   
+        "average_reviews": make_subdict("average_", top_level),
+        "recent_reviews": make_subdict("recent_", top_level),
+        "num_semesters": top_level["average_semester_count"],
+        nested_name: nest_related(
+            nested,
+            nested_key,
+            {
+                "latest_semester": "recent_semester_calc",
+                "num_semesters": "average_semester_count",
+                **other_keys,
+            },
+        ),
+    }
 
 
 """
@@ -112,11 +109,8 @@ def course_reviews(request, course_code):
 
     response = make_review_response(course, instructors.values(), "instructors", "name")
 
-    return Response({
-        "code": course["full_code"],
-        "name": course["title"],
-        **response
-    })
+    return Response({"code": course["full_code"], "name": course["title"], **response})
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -138,15 +132,23 @@ def instructor_reviews(request, instructor_id):
         ),
     )
 
-    review_response = make_review_response(instructor_qs.values()[0], courses.values(), "courses", "full_code", {"code": "full_code", "name": "title"})
+    review_response = make_review_response(
+        instructor_qs.values()[0],
+        courses.values(),
+        "courses",
+        "full_code",
+        {"code": "full_code", "name": "title"},
+    )
 
-    return Response({
-        "name": instructor.name,
-        "num_sections_recent": len(review_response["courses"]),
-        # "num_sections_recent": len(course_vals),
-        # "num_sections":
-        **review_response,
-    })
+    return Response(
+        {
+            "name": instructor.name,
+            "num_sections_recent": len(review_response["courses"]),
+            # "num_sections_recent": len(course_vals),
+            # "num_sections":
+            **review_response,
+        }
+    )
 
 
 @api_view(["GET"])
@@ -219,11 +221,7 @@ def autocomplete(request):
     ]
     departments = Department.objects.all().values("code", "name")
     department_set = [
-        {
-            "title": dept["code"],
-            "desc": dept["name"],
-            "url": f"/department/{dept['code']}",
-        }
+        {"title": dept["code"], "desc": dept["name"], "url": f"/department/{dept['code']}",}
         for dept in departments
     ]
 
@@ -234,7 +232,7 @@ def autocomplete(request):
             instructor_set[inst["id"]] = {
                 "title": inst["name"],
                 "desc": set([inst["section__course__department__code"]]),
-                "url": f"/instructor/{inst['id']}"
+                "url": f"/instructor/{inst['id']}",
             }
         instructor_set[inst["id"]]["desc"].add(inst["section__course__department__code"])
     instructor_set = [

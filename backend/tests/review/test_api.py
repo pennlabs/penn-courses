@@ -127,19 +127,11 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                     {
                         "title": self.instructor_name,
                         "desc": "CIS",
-                        "url": f"/instructor/{Instructor.objects.get().pk}"
+                        "url": f"/instructor/{Instructor.objects.get().pk}",
                     }
                 ],
-                "courses": [
-                    {
-                        "title": "CIS-120",
-                        "desc": [""],
-                        "url": "/course/CIS-120",
-                    }
-                ],
-                "departments": [
-                    {"title": "CIS", "desc": "", "url": "/department/CIS"}
-                ],
+                "courses": [{"title": "CIS-120", "desc": [""], "url": "/course/CIS-120",}],
+                "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
             },
         )
 
@@ -359,7 +351,7 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "Instructor One",
                         "desc": "CIS",
-                        "url": f"/instructor/{self.instructor1.pk}"
+                        "url": f"/instructor/{self.instructor1.pk}",
                     },
                     {
                         "title": "Instructor Two",
@@ -367,16 +359,8 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
                         "url": f"/instructor/{self.instructor2.pk}",
                     },
                 ],
-                "courses": [
-                    {
-                        "title": "CIS-120",
-                        "desc": [""],
-                        "url": "/course/CIS-120"
-                    }
-                ],
-                "departments": [
-                    {"title": "CIS", "desc": "", "url": "/department/CIS"}
-                ],
+                "courses": [{"title": "CIS-120", "desc": [""], "url": "/course/CIS-120"}],
+                "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
             },
         )
 
