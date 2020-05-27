@@ -32,7 +32,15 @@ def make_subdict(field_prefix, d):
     }
 
 
-def make_list_response(nested_data, nested_key, other_fields):
+def nest_related(nested_data, nested_key, other_fields):
+    """
+    Return all nested data necessary for PCR views.
+
+    :param nested_data: ValuesQuerySet (or just a dict) to nest.
+    :param nested_key: Property which represents unique identifier of each row.
+    :param other_fields: the key will be the key in each element's dictionary.
+    The value is the lookup value in the input row.
+    """
     return {
         r[nested_key]: {
             nested_key: r[nested_key],
@@ -54,16 +62,31 @@ def make_review_response(top_level, nested, nested_name, nested_key):
             "average_reviews": make_subdict("average_", top_level),
             "recent_reviews": make_subdict("recent_", top_level),
             "num_semesters": top_level["average_semester_count"],
-            nested_name: make_list_response(
+            nested_name: nest_related(
                 nested,
                 nested_key,
                 {
                     "latest_semester": "recent_semester_calc",
                     "num_semesters": "average_semester_count",
                 },
-            )
+            ),
         }
     )
+
+
+"""
+You might be wondering why these API routes are using the @api_view function decorator
+from Django REST Framework rather than using any of the higher-level constructs that DRF
+gives us, like Generic APIViews or ViewSets.
+
+ViewSets define REST actions on a specific "resource" -- generally in our case, django models with
+defined serializers. With these aggregations, though, there isn't a good way to define a resource
+for a ViewSet to act upon. Each endpoint doesn't represent one resource, or a list of resources,
+but one aggregation of all resources (ReviewBits) that fit a certain filter.
+
+There probably is a way to fit everything into a serializer, but at the time of writing it felt like
+it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
+"""
 
 
 @api_view(["GET"])
@@ -121,7 +144,7 @@ def department_reviews(request, department_code):
         {
             "code": department.code,
             "name": department.name,
-            "courses": make_list_response(courses, "full_code", {"code": "full_code", "name": "title"})
+            "courses": nest_related(courses, "full_code", {"code": "full_code", "name": "title"}),
         }
     )
 

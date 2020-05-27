@@ -86,9 +86,9 @@ REVIEW_BIT_LABEL = (
 )
 
 # Maps column name from SUMMARY sql tables to common slug.
-COLUMN_TO_SLUG = dict([(x[0], x[2]) for x in REVIEW_BIT_LABEL])
+COLUMN_TO_SLUG = {x[0]: x[2] for x in REVIEW_BIT_LABEL}
 # Maps "context" value from RATING table to common slug.
-CONTEXT_TO_SLUG = dict([(x[1], x[2]) for x in REVIEW_BIT_LABEL])
+CONTEXT_TO_SLUG = {x[1]: x[2] for x in REVIEW_BIT_LABEL}
 ALL_FIELD_SLUGS = [x[2] for x in REVIEW_BIT_LABEL]
 
 
