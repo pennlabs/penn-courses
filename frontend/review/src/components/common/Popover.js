@@ -1,73 +1,73 @@
-import React, { Component } from 'react'
-import ReactDOM from 'react-dom'
+import React, { Component } from "react";
+import ReactDOM from "react-dom";
 
 /**
  * A component that represents a button and a box that appears when the button is clicked/hovered over.
  */
 class Popover extends Component {
   constructor(props) {
-    super(props)
+    super(props);
 
     this.state = {
-      isShown: false,
-    }
+      isShown: false
+    };
 
-    this.onToggle = this.onToggle.bind(this)
-    this.onHide = this.onHide.bind(this)
+    this.onToggle = this.onToggle.bind(this);
+    this.onHide = this.onHide.bind(this);
   }
 
   componentDidMount() {
     if (!this.props.hover) {
-      document.addEventListener('click', this.onHide)
+      document.addEventListener("click", this.onHide);
     }
     if (!this.dialogElement) {
-      this.dialogElement = document.createElement('div')
-      this.dialogElement.style.position = 'static'
-      document.body.appendChild(this.dialogElement)
-      this.componentDidUpdate()
+      this.dialogElement = document.createElement("div");
+      this.dialogElement.style.position = "static";
+      document.body.appendChild(this.dialogElement);
+      this.componentDidUpdate();
     }
   }
 
   componentWillUnmount() {
     if (!this.props.hover) {
-      document.removeEventListener('click', this.onHide)
+      document.removeEventListener("click", this.onHide);
     }
-    document.body.removeChild(this.dialogElement)
+    document.body.removeChild(this.dialogElement);
   }
 
   onHide(e) {
     if (!this.refs.button) {
-      return
+      return;
     }
-    const buttonElement = ReactDOM.findDOMNode(this.refs.button)
+    const buttonElement = ReactDOM.findDOMNode(this.refs.button);
     if (buttonElement.contains(e.target)) {
-      return
+      return;
     }
     if (!this.dialogElement.contains(e.target)) {
       this.setState({
-        isShown: false,
-      })
+        isShown: false
+      });
     }
   }
 
   onToggle(val) {
     const { left, bottom } = ReactDOM.findDOMNode(
       this.refs.button
-    ).getBoundingClientRect()
+    ).getBoundingClientRect();
     this.setState(({ isShown }) => ({
-      isShown: typeof val === 'undefined' ? !isShown : val,
-      position: [left, bottom],
-    }))
+      isShown: typeof val === "undefined" ? !isShown : val,
+      position: [left, bottom]
+    }));
   }
 
   componentDidUpdate() {
     if (this.state.position) {
       const {
         position: [top, left],
-        isShown,
-      } = this.state
-      const { style, children } = this.props
-      const { scrollX, scrollY } = window
+        isShown
+      } = this.state;
+      const { style, children } = this.props;
+      const { scrollX, scrollY } = window;
       ReactDOM.render(
         isShown ? (
           <div
@@ -75,7 +75,7 @@ class Popover extends Component {
             style={{
               ...style,
               top: left + scrollY,
-              left: top + scrollX,
+              left: top + scrollX
             }}
           >
             {children}
@@ -84,23 +84,23 @@ class Popover extends Component {
           undefined
         ),
         this.dialogElement
-      )
+      );
     }
   }
 
   render() {
-    const { hover, button } = this.props
+    const { hover, button } = this.props;
     return (
       <span
         ref="button"
-        style={{ cursor: 'pointer' }}
+        style={{ cursor: "pointer" }}
         onClick={!hover ? () => this.onToggle() : undefined}
         onMouseEnter={hover ? () => this.onToggle(true) : undefined}
         onMouseLeave={hover ? () => this.onToggle(false) : undefined}
       >
         {button || <button>Toggle</button>}
       </span>
-    )
+    );
   }
 }
 
@@ -108,6 +108,6 @@ const PopoverTitle = ({ children, title }) => (
   <Popover hover button={children}>
     {title}
   </Popover>
-)
+);
 
-export { PopoverTitle, Popover }
+export { PopoverTitle, Popover };

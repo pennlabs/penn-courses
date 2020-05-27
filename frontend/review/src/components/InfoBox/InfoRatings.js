@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 
 /**
  * Three colored boxes with numerical rating values, used in the course description box.
@@ -8,32 +8,32 @@ const RatingRow = ({
   num_sections: numSections,
   course,
   instructor,
-  difficulty,
+  difficulty
 }) => {
-  const numOrNA = num => (isNaN(num) ? 'N/A' : num.toFixed(1))
+  const numOrNA = num => (isNaN(num) ? "N/A" : num.toFixed(1));
   // TODO: After switching to styled-components or some other styling solution, refactor this code.
   const getColor = num => {
     if (isNaN(num)) {
-      return 'rating-good'
+      return "rating-good";
     }
-    num = num.toFixed(1)
+    num = num.toFixed(1);
     if (num < 2) {
-      return 'rating-bad'
+      return "rating-bad";
     }
     if (num < 3) {
-      return 'rating-okay'
+      return "rating-okay";
     }
-    return 'rating-good'
-  }
+    return "rating-good";
+  };
 
-  const hasSingleSection = numSections === 1
+  const hasSingleSection = numSections === 1;
 
   return (
     <div className="scorebox-desc-row">
       <div className="scoredesc">
-        <p className="title">{value}</p>{' '}
+        <p className="title">{value}</p>{" "}
         <p className="subtitle">
-          {numSections} {hasSingleSection ? 'Section' : 'Sections'}
+          {numSections} {hasSingleSection ? "Section" : "Sections"}
         </p>
       </div>
       <div className="scoreboxrow">
@@ -51,7 +51,7 @@ const RatingRow = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default RatingRow
+export default RatingRow;

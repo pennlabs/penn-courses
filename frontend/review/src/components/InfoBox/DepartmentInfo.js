@@ -1,22 +1,22 @@
-import React from 'react'
-import { Bar } from 'react-chartjs-2'
+import React from "react";
+import { Bar } from "react-chartjs-2";
 
-import { DEFAULT_COLUMNS } from '../../constants'
-import { getColumnName } from '../../utils/helpers'
+import { DEFAULT_COLUMNS } from "../../constants";
+import { getColumnName } from "../../utils/helpers";
 
 export const DepartmentHeader = ({ name, code }) => (
   <div className="department">
     <div className="title">{name}</div>
     <p className="subtitle">{code}</p>
   </div>
-)
+);
 
 const chartColorMap = {
-  rCourseQuality: '#6274f1',
-  rInstructorQuality: '#ffc107',
-  rDifficulty: '#76bf96',
-  rWorkRequired: '#df5d56',
-}
+  rCourseQuality: "#6274f1",
+  rInstructorQuality: "#ffc107",
+  rDifficulty: "#76bf96",
+  rWorkRequired: "#df5d56"
+};
 
 const generateChartData = courses => {
   return {
@@ -26,14 +26,14 @@ const generateChartData = courses => {
       data: Object.values(courses).map(
         ({
           original: {
-            [column]: { average = 0 },
-          },
+            [column]: { average = 0 }
+          }
         }) => average
       ),
-      backgroundColor: chartColorMap[column],
-    })),
-  }
-}
+      backgroundColor: chartColorMap[column]
+    }))
+  };
+};
 
 const chartOptions = {
   scales: {
@@ -42,16 +42,16 @@ const chartOptions = {
         display: true,
         ticks: {
           min: 0,
-          max: 4,
-        },
-      },
-    ],
-  },
-}
+          max: 4
+        }
+      }
+    ]
+  }
+};
 
 export const DepartmentGraphs = ({ courses }) => {
   const chartData =
-    courses && Object.keys(courses).length && generateChartData(courses)
+    courses && Object.keys(courses).length && generateChartData(courses);
   return (
     <div className="department-content">
       {chartData ? (
@@ -69,5 +69,5 @@ export const DepartmentGraphs = ({ courses }) => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};

@@ -1,5 +1,5 @@
-import React from 'react'
-import withLayout from './withLayout'
+import React from "react";
+import withLayout from "./withLayout";
 
 const FAQ = () => (
   <div id="faqs" className="center-narrow">
@@ -72,6 +72,6 @@ const FAQ = () => (
       </div>
     </div>
   </div>
-)
+);
 
-export const FAQPage = withLayout(FAQ)
+export const FAQPage = withLayout(FAQ);

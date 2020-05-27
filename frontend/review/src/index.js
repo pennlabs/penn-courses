@@ -1,23 +1,23 @@
-import React from 'react'
-import 'react-app-polyfill/ie11'
-import 'react-app-polyfill/stable'
+import React from "react";
+import "react-app-polyfill/ie11";
+import "react-app-polyfill/stable";
 
-import ReactDOM from 'react-dom'
-import { Route, Switch, BrowserRouter as Router } from 'react-router-dom'
+import ReactDOM from "react-dom";
+import { Route, Switch, BrowserRouter as Router } from "react-router-dom";
 import {
   AboutPage,
   AuthPage,
   CartPage,
   ErrorPage,
   FAQPage,
-  ReviewPage,
-} from './pages'
-import { GoogleAnalytics } from './components/common'
+  ReviewPage
+} from "./pages";
+import { GoogleAnalytics } from "./components/common";
 
-if (window.location.hostname !== 'localhost') {
+if (window.location.hostname !== "localhost") {
   window.Raven.config(
-    'https://1eab3b29efe0416fa948c7cd23ed930a@sentry.pennlabs.org/5'
-  ).install()
+    "https://1eab3b29efe0416fa948c7cd23ed930a@sentry.pennlabs.org/5"
+  ).install();
 }
 
 ReactDOM.render(
@@ -35,5 +35,5 @@ ReactDOM.render(
     </Switch>
     <GoogleAnalytics />
   </Router>,
-  document.getElementById('root')
-)
+  document.getElementById("root")
+);

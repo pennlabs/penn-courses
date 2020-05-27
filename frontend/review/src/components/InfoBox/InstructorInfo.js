@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 
 export default ({ name, contact, notes }) => (
   <div className="instructor">
@@ -6,15 +6,16 @@ export default ({ name, contact, notes }) => (
     {contact && (
       <div>
         <p className="desc">
-          Email:{' '}
+          Email:{" "}
           <a href={`mailto:${contact.email}`}> {contact.email.toLowerCase()}</a>
         </p>
       </div>
     )}
-    {notes && notes.map(note => (
-      <div key={note} className="note">
-        <i className="fa fa-thumbtack" /> {note}
-      </div>
-    ))}
+    {notes &&
+      notes.map(note => (
+        <div key={note} className="note">
+          <i className="fa fa-thumbtack" /> {note}
+        </div>
+      ))}
   </div>
-)
+);

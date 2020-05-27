@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from "react";
 
-import Ratings from './InfoRatings'
-import { CourseDescription, CourseHeader } from './CourseInfo'
-import InstructorInfo from './InstructorInfo'
-import { DepartmentHeader, DepartmentGraphs } from './DepartmentInfo'
-import { apiContact } from '../../utils/api'
+import Ratings from "./InfoRatings";
+import { CourseDescription, CourseHeader } from "./CourseInfo";
+import InstructorInfo from "./InstructorInfo";
+import { DepartmentHeader, DepartmentGraphs } from "./DepartmentInfo";
+import { apiContact } from "../../utils/api";
 
 /**
  * Information box on the left most side, containing scores and descriptions
@@ -16,75 +16,75 @@ const InfoBox = ({
   data: {
     average_reviews: average = {},
     recent_reviews: recent = {},
-    code = '',
+    code = "",
     aliases,
     description,
     instructors,
     name,
     notes,
     num_sections: numSections,
-    num_sections_recent: numSectionsRecent,
+    num_sections_recent: numSectionsRecent
   },
   data,
   liveData,
-  selectedCourses,
+  selectedCourses
 }) => {
-  const [contact, setContact] = useState(null)
+  const [contact, setContact] = useState(null);
   const [inCourseCart, setInCourseCart] = useState(
     Boolean(localStorage.getItem(code))
-  )
-  console.log(average)
+  );
+  console.log(average);
   const {
     rInstructorQuality: avgInstructorQuality,
     rCourseQuality: avgCourseQuality,
-    rDifficulty: avgDifficulty,
-  } = average
+    rDifficulty: avgDifficulty
+  } = average;
   const {
     rInstructorQuality: recentInstructorQuality,
     rCourseQuality: recentCourseQuality,
-    rDifficulty: recentDifficulty,
-  } = recent
+    rDifficulty: recentDifficulty
+  } = recent;
 
-  const isCourse = type === 'course'
-  const isInstructor = type === 'instructor'
-  const isDepartment = type === 'department'
+  const isCourse = type === "course";
+  const isInstructor = type === "instructor";
+  const isDepartment = type === "department";
 
   useEffect(() => {
-    if (isInstructor) apiContact(name).then(setContact)
-  }, [name, isInstructor])
+    if (isInstructor) apiContact(name).then(setContact);
+  }, [name, isInstructor]);
 
   const handleCartAdd = key => {
-    let instructor = 'Average Professor'
-    if (key !== 'average') {
-      ;({
+    let instructor = "Average Professor";
+    if (key !== "average") {
+      ({
         name: instructor,
         average_reviews: average,
-        recent_reviews: recent,
-      } = instructors[key])
+        recent_reviews: recent
+      } = instructors[key]);
     }
     const info = Object.keys(average).map(category => ({
       category,
       average: average[category],
-      recent: recent[category],
-    }))
+      recent: recent[category]
+    }));
     const item = JSON.stringify({
       version: 1,
       course: code,
       instructor,
-      info,
-    })
-    localStorage.setItem(code, item)
-    if (window.onCartUpdated) window.onCartUpdated()
-    setInCourseCart(true)
-  }
+      info
+    });
+    localStorage.setItem(code, item);
+    if (window.onCartUpdated) window.onCartUpdated();
+    setInCourseCart(true);
+  };
   const handleCartRemove = () => {
-    localStorage.removeItem(code)
-    setInCourseCart(false)
-    if (window.onCartUpdated) window.onCartUpdated()
-  }
+    localStorage.removeItem(code);
+    setInCourseCart(false);
+    if (window.onCartUpdated) window.onCartUpdated();
+  };
 
   if (!data) {
-    return <h1>Loading data...</h1>
+    return <h1>Loading data...</h1>;
   }
 
   return (
@@ -137,7 +137,7 @@ const InfoBox = ({
 
       {isCourse && <CourseDescription description={description} />}
     </div>
-  )
-}
+  );
+};
 
-export default InfoBox
+export default InfoBox;

@@ -1,6 +1,6 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import withLayout from './withLayout'
+import React from "react";
+import { Link } from "react-router-dom";
+import withLayout from "./withLayout";
 
 const About = () => (
   <div className="center-narrow">
@@ -21,7 +21,7 @@ const About = () => (
       .
     </p>
     <p>
-      Want easy access to Penn Course Review? Get the{' '}
+      Want easy access to Penn Course Review? Get the{" "}
       <a href="https://pennlabs.org/mobile/">Penn Mobile App</a>!
     </p>
 
@@ -73,6 +73,6 @@ const About = () => (
       <Link to="faq">FAQs</Link> section.
     </p>
   </div>
-)
+);
 
-export const AboutPage = withLayout(About)
+export const AboutPage = withLayout(About);

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import SearchBar from './SearchBar'
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import SearchBar from "./SearchBar";
 
 /**
  * The navigation bar at the top of the page, containing the logo, search bar, and cart icon.
@@ -8,18 +8,18 @@ import SearchBar from './SearchBar'
 
 const Navbar = () => {
   const getCourseCount = () =>
-    Object.keys(localStorage).filter(a => !a.startsWith('meta-')).length
-  const [courseCount, setCourseCount] = useState(getCourseCount())
+    Object.keys(localStorage).filter(a => !a.startsWith("meta-")).length;
+  const [courseCount, setCourseCount] = useState(getCourseCount());
 
   useEffect(() => {
-    const onStorageChange = () => setCourseCount(getCourseCount())
-    window.addEventListener('storage', onStorageChange)
-    window.onCartUpdated = onStorageChange
+    const onStorageChange = () => setCourseCount(getCourseCount());
+    window.addEventListener("storage", onStorageChange);
+    window.onCartUpdated = onStorageChange;
     return () => {
-      window.removeEventListener('storage', onStorageChange)
-      window.onCartUpdated = null
-    }
-  }, [])
+      window.removeEventListener("storage", onStorageChange);
+      window.onCartUpdated = null;
+    };
+  }, []);
 
   return (
     <div id="header">
@@ -36,7 +36,7 @@ const Navbar = () => {
         </Link>
       </span>
     </div>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

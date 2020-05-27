@@ -1,7 +1,7 @@
-import React from 'react'
-import withLayout from './withLayout'
-import { ErrorBox } from '../components/common'
+import React from "react";
+import withLayout from "./withLayout";
+import { ErrorBox } from "../components/common";
 
-const ErrorMsg = () => <ErrorBox>404 Page Not Found</ErrorBox>
+const ErrorMsg = () => <ErrorBox>404 Page Not Found</ErrorBox>;
 
-export const ErrorPage = withLayout(ErrorMsg)
+export const ErrorPage = withLayout(ErrorMsg);

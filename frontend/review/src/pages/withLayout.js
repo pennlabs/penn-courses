@@ -1,6 +1,6 @@
-import React from 'react'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
+import React from "react";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 export default WrappedComponent => props => (
   <>
@@ -8,4 +8,4 @@ export default WrappedComponent => props => (
     <WrappedComponent {...props} />
     <Footer />
   </>
-)
+);

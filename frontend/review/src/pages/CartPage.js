@@ -1,70 +1,70 @@
-import React, { Component } from 'react'
-import { Link } from 'react-router-dom'
+import React, { Component } from "react";
+import { Link } from "react-router-dom";
 
-import withLayout from './withLayout'
-import { Popover } from '../components/common'
-import { getColumnName, getCartCourses } from '../utils/helpers'
+import withLayout from "./withLayout";
+import { Popover } from "../components/common";
+import { getColumnName, getCartCourses } from "../utils/helpers";
 
 import {
   DEFAULT_COLUMNS,
   ALL_DATA_COLUMNS,
   COLUMN_FULLNAMES,
-  COLUMN_SHORTNAMES,
-} from '../constants'
+  COLUMN_SHORTNAMES
+} from "../constants";
 
 class Cart extends Component {
   constructor(props) {
-    super(props)
+    super(props);
 
     this.state = {
       showChooseCols: false,
-      isAverage: localStorage.getItem('meta-column-type') !== 'recent',
+      isAverage: localStorage.getItem("meta-column-type") !== "recent",
       courses: [],
       excludedCourses: [],
-      boxValues: ['N/A', 'N/A', 'N/A', 'N/A'],
-      boxLabels: DEFAULT_COLUMNS,
-    }
+      boxValues: ["N/A", "N/A", "N/A", "N/A"],
+      boxLabels: DEFAULT_COLUMNS
+    };
 
     // TODO: Move regeneration logic into Redux or React Context
-    this.regenerateRatings = this.regenerateRatings.bind(this)
+    this.regenerateRatings = this.regenerateRatings.bind(this);
   }
 
   componentDidMount() {
-    window.addEventListener('storage', this.regenerateRatings)
-    this.regenerateRatings()
+    window.addEventListener("storage", this.regenerateRatings);
+    this.regenerateRatings();
   }
 
   componentWillUnmount() {
-    window.removeEventListener('storage', this.regenerateRatings)
+    window.removeEventListener("storage", this.regenerateRatings);
   }
 
   regenerateRatings() {
-    const courses = getCartCourses()
+    const courses = getCartCourses();
     this.setState(({ boxLabels, excludedCourses, isAverage }) => ({
       courses,
       boxValues: boxLabels.map(type => {
         const scoreList = courses
           .filter(
             a =>
-              typeof a !== 'undefined' &&
+              typeof a !== "undefined" &&
               excludedCourses.indexOf(a.course) === -1
           )
           .map(
             a =>
               ((a.info || { type: null })[type] || {
                 average: null,
-                recent: null,
-              })[isAverage ? 'average' : 'recent']
+                recent: null
+              })[isAverage ? "average" : "recent"]
           )
           .filter(a => a !== null && !isNaN(a))
-          .map(a => parseFloat(a))
+          .map(a => parseFloat(a));
         return scoreList.length
           ? (scoreList.reduce((a, b) => a + b) / scoreList.length).toFixed(1)
-          : 'N/A'
-      }),
-    }))
+          : "N/A";
+      })
+    }));
 
-    if (window.onCartUpdated) window.onCartUpdated()
+    if (window.onCartUpdated) window.onCartUpdated();
   }
 
   render() {
@@ -74,11 +74,11 @@ class Cart extends Component {
       courses,
       excludedCourses,
       showChooseCols,
-      isAverage,
-    } = this.state
+      isAverage
+    } = this.state;
 
     return (
-      <center className="box" style={{ margin: '30px auto', maxWidth: 720 }}>
+      <center className="box" style={{ margin: "30px auto", maxWidth: 720 }}>
         <p className="courseCartHeader title">My Course Cart</p>
         <p className="courseCartDesc">
           The course cart is a feature for you to see all the relevant reviews
@@ -91,7 +91,7 @@ class Cart extends Component {
               <div
                 key={a}
                 className={`mb-2 scorebox ${
-                  ['course', 'instructor', 'difficulty', 'workload'][i % 4]
+                  ["course", "instructor", "difficulty", "workload"][i % 4]
                 }`}
               >
                 <p className="num">{boxValues[i]}</p>
@@ -104,34 +104,34 @@ class Cart extends Component {
         <div className="fillerBox" />
         {showChooseCols && (
           <div className="box">
-            <h3 style={{ fontSize: '1.5em' }}>Choose columns to display</h3>
-            <div className="clearfix" style={{ textAlign: 'left' }}>
+            <h3 style={{ fontSize: "1.5em" }}>Choose columns to display</h3>
+            <div className="clearfix" style={{ textAlign: "left" }}>
               {ALL_DATA_COLUMNS.map(a => (
-                <div style={{ width: '50%', display: 'inline-block' }} key={a}>
+                <div style={{ width: "50%", display: "inline-block" }} key={a}>
                   <input
                     type="checkbox"
                     onChange={() => {
-                      const pos = boxLabels.indexOf(a)
+                      const pos = boxLabels.indexOf(a);
                       if (pos === -1) {
                         this.setState(state => {
-                          state.boxValues.push('N/A')
-                          state.boxLabels.push(a)
+                          state.boxValues.push("N/A");
+                          state.boxLabels.push(a);
                           return {
                             boxValues: state.boxValues,
-                            boxLabels: state.boxLabels,
-                          }
-                        })
+                            boxLabels: state.boxLabels
+                          };
+                        });
                       } else {
                         this.setState(state => {
-                          state.boxValues.splice(pos, 1)
-                          state.boxLabels.splice(pos, 1)
+                          state.boxValues.splice(pos, 1);
+                          state.boxLabels.splice(pos, 1);
                           return {
                             boxValues: state.boxValues,
-                            boxLabels: state.boxLabels,
-                          }
-                        })
+                            boxLabels: state.boxLabels
+                          };
+                        });
                       }
-                      this.regenerateRatings()
+                      this.regenerateRatings();
                     }}
                     checked={boxLabels.indexOf(a) !== -1}
                     value={a}
@@ -149,7 +149,7 @@ class Cart extends Component {
           className="btn btn-primary mr-2"
           onClick={() =>
             this.setState(state => ({
-              showChooseCols: !state.showChooseCols,
+              showChooseCols: !state.showChooseCols
             }))
           }
         >
@@ -157,23 +157,23 @@ class Cart extends Component {
         </button>
         <div className="btn-group">
           <span
-            className={`btn ${isAverage ? 'btn-primary' : 'btn-secondary'}`}
+            className={`btn ${isAverage ? "btn-primary" : "btn-secondary"}`}
             onClick={() => {
               this.setState({ isAverage: true }, () =>
-                localStorage.setItem('meta-column-type', 'average')
-              )
-              this.regenerateRatings()
+                localStorage.setItem("meta-column-type", "average")
+              );
+              this.regenerateRatings();
             }}
           >
             Average
           </span>
           <span
-            className={`btn ${isAverage ? 'btn-secondary' : 'btn-primary'}`}
+            className={`btn ${isAverage ? "btn-secondary" : "btn-primary"}`}
             onClick={() => {
               this.setState({ isAverage: false }, () =>
-                localStorage.setItem('meta-column-type', 'recent')
-              )
-              this.regenerateRatings()
+                localStorage.setItem("meta-column-type", "recent")
+              );
+              this.regenerateRatings();
             }}
           >
             Most Recent
@@ -194,15 +194,15 @@ class Cart extends Component {
                       excludedCourses:
                         excludedCourses.indexOf(course) !== -1
                           ? excludedCourses.filter(b => b !== course)
-                          : excludedCourses.concat([course]),
-                    })
-                    this.regenerateRatings()
+                          : excludedCourses.concat([course])
+                    });
+                    this.regenerateRatings();
                   }}
-                  style={{ display: 'inline-block' }}
+                  style={{ display: "inline-block" }}
                   className={`courseInBox${
                     excludedCourses.indexOf(course) !== -1
-                      ? ' courseInBoxGrayed'
-                      : ''
+                      ? " courseInBoxGrayed"
+                      : ""
                   }`}
                 >
                   {course}
@@ -212,8 +212,8 @@ class Cart extends Component {
                   <i
                     className="fa fa-times"
                     onClick={() => {
-                      localStorage.removeItem(course)
-                      this.regenerateRatings()
+                      localStorage.removeItem(course);
+                      this.regenerateRatings();
                     }}
                   />
                 </div>
@@ -229,7 +229,7 @@ class Cart extends Component {
                   .sort((x, y) => x.category.localeCompare(y.category))
                   .map(({ category, average, recent }, i) => (
                     <div key={i}>
-                      {getColumnName(category)}{' '}
+                      {getColumnName(category)}{" "}
                       <span className="float-right ml-3">
                         {isAverage ? average : recent}
                       </span>
@@ -239,8 +239,8 @@ class Cart extends Component {
           ))}
         </div>
       </center>
-    )
+    );
   }
 }
 
-export const CartPage = withLayout(Cart)
+export const CartPage = withLayout(Cart);
