@@ -1,3 +1,4 @@
+import React from "react";
 import "bulma/css/bulma.css";
 import "bulma-popover/css/bulma-popver.min.css";
 import "bulma-extensions/bulma-divider/dist/css/bulma-divider.min.css";
@@ -13,8 +14,9 @@ import "../styles/schedule.css";
 import "../styles/Search.css";
 import "../styles/selector.css";
 
+// eslint-disable-next-line
 function App({ Component, pageProps }) {
-    return <Component {...pageProps}/>
+    return <Component {...pageProps} />;
 }
 
-export default App
+export default App;

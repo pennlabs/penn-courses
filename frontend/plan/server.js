@@ -29,16 +29,20 @@ app.prepare()
         server = express();
 
         if (dev) {
-            server.on('upgrade', handle)
+            server.on("upgrade", handle);
 
             // Set up the proxy.
             if (devProxy) {
-                // eslint-disable-next-line
-                const { createProxyMiddleware } = require("http-proxy-middleware");
-                // eslint-disable-next-line
+                /* eslint-disable */
+                const {
+                    createProxyMiddleware,
+                } = require("http-proxy-middleware");
                 Object.keys(devProxy).forEach(function (context) {
-                    server.use(createProxyMiddleware(context, devProxy[context]));
+                    server.use(
+                        createProxyMiddleware(context, devProxy[context])
+                    );
                 });
+                /* eslint-enable */
             }
         }
 
