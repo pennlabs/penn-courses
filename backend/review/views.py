@@ -95,6 +95,7 @@ def course_reviews(request, course_code):
     """
     if not Course.objects.filter(full_code=course_code).exists():
         raise Http404()
+
     course_qs = annotate_average_and_recent(
         Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
         match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
@@ -111,7 +112,14 @@ def course_reviews(request, course_code):
         course, instructors.values(), "instructors", "id", {"name": "name"}
     )
 
-    return Response({"code": course["full_code"], "name": course["title"], **response})
+    return Response(
+        {
+            "code": course["full_code"],
+            "name": course["title"],
+            "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
+            **response,
+        }
+    )
 
 
 @api_view(["GET"])
