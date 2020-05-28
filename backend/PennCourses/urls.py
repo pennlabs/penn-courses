@@ -9,6 +9,7 @@ from courses.views import UserView
 
 
 api_urlpatterns = [
+    path("review/", include("review.urls")),
     path("plan/", include("plan.urls")),
     path("alert/", include("alert.urls")),
     path("courses/", include("courses.urls")),

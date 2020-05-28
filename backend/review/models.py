@@ -61,6 +61,37 @@ class Review(models.Model):
         )
 
 
+"""
+Review Bits have different labels in the summary table and the rating table.
+This tuple keeps track of the association between the two, along with an
+intermediate, general label that we use internally.
+"""
+REVIEW_BIT_LABEL = (
+    ("RINSTRUCTORQUALITY", "Instructor Quality", "instructor_quality"),
+    ("RCOURSEQUALITY", "Course Quality", "course_quality"),
+    ("RCOMMABILITY", "Comm. Ability", "communication_ability"),
+    ("RSTIMULATEINTEREST", "Stimulate Ability", "stimulate_interest"),
+    ("RINSTRUCTORACCESS", "Instructor Access", "instructor_access"),
+    ("RDIFFICULTY", "Difficulty", "difficulty"),
+    ("RWORKREQUIRED", "Work Required", "work_required"),
+    ("RTAQUALITY", "TA Quality", "ta_quality"),
+    ("RREADINGSVALUE", "Readings Value", "readings_value"),
+    ("RAMOUNTLEARNED", "Amount Learned", "amount_learned"),
+    ("RRECOMMENDMAJOR", "Recommend Major", "recommend_major"),
+    ("RRECOMMENDNONMAJOR", "Recommend Non-Major", "recommend_nonmajor"),
+    ("RABILITIESCHALLENGED", "Abilities Challenged", "abilities_challenged"),
+    ("RCLASSPACE", "Class Pace", "class_pace"),
+    ("RINSTRUCTOREFFECTIVE", "Instructor Effectiveness", "instructor_effective"),
+    ("RNATIVEABILITY", "Native Ability", "native_ability"),
+)
+
+# Maps column name from SUMMARY sql tables to common slug.
+COLUMN_TO_SLUG = {x[0]: x[2] for x in REVIEW_BIT_LABEL}
+# Maps "context" value from RATING table to common slug.
+CONTEXT_TO_SLUG = {x[1]: x[2] for x in REVIEW_BIT_LABEL}
+ALL_FIELD_SLUGS = [x[2] for x in REVIEW_BIT_LABEL]
+
+
 class ReviewBit(models.Model):
     """
     A single key/value pair associated with a review. Fields are things like "course_quality",
