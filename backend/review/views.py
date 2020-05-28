@@ -107,7 +107,9 @@ def course_reviews(request, course_code):
 
     course = course_qs.values()[0]
 
-    response = make_review_response(course, instructors.values(), "instructors", "name")
+    response = make_review_response(
+        course, instructors.values(), "instructors", "id", {"name": "name"}
+    )
 
     return Response({"code": course["full_code"], "name": course["title"], **response})
 
