@@ -182,16 +182,16 @@ export const DetailsBox = forwardRef(({ course, instructor, type }, ref) => {
     const code = sem.slice(4);
 
     switch (code) {
-        case "A":
-          return `Spring ${year}`
-        case "B":
-          return `Summer ${year}`
-        case "C":
-          return `Fall ${year}`
-        default:
-          return sem
+      case "A":
+        return `Spring ${year}`;
+      case "B":
+        return `Summer ${year}`;
+      case "C":
+        return `Fall ${year}`;
+      default:
+        return sem;
     }
-  }
+  };
 
   return (
     <div id="course-details" className="box" ref={ref}>
