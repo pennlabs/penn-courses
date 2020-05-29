@@ -9,15 +9,11 @@ COPY package.json /app
 COPY yarn.lock /app
 COPY plan/ /app/plan
 COPY shared-components/ /app/shared-components
-RUN yarn workspace penncourseplan install
-RUN yarn workspace pcx-shared-components install
+RUN yarn workspace penncourseplan install --production --frozen-lockfile
+RUN yarn workspace pcx-shared-components install --production --frozen-lockfile
 
 # Build project
 WORKDIR /app/plan
 RUN yarn build
 
-FROM nginx:1.12
-COPY --from=build-deps /app/plan/build/ /usr/share/nginx/html
-
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["yarn", "start"]

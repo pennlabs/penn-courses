@@ -17,6 +17,7 @@ const AccountIndicator = ({
     onLeft,
     backgroundColor,
     nameLength,
+    pathname,
 }) => {
     useEffect(() => {
         if (user) {
@@ -44,7 +45,7 @@ const AccountIndicator = ({
             onLeft={onLeft}
         />
     ) : (
-        <LoginButton />
+        <LoginButton pathname={pathname} />
     );
 };
 
@@ -55,6 +56,7 @@ AccountIndicator.propTypes = {
     backgroundColor: PropTypes.string,
     nameLength: PropTypes.number,
     onLeft: PropTypes.bool,
+    pathname: PropTypes.string,
 };
 
 export default AccountIndicator;

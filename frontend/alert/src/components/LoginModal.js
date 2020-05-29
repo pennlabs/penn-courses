@@ -18,7 +18,7 @@ const LoginModal = () => (
         </Center>
         <br />
         <LoginButtonContainer>
-            <LoginButton noMargin />
+            <LoginButton noMargin pathname={window.location.pathname} />
         </LoginButtonContainer>
     </Modal>
 );

@@ -29,6 +29,9 @@ applications:
       hosts:
         - host: penncourseplan.com
           paths: ["/"]
+    extraEnv:
+      - name: PORT
+        value: 80
   - name: alert
     image: pennlabs/pca-frontend
     ingress:
