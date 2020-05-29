@@ -20,6 +20,8 @@ class Review(models.Model):
     responses = models.IntegerField(blank=True, null=True)
     form_type = models.IntegerField(blank=True, null=True)
 
+    comments = models.TextField(blank=True)
+
     class Meta:
         unique_together = (("section", "instructor"),)
 
