@@ -71,13 +71,6 @@ def make_review_response(top_level, nested, nested_name, nested_key, other_keys=
         ),
     }
 
-# def make_section_count_response(filters, recent_semester):
-#     qs = Review.objects.filter(filters).values("section__pk")
-#     return {
-#         "num_sections": qs.count(),
-#         "num_sections_recent": qs.filter(section__course__semester=recent_semester).values("section__pk").count()
-#     }
-
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
@@ -125,7 +118,9 @@ def course_reviews(request, course_code):
             "name": course["title"],
             "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
             "num_sections": Section.objects.filter(course__full_code=course_code).count(),
-            "num_sections_recent": Section.objects.filter(course__full_code=course_code, course__semester=course["recent_semester_calc"]).count(),
+            "num_sections_recent": Section.objects.filter(
+                course__full_code=course_code, course__semester=course["recent_semester_calc"]
+            ).count(),
             **response,
         }
     )
@@ -151,22 +146,19 @@ def instructor_reviews(request, instructor_id):
         ),
     )
 
-    inst = instructor_qs.values()[0],
+    inst = instructor_qs.values()[0]
 
     review_response = make_review_response(
-        inst,
-        courses.values(),
-        "courses",
-        "full_code",
-        {"code": "full_code", "name": "title"},
+        inst, courses.values(), "courses", "full_code", {"code": "full_code", "name": "title"},
     )
 
     return Response(
         {
             "name": instructor.name,
-            "num_sections_recent": len(review_response["courses"]),
-            "num_sections_recent": Section.objects.filter(instructor=instructor, course__semester=inst["recent_semester_calc"]).count(),
-            "num_sections": Section.objects.filter(instructor=instructor)
+            "num_sections_recent": Section.objects.filter(
+                instructors=instructor, course__semester=inst["recent_semester_calc"]
+            ).count(),
+            "num_sections": Section.objects.filter(instructors=instructor).count(),
             **review_response,
         }
     )
