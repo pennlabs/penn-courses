@@ -177,6 +177,22 @@ export const DetailsBox = forwardRef(({ course, instructor, type }, ref) => {
   } = data;
   const sectionsList = Object.values(sections);
 
+  const toNormalizedSemester = sem => {
+    const year = sem.slice(0, 4);
+    const code = sem.slice(4);
+
+    switch (code) {
+        case "A":
+          return `Spring ${year}`
+        case "B":
+          return `Summer ${year}`
+        case "C":
+          return `Fall ${year}`
+        default:
+          return sem
+    }
+  }
+
   return (
     <div id="course-details" className="box" ref={ref}>
       <div id="course-details-wrapper">
@@ -246,7 +262,7 @@ export const DetailsBox = forwardRef(({ course, instructor, type }, ref) => {
                   forms_returned: returned
                 }) => ({
                   ...ratings,
-                  semester,
+                  semester: toNormalizedSemester(semester),
                   name,
                   forms_produced: produced,
                   forms_returned: returned
