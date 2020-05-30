@@ -4,17 +4,15 @@ import PropTypes from "prop-types";
 import ReactGA from "react-ga";
 import * as Sentry from "@sentry/browser";
 
-import "./App.css";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
-import Logo from "./assets/PCA_logo.svg";
-import ManageAlertWrapper from "./components/managealert";
-import { maxWidth, PHONE } from "./constants";
-import Footer from "./components/Footer";
-import AlertForm from "./components/AlertForm";
+import ManageAlertWrapper from "../components/managealert";
+import { maxWidth, PHONE } from "../constants";
+import Footer from "../components/Footer";
+import AlertForm from "../components/AlertForm";
 
-import { Center, Container, Flex } from "./components/common/layout";
-import MessageList from "./components/MessageList";
-import LoginModal from "./components/LoginModal";
+import { Center, Container, Flex } from "../components/common/layout";
+import MessageList from "../components/MessageList";
+import LoginModal from "../components/LoginModal";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
@@ -34,7 +32,7 @@ const LogoArea = () => (
             alt="Penn Course Alert logo"
             width="70px"
             height="70px"
-            src={Logo}
+            src="/svg/PCA_logo.svg"
         />
         <Header>Penn Course Alert</Header>
     </Flex>
@@ -114,9 +112,7 @@ const genId = (() => {
 
 function App() {
     const [user, setUser] = useState(null);
-    const [page, setPage] = useState(
-        window.location.hash === "#manage" ? "manage" : "home"
-    );
+    const [page, setPage] = useState("home");
     const [messages, setMessages] = useState([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
 
