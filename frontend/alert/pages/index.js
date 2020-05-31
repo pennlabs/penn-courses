@@ -45,13 +45,14 @@ const NavContainer = styled.nav`
     width: 95%;
 `;
 
-const NavElt = styled.a`
+const NavElt = styled.span`
     padding: 20px;
     color: #4a4a4a;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    font-weight: ${(props) => (props.active ? "bold" : "normal")};
+    font-weight: ${props => (props.active ? "bold" : "normal")};
+    cursor: pointer;
 `;
 
 const Nav = ({ login, logout, user, page, setPage }) => (
@@ -67,9 +68,8 @@ const Nav = ({ login, logout, user, page, setPage }) => (
             />
         </NavElt>
         <NavElt
-            href="/"
             active={page === "home"}
-            onClick={(e) => {
+            onClick={e => {
                 e.preventDefault();
                 setPage("home");
             }}
@@ -77,9 +77,8 @@ const Nav = ({ login, logout, user, page, setPage }) => (
             Home
         </NavElt>
         <NavElt
-            href="/manage"
             active={page === "manage"}
-            onClick={(e) => {
+            onClick={e => {
                 e.preventDefault();
                 setPage("manage");
             }}
@@ -122,19 +121,19 @@ function App() {
     }, []);
 
     const MESSAGE_EXPIRATION_MILLIS = 8000;
-    const removeMessage = (k) =>
-        setMessages((msgs) => msgs.filter((m) => m.key !== k));
+    const removeMessage = k =>
+        setMessages(msgs => msgs.filter(m => m.key !== k));
     const addMessage = ({ message, status }) => {
         const id = genId();
-        setMessages((msgs) => [{ message, status, key: id }].concat(msgs));
+        setMessages(msgs => [{ message, status, key: id }].concat(msgs));
         setTimeout(() => removeMessage(id), MESSAGE_EXPIRATION_MILLIS);
     };
 
-    const setResponse = (res) => {
+    const setResponse = res => {
         const { status } = res;
         res.json()
-            .then((j) => addMessage({ message: j.message, status }))
-            .catch((e) => {
+            .then(j => addMessage({ message: j.message, status }))
+            .catch(e => {
                 addMessage({
                     message:
                         "We're sorry, there was an error in sending your message to our servers.",
@@ -146,7 +145,7 @@ function App() {
     };
 
     // Separates showLoginModal from state so that the login modal doesn't show up on page load
-    const updateUser = (newUserVal) => {
+    const updateUser = newUserVal => {
         if (!newUserVal) {
             // the user has logged out; show the login modal
             setShowLoginModal(true);
@@ -168,7 +167,7 @@ function App() {
                     logout={logout}
                     user={user}
                     page={page}
-                    setPage={(p) => {
+                    setPage={p => {
                         ReactGA.event({
                             category: "Navigation",
                             action: "Changed Page",

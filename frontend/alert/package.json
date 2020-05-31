@@ -1,5 +1,5 @@
 {
-  "name": "alert",
+  "name": "penncoursealert",
   "version": "0.1.0",
   "private": true,
   "proxy": "http://localhost:8000",
@@ -14,6 +14,7 @@
     "awesome-debounce-promise": "^2.1.0",
     "babel-plugin-styled-components": "^1.10.7",
     "eslint-plugin-prettier": "^3.1.3",
+    "express": "^4.17.1",
     "libphonenumber-js": "^1.7.50",
     "next": "^9.4.4",
     "next-transpile-modules": "^3.3.0",
@@ -23,7 +24,6 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-ga": "^2.7.0",
-    "react-scripts": "^3.4.1",
     "styled-components": "^5.1.0"
   },
   "scripts": {
@@ -55,6 +55,7 @@
     "eslint-plugin-flowtype": "^4.7.0",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-prettier": "^3.1.3",
     "eslint-plugin-react": "^7.16.0",
     "get-yarn-workspaces": "^1.0.2",
     "lint-staged": "^10.2.2",

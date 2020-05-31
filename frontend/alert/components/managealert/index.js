@@ -6,12 +6,12 @@ import { AlertStatus, AlertRepeat, AlertAction } from "./AlertItemEnums";
 import getCsrf from "../../csrf";
 
 const fetchAlerts = () =>
-    fetch("/api/alert/registrations/").then((res) => res.json());
+    fetch("/api/alert/registrations/").then(res => res.json());
 
-const processAlerts = (setAlerts) => {
+const processAlerts = setAlerts => {
     const fetchPromise = () =>
-        fetchAlerts().then((res) =>
-            res.map((registration) => {
+        fetchAlerts().then(res =>
+            res.map(registration => {
                 let datetime = null;
                 if (registration.notification_sent) {
                     const date = Intl.DateTimeFormat("en-US").format(
@@ -58,7 +58,7 @@ const processAlerts = (setAlerts) => {
             })
         );
 
-    AwesomeDebouncePromise(fetchPromise, 300)().then((alerts) =>
+    AwesomeDebouncePromise(fetchPromise, 300)().then(alerts =>
         setAlerts(alerts)
     );
 };
@@ -74,7 +74,7 @@ const filterAlerts = (alerts, filter) => {
         return 1;
     });
 
-    return sortedAlerts.filter((alert) => {
+    return sortedAlerts.filter(alert => {
         if (filter.search.length > 0) {
             return alert.section.includes(filter.search.toUpperCase());
         }
@@ -120,8 +120,8 @@ const getActionPromise = (id, actionenum) => {
  * id {number} and actionenum {AlertAction}
  *
  */
-const actionHandler = (callback) => (id, actionenum) => {
-    getActionPromise(id, actionenum).then((res) => callback());
+const actionHandler = callback => (id, actionenum) => {
+    getActionPromise(id, actionenum).then(res => callback());
 };
 
 /**
@@ -135,19 +135,19 @@ const actionHandler = (callback) => (id, actionenum) => {
  * @returns {func} - The function which expects the actionenum and
  * executes the action on idList
  */
-const batchActionHandler = (callback, idList) => (actionenum) => {
-    Promise.all(
-        idList.map((id) => getActionPromise(id, actionenum))
-    ).then((res) => callback());
+const batchActionHandler = (callback, idList) => actionenum => {
+    Promise.all(idList.map(id => getActionPromise(id, actionenum))).then(res =>
+        callback()
+    );
 };
 
-const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
+const batchSelectHandler = (setAlertSel, currAlerts, alerts) => checked => {
     const selMap = {};
-    alerts.forEach((alert) => {
+    alerts.forEach(alert => {
         selMap[alert.id] = false;
     });
     if (!checked) {
-        currAlerts.forEach((alert) => {
+        currAlerts.forEach(alert => {
             selMap[alert.id] = true;
         });
     }
@@ -171,7 +171,7 @@ const ManageAlertWrapper = () => {
 
     useEffect(() => {
         const selMap = {};
-        alerts.forEach((alert) => {
+        alerts.forEach(alert => {
             selMap[alert.id] = false;
         });
         setAlertSel(selMap);
@@ -197,7 +197,7 @@ const ManageAlertWrapper = () => {
             }
             {/* <ManageAlertHeader /> */}
             <ManageAlert
-                setFilter={(f) => {
+                setFilter={f => {
                     ReactGA.event({
                         category: "Manage Alerts",
                         action: "filter",
@@ -220,7 +220,7 @@ const ManageAlertWrapper = () => {
                 )}
                 batchActionHandler={batchActionHandler(
                     () => processAlerts(setAlerts),
-                    Object.keys(alertSel).filter((id) => alertSel[id])
+                    Object.keys(alertSel).filter(id => alertSel[id])
                 )}
             />
         </>

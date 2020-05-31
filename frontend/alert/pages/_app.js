@@ -23,7 +23,7 @@ function App({ Component, pageProps }) {
     return (
         <>
             <GlobalStyles />
-            <Component {...pageProps} />;
+            <Component {...pageProps} />
         </>
     );
 }
