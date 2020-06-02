@@ -9,8 +9,8 @@ COPY review/package.json /app/review/
 COPY shared-components/package.json /app/shared-components/
 
 # Install dependencies
-RUN yarn workspace penncoursereview install
-RUN yarn workspace pcx-shared-components install
+RUN yarn workspace penncoursereview install --production --frozen-lockfile
+RUN yarn workspace pcx-shared-components install --production --frozen-lockfile
 
 # Copy project
 COPY review/ /app/review
