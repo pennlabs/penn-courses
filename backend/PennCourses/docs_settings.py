@@ -1,58 +1,92 @@
 from rest_framework.renderers import JSONOpenAPIRenderer
 import json
 from rest_framework.schemas.openapi import AutoSchema
-from rest_framework.schemas.utils import is_list_view
+from rest_framework.schemas.utils import is_list_view, get_pk_description
 import re
+from rest_framework.compat import uritemplate
+from django.utils.encoding import force_str
+from inspect import getdoc
+from rest_framework import serializers
+from rest_framework.fields import empty
+from textwrap import dedent
 
 """
 This file includes code and settings for our PCx autodocumentation
 (based on a Django-generated OpenAPI schema and Redoc, which formats that schema into a 
-readable documentation web page).  Some useful links:
+readable documentation web page). Some useful links:
 https://github.com/Redocly/redoc
 https://github.com/Redocly/redoc/blob/master/docs/redoc-vendor-extensions.md#tagGroupObject
 https://www.django-rest-framework.org/api-guide/schemas
+https://www.django-rest-framework.org/topics/documenting-your-api/
 A Redoc example from which many of the concepts in this file were taken from:
 https://redocly.github.io/redoc/
 https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
 
-IMPORTANT NOTE: for the auto-documentation to work, you need to include the line:
+
+MAINTENENCE (PLEASE READ IN FULL): 
+For the auto-documentation to work, you need to include the line:
 schema = PcxAutoSchema()
 in all views (this will allow for proper tag and operation_id generation; see below).
-PcxAutoSchema (defined below) is a subclass of Django's AutoSchema,
-and it makes some improvements on that class for use with Redoc 
-as well as some customizations specific to the Labs PCX use-case.
-
-Maintenence: besides including schema = PcxAutoSchema(), the only maintenance we
-need to do when writing new code is including docstrings in views (see
-https://www.django-rest-framework.org/coreapi/from-documenting-your-api/#documenting-your-views).
-You should also try to add a description for each new tag group created automatically by the docs
-(visible in the nav bar).  You can do that using the custom_tag_descriptions dictionary below.
-If the auto-generated names are unsatisfactory, you can also manually change any 
-operation_id, tag, or tag group name (see below).
-You can update the introductory sections / readme by editing the markdown-formatted
-openapi_description text below.
+PcxAutoSchema (defined below) is a subclass of Django's AutoSchema, and it makes some improvements 
+on that class for use with Redoc as well as some customizations specific to the Labs PCX use-case.
+You should include docstrings in views (see 
+https://www.django-rest-framework.org/coreapi/from-documenting-your-api/#documenting-your-views) 
+explaining the function of the view (or of each method if there are multiple supported methods). 
+If the meaning of a tag group created automatically by the docs 
+(visible in the nav bar) is not clear, you should add a custom description. 
+You can do that using the custom_tag_descriptions dictionary below. 
+If any auto-generated names are unsatisfactory, you can also manually change any 
+operation_id, tag, or tag group name (see below for more on what these are). 
+You can update the introductory sections / readme by editing the markdown-formatted 
+openapi_description text below. 
+When writing any class-based views where you specify a queryset (such as ViewSets), even if you 
+override get_queryset(), you should also specify the queryset field with something like
+queryset = ExampleModel.objects.none() (to provide an extra layer of protection against accidental 
+data breach), or alternatively a sensible queryset default 
+(e.g. queryset = Course.with_reviews.all() for the CourseDetail ViewSet). This will allow the 
+auto-documentation to access the model underlying the queryset (it cannot call get_queryset() 
+since it cannot generate a request object which the get_queryset() method might try to access).
+If the meaning of a model or serializer field is not clear, you should include the string help_text 
+as a parameter when initializing the field, explaining what that field stores. This will 
+show up in the documentation such that parameter descriptions are inferred from 
+model or serializer field help text. For properties, the docstring will be used since there is no 
+way to define help_text for a property; so even if a property's use is clear based on the code, 
+keep in mind that describing it's purpose in the docstring will be helpful to frontend engineers 
+who are unfamiliar with the backend code (also, don't include a :return: tag as you might normally 
+do for functions; a property is to be treated as a dynamic field, not a method, so just state 
+what the method returns as the only text in the docstring). 
+Including help_text/docstring when a field/property's purpose is unclear will also 
+make the model/serializer code more understandable for newbies. And furthermore, all help_text 
+and descriptive docstrings will not only help future Labs developers but it will also show up in 
+the backend documentation (accessible at /admin/doc/).
 """
 
 openapi_description = """
 # Introduction
 Penn Courses ([GitHub](https://github.com/pennlabs/penn-courses">)) is the umbrella 
 categorization for [Penn Labs](https://pennlabs.org/)
-products designed to help students navigate the course registration process.  It currently 
+products designed to help students navigate the course registration process. It currently 
 includes three products, each with their own API documented on this page: 
 Penn Course Alert, Penn Course Plan, and Penn Course Review (PCR coming soon).
 
-See `Penn Labs Notion / Penn Courses` for more details on each of our (currently) three apps.
+See `Penn Labs Notion > Penn Courses` for more details on each of our (currently) three apps.
 
 For instructions on how to maintain this documentation while writing code,
-see the comments in `backend/PennCourses/docs_settings.py` (it is easy, and will be helpful
+see the comments in `backend\PennCourses\docs_settings.py` (it is easy, and will be helpful
 for maintaining Labs knowledge in spite of our high member turnover rate).
+
+See our 
+[GitHub](https://github.com/pennlabs/penn-courses">) repo for instructions on 
+installation, running in development, and loading in course data for development. Visit 
+the `/admin/doc/` route ([link](/admin/doc/)) for the backend documentation (admin account required, which can be made 
+by running `python manage.py createsuperuser` in terminal/CLI).
 
 # Unified Penn Courses
 By virtue of the fact that all Penn Courses products deal with, well, courses, 
 it would make sense for all three products to share the same backend.
 
 We realized the necessity of a unified backend when attempting to design a new Django backend 
-for Penn Course Plan.  We like to live by the philosophy of keeping it 
+for Penn Course Plan. We like to live by the philosophy of keeping it 
 [DRY](https://en.wikipedia.org/wiki/Don't_repeat_yourself), and 
 PCA and PCP's data models both need to reference course and 
 section information. We could have simply copied over code (a bad idea) 
@@ -60,10 +94,16 @@ or created a shared reusable Django app (a better idea) for course data,
 but each app would still need to download copies of the same data. 
 Additionally, this will help us build integrations between our Courses products.
 
-See `Penn Labs Notion / Penn Courses / Unified Penn Courses` for more details on our
-codebase file structure, data models, and multi-site devops scheme.  See our 
-[GitHub](https://github.com/pennlabs/penn-courses">) repo for instructions on 
-installation, running in development, and loading in course data for development.
+See `Penn Labs Notion > Penn Courses > Unified Penn Courses` for more details on our
+codebase file structure, data models, and multi-site devops scheme.
+
+# Authentication
+Currently, PCx user authentication is taken care of by platform's Penn Labs Accounts system. 
+See `Penn Labs Notion > Platform > The Accounts Engine` for extensive documentation and 
+links to repositories for this system. When tags or routes are described as requiring user 
+authentication, they are referring to this system. See the Django docs for more on Django's 
+[User Authentication system](https://docs.djangoproject.com/en/3.0/topics/auth/), 
+with underlies, PLA.
 """
 
 subpath_abbreviations = {
@@ -87,6 +127,9 @@ tag_group_abbreviations = {
 # tags are not to be confused with tag groups (see above description of tag groups)
 
 # name here refers to the name underlying the operation id of the view
+# this is NOT the name that you see on the API, it is the name underlying it (see below get_name
+# and _get_operation_id methods in PcxAutoSchema for an explanation of the difference). The name
+# also defines what the automatically-set tag name will be.
 custom_name = {  # keys are (path, method) tuples, values are custom names
     # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
     ("/api/alert/registrationhistory/", "GET"): "Registration History",
@@ -105,8 +148,99 @@ custom_tag_names = {  # keys are old tag names (seen on docs), values are new ta
 # tag descriptions show up in the documentation below the tag name
 custom_tag_descriptions = {
     # keys are tag names (after any name changes from above dicts), vals are descriptions
-
+    "[PCP] Schedule": dedent("""
+    These routes allow interfacing with the user's PCP Schedules for the current semester, 
+    stored on the backend. Ever since we integrated Penn Labs Accounts into PCP so that users 
+    can store their schedules across devices and browsers, we have stored users' schedules on 
+    our backend (rather than local storage). 
+    <span style="color:red;">User authentication required</span> for all routes.
+    """),
+    "[PCP] Requirements": dedent("""
+    These routes expose the academic requirements for the current semester which are stored on 
+    our backend (hopefully comprehensive). Authentication not required.
+    """),
+    "[PCP] Course": dedent("""
+    These routes expose course information for PCP for the current semester.  Authentication not 
+    required.
+    """),
+    "[PCA] Registration History": dedent("""
+    These routes expose a user's registration history (including deleted registrations) 
+    for the current semester. <span style="color:red;">User authentication required</span> 
+    for all routes.
+    """)
 }
+
+# do not edit
+labs_logo = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZ" \
+            "pZXdCb3g9Ii01MCAtNTAgNDIxLjAxIDIyNS42NyI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiMxMjI3" \
+            "NGI7fS5jbHMtMntmaWxsOiMyMDljZWU7fTwvc3R5bGU+PC9kZWZzPjx0aXRsZT5sYWJzLWZ1bGwtbG9nb" \
+            "zwvdGl0bGU+PGcgaWQ9IkxheWVyXzIiIGRhdGEtbmFtZT0iTGF5ZXIgMiI+PGcgaWQ9IkxheWVyXzEtMi" \
+            "IgZGF0YS1uYW1lPSJMYXllciAxIj48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xNzcuMzcsNi4xMXE1LDQ" \
+            "uNCw1LDEyLjA4dC01LDEycS01LDQuMzYtMTMuNTYsNC4zNkgxNTIuMDVWNTQuNTFoLTguNTZWMS43MWgy" \
+            "MC4zMlExNzIuMzcsMS43MSwxNzcuMzcsNi4xMVpNMTcwLjc3LDI1cTIuNzItMi4yOCwyLjcyLTYuODQsM" \
+            "C05LjItMTEtOS4yaC0xMC40VjI3LjMxaDEwLjRRMTY4LjA1LDI3LjMxLDE3MC43NywyNVoiLz48cGF0aC" \
+            "BjbGFzcz0iY2xzLTEiIGQ9Ik0yMjYsMzcuNzFIMTk2LjY5cS43Miw1LjI4LDMuNzYsOGExMS4yMSwxMS4" \
+            "yMSwwLDAsMCw3Ljg0LDIuNzYsMTMuNjMsMTMuNjMsMCwwLDAsNi41Mi0xLjQsNy4zMiw3LjMyLDAsMCww" \
+            "LDMuNTYtNGw3LjEyLDNxLTQuNDgsOS4yOC0xNy4yLDkuMjgtOS40NCwwLTE0Ljc2LTUuNTJ0LTUuMzItM" \
+            "TUuMjhxMC05Ljg0LDUuMTItMTUuMzJ0MTQuNC01LjQ4cTguOCwwLDEzLjY4LDUuMzZ0NC44OCwxNC4yNE" \
+            "EyOSwyOSwwLDAsMSwyMjYsMzcuNzFaTTIwMC4yNSwyMy4yM3EtMi44NCwyLjcyLTMuNTYsNy45MmgyMS4" \
+            "2YTEzLjE4LDEzLjE4LDAsMCwwLTMuNC03Ljg0LDkuNjIsOS42MiwwLDAsMC03LjE2LTIuOEExMC4zNywx" \
+            "MC4zNywwLDAsMCwyMDAuMjUsMjMuMjNaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjY4LjMzLDE3L" \
+            "jU1cTQuMiwzLjg0LDQuMiwxMVY1NC41MUgyNjRWMzEuMzFxMC0xMC41Ni04LjU2LTEwLjU2YTEwLjY4LD" \
+            "EwLjY4LDAsMCwwLTcuNjgsMy4wOHEtMy4yLDMuMDgtMy4yLDkuNDh2MjEuMkgyMzZ2LTQwaDcuNmwuNCw" \
+            "2LjY0YTEzLDEzLDAsMCwxLDUuNTItNS42LDE3LDE3LDAsMCwxLDgtMS44NEExNS40NCwxNS40NCwwLDAs" \
+            "MSwyNjguMzMsMTcuNTVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzE2LjgxLDE3LjU1cTQuMiwzL" \
+            "jg0LDQuMiwxMVY1NC41MWgtOC41NlYzMS4zMXEwLTEwLjU2LTguNTYtMTAuNTZhMTAuNjgsMTAuNjgsMC" \
+            "wwLDAtNy42OCwzLjA4cS0zLjIsMy4wOC0zLjIsOS40OHYyMS4yaC04LjU2di00MGg3LjZsLjQsNi42NGE" \
+            "xMywxMywwLDAsMSw1LjUyLTUuNiwxNywxNywwLDAsMSw4LTEuODRBMTUuNDQsMTUuNDQsMCwwLDEsMzE2" \
+            "LjgxLDE3LjU1WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE4MS41MiwxMTcuNTF2Ny4zNkgxNDMuO" \
+            "DRWNzIuMDdoOC41NnY0NS40NFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMjguMDgsMTE4Ljk1bC" \
+            "0uNTYsNS43NmExMi4xLDEyLjEsMCwwLDEtNSwxLDkuNzUsOS43NSwwLDAsMS01LjQ4LTEuMzYsNi43Niw" \
+            "2Ljc2LDAsMCwxLTIuNjgtNC41NiwxMiwxMiwwLDAsMS01LjQ0LDQuMzYsMjAuMTIsMjAuMTIsMCwwLDEt" \
+            "OC4wOCwxLjU2LDE1LjI1LDE1LjI1LDAsMCwxLTkuNDQtMi43Miw5LjE1LDkuMTUsMCwwLDEtMy42LTcuN" \
+            "zYsMTAsMTAsMCwwLDEsMy45Mi04cTMuOTItMy4yNCwxMS42OC00LjZsMTAuMTYtMS43NlY5OC43MWE3Lj" \
+            "c2LDcuNzYsMCwwLDAtMi4xNi01LjgsOC4yMSw4LjIxLDAsMCwwLTYtMi4xMnEtNy45MiwwLTEwLjMyLDc" \
+            "uMmwtNi42NC0zLjUyYTEzLjI5LDEzLjI5LDAsMCwxLDUuODgtNy42LDIwLjA4LDIwLjA4LDAsMCwxLDEw" \
+            "LjkyLTIuOHE3Ljc2LDAsMTIuMzIsMy42dDQuNTYsMTAuNTZ2MTguMDhhMy4xNywzLjE3LDAsMCwwLC42O" \
+            "CwyLjI0LDMsMywwLDAsMCwyLjI4LjcyQTExLjY1LDExLjY1LDAsMCwwLDIyOC4wOCwxMTguOTVabS0xNy" \
+            "43Ni0xLjg0YTYuMyw2LjMsMCwwLDAsMy4yOC01LjUydi00LjhsLTguNzIsMS43NmExNS45MiwxNS45Miw" \
+            "wLDAsMC02LjE2LDIuMjQsNC41LDQuNSwwLDAsMC0yLDMuODQsNCw0LDAsMCwwLDEuNTYsMy40LDcuMzMs" \
+            "Ny4zMywwLDAsMCw0LjQ0LDEuMTZBMTMuODgsMTMuODgsMCwwLDAsMjEwLjMyLDExNy4xMVoiLz48cGF0a" \
+            "CBjbGFzcz0iY2xzLTEiIGQ9Ik0yNzAuNjQsODkuNjNxNC43Miw1LjU2LDQuNzIsMTUuMzJ0LTQuNzIsMT" \
+            "UuMjRxLTQuNzIsNS40OC0xMyw1LjQ4YTE1LjIxLDE1LjIxLDAsMCwxLTguMjgtMi4yNCwxMy45MywxMy4" \
+            "5MywwLDAsMS01LjMyLTZsLS40LDcuNDRoLTcuNTJ2LTU4aDguNTZ2MjQuNEExMy4yOSwxMy4yOSwwLDAs" \
+            "MSwyNTAsODZhMTUuNDIsMTUuNDIsMCwwLDEsNy43Mi0xLjkyUTI2NS45Miw4NC4wNywyNzAuNjQsODkuN" \
+            "jNabS02Ljc2LDI1LjQ4cTIuOTItMy42OCwyLjkyLTEwLjI0dC0yLjkyLTEwLjJBMTAuOSwxMC45LDAsMC" \
+            "wwLDI0OCw5NC4zMXEtMi45MiwzLjI4LTMuMjQsOXYzcS4zMiw1Ljg0LDMuMjQsOS4xMmE5LjkyLDkuOTI" \
+            "sMCwwLDAsNy44LDMuMjhBOS43OSw5Ljc5LDAsMCwwLDI2My44OCwxMTUuMTFaIi8+PHBhdGggY2xhc3M9" \
+            "ImNscy0xIiBkPSJNMjkwLjIsMTIzLjU5YTE0Ljc4LDE0Ljc4LDAsMCwxLTcuMDgtNi4zMmw1Ljc2LTVhO" \
+            "S45LDkuOSwwLDAsMCw0LjcyLDUsMTcsMTcsMCwwLDAsNy42OCwxLjYsMTIuNTMsMTIuNTMsMCwwLDAsNi" \
+            "4zMi0xLjMyLDQsNCwwLDAsMCwyLjI0LTMuNDgsMy40NywzLjQ3LDAsMCwwLTIuMDgtMy4wOCwyNy40Miw" \
+            "yNy40MiwwLDAsMC03LjItMi4ycS04Ljg4LTEuNjgtMTIuNDgtNC40OGE5LjQ1LDkuNDUsMCwwLDEtMy42" \
+            "LTcuOTIsMTAuNDIsMTAuNDIsMCwwLDEsMi02LjEyLDEzLjg5LDEzLjg5LDAsMCwxLDUuOC00LjU2LDIxL" \
+            "jY4LDIxLjY4LDAsMCwxLDktMS43MnE2LjY0LDAsMTAuNjQsMi4yYTE0LjQ5LDE0LjQ5LDAsMCwxLDYuMT" \
+            "YsNi44NEwzMTIsOTcuNTlhMTAuNiwxMC42LDAsMCwwLTQtNS4xNiwxMi4xOSwxMi4xOSwwLDAsMC02LjY" \
+            "tMS42NCwxMSwxMSwwLDAsMC02LDEuNDhRMjkzLDkzLjc1LDI5Myw5NS42N2EzLjg4LDMuODgsMCwwLDAs" \
+            "Mi4xMiwzLjQ0cTIuMTIsMS4yOCw3LjcyLDIuMzIsOC40OCwxLjUyLDEyLDQuMzJhOS40NSw5LjQ1LDAsM" \
+            "CwxLDMuNTIsNy44NCwxMC4zMSwxMC4zMSwwLDAsMS00LjY0LDguNzJxLTQuNjQsMy4zNi0xMi44LDMuMz" \
+            "ZBMjYuMjYsMjYuMjYsMCwwLDEsMjkwLjIsMTIzLjU5WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTM" \
+            "wLjQyLDExMi4zNXEzLjEzLDIsMTAsMkwzOSwxMjQuNzNxLTEyLjkxLDAtMTguNS00LjQ2dC01LjU5LTEz" \
+            "LjkxVjgxLjczcTAtNy40NS0zLjM5LTEwLjY1VDAsNjcuODlWNTdxOC4xMiwwLDExLjUxLTMuMTl0My4zO" \
+            "S0xMC42NVYxOC4zN3EwLTkuNDUsNS41OS0xMy45MVQzOSwwbDEuNDYsMTAuMzhxLTYuOTIsMC0xMCwyYT" \
+            "YuODksNi44OSwwLDAsMC0zLjEzLDYuMjZWNDUuMTNxMCwxMy41OC0xNC43OCwxNy4zMVEyNy4yOSw2NS4" \
+            "4OSwyNy4yOSw3OS42djI2LjQ5QTYuODksNi44OSwwLDAsMCwzMC40MiwxMTIuMzVaIi8+PHBhdGggY2xh" \
+            "c3M9ImNscy0xIiBkPSJNMTEwLjkxLDUzLjc4UTExNC4zLDU3LDEyMi40Miw1N1Y2Ny44OXEtOC4xMiwwL" \
+            "TExLjUxLDMuMTl0LTMuMzksMTAuNjV2MjQuNjNxMCw5LjQ1LTUuNTksMTMuOTF0LTE4LjUsNC40Nkw4Mi" \
+            "wxMTQuMzVxNi45MiwwLDEwLTEuOTNUOTUsMTA2LjA5Vjc5LjZxMC0xMy43MSwxNC43OC0xNy4xN1E5NSw" \
+            "1OC43MSw5NSw0NS4xM1YxOC42NGE2LjkzLDYuOTMsMCwwLDAtMy4wNi02LjI2cS0zLjA2LTItMTAtMkw4" \
+            "My40MiwwcTEyLjkxLDAsMTguNSw0LjQ2dDUuNTksMTMuOTFWNDMuMTNRMTA3LjUyLDUwLjU5LDExMC45M" \
+            "Sw1My43OFoiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMiIgY3g9IjcxLjY3IiBjeT0iMzMuNjkiIHI9IjUuNz" \
+            "kiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMiIgY3g9IjYxLjA4IiBjeT0iMTAuMjkiIHI9IjUuNzkiLz48Y2l" \
+            "yY2xlIGNsYXNzPSJjbHMtMiIgY3g9IjUwLjUzIiBjeT0iNDguNyIgcj0iNS43OSIvPjxwYXRoIGNsYXNz" \
+            "PSJjbHMtMiIgZD0iTTc3LjI2LDYzSDQ1YTcuNDcsNy40NywwLDAsMC03LjQ3LDcuNDdWOTkuMzdBNy40N" \
+            "yw3LjQ3LDAsMCwwLDQ1LDEwNi44NEg3Ny4yNmE3LjQ3LDcuNDcsMCwwLDAsNy40Ny03LjQ3VjcwLjUxQT" \
+            "cuNDcsNy40NywwLDAsMCw3Ny4yNiw2M1pNNzEsODIuMzRhNS43OSw1Ljc5LDAsMSwxLDUuOTMtNS42NEE" \
+            "1Ljc5LDUuNzksMCwwLDEsNzEsODIuMzRaIi8+PC9nPjwvZz48L3N2Zz4="
 
 
 def split_camel(w):
@@ -156,17 +290,26 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                                                [pluralize_word(tag.split(" ")[-1])]))
             if tag in custom_tag_names.keys():  # rename custom tags
                 tag = update_tag(tag, custom_tag_names[tag])
+
+        for path_name, val in data["paths"].items():  # Display the method and path more visibly
+            for method_name, v in val.items():
+                v["description"] = \
+                    "(" + method_name.upper() + " `" + path_name + "`)" + "  \n  \n" + \
+                    v["description"]
+
+
         for k, v in changes.items():  # since tags cannot be updated while iterating through tags
             tags.remove(k)
             tags.add(v)
 
-        tag_dict = dict()
-        tag_dict["tags"] = [{"name": tag, "description": custom_tag_descriptions.get(tag, "")}
+        data["tags"] = [{"name": tag, "description": custom_tag_descriptions.get(tag, "")}
                             for tag in tags]
-        tag_dict["x-tagGroups"] = [{"name": v, "tags": [t for t in tags if k in t]}
+        data["x-tagGroups"] = [{"name": v, "tags": [t for t in tags if k in t]}
                                    for k, v in tag_group_abbreviations.items()]
-        tag_dict["x-tagGroups"] = [g for g in tag_dict["x-tagGroups"] if len(g["tags"]) != 0]
-        return json.dumps(dict(tag_dict, **data), indent=2).encode('utf-8')
+        data["x-tagGroups"] = [g for g in data["x-tagGroups"] if len(g["tags"]) != 0]
+        data["info"]["x-logo"] = {"url": labs_logo, "altText": "Labs Logo"}
+        data["info"]["contact"] = {"email": "contact@pennlabs.org"}
+        return json.dumps(data, indent=2).encode('utf-8')
 
 
 class PcxAutoSchema(AutoSchema):
@@ -182,7 +325,12 @@ class PcxAutoSchema(AutoSchema):
     get_operation methods below should be deleted (they will be inherited from AutoSchema).
     """
 
-    def __init__(self, tags=None):  # allow user to specify custom tag(s)
+    def __init__(self, tags=None):
+        """
+            Parameters:
+
+            * `tags`: list of strings (tags) which will override the auto-generation of tags
+        """
         if tags and not all(isinstance(tag, str) for tag in tags):
             raise ValueError('tags must be a list or tuple of string.')
         self._tags = tags
@@ -260,3 +408,104 @@ class PcxAutoSchema(AutoSchema):
         ret = action + name
 
         return split_camel(ret[0].capitalize() + ret[1:])
+
+    def _get_path_parameters(self, path, method):
+        """
+        Return a list of parameters from templated path variables.
+        """
+        assert uritemplate, '`uritemplate` must be installed for OpenAPI schema support.'
+
+        model = getattr(getattr(self.view, 'queryset', None), 'model', None)
+        parameters = []
+
+        for variable in uritemplate.variables(path):
+            description = ''
+            if model is not None:  # TODO: test this.
+                # Attempt to infer a field description if possible.
+                try:
+                    model_field = model._meta.get_field(variable)
+                except Exception:
+                    model_field = None
+
+                if model_field is not None and model_field.help_text:
+                    description = force_str(model_field.help_text)
+                elif model_field is not None and model_field.primary_key:
+                    description = get_pk_description(model, model_field)
+
+                if model_field is None and variable in model.__dict__.keys() and \
+                        isinstance(model.__dict__[variable], property):
+                    doc = getdoc(model.__dict__[variable])
+                    description = '' if doc is None else doc
+
+            parameter = {
+                "name": variable,
+                "in": "path",
+                "required": True,
+                "description": description,
+                'schema': {
+                    'type': 'string',  # TODO: integer, pattern, ...
+                },
+            }
+            parameters.append(parameter)
+
+        return parameters
+
+    """
+
+    def _map_serializer(self, serializer):
+        # Assuming we have a valid serializer instance.
+        # TODO:
+        #   - field is Nested or List serializer.
+        #   - Handle read_only/write_only for request/response differences.
+        #       - could do this with readOnly/writeOnly and then filter dict.
+        required = []
+        properties = {}
+
+        for field in serializer.fields.values():
+            if isinstance(field, serializers.HiddenField):
+                continue
+
+            if field.required:
+                required.append(field.field_name)
+
+            schema = self._map_field(field)
+            if field.read_only:
+                schema['readOnly'] = True
+            if field.write_only:
+                schema['writeOnly'] = True
+            if field.allow_null:
+                schema['nullable'] = True
+            if field.default and field.default != empty:  # why don't they use None?!
+                schema['default'] = field.default
+            if field.help_text:
+                schema['description'] = str(field.help_text) if str(field.help_text) else \
+                    getdoc(serializer.model.__dict__[field.field_name]) \
+                    if hasattr(serializer, "model") and \
+                    hasattr(serializer.model.__dict__, field.field_name) and \
+                    isinstance(serializer.model.__dict__[field.field_name], property) and \
+                    getdoc(serializer.model.__dict__[field.field_name]) \
+                    else ""
+            self._map_field_validators(field, schema)
+
+            properties[field.field_name] = schema
+
+        result = {
+            'properties': properties
+        }
+        if required:
+            result['required'] = required
+
+        return result
+    
+    """
+
+"""
+class CustomOpenAPISchemaGenerator(OpenAPISchemaGenerator):
+    def get_schema(self, *args, **kwargs):
+        schema = super().get_schema(*args, **kwargs)
+        schema.basePath = "/api/"
+        return schema
+
+    def determine_path_prefix(self, paths):
+        return "/api/"
+"""

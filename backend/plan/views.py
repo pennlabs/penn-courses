@@ -21,7 +21,6 @@ class CourseListSchema(PcxAutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == "GET":
-            print(operation, method)
             operation["parameters"].extend([])
         return operation
 
@@ -29,7 +28,7 @@ class CourseListSchema(PcxAutoSchema):
 class CourseListSearch(CourseList):
     """
     The main API endpoint for PCP. Without any GET parameters, it simply returns all courses for
-    a given semester.
+    a given semester. Authentication not required.
     """
 
     schema = CourseListSchema()
@@ -41,12 +40,42 @@ class CourseListSearch(CourseList):
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
     list:
-    This route will return a list of schedules for the logged-in user, each with the fields
-    detailed below.
+    Get a list of all the logged-in user's schedules for the current semester.  Normally, the
+    response code is 200. Each object in the returned list is of the same form as the object
+    returned by Retrieve Schedule, detailed below.
+    <span style="color:red;">User authentication required</span>.
 
     retrieve:
-    Get a single schedule.
+    Get one of the logged-in user's schedules for the current semester, using the schedule's ID.
+    If a schedule with the specified ID exists, a 200 response code is returned, along with
+    an object of the same form as the objects in the list returned by List Schedule,
+    detailed above. If the given id does not exist, a 404 is returned, along with
+    data `{'detail': 'Not found.'}`.n<span style="color:red;">User authentication required</span>.
 
+    create:
+    This route will return a 201 if it succeeds, and a JSON in the same format as if you were
+    to get the schedule you just posted (in the same format as returned
+    by Retrieve Schedule).  At a minimum, you must include the `title` and
+    `sections` (or `meetings`) list. Title is the name of the schedule (all names must be distinct
+    for a single user in a single semester; otherwise in the POST a
+
+    Note that your posted object can include either a `sections`
+    field or a `meetings` field to list all sections you would like to be in the schedule.
+    If both fields exist in the object, only `meetings` will be considered.  In all cases,
+    the field in question will be renamed to `sections` so that will be the field name whenever
+    you GET from the server. (Sorry for this confusing behavior, it is grandfathered in
+    from when the PCP frontend was referring to sections as meetings, before schedules were
+    stored on the backend.)
+
+    <span style="color:red;">User authentication required</span>.
+    - `title` - must be unique for a given user in this semester.
+    - `meetings[*].semester` -
+
+    update:
+    <span style="color:red;">User authentication required</span>.
+
+    delete:
+    <span style="color:red;">User authentication required</span>.
     """
 
     schema = PcxAutoSchema()
@@ -117,10 +146,6 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
     def create(self, request, *args, **kwargs):
-        """
-        - `title` - must be unique for a given user in this semester.
-        - `meetings[*].semester` -
-        """
         if self.get_queryset().filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
 

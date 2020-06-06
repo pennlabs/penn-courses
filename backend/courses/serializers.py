@@ -3,24 +3,43 @@ from rest_framework import serializers
 
 from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserProfile
 
+from textwrap import dedent
+
 
 class MeetingSerializer(serializers.ModelSerializer):
-    room = serializers.StringRelatedField()
+    room = serializers.StringRelatedField(
+        help_text=dedent("""
+        The room in which the meeting is taking place, in the form '{building code} {room number}'.
+        """))
 
     class Meta:
         model = Meeting
         fields = ("day", "start", "end", "room")
 
 
-class SectionIdField(serializers.RelatedField):
-    def to_representation(self, value):
-        return {"id": value.full_code, "activity": value.activity}
+class SectionIdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Section
+        fields = [
+            "id",
+            "activity",
+        ]
 
 
 class MiniSectionSerializer(serializers.ModelSerializer):
-    section_id = serializers.CharField(source="full_code")
-    instructors = serializers.StringRelatedField(many=True)
-    course_title = serializers.SerializerMethodField()
+    section_id = serializers.CharField(
+        source="full_code",
+        help_text=dedent("""
+            The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the 
+            001 lecture section of CIS-120.
+            """))
+    instructors = serializers.StringRelatedField(
+        many=True,
+        help_text="A list of the names of the instructors teaching this section.")
+    course_title = serializers.SerializerMethodField(
+        help_text=dedent("""
+                The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.
+                """))
 
     def get_course_title(self, obj):
         return obj.course.title
@@ -41,17 +60,50 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         return obj.course.semester
 
 
-class SectionDetailSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source="full_code")
-    semester = serializers.SerializerMethodField()
-    meetings = MeetingSerializer(many=True)
-    instructors = serializers.StringRelatedField(many=True)
-    associated_sections = SectionIdField(many=True, read_only=True)
+course_quality_help = "The average course quality rating for this section, on a scale of 0-4."
+difficulty_help = "The average difficult rating for this section, on a scale of 0-4."
+instructor_quality_help = "The average instructor quality for this section, on a scale of 0-4."
+work_required_help = "The average work required for this section, on a scale of 0-4."
 
-    course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
-    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
-    instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
-    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
+
+class SectionDetailSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(
+        source="full_code",
+        help_text=dedent("""
+                The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the 
+                001 lecture section of CIS-120.
+                """))
+    semester = serializers.SerializerMethodField(
+        help_text=dedent("""
+        The semester of the section (of the form YYYYx where x is A [for spring], B [summer], 
+        or C [fall]), e.g. 2019C for fall 2019. We organize requirements by semester so that we 
+        don't get huge related sets which don't give particularly good info.
+        """))
+    meetings = MeetingSerializer(
+        many=True,
+        help_text=dedent("""
+        A list of the meetings of this section (each meeting is a continuous span of time 
+        during which a section would meet).
+        """))
+    instructors = serializers.StringRelatedField(
+        many=True,
+        help_text="A list of the names of the instructors teaching this section.")
+    associated_sections = SectionIdSerializer(
+        many=True, read_only=True,
+        help_text=dedent("""
+        A list of all sections associated with the Course which this section belongs to; e.g. for 
+        CIS-120-001, all of the lecture and recitation sections for CIS-120 (including CIS-120-001) 
+        in the same semester.
+        """))
+
+    course_quality = serializers.DecimalField(
+        max_digits=4, decimal_places=3, help_text=course_quality_help)
+    difficulty = serializers.DecimalField(
+        max_digits=4, decimal_places=3, help_text=difficulty_help)
+    instructor_quality = serializers.DecimalField(
+        max_digits=4, decimal_places=3, help_text=instructor_quality_help)
+    work_required = serializers.DecimalField(
+        max_digits=4, decimal_places=3, help_text=work_required_help)
 
     @staticmethod
     def get_semester(obj):
@@ -75,7 +127,8 @@ class SectionDetailSerializer(serializers.ModelSerializer):
 
 
 class RequirementListSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
+    id = serializers.SerializerMethodField(
+        help_text="A string representation of the requirement, in the form '{code}@{school}'")
 
     @staticmethod
     def get_id(obj):
@@ -87,16 +140,23 @@ class RequirementListSerializer(serializers.ModelSerializer):
 
 
 class CourseListSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source="full_code")
-    num_sections = serializers.SerializerMethodField()
+    id = serializers.ReadOnlyField(
+        source="full_code",
+        help_text=dedent("""
+        The full code of the course, in the form '{dept code}-{course code}' 
+        dash-joined department and code of the course, e.g. 'CIS-120' for CIS-120."""))
+    num_sections = serializers.IntegerField(
+        required=False,
+        help_text="The number of sections for this course.")
 
-    course_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
-    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3)
-    instructor_quality = serializers.DecimalField(max_digits=4, decimal_places=3)
-    work_required = serializers.DecimalField(max_digits=4, decimal_places=3)
-
-    def get_num_sections(self, obj):
-        return obj.sections.count()
+    course_quality = serializers.DecimalField(
+        max_digits=4, decimal_places=3, help_text=course_quality_help)
+    difficulty = serializers.DecimalField(
+        max_digits=4, decimal_places=3, help_text=difficulty_help)
+    instructor_quality = serializers.DecimalField(
+        max_digits=4, decimal_places=3, help_text=instructor_quality_help)
+    work_required = serializers.DecimalField(
+        max_digits=4, decimal_places=3, help_text=work_required_help)
 
     class Meta:
         model = Course
@@ -114,9 +174,18 @@ class CourseListSerializer(serializers.ModelSerializer):
 
 
 class CourseDetailSerializer(CourseListSerializer):
-    crosslistings = serializers.SlugRelatedField(slug_field="full_code", many=True, read_only=True)
-    sections = SectionDetailSerializer(many=True)
-    requirements = RequirementListSerializer(many=True)
+    crosslistings = serializers.SlugRelatedField(
+        slug_field="full_code", many=True, read_only=True,
+        help_text=dedent("""
+        A list of the full codes (DEPT-###) of all crosslistings for this course 
+        (not including this course).
+        """))
+    sections = SectionDetailSerializer(
+        many=True,
+        help_text="A list of the sections of this course.")
+    requirements = RequirementListSerializer(
+        many=True,
+        help_text="A list of the academic requirements this course fulfills.")
 
     class Meta:
         model = Course
@@ -140,7 +209,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer(read_only=False)
+    profile = UserProfileSerializer(
+        read_only=False,
+        help_text="The user profile object, storing collected info about the user.")
 
     def update(self, instance, validated_data):
         prof, _ = UserProfile.objects.get_or_create(user=instance)
@@ -163,7 +234,13 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class StatusUpdateSerializer(serializers.ModelSerializer):
-    section = serializers.ReadOnlyField(source="section__full_code", read_only=True)
+    section = serializers.ReadOnlyField(
+        source="section__full_code", read_only=True,
+        help_text=dedent("""
+            The code of the section which this status update applies to, in the form 
+            '{dept code}-{course code}-{section code}', e.g. 'CIS-120-001' for the 
+            001 section of CIS-120.  
+            """))
 
     class Meta:
         model = StatusUpdate

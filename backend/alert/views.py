@@ -316,6 +316,12 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
 
 class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet):
+    """
+    list:
+    List all registrations for the current semester
+    retrieve:
+
+    """
     schema = PcxAutoSchema()
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]

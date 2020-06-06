@@ -4,7 +4,7 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_value
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.schemas.openapi import AutoSchema
+from django.db.models import Count
 
 from PennCourses.docs_settings import PcxAutoSchema
 from courses.models import Course, Requirement, Section, StatusUpdate
@@ -48,6 +48,10 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
 
 
 class SectionList(generics.ListAPIView, BaseCourseMixin):
+    """
+    Retrieve a list of sections (less detailed than Section Detail)
+    """
+
     serializer_class = MiniSectionSerializer
     queryset = Section.with_reviews.all()
     filter_backends = [TypedSectionSearchBackend]
@@ -59,6 +63,10 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
 
 
 class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
+    """
+    Retrieve a detailed look at a specific course section.
+    """
+
     serializer_class = SectionDetailSerializer
     queryset = Section.with_reviews.all()
     lookup_field = "full_code"
@@ -68,8 +76,12 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
+    """
+    Retrieve a list of courses.
+    """
+
     serializer_class = CourseListSerializer
-    queryset = Course.with_reviews.filter(sections__isnull=False)
+    queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
@@ -83,18 +95,19 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
                 .distinct(),
             )
         )
-        queryset = self.filter_by_semester(queryset)
+        queryset = self.filter_by_semester(queryset).annotate(num_sections=Count('sections'))
         return queryset
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     """
-    Return a detailed look at a specific course. Includes all details necessary to display course
-    info, including requirements this class fulfills, and all sections.
+    Retrieve a detailed look at a specific course. Includes all details necessary to display course
+    info, including requirements this class fulfills, and all sections. Authentication not required.
     """
 
     serializer_class = CourseDetailSerializer
     lookup_field = "full_code"
+    queryset = Course.with_reviews.all()  # included redundantly for docs
 
     def get_queryset(self):
         queryset = Course.with_reviews.all()
@@ -108,14 +121,14 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 .distinct(),
             )
         )
-        queryset = self.filter_by_semester(queryset)
         return queryset
 
 
 class RequirementList(generics.ListAPIView, BaseCourseMixin):
     """
-    Get a list of all requirements in the database for this semester. Includes the `id` field,
-    which can be used to identify the requirement in filters.
+    Retrieve a list of all academic requirements in the database for this semester.
+    Includes the `id` field, which can be used to identify the requirement in filters.
+    Authentication not required.
     """
 
     serializer_class = RequirementListSerializer
@@ -123,6 +136,10 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
 
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
+    """
+    User test123. <span style="color:red;">User authentication required</span>.
+    """
+
     schema = PcxAutoSchema()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
@@ -135,6 +152,11 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
 
 
 class StatusUpdateView(generics.ListAPIView):
+    """
+    Retrieve all Status Update objects for a specific section from the current semester.
+    Authentication not required.
+    """
+
     schema = PcxAutoSchema()
     serializer_class = StatusUpdateSerializer
     http_method_names = ["get"]

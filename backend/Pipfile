@@ -46,6 +46,7 @@ tqdm = "*"
 nose = "*"
 importlib-metadata = "*"
 django = "*"
+textwrap = "*"
 
 [requires]
 python_version = "3"
