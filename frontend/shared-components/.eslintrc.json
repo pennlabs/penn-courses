@@ -6,9 +6,10 @@
         "browser": true
     },
     "rules": {
+        "import/extensions": [".js", ".jsx", ".ts", "tsx"],
         "prettier/prettier": "error",
         "quotes": ["error", "double", "avoid-escape"],
-        "no-unused-vars": ["error", {"args": "none"}],
+        "no-unused-vars": ["error", { "args": "none" }],
         "import/prefer-default-export": 0,
         "react/jsx-filename-extension": 0,
         "jsx-a11y/click-events-have-key-events": 0,
@@ -17,5 +18,12 @@
         "react/jsx-boolean-value": 0,
         "no-bitwise": "off",
         "no-await-in-loop": "warn"
+    },
+    "settings": {
+        "import/resolver": {
+            "node": {
+                "extensions": [".js", ".jsx", ".ts", ".tsx"]
+            }
+        }
     }
 }

@@ -8,7 +8,7 @@
     "start": "NODE_ENV=production node server.js",
     "test": "echo no tests yet",
     "codecov": "echo no codecov",
-    "lint": "eslint .",
+    "lint": "eslint . && tsc",
     "lint-fix": "eslint . --fix",
     "precommit": "lint-staged"
   },
@@ -22,6 +22,7 @@
     "express": "^4.17.1",
     "http-proxy-middleware": "^1.0.4",
     "next": "9.4.2",
+    "next-transpile-modules": "^3.3.0",
     "pcx-shared-components": "0.1.0",
     "prop-types": "^15.7.2",
     "rc-slider": "^8.7.1",
@@ -38,10 +39,10 @@
     "redux-thunk": "^2.3.0",
     "scroll-into-view-if-needed": "^2.2.22",
     "styled-components": "^5.0.1",
-    "typescript": "^3.9.3",
-    "next-transpile-modules": "^3.3.0"
+    "typescript": "^3.9.3"
   },
   "devDependencies": {
+    "@types/styled-components": "^5.1.0",
     "babel-plugin-styled-components": "^1.10.7",
     "eslint-config-airbnb": "^17.1.1",
     "eslint-config-prettier": "^6.11.0",
