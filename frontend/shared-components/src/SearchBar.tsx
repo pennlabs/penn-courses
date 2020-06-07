@@ -48,7 +48,7 @@ export const SearchBar = ({
 }: SearchBarProps) => (
     <SearchFlex valign radius={radius}>
         <SearchBarFlex valign margin="2%">
-            <Img src={logo} alt="" width="6%" />
+            <Img src={logo} alt="" width="0.6rem" />
             <SearchInput
                 type="search"
                 placeholder="Search"
