@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
-import { SearchBar } from "pcx-shared-components/index";
+import { SearchBar } from "pcx-shared-components";
 
 export function SearchField({
     startSearch,
@@ -32,7 +32,6 @@ export function SearchField({
             onChange={handleChangeVal}
             logo="/images/search.svg"
             radius="0.7rem"
-            width="15rem"
         />
     );
 }
