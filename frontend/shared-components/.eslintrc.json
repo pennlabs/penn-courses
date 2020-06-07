@@ -6,7 +6,6 @@
         "browser": true
     },
     "rules": {
-        "import/extensions": [".js", ".jsx", ".ts", "tsx"],
         "prettier/prettier": "error",
         "quotes": ["error", "double", "avoid-escape"],
         "no-unused-vars": ["error", { "args": "none" }],
