@@ -13,7 +13,6 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from PennCourses.docs_settings import PcxAutoSchema
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
     RegistrationCreateSerializer,
@@ -22,6 +21,7 @@ from alert.serializers import (
 )
 from alert.tasks import send_course_alerts
 from courses.util import record_update, update_course_from_record
+from PennCourses.docs_settings import PcxAutoSchema
 
 
 logger = logging.getLogger(__name__)
@@ -322,6 +322,7 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     retrieve:
 
     """
+
     schema = PcxAutoSchema()
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]

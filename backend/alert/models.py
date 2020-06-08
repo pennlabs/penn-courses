@@ -1,13 +1,12 @@
 import logging
 from enum import Enum, auto
+from textwrap import dedent
 
 import phonenumbers  # library for parsing and formatting phone numbers.
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
-
-from textwrap import dedent
 
 from alert.alerts import Email, Text
 from courses.models import Course, Section, UserProfile, get_current_semester, string_dict_to_html
@@ -31,6 +30,7 @@ class Registration(models.Model):
     A registration for sending an alert to the user upon the opening of a course
     during open registration.
     """
+
     created_at = models.DateTimeField(auto_now_add=True)
     original_created_at = models.DateTimeField(null=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -44,89 +44,131 @@ class Registration(models.Model):
     )
 
     source = models.CharField(
-        max_length=16, choices=SOURCE_CHOICES,
+        max_length=16,
+        choices=SOURCE_CHOICES,
         help_text="Where did the registration come from? Options and meanings: "
-                  + string_dict_to_html(dict(SOURCE_CHOICES)))
+        + string_dict_to_html(dict(SOURCE_CHOICES)),
+    )
     api_key = models.ForeignKey(
-        "courses.APIKey", blank=True, null=True, on_delete=models.CASCADE,
-        help_text=dedent("""
-        An API key for 3rd party alternatives to PCA. This is currently unused now that 
+        "courses.APIKey",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        help_text=dedent(
+            """
+        An API key for 3rd party alternatives to PCA. This is currently unused now that
         Penn Course Notify has fallen, but may be used in the future.
-        """))
+        """
+        ),
+    )
 
     user = models.ForeignKey(
-        get_user_model(), on_delete=models.CASCADE, blank=True, null=True,
-        help_text=dedent("""
-        The User that registered for this alert. This object will be none if registration occurred 
-        before the PCA refresh of Spring 2020 (before the refresh user's were only identified by 
-        their email and phone numbers, which are legacy fields in this model now). This object 
-        might also be none if registration occurred through a 3rd part API such as Penn Course 
+        get_user_model(),
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        The User that registered for this alert. This object will be none if registration occurred
+        before the PCA refresh of Spring 2020 (before the refresh user's were only identified by
+        their email and phone numbers, which are legacy fields in this model now). This object
+        might also be none if registration occurred through a 3rd part API such as Penn Course
         Notify (now that Notify has fallen this is an unlikely event).
-        """))
+        """
+        ),
+    )
     email = models.EmailField(
-        blank=True, null=True,
-        help_text=dedent("""
-        A legacy field that stored the user's email before the Spring 2020 PCA refresh. Currently, 
-        for all new registrations the email and phone fields will be None and contact information 
-        can be found in the User's UserProfile object (related_name is profile, so you can 
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        A legacy field that stored the user's email before the Spring 2020 PCA refresh. Currently,
+        for all new registrations the email and phone fields will be None and contact information
+        can be found in the User's UserProfile object (related_name is profile, so you can
         access the profile from the User object with `.user.profile`).
-        """))
+        """
+        ),
+    )
     phone = models.CharField(
-        blank=True, null=True, max_length=100,
-        help_text=dedent("""
-        A legacy field that stored the user's phone before the Spring 2020 PCA refresh. Currently, 
-        for all new registrations the email and phone fields will be None and contact information 
-        can be found in the User's UserProfile object (related_name is profile, so you can 
+        blank=True,
+        null=True,
+        max_length=100,
+        help_text=dedent(
+            """
+        A legacy field that stored the user's phone before the Spring 2020 PCA refresh. Currently,
+        for all new registrations the email and phone fields will be None and contact information
+        can be found in the User's UserProfile object (related_name is profile, so you can
         access the profile from the User object with `.user.profile`).
-        """))
+        """
+        ),
+    )
     section = models.ForeignKey(
-        Section, on_delete=models.CASCADE,
-        help_text="The section that the user registered to be notified about.")
+        Section,
+        on_delete=models.CASCADE,
+        help_text="The section that the user registered to be notified about.",
+    )
     cancelled = models.BooleanField(
         default=False,
-        help_text=dedent("""
-        Defaults to False, changed to True if the registration has been cancelled. A cancelled 
-        registration will not trigger any alerts to be sent even if the relevant section opens. 
-        A cancelled section can be resubscribed to (unlike deleted alerts), and will show up 
-        on the manage alerts page on the frontend (also unlike deleted alerts). Note that once 
-        a registration is cancelled, it cannot be uncancelled (resubscribing creates a new 
-        registration which is accessible via the resubscribed_to field, related name of 
+        help_text=dedent(
+            """
+        Defaults to False, changed to True if the registration has been cancelled. A cancelled
+        registration will not trigger any alerts to be sent even if the relevant section opens.
+        A cancelled section can be resubscribed to (unlike deleted alerts), and will show up
+        on the manage alerts page on the frontend (also unlike deleted alerts). Note that once
+        a registration is cancelled, it cannot be uncancelled (resubscribing creates a new
+        registration which is accessible via the resubscribed_to field, related name of
         resubscribed_from).
-        """))
+        """
+        ),
+    )
     cancelled_at = models.DateTimeField(
-        blank=True, null=True,
-        help_text="When was the registration cancelled? Null if it hasn't been cancelled.")
+        blank=True,
+        null=True,
+        help_text="When was the registration cancelled? Null if it hasn't been cancelled.",
+    )
     deleted = models.BooleanField(
         default=False,
-        help_text=dedent("""
-        Defaults to False, changed to True if the registration has been deleted. A deleted 
-        registration will not trigger any alerts to be sent even if the relevant section opens. 
-        A deleted section cannot be resubscribed to or undeleted, and will not show up on the 
-        manage alerts page on the frontend. It is kept in the database for analytics purposes, 
+        help_text=dedent(
+            """
+        Defaults to False, changed to True if the registration has been deleted. A deleted
+        registration will not trigger any alerts to be sent even if the relevant section opens.
+        A deleted section cannot be resubscribed to or undeleted, and will not show up on the
+        manage alerts page on the frontend. It is kept in the database for analytics purposes,
         even though it serves no immediate functional purpose for its original user.
-        """))
+        """
+        ),
+    )
     deleted_at = models.DateTimeField(
-        blank=True, null=True,
-        help_text="When was the registration deleted? Null if it hasn't been deleted.")
+        blank=True,
+        null=True,
+        help_text="When was the registration deleted? Null if it hasn't been deleted.",
+    )
     auto_resubscribe = models.BooleanField(
         default=False,
-        help_text=dedent("""
-        Defaults to False, in which case a registration will not be automatically resubscribed 
-        after it triggers an alert to be sent (but the user can still resubscribe to a sent alert, 
-        as long as it is not deleted). If set to True, the registration will be automatically 
-        resubscribed to once it triggers an alert to be sent (this is useful in the case of 
-        volatile sections which are opening and closing frequently, often before the user has 
+        help_text=dedent(
+            """
+        Defaults to False, in which case a registration will not be automatically resubscribed
+        after it triggers an alert to be sent (but the user can still resubscribe to a sent alert,
+        as long as it is not deleted). If set to True, the registration will be automatically
+        resubscribed to once it triggers an alert to be sent (this is useful in the case of
+        volatile sections which are opening and closing frequently, often before the user has
         time to register).
-        """))
+        """
+        ),
+    )
     notification_sent = models.BooleanField(
-        default=False,
-        help_text="True if an alert has been sent to the user, false otherwise.")
+        default=False, help_text="True if an alert has been sent to the user, false otherwise."
+    )
     notification_sent_at = models.DateTimeField(
-        blank=True, null=True,
-        help_text=dedent("""
-        When was an alert sent to the user as a result of this registration? 
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        When was an alert sent to the user as a result of this registration?
         Null if an alert was not sent.
-        """))
+        """
+        ),
+    )
 
     METHOD_CHOICES = (
         ("", "Unsent"),
@@ -136,9 +178,13 @@ class Registration(models.Model):
         ("ADM", "Admin Interface"),
     )
     notification_sent_by = models.CharField(
-        max_length=16, choices=METHOD_CHOICES, default="", blank=True,
+        max_length=16,
+        choices=METHOD_CHOICES,
+        default="",
+        blank=True,
         help_text="What triggered the alert to be sent? Options and meanings: "
-                  + string_dict_to_html(dict(METHOD_CHOICES)))
+        + string_dict_to_html(dict(METHOD_CHOICES)),
+    )
 
     # track resubscriptions
     resubscribed_from = models.OneToOneField(
@@ -147,16 +193,18 @@ class Registration(models.Model):
         null=True,
         on_delete=models.SET_NULL,
         related_name="resubscribed_to",
-        help_text=dedent("""
-        The registration which was resubscribed to, triggering the creation of this registration. 
-        If this registration is the original registration in its resubscribe chain (the tail), 
-        this field is null. The related field, 'resubscribed_to' only exists as an attribute of 
-        a Registration object if the registration has been resubscribed. In that case, 
-        the field resubscribed_to will point to the next element in the resubscribe chain. 
-        If the field does not exist, this registration is the head of its resubscribe chain 
-        (note that an element can be both the head and the tail of its resubscribe chain, 
+        help_text=dedent(
+            """
+        The registration which was resubscribed to, triggering the creation of this registration.
+        If this registration is the original registration in its resubscribe chain (the tail),
+        this field is null. The related field, 'resubscribed_to' only exists as an attribute of
+        a Registration object if the registration has been resubscribed. In that case,
+        the field resubscribed_to will point to the next element in the resubscribe chain.
+        If the field does not exist, this registration is the head of its resubscribe chain
+        (note that an element can be both the head and the tail of its resubscribe chain,
         in which case it is the only element in its resubscribe chain).
-        """)
+        """
+        ),
     )
 
     def __str__(self):
@@ -256,7 +304,8 @@ class Registration(models.Model):
         most_recent_reg = self.get_most_current_rec()
 
         if (
-            not most_recent_reg.notification_sent and not most_recent_reg.cancelled
+            not most_recent_reg.notification_sent
+            and not most_recent_reg.cancelled
             and not most_recent_reg.deleted
         ):  # if a notification hasn't been sent on this recent one
             # (and it hasn't been cancelled or deleted),

@@ -7,10 +7,10 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from PennCourses.docs_settings import PcxAutoSchema
 from courses.models import Section
 from courses.util import get_course_and_section
 from courses.views import CourseList
+from PennCourses.docs_settings import PcxAutoSchema
 from plan.filters import CourseSearchFilterBackend
 from plan.models import Schedule
 from plan.search import TypedCourseSearchBackend

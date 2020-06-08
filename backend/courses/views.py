@@ -4,9 +4,7 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_value
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Count
 
-from PennCourses.docs_settings import PcxAutoSchema
 from courses.models import Course, Requirement, Section, StatusUpdate
 from courses.serializers import (
     CourseDetailSerializer,
@@ -17,6 +15,7 @@ from courses.serializers import (
     StatusUpdateSerializer,
     UserSerializer,
 )
+from PennCourses.docs_settings import PcxAutoSchema
 from plan.search import TypedSectionSearchBackend
 
 
@@ -95,7 +94,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
                 .distinct(),
             )
         )
-        queryset = self.filter_by_semester(queryset).annotate(num_sections=Count('sections'))
+        queryset = self.filter_by_semester(queryset)
         return queryset
 
 
@@ -121,6 +120,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 .distinct(),
             )
         )
+        queryset = self.filter_by_semester(queryset)
         return queryset
 
 
