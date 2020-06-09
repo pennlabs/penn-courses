@@ -96,7 +96,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             "CIS-120",
             {
                 **average_and_recent(4, 4),
-                "instructors": {self.instructor_name: {**average_and_recent(4, 4)}},
+                "instructors": {Instructor.objects.get().pk: {**average_and_recent(4, 4)}},
             },
         )
 
@@ -127,19 +127,11 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                     {
                         "title": self.instructor_name,
                         "desc": "CIS",
-                        "url": reverse("instructor-reviews", args=[Instructor.objects.get().pk]),
+                        "url": f"/instructor/{Instructor.objects.get().pk}",
                     }
                 ],
-                "courses": [
-                    {
-                        "title": "CIS-120",
-                        "desc": [""],
-                        "url": reverse("course-reviews", args=["CIS-120"]),
-                    }
-                ],
-                "departments": [
-                    {"title": "CIS", "desc": "", "url": reverse("department-reviews", args=["CIS"])}
-                ],
+                "courses": [{"title": "CIS-120", "desc": [""], "url": "/course/CIS-120",}],
+                "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
             },
         )
 
@@ -160,7 +152,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
                 "num_semesters": 2,
                 **average_and_recent(3, 4),
                 "instructors": {
-                    self.instructor_name: {
+                    Instructor.objects.get().pk: {
                         **average_and_recent(3, 4),
                         "latest_semester": TEST_SEMESTER,
                     },
@@ -205,7 +197,7 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
                 "num_semesters": 2,
                 **average_and_recent(3, 4),
                 "instructors": {
-                    self.instructor_name: {
+                    Instructor.objects.get().pk: {
                         **average_and_recent(3, 4),
                         "latest_semester": TEST_SEMESTER,
                     }
@@ -231,8 +223,8 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             {
                 **average_and_recent(3, 3),
                 "instructors": {
-                    self.instructor_name: average_and_recent(4, 4),
-                    "Instructor Two": average_and_recent(2, 2),
+                    self.instructor1.pk: average_and_recent(4, 4),
+                    self.instructor2.pk: average_and_recent(2, 2),
                 },
             },
         )
@@ -268,8 +260,8 @@ class TwoSectionTestCase(TestCase, PCRTestMixin):
             {
                 **average_and_recent(3, 3),
                 "instructors": {
-                    self.instructor_name: average_and_recent(4, 4),
-                    "Instructor Two": average_and_recent(2, 2),
+                    self.instructor1.pk: average_and_recent(4, 4),
+                    self.instructor2.pk: average_and_recent(2, 2),
                 },
             },
         )
@@ -298,6 +290,8 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
 
         create_review("CIS-120-900", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review("CIS-120-003", "2012C", "Instructor Two", {"instructor_quality": 1})
+        self.instructor1 = Instructor.objects.get(name=self.instructor_name)
+        self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
         self.assertRequestContains(
@@ -306,11 +300,11 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
             {
                 **average_and_recent(2.25, 4),
                 "instructors": {
-                    self.instructor_name: {
+                    self.instructor1.pk: {
                         **average_and_recent(3, 4),
                         "latest_semester": TEST_SEMESTER,
                     },
-                    "Instructor Two": {**average_and_recent(1.5, 2), "latest_semester": "2017A"},
+                    self.instructor2.pk: {**average_and_recent(1.5, 2), "latest_semester": "2017A"},
                 },
             },
         )
@@ -332,7 +326,7 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
             "MATH-114",
             {
                 **average_and_recent(2, 2),
-                "instructors": {self.instructor2.name: average_and_recent(2, 2)},
+                "instructors": {self.instructor2.pk: average_and_recent(2, 2)},
             },
         )
 
@@ -359,24 +353,16 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "Instructor One",
                         "desc": "CIS",
-                        "url": reverse("instructor-reviews", args=[self.instructor1.pk]),
+                        "url": f"/instructor/{self.instructor1.pk}",
                     },
                     {
                         "title": "Instructor Two",
                         "desc": "ENM,MATH",
-                        "url": reverse("instructor-reviews", args=[self.instructor2.pk]),
+                        "url": f"/instructor/{self.instructor2.pk}",
                     },
                 ],
-                "courses": [
-                    {
-                        "title": "CIS-120",
-                        "desc": [""],
-                        "url": reverse("course-reviews", args=["CIS-120"]),
-                    }
-                ],
-                "departments": [
-                    {"title": "CIS", "desc": "", "url": reverse("department-reviews", args=["CIS"])}
-                ],
+                "courses": [{"title": "CIS-120", "desc": [""], "url": "/course/CIS-120"}],
+                "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
             },
         )
 

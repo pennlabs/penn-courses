@@ -53,10 +53,22 @@ workflows:
           tag: "${CIRCLE_SHA1},latest"
           context: docker-publish
           <<: *branch-filters
+      - docker/publish:
+          name: publish-review
+          requires:
+            - check-frontend
+          path: frontend
+          dockerfile: review/Dockerfile
+          cache_from: "pennlabs/pcr-frontend:latest"
+          image: "pennlabs/pcr-frontend"
+          tag: "${CIRCLE_SHA1},latest"
+          context: docker-publish
+          <<: *branch-filters
       - helm-tools/deploy:
           requires:
             - publish-backend
             - publish-plan
             - publish-alert
+            - publish-review
           context: k8s-deploy
           <<: *branch-filters
