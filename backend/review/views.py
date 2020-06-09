@@ -116,6 +116,7 @@ def course_reviews(request, course_code):
         {
             "code": course["full_code"],
             "name": course["title"],
+            "description": course["description"],
             "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
             "num_sections": Section.objects.filter(course__full_code=course_code).count(),
             "num_sections_recent": Section.objects.filter(
@@ -212,6 +213,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
                     "forms_returned": review["responses"],
                     "forms_produced": review["enrollment"],
                     "ratings": make_subdict("bit_", review),
+                    "comments": review["comments"],
                 }
                 for review in reviews.values()
             ],
