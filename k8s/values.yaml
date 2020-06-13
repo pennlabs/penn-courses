@@ -1,4 +1,4 @@
-deploy_version: 0.1.12
+deploy_version: 0.1.20
 applications:
   - name: redis
     image: redis
