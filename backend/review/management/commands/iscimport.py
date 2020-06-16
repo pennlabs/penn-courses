@@ -99,6 +99,10 @@ class Command(BaseCommand):
             help="Show dynamic progress bars during execution",
         )
 
+        parser.add_argument(
+            "--force", action="store_true", help="Complete action in non-interactive mode."
+        )
+
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
 
     def get_files(self, src, is_zipfile, tables_to_get):
@@ -141,6 +145,7 @@ class Command(BaseCommand):
         import_details = kwargs["import_details"]
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
+        force = kwargs["force"]
 
         if src is None:
             raise CommandError("source directory or zip must be defined.")
@@ -194,12 +199,13 @@ class Command(BaseCommand):
         delete_count = to_delete.count()
 
         if delete_count > 0:
-            prompt = input(
-                f"This import will overwrite {delete_count} rows that have already been imported. Continue? (y/N) "  # noqa E501
-            )
-            if prompt.strip().upper() != "Y":
-                self.display("Aborting...")
-                return 0
+            if not force:
+                prompt = input(
+                    f"This import will overwrite {delete_count} rows that have already been imported. Continue? (y/N) "  # noqa E501
+                )
+                if prompt.strip().upper() != "Y":
+                    self.display("Aborting...")
+                    return 0
 
             self.display(
                 f"Deleting {delete_count} existing reviews for semesters from the database..."
