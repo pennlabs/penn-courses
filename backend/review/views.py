@@ -102,7 +102,9 @@ def course_reviews(request, course_code):
     )
 
     instructors = annotate_average_and_recent(
-        Instructor.objects.filter(section__course__full_code=course_code).distinct(),
+        Instructor.objects.filter(
+            section__course__full_code=course_code, section__review__isnull=False
+        ).distinct(),
         match_on=Q(section__course__full_code=course_code, instructor__pk=OuterRef(OuterRef("pk"))),
     )
 

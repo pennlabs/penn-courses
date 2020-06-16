@@ -54,6 +54,7 @@ class PCRTestMixin(object):
         res = self.client.get(reverse(url, args=args))
         self.assertEqual(200, res.status_code)
         self.assertDictContains(res.data, expected)
+        return res.data
 
 
 """
@@ -365,6 +366,28 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
                 "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
             },
         )
+
+
+class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+        _, recitation, _, _ = get_or_create_course_and_section("CIS-120-201", TEST_SEMESTER)
+        recitation.instructors.add(Instructor.objects.create(name="Instructor Two"))
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+        self.instructor1 = Instructor.objects.get(name="Instructor One")
+        self.instructor2 = Instructor.objects.get(name="Instructor Two")
+
+    def test_course(self):
+        res = self.assertRequestContains(
+            "course-reviews",
+            "CIS-120",
+            {
+                **average_and_recent(4, 4),
+                "instructors": {self.instructor1.pk: average_and_recent(4, 4)},
+            },
+        )
+        self.assertEqual(1, len(res["instructors"]))
 
 
 class NotFoundTestCase(TestCase):
