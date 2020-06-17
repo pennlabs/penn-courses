@@ -314,12 +314,15 @@ def autocomplete(request):
                 "url": f"/instructor/{inst['id']}",
             }
         instructor_set[inst["id"]]["desc"].add(inst["section__course__department__code"])
+
+    def join_depts(depts):
+        try:
+            return ",".join(sorted(list(depts)))
+        except TypeError:
+            return ""
+
     instructor_set = [
-        {
-            "title": v["title"],
-            "desc": ",".join(sorted(list(v["desc"]))) if v["desc"] is not None else "",
-            "url": v["url"],
-        }
+        {"title": v["title"], "desc": join_depts(v["desc"]), "url": v["url"],}
         for k, v in instructor_set.items()
     ]
 
