@@ -315,7 +315,11 @@ def autocomplete(request):
             }
         instructor_set[inst["id"]]["desc"].add(inst["section__course__department__code"])
     instructor_set = [
-        {"title": v["title"], "desc": ",".join(sorted(list(v["desc"]))), "url": v["url"],}
+        {
+            "title": v["title"],
+            "desc": ",".join(sorted(list(v["desc"]))) if v["desc"] is not None else "",
+            "url": v["url"],
+        }
         for k, v in instructor_set.items()
     ]
 
