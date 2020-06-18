@@ -3,6 +3,7 @@ import os
 import zipfile
 
 import boto3
+from django.core.cache import cache
 from django.core.management.base import BaseCommand, CommandError
 
 from review.import_utils.import_to_db import (
@@ -201,7 +202,8 @@ class Command(BaseCommand):
         if delete_count > 0:
             if not force:
                 prompt = input(
-                    f"This import will overwrite {delete_count} rows that have already been imported. Continue? (y/N) "  # noqa E501
+                    f"This import will overwrite {delete_count} rows that have already been"
+                    + "imported. Continue? (y/N) "
                 )
                 if prompt.strip().upper() != "Y":
                     self.display("Aborting...")
@@ -213,7 +215,8 @@ class Command(BaseCommand):
             to_delete.delete()
 
         self.display(
-            f"Importing reviews for semester(s) {', '.join(semesters) if not kwargs['import_all'] else 'all'}"  # noqa E501
+            "Importing reviews for semester(s)"
+            + f"{', '.join(semesters)if not kwargs['import_all'] else 'all'}"
         )
         stats = import_summary_rows(summary_rows, show_progress_bar)
         self.display(stats)
@@ -238,4 +241,6 @@ class Command(BaseCommand):
             self.display(stats)
 
         self.close_files(files)
+        # invalidate cached views
+        cache.clear()
         return 0
