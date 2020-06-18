@@ -118,7 +118,7 @@ def course_reviews(request, course_code):
         match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
     )
 
-    course = dict(course_qs.values()[0])
+    course = dict(course_qs[:1].values()[0])
 
     # We could use `annotate_average_and_recent` for instructor reviews as well, but aggregating
     # every instructor is a very slow query. So, instead, we grab the "flat" reviews,

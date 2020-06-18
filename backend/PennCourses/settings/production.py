@@ -31,3 +31,11 @@ PLATFORM_ACCOUNTS = {"ADMIN_PERMISSION": "courses_admin"}
 
 # TODO: This is a BAD HACK. We shouldn't hardcode the base URL into the shortener
 PCA_URL = "https://penncoursealert.com"
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient",},
+    }
+}
