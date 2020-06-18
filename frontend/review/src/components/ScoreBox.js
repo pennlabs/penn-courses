@@ -136,8 +136,8 @@ class ScoreBox extends Component {
           return;
         }
         output[col] = {
-          average: val.average_reviews[col].toFixed(2),
-          recent: val.recent_reviews[col].toFixed(2)
+          average: val.average_reviews[col]?.toFixed(2),
+          recent: val.recent_reviews[col]?.toFixed(2)
         };
         columns[col] = true;
       });
