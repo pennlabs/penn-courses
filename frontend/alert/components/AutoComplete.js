@@ -13,9 +13,9 @@ import { Input } from "./Input";
 the search results.
 Including the search term makes it possible to determine if the search result is stale.
  */
-const suggestionsFor = search =>
-    fetch(`/api/alert/courses?search=${search}`).then(res =>
-        res.json().then(searchResult => ({
+const suggestionsFor = (search) =>
+    fetch(`/api/alert/courses?search=${search}`).then((res) =>
+        res.json().then((searchResult) => ({
             searchResult,
             searchTerm: search,
         }))
@@ -76,7 +76,8 @@ const DropdownItemBox = styled.div`
     justify-content: stretch;
     flex-direction: row;
     cursor: pointer;
-    ${props => (props.selected ? "background-color: rgb(235, 235, 235);" : "")}
+    ${(props) =>
+        props.selected ? "background-color: rgb(235, 235, 235);" : ""}
     &:hover {
         background-color: rgb(220, 220, 220);
     }
@@ -114,12 +115,12 @@ const DropdownItemLeftCol = styled.div`
 
 const AutoCompleteInput = styled(Input)`
     position: absolute;
-    ${props => (props.disabled ? "" : "background: transparent;")}
+    ${(props) => (props.disabled ? "" : "background: transparent;")}
     z-index: 1;
 `;
 
 const AutoCompleteInputBackground = styled(AutoCompleteInput)`
-    ${props => (props.disabled ? "" : "background: white;")}
+    ${(props) => (props.disabled ? "" : "background: white;")}
     z-index: 0;
     color: grey;
 `;
@@ -128,7 +129,7 @@ const Container = styled.div`
     position: relative;
     display: block;
     margin-bottom: 1rem;
-    height: ${props => props.inputHeight};
+    height: ${(props) => props.inputHeight};
 `;
 
 const Suggestion = ({ onClick, courseCode, title, instructor, selected }) => {
@@ -203,7 +204,7 @@ const AutoComplete = ({ onValueChange, disabled }) => {
 
     const show = active && suggestions.length > 0;
 
-    const setValue = v => {
+    const setValue = (v) => {
         onValueChange(v);
         return setInternalValue(v);
     };
@@ -226,7 +227,7 @@ const AutoComplete = ({ onValueChange, disabled }) => {
      * Takes in the index of a new selected suggestion and updates state accordingly
      * @param newSelectedSuggestion
      */
-    const handleSuggestionSelect = newSelectedSuggestion => {
+    const handleSuggestionSelect = (newSelectedSuggestion) => {
         const newVal =
             newSelectedSuggestion !== -1 && suggestions[newSelectedSuggestion];
         if (newVal) {
@@ -242,7 +243,7 @@ const AutoComplete = ({ onValueChange, disabled }) => {
      */
     const getCurrentIndex = () =>
         suggestions
-            .map(suggestion => suggestion.section_id.toLowerCase())
+            .map((suggestion) => suggestion.section_id.toLowerCase())
             .indexOf(value.toLowerCase());
 
     return (
@@ -257,12 +258,12 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                 autocomplete="off"
                 placeholder="Course"
                 ref={setInputRef}
-                onKeyDown={e => {
+                onKeyDown={(e) => {
                     if (e.keyCode === RETURN_KEY && suggestions) {
                         e.preventDefault();
                     }
                 }}
-                onKeyUp={e => {
+                onKeyUp={(e) => {
                     if (
                         (e.keyCode === RIGHT_ARROW ||
                             e.keyCode === RETURN_KEY) &&

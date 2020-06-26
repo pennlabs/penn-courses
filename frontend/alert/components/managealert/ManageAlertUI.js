@@ -105,7 +105,7 @@ export const ManageAlert = ({
     batchSelected,
     setBatchSelected,
 }) => {
-    const toggleAlert = id => () => {
+    const toggleAlert = (id) => () => {
         setAlertSel({ ...alertSel, [id]: !alertSel[id] });
     };
 
@@ -117,7 +117,7 @@ export const ManageAlert = ({
         setNumSelected(Object.values(alertSel).reduce((acc, x) => acc + x, 0));
     }, [alertSel]);
 
-    const handleChange = event => {
+    const handleChange = (event) => {
         const searchText = event.target.value;
         setSearchValue(searchText);
         if (searchTimeout) {

@@ -46,7 +46,7 @@ const RadioSet = ({ selected, options, setSelected }) => (
                         name="name"
                         id={value}
                         value={value}
-                        onChange={e => setSelected(e.target.value)}
+                        onChange={(e) => setSelected(e.target.value)}
                         checked={value === selected}
                     />
                     {label}
@@ -106,7 +106,7 @@ const AlertForm = ({ user, setResponse }) => {
         setResponse(new Response(blob, { status }));
     };
 
-    const handleError = e => {
+    const handleError = (e) => {
         Sentry.captureException(e);
         sendError(
             500,
@@ -119,7 +119,7 @@ const AlertForm = ({ user, setResponse }) => {
             section,
             auto_resubscribe: autoResub === "true",
         })
-            .then(res => setResponse(res))
+            .then((res) => setResponse(res))
             .catch(handleError);
     };
 
@@ -143,7 +143,7 @@ const AlertForm = ({ user, setResponse }) => {
             doAPIRequest("/accounts/me/", "PATCH", {
                 profile: { email, phone },
             })
-                .then(res => {
+                .then((res) => {
                     if (!res.ok) {
                         throw new Error(JSON.stringify(res));
                     } else {
@@ -162,12 +162,12 @@ const AlertForm = ({ user, setResponse }) => {
             <Input
                 placeholder="Email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
             />
             <Input
                 placeholder="Phone"
                 value={phone}
-                onChange={e => {
+                onChange={(e) => {
                     setPhone(e.target.value);
                     setPhoneDirty(true);
                 }}
@@ -185,7 +185,7 @@ const AlertForm = ({ user, setResponse }) => {
                     />
                 </AlertText>
                 <SubmitButton
-                    onClick={e => {
+                    onClick={(e) => {
                         e.preventDefault();
                         onSubmit();
                     }}

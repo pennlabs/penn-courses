@@ -6,7 +6,7 @@ import { Img, P } from "../common/common";
 import { AlertAction } from "./AlertItemEnums";
 
 const ActionFlex = styled(Flex)`
-    background-color: ${props => props.background};
+    background-color: ${(props) => props.background};
     border-radius: 0.2rem;
     cursor: pointer;
 `;

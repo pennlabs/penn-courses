@@ -8,7 +8,7 @@ import { Img } from "../common/common";
 const HeaderText = styled.p`
     font-size: 0.7rem;
     font-weight: bold;
-    color: ${props => (props.color ? props.color : "#9ea0a7")};
+    color: ${(props) => (props.color ? props.color : "#9ea0a7")};
 `;
 
 const HeaderAction = styled(HeaderText)`

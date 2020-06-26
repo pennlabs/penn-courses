@@ -10,7 +10,7 @@ const StatusInd = styled.div`
     border-radius: 1rem;
     width: 0.4rem;
     height: 0.4rem;
-    background-color: ${props => props.background};
+    background-color: ${(props) => props.background};
 `;
 
 const StatusGridItem = styled(GridItem)`

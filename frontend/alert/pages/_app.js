@@ -2,10 +2,9 @@ import React from "react";
 import * as Sentry from "@sentry/browser";
 import { createGlobalStyle } from "styled-components";
 
-// Sentry.init({
-//     dsn: "https://7c27d176a3984f8c931600ca1751d526@sentry.pennlabs.org/16",
-// });
-//
+Sentry.init({
+    dsn: "https://7c27d176a3984f8c931600ca1751d526@sentry.pennlabs.org/16",
+});
 
 const GlobalStyles = createGlobalStyle`
 body {
