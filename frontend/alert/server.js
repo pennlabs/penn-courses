@@ -34,9 +34,7 @@ app.prepare()
             // Set up the proxy.
             if (devProxy) {
                 /* eslint-disable */
-                const {
-                    createProxyMiddleware,
-                } = require("http-proxy-middleware");
+                const { createProxyMiddleware } = require("http-proxy-middleware");
                 Object.keys(devProxy).forEach(function(context) {
                     server.use(
                         createProxyMiddleware(context, devProxy[context])

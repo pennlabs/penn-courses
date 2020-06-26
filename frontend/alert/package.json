@@ -24,7 +24,8 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-ga": "^2.7.0",
-    "styled-components": "^5.1.0"
+    "styled-components": "^5.1.0",
+    "http-proxy-middleware": "^1.0"
   },
   "scripts": {
     "dev": "node server.js",
