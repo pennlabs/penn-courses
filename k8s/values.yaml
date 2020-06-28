@@ -40,6 +40,9 @@ applications:
       hosts:
         - host: penncoursealert.com
           paths: ["/"]
+    extraEnv:
+      - name: PORT
+        value: 80
   - name: review
     image: pennlabs/pcr-frontend
     ingress:
