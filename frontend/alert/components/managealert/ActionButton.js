@@ -1,8 +1,6 @@
 import React from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
-import Bell from "../../assets/bell.svg";
-import XBell from "../../assets/bell-off.svg";
 import { Flex } from "../common/layout";
 import { Img, P } from "../common/common";
 import { AlertAction } from "./AlertItemEnums";
@@ -32,13 +30,13 @@ export const ActionButton = ({ type, onClick }) => {
         case "resub":
             primary = "#5891fc";
             secondary = "rgba(88, 145, 252, 0.12)";
-            img = Bell;
+            img = "/svg/bell.svg";
             text = "Resubscribe";
             break;
         case "cancel":
             primary = "#646e7a";
             secondary = "rgba(162, 169, 176, 0.15)";
-            img = XBell;
+            img = "/svg/bell-off.svg";
             text = "Cancel";
             break;
         default:

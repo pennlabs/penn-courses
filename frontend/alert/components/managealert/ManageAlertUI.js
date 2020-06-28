@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import Header from "./Header";
-import Logo from "../../assets/PCA_logo.svg";
 import { Flex } from "../common/layout";
 import { AlertSearch } from "./AlertSearch";
 import { AlertItem } from "./AlertItem";
@@ -81,7 +80,11 @@ const Grid = styled.div`
 
 export const ManageAlertHeader = () => (
     <Flex margin="-3.4rem 0rem 0rem 0rem">
-        <img alt="Penn Course Alert logo" src={Logo} width="50rem" />
+        <img
+            alt="Penn Course Alert logo"
+            src="/svg/PCA_logo.svg"
+            width="50rem"
+        />
 
         {/*     <Flex> */}
         {/*         <Input placeholder="Course" /> */}

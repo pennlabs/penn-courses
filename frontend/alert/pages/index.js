@@ -4,17 +4,15 @@ import PropTypes from "prop-types";
 import ReactGA from "react-ga";
 import * as Sentry from "@sentry/browser";
 
-import "./App.css";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
-import Logo from "./assets/PCA_logo.svg";
-import ManageAlertWrapper from "./components/managealert";
-import { maxWidth, PHONE } from "./constants";
-import Footer from "./components/Footer";
-import AlertForm from "./components/AlertForm";
+import ManageAlertWrapper from "../components/managealert";
+import { maxWidth, PHONE } from "../constants";
+import Footer from "../components/Footer";
+import AlertForm from "../components/AlertForm";
 
-import { Center, Container, Flex } from "./components/common/layout";
-import MessageList from "./components/MessageList";
-import LoginModal from "./components/LoginModal";
+import { Center, Container, Flex } from "../components/common/layout";
+import MessageList from "../components/MessageList";
+import LoginModal from "../components/LoginModal";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
@@ -34,7 +32,7 @@ const LogoArea = () => (
             alt="Penn Course Alert logo"
             width="70px"
             height="70px"
-            src={Logo}
+            src="/svg/PCA_logo.svg"
         />
         <Header>Penn Course Alert</Header>
     </Flex>
@@ -47,13 +45,14 @@ const NavContainer = styled.nav`
     width: 95%;
 `;
 
-const NavElt = styled.a`
+const NavElt = styled.span`
     padding: 20px;
     color: #4a4a4a;
     display: flex;
     flex-direction: column;
     justify-content: center;
     font-weight: ${(props) => (props.active ? "bold" : "normal")};
+    cursor: pointer;
 `;
 
 const Nav = ({ login, logout, user, page, setPage }) => (
@@ -69,7 +68,6 @@ const Nav = ({ login, logout, user, page, setPage }) => (
             />
         </NavElt>
         <NavElt
-            href="/"
             active={page === "home"}
             onClick={(e) => {
                 e.preventDefault();
@@ -79,7 +77,6 @@ const Nav = ({ login, logout, user, page, setPage }) => (
             Home
         </NavElt>
         <NavElt
-            href="/manage"
             active={page === "manage"}
             onClick={(e) => {
                 e.preventDefault();
@@ -114,9 +111,7 @@ const genId = (() => {
 
 function App() {
     const [user, setUser] = useState(null);
-    const [page, setPage] = useState(
-        window.location.hash === "#manage" ? "manage" : "home"
-    );
+    const [page, setPage] = useState("home");
     const [messages, setMessages] = useState([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -144,7 +139,6 @@ function App() {
                         "We're sorry, there was an error in sending your message to our servers.",
                     status: 500,
                 });
-                console.log(e); // eslint-ignore-line
                 Sentry.captureException(e);
             });
     };

@@ -1,9 +1,6 @@
 import React from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
-import XBell from "../../assets/bell-off.svg";
-import Trash from "../../assets/trash.svg";
-import ABell from "../../assets/abell.svg";
 import { AlertAction } from "./AlertItemEnums";
 import { GridItem, Flex, RightItem } from "../common/layout";
 import { Img } from "../common/common";
@@ -82,7 +79,7 @@ const Header = ({
                         <HeaderRightItem>
                             <HeaderButtonsFlex valign>
                                 <Img
-                                    src={ABell}
+                                    src="/svg/abell.svg"
                                     width="0.5rem"
                                     height="0.5rem"
                                 />
@@ -98,7 +95,7 @@ const Header = ({
                             </HeaderButtonsFlex>
                             <HeaderButtonsFlex valign>
                                 <Img
-                                    src={XBell}
+                                    src="/svg/bell-off.svg"
                                     width="0.5rem"
                                     height="0.5rem"
                                 />
@@ -112,7 +109,7 @@ const Header = ({
                             </HeaderButtonsFlex>
                             <HeaderButtonsFlex valign>
                                 <Img
-                                    src={Trash}
+                                    src="/svg/trash.svg"
                                     width="0.5rem"
                                     height="0.5rem"
                                 />

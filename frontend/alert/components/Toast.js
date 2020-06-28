@@ -4,11 +4,6 @@ import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 
-import x from "../assets/x.svg";
-import close from "../assets/close.svg";
-import bang from "../assets/bang.svg";
-import check from "../assets/check.svg";
-
 import { between, TABLET, SMALLDESKTOP } from "../constants";
 
 const Rectangle = styled.div`
@@ -84,17 +79,17 @@ const Toast = ({ onClose, children, type }) => {
         primary = "#78d381";
         secondary = "#e9f8eb";
         textcolor = "#4ab255";
-        image = check;
+        image = "/svg/check.svg";
     } else if (type === ToastType.Warning) {
         primary = "#fbcd4c";
         secondary = "#fcf5e1";
         textcolor = "#e8ad06";
-        image = bang;
+        image = "/svg/bang.svg";
     } else if (type === ToastType.Error) {
         primary = "#e8746a";
         secondary = "#fbebe9";
         textcolor = "#e8746a";
-        image = x;
+        image = "/svg/x.svg";
     }
 
     return (
@@ -104,7 +99,11 @@ const Toast = ({ onClose, children, type }) => {
                     <Icon src={image} />
                 </IconDiv>
                 <ToastText color={textcolor}>{children}</ToastText>
-                <CloseButton src={close} color={textcolor} onClick={onClose} />
+                <CloseButton
+                    src="/svg/close.svg"
+                    color={textcolor}
+                    onClick={onClose}
+                />
             </Rectangle>
         </RightItem>
     );

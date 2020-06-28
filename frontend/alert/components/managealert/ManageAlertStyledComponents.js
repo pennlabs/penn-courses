@@ -11,11 +11,7 @@ export const Flex = styled.div`
     align-items: ${(props) => (props.valign ? "center" : null)};
     justify-content: ${(props) =>
         /* eslint-disable-next-line */
-        props.halign
-            ? "center"
-            : props.spaceBetween
-            ? "space-between"
-            : null };
+        props.halign ? "center" : props.spaceBetween ? "space-between" : null};
     flex-direction: ${(props) => (props.col ? "column" : "row")};
 `;
 
