@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.cache import cache_page
 
 from review.views import (
     autocomplete,
@@ -9,14 +10,28 @@ from review.views import (
 )
 
 
+MONTH_IN_SECONDS = 60 * 60 * 24 * 30
+
 urlpatterns = [
-    path("courses/<slug:course_code>", course_reviews, name="course-reviews"),
-    path("instructor/<slug:instructor_id>", instructor_reviews, name="instructor-reviews"),
-    path("department/<slug:department_code>", department_reviews, name="department-reviews"),
     path(
-        "courses/<slug:course_code>/<slug:instructor_id>",
-        instructor_for_course_reviews,
+        "course/<slug:course_code>",
+        cache_page(MONTH_IN_SECONDS)(course_reviews),
+        name="course-reviews",
+    ),
+    path(
+        "instructor/<slug:instructor_id>",
+        cache_page(MONTH_IN_SECONDS)(instructor_reviews),
+        name="instructor-reviews",
+    ),
+    path(
+        "department/<slug:department_code>",
+        cache_page(MONTH_IN_SECONDS)(department_reviews),
+        name="department-reviews",
+    ),
+    path(
+        "course/<slug:course_code>/<slug:instructor_id>",
+        cache_page(MONTH_IN_SECONDS)(instructor_for_course_reviews),
         name="course-history",
     ),
-    path("autocomplete", autocomplete, name="review-autocomplete"),
+    path("autocomplete", cache_page(MONTH_IN_SECONDS)(autocomplete), name="review-autocomplete"),
 ]

@@ -46,6 +46,7 @@ tqdm = "*"
 "boto3" = "*"
 nose = "*"
 importlib-metadata = "*"
+django-redis = "*"
 
 [requires]
 python_version = "3"

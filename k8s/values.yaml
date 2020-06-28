@@ -1,4 +1,4 @@
-deploy_version: 0.1.12
+deploy_version: 0.1.20
 applications:
   - name: redis
     image: redis
@@ -20,6 +20,8 @@ applications:
           paths: ["/api", "/admin", "/accounts", "/assets"]
         - host: penncoursealert.com
           paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"]
+        - host: review.penncourses.org
+          paths: ["/api", "/admin", "/accounts", "/assets"]
     extraEnv:
       - name: DJANGO_SETTINGS_MODULE
         value: PennCourses.settings.production
@@ -38,6 +40,12 @@ applications:
       hosts:
         - host: penncoursealert.com
           paths: ["/"]
+  - name: review
+    image: pennlabs/pcr-frontend
+    ingress:
+      hosts:
+      - host: review.penncourses.org
+        paths: ["/"]
 
 cronjobs:
   - name: load-courses

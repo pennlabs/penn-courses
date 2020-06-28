@@ -1,13 +1,13 @@
+from typing import Dict, List
+
 from django.db.models import F, OuterRef, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
-from options.models import get_value
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course, Department, Instructor
+from courses.models import Course, Department, Instructor, Section
 from review.annotations import annotate_average_and_recent, review_averages
 from review.models import ALL_FIELD_SLUGS, Review
 
@@ -33,6 +33,21 @@ def make_subdict(field_prefix, d):
     }
 
 
+def dict_average(entries: List[Dict[str, int]]) -> Dict[str, int]:
+    keys = []
+    for entry in entries:
+        keys.extend(entry.keys())
+    keys = set(keys)
+
+    averages = {k: (0, 0) for k in keys}
+    for entry in entries:
+        for k, v in entry.items():
+            sum_, count_ = averages[k]
+            averages[k] = (sum_ + v, count_ + 1)
+
+    return {k: v[0] / v[1] if v[1] > 0 else 0 for k, v in averages.items()}
+
+
 def nest_related(nested_data, nested_key, other_fields):
     """
     Return all nested data necessary for PCR views.
@@ -53,26 +68,25 @@ def nest_related(nested_data, nested_key, other_fields):
     }
 
 
-def make_review_response(top_level, nested, nested_name, nested_key):
+def make_review_response(top_level, nested, nested_name, nested_key, other_keys=dict()):
     """
     Instructor and course responses are formatted exactly the same. Factor out the
     response to remove duplicated code.
     """
-    return Response(
-        {
-            "average_reviews": make_subdict("average_", top_level),
-            "recent_reviews": make_subdict("recent_", top_level),
-            "num_semesters": top_level["average_semester_count"],
-            nested_name: nest_related(
-                nested,
-                nested_key,
-                {
-                    "latest_semester": "recent_semester_calc",
-                    "num_semesters": "average_semester_count",
-                },
-            ),
-        }
-    )
+    return {
+        "average_reviews": make_subdict("average_", top_level),
+        "recent_reviews": make_subdict("recent_", top_level),
+        "num_semesters": top_level["average_semester_count"],
+        nested_name: nest_related(
+            nested,
+            nested_key,
+            {
+                "latest_semester": "recent_semester_calc",
+                "num_semesters": "average_semester_count",
+                **other_keys,
+            },
+        ),
+    }
 
 
 """
@@ -98,17 +112,81 @@ def course_reviews(request, course_code):
     """
     if not Course.objects.filter(full_code=course_code).exists():
         raise Http404()
-    course = annotate_average_and_recent(
+
+    course_qs = annotate_average_and_recent(
         Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
         match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
     )
 
-    instructors = annotate_average_and_recent(
-        Instructor.objects.filter(section__course__full_code=course_code).distinct(),
-        match_on=Q(section__course__full_code=course_code, instructor__pk=OuterRef(OuterRef("pk"))),
+    course = dict(course_qs[:1].values()[0])
+
+    # We could use `annotate_average_and_recent` for instructor reviews as well, but aggregating
+    # every instructor is a very slow query. So, instead, we grab the "flat" reviews,
+    # and aggregate them in Python code.
+
+    reviews = (
+        review_averages(
+            Review.objects.filter(section__course__full_code=course_code),
+            {"review__pk": OuterRef("pk")},
+            fields=ALL_FIELD_SLUGS,
+            prefix="bit_",
+        )
+        .annotate(
+            course_title=F("section__course__title"),
+            semester=F("section__course__semester"),
+            instructor_name=F("instructor__name"),
+        )
+        .values()
     )
 
-    return make_review_response(course.values()[0], instructors.values(), "instructors", "name")
+    reviews_by_instructor = dict()
+    for review in reviews:
+        instructor = review["instructor_id"]
+        if instructor not in reviews_by_instructor:
+            reviews_by_instructor[instructor] = []
+
+        reviews_by_instructor[instructor].append(
+            {
+                "instructor_name": review["instructor_name"],
+                "semester": review["semester"],
+                "scores": make_subdict("bit_", review),
+            }
+        )
+
+    instructors = dict()
+    for k, reviews in reviews_by_instructor.items():
+        latest_sem = max([r["semester"] for r in reviews])
+        all_scores = [r["scores"] for r in reviews]
+        recent_scores = [r["scores"] for r in reviews if r["semester"] == latest_sem]
+        instructors[k] = {
+            "id": k,
+            "average_reviews": dict_average(all_scores),
+            "recent_reviews": dict_average(recent_scores),
+            "name": reviews[0]["instructor_name"],
+            "latest_semester": latest_sem,
+            "num_semesters": len(set([r["semester"] for r in reviews])),
+        }
+
+    return Response(
+        {
+            "code": course["full_code"],
+            "name": course["title"],
+            "description": course["description"],
+            "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
+            "num_sections": Section.objects.filter(
+                course__full_code=course_code, review__isnull=False
+            ).count(),
+            "num_sections_recent": Section.objects.filter(
+                course__full_code=course_code,
+                course__semester=course["recent_semester_calc"],
+                review__isnull=False,
+            ).count(),
+            "average_reviews": make_subdict("average_", course),
+            "recent_reviews": make_subdict("recent_", course),
+            "num_semesters": course["average_semester_count"],
+            "instructors": instructors,
+        }
+    )
 
 
 @api_view(["GET"])
@@ -130,7 +208,23 @@ def instructor_reviews(request, instructor_id):
             instructor__pk=instructor.pk,
         ),
     )
-    return make_review_response(instructor_qs.values()[0], courses.values(), "courses", "full_code")
+
+    inst = instructor_qs.values()[0]
+
+    review_response = make_review_response(
+        inst, courses.values(), "courses", "full_code", {"code": "full_code", "name": "title"},
+    )
+
+    return Response(
+        {
+            "name": instructor.name,
+            "num_sections_recent": Section.objects.filter(
+                instructors=instructor, course__semester=inst["recent_semester_calc"]
+            ).count(),
+            "num_sections": Section.objects.filter(instructors=instructor).count(),
+            **review_response,
+        }
+    )
 
 
 @api_view(["GET"])
@@ -178,7 +272,10 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
                 {
                     "course_name": review["course_title"],
                     "semester": review["semester"],
+                    "forms_returned": review["responses"],
+                    "forms_produced": review["enrollment"],
                     "ratings": make_subdict("bit_", review),
+                    "comments": review["comments"],
                 }
                 for review in reviews.values()
             ],
@@ -192,22 +289,18 @@ def autocomplete(request):
     Courses, departments, instructors. All objects are title, desc, url.
     """
 
-    courses = Course.objects.filter(semester=get_value("SEMESTER")).values("full_code", "title")
+    courses = Course.objects.filter().values("full_code", "title")
     course_set = [
         {
             "title": course["full_code"],
             "desc": [course["title"]],
-            "url": reverse("course-reviews", args=[course["full_code"]]),
+            "url": f"/course/{course['full_code']}",
         }
         for course in courses
     ]
     departments = Department.objects.all().values("code", "name")
     department_set = [
-        {
-            "title": dept["code"],
-            "desc": dept["name"],
-            "url": reverse("department-reviews", args=[dept["code"]]),
-        }
+        {"title": dept["code"], "desc": dept["name"], "url": f"/department/{dept['code']}",}
         for dept in departments
     ]
 
@@ -218,11 +311,18 @@ def autocomplete(request):
             instructor_set[inst["id"]] = {
                 "title": inst["name"],
                 "desc": set([inst["section__course__department__code"]]),
-                "url": reverse("instructor-reviews", args=[inst["id"]]),
+                "url": f"/instructor/{inst['id']}",
             }
         instructor_set[inst["id"]]["desc"].add(inst["section__course__department__code"])
+
+    def join_depts(depts):
+        try:
+            return ",".join(sorted(list(depts)))
+        except TypeError:
+            return ""
+
     instructor_set = [
-        {"title": v["title"], "desc": ",".join(sorted(list(v["desc"]))), "url": v["url"],}
+        {"title": v["title"], "desc": join_depts(v["desc"]), "url": v["url"],}
         for k, v in instructor_set.items()
     ]
 

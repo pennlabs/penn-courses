@@ -109,7 +109,7 @@ class Course(models.Model):
         if self.primary_listing is not None:
             return self.primary_listing.listing_set.exclude(id=self.id)
         else:
-            return None
+            return Course.objects.none()
 
     @property
     def requirements(self):

@@ -3,6 +3,7 @@ import os
 import zipfile
 
 import boto3
+from django.core.cache import cache
 from django.core.management.base import BaseCommand, CommandError
 
 from review.import_utils.import_to_db import (
@@ -99,6 +100,10 @@ class Command(BaseCommand):
             help="Show dynamic progress bars during execution",
         )
 
+        parser.add_argument(
+            "--force", action="store_true", help="Complete action in non-interactive mode."
+        )
+
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
 
     def get_files(self, src, is_zipfile, tables_to_get):
@@ -141,6 +146,7 @@ class Command(BaseCommand):
         import_details = kwargs["import_details"]
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
+        force = kwargs["force"]
 
         if src is None:
             raise CommandError("source directory or zip must be defined.")
@@ -194,12 +200,14 @@ class Command(BaseCommand):
         delete_count = to_delete.count()
 
         if delete_count > 0:
-            prompt = input(
-                f"This import will overwrite {delete_count} rows that have already been imported. Continue? (y/N) "  # noqa E501
-            )
-            if prompt.strip().upper() != "Y":
-                self.display("Aborting...")
-                return 0
+            if not force:
+                prompt = input(
+                    f"This import will overwrite {delete_count} rows that have already been"
+                    + "imported. Continue? (y/N) "
+                )
+                if prompt.strip().upper() != "Y":
+                    self.display("Aborting...")
+                    return 0
 
             self.display(
                 f"Deleting {delete_count} existing reviews for semesters from the database..."
@@ -207,7 +215,8 @@ class Command(BaseCommand):
             to_delete.delete()
 
         self.display(
-            f"Importing reviews for semester(s) {', '.join(semesters) if not kwargs['import_all'] else 'all'}"  # noqa E501
+            "Importing reviews for semester(s)"
+            + f"{', '.join(semesters)if not kwargs['import_all'] else 'all'}"
         )
         stats = import_summary_rows(summary_rows, show_progress_bar)
         self.display(stats)
@@ -232,4 +241,6 @@ class Command(BaseCommand):
             self.display(stats)
 
         self.close_files(files)
+        # invalidate cached views
+        cache.clear()
         return 0

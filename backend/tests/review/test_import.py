@@ -314,6 +314,26 @@ class ReviewImportCommandTestCase(TestCase):
         self.assertEqual(1, Review.objects.count())
         self.assertNotEqual(r.pk, Review.objects.get().pk)
 
+    def test_reviews_exist_force(self, mock_get_files, mock_close_files):
+        mock_get_files.return_value = [self.summary_fo]
+
+        course, section, _, _ = get_or_create_course_and_section("CIS 120001", TEST_SEMESTER)
+        instructor = Instructor.objects.create(name="name")
+        r = Review.objects.create(section=section, instructor=instructor)
+
+        management.call_command(
+            self.COMMAND_NAME,
+            "hi.zip",
+            "--zip",
+            f"--semester={TEST_SEMESTER}",
+            "--force",
+            stdout=self.out,
+            stderr=self.err,
+            show_progress_bar=False,
+        )
+        self.assertEqual(1, Review.objects.count())
+        self.assertNotEqual(r.pk, Review.objects.get().pk)
+
     def test_import_details_bit_exists(self, mock_get_files, mock_close_files):
         mock_get_files.return_value = [self.summary_fo, self.ratings_fo]
         res = management.call_command(
