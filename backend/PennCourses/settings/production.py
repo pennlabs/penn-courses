@@ -5,13 +5,9 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from PennCourses.settings.base import *  # noqa: F401, F403
-from PennCourses.settings.base import DATABASES
 
 
 DEBUG = False
-
-# Fix MySQL Emoji support
-DATABASES["default"]["OPTIONS"] = {"charset": "utf8mb4"}
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
