@@ -13,6 +13,11 @@ import "../styles/course-cart.css";
 import "../styles/schedule.css";
 import "../styles/Search.css";
 import "../styles/selector.css";
+import * as Sentry from "@sentry/browser";
+
+Sentry.init({
+    dsn: "https://b476d74f4a224b5ea5bd44449cfc5d67@sentry.pennlabs.org/17",
+});
 
 // eslint-disable-next-line
 function App({ Component, pageProps }) {
