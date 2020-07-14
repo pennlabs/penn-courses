@@ -95,6 +95,9 @@ export const getTimeString = (meetings) => {
     const times = {};
     let maxcount = 0;
     let maxrange = null;
+    if (!meetings || meetings.length === 0) {
+        return "TBA";
+    }
     meetings.forEach((meeting) => {
         const rangeId = `${meeting.start}-${meeting.end}`;
         if (!times[rangeId]) {
