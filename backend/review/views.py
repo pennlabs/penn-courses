@@ -234,15 +234,60 @@ def department_reviews(request, department_code):
     Get reviews for all courses in a department.
     """
     department = get_object_or_404(Department, code=department_code)
-    courses = annotate_average_and_recent(
-        Course.objects.filter(department=department).values("full_code", "title"),
-        match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
+    # courses = annotate_average_and_recent(
+    #     Course.objects.filter(department=department).values("full_code", "title"),
+    #     match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
+    # )
+    reviews = (
+        review_averages(
+            Review.objects.filter(section__course__department=department),
+            {"review__pk": OuterRef("pk")},
+            fields=ALL_FIELD_SLUGS,
+            prefix="bit_",
+        )
+        .annotate(
+            course_title=F("section__course__title"),
+            course_code=F("section__course__full_code"),
+            semester=F("section__course__semester"),
+        )
+        .values()
     )
+
+    reviews_by_course = dict()
+    for review in reviews:
+        course = review["course_code"]
+        if course not in reviews_by_course:
+            reviews_by_course[course] = []
+
+        reviews_by_course[course].append(
+            {
+                "code": review["course_code"],
+                "title": review["course_title"],
+                "semester": review["semester"],
+                "scores": make_subdict("bit_", review),
+            }
+        )
+
+    courses = dict()
+    for k, reviews in reviews_by_course.items():
+        latest_sem = max([r["semester"] for r in reviews])
+        all_scores = [r["scores"] for r in reviews]
+        recent_scores = [r["scores"] for r in reviews if r["semester"] == latest_sem]
+        courses[k] = {
+            "code": k,
+            "name": reviews[0]["title"],
+            "average_reviews": dict_average(all_scores),
+            "recent_reviews": dict_average(recent_scores),
+            "latest_semester": latest_sem,
+            "num_semesters": len(set([r["semester"] for r in reviews])),
+        }
+
     return Response(
         {
             "code": department.code,
             "name": department.name,
-            "courses": nest_related(courses, "full_code", {"code": "full_code", "name": "title"}),
+            "courses": courses
+            # "courses": nest_related(courses, "full_code", {"code": "full_code", "name": "title"}),
         }
     )
 

@@ -7,7 +7,8 @@ import {
   compareSemesters,
   getColumnName,
   orderColumns,
-  convertSemesterToInt
+  convertSemesterToInt,
+  toNormalizedSemester
 } from "../utils/helpers";
 import {
   ColumnSelector,
@@ -149,7 +150,7 @@ class ScoreBox extends Component {
       }
       output.key = isCourse ? key : val.code;
       output.name = val.name;
-      output.semester = val.most_recent_semester;
+      output.semester = toNormalizedSemester(val.most_recent_semester);
       output.code = val.code;
       return output;
     });

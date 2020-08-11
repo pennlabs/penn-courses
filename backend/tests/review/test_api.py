@@ -206,6 +206,13 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
             },
         )
 
+    def test_department(self):
+        self.assertRequestContains(
+            "department-reviews",
+            "CIS",
+            {"courses": {"CIS-120": average_and_recent(3, 4), "CIS-160": average_and_recent(2, 2)}},
+        )
+
 
 class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
     def setUp(self):

@@ -14,6 +14,7 @@ applications:
   - name: backend
     image: pennlabs/penn-courses-backend
     secret: penn-courses
+    replicas: 3
     ingress:
       hosts:
         - host: penncourseplan.com

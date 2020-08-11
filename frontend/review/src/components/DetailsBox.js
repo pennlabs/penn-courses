@@ -5,7 +5,8 @@ import { ColumnSelector, ScoreTable } from "./common";
 import {
   compareSemesters,
   getColumnName,
-  orderColumns
+  orderColumns,
+  toNormalizedSemester
 } from "../utils/helpers";
 import { apiHistory } from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
@@ -176,22 +177,6 @@ export const DetailsBox = forwardRef(({ course, instructor, type }, ref) => {
     sections
   } = data;
   const sectionsList = Object.values(sections);
-
-  const toNormalizedSemester = sem => {
-    const year = sem.slice(0, 4);
-    const code = sem.slice(4);
-
-    switch (code) {
-      case "A":
-        return `Spring ${year}`;
-      case "B":
-        return `Summer ${year}`;
-      case "C":
-        return `Fall ${year}`;
-      default:
-        return sem;
-    }
-  };
 
   return (
     <div id="course-details" className="box" ref={ref}>
