@@ -144,13 +144,17 @@ class ScoreBox extends Component {
       });
       if (isInstructor) {
         EXTRA_KEYS.forEach(col => {
-          output[col] = val[col];
+          if (col === "latest_semester") {
+            output[col] = toNormalizedSemester(val[col]);
+          } else {
+            output[col] = val[col];
+          }
           columns[col] = true;
         });
       }
       output.key = isCourse ? key : val.code;
       output.name = val.name;
-      output.semester = toNormalizedSemester(val.most_recent_semester);
+      output.semester = val.most_recent_semester;
       output.code = val.code;
       return output;
     });
