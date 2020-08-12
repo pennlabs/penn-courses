@@ -145,7 +145,7 @@ class ScoreBox extends Component {
       if (isInstructor) {
         EXTRA_KEYS.forEach(col => {
           if (col === "latest_semester") {
-            output[col] = toNormalizedSemester(val[col]);
+            output[col] = val[col] && toNormalizedSemester(val[col]);
           } else {
             output[col] = val[col];
           }
