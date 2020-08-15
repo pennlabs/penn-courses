@@ -47,7 +47,6 @@ tqdm = "*"
 "boto3" = "*"
 nose = "*"
 importlib-metadata = "*"
-textwrap = "*"
 django-redis = "*"
 
 [requires]
