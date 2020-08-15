@@ -2,6 +2,7 @@ import re
 import uuid
 
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError
 from tqdm import tqdm
 
 from courses.models import Course, Instructor
@@ -10,7 +11,7 @@ from courses.util import (
     get_or_create_course_and_section,
     separate_course_code,
 )
-from review.models import Review, ReviewBit
+from review.models import COLUMN_TO_SLUG, CONTEXT_TO_SLUG, Review, ReviewBit
 
 
 """
@@ -25,36 +26,6 @@ specific values extracted from dictionaries. This allows for re-use between impo
 passes (for example, the SUMMARY file and the CROSSLISTINGS file), as well as allowing for
 more granular unit tests.
 """
-
-
-"""
-Review Bits have different labels in the summary table and the rating table.
-This tuple keeps track of the association between the two, along with an
-intermediate, general label that we use internally.
-"""
-REVIEW_BIT_LABEL = (
-    ("RINSTRUCTORQUALITY", "Instructor Quality", "instructor_quality"),
-    ("RCOURSEQUALITY", "Course Quality", "course_quality"),
-    ("RCOMMABILITY", "Comm. Ability", "communication_ability"),
-    ("RSTIMULATEINTEREST", "Stimulate Ability", "stimulate_interest"),
-    ("RINSTRUCTORACCESS", "Instructor Access", "instructor_access"),
-    ("RDIFFICULTY", "Difficulty", "difficulty"),
-    ("RWORKREQUIRED", "Work Required", "work_required"),
-    ("RTAQUALITY", "TA Quality", "ta_quality"),
-    ("RREADINGSVALUE", "Readings Value", "readings_value"),
-    ("RAMOUNTLEARNED", "Amount Learned", "amount_learned"),
-    ("RRECOMMENDMAJOR", "Recommend Major", "recommend_major"),
-    ("RRECOMMENDNONMAJOR", "Recommend Non-Major", "recommend_nonmajor"),
-    ("RABILITIESCHALLENGED", "Abilities Challenged", "abilities_challenged"),
-    ("RCLASSPACE", "Class Pace", "class_pace"),
-    ("RINSTRUCTOREFFECTIVE", "Instructor Effectiveness", "instructor_effective"),
-    ("RNATIVEABILITY", "Native Ability", "native_ability"),
-)
-
-# Maps column name from SUMMARY sql tables to common slug.
-COLUMN_TO_SLUG = dict([(x[0], x[2]) for x in REVIEW_BIT_LABEL])
-# Maps "context" value from RATING table to common slug.
-CONTEXT_TO_SLUG = dict([(x[1], x[2]) for x in REVIEW_BIT_LABEL])
 
 
 def titleize(name):
@@ -110,7 +81,11 @@ def import_instructor(pennid, fullname, stat):
             inst.save()
             inst_created = False
         else:
-            inst = Instructor.objects.create(user=user, name=fullname)
+            try:
+                inst = Instructor.objects.create(user=user, name=fullname)
+            except IntegrityError:
+                stat("instructor:integrity_error")
+                return
             inst_created = True
 
         if inst_created:
@@ -166,16 +141,25 @@ def import_course_and_section(full_course_code, semester, course_title, primary_
 def import_review(section, instructor, enrollment, responses, form_type, bits, stat):
     # Assumption: that all review objects for the semesters in question were
     # deleted before this runs.
-    review = Review.objects.create(
-        section=section,
-        instructor=instructor,
-        enrollment=enrollment,
-        responses=responses,
-        form_type=form_type,
-    )
+    try:
+        review = Review.objects.create(
+            section=section,
+            instructor=instructor,
+            enrollment=enrollment,
+            responses=responses,
+            form_type=form_type,
+        )
+    except IntegrityError:
+        stat("review:integrity_error")
+        return
     review_bits = [ReviewBit(review=review, field=k, average=v) for k, v in bits.items()]
+
     # This saves us a bunch of database calls per row, since reviews have > 10 bits.
-    ReviewBit.objects.bulk_create(review_bits)
+    try:
+        ReviewBit.objects.bulk_create(review_bits)
+    except IntegrityError:
+        stat("reviewbit:integrity_error")
+        return
     stat("reviewbit_created_count", len(review_bits))
 
 

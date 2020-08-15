@@ -1,9 +1,10 @@
 {
   "name": "penn-courses-frontend",
   "workspaces": [
-    "alert",
     "shared-components",
-    "plan"
+    "alert",
+    "plan",
+    "review"
   ],
   "private": true,
   "scripts": {

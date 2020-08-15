@@ -39,17 +39,20 @@ const LoginButtonStyles = styled.a`
     paddingLeft: "1rem",
 `;
 
-const LoginButton = ({ noMargin }) => (
-    <LoginButtonStyles
-        noMargin={noMargin}
-        href={`/accounts/login/?next=${window.location.pathname}`}
-    >
-        Login
-    </LoginButtonStyles>
-);
+const LoginButton = ({ noMargin, pathname }) => {
+    return (
+        <LoginButtonStyles
+            noMargin={noMargin}
+            href={`/accounts/login/?next=${pathname}`}
+        >
+            Login
+        </LoginButtonStyles>
+    );
+};
 
 LoginButton.propTypes = {
     noMargin: PropTypes.bool,
+    pathname: PropTypes.string,
 };
 
 export default LoginButton;

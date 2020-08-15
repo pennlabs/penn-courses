@@ -6,13 +6,13 @@ import phonenumbers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Avg, FloatField, OuterRef, Q, Subquery
+from django.db.models import OuterRef, Q, Subquery
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from options.models import get_value
 
-from review.models import ReviewBit
+from review.annotations import review_averages
 
 
 User = get_user_model()
@@ -90,42 +90,6 @@ class Department(models.Model):
 
     def __str__(self):
         return self.code
-
-
-"""
-Queryset annotations
-====================
-
-This file has code which annotates Course and Section querysets with Review information.
-There's some tricky JOINs going on here, through the Subquery objects which you can
-read about here:
-https://docs.djangoproject.com/en/2.2/ref/models/expressions/#subquery-expressions.
-
-This allows us to have the database do all of the work of averaging PCR data, so that we can get
-all of our Course and Section data in two queries.
-"""
-
-
-# Annotations are basically the same for Course and Section, save a few of the subfilters,
-# so generalize it out.
-def review_averages(queryset, subfilters):
-    """
-    Annotate the queryset with the average of all reviews matching the subfilters.
-    """
-    fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
-    return queryset.annotate(
-        **{
-            field: Subquery(
-                ReviewBit.objects.filter(field=field, **subfilters)
-                .values("field")
-                .order_by()
-                .annotate(avg=Avg("average"))
-                .values("avg")[:1],
-                output_field=FloatField(),
-            )
-            for field in fields
-        }
-    )
 
 
 def sections_with_reviews(queryset):
@@ -245,7 +209,7 @@ class Course(models.Model):
         if self.primary_listing is not None:
             return self.primary_listing.listing_set.exclude(id=self.id)
         else:
-            return None
+            return Course.objects.none()
 
     @property
     def requirements(self):
