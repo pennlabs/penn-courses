@@ -48,7 +48,7 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
 
 class SectionList(generics.ListAPIView, BaseCourseMixin):
     """
-    Retrieve a list of sections (less detailed than Section Detail)
+    Retrieve a list of sections (less detailed than [PCx] Section, or SectionDetail on the backend)
     """
 
     serializer_class = MiniSectionSerializer

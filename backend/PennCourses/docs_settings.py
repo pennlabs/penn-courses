@@ -169,6 +169,24 @@ custom_tag_descriptions = {
     for all routes.
     """
     ),
+    "[PCA] Registration": dedent(
+        """
+        These routes expose a user's alert registrations
+        for the current semester. <span style="color:red;">User authentication required</span>
+        for all routes.
+        """
+    ),
+    "[PCA] User": dedent(
+        """
+    These routes expose a user's saved settings. 
+    <span style="color:red;">User authentication required</span> for all routes.
+    """
+    ),
+    "[PCA] Sections": dedent(
+        """
+    This route is used by PCA to get data about sections.
+    """
+    ),
 }
 
 # do not edit

@@ -49,32 +49,61 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     Get one of the logged-in user's schedules for the current semester, using the schedule's ID.
     If a schedule with the specified ID exists, a 200 response code is returned, along with
     an object of the same form as the objects in the list returned by List Schedule,
-    detailed above. If the given id does not exist, a 404 is returned, along with
-    data `{'detail': 'Not found.'}`.n<span style="color:red;">User authentication required</span>.
+    detailed above. If the given id does not exist, a 404 is returned.
+    <span style="color:red;">User authentication required</span>.
 
     create:
-    This route will return a 201 if it succeeds, and a JSON in the same format as if you were
-    to get the schedule you just posted (in the same format as returned
-    by Retrieve Schedule).  At a minimum, you must include the `title` and
-    `sections` (or `meetings`) list. Title is the name of the schedule (all names must be distinct
-    for a single user in a single semester; otherwise in the POST a
+    This route will return a 201 if it succeeds, with a JSON in the same format as if you were
+    to get the schedule you just posted (in the same format as returned by Retrieve Schedule).
+    At a minimum, you must include the `title` and `sections` list (`meetings` can be
+    substituted for `sections`, ignore this and just use `sections` if you don't know why;
+    or see below for an explanation... TLDR: it is grandfathered in from the old version of PCP).
+    The `title` is the name of the schedule (all names must be distinct for a single user in a
+    single semester; otherwise the response will be a 400). The sections list must be a list of
+    objects with minimum fields `id` (dash-separated, e.g. "CIS-121-001") and `semester`
+    (5 character string, e.g. '2020A').  If any of the sections are invalid, a 404 is returned
+    with data `{"detail": "One or more sections not found in database."}`.  If any two sections in
+    the `sections` list have differing semesters, a 400 is returned.
 
-    Note that your posted object can include either a `sections`
-    field or a `meetings` field to list all sections you would like to be in the schedule.
+    Optionally, you can also include a `semester` field (5 character string, e.g. '2020A') in the
+    posted object, which will set the academic semester which the schedule is planning.  If the
+    `semester` field is omitted, the semester of the first section in the `sections` list will be
+    used (or if the `sections` list is empty, the current semester will be used).  If the
+    schedule's semester differs from any of the semesters of the sections in the `sections` list,
+    a 400 will be returned.
+
+    Optionally, you can also include an `id` field (an integer) in the posted object; if you
+    include it, it will update the schedule with the given id (if such a schedule exists),
+    or if the schedule does not exist, it will create a new schedule with that id.
+
+    Note that your posted object can include either a `sections` field or a `meetings` field to
+    list all sections you would like to be in the schedule (mentioned above).
     If both fields exist in the object, only `meetings` will be considered.  In all cases,
-    the field in question will be renamed to `sections` so that will be the field name whenever
+    the field in question will be renamed to `sections`, so that will be the field name whenever
     you GET from the server. (Sorry for this confusing behavior, it is grandfathered in
     from when the PCP frontend was referring to sections as meetings, before schedules were
     stored on the backend.)
 
     <span style="color:red;">User authentication required</span>.
-    - `title` - must be unique for a given user in this semester.
-    - `meetings[*].semester` -
 
     update:
+    Send a put request to this route to update a specific schedule.
+    The `id` path parameter (an integer) specifies which schedule you want to update.  If a
+    schedule with the specified id does not exist, a 404 is returned. In the body of the PUT,
+    use the same format as a POST request (see the create schedule docs).
+    This is an alternate way to update schedules (you can also just include the id field
+    in a schedule when you post and it will update that schedule if the id exists).  Note that in a
+    put request the  id field in the putted object is ignored; the id taken from the route
+    always takes precedence. If the request succeeds, it will return a 202 and a JSON in the same
+    format as if you were to get the schedule you just updated (in the same format as returned by
+    the GET /schedules/ route).
+
     <span style="color:red;">User authentication required</span>.
 
     delete:
+    Send a delete request to this route to delete a specific schedule.  The `id` path parameter
+    (an integer) specifies which schedule you want to update.  If a schedule with the specified
+    id does not exist, a 404 is returned.
     <span style="color:red;">User authentication required</span>.
     """
 

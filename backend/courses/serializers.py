@@ -32,6 +32,7 @@ class SectionIdSerializer(serializers.ModelSerializer):
 class MiniSectionSerializer(serializers.ModelSerializer):
     section_id = serializers.CharField(
         source="full_code",
+        read_only=True,
         help_text=dedent(
             """
             The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
@@ -40,13 +41,14 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         ),
     )
     instructors = serializers.StringRelatedField(
-        many=True, help_text="A list of the names of the instructors teaching this section."
+        many=True, read_only=True, help_text="A list of the names of the instructors teaching this section."
     )
     course_title = serializers.SerializerMethodField(
+        read_only=True,
         help_text=dedent(
             """
-                The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.
-                """
+            The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.
+            """
         )
     )
 
@@ -63,6 +65,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             "instructors",
             "course_title",
         ]
+        read_only_fields = fields
 
     @staticmethod
     def get_semester(obj):
@@ -78,32 +81,36 @@ work_required_help = "The average work required for this section, on a scale of 
 class SectionDetailSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(
         source="full_code",
+        read_only=True,
         help_text=dedent(
             """
-                The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
-                001 lecture section of CIS-120.
-                """
+            The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
+            001 lecture section of CIS-120.
+            """
         ),
     )
     semester = serializers.SerializerMethodField(
+        read_only=True,
         help_text=dedent(
             """
-        The semester of the section (of the form YYYYx where x is A [for spring], B [summer],
-        or C [fall]), e.g. 2019C for fall 2019. We organize requirements by semester so that we
-        don't get huge related sets which don't give particularly good info.
-        """
+            The semester of the section (of the form YYYYx where x is A [for spring], B [summer],
+            or C [fall]), e.g. 2019C for fall 2019. We organize requirements by semester so that we
+            don't get huge related sets which don't give particularly good info.
+            """
         )
     )
     meetings = MeetingSerializer(
         many=True,
+        read_only=True,
         help_text=dedent(
             """
-        A list of the meetings of this section (each meeting is a continuous span of time
-        during which a section would meet).
-        """
+            A list of the meetings of this section (each meeting is a continuous span of time
+            during which a section would meet).
+            """
         ),
     )
     instructors = serializers.StringRelatedField(
+        read_only=True,
         many=True, help_text="A list of the names of the instructors teaching this section."
     )
     associated_sections = SectionIdSerializer(
@@ -119,14 +126,17 @@ class SectionDetailSerializer(serializers.ModelSerializer):
     )
 
     course_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, help_text=course_quality_help
+        max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
     )
-    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3, help_text=difficulty_help)
+    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True,
+                                          help_text=difficulty_help)
     instructor_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, help_text=instructor_quality_help
+        max_digits=4, decimal_places=3, read_only=True,
+        help_text=instructor_quality_help
     )
     work_required = serializers.DecimalField(
-        max_digits=4, decimal_places=3, help_text=work_required_help
+        max_digits=4, decimal_places=3, read_only=True,
+        help_text=work_required_help
     )
 
     @staticmethod
@@ -148,10 +158,12 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "difficulty",
             "work_required",
         ] + ["associated_sections",]
+        read_only_fields = fields
 
 
 class RequirementListSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField(
+        read_only=True,
         help_text="A string representation of the requirement, in the form '{code}@{school}'"
     )
 
@@ -162,6 +174,7 @@ class RequirementListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Requirement
         fields = ["id", "code", "school", "semester", "name"]
+        read_only_fields = fields
 
 
 class CourseListSerializer(serializers.ModelSerializer):
@@ -171,27 +184,28 @@ class CourseListSerializer(serializers.ModelSerializer):
             """
         The full code of the course, in the form '{dept code}-{course code}'
         dash-joined department and code of the course, e.g. 'CIS-120' for CIS-120."""
-        ),
+        )
     )
 
     num_sections = type(
         "SerializerIntMethodField",
         (serializers.SerializerMethodField, serializers.IntegerField),
         dict(),
-    )(help_text="The number of sections for this course.")
+    )(read_only=True, help_text="The number of sections for this course.")
 
     def get_num_sections(self, obj):
         return obj.sections.count()
 
     course_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, help_text=course_quality_help
+        max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
     )
-    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3, help_text=difficulty_help)
+    difficulty = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help)
     instructor_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, help_text=instructor_quality_help
+        max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
     )
     work_required = serializers.DecimalField(
-        max_digits=4, decimal_places=3, help_text=work_required_help
+        max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
     )
 
     class Meta:
@@ -207,6 +221,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             "difficulty",
             "work_required",
         ]
+        read_only_fields = fields
 
 
 class CourseDetailSerializer(CourseListSerializer):
@@ -222,10 +237,22 @@ class CourseDetailSerializer(CourseListSerializer):
         ),
     )
     sections = SectionDetailSerializer(
-        many=True, help_text="A list of the sections of this course."
+        many=True, read_only=True, help_text="A list of the sections of this course."
     )
     requirements = RequirementListSerializer(
-        many=True, help_text="A list of the academic requirements this course fulfills."
+        many=True, read_only=True, help_text="A list of the academic requirements this course fulfills."
+    )
+
+    course_quality = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
+    )
+    difficulty = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help)
+    instructor_quality = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
+    )
+    work_required = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
     )
 
     class Meta:
@@ -241,6 +268,7 @@ class CourseDetailSerializer(CourseListSerializer):
             "difficulty",
             "work_required",
         ] + ["crosslistings", "requirements", "sections",]
+        read_only_fields = fields
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
