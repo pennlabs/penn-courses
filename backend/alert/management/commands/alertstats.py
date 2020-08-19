@@ -1,5 +1,4 @@
 import json
-from datetime import datetime, timedelta
 from textwrap import dedent
 
 import requests
@@ -35,7 +34,8 @@ class Command(BaseCommand):
 
         message = dedent(
             f"""
-        Penn Course Alert stats in the past {days} day(s) since {start.strftime("%H:%M on %d %B, %Y")}:
+        {f'Penn Course Alert stats in the past {days} day(s)'
+         f' since {start.strftime("%H:%M on %d %B, %Y")}'}:
         New registrations: {num_registrations}
         Alerts sent: {num_alerts_sent}
         Resubscribes: {num_resubscribe}

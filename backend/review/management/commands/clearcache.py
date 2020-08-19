@@ -1,7 +1,7 @@
 import redis
 from django.conf import settings
-from django.core.management import BaseCommand
 from django.core.cache import cache
+from django.core.management import BaseCommand
 
 
 def clear_cache():
