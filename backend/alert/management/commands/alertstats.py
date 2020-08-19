@@ -4,6 +4,7 @@ from textwrap import dedent
 import requests
 from django.conf import settings
 from django.core.management import BaseCommand
+from django.db.models import Q
 from django.utils import timezone
 from options.models import get_value
 
@@ -39,6 +40,11 @@ class Command(BaseCommand):
             cancelled=False,
             notification_sent=False,
         ).count()
+        num_cancelled_perpetual = (
+            qs.filter(resubscribed_to__isnull=True, auto_resubscribe=True,)
+            .filter(Q(deleted=True) | Q(cancelled=True))
+            .count()
+        )
 
         message = dedent(
             f"""
@@ -48,6 +54,7 @@ class Command(BaseCommand):
         Alerts sent: {num_alerts_sent}
         Manual resubscribes: {num_resubscribe}
         Active auto-resubscribe requests: {num_active_perpetual}
+        Cancelled auto-resubscribe requests: {num_cancelled_perpetual}
         Status Updates from Penn InTouch: {num_status_updates}
         """
         )
