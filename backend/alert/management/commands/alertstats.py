@@ -38,7 +38,7 @@ class Command(BaseCommand):
             deleted=False,
             cancelled=False,
             notification_sent=False,
-        )
+        ).count()
 
         message = dedent(
             f"""
