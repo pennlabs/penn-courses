@@ -1,3 +1,4 @@
+import django_auto_prefetching
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch
@@ -156,4 +157,5 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         sem = get_value("SEMESTER")
         queryset = Schedule.objects.filter(person=self.request.user, semester=sem)
         queryset = queryset.prefetch_related(Prefetch("sections", Section.with_reviews.all()),)
+        queryset = django_auto_prefetching.prefetch(queryset, self.get_serializer_class())
         return queryset
