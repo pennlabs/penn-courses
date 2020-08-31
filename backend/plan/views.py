@@ -156,6 +156,11 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         sem = get_value("SEMESTER")
         queryset = Schedule.objects.filter(person=self.request.user, semester=sem)
-        queryset = queryset.prefetch_related(Prefetch("sections", Section.with_reviews.all()),)
-        queryset = django_auto_prefetching.prefetch(queryset, self.get_serializer_class())
+        queryset = queryset.prefetch_related(
+            Prefetch("sections", Section.with_reviews.all()),
+            "sections__associated_sections",
+            "sections__instructors",
+            "sections__meetings",
+            "sections__meetings__room",
+        )
         return queryset
