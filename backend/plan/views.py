@@ -1,4 +1,3 @@
-import django_auto_prefetching
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch
