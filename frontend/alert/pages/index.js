@@ -39,7 +39,7 @@ const LogoArea = () => (
 );
 
 const NavContainer = styled.nav`
-    margin: 20px;
+    //margin: 20px;
     display: flex;
     flex-align: left;
     width: 95%;
@@ -109,6 +109,17 @@ const genId = (() => {
     return () => counter++;
 })();
 
+const RecruitingBanner = styled.div`
+    text-align: center;
+    display: grid;
+    padding: 20px;
+    width: 100%;
+    background-color: #fbcd4c;
+    & > * {
+        margin: auto;
+    }
+`;
+
 function App() {
     const [user, setUser] = useState(null);
     const [page, setPage] = useState("home");
@@ -160,6 +171,19 @@ function App() {
     return (
         <>
             <Container>
+                <RecruitingBanner>
+                    <p>
+                        <span role="img" aria-label="party">
+                            🎉
+                        </span>{" "}
+                        Want to build impactful products like Penn Course Alert?
+                        Join Penn Labs this fall!{" "}
+                        <a href="https://pennlabs.org/apply">Apply here!</a>{" "}
+                        <span role="img" aria-label="party">
+                            🎉
+                        </span>
+                    </p>
+                </RecruitingBanner>
                 {showLoginModal && <LoginModal />}
                 <Nav
                     login={updateUser}
@@ -179,6 +203,7 @@ function App() {
                     messages={messages}
                     removeMessage={removeMessage}
                 />
+
                 <Heading />
                 {page === "home" ? (
                     <Flex col grow={1}>
