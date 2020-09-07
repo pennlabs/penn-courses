@@ -1161,9 +1161,7 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_semester_not_set(self):
         Option.objects.filter(key="SEMESTER").delete()
-        response = self.client.get(
-            reverse("registrations-list")
-        )
+        response = self.client.get(reverse("registrations-list"))
         self.assertEqual(500, response.status_code)
         self.assertTrue("SEMESTER" in response.data["detail"])
 
