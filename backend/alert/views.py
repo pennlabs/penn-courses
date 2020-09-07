@@ -8,16 +8,15 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from options.models import get_bool, get_value
+from options.models import get_bool
 from rest_framework import status, viewsets
-from rest_framework.exceptions import APIException
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import RegistrationSerializer
 from alert.tasks import send_course_alerts
-from courses.util import record_update, update_course_from_record
+from courses.util import get_current_semester, record_update, update_course_from_record
 
 
 logger = logging.getLogger(__name__)
@@ -87,7 +86,7 @@ def accept_webhook(request):
     should_send_alert = (
         get_bool("SEND_FROM_WEBHOOK", False)
         and course_status == "O"
-        and get_value("SEMESTER") == course_term
+        and get_current_semester() == course_term
     )
 
     alert_for_course_called = False
@@ -209,7 +208,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         registration = registration.get_most_current_rec()
 
-        if registration.section.semester != get_value("SEMESTER"):
+        if registration.section.semester != get_current_semester():
             return Response(
                 {"detail": "You can only update registrations from the current semester."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -300,19 +299,11 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         Returns a superset of all active registrations (also includes cancelled registrations
         from the current semester at the head of their resubscribe chains).
         """
-        if get_value("SEMESTER", None) is None:
-            raise APIException(
-                "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
-                "option by running the command "
-                "'python manage.py setoption -key SEMESTER -val 2020C', "
-                "replacing 2020C with the current semester, in the backend directory (remember "
-                "to run 'pipenv shell' before running this command, though)."
-            )
         return Registration.objects.filter(
             user=self.request.user,
             deleted=False,
             resubscribed_to__isnull=True,
-            section__course__semester=get_value("SEMESTER"),
+            section__course__semester=get_current_semester(),
         )
 
 
@@ -321,14 +312,6 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        if get_value("SEMESTER", None) is None:
-            raise APIException(
-                "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
-                "option by running the command "
-                "'python manage.py setoption -key SEMESTER -val 2020C', "
-                "replacing 2020C with the current semester, in the backend directory (remember "
-                "to run 'pipenv shell' before running this command, though)."
-            )
         return Registration.objects.filter(
-            user=self.request.user, section__course__semester=get_value("SEMESTER")
+            user=self.request.user, section__course__semester=get_current_semester()
         ).prefetch_related("section")

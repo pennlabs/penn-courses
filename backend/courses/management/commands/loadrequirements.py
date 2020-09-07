@@ -1,11 +1,11 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from options.models import get_value
 from tqdm import tqdm
 
 from courses.models import Course, Department, Requirement
 from courses.requirements import engineering, wharton
+from courses.util import get_current_semester
 
 
 def load_requirements(school=None, semester=None, requirements=None):
@@ -29,7 +29,7 @@ def load_requirements(school=None, semester=None, requirements=None):
     }
     """
     if semester is None:
-        semester = get_value("SEMESTER")
+        semester = get_current_semester()
 
     if school == "WH":
         requirements = wharton.get_requirements()

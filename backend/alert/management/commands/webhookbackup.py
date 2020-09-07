@@ -1,11 +1,11 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from options.models import get_value
 from tqdm import tqdm
 
 from alert.views import alert_for_course
 from courses import registrar
+from courses.util import get_current_semester
 
 
 class Command(BaseCommand):
@@ -17,7 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
-        semester = get_value("SEMESTER")
+        semester = get_current_semester()
         statuses = registrar.get_all_course_status(semester)
         stats = {
             "missing_data": 0,

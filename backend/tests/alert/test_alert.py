@@ -1159,6 +1159,14 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120, response.data)
 
+    def test_semester_not_set(self):
+        Option.objects.filter(key="SEMESTER").delete()
+        response = self.client.get(
+            reverse("registrations-list")
+        )
+        self.assertEqual(500, response.status_code)
+        self.assertTrue("SEMESTER" in response.data["detail"])
+
     def test_registrations_get_only_current_semester(self):
         _, self.cis110in2019C = create_mock_data("CIS-110-001", "2019C")
         registration = Registration(section=self.cis110in2019C, user=self.user, source="PCA")

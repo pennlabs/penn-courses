@@ -2,6 +2,8 @@ import json
 import re
 
 from django.core.exceptions import ObjectDoesNotExist
+from options.models import get_value
+from rest_framework.exceptions import APIException
 
 from courses.models import (
     Building,
@@ -15,6 +17,18 @@ from courses.models import (
     Section,
     StatusUpdate,
 )
+
+
+def get_current_semester():
+    if get_value("SEMESTER", None) is None:
+        raise APIException(
+            "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+            "option by running the command "
+            "'python manage.py setoption -key SEMESTER -val 2020C', "
+            "replacing 2020C with the current semester, in the backend directory (remember "
+            "to run 'pipenv shell' before running this command, though)."
+        )
+    return get_value("SEMESTER")
 
 
 def separate_course_code(course_code):
