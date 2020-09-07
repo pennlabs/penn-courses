@@ -7,6 +7,7 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 import plan.examples as examples
+from rest_framework.exceptions import APIException
 
 from courses.models import Section
 from courses.util import get_course_and_section
@@ -51,6 +52,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     Get a list of all the logged-in user's schedules for the current semester.  Normally, the
     response code is 200. Each object in the returned list is of the same form as the object
     returned by Retrieve Schedule.
+
     <span style="color:red;">User authentication required</span>.
 
     retrieve:
@@ -58,6 +60,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     If a schedule with the specified ID exists, a 200 response code is returned, along with
     an object of the same form as the objects in the list returned by List Schedule.
     If the given id does not exist, a 404 is returned.
+
     <span style="color:red;">User authentication required</span>.
 
     create:
@@ -113,6 +116,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     Send a delete request to this route to delete a specific schedule.  The `id` path parameter
     (an integer) specifies which schedule you want to update.  If a schedule with the specified
     id does not exist, a 404 is returned.  If the delete is successful, a 204 is returned.
+
     <span style="color:red;">User authentication required</span>.
     """
 
@@ -267,7 +271,13 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
     queryset = Schedule.objects.none()  # used to help out the AutoSchema in generating documentation
+
     def get_queryset(self):
+        if get_value("SEMESTER", None) is None:
+            raise APIException("The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+                               "option by running the command 'python manage.py setoption -key SEMESTER -val 2020C' "
+                               "(replacing 2020C with the current semester) in the backend directory (remember "
+                               "to run 'pipenv shell' before running this command, though).")
         sem = get_value("SEMESTER")
         queryset = Schedule.objects.filter(person=self.request.user, semester=sem)
         queryset = queryset.prefetch_related(Prefetch("sections", Section.with_reviews.all()),)

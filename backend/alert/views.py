@@ -13,6 +13,7 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 import alert.examples as examples
+from rest_framework.exceptions import APIException
 
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
@@ -127,9 +128,21 @@ def accept_webhook(request):
 class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
     retrieve: test retrieve description
+
+    <span style="color:red;">User authentication required</span>.
+
     list: test list description
+
+    <span style="color:red;">User authentication required</span>.
+
     create: test create description
+
+    <span style="color:red;">User authentication required</span>.
+
     update: test update description
+
+    <span style="color:red;">User authentication required</span>.
+
     """
 
     schema = PcxAutoSchema(
@@ -209,7 +222,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset_current())
+        queryset = self.get_queryset()
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -317,13 +330,13 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     queryset = Registration.objects.none()  # used to help out the AutoSchema in generating documentation
     def get_queryset(self):
-        return Registration.objects.filter(user=self.request.user)
-
-    def get_queryset_current(
-        self,
-    ):  # NOT the same as all active registrations (includes cancelled)
+        if get_value("SEMESTER", None) is None:
+            raise APIException("The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+                               "option by running the command 'python manage.py setoption -key SEMESTER -val 2020C', "
+                               "replacing 2020C with the current semester, in the backend directory (remember "
+                               "to run 'pipenv shell' before running this command, though).")
         return Registration.objects.filter(
-            user=self.request.user, deleted=False, resubscribed_to__isnull=True,
+            user=self.request.user, deleted=False, resubscribed_to__isnull=True, semester=get_value("SEMESTER")
         )
 
 
@@ -341,4 +354,11 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
 
     queryset = Registration.objects.none()  # used to help out the AutoSchema in generating documentation
     def get_queryset(self):
-        return Registration.objects.filter(user=self.request.user).prefetch_related("section")
+        if get_value("SEMESTER", None) is None:
+            raise APIException("The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+                               "option by running the command 'python manage.py setoption -key SEMESTER -val 2020C' "
+                               "(replacing 2020C with the current semester) in the backend directory (remember "
+                               "to run 'pipenv shell' before running this command, though).")
+        return Registration.objects.filter(
+            user=self.request.user, semester=get_value("SEMESTER")
+        ).prefetch_related("section")
