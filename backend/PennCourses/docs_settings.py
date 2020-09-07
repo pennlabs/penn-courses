@@ -27,6 +27,14 @@ MAINTENENCE (PLEASE READ IN FULL):
 For the auto-documentation to work, you need to include the line:
 schema = PcxAutoSchema()
 in all views (this will allow for proper tag and operation_id generation; see below).
+Or, if you are using function-based views, include the following decorator above your views:
+@schema(PcxAutoSchema())
+and include the following import in your views.py file:
+from rest_framework.decorators import schema
+(This is instructed in the DRF docs:
+https://www.django-rest-framework.org/api-guide/views/#view-schema-decorator.)
+In all cases, you must include the following import for PcxAutoSchema:
+from PennCourses.docs_settings import PcxAutoSchema
 PcxAutoSchema (defined below) is a subclass of Django's AutoSchema, and it makes some improvements
 on that class for use with Redoc as well as some customizations specific to the Labs PCX use-case.
 You should include docstrings in views (see
