@@ -9,8 +9,8 @@ from django.db import models
 from django.utils import timezone
 
 from alert.alerts import Email, Text
-from courses.models import Course, Section, UserProfile, get_current_semester, string_dict_to_html
-from courses.util import get_course_and_section
+from courses.models import Course, Section, UserProfile
+from courses.util import get_course_and_section, get_current_semester
 
 
 class RegStatus(Enum):

@@ -1,17 +1,16 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from options.models import get_value
 from tqdm import tqdm
 
 from courses import registrar
 from courses.models import Course, Section
-from courses.util import get_course_and_section
+from courses.util import get_course_and_section, get_current_semester
 
 
 def set_all_status(semester=None):
     if semester is None:
-        semester = get_value("SEMESTER")
+        semester = get_current_semester()
     statuses = registrar.get_all_course_status(semester)
     for status in tqdm(statuses):
         if "section_id_normalized" not in status:

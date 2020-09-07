@@ -49,6 +49,12 @@ class ScheduleTest(TestCase):
                 actual = serialized_section.get(field)
                 self.assertAlmostEqual(expected, actual, 3)
 
+    def test_semester_not_set(self):
+        Option.objects.filter(key="SEMESTER").delete()
+        response = self.client.get("/api/plan/schedules/")
+        self.assertEqual(500, response.status_code)
+        self.assertTrue("SEMESTER" in response.data["detail"])
+
     def test_get_schedule(self):
         response = self.client.get("/api/plan/schedules/")
         self.assertEqual(200, response.status_code)

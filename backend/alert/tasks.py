@@ -3,11 +3,10 @@ import logging
 import redis
 from celery import shared_task
 from django.conf import settings
-from options.models import get_value
 
 from alert.models import Registration
 from courses.models import StatusUpdate
-from courses.util import get_course_and_section, update_course_from_record
+from courses.util import get_course_and_section, get_current_semester, update_course_from_record
 
 
 logger = logging.getLogger(__name__)
@@ -39,7 +38,7 @@ def get_active_registrations(course_code, semester):
 @shared_task(name="pca.tasks.send_course_alerts")
 def send_course_alerts(course_code, semester=None, sent_by=""):
     if semester is None:
-        semester = get_value("SEMESTER")
+        semester = get_current_semester()
 
     for reg in get_active_registrations(course_code, semester):
         send_alert.delay(reg.id, sent_by)

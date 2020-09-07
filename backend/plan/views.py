@@ -2,7 +2,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from options.models import get_value
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,7 +9,7 @@ import plan.examples as examples
 from rest_framework.exceptions import APIException
 
 from courses.models import Section
-from courses.util import get_course_and_section
+from courses.util import get_course_and_section, get_current_semester
 from courses.views import CourseList
 from PennCourses.docs_settings import PcxAutoSchema
 from plan.filters import CourseSearchFilterBackend
@@ -187,7 +186,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         if "semester" not in data:
-            data["semester"] = get_value("SEMESTER", None)
+            data["semester"] = get_current_semester()
 
     def update(self, request, pk=None):
         try:
@@ -273,12 +272,13 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     queryset = Schedule.objects.none()  # used to help out the AutoSchema in generating documentation
 
     def get_queryset(self):
-        if get_value("SEMESTER", None) is None:
-            raise APIException("The SEMESTER runtime option is not set.  If you are in dev, you can set this "
-                               "option by running the command 'python manage.py setoption -key SEMESTER -val 2020C' "
-                               "(replacing 2020C with the current semester) in the backend directory (remember "
-                               "to run 'pipenv shell' before running this command, though).")
-        sem = get_value("SEMESTER")
+        sem = get_current_semester()
         queryset = Schedule.objects.filter(person=self.request.user, semester=sem)
-        queryset = queryset.prefetch_related(Prefetch("sections", Section.with_reviews.all()),)
+        queryset = queryset.prefetch_related(
+            Prefetch("sections", Section.with_reviews.all()),
+            "sections__associated_sections",
+            "sections__instructors",
+            "sections__meetings",
+            "sections__meetings__room",
+        )
         return queryset

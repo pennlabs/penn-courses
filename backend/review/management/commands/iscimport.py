@@ -3,7 +3,6 @@ import os
 import zipfile
 
 import boto3
-from django.core.cache import cache
 from django.core.management.base import BaseCommand, CommandError
 
 from review.import_utils.import_to_db import (
@@ -12,6 +11,7 @@ from review.import_utils.import_to_db import (
     import_summary_rows,
 )
 from review.import_utils.parse_sql import load_sql_dump
+from review.management.commands.clearcache import clear_cache
 from review.models import Review
 
 
@@ -242,5 +242,7 @@ class Command(BaseCommand):
 
         self.close_files(files)
         # invalidate cached views
-        cache.clear()
+        self.display("Invalidating cache...")
+        del_count = clear_cache()
+        self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
         return 0
