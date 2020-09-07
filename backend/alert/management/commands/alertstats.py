@@ -6,10 +6,10 @@ from django.conf import settings
 from django.core.management import BaseCommand
 from django.db.models import Q
 from django.utils import timezone
-from options.models import get_value
 
 from alert.models import Registration
 from courses.models import StatusUpdate
+from courses.util import get_current_semester
 
 
 class Command(BaseCommand):
@@ -25,7 +25,7 @@ class Command(BaseCommand):
 
         start = timezone.now() - timezone.timedelta(days=days)
 
-        qs = Registration.objects.filter(section__course__semester=get_value("SEMESTER"))
+        qs = Registration.objects.filter(section__course__semester=get_current_semester())
 
         num_registrations = qs.filter(created_at__gte=start, resubscribed_from__isnull=True).count()
         num_alerts_sent = qs.filter(notification_sent=True, notification_sent_at__gte=start).count()

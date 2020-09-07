@@ -5,9 +5,9 @@ from datetime import datetime
 import pytz
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
-from options.models import get_value
 
 from courses.models import Section, StatusUpdate
+from courses.util import get_current_semester
 
 
 class Command(BaseCommand):
@@ -43,11 +43,11 @@ class Command(BaseCommand):
                 if row[0] != "O" and row[0] != "C" and row[0] != "X":
                     row[0] = ""
                 if Section.objects.filter(
-                    full_code=section_code, course__semester=get_value("SEMESTER", None)
+                    full_code=section_code, course__semester=get_current_semester()
                 ).exists():
                     sec = Section.objects.get(
                         full_code=(row[4] + "-" + row[5] + "-" + row[6]),
-                        course__semester=get_value("SEMESTER", None),
+                        course__semester=get_current_semester(),
                     )
                     if not StatusUpdate.objects.filter(
                         section=sec,

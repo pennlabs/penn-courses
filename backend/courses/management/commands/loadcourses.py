@@ -1,13 +1,12 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from options.models import get_value
 from tqdm import tqdm
 
 from courses import registrar
 from courses.management.commands.loadrequirements import load_requirements
 from courses.management.commands.loadstatus import set_all_status
-from courses.util import upsert_course_from_opendata
+from courses.util import get_current_semester, upsert_course_from_opendata
 
 
 class Command(BaseCommand):
@@ -24,7 +23,7 @@ class Command(BaseCommand):
         query = kwargs.get("query")
 
         if semester is None:
-            semester = get_value("SEMESTER")
+            semester = get_current_semester()
 
         print("loading in courses with prefix %s from %s..." % (query, semester))
         results = registrar.get_courses(query, semester)

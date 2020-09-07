@@ -2,13 +2,12 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from options.models import get_value
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Section
-from courses.util import get_course_and_section
+from courses.util import get_course_and_section, get_current_semester
 from courses.views import CourseList
 from plan.filters import bound_filter, choice_filter, requirement_filter
 from plan.models import Schedule
@@ -69,7 +68,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         if "semester" not in data:
-            data["semester"] = get_value("SEMESTER", None)
+            data["semester"] = get_current_semester()
 
     def update(self, request, pk=None):
         try:
@@ -153,7 +152,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
     def get_queryset(self):
-        sem = get_value("SEMESTER")
+        sem = get_current_semester()
         queryset = Schedule.objects.filter(person=self.request.user, semester=sem)
         queryset = queryset.prefetch_related(
             Prefetch("sections", Section.with_reviews.all()),

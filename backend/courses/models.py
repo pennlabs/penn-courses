@@ -9,16 +9,11 @@ from django.db.models import OuterRef, Q, Subquery
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from options.models import get_value
 
 from review.annotations import review_averages
 
 
 User = get_user_model()
-
-
-def get_current_semester():
-    return get_value("SEMESTER", "2019C")
 
 
 """
