@@ -1167,7 +1167,9 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(1, len(response.data))
         self.assertEqual(200, response.status_code)
-        self.check_model_with_response_data(Registration.objects.get(section=self.cis120), response.data[0])
+        self.check_model_with_response_data(
+            Registration.objects.get(section=self.cis120), response.data[0]
+        )
 
     def test_registration_history_get_only_current_semester(self):
         _, self.cis110in2019C = create_mock_data("CIS-110-001", "2019C")
@@ -1177,7 +1179,9 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrationhistory-list"))
         self.assertEqual(1, len(response.data))
         self.assertEqual(200, response.status_code)
-        self.check_model_with_response_data(Registration.objects.get(section=self.cis120), response.data[0])
+        self.check_model_with_response_data(
+            Registration.objects.get(section=self.cis120), response.data[0]
+        )
 
     def registrations_resubscribe_get_old_and_history_helper(self, ids):
         response = self.client.get(reverse("registrations-list"))

@@ -10,9 +10,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_bool, get_value
 from rest_framework import status, viewsets
+from rest_framework.exceptions import APIException
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.exceptions import APIException
 
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import RegistrationSerializer
@@ -297,17 +297,22 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     def get_queryset_current(self):
         """
-        Returns a superset of all active registrations (also includes cancelled registrations from the
-        current semester at the head of their resubscribe chains).
+        Returns a superset of all active registrations (also includes cancelled registrations
+        from the current semester at the head of their resubscribe chains).
         """
         if get_value("SEMESTER", None) is None:
-            raise APIException("The SEMESTER runtime option is not set.  If you are in dev, you can set this "
-                               "option by running the command 'python manage.py setoption -key SEMESTER -val 2020C', "
-                               "replacing 2020C with the current semester, in the backend directory (remember "
-                               "to run 'pipenv shell' before running this command, though).")
+            raise APIException(
+                "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+                "option by running the command "
+                "'python manage.py setoption -key SEMESTER -val 2020C', "
+                "replacing 2020C with the current semester, in the backend directory (remember "
+                "to run 'pipenv shell' before running this command, though)."
+            )
         return Registration.objects.filter(
-            user=self.request.user, deleted=False, resubscribed_to__isnull=True,
-            section__course__semester=get_value("SEMESTER")
+            user=self.request.user,
+            deleted=False,
+            resubscribed_to__isnull=True,
+            section__course__semester=get_value("SEMESTER"),
         )
 
 
@@ -317,11 +322,13 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
 
     def get_queryset(self):
         if get_value("SEMESTER", None) is None:
-            raise APIException("The SEMESTER runtime option is not set.  If you are in dev, you can set this "
-                               "option by running the command 'python manage.py setoption -key SEMESTER -val 2020C', "
-                               "replacing 2020C with the current semester, in the backend directory (remember "
-                               "to run 'pipenv shell' before running this command, though).")
+            raise APIException(
+                "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+                "option by running the command "
+                "'python manage.py setoption -key SEMESTER -val 2020C', "
+                "replacing 2020C with the current semester, in the backend directory (remember "
+                "to run 'pipenv shell' before running this command, though)."
+            )
         return Registration.objects.filter(
-            user=self.request.user,
-            section__course__semester=get_value("SEMESTER")
+            user=self.request.user, section__course__semester=get_value("SEMESTER")
         ).prefetch_related("section")

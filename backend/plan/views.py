@@ -4,9 +4,9 @@ from django.db.models import Prefetch
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_value
 from rest_framework import status, viewsets
+from rest_framework.exceptions import APIException
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.exceptions import APIException
 
 from courses.models import Section
 from courses.util import get_course_and_section
@@ -62,10 +62,13 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     @staticmethod
     def check_semester(data, sections):
         if get_value("SEMESTER", None) is None:
-            raise APIException("The SEMESTER runtime option is not set.  If you are in dev, you can set this "
-                               "option by running the command 'python manage.py setoption -key SEMESTER -val 2020C', "
-                               "replacing 2020C with the current semester, in the backend directory (remember "
-                               "to run 'pipenv shell' before running this command, though).")
+            raise APIException(
+                "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+                "option by running the command "
+                "'python manage.py setoption -key SEMESTER -val 2020C', "
+                "replacing 2020C with the current semester, in the backend directory (remember "
+                "to run 'pipenv shell' before running this command, though)."
+            )
         for i, s in enumerate(sections):
             if i == 0 and "semester" not in data:
                 data["semester"] = s.course.semester
@@ -160,10 +163,12 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         if get_value("SEMESTER", None) is None:
-            raise APIException("The SEMESTER runtime option is not set.  If you are in dev, you can set this "
-                               "option by running the command 'python manage.py setoption -key SEMESTER -val 2020C', "
-                               "replacing 2020C with the current semester, in the backend directory (remember "
-                               "to run 'pipenv shell' before running this command, though).")
+            raise APIException(
+                "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+                "option by running the command 'python manage.py setoption -key SEMESTER "
+                "-val 2020C', replacing 2020C with the current semester, in the backend directory "
+                "(remember to run 'pipenv shell' before running this command, though)."
+            )
         sem = get_value("SEMESTER")
         queryset = Schedule.objects.filter(person=self.request.user, semester=sem)
         queryset = queryset.prefetch_related(
