@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "options.apps.OptionsConfig",
     "django.contrib.admindocs",
-    "drf_yasg",
     "alert",
     "courses",
     "plan",
