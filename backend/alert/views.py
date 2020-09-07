@@ -12,6 +12,7 @@ from options.models import get_bool, get_value
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+import alert.examples as examples
 
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
@@ -124,7 +125,17 @@ def accept_webhook(request):
 
 
 class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
-    schema = PcxAutoSchema()
+    """
+    retrieve: test retrieve description
+    list: test list description
+    create: test create description
+    update: test update description
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.RegistrationViewSet_examples,
+        response_codes={}
+    )
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]
 
@@ -304,6 +315,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return self.update(request, request.data.get("id"))
         return self.handle_registration(request)
 
+    queryset = Registration.objects.none()  # used to help out the AutoSchema in generating documentation
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
 
@@ -327,5 +339,6 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
 
+    queryset = Registration.objects.none()  # used to help out the AutoSchema in generating documentation
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user).prefetch_related("section")

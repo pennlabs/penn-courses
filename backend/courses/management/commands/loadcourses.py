@@ -29,6 +29,8 @@ class Command(BaseCommand):
         print("loading in courses with prefix %s from %s..." % (query, semester))
         results = registrar.get_courses(query, semester)
 
+        print("Len results", len(results))
+
         for course in tqdm(results):
             upsert_course_from_opendata(course, semester)
 

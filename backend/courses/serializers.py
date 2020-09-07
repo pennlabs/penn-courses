@@ -81,7 +81,6 @@ work_required_help = "The average work required for this section, on a scale of 
 class SectionDetailSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(
         source="full_code",
-        read_only=True,
         help_text=dedent(
             """
             The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
@@ -90,7 +89,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
         ),
     )
     semester = serializers.SerializerMethodField(
-        read_only=True,
         help_text=dedent(
             """
             The semester of the section (of the form YYYYx where x is A [for spring], B [summer],

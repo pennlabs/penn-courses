@@ -2,7 +2,7 @@ import json
 import re
 from inspect import getdoc
 from textwrap import dedent
-
+from rest_framework import serializers
 from django.utils.encoding import force_str
 from rest_framework.compat import uritemplate
 from rest_framework.renderers import JSONOpenAPIRenderer
@@ -41,14 +41,14 @@ You can update the introductory sections / readme by editing the markdown-format
 openapi_description text below.
 When writing any class-based views where you specify a queryset (such as ViewSets), even if you
 override get_queryset(), you should also specify the queryset field with something like
-queryset = ExampleModel.objects.none() (to provide an extra layer of protection against accidental
-data breach), or alternatively a sensible queryset default
-(e.g. queryset = Course.with_reviews.all() for the CourseDetail ViewSet). This will allow the
-auto-documentation to access the model underlying the queryset (it cannot call get_queryset()
-since it cannot generate a request object which the get_queryset() method might try to access).
-If the meaning of a model or serializer field is not clear, you should include the string help_text
-as a parameter when initializing the field, explaining what that field stores. This will
-show up in the documentation such that parameter descriptions are inferred from
+queryset = ExampleModel.objects.none() (using .none() to prevent accidental data breach), or alternatively 
+a sensible queryset default (e.g. queryset = Course.with_reviews.all() for the CourseDetail ViewSet). 
+Basically, just make sure the queryset parameter is always pointing to the relevant model 
+(if you are using queryset or get_queryset()). This will allow the auto-documentation to access the model 
+underlying the queryset (it cannot call get_queryset() since it cannot generate a request object which 
+the get_queryset() method might try to access). If the meaning of a model or serializer field is not clear, 
+you should include the string help_text as a parameter when initializing the field, explaining what that 
+field stores. This will show up in the documentation such that parameter descriptions are inferred from
 model or serializer field help text. For properties, the docstring will be used since there is no
 way to define help_text for a property; so even if a property's use is clear based on the code,
 keep in mind that describing it's purpose in the docstring will be helpful to frontend engineers
@@ -122,7 +122,8 @@ tag_group_abbreviations = {
 # tags are not to be confused with tag groups (see above description of tag groups)
 
 # name here refers to the name underlying the operation id of the view
-# this is NOT the name that you see on the API, it is the name underlying it (see below get_name
+# this is NOT the name that you see on the API, it is the name underlying it,
+# and is used in construction of that name (see below get_name
 # and _get_operation_id methods in PcxAutoSchema for an explanation of the difference). The name
 # also defines what the automatically-set tag name will be.
 custom_name = {  # keys are (path, method) tuples, values are custom names
@@ -136,7 +137,18 @@ custom_operation_id = {  # keys are (path, method) tuples, values are custom nam
     ("/api/alert/registrationhistory/", "GET"): "List Registration History",
 }
 
-custom_tag_names = {}  # keys are old tag names (seen on docs), values are new tag names
+# Use this dictionary to
+# The default response code to use in Django's OpenAPI AutoSchema is 200
+# When this default is undesirable, you can change it below.
+change_response_code = {  # keys are (path, method) tuples, values are custom names
+    # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
+    # value should be a tuple of the form: (old_code, new_code)
+    ("/api/plan/schedules/{id}/", "PUT"): (),
+}
+
+# Use this dictionary to rename tags, if you wish to do so
+# keys are old tag names (seen on docs), values are new tag names
+custom_tag_names = {}
 
 # tag descriptions show up in the documentation below the tag name
 custom_tag_descriptions = {
@@ -272,6 +284,61 @@ def pluralize_word(s):
     return s + "s"  # naive solution because this is how it is done in DRF
 
 
+def make_manual_schema_changes(data):
+    """
+    Use this space to make manual modifications to the schema before it is
+    presented to the user. Only make manual changes as a last resort, and try
+    to use built-in functionality whenever possible.
+    These modifications were written by referencing the existing schema at /api/openapi
+    and also an example schema (written in YAML instead of JSON, but still
+    easily interpretable as JSON) from a Redoc example:
+    https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
+    """
+
+    data["info"]["x-logo"] = {"url": labs_logo, "altText": "Labs Logo"}
+    data["info"]["contact"] = {"email": "contact@pennlabs.org"}
+
+    # Remove ID from the documented PUT request body for /api/plan/schedules/
+    # (the id field in the request body is ignored in favor of the id path parameter)
+    for content_ob in data["paths"]["/api/plan/schedules/{id}/"]["put"]["requestBody"]["content"].values():
+        content_ob["schema"]["properties"].pop('id', None)
+
+    # Make the id and semester fields show up in PCP schedule request body under sections
+    # (and make id required)
+    for path, path_ob in data["paths"].items():
+        if "plan/schedules" not in path:
+            continue
+        for method_ob in path_ob.values():
+            if "requestBody" not in method_ob.keys():
+                continue
+            for content_ob in method_ob["requestBody"]["content"].values():
+                properties_ob = content_ob["schema"]["properties"]
+                if "sections" in properties_ob.keys():
+                    section_ob = properties_ob["sections"]
+                    if "required" not in section_ob["items"].keys():
+                        section_ob["items"]["required"] = []
+                    section_ob["items"]["required"].append("id")
+                    section_ob["items"]["required"].append("semester")
+                    for field, field_ob in section_ob["items"]["properties"].items():
+                        if field == "id" or field == "semester":
+                            field_ob["readOnly"] = False
+                        if field == "id":
+                            field_ob["readOnly"] = False
+
+    # Make application/json the only content type
+    def delete_other_content_types_dfs(dictionary):
+        if not isinstance(dictionary, dict):
+            return None
+        dictionary.pop('application/x-www-form-urlencoded', None)
+        dictionary.pop('multipart/form-data', None)
+        for value in dictionary.values():
+            delete_other_content_types_dfs(value)
+    delete_other_content_types_dfs(data)
+
+
+examples_dict = {}  # populated by PcxAutoSchema instantiations
+
+
 class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
     def render(self, data, media_type=None, renderer_context=None):
         """
@@ -282,6 +349,15 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
         easily interpretable as JSON) from a Redoc example:
         https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
         """
+
+        global examples_dict
+        for key, val in examples_dict.items():
+            examples_dict[key] = {k.lower(): v for k, v in examples_dict[key].items()}
+            for val2 in examples_dict[key].values():
+                if "responses" in val2.keys():
+                    for res in val2["responses"]:
+                        if "code" in res.keys() and isinstance(res["code"], int):
+                            res["code"] = str(res["code"])
 
         tags = set()
         tag_to_dicts = dict()
@@ -325,6 +401,17 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                     + v["description"]
                 )
 
+                # remove 'required' tags from responses
+                # (it doesn't make sense for a response item to be 'required')
+                def delete_required_dfs(dictionary):
+                    if not isinstance(dictionary, dict):
+                        return None
+                    dictionary.pop('required', None)
+                    for value in dictionary.values():
+                        delete_required_dfs(value)
+                delete_required_dfs(v['responses'])
+
+
         for k, v in changes.items():  # since tags cannot be updated while iterating through tags
             tags.remove(k)
             tags.add(v)
@@ -337,8 +424,83 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
             for k, v in tag_group_abbreviations.items()
         ]
         data["x-tagGroups"] = [g for g in data["x-tagGroups"] if len(g["tags"]) != 0]
-        data["info"]["x-logo"] = {"url": labs_logo, "altText": "Labs Logo"}
-        data["info"]["contact"] = {"email": "contact@pennlabs.org"}
+
+        for path in examples_dict.keys():
+            for method in examples_dict[path].keys():
+                ob = examples_dict[path][method]
+                if path not in data["paths"].keys():
+                    raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                     "no such path exists in schema")
+                if method not in data["paths"][path].keys():
+                    raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                     "no such method exists for the given path")
+                if "responses" in ob.keys():
+                    for response in ob["responses"]:
+                        if "code" not in response.keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             "an object in the responses list does not contain "
+                                             "a response code key/value pair.")
+                        code = response["code"]
+                        if "responses" not in data["paths"][path][method].keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             "the given path and method does not have a responses "
+                                             "object in the schema, but an example response was given.")
+                        if code not in data["paths"][path][method]["responses"].keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             f"an example response with code {code} is invalid "
+                                             "because that is not a response code in the schema "
+                                             "for the given path/method.")
+                        if "content" not in data["paths"][path][method]["responses"][code].keys():
+                            raise ValueError(f"Check your response_codes dictionary for:\n"
+                                             f"{method.upper()} {path}, response code {code}\n"
+                                             f"If '[DEFAULT]' is not in the description for this path/method/code, "
+                                             "no response schema content will be created for it "
+                                             "and you will not be able to make an example response for it. "
+                                             f"Alternatively, remove the {code} response from "
+                                             f"the {method.upper()} {path} responses list in your examples dict.")
+                        if "application/json" not in data["paths"][path][method]["responses"][code]["content"].keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             f"an example response with code {code} is invalid "
+                                             "because the response corresponding to the given "
+                                             "path/method/code does not have data type application/json.")
+                        final_ob = data["paths"][path][method]["responses"][code]["content"]["application/json"]
+                        if "examples" not in final_ob.keys():
+                            final_ob["examples"] = {}
+                        if "summary" not in response.keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             f"an example response with code {code} is invalid "
+                                             "because it does not contain required field 'summary'.")
+                        if "value" not in response.keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             f"an example response with code {code} is invalid "
+                                             "because it does not contain required field 'value'.")
+                        final_ob["examples"][response["summary"]] = response
+                if "requests" in ob.keys():
+                    for request in ob["requests"]:
+                        if "requestBody" not in data["paths"][path][method].keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             "the given path and method does not have a requestBody "
+                                             "object in the schema, but an example request was given.")
+                        if "application/json" not in data["paths"][path][method]["requestBody"]["content"].keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             f"an example request is invalid "
+                                             "because the request corresponding to the given "
+                                             "path/method/code does not have data type application/json.")
+                        final_ob = data["paths"][path][method]["requestBody"]["content"]["application/json"]
+                        if "examples" not in final_ob.keys():
+                            final_ob["examples"] = {}
+                        if "summary" not in request.keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             f"an example request is invalid "
+                                             "because it does not contain required field 'summary'.")
+                        if "value" not in request.keys():
+                            raise ValueError(f"Check your examples file for:\n{method} {path}\n"
+                                             f"an example request is invalid "
+                                             "because it does not contain required field 'value'.")
+                        final_ob["examples"][request["summary"]] = request
+
+        make_manual_schema_changes(data)
+
         return json.dumps(data, indent=2).encode("utf-8")
 
 
@@ -351,11 +513,12 @@ class PcxAutoSchema(AutoSchema):
     https://github.com/encode/django-rest-framework/pull/7184/files
     This PR is adding the functionality outlined here in the DRF api guide:
     https://www.django-rest-framework.org/api-guide/schemas/#grouping-operations-with-tags
-    Once the code from this PR is included in a stable Django release, the __init__ and
-    get_operation methods below should be deleted (they will be inherited from AutoSchema).
+    Once the code from this PR is included in a stable Django release, the get_operation methods below
+    should be deleted (it will be inherited from AutoSchema) and the tag code should be removed from __init__.
     """
 
-    def __init__(self, tags=None):
+    def __init__(self, tags=None, examples={}, response_codes={}):
+        global examples_dict
         """
             Parameters:
 
@@ -364,6 +527,13 @@ class PcxAutoSchema(AutoSchema):
         if tags and not all(isinstance(tag, str) for tag in tags):
             raise ValueError("tags must be a list or tuple of string.")
         self._tags = tags
+
+        for k, d in response_codes.items():
+            response_codes[k] = {k.upper(): v for k, v in d.items()}
+        self.response_codes = response_codes
+
+        examples_dict.update(examples)
+
         super().__init__()
 
     def get_operation(self, path, method):
@@ -476,6 +646,9 @@ class PcxAutoSchema(AutoSchema):
                     doc = getdoc(model.__dict__[variable])
                     description = "" if doc is None else doc
 
+                if not description or "A unique integer value" in description and variable == "id":
+                    description = f"The id of the {str(model.__name__).lower()}."
+
             parameter = {
                 "name": variable,
                 "in": "path",
@@ -486,3 +659,72 @@ class PcxAutoSchema(AutoSchema):
             parameters.append(parameter)
 
         return parameters
+
+    def _get_responses(self, path, method):
+        # TODO: Handle multiple codes and pagination classes.
+        if method == 'DELETE':
+            if (
+                path not in self.response_codes.keys() or
+                method not in self.response_codes[path].keys() or
+                not self.response_codes[path][method]
+            ):
+                return {
+                    '204': {
+                        'description': ''
+                    }
+                }
+            return {
+                str(k): {'description': v.replace("[DEFAULT]", "")}
+                for k, v in self.response_codes[path][method].items()
+            }
+
+        self.response_media_types = self.map_renderers(path, method)
+
+        item_schema = {}
+        serializer = self._get_serializer(path, method)
+
+        if isinstance(serializer, serializers.Serializer):
+            item_schema = self._map_serializer(serializer)
+            # No write_only fields for response.
+            for name, schema in item_schema['properties'].copy().items():
+                if 'writeOnly' in schema:
+                    del item_schema['properties'][name]
+                    if 'required' in item_schema:
+                        item_schema['required'] = [f for f in item_schema['required'] if f != name]
+
+        if is_list_view(path, method, self.view):
+            response_schema = {
+                'type': 'array',
+                'items': item_schema,
+            }
+            paginator = self._get_paginator()
+            if paginator:
+                response_schema = paginator.get_paginated_response_schema(response_schema)
+        else:
+            response_schema = item_schema
+
+        if (
+            path not in self.response_codes.keys() or
+            method not in self.response_codes[path].keys() or
+            not self.response_codes[path][method]
+        ):
+            return {
+                '200': {
+                    'content': {
+                        ct: {'schema': response_schema}
+                        for ct in self.response_media_types
+                    },
+                    # description is a mandatory property,
+                    # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#responseObject
+                    # TODO: put something meaningful into it
+                    'description': ""
+                }
+            }
+        return {
+            str(k): {'description': v.replace("[DEFAULT]", ""),
+                **({'content': {
+                        ct: {'schema': response_schema}
+                        for ct in self.response_media_types
+                    }} if "[DEFAULT]" in v else {})}
+            for k, v in self.response_codes[path][method].items()
+        }

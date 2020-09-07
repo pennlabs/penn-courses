@@ -18,7 +18,6 @@ django-debug-toolbar = "*"
 
 [packages]
 django = "*"
-psycopg2 = "*"
 requests = "*"
 twilio = "*"
 phonenumbers = "*"

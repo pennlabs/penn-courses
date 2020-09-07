@@ -4,6 +4,7 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_value
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
+import courses.examples as examples
 
 from courses.models import Course, Requirement, Section, StatusUpdate
 from courses.serializers import (
@@ -131,13 +132,24 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
     Authentication not required.
     """
 
+    schema = PcxAutoSchema(
+        examples=examples.RequirementList_examples,
+        response_codes={
+            "/api/plan/requirements/": {
+                "GET": {
+                    200: "[DEFAULT]Requirements listed successfully."
+                }
+            }
+        }
+    )
+
     serializer_class = RequirementListSerializer
     queryset = Requirement.objects.all()
 
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
     """
-    User test123. <span style="color:red;">User authentication required</span>.
+    <span style="color:red;">User authentication required</span>.
     """
 
     schema = PcxAutoSchema()
