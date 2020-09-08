@@ -334,7 +334,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
 
 
 @api_view(["GET"])
-@schema(PcxAutoSchema())
+
 def autocomplete(request):
     """
     Courses, departments, instructors. All objects are title, desc, url.

@@ -67,7 +67,10 @@ Including help_text/docstring when a field/property's purpose is unclear will al
 make the model/serializer code more understandable for newbies. And furthermore, all help_text
 and descriptive docstrings will not only help future Labs developers but it will also show up in
 the backend documentation (accessible at /admin/doc/).
+TODO: Add instructions on how to customize examples and response codes.  Also mention how to 
+make manual changes to the schema for edge-case customization.
 """
+# TODO: ^^^
 
 openapi_description = """
 # Introduction
@@ -75,7 +78,7 @@ Penn Courses ([GitHub](https://github.com/pennlabs/penn-courses">)) is the umbre
 categorization for [Penn Labs](https://pennlabs.org/)
 products designed to help students navigate the course registration process. It currently
 includes three products, each with their own API documented on this page:
-Penn Course Alert, Penn Course Plan, and Penn Course Review (PCR coming soon).
+Penn Course Alert, Penn Course Plan, and Penn Course Review.
 
 See `Penn Labs Notion > Penn Courses` for more details on each of our (currently) three apps.
 
@@ -114,14 +117,28 @@ authentication, they are referring to this system. See the Django docs for more 
 with underlies, PLA.
 """
 
-subpath_abbreviations = {"plan": "PCP", "alert": "PCA", "review": "PCR", "courses": "PCx"}
+# This dictionary takes app names (the string just after /api/ in the path or just after /
+# if /api/ does not come at the beginning of the path)
+# as values and abbreviated versions of those names as values.  It is used to
+# add an abbreviated app prefix designating app membership to each route's tag name
+# (allowing all the tags for each app to be organized into tag groups for each app).
+subpath_abbreviations = {"plan": "PCP", "alert": "PCA", "review": "PCR", "courses": "PCx",
+                         "accounts": "Accounts"}
 
-# tag groups organize tags into groups; we are using them to separate our tags by app
+# Tag groups organize tags into groups; they show up in the left sidebar and divide the categories
+# of routes into meta categories. We are using them to separate our tags by app.
+# This dictionary should map abbreviated app names (values from the dict above) to
+# longer form names which will show up as the tag group name in the documentation.
 tag_group_abbreviations = {
     "PCP": "Penn Course Plan",
     "PCA": "Penn Course Alert",
     "PCR": "Penn Course Review",
     "PCx": "Penn Courses (Unified)",
+    "Accounts": "Penn Labs Accounts",
+    "": "Other"  # Catches all other tags (this should normally be an empty tag group and if so
+    # it will not show up in the documentation, but is left as a debugging safeguard).
+    # If routes are showing up in a "Misc" tag in this group, make sure you set the schema for
+    # those views to be PcxAutoSchema, as is instructed in the meta docs above.
 }
 
 
@@ -143,15 +160,6 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
 custom_operation_id = {  # keys are (path, method) tuples, values are custom names
     # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
     ("/api/alert/registrationhistory/", "GET"): "List Registration History",
-}
-
-# Use this dictionary to
-# The default response code to use in Django's OpenAPI AutoSchema is 200
-# When this default is undesirable, you can change it below.
-change_response_code = {  # keys are (path, method) tuples, values are custom names
-    # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
-    # value should be a tuple of the form: (old_code, new_code)
-    ("/api/plan/schedules/{id}/", "PUT"): (),
 }
 
 # Use this dictionary to rename tags, if you wish to do so
@@ -207,6 +215,19 @@ custom_tag_descriptions = {
     This route is used by PCA to get data about sections.
     """
     ),
+    "[Accounts] User": dedent(
+        """
+    These routes allow interaction with the User object of a Penn Labs Accounts user.
+    """
+    ),
+    "Miscs": dedent(
+        """
+        <span style="color:red;">WARNING</span>: This tag should not be used, and its existence 
+        indicates you may have forgotten to set a view's schema to PcxAutoSchema for the views 
+        under this tag. See the meta documentation in backend/PennCourses/docs_settings.py of our 
+        codebase for instructions on how to properly set a view's schema to PcxAutoSchema.
+    """
+    )
 }
 
 # do not edit
@@ -358,6 +379,8 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
         https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
         """
 
+        # Change all the response codes in the examples_dict to strings
+        # and change the methods to lower case
         global examples_dict
         for key, val in examples_dict.items():
             examples_dict[key] = {k.lower(): v for k, v in examples_dict[key].items()}
@@ -367,6 +390,11 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                         if "code" in res.keys() and isinstance(res["code"], int):
                             res["code"] = str(res["code"])
 
+        # Determine existing tags and create a map from tag to a list of the corresponding dicts
+        # of nested schema objects at paths/{path}/{method} in the OpenAPI schema (for all
+        # the paths/methods which have that tag).
+        # If any routes do not have tags, add the 'Misc' tag to them, which will be put in
+        # the 'Other' tag group automatically, below.
         tags = set()
         tag_to_dicts = dict()
         for x in data["paths"].values():
@@ -377,8 +405,17 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                         if t not in tag_to_dicts.keys():
                             tag_to_dicts[t] = []
                         tag_to_dicts[t].append(v)
-        changes = dict()
+                else:
+                    v["tags"] = ["Misc"]
+                    tags.add("Misc")
+                    if "Misc" not in tag_to_dicts.keys():
+                        tag_to_dicts["Misc"] = []
+                    tag_to_dicts["Misc"].append(v)
 
+        # A function to change tag names (adds requested changes to a dict which will be
+        # cleared after the for tag in tags loop below finishes; it is done this way since
+        # the tags set cannot be modified while it is being iterated over).
+        changes = dict()
         def update_tag(old_tag, new_tag):
             for val in tag_to_dicts[old_tag]:
                 val["tags"] = [(t if t != old_tag else new_tag) for t in val["tags"]]
@@ -387,6 +424,8 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
             changes[old_tag] = new_tag  # since tags cannot be updated while iterating through tags
             return new_tag
 
+        # Pluralize tag name if all views in tag are lists, and apply custom tag names from
+        # custom_tag_names dict defined above.
         for tag in tags:
             tag = update_tag(tag, split_camel(tag))
             all_list = all([("list" in v["operationId"].lower()) for v in tag_to_dicts[tag]])
@@ -397,7 +436,10 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
             if tag in custom_tag_names.keys():  # rename custom tags
                 tag = update_tag(tag, custom_tag_names[tag])
 
-        for path_name, val in data["paths"].items():  # Display the method and path more visibly
+        # Add the method and path to the description of that method/path so it is more visible.
+        # Also remove 'required' flags from responses (it doesn't make sense for a response
+        # item to be 'required').
+        for path_name, val in data["paths"].items():
             for method_name, v in val.items():
                 v["description"] = (
                     "("
@@ -409,7 +451,7 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                     + v["description"]
                 )
 
-                # remove 'required' tags from responses
+                # remove 'required' flags from responses
                 # (it doesn't make sense for a response item to be 'required')
                 def delete_required_dfs(dictionary):
                     if not isinstance(dictionary, dict):
@@ -419,20 +461,39 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                         delete_required_dfs(value)
                 delete_required_dfs(v['responses'])
 
-
-        for k, v in changes.items():  # since tags cannot be updated while iterating through tags
+        # Since tags could not be updated while we were through tags above, we update them now.
+        for k, v in changes.items():
             tags.remove(k)
             tags.add(v)
 
+        # Add custom tag descriptions from the custom_tag_descriptions dict defined above
         data["tags"] = [
             {"name": tag, "description": custom_tag_descriptions.get(tag, "")} for tag in tags
         ]
+
+        # Add tags to tag groups based on the tag group abbreviation in the name of the tag
+        # (these abbreviations are added as prefixes of the tag names automatically in the
+        # get_tags method of PcxAutoSchema).
+        tags_to_tag_groups = dict()
+        for t in tags:
+            for k in tag_group_abbreviations.keys():
+                # Assigning the tag groups like this prevents tag abbreviations being substrings
+                # of each other from being problematic; the longest matching abbreviation is
+                # used (so even if another tag group abbreviation is a substring, it won't be
+                # mistakenly used for the tag group).
+                if k in t and (
+                    t not in tags_to_tag_groups.keys() or len(k) > len(tags_to_tag_groups[t])
+                ):
+                    tags_to_tag_groups[t] = k
         data["x-tagGroups"] = [
-            {"name": v, "tags": [t for t in tags if k in t]}
+            {"name": v, "tags": [t for t in tags if tags_to_tag_groups[t] == k]}
             for k, v in tag_group_abbreviations.items()
         ]
+        # Remove empty tag groups
         data["x-tagGroups"] = [g for g in data["x-tagGroups"] if len(g["tags"]) != 0]
 
+        # Add request/response examples to the documentation (instructions on how to customize a
+        # route's examples can be found above).
         for path in examples_dict.keys():
             for method in examples_dict[path].keys():
                 ob = examples_dict[path][method]
@@ -602,14 +663,12 @@ class PcxAutoSchema(AutoSchema):
 
         name = self.get_name(path, method)
         path_components = (path[1:] if path.startswith("/") else path).split("/")
-        return [
-            (
-                "[" + subpath_abbreviations[path_components[1]] + "] "
-                if path_components[1] in subpath_abbreviations.keys()
-                else ""
-            )
-            + name
-        ]
+        subpath = path_components[1] if path_components[0] == "api" else path_components[0]
+        if subpath not in subpath_abbreviations.keys():
+            raise ValueError(f"You must add the the '{subpath}' subpath to the "
+                             "subpath_abbreviations dict in backend/PennCourses/docs_settings.py. "
+                             f"This subpath was inferred from the path '{path}'.")
+        return ["[" + subpath_abbreviations[subpath] + "] " + name]
 
     def _get_operation_id(self, path, method):
         if (path, method) in custom_operation_id.keys():
