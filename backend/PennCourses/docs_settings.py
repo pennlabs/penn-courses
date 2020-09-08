@@ -591,6 +591,8 @@ class PcxAutoSchema(AutoSchema):
         ):  # ListView, UpdateAPIView, ThingDelete ...
             name = name[: -len(self.get_action(path, method))]
 
+        name = name.replace("_", " ").title()
+
         return name
 
     def get_tags(self, path, method):
@@ -619,7 +621,7 @@ class PcxAutoSchema(AutoSchema):
         if action == "list":  # listThings instead of listThing
             name = pluralize_word(name)
 
-        ret = action + name
+        ret = action + " " + name
 
         return split_camel(ret[0].capitalize() + ret[1:])
 

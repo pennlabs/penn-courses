@@ -17,4 +17,5 @@ PennCourses/settings/static/
 *-test.json
 celerybeat-schedule
 pcr-backup*
-backend/openapi/openapi.yaml
+
+# frontend/*/src/components/shared
