@@ -14,6 +14,14 @@ import { apiReviewData, apiLive, apiLiveInstructor } from "../utils/api";
  */
 const SHOW_RECRUITMENT_BANNER = false;
 
+if (typeof window != null) {
+  if (window.location.hostname !== "localhost") {
+    window.Raven.config(
+      "https://1eab3b29efe0416fa948c7cd23ed930a@sentry.pennlabs.org/5"
+    ).install();
+  }
+}
+
 /**
  * Represents a course, instructor, or department review page.
  */
@@ -33,7 +41,6 @@ class ReviewPage extends Component {
       rowCode: null,
       liveData: null,
       selectedCourses: {},
-      // isAverage: localStorage.getItem("meta-column-type") !== "recent",
       isAverage: false,
       showBanner:
         SHOW_RECRUITMENT_BANNER && !this.cookies.get("hide_pcr_banner")
@@ -41,13 +48,19 @@ class ReviewPage extends Component {
 
     this.navigateToPage = this.navigateToPage.bind(this);
     this.getReviewData = this.getReviewData.bind(this);
-    // this.setIsAverage = this.setIsAverage.bind(this);
+    this.setIsAverage = this.setIsAverage.bind(this);
     this.showRowHistory = this.showRowHistory.bind(this);
     this.showDepartmentGraph = this.showDepartmentGraph.bind(this);
   }
 
   componentDidMount() {
+
     this.getReviewData();
+    this.setState({
+      isAverage: localStorage.getItem("meta-column-type") !== "recent"
+      // type: _this.props.match.params.type,
+      // code: _this.props.match.params.code
+    });
   }
 
   componentDidUpdate(prevProps) {
@@ -70,11 +83,11 @@ class ReviewPage extends Component {
     }
   }
 
-  // setIsAverage(isAverage) {
-  //   this.setState({ isAverage }, () =>
-  //     localStorage.setItem("meta-column-type", isAverage ? "average" : "recent")
-  //   );
-  // }
+  setIsAverage(isAverage) {
+    this.setState({ isAverage }, () =>
+      localStorage.setItem("meta-column-type", isAverage ? "average" : "recent")
+    );
+  }
 
   getPageInfo() {
     const pageInfo = window.location.pathname.substring(1).split("/");

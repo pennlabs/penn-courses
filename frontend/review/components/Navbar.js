@@ -6,14 +6,14 @@ import SearchBar from "./SearchBar";
  * The navigation bar at the top of the page, containing the logo, search bar, and cart icon.
  */
 
-const Navbar = () => {
-  const getCourseCount = () =>
-  Object.keys(['localStorage']).filter(a => !a.startsWith("meta-")).length;
 
-    // Object.keys(localStorage).filter(a => !a.startsWith("meta-")).length;
-  const [courseCount, setCourseCount] = useState(getCourseCount());
+const Navbar = () => {
+  const [courseCount, setCourseCount] = useState(0);
 
   useEffect(() => {
+    const getCourseCount = () =>
+      Object.keys(localStorage).filter(a => !a.startsWith("meta-")).length;
+    setCourseCount(getCourseCount);
     const onStorageChange = () => setCourseCount(getCourseCount());
     window.addEventListener("storage", onStorageChange);
     window.onCartUpdated = onStorageChange;
@@ -33,8 +33,10 @@ const Navbar = () => {
       </span>
       <span className="float-right">
         <Link href="/" id="cart-icon" title="Course Cart">
-          <i id="cart" className="fa fa-shopping-cart" />
-          {/* {courseCount > 0 && <span id="cart-count">{courseCount}</span>} */}
+          <span>
+            <i id="cart" className="fa fa-shopping-cart"/>
+              {courseCount > 0 && <span id="cart-count">{courseCount}</span>}
+          </span>
         </Link>
       </span>
     </div>
