@@ -1,11 +1,9 @@
-
 {
   "name": "penncoursereview",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
     "chart.js": "^2.9.3",
-    "next": "9.5.3",
     "fuzzysort": "^1.1.4",
     "http-proxy-middleware": "^0.20.0",
     "js-cookie": "^2.2.1",
@@ -21,8 +19,8 @@
     "universal-cookie": "^4.0.2"
   },
   "scripts": {
-    "start": "next start",
-    "build": "next build",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
     "test": "exit 0",
     "eject": "react-scripts eject",
     "lint": "prettier --check \"src/**/*.js\" && eslint \"./src/**/*.js\"",

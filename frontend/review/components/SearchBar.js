@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import AsyncSelect from "react-select/lib/Async";
 import { components } from "react-select";
 import { css } from "emotion";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "next/router";
 import fuzzysort from "fuzzysort";
 import { apiAutocomplete } from "../utils/api";
 
