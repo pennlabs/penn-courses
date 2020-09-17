@@ -171,19 +171,6 @@ function App() {
     return (
         <>
             <Container>
-                <RecruitingBanner>
-                    <p>
-                        <span role="img" aria-label="party">
-                            🎉
-                        </span>{" "}
-                        Want to build impactful products like Penn Course Alert?
-                        Join Penn Labs this fall!{" "}
-                        <a href="https://pennlabs.org/apply">Apply here!</a>{" "}
-                        <span role="img" aria-label="party">
-                            🎉
-                        </span>
-                    </p>
-                </RecruitingBanner>
                 {showLoginModal && <LoginModal />}
                 <Nav
                     login={updateUser}
