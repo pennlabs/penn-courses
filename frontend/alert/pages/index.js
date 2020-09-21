@@ -109,16 +109,16 @@ const genId = (() => {
     return () => counter++;
 })();
 
-const RecruitingBanner = styled.div`
-    text-align: center;
-    display: grid;
-    padding: 20px;
-    width: 100%;
-    background-color: #fbcd4c;
-    & > * {
-        margin: auto;
-    }
-`;
+// const RecruitingBanner = styled.div`
+//     text-align: center;
+//     display: grid;
+//     padding: 20px;
+//     width: 100%;
+//     background-color: #fbcd4c;
+//     & > * {
+//         margin: auto;
+//     }
+// `;
 
 function App() {
     const [user, setUser] = useState(null);
