@@ -14,13 +14,14 @@ import { apiReviewData, apiLive, apiLiveInstructor } from "../utils/api";
  */
 const SHOW_RECRUITMENT_BANNER = false;
 
-if (typeof window != null) {
-  if (window.location.hostname !== "localhost") {
-    window.Raven.config(
-      "https://1eab3b29efe0416fa948c7cd23ed930a@sentry.pennlabs.org/5"
-    ).install();
-  }
-}
+// TODO: figure out what this is
+// if (typeof window != null) {
+//   if (window.location.hostname !== "localhost") {
+//     window.Raven.config(
+//       "https://1eab3b29efe0416fa948c7cd23ed930a@sentry.pennlabs.org/5"
+//     ).install();
+//   }
+// }
 
 /**
  * Represents a course, instructor, or department review page.

@@ -113,7 +113,8 @@ class SearchBar extends Component {
         );
       })
       .catch(e => {
-        window.Raven.captureException(e);
+        // TODO: Figure this out
+        // window.Raven.captureException(e);
         this.setState(
           {
             autocompleteOptions: []
@@ -206,7 +207,7 @@ class SearchBar extends Component {
 
   // Called when an option is selected in the AsyncSelect component
   handleChange(value) {
-    this.props.history.push(value.url);
+    this.props.router.push(value.url);
   }
 
   render() {
