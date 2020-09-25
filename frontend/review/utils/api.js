@@ -1,5 +1,3 @@
-// const API_DOMAIN = `${window.location.protocol}//${window.location.host}`;
-const API_DOMAIN = "localhost:3000"
 
 const PUBLIC_API_TOKEN = "public";
 const API_TOKEN = "platform";
@@ -9,27 +7,27 @@ function apiFetch(url) {
 }
 
 export function redirectForAuth() {
-  window.location.href = `${API_DOMAIN}/accounts/login/?next=${encodeURIComponent(
+  window.location.href = `/accounts/login/?next=${encodeURIComponent(
     window.location.pathname
   )}`;
 }
 
 export function getLogoutUrl() {
-  return `${API_DOMAIN}/accounts/logout/?next=${encodeURIComponent(
+  return `/accounts/logout/?next=${encodeURIComponent(
     `${window.location.origin}/logout`
   )}`;
 }
 
 export function apiAutocomplete() {
   return apiFetch(
-    `${API_DOMAIN}/api/review/autocomplete?token=${encodeURIComponent(
+    `/api/review/autocomplete?token=${encodeURIComponent(
       PUBLIC_API_TOKEN
     )}`
   );
 }
 
 export async function apiCheckAuth() {
-  const res = await fetch(`${API_DOMAIN}/accounts/me/`);
+  const res = await fetch(`/accounts/me/`);
   if (res.status < 300 && res.status >= 200) {
     return true;
   } else {
@@ -39,7 +37,7 @@ export async function apiCheckAuth() {
 
 export function apiIsAuthenticated(func) {
   apiFetch(
-    `${API_DOMAIN}/api/review/auth?token=${encodeURIComponent(
+    `/api/review/auth?token=${encodeURIComponent(
       PUBLIC_API_TOKEN
     )}`
   ).then(data => {
@@ -54,7 +52,7 @@ export function apiIsAuthenticated(func) {
 
 export function apiLive(code) {
   return apiFetch(
-    `${API_DOMAIN}/api/token/live/${encodeURIComponent(
+    `/api/token/live/${encodeURIComponent(
       code
     )}?token=${encodeURIComponent(PUBLIC_API_TOKEN)}`
   );
@@ -70,7 +68,7 @@ export function apiLiveInstructor(name) {
 
 export function apiReviewData(type, code) {
   return apiFetch(
-    `${API_DOMAIN}/api/review/${encodeURIComponent(type)}/${encodeURIComponent(
+    `/api/review/${encodeURIComponent(type)}/${encodeURIComponent(
       code
     )}?token=${encodeURIComponent(API_TOKEN)}`
   );
@@ -94,7 +92,7 @@ export function apiContact(name) {
 
 export function apiHistory(course, instructor) {
   return apiFetch(
-    `${API_DOMAIN}/api/review/course/${encodeURIComponent(
+    `/api/review/course/${encodeURIComponent(
       course
     )}/${encodeURIComponent(instructor)}?token=${encodeURIComponent(API_TOKEN)}`
   );
