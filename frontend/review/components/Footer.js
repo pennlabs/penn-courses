@@ -16,6 +16,7 @@ const Footer = ({ style, url }) => (
       >
         Feedback
       </a>{" "}
+      {/* TODO: Figure out what's up with this */}
       {/* | <a href={getLogoutUrl()}>Logout</a> */}
       <p id="copyright">
         Made with <i style={{ color: "#F56F71" }} className="fa fa-heart" /> by{" "}
