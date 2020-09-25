@@ -30,10 +30,8 @@ const InfoBox = ({
   selectedCourses
 }) => {
   const [contact, setContact] = useState(null);
-  const [inCourseCart, setInCourseCart] = useState(
-    Boolean(localStorage.getItem(code))
-  );
-  console.log(average);
+  const [inCourseCart, setInCourseCart] = useState();
+  useEffect(() => setInCourseCart(localStorage.getItem(code)))
   const {
     rInstructorQuality: avgInstructorQuality,
     rCourseQuality: avgCourseQuality,
