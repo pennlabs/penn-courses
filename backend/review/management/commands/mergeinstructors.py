@@ -27,7 +27,7 @@ def batch_duplicates(qs, get_prop) -> List[List[Instructor]]:
     """
     qs = list(qs)
     rows_by_prop = dict()
-    for row in qs:
+    for row in tqdm(qs):
         prop = get_prop(row)
         if prop is None:
             continue
@@ -96,6 +96,8 @@ def resolve_duplicates(duplicate_instructor_groups: List[List[Instructor]], dry_
             if not dry_run:
                 duplicate_instructor.delete()
 
+# Middle Initial ([\w ']+)([a-zA-Z]+\.)([\w ']+)
+
 
 """
 Strategy definitions. Keys are the strategy name, values are lambdas
@@ -105,11 +107,11 @@ given strategies.
 """
 strategies: Dict[str, Callable[[], List[List[Instructor]]]] = {
     "case-insensitive": lambda _: batch_duplicates(
-        Instructor.objects.all().annotate(name_lower=Lower("name")).order_by("created_at"),
+        Instructor.objects.all().annotate(name_lower=Lower("name")).order_by("-updated_at"),
         lambda row: row.name_lower,
     ),
     "pennid": lambda _: batch_duplicates(
-        Instructor.objects.all().order_by("created_at"),
+        Instructor.objects.all().order_by("-updated_at"),
         lambda row: row.user.pk if row.user is not None else None,
     ),
 }
@@ -149,13 +151,22 @@ class Command(BaseCommand):
             else:
                 stats.setdefault(key, []).append(element)
 
+        def run_merge(strat: Callable[[], List[List[Instructor]]], dry_run: bool, stat):
+            print("Finding duplicates...")
+            duplicates = strat()
+            print(f"Found {len(duplicates)} instructors with multiple rows. Merging records...")
+            resolve_duplicates(duplicates, dry_run, stat)
+
         if len(manual_merge) > 0:
-            resolve_duplicates([list(Instructor.objects.filter(pk__in=manual_merge))], dry_run, stat)
+            print(f"***Merging records manually***")
+            run_merge(lambda _: [list(Instructor.objects.filter(pk__in=manual_merge))], dry_run, stat)
         elif selected_strategies is None:
-            for _, dupes in strategies.items():
-                resolve_duplicates(dupes(), dry_run, stat)
+            for strategy, find_duplicates in strategies.items():
+                print(f"***Merging according to <{strategy}>***")
+                run_merge(find_duplicates, dry_run, stat)
         else:
             for strategy in selected_strategies:
-                resolve_duplicates(strategies[strategy](), dry_run, stat)
+                print(f"***Merging according to <{strategy}>***")
+                run_merge(strategies[strategy], dry_run, stat)
 
         print(stats)
