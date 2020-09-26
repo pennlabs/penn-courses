@@ -1,8 +1,8 @@
-from typing import Optional, List, Dict, Callable
-from tqdm import tqdm
+from typing import Callable, Dict, List, Optional
 
 from django.core.management import BaseCommand
 from django.db.models.functions import Lower
+from tqdm import tqdm
 
 from courses.models import Instructor, Section
 from review.models import Review
@@ -40,7 +40,8 @@ def resolve_duplicates(duplicate_instructor_groups: List[List[Instructor]], dry_
     Given a list of list of duplicate instructor groups, resolve the foreign key and many-to-many
     relationships among duplicates to all point to the same instance.
 
-    :param duplicate_instructor_groups: List of lists of duplicate instructors e.g. [[a, a, a], [b, b]]
+    :param duplicate_instructor_groups: List of lists of duplicate instructors
+    e.g. [[a, a, a], [b, b]]
     :param dry_run: If true, just calculate stats without actually modifying the database.
     :param stat: Function to collect statistics.
     """
@@ -64,8 +65,9 @@ def resolve_duplicates(duplicate_instructor_groups: List[List[Instructor]], dry_
                 stat(INSTRUCTORS_KEPT, 1)
                 primary_instructor = potential_primary[0]
             # Otherwise, we don't have enough information to merge automatically. There are multiple
-            # instructors marked as duplicates, but they link to different users and so could be different
-            # people. Report the PKs of these instructors in the statistics, but don't merge.
+            # instructors marked as duplicates, but they link to different users and so could be
+            # different people. Report the PKs of these instructors in the statistics, but don't
+            # merge.
             else:
                 stat(INSTRUCTORS_KEPT, len(instructor_set))
                 stat(INSTRUCTORS_UNMERGED, element=[i.pk for i in instructor_set])
@@ -76,8 +78,8 @@ def resolve_duplicates(duplicate_instructor_groups: List[List[Instructor]], dry_
         duplicate_instructors = [
             inst for inst in instructor_set if inst.pk != primary_instructor.pk
         ]
+        # Transfer the sections and reviews of all non-primary instances to the primary instance.
         for duplicate_instructor in duplicate_instructors:
-            # Transfer the sections and reviews of all non-primary instances to the primary instance.
             sects = Section.objects.filter(instructors=duplicate_instructor)
             for sect in sects:
                 stat(SECTIONS_MODIFIED, 1)
@@ -95,6 +97,7 @@ def resolve_duplicates(duplicate_instructor_groups: List[List[Instructor]], dry_
             stat(INSTRUCTORS_REMOVED, 1)
             if not dry_run:
                 duplicate_instructor.delete()
+
 
 # Middle Initial ([\w ']+)([a-zA-Z]+\.)([\w ']+)
 
@@ -120,7 +123,7 @@ strategies: Dict[str, Callable[[], List[List[Instructor]]]] = {
 class Command(BaseCommand):
     help = """
     Merge duplicate instructor entries through different strategies.
-    
+
     case-insensitive: Merge instructors with the same name but different cases [O'leary, O'Leary]
     pennid: Merge instructors with the same pennid
     middle-initial: Merge instructors based on firstname and lastname, ignoring middle initials.
@@ -151,22 +154,25 @@ class Command(BaseCommand):
             else:
                 stats.setdefault(key, []).append(element)
 
-        def run_merge(strat: Callable[[], List[List[Instructor]]], dry_run: bool, stat):
+        def run_merge(strat: Callable[[], List[List[Instructor]]]):
+            """
+            Run a merge pass, printing out helpful messages along the way.
+            """
             print("Finding duplicates...")
             duplicates = strat()
             print(f"Found {len(duplicates)} instructors with multiple rows. Merging records...")
             resolve_duplicates(duplicates, dry_run, stat)
 
         if len(manual_merge) > 0:
-            print(f"***Merging records manually***")
-            run_merge(lambda _: [list(Instructor.objects.filter(pk__in=manual_merge))], dry_run, stat)
+            print("***Merging records manually***")
+            run_merge(lambda _: [list(Instructor.objects.filter(pk__in=manual_merge))])
         elif selected_strategies is None:
             for strategy, find_duplicates in strategies.items():
                 print(f"***Merging according to <{strategy}>***")
-                run_merge(find_duplicates, dry_run, stat)
+                run_merge(find_duplicates)
         else:
             for strategy in selected_strategies:
                 print(f"***Merging according to <{strategy}>***")
-                run_merge(strategies[strategy], dry_run, stat)
+                run_merge(strategies[strategy])
 
         print(stats)
