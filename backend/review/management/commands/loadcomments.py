@@ -28,10 +28,11 @@ def get_semester(code):
 
 
 class Command(BaseCommand):
-    def handle(self, *args, **kwargs):
-        filepath = ""
+    def add_arguments(self, parser):
+        parser.add_argument("path_to_csv", help="path to CSV file to use.")
 
-        with open(filepath) as csvfile:
+    def handle(self, *args, **kwargs):
+        with open(kwargs["path_to_csv"]) as csvfile:
             reader = csv.reader(csvfile)
             num_updated = 0
             for row in tqdm(reader):

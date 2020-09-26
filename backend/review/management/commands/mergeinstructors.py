@@ -34,7 +34,9 @@ def batch_duplicates(qs, get_prop) -> List[List[Instructor]]:
     return [rows for name, rows in rows_by_prop.items() if len(rows) > 1]
 
 
-def resolve_duplicates(duplicate_instructor_groups: List[List[Instructor]], dry_run: bool, stat):
+def resolve_duplicates(
+    duplicate_instructor_groups: List[List[Instructor]], dry_run: bool, stat, force=False
+):
     """
     Given a list of list of duplicate instructor groups, resolve the foreign key and many-to-many
     relationships among duplicates to all point to the same instance.
@@ -60,7 +62,7 @@ def resolve_duplicates(duplicate_instructor_groups: List[List[Instructor]], dry_
         else:
             # If all potential primary rows relate to the same user (with the same pk),
             # go ahead and choose one arbitrarily.
-            if len(set([inst.user.pk for inst in potential_primary])) == 1:
+            if len(set([inst.user.pk for inst in potential_primary])) == 1 or force:
                 stat(INSTRUCTORS_KEPT, 1)
                 primary_instructor = potential_primary[0]
             # Otherwise, we don't have enough information to merge automatically. There are multiple
@@ -108,11 +110,11 @@ lazy evaluation, since we won't necessarily be running all (or any) of the
 given strategies.
 """
 strategies: Dict[str, Callable[[], List[List[Instructor]]]] = {
-    "case-insensitive": lambda _: batch_duplicates(
+    "case-insensitive": lambda: batch_duplicates(
         Instructor.objects.all().annotate(name_lower=Lower("name")).order_by("-updated_at"),
         lambda row: row.name_lower,
     ),
-    "pennid": lambda _: batch_duplicates(
+    "pennid": lambda: batch_duplicates(
         Instructor.objects.all().order_by("-updated_at"),
         lambda row: row.user.pk if row.user is not None else None,
     ),
@@ -129,15 +131,21 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument("--dry-run", action="store_true", help="perform a dry run of merge.")
-        parser.add_argument(
-            "--manual", nargs="*", help="manually merge instructors with the provided IDs.",
+        parser.add_argument("--dryrun", action="store_true", help="perform a dry run of merge.")
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
+            "--instructor",
+            "-i",
+            action="append",
+            dest="manual",
+            help="manually merge instructors with the provided IDs.",
+            default=list(),
         )
-        parser.add_argument("--strategies", "-s", action="append")
-        parser.add_argument("--all", "-a", action="store_const", const=None, dest="strategies")
+        group.add_argument("--strategy", "-s", action="append")
+        group.add_argument("--all", "-a", action="store_const", const=None, dest="strategies")
 
     def handle(self, *args, **kwargs):
-        dry_run = kwargs["dry_run"]
+        dry_run = kwargs["dryrun"]
         manual_merge: List[str] = kwargs["manual"]
         selected_strategies: Optional[List[str]] = kwargs["strategies"]
 
@@ -153,18 +161,18 @@ class Command(BaseCommand):
             else:
                 stats.setdefault(key, []).append(element)
 
-        def run_merge(strat: Callable[[], List[List[Instructor]]]):
+        def run_merge(strat: Callable[[], List[List[Instructor]]], force=False):
             """
             Run a merge pass, printing out helpful messages along the way.
             """
             print("Finding duplicates...")
             duplicates = strat()
             print(f"Found {len(duplicates)} instructors with multiple rows. Merging records...")
-            resolve_duplicates(duplicates, dry_run, stat)
+            resolve_duplicates(duplicates, dry_run, stat, force)
 
         if len(manual_merge) > 0:
             print("***Merging records manually***")
-            run_merge(lambda _: [list(Instructor.objects.filter(pk__in=manual_merge))])
+            run_merge(lambda: [list(Instructor.objects.filter(pk__in=manual_merge))], force=True)
         elif selected_strategies is None:
             for strategy, find_duplicates in strategies.items():
                 print(f"***Merging according to <{strategy}>***")
