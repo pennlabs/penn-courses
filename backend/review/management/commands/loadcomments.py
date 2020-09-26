@@ -1,7 +1,7 @@
 import csv
 
-from tqdm import tqdm
 from django.core.management import BaseCommand
+from tqdm import tqdm
 
 from review.models import Review
 
