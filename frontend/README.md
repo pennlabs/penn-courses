@@ -20,6 +20,19 @@ symlink `frontend/node_modules/pcx-shared-components` to `frontend/pcx-shared-co
 and both PCA and PCP codebases can use shared components simply by 
 doing `import _ from "pcx-shared-components"`. 
 
+## Running the frontends
+To run a frontend development server,
+1. `cd frontend`
+2. `yarn` to ensure dependencies are up-to-date.
+3. `cd [alert|plan|review]` depending on which frontend you'd like to run.
+4. `yarn` once more (just to be sure `:)`)
+5. `yarn start` to run the frontend.
+
+Feel free to leave out the `yarn`s when you know dependencies are up-to-date.
+
+As long as the back-end is running on port 8000, requests will be
+proxied between the two development servers.
+
 ## Modifications to CRA 
 By using Yarn Workspaces as described above, dependencies from another project 
 are treated as an outside dependency, and therefore should be built and transpiled
