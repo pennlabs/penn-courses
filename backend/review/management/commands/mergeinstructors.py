@@ -25,7 +25,6 @@ def batch_duplicates(qs, get_prop) -> List[List[Instructor]]:
     If get_prop returns None, don't include the row in the groupings.
     :return: List of lists of duplicate rows according to some property.
     """
-    qs = list(qs)
     rows_by_prop = dict()
     for row in tqdm(qs):
         prop = get_prop(row)
@@ -80,12 +79,12 @@ def resolve_duplicates(duplicate_instructor_groups: List[List[Instructor]], dry_
         ]
         # Transfer the sections and reviews of all non-primary instances to the primary instance.
         for duplicate_instructor in duplicate_instructors:
-            sects = Section.objects.filter(instructors=duplicate_instructor)
-            for sect in sects:
+            sections = Section.objects.filter(instructors=duplicate_instructor)
+            for section in sections:
                 stat(SECTIONS_MODIFIED, 1)
                 if not dry_run:
-                    sect.instructors.remove(duplicate_instructor)
-                    sect.instructors.add(primary_instructor)
+                    section.instructors.remove(duplicate_instructor)
+                    section.instructors.add(primary_instructor)
 
             reviews = Review.objects.filter(instructor=duplicate_instructor)
             for review in reviews:
