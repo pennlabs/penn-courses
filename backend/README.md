@@ -13,7 +13,9 @@ Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
 4. `python manage.py migrate`
 5. Make sure everything works by running `python manage.py test` and
 ensuring all tests pass.
-6. Run with `python manage.py runserver` and go to `localhost:8000/admin` to view the admin site!
+6. Create an admin user with `python manage.py createsuperuser`
+7. Run with `python manage.py runserver` and go to `localhost:8000/admin`, login with your
+   new user to make sure the site backend operational!
 
 ## Set the proper semester
 PCA and PCP rely on the semester being set properly to work.
