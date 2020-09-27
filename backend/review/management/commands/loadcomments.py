@@ -35,16 +35,16 @@ class Command(BaseCommand):
         with open(kwargs["path_to_csv"]) as csvfile:
             reader = csv.reader(csvfile)
             num_updated = 0
-            for row in tqdm(reader):
-                section_code = f"{row[0]}-{row[1]}-{leftpad(int(row[2]))}"
-                semester = f"{row[3]}{get_semester(row[4])}"
-                instructor_name = row[5].lower()
-                comment = row[6]
-
+            lines = list(reader)
+            for row in tqdm(lines):
+                dept, course_id, section_id, year, semester_num, instructor_name, comment = row
+                section_code = f"{dept}-{course_id}-{leftpad(int(section_id))}"
+                semester = f"{year}{get_semester(semester_num)}"
+                instructor_name = instructor_name.lower()
                 num_updated += Review.objects.filter(
                     section__full_code=section_code,
                     section__course__semester=semester,
-                    instructor_name__iexact=instructor_name,
+                    instructor__name__iexact=instructor_name,
                 ).update(comments=comment)
 
             print(f"{num_updated} reviews updated.")
