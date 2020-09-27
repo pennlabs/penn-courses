@@ -45,6 +45,7 @@ def resolve_duplicates(
     e.g. [[a, a, a], [b, b]]
     :param dry_run: If true, just calculate stats without actually modifying the database.
     :param stat: Function to collect statistics.
+    :param force: Manually override conflicting user information.
     """
     for instructor_set in tqdm(duplicate_instructor_groups):
         # Find a primary instance in the duplicate set. This should be the instance that is most
@@ -173,11 +174,9 @@ class Command(BaseCommand):
         if len(manual_merge) > 0:
             print("***Merging records manually***")
             run_merge(lambda: [list(Instructor.objects.filter(pk__in=manual_merge))], force=True)
-        elif selected_strategies is None:
-            for strategy, find_duplicates in strategies.items():
-                print(f"***Merging according to <{strategy}>***")
-                run_merge(find_duplicates)
         else:
+            if selected_strategies is None:
+                selected_strategies = list(strategies.keys())
             for strategy in selected_strategies:
                 print(f"***Merging according to <{strategy}>***")
                 run_merge(strategies[strategy])
