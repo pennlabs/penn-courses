@@ -101,9 +101,6 @@ def resolve_duplicates(
                 duplicate_instructor.delete()
 
 
-# Middle Initial ([\w ']+)([a-zA-Z]+\.)([\w ']+)
-
-
 """
 Strategy definitions. Keys are the strategy name, values are lambdas
 which resolve a list of duplicate lists when called. The lambdas are to ensure
@@ -119,6 +116,7 @@ strategies: Dict[str, Callable[[], List[List[Instructor]]]] = {
         Instructor.objects.all().order_by("-updated_at"),
         lambda row: row.user.pk if row.user is not None else None,
     ),
+    # Middle Initial ([\w ']+)([a-zA-Z]+\.)([\w ']+)
 }
 
 
