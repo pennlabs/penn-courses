@@ -178,7 +178,10 @@ class Command(BaseCommand):
             if selected_strategies is None:
                 selected_strategies = list(strategies.keys())
             for strategy in selected_strategies:
-                print(f"***Merging according to <{strategy}>***")
-                run_merge(strategies[strategy])
+                if strategy in strategies:
+                    print(f"***Merging according to <{strategy}>***")
+                    run_merge(strategies[strategy])
+                else:
+                    print(f"***Could not find strategy <{strategy}>***")
 
         print(stats)
