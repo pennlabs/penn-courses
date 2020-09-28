@@ -113,7 +113,7 @@ strategies: Dict[str, Callable[[], List[List[Instructor]]]] = {
         lambda row: row.name_lower,
     ),
     "pennid": lambda: batch_duplicates(
-        Instructor.objects.all().order_by("-updated_at"),
+        Instructor.objects.all().order_by("-updated_at").select_related("user"),
         lambda row: row.user.pk if row.user is not None else None,
     ),
     # Middle Initial ([\w ']+)([a-zA-Z]+\.)([\w ']+)
@@ -140,7 +140,7 @@ class Command(BaseCommand):
             help="manually merge instructors with the provided IDs.",
             default=list(),
         )
-        group.add_argument("--strategy", "-s", action="append")
+        group.add_argument("--strategy", "-s", dest="strategies", action="append")
         group.add_argument("--all", "-a", action="store_const", const=None, dest="strategies")
 
     def handle(self, *args, **kwargs):
