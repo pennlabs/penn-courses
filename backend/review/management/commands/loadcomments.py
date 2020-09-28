@@ -1,5 +1,6 @@
 import csv
 
+import boto3
 from django.core.management import BaseCommand
 from tqdm import tqdm
 
@@ -30,12 +31,25 @@ def get_semester(code):
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("path_to_csv", help="path to CSV file to use.")
+        parser.add_argument(
+            "-s3", "--s3_bucket", help="download zip file from specified s3 bucket."
+        )
 
     def handle(self, *args, **kwargs):
-        with open(kwargs["path_to_csv"]) as csvfile:
+        src = kwargs["path_to_csv"]
+        if kwargs["s3_bucket"] is not None:
+            fp = "/tmp/comments.csv"
+            # Make sure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+            # are loaded in as environment variables.
+            print(f"downloading zip from s3 bucket: {src}")
+            boto3.client("s3").download_file(kwargs["s3_bucket"], src, fp)
+            src = fp
+
+        with open(src) as csvfile:
             reader = csv.reader(csvfile)
             num_updated = 0
             lines = list(reader)
+            print("Starting upload...")
             for row in tqdm(lines):
                 dept, course_id, section_id, year, semester_num, instructor_name, comment = row
                 section_code = f"{dept}-{course_id}-{leftpad(int(section_id))}"
