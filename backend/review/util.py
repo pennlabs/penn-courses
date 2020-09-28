@@ -1,4 +1,5 @@
 import re
+from typing import Dict, List
 
 
 def titleize(name):
@@ -18,3 +19,87 @@ def titleize(name):
     # Possessives shouldn't get capitalized.
     name = name.replace("'S", "'s")
     return name
+
+
+def to_r_camel(s):
+    """
+    Turns fields from python snake_case to the PCR frontend's rCamelCase.
+    """
+    return "r" + "".join([x.title() for x in s.split("_")])
+
+
+def make_subdict(field_prefix, d):
+    """
+    Rows in a queryset that don't represent related database models are flat. But we want
+    our JSON to have a nested structure that makes more sense to the client. This function
+    takes fields from a flat dictionary with a certain prefix
+    """
+    start_at = len(field_prefix)
+    return {
+        to_r_camel(k[start_at:]): v
+        for k, v in d.items()
+        if k.startswith(field_prefix) and v is not None
+    }
+
+
+def dict_average(entries: List[Dict[str, float]]) -> Dict[str, float]:
+    """
+    Average a list of dicts into one dict with averages.
+    :param entries:
+    :return:
+    """
+    keys = []
+    for entry in entries:
+        keys.extend(entry.keys())
+    keys = set(keys)
+
+    averages = {k: (0, 0) for k in keys}
+    for entry in entries:
+        for k, v in entry.items():
+            sum_, count_ = averages[k]
+            averages[k] = (sum_ + v, count_ + 1)
+
+    return {k: v[0] / v[1] if v[1] > 0 else 0 for k, v in averages.items()}
+
+
+def aggregate_reviews(reviews, group_by, **extra_fields):
+    """
+    Aggregate a list of reviews, grouping by some field.
+    :param reviews: A list of dictionaries representing Review objects, with reviewbits inlined
+    using review.annotations.review_averages(). And dict-ified by calling .values() on a queryset.
+    :param group_by: Field to group by in the review.
+    :param extra_fields: Any extra fields from the dictionaries to carry through to the response.
+    :return: Average reviews, recent reviews, number of semesters taught, and other data needed
+    for the response to the frontend.
+    """
+    grouped_reviews = dict()
+    for review in reviews:
+        key = review[group_by]
+        grouped_reviews.setdefault(key, []).append(
+            {
+                "semester": review["semester"],
+                "scores": make_subdict("bit_", review),
+                **{
+                    response_prop: review[instance_prop]
+                    for response_prop, instance_prop in extra_fields.items()
+                },
+            }
+        )
+    aggregated = dict()
+    for k, reviews in grouped_reviews.items():
+        latest_sem = max([r["semester"] for r in reviews])
+        all_scores = [r["scores"] for r in reviews]
+        recent_scores = [r["scores"] for r in reviews if r["semester"] == latest_sem]
+        aggregated[k] = {
+            "id": k,
+            "average_reviews": dict_average(all_scores),
+            "recent_reviews": dict_average(recent_scores),
+            "latest_semester": latest_sem,
+            "num_semesters": len(set([r["semester"] for r in reviews])),
+            **{
+                response_prop: reviews[0][response_prop]
+                for response_prop, _ in extra_fields.items()
+            },
+        }
+
+    return aggregated
