@@ -222,10 +222,6 @@ form > input[type="text"] {
   100%  { transform: rotate(360deg); }
 }
 
-.hide {
-  opacity: 0;
-  /*visibility: hidden;*/
-}
 
 #CourseHeader {
   overflow: hidden;
@@ -635,83 +631,6 @@ ul {
   align-items:center;
   display:flex;
   justify-content:center;
-}
-
-
-
-.block.red{
-  border-top-color:#D0021B;
-  color:#D0021B;
-}
-
-.block.red > div {
-  background-color: rgba(207, 2, 29, 0.2);
-}
-
-
-.block.orange{
-  border-top-color:#F5A623;
-  color:#F5A623;
-}
-.block.orange > div {
-  background-color: rgba(245, 166, 35, 0.2);
-}
-
-.block.blue{
-  border-top-color:#00BFDD;
-  color:#00BFDD;
-}
-
-.block.blue > div {
-  background-color: rgba(0, 191, 221, 0.21);
-}
-
-
-.block.aqua{
-  border-top-color:#35E1BB;
-  color:#35E1BB;
-}
-
-.block.aqua > div {
-  background-color: rgba(53, 225, 187, 0.2);
-}
-
-
-.block.green{
-  border-top-color:#7ED321;
-  color:#7ED321;
-}
-
-.block.green > div {
-  background-color: rgba(126, 211, 33, 0.2);
-}
-
-
-.block.pink{
-  border-top-color:#FF34CC;
-  color:#FF34CC;
-}
-
-.block.pink > div {
-  background-color: rgba(255, 52, 204, 0.21);
-}
-
-.block.sea{
-  border-top-color:#3055CC;
-  color:#3055CC;
-}
-
-.block.sea > div {
-  background-color: rgba(48, 85, 204, 0.21);
-}
-
-.block.indigo{
-  border-top-color:#7874CF;
-  color:#7874CF;
-}
-
-.block.indigo > div {
-  background-color: rgba(120, 116, 207, 0.2);
 }
 
 .SchedBlock > span {
