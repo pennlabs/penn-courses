@@ -9,18 +9,20 @@ import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
 import { apiReviewData, apiLive, apiLiveInstructor } from "../utils/api";
 
+import { withRouter } from "next/router";
+
 /**
  * Enable or disable the Penn Labs recruitment banner.
  */
 const SHOW_RECRUITMENT_BANNER = false;
 
-if (typeof window != null) {
+if (typeof window == !undefined) {
   if (window.location.hostname !== "localhost") {
     window.Raven.config(
       "https://1eab3b29efe0416fa948c7cd23ed930a@sentry.pennlabs.org/5"
     ).install();
   }
-}
+} 
 
 /**
  * Represents a course, instructor, or department review page.
@@ -33,8 +35,10 @@ class ReviewPage extends Component {
     this.state = {
       type: null,
       code: null,
-      // type: this.props.match.params.type,
+      type: !this.props.router.query.slug ? null : this.props.router.query.slug[0],
+      code: !this.props.router.query.slug ? null : this.props.router.query.slug[1],
       // code: this.props.match.params.code,
+
       data: null,
       error: null,
       error_detail: null,
@@ -45,7 +49,6 @@ class ReviewPage extends Component {
       showBanner:
         SHOW_RECRUITMENT_BANNER && !this.cookies.get("hide_pcr_banner")
     };
-
     this.navigateToPage = this.navigateToPage.bind(this);
     this.getReviewData = this.getReviewData.bind(this);
     this.setIsAverage = this.setIsAverage.bind(this);
@@ -53,27 +56,27 @@ class ReviewPage extends Component {
     this.showDepartmentGraph = this.showDepartmentGraph.bind(this);
   }
 
+  
   componentDidMount() {
-
     this.getReviewData();
+    console.log(this.props)
     this.setState({
-      isAverage: localStorage.getItem("meta-column-type") !== "recent"
-      // type: _this.props.match.params.type,
-      // code: _this.props.match.params.code
+      isAverage: (localStorage.getItem("meta-column-type") !== "recent")
+      // type: this.props.router.query.type,
+      // code: this.props.router.query.code,
     });
   }
 
   componentDidUpdate(prevProps) {
-    if (false
-      // this.props.match.params.type !== prevProps.match.params.type ||
-      // this.props.match.params.code !== prevProps.match.params.code
+    if (
+      this.props.router.query.slug !== prevProps.router.query.slug
     ) {
       // TODO: Switch to functional component and use useEffect(() => {...}, [])
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState(
         {
-          // type: this.props.match.params.type,
-          // code: this.props.match.params.code,
+          type: !this.props.router.query.slug ? null : this.props.router.query.slug[0],
+          code: !this.props.router.query.slug ? null : this.props.router.query.slug[1],
           data: null,
           rowCode: null,
           error: null
@@ -307,4 +310,4 @@ class ReviewPage extends Component {
   }
 }
 
-export default ReviewPage;
+export default withRouter(ReviewPage);

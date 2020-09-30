@@ -21,7 +21,7 @@
     "universal-cookie": "^4.0.2"
   },
   "scripts": {
-    "start": "next start",
+    "start": "NODE_ENV=production node server.js",
     "build": "next build",
     "test": "exit 0",
     "eject": "react-scripts eject",

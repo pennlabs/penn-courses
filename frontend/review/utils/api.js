@@ -1,5 +1,5 @@
 // const API_DOMAIN = `${window.location.protocol}//${window.location.host}`;
-const API_DOMAIN = "localhost:3000"
+const API_DOMAIN = "http://localhost:3000"
 
 const PUBLIC_API_TOKEN = "public";
 const API_TOKEN = "platform";
