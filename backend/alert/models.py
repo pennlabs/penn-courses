@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 
-from alert.alerts import Email, Text
+from alert.alerts import Email, Text, PushNotification
 from courses.models import Course, Section, UserProfile, get_current_semester
 from courses.util import get_course_and_section
 
@@ -59,6 +59,10 @@ class Registration(models.Model):
     # change to True once notification email has been sent out
     notification_sent = models.BooleanField(default=False)
     notification_sent_at = models.DateTimeField(blank=True, null=True)
+    # has the user enabled mobile notifications
+    push_notifications = models.BooleanField(default=False)
+    # has the user opted-in to receive notifications when the course opens and then closes.
+    close_notification = models.BooleanField(default=False)
 
     METHOD_CHOICES = (
         ("", "Unsent"),
@@ -132,6 +136,7 @@ class Registration(models.Model):
         if forced or self.is_active:
             text_result = Text(self).send_alert()
             email_result = Email(self).send_alert()
+            notif_result = PushNotification(self).send_alert()
             logging.debug("NOTIFICATION SENT FOR " + self.__str__())
             self.notification_sent = True
             self.notification_sent_at = timezone.now()
