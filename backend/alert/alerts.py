@@ -3,12 +3,11 @@ from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from smtplib import SMTP, SMTPRecipientsRefused
 
+import requests
 from django.conf import settings
 from django.template import loader
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
-
-import requests
 
 
 logger = logging.getLogger(__name__)
@@ -97,7 +96,7 @@ class PushNotification(Alert):
         if self.registration.push_notifications:
             pennkey = self.registration.user.username
             bearer_token = str(10101)
-            r = requests.post(
+            requests.post(
                 "https:/api.pennlabs.org/notifications/send/internal",
                 data={
                     "title": "%s is now open!" % self.registration.section.full_code,

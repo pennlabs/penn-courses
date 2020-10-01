@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 
-from alert.alerts import Email, Text, PushNotification
+from alert.alerts import Email, PushNotification, Text
 from courses.models import Course, Section, UserProfile, get_current_semester
 from courses.util import get_course_and_section
 
