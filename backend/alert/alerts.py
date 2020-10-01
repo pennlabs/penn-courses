@@ -97,12 +97,14 @@ class PushNotification(Alert):
         if self.registration.push_notifications:
             pennkey = self.registration.user.username
             bearer_token = str(10101)
-            r = requests.post("https:/api.pennlabs.org/notifications/send/internal", 
-                                data={"title": "%s is now open!" % self.registration.section.full_code, 
-                                        "body": self.text, 
-                                        "pennkey": pennkey},
-                                headers={"Authorization": "Bearer %s" + bearer_token})
-        
-        return False    
-            
+            r = requests.post(
+                "https:/api.pennlabs.org/notifications/send/internal",
+                data={
+                    "title": "%s is now open!" % self.registration.section.full_code,
+                    "body": self.text,
+                    "pennkey": pennkey,
+                },
+                headers={"Authorization": "Bearer %s" + bearer_token},
+            )
 
+        return False

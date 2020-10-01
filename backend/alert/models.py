@@ -156,8 +156,13 @@ class Registration(models.Model):
         Returns a dict of filters defining the behavior of the is_waiting_for_close property.
         Also used in database filtering of registrations (you cannot filter by a property value).
         """
-        return {"notification_sent": True, "close_notification": True,
-                "deleted": False, "cancelled": False, "close_notification_sent": False}
+        return {
+            "notification_sent": True,
+            "close_notification": True,
+            "deleted": False,
+            "cancelled": False,
+            "close_notification_sent": False,
+        }
 
     @property
     def is_waiting_for_close(self):
@@ -190,8 +195,9 @@ class Registration(models.Model):
                 self.close_notification_sent_by = sent_by
                 self.save()
             return (
-                email_result is not None and text_result is not None and
-                push_notif_result is not None
+                email_result is not None
+                and text_result is not None
+                and push_notif_result is not None
             )  # True if no error in email/text/push-notification.
         else:
             return False
@@ -318,7 +324,7 @@ def register_for_course(
     user=None,
     auto_resub=False,
     close_notification=False,
-    push_notifications=False
+    push_notifications=False,
 ):
     if not email_address and not phone and not user:
         return RegStatus.NO_CONTACT_INFO, None, None

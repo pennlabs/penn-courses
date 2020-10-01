@@ -420,11 +420,11 @@ class WebhookViewTestCase(TestCase):
         )
 
         self.assertEqual(200, res.status_code)
-        self.assertFalse("sent" in json.loads(res.content)["message"])
-        self.assertFalse(mock_alert.called)
+        self.assertTrue("sent" in json.loads(res.content)["message"])
+        self.assertTrue(mock_alert.called)
         self.assertEqual(1, StatusUpdate.objects.count())
         u = StatusUpdate.objects.get()
-        self.assertFalse(u.alert_sent)
+        self.assertTrue(u.alert_sent)
 
     def test_alert_called_wrong_sem(self, mock_alert):
         self.body["term"] = "NOTRM"

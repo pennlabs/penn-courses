@@ -22,8 +22,8 @@ from courses.util import record_update, update_course_from_record
 logger = logging.getLogger(__name__)
 
 
-def alert_for_course(c_id, semester, sent_by):
-    send_course_alerts.delay(c_id, semester=semester, sent_by=sent_by)
+def alert_for_course(c_id, semester, sent_by, course_status="O"):
+    send_course_alerts.delay(c_id, semester=semester, sent_by=sent_by, course_status=course_status)
 
 
 def extract_basic_auth(auth_header):
@@ -93,12 +93,15 @@ def accept_webhook(request):
 
     if should_send_alert:
         try:
-            alert_for_course(course_id, semester=course_term, sent_by="WEB", course_status=course_status)
+            alert_for_course(
+                course_id, semester=course_term, sent_by="WEB", course_status=course_status
+            )
             alert_for_course_called = True
             response = JsonResponse({"message": "webhook recieved, alerts sent"})
         except ValueError:
             response = JsonResponse({"message": "course code could not be parsed"})
-    response = JsonResponse({"message": "webhook recieved"})
+    else:
+        response = JsonResponse({"message": "webhook recieved"})
 
     try:
         u = record_update(
@@ -145,7 +148,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             user=request.user,
             auto_resub=request.data.get("auto_resubscribe", False),
             close_notification=request.data.get("close_notification", False),
-            push_notifications=request.data.get("push_notifications", False)
+            push_notifications=request.data.get("push_notifications", False),
         )
 
         if res == RegStatus.SUCCESS:
@@ -261,38 +264,60 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     registration.cancelled_at = timezone.now()
                     registration.save()
                     return Response({"detail": "Registration cancelled"}, status=status.HTTP_200_OK)
-            elif ("auto_resubscribe" in request.data or "close_notification" in request.data or
-                  "push_notifications" in request.data):
+            elif (
+                "auto_resubscribe" in request.data
+                or "close_notification" in request.data
+                or "push_notifications" in request.data
+            ):
                 if registration.deleted:
                     return Response(
                         {"detail": "You cannot make changes to a deleted registration."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 changed = (
-                    registration.auto_resubscribe != request.data.get("auto_resubscribe") or
-                    registration.close_notification != request.data.get("close_notification") or
-                    registration.push_notifications != request.data.get("push_notifications")
+                    registration.auto_resubscribe != request.data.get("auto_resubscribe")
+                    or registration.close_notification != request.data.get("close_notification")
+                    or registration.push_notifications != request.data.get("push_notifications")
                 )
-                registration.auto_resubscribe = request.data.get("auto_resubscribe",
-                                                                 registration.auto_resubscribe)
-                registration.close_notification = request.data.get("close_notification",
-                                                                   registration.close_notification)
-                registration.push_notifications = request.data.get("push_notifications",
-                                                                   registration.push_notifications)
+                registration.auto_resubscribe = request.data.get(
+                    "auto_resubscribe", registration.auto_resubscribe
+                )
+                registration.close_notification = request.data.get(
+                    "close_notification", registration.close_notification
+                )
+                registration.push_notifications = request.data.get(
+                    "push_notifications", registration.push_notifications
+                )
                 registration.save()
                 if changed:  # else taken care of in generic return statement
                     return Response(
                         {
                             "detail": ", ".join(
-                                (["auto_resubscribe updated to "
-                                  + str(registration.auto_resubscribe)] if
-                                 "auto_resubscribe" in request.data else []) +
-                                (["close_notification updated to "
-                                  + str(registration.close_notification)]
-                                 if "close_notification" in request.data else []) +
-                                (["push_notifications updated to "
-                                  + str(registration.push_notifications)]
-                                 if "push_notifications" in request.data else []))
+                                (
+                                    [
+                                        "auto_resubscribe updated to "
+                                        + str(registration.auto_resubscribe)
+                                    ]
+                                    if "auto_resubscribe" in request.data
+                                    else []
+                                )
+                                + (
+                                    [
+                                        "close_notification updated to "
+                                        + str(registration.close_notification)
+                                    ]
+                                    if "close_notification" in request.data
+                                    else []
+                                )
+                                + (
+                                    [
+                                        "push_notifications updated to "
+                                        + str(registration.push_notifications)
+                                    ]
+                                    if "push_notifications" in request.data
+                                    else []
+                                )
+                            )
                         },
                         status=status.HTTP_200_OK,
                     )

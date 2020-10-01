@@ -6,33 +6,44 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('alert', '0009_auto_20200419_2112'),
+        ("alert", "0009_auto_20200419_2112"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='registration',
-            name='close_notification',
+            model_name="registration",
+            name="close_notification",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='registration',
-            name='close_notification_sent',
+            model_name="registration",
+            name="close_notification_sent",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='registration',
-            name='close_notification_sent_at',
+            model_name="registration",
+            name="close_notification_sent_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='registration',
-            name='close_notification_sent_by',
-            field=models.CharField(blank=True, choices=[('', 'Unsent'), ('LEG', '[Legacy] Sequence of course API requests'), ('WEB', 'Webhook'), ('SERV', 'Course Status Service'), ('ADM', 'Admin Interface')], default='', max_length=16),
+            model_name="registration",
+            name="close_notification_sent_by",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("", "Unsent"),
+                    ("LEG", "[Legacy] Sequence of course API requests"),
+                    ("WEB", "Webhook"),
+                    ("SERV", "Course Status Service"),
+                    ("ADM", "Admin Interface"),
+                ],
+                default="",
+                max_length=16,
+            ),
         ),
         migrations.AddField(
-            model_name='registration',
-            name='push_notifications',
+            model_name="registration",
+            name="push_notifications",
             field=models.BooleanField(default=False),
         ),
     ]
