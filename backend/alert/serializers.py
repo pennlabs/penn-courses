@@ -7,7 +7,13 @@ from courses.models import Section
 class RegistrationSerializer(serializers.ModelSerializer):
     section = serializers.SlugRelatedField(slug_field="full_code", required=False,
                                            queryset=Section.objects.none())
-    user = serializers.SlugRelatedField(slug_field="username", read_only=True)
+    user = serializers.SlugRelatedField(
+        slug_field="username", read_only=True,
+        help_text=dedent(
+            """
+            
+            """
+        ))
     section_status = serializers.SerializerMethodField(read_only=True)
 
     is_active = serializers.SerializerMethodField()
@@ -40,7 +46,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 class RegistrationCreateSerializer(serializers.Serializer):
     section = serializers.CharField(max_length=16)
-    auto_resubscribe = serializers.BooleanField()
+    auto_resubscribe = serializers.BooleanField(required=False)
 
     class Meta:
         model = Registration

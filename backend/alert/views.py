@@ -13,7 +13,6 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 import alert.examples as examples
-from rest_framework.exceptions import APIException
 
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
@@ -127,27 +126,59 @@ def accept_webhook(request):
 
 class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
-    retrieve: test retrieve description
+    retrieve: Get one of the logged-in user's PCA registrations for the current semester, using
+    the registration's ID. Note that if a registration with the specified ID exists, but that
+    registration is not at the head of its resubscribe chain (i.e. there is a more recent
+    registration which was created by resubscribing to the specified registration), the
+    HEAD of the resubscribe chain will be returned.  This may lead to unintuitive behavior, i.e.
+    the same registration being returned from a GET request to 2 distinct IDs.
+    If a registration with the specified ID exists, a 200 response code is
+    returned, along with the head registration object.
+    If the given id does not exist, a 404 is returned.
 
-    <span style="color:red;">User authentication required</span>.
+    list: Returns all registrations which are not deleted or made obsolete by resubscription.  Put
+    another way, this endpoint will return a superset of all active registrations: all
+    active registrations (meaning they would trigger an alert to be sent if their section
+    were to open up), IN ADDITION TO all cancelled registrations from the current semester at
+    the head of their resubscribe chains.  Each object in the returned list of registrations
+    is of the same form as the object returned by Retrieve Registration.
 
-    list: test list description
-
-    <span style="color:red;">User authentication required</span>.
-
-    create: test create description
-
-    <span style="color:red;">User authentication required</span>.
+    create: Use this route to create a PCA registration for a certain section.  A PCA registration
+    represents a "subscription" to receive alerts for that section.  The body of the request must
+    include a section field (with the dash-separated full code of the section) and optionally
+    can contain an auto_resubscribe field (defaults to false) which sets whether the registration
+    will automatically create a new registration once it triggers an alerts (i.e. whether it will
+    automatically resubscribe the user to receive alerts for that section).  This route returns
+    a 201 if the registration is successfully created, a 400 if the input is invalid
+    (for instance if a null section is given), a 404 if the given section is not found in the
+    database, a 406 if the authenticated user does not have either a phone or an email set
+    in their profile (thus making it impossible for them to receive alerts), and a 409 if the
+    user is already currently registered to receive alerts for the given section.
 
     update: test update description
-
-    <span style="color:red;">User authentication required</span>.
 
     """
 
     schema = PcxAutoSchema(
         examples=examples.RegistrationViewSet_examples,
-        response_codes={}
+        response_codes={
+            "/api/alert/registrations/": {
+                "POST": {
+                    201: "[SCHEMA]Registration successfully created.",
+                    400: "Bad request (e.g. given null section).",
+                    404: "Given section not found in database.",
+                    406: "No contact information (phone or email) set for user.",
+                    409: "Registration for given section already exists.",
+                }
+            },
+            "/api/alert/registrations/{id}/": {
+                "PUT": {
+                    200: "Registration successfully updated (or no changes necessary).",
+                    400: "Bad request (see route description)."
+                }
+            }
+        },
+        override_schema=examples.RegistrationViewSet_override_schema
     )
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]

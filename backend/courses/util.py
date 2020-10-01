@@ -24,7 +24,7 @@ def get_current_semester():
         raise APIException(
             "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
             "option by running the command "
-            "'python manage.py setoption -key SEMESTER -val 2020C', "
+            "'python manage.py setoption SEMESTER 2020C', "
             "replacing 2020C with the current semester, in the backend directory (remember "
             "to run 'pipenv shell' before running this command, though)."
         )

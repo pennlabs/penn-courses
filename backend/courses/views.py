@@ -102,7 +102,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     """
     Retrieve a detailed look at a specific course. Includes all details necessary to display course
-    info, including requirements this class fulfills, and all sections. Authentication not required.
+    info, including requirements this class fulfills, and all sections.
     """
 
     serializer_class = CourseDetailSerializer
@@ -129,7 +129,6 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
     """
     Retrieve a list of all academic requirements in the database for this semester.
     Includes the `id` field, which can be used to identify the requirement in filters.
-    Authentication not required.
     """
 
     schema = PcxAutoSchema(
@@ -137,7 +136,7 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
         response_codes={
             "/api/plan/requirements/": {
                 "GET": {
-                    200: "[DEFAULT]Requirements listed successfully."
+                    200: "[SCHEMA]Requirements listed successfully."
                 }
             }
         }
@@ -149,7 +148,7 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
     """
-    <span style="color:red;">User authentication required</span>.
+    TODO: fill this in
     """
 
     schema = PcxAutoSchema()
@@ -166,7 +165,6 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
 class StatusUpdateView(generics.ListAPIView):
     """
     Retrieve all Status Update objects for a specific section from the current semester.
-    Authentication not required.
     """
 
     schema = PcxAutoSchema()

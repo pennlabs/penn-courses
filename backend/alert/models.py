@@ -31,9 +31,20 @@ class Registration(models.Model):
     during open registration.
     """
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    original_created_at = models.DateTimeField(null=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="The datetime at which this registration was created.")
+    original_created_at = models.DateTimeField(
+        null=True,
+        help_text=dedent("""
+        The datetime at which the tail of the resubscribe chain to which this registration belongs 
+        was created.  In other words, the datetime at which the user created the original 
+        registration for this section, before resubscribing some number of times 
+        (0 or more) to reach this registration.
+        """))
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="The datetime at which this registration was last modified.")
 
     SOURCE_CHOICES = (
         ("PCA", "Penn Course Alert"),
@@ -49,6 +60,7 @@ class Registration(models.Model):
         help_text="Where did the registration come from? Options and meanings: "
         + string_dict_to_html(dict(SOURCE_CHOICES)),
     )
+
     api_key = models.ForeignKey(
         "courses.APIKey",
         blank=True,
