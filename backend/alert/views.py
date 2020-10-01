@@ -83,22 +83,22 @@ def accept_webhook(request):
     if prev_status is None:
         return HttpResponse("Previous Status could not be extracted from response", status=400)
 
+    alert_for_course_called = False
+
     should_send_alert = (
         get_bool("SEND_FROM_WEBHOOK", False)
-        and course_status == "O"
+        and (course_status == "O" or course_status == "C")
         and get_value("SEMESTER") == course_term
     )
 
-    alert_for_course_called = False
     if should_send_alert:
         try:
-            alert_for_course(course_id, semester=course_term, sent_by="WEB")
+            alert_for_course(course_id, semester=course_term, sent_by="WEB", course_status=course_status)
             alert_for_course_called = True
             response = JsonResponse({"message": "webhook recieved, alerts sent"})
         except ValueError:
             response = JsonResponse({"message": "course code could not be parsed"})
-    else:
-        response = JsonResponse({"message": "webhook recieved"})
+    response = JsonResponse({"message": "webhook recieved"})
 
     try:
         u = record_update(
