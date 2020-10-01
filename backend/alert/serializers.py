@@ -9,12 +9,16 @@ class RegistrationSerializer(serializers.ModelSerializer):
     section_status = serializers.SerializerMethodField()
 
     is_active = serializers.SerializerMethodField()
+    is_waiting_for_close = serializers.SerializerMethodField()
 
     def get_section_status(self, o):
         return o.section.status
 
     def get_is_active(self, o):
         return o.is_active
+
+    def get_is_waiting_for_close(self, o):
+        return o.is_waiting_for_close
 
     class Meta:
         model = Registration
@@ -29,8 +33,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "auto_resubscribe",
             "notification_sent",
             "notification_sent_at",
+            "close_notification",
+            "close_notification_sent",
+            "close_notification_sent_at",
+            "push_notifications",
             "deleted_at",
             "is_active",
+            "is_waiting_for_close",
             "section_status",
         ]
         read_only_fields = [
@@ -41,6 +50,10 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "user",
             "notification_sent",
             "notification_sent_at",
+            "close_notification_sent",
+            "close_notification_sent_at",
             "deleted_at",
+            "is_active",
+            "is_waiting_for_close",
             "section_status",
         ]

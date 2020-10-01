@@ -31,13 +31,19 @@ def send_alert(reg_id, sent_by=""):
     return {"result": result, "task": "pca.tasks.send_alert"}
 
 
-def get_active_registrations(course_code, semester, course_status="O"):
+def get_active_registrations(course_code, semester):
     _, section = get_course_and_section(course_code, semester)
-    # if open then want registrations where the notification has not yet been sent else closed and then want where notification has been sent and where user has requested a close notification
-    if course_status == "O": 
-        return list(section.registration_set.filter(notification_sent=False, deleted=False))
+    # Use the is_active filters statically defined in the Registration model
+    return list(section.registration_set.filter(**Registration.is_active_filter()))
+
+def get_registrations_for_alerts(course_code, semester, course_status="O"):
+    _, section = get_course_and_section(course_code, semester)
+    if course_status == "O":
+        # Use the is_active filters statically defined in the Registration model
+        return list(section.registration_set.filter(**Registration.is_active_filter()))
     else:
-        return list(section.registration_set.filter(close_notification=True, notification_sent=True, deleted=False))
+        # Use the is_waiting_for_close_filter filters statically defined in the Registration model
+        return list(section.registration_set.filter(**Registration.is_waiting_for_close_filter()))
 
 
 @shared_task(name="pca.tasks.send_course_alerts")
@@ -45,5 +51,5 @@ def send_course_alerts(course_code, semester=None, sent_by="", course_status="O"
     if semester is None:
         semester = get_value("SEMESTER")
 
-    for reg in get_active_registrations(course_code, semester, course_status=course_status):
+    for reg in get_registrations_for_alerts(course_code, semester, course_status=course_status):
         send_alert.delay(reg.id, sent_by)
