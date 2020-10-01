@@ -106,5 +106,5 @@ class PushNotification(Alert):
                 },
                 headers={"Authorization": "Bearer %s" + bearer_token},
             )
-
+            return True
         return False
