@@ -8,6 +8,8 @@ from django.template import loader
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 
+import requests
+
 
 logger = logging.getLogger(__name__)
 
@@ -85,3 +87,22 @@ class Text(Alert):
             return False
 
         return send_text(phone_number, self.text)
+
+
+class PushNotification(Alert):
+    def __init__(self, reg):
+        super().__init__("alert/push_notif.txt", reg)
+
+    def send_alert(self):
+        if self.registration.push_notifications:
+            pennkey = self.registration.user.username
+            bearer_token = str(10101)
+            r = requests.post("https:/api.pennlabs.org/notifications/send/internal", 
+                                data={"title": "%s is now open!" % self.registration.section.full_code, 
+                                        "body": self.text, 
+                                        "pennkey": pennkey},
+                                headers={"Authorization": "Bearer %s" + bearer_token})
+        
+        return False    
+            
+
