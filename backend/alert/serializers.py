@@ -58,23 +58,57 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class RegistrationCreateSerializer(serializers.ModelSerializer):
-    section = serializers.CharField(max_length=16)
-    auto_resubscribe = serializers.BooleanField(required=False)
+    section = serializers.CharField(
+        max_length=16,
+        help_text="The dash-separated full code of the section associated with this Registration.")
+    auto_resubscribe = serializers.BooleanField(
+        required=False,
+        help_text=dedent("""
+        Set this to true to turn on auto resubscribe (causing the registration to automatically 
+        resubscribe once it sends out a notification).  Default is false if not specified.
+        """))
+    id = serializers.IntegerField(
+        read_only=False, required=False,
+        help_text="The id of the registration (can optionally be used to customize the "
+                  "id of a new registration, or to update an existing registration)."
+    )
 
     class Meta:
         model = Registration
         fields = registration_fields
         read_only_fields = [f for f in registration_fields if f not in [
             "section",
-            "auto_resubscribe"
+            "auto_resubscribe",
+            "id"
         ]]
 
 
 class RegistrationUpdateSerializer(serializers.ModelSerializer):
-    resubscribe = serializers.BooleanField(required=False)
-    deleted = serializers.BooleanField(required=False)
-    cancelled = serializers.BooleanField(required=False)
-    auto_resubscribe = serializers.BooleanField(required=False)
+    resubscribe = serializers.BooleanField(
+        required=False,
+        help_text=dedent("""
+        Set this to true to resubscribe to this registration (only works if the registration 
+        has sent a notification and hasn't been deleted).
+        """))
+    deleted = serializers.BooleanField(
+        required=False,
+        help_text=dedent("""
+        Set this to true to delete this registration (making it inactive and preventing it from 
+        showing up in List Registrations).
+        """)
+    )
+    cancelled = serializers.BooleanField(
+        required=False,
+        help_text=dedent("""
+        Set this to true to cancel to this registration (making it inactive while keeping it 
+        in List Registration).
+        """))
+    auto_resubscribe = serializers.BooleanField(
+        required=False,
+        help_text=dedent("""
+        Set this to true to turn on auto resubscribe (causing the registration to automatically 
+        resubscribe once it sends out a notification).
+        """))
 
     class Meta:
         model = Registration

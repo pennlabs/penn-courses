@@ -24,7 +24,7 @@ https://redocly.github.io/redoc/
 https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
 
 
-MAINTENENCE (PLEASE READ IN FULL):
+MAINTENENCE:
 For the auto-documentation to work, you need to include the line:
 schema = PcxAutoSchema()
 in all views (this will allow for proper tag and operation_id generation; see below).
@@ -258,11 +258,13 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
     # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
     ("/api/alert/registrationhistory/", "GET"): "Registration History",
     ("/api/alert/registrationhistory/{id}/", "GET"): "Registration History",
+    ("/api/courses/statusupdate/{full_code}/", "GET"): "Status Update"
 }
 
 custom_operation_id = {  # keys are (path, method) tuples, values are custom names
     # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
     ("/api/alert/registrationhistory/", "GET"): "List Registration History",
+    ("/api/courses/statusupdate/{full_code}/", "GET"): "List Status Updates"
 }
 
 # Use this dictionary to rename tags, if you wish to do so
@@ -293,8 +295,11 @@ custom_tag_descriptions = {
     ),
     "[PCA] Registration History": dedent(
         """
-        These routes expose a user's registration history (including deleted registrations)
-        for the current semester.
+        These routes expose a user's registration history (including 
+        inactive and obsolete registrations) for the current semester.  Inactive registrations are 
+        registrations which would not trigger a notification to be sent if their section opened, 
+        and obsolete registrations are registrations which are not at the head of their resubscribe 
+        chain.
         """
     ),
     "[PCA] Registration": dedent(
@@ -303,7 +308,7 @@ custom_tag_descriptions = {
         PCA registrations.  An important concept which is referenced throughout the documentation 
         for these routes is that of the "resubscribe chain".  A resubscribe chain is a chain 
         of PCA registrations where the tail of the chain was an original registration created 
-        through a POST request to /api/alert/registrations/ specifying a new section (one that 
+        through a POST request to `/api/alert/registrations/` specifying a new section (one that 
         the user wasn't already registered to receive alerts for).  Each next element in the chain 
         is a registration created by resubscribing to the previous registration (once that 
         registration had triggered an alert to be sent), either manually by the user or 
@@ -315,7 +320,10 @@ custom_tag_descriptions = {
     ),
     "[PCA] User": dedent(
         """
-        These routes expose a user's saved settings.
+        These routes expose a user's saved settings (from their Penn Labs Accounts user object).  
+        For PCA, the profile object is of particular importance; it stores the email and 
+        phone of the user (with a null value for either indicating the user doesn't want to be 
+        notified using that medium).
         """
     ),
     "[PCA] Sections": dedent(

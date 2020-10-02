@@ -10,11 +10,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
     )
     id = serializers.IntegerField(
         read_only=False, required=False,
-        help_text=dedent(
-            """
-        The id of the schedule.
-        """
-        )
+        help_text="The id of the schedule."
     )
 
     class Meta:
