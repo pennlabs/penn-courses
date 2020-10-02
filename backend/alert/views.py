@@ -169,12 +169,18 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     404: "Given section not found in database.",
                     406: "No contact information (phone or email) set for user.",
                     409: "Registration for given section already exists.",
+                },
+                "GET": {
+                    200: "[SCHEMA]Registrations successfully listed."
                 }
             },
             "/api/alert/registrations/{id}/": {
                 "PUT": {
                     200: "Registration successfully updated (or no changes necessary).",
                     400: "Bad request (see route description)."
+                },
+                "GET": {
+                    200: "[SCHEMA]Registration detail successfully retrieved."
                 }
             }
         },
@@ -253,7 +259,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.get_queryset_current()
 
         page = self.paginate_queryset(queryset)
         if page is not None:

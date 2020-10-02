@@ -17,9 +17,9 @@ from review.annotations import review_averages
 User = get_user_model()
 
 
-def string_dict_to_html(dict):
+def string_dict_to_html(dictionary):
     html = ["<table width=100%>"]
-    for key, value in dict.items():
+    for key, value in dictionary.items():
         html.append("<tr>")
         html.append('<td>"{0}"</td>'.format(key))
         html.append('<td>"{0}"</td>'.format(value))
