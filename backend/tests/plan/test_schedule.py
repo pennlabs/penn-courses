@@ -163,7 +163,7 @@ class ScheduleTest(TestCase):
             ),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 200)
         response = self.client.get("/api/plan/schedules/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -248,7 +248,7 @@ class ScheduleTest(TestCase):
             ),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 200)
         response = self.client.get("/api/plan/schedules/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -300,7 +300,7 @@ class ScheduleTest(TestCase):
             ),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 200)
         response = self.client.get("/api/plan/schedules/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -352,7 +352,7 @@ class ScheduleTest(TestCase):
             ),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 200)
         response = self.client.get("/api/plan/schedules/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -401,7 +401,7 @@ class ScheduleTest(TestCase):
             ),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 200)
         response = self.client.get("/api/plan/schedules/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -435,7 +435,7 @@ class ScheduleTest(TestCase):
             ),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 200)
         response = self.client.get("/api/plan/schedules/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -621,7 +621,7 @@ class ScheduleTest(TestCase):
             json.dumps({"name": "New Test Schedule", "sections": []}),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 200)
         response = self.client.get("/api/plan/schedules/")
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))

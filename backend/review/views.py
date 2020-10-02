@@ -3,11 +3,12 @@ from typing import Dict, List
 from django.db.models import F, OuterRef, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Course, Department, Instructor, Section
+from PennCourses.docs_settings import PcxAutoSchema
 from review.annotations import annotate_average_and_recent, review_averages
 from review.models import ALL_FIELD_SLUGS, Review
 
@@ -105,6 +106,7 @@ it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
 
 
 @api_view(["GET"])
+@schema(PcxAutoSchema())
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code):
     """
@@ -190,6 +192,7 @@ def course_reviews(request, course_code):
 
 
 @api_view(["GET"])
+@schema(PcxAutoSchema())
 @permission_classes([IsAuthenticated])
 def instructor_reviews(request, instructor_id):
     """
@@ -228,6 +231,7 @@ def instructor_reviews(request, instructor_id):
 
 
 @api_view(["GET"])
+@schema(PcxAutoSchema())
 @permission_classes([IsAuthenticated])
 def department_reviews(request, department_code):
     """
@@ -293,6 +297,7 @@ def department_reviews(request, department_code):
 
 
 @api_view(["GET"])
+@schema(PcxAutoSchema())
 @permission_classes([IsAuthenticated])
 def instructor_for_course_reviews(request, course_code, instructor_id):
     """

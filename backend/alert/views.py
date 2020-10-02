@@ -13,10 +13,16 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
-from alert.serializers import RegistrationSerializer
+from alert.serializers import (
+    RegistrationCreateSerializer,
+    RegistrationSerializer,
+    RegistrationUpdateSerializer,
+)
 from alert.tasks import send_course_alerts
 from courses.util import get_current_semester, record_update, update_course_from_record
+from PennCourses.docs_settings import PcxAutoSchema
 
 
 logger = logging.getLogger(__name__)
@@ -119,9 +125,117 @@ def accept_webhook(request):
 
 
 class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
-    serializer_class = RegistrationSerializer
+    """
+    retrieve: Get one of the logged-in user's PCA registrations for the current semester, using
+    the registration's ID. Note that if a registration with the specified ID exists, but that
+    registration is not at the head of its resubscribe chain (i.e. there is a more recent
+    registration which was created by resubscribing to the specified registration), the
+    HEAD of the resubscribe chain will be returned.  This means the same registration could be
+    returned from a GET request to 2 distinct IDs (if they are in the same resubscribe chain).
+    If a registration with the specified ID exists, a 200 response code is returned, along
+    with the head registration object. If no registration with the given id exists,
+    a 404 is returned.
+
+    list: Returns all registrations which are not deleted or made obsolete by resubscription.  Put
+    another way, this endpoint will return a superset of all active registrations: all
+    active registrations (meaning registrations which would trigger an alert to be sent if their
+    section were to open up), IN ADDITION TO all inactive registrations from the current semester
+    which are at the head of their resubscribe chains.  Each object in the returned list of
+    registrations is of the same form as the object returned by Retrieve Registration.
+
+    create: Use this route to create a PCA registration for a certain section.  A PCA registration
+    represents a "subscription" to receive alerts for that section.  The body of the request must
+    include a section field (with the dash-separated full code of the section) and optionally
+    can contain an auto_resubscribe field (defaults to false) which sets whether the registration
+    will automatically create a new registration once it triggers an alerts (i.e. whether it will
+    automatically resubscribe the user to receive alerts for that section).
+    Note that if you include the "id" field in the body of your POST request, and that id
+    does not already exist, the id of the created registration will be set to the given value.
+    However, if the given id does exist, the request will instead be treated as a PUT request for
+    the registration (see the Update Registration docs for more info on how
+    PUT requests are handled).
+
+    This route returns a 201 if the registration is successfully created, a 400 if the input is
+    invalid (for instance if a null section is given), a 404 if the given section is not found in
+    the database, a 406 if the authenticated user does not have either a phone or an email set
+    in their profile (thus making it impossible for them to receive alerts), and a 409 if the
+    user is already currently registered to receive alerts for the given section.  If the request
+    is redirected to update (when the passed in id is already associated with a registration),
+    other response codes may be returned (see the Update Registration docs for more info).
+
+    update: Use this route to update existing PCA Registrations.  Note that the provided id does
+    not always strictly specify which Registration gets modified.  In fact, the actual Registration
+    that would get modified by a PUT request would be the head of the resubscribe chain of the
+    Registration with the specified id (so if you try to update an outdated Registration it will
+    instead update the most recent Registration).  The parameters which can be
+    included in the request body are `resubscribe`, `auto_resubscribe`, `cancelled`, and `deleted`.
+    If you include multiple parameters, the order of precedence in choosing what action to take is
+    `resubscribe` > `deleted` > `cancelled` > `auto_resubscribe` (so if you include multiple
+    parameters only the action associated with the highest priority parameter will be executed).
+    Note that a registration will send an alert when the section it is watching opens, if and only
+    if it hasn't sent one before, it isn't cancelled, and it isn't deleted.  If a registration would
+    send an alert when the section it is watching opens, we call it "active".  Registrations which
+    have triggered an alert can be resubscribed to (which creates a new registration with the same
+    settings and adds that to the end of the original registration's resubscribe chain).  Triggered
+    registrations would show up in List Registrations (as long as they are at the head of
+    their resubscribe chain), even though they aren't active.  Cancelled registrations can also
+    be resubscribed to (in effect uncancelling), and also show up in List Registrations, despite
+    not being active.  A user might cancel an alert rather than delete it if they want to keep it
+    in their PCA manage console but don't want to receive alerts for it.  Deleted registrations
+    are not active, do not show up in List Registrations, and cannot be resubscribed to.  You can
+    think of deleted registrations as effectively nonexistent; they are only kept on the backend
+    for analytics purposes.  Note that while you can cancel a registration by setting the cancelled
+    parameter to true in your PUT request (and the same for delete/deleted), you cannot uncancel
+    or undelete (cancelled registrations can be resubscribed to and deleted registrations
+    are effectively nonexistent).
+
+    If the update is successful, a 200 is returned.  If there is some issue with the request,
+    a 400 is returned.  This could be caused by trying to update a registration from a different
+    semester, trying to resubscribe to a deleted registration, resubscribing to a registration
+    which is not cancelled or hasn't yet triggered a notification, cancelling a deleted or
+    triggered registration, trying to make changes to a deleted registration, or otherwise
+    breaking rules.  Look in the detail field of the response object for more detail on what
+    exactly went wrong if you encounter a 400.  If no registration with the given id is found,
+    a 404 is returned.
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.RegistrationViewSet_examples,
+        response_codes={
+            "/api/alert/registrations/": {
+                "POST": {
+                    201: "[SCHEMA]Registration successfully created.",
+                    400: "Bad request (e.g. given null section).",
+                    404: "Given section not found in database.",
+                    406: "No contact information (phone or email) set for user.",
+                    409: "Registration for given section already exists.",
+                },
+                "GET": {200: "[SCHEMA]Registrations successfully listed."},
+            },
+            "/api/alert/registrations/{id}/": {
+                "PUT": {
+                    200: "Registration successfully updated (or no changes necessary).",
+                    400: "Bad request (see route description).",
+                    404: "Registration not found with given id.",
+                },
+                "GET": {
+                    200: "[SCHEMA]Registration detail successfully retrieved.",
+                    404: "Registration not found with given id.",
+                },
+            },
+        },
+        override_schema=examples.RegistrationViewSet_override_schema,
+    )
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return RegistrationCreateSerializer
+        elif self.action == "update":
+            return RegistrationUpdateSerializer
+        else:
+            return RegistrationSerializer
 
     @staticmethod
     def handle_registration(request):
@@ -133,7 +247,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         section_code = request.data.get("section", None)
 
-        if request.data.get("section", None) is None:
+        if section_code is None:
             return Response(
                 {"message": "You must include a not null section"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -291,6 +405,10 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return self.update(request, request.data.get("id"))
         return self.handle_registration(request)
 
+    queryset = (
+        Registration.objects.none()
+    )  # used to help out the AutoSchema in generating documentation
+
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
 
@@ -308,8 +426,27 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
 
 class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet):
+    """
+    list:
+    List all of the user's registrations for the current semester, regardless of whether
+    they are active, obsolete (not at the head of their resubscribe chains), or deleted.  Note
+    that this is not appropriate to use for listing registrations and presenting them to the user;
+    for that you should use List Registrations (GET `/api/alert/registrations/`).
+    retrieve:
+    Get the detail of a specific registration from the current semester.  All registrations are
+    accessible via this endpoint, regardless of whether they are active,
+    obsolete (not at the head of their resubscribe chains), or deleted.  Unless you need to access
+    inactive and obsolete registrations, you should probably use Retrieve Registration
+    (GET `/api/alert/registrations/{id}/`) rather than this endpoint.
+    """
+
+    schema = PcxAutoSchema()
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
+
+    queryset = (
+        Registration.objects.none()
+    )  # used to help out the AutoSchema in generating documentation
 
     def get_queryset(self):
         return Registration.objects.filter(

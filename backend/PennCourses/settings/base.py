@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "shortener.apps.ShortenerConfig",
     "accounts.apps.AccountsConfig",
     "options.apps.OptionsConfig",
+    "django.contrib.admindocs",
     "alert",
     "courses",
     "plan",
