@@ -1,4 +1,3 @@
-import re
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -12,6 +11,7 @@ from courses.util import (
     separate_course_code,
 )
 from review.models import COLUMN_TO_SLUG, CONTEXT_TO_SLUG, Review, ReviewBit
+from review.util import titleize
 
 
 """
@@ -26,26 +26,6 @@ specific values extracted from dictionaries. This allows for re-use between impo
 passes (for example, the SUMMARY file and the CROSSLISTINGS file), as well as allowing for
 more granular unit tests.
 """
-
-
-def titleize(name):
-    """
-    Titleize a course name or instructor, taking into account exceptions such as II.
-    """
-    # string.title() will capitalize the first letter of every word,
-    # where a word is a substring delimited by a non-letter character. So, "o'leary" is two words
-    # and will be capitalized (properly) as "O'Leary".
-    name = name.strip().title()
-    # Roman-numeral suffixes
-    name = re.sub(r"([XVI])(x|v|i+)", lambda m: m.group(1) + m.group(2).upper(), name)
-    # "1st".title() -> "1St", but it should still be "1st".
-    name = re.sub(r"(\d)(St|Nd|Rd|Th)", lambda m: m.group(1) + m.group(2).lower(), name)
-    # Like McDonald.
-    name = re.sub(r"Mc([a-z])", lambda m: "Mc" + m.group(1).upper(), name)
-    # Possessives shouldn't get capitalized.
-    name = name.replace("'S", "'s")
-    return name
-
 
 User = get_user_model()
 

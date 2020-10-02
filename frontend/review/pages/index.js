@@ -3,6 +3,8 @@ import Cookies from "universal-cookie";
 import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 
+
+
 /**
  * Enable or disable the Penn Labs recruitment banner.
  */
