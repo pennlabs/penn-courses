@@ -10,6 +10,7 @@ class Schedule(models.Model):
     """
     Used to save schedules created by users on PCP
     """
+
     person = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,

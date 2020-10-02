@@ -4,27 +4,16 @@ RegistrationViewSet_examples = {
     "/api/alert/registrations/": {
         "POST": {
             "requests": [
-                {
-                    "summary": "Minimally Customized POST",
-                    "value": {
-                        "section": "CIS-120-001"
-                    }
-                },
+                {"summary": "Minimally Customized POST", "value": {"section": "CIS-120-001"}},
                 {
                     "summary": "Maximally Customized POST",
-                    "value": {
-                        "section": "CIS-120-001",
-                        "auto_resubscribe": True
-                    }
+                    "value": {"section": "CIS-120-001", "auto_resubscribe": True},
                 },
                 {
                     "code": 200,
                     "summary": "POST With ID to Update",
-                    "value": {
-                        "id": 1,
-                        "auto_resubscribe": True
-                    }
-                }
+                    "value": {"id": 1, "auto_resubscribe": True},
+                },
             ],
             "responses": [
                 {
@@ -32,10 +21,10 @@ RegistrationViewSet_examples = {
                     "summary": "Registration Created Successfully",
                     "value": {
                         "message": "Your registration for CIS-120-001 was successful!",
-                        "id": 1
-                    }
+                        "id": 1,
+                    },
                 }
-            ]
+            ],
         },
         "GET": {
             "requests": [],
@@ -57,12 +46,12 @@ RegistrationViewSet_examples = {
                             "notification_sent_at": None,
                             "deleted_at": None,
                             "is_active": True,
-                            "section_status": "C"
+                            "section_status": "C",
                         }
-                    ]
+                    ],
                 }
-            ]
-        }
+            ],
+        },
     },
     "/api/alert/registrations/{id}/": {
         "GET": {
@@ -84,44 +73,24 @@ RegistrationViewSet_examples = {
                         "notification_sent_at": None,
                         "deleted_at": None,
                         "is_active": True,
-                        "section_status": "C"
-                    }
+                        "section_status": "C",
+                    },
                 }
-            ]
+            ],
         },
         "PUT": {
             "requests": [
-                {
-                    "code": 200,
-                    "summary": "Resubscribe",
-                    "value": {
-                        "resubscribe": True,
-                    }
-                },
+                {"code": 200, "summary": "Resubscribe", "value": {"resubscribe": True,}},
                 {
                     "code": 200,
                     "summary": "Modify Auto-Resubscribe",
-                    "value": {
-                        "auto_resubscribe": True,
-                    }
+                    "value": {"auto_resubscribe": True,},
                 },
-                {
-                    "code": 200,
-                    "summary": "Cancel Registration",
-                    "value": {
-                        "cancelled": True
-                    }
-                },
-                {
-                    "code": 200,
-                    "summary": "Delete Registration",
-                    "value": {
-                        "deleted": True
-                    }
-                },
+                {"code": 200, "summary": "Cancel Registration", "value": {"cancelled": True}},
+                {"code": 200, "summary": "Delete Registration", "value": {"deleted": True}},
             ],
-            "responses": []
-        }
+            "responses": [],
+        },
     },
     "/api/alert/registrationhistory/": {
         "GET": {
@@ -144,7 +113,7 @@ RegistrationViewSet_examples = {
                             "notification_sent_at": None,
                             "deleted_at": "2020-10-02T04:55:31.355307-04:00",
                             "is_active": False,
-                            "section_status": "C"
+                            "section_status": "C",
                         },
                         {
                             "id": 2,
@@ -159,7 +128,7 @@ RegistrationViewSet_examples = {
                             "notification_sent_at": None,
                             "deleted_at": None,
                             "is_active": False,
-                            "section_status": "C"
+                            "section_status": "C",
                         },
                         {
                             "id": 3,
@@ -174,11 +143,11 @@ RegistrationViewSet_examples = {
                             "notification_sent_at": None,
                             "deleted_at": None,
                             "is_active": True,
-                            "section_status": "C"
-                        }
-                    ]
+                            "section_status": "C",
+                        },
+                    ],
                 }
-            ]
+            ],
         }
     },
     "/api/alert/registrationhistory/{id}/": {
@@ -201,27 +170,16 @@ RegistrationViewSet_examples = {
                         "notification_sent_at": None,
                         "deleted_at": "2020-10-02T04:55:31.355307-04:00",
                         "is_active": False,
-                        "section_status": "C"
-                    }
+                        "section_status": "C",
+                    },
                 }
-            ]
+            ],
         }
-    }
+    },
 }
 
 RegistrationViewSet_override_schema = {
     "/api/alert/registrations/": {
-        "POST": {
-            201: {
-              "properties": {
-                "message": {
-                  "type": "string"
-                },
-                "id": {
-                  "type": "integer"
-                }
-              }
-            },
-        }
+        "POST": {201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},}
     }
 }

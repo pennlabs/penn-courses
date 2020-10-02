@@ -4,8 +4,8 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_value
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-import courses.examples as examples
 
+import courses.examples as examples
 from courses.models import Course, Requirement, Section, StatusUpdate
 from courses.serializers import (
     CourseDetailSerializer,
@@ -57,12 +57,8 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.SectionList_examples,
         response_codes={
-            "/api/alert/courses/": {
-                "GET": {
-                    200: "[SCHEMA]Sections Listed Successfully."
-                }
-            }
-        }
+            "/api/alert/courses/": {"GET": {200: "[SCHEMA]Sections Listed Successfully."}}
+        },
     )
 
     serializer_class = MiniSectionSerializer
@@ -84,11 +80,9 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
         examples=examples.SectionDetail_examples,
         response_codes={
             "/api/courses/{semester}/sections/{full_code}/": {
-                "GET": {
-                    200: "[SCHEMA]Section detail retrieved successfully."
-                }
+                "GET": {200: "[SCHEMA]Section detail retrieved successfully."}
             }
-        }
+        },
     )
 
     serializer_class = SectionDetailSerializer
@@ -108,11 +102,9 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
         examples=examples.CourseList_examples,
         response_codes={
             "/api/courses/{semester}/courses/": {
-                "GET": {
-                    200: "[SCHEMA]Courses listed successfully."
-                }
+                "GET": {200: "[SCHEMA]Courses listed successfully."}
             }
-        }
+        },
     )
 
     serializer_class = CourseListSerializer
@@ -144,11 +136,9 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
         examples=examples.CourseDetail_examples,
         response_codes={
             "/api/courses/{semester}/courses/{full_code}/": {
-                "GET": {
-                    200: "[SCHEMA]Courses detail retrieved successfully."
-                }
+                "GET": {200: "[SCHEMA]Courses detail retrieved successfully."}
             }
-        }
+        },
     )
 
     serializer_class = CourseDetailSerializer
@@ -179,17 +169,11 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.RequirementList_examples,
         response_codes={
-            "/api/plan/requirements/": {
-                "GET": {
-                    200: "[SCHEMA]Requirements listed successfully."
-                }
-            },
+            "/api/plan/requirements/": {"GET": {200: "[SCHEMA]Requirements listed successfully."}},
             "/api/courses/{semester}/requirements/": {
-                "GET": {
-                    200: "[SCHEMA]Requirements listed successfully."
-                }
-            }
-        }
+                "GET": {200: "[SCHEMA]Requirements listed successfully."}
+            },
+        },
     )
 
     serializer_class = RequirementListSerializer
@@ -221,11 +205,9 @@ class StatusUpdateView(generics.ListAPIView):
         examples=examples.StatusUpdateView_examples,
         response_codes={
             "/api/courses/statusupdate/{full_code}/": {
-                "GET": {
-                    200: "[SCHEMA]Status Updates for section listed successfully."
-                }
+                "GET": {200: "[SCHEMA]Status Updates for section listed successfully."}
             }
-        }
+        },
     )
     serializer_class = StatusUpdateSerializer
     http_method_names = ["get"]

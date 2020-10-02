@@ -32,19 +32,22 @@ class Registration(models.Model):
     """
 
     created_at = models.DateTimeField(
-        auto_now_add=True,
-        help_text="The datetime at which this registration was created.")
+        auto_now_add=True, help_text="The datetime at which this registration was created."
+    )
     original_created_at = models.DateTimeField(
         null=True,
-        help_text=dedent("""
-        The datetime at which the tail of the resubscribe chain to which this registration belongs 
-        was created.  In other words, the datetime at which the user created the original 
-        registration for this section, before resubscribing some number of times 
+        help_text=dedent(
+            """
+        The datetime at which the tail of the resubscribe chain to which this registration belongs
+        was created.  In other words, the datetime at which the user created the original
+        registration for this section, before resubscribing some number of times
         (0 or more) to reach this registration.
-        """))
+        """
+        ),
+    )
     updated_at = models.DateTimeField(
-        auto_now=True,
-        help_text="The datetime at which this registration was last modified.")
+        auto_now=True, help_text="The datetime at which this registration was last modified."
+    )
 
     SOURCE_CHOICES = (
         ("PCA", "Penn Course Alert"),

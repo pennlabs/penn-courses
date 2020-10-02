@@ -41,7 +41,9 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         ),
     )
     instructors = serializers.StringRelatedField(
-        many=True, read_only=True, help_text="A list of the names of the instructors teaching this section."
+        many=True,
+        read_only=True,
+        help_text="A list of the names of the instructors teaching this section.",
     )
     course_title = serializers.SerializerMethodField(
         read_only=True,
@@ -49,7 +51,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             """
             The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.
             """
-        )
+        ),
     )
 
     def get_course_title(self, obj):
@@ -109,7 +111,8 @@ class SectionDetailSerializer(serializers.ModelSerializer):
     )
     instructors = serializers.StringRelatedField(
         read_only=True,
-        many=True, help_text="A list of the names of the instructors teaching this section."
+        many=True,
+        help_text="A list of the names of the instructors teaching this section.",
     )
     associated_sections = SectionIdSerializer(
         many=True,
@@ -126,15 +129,14 @@ class SectionDetailSerializer(serializers.ModelSerializer):
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
     )
-    difficulty = serializers.DecimalField(max_digits=4, decimal_places=3, read_only=True,
-                                          help_text=difficulty_help)
+    difficulty = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
+    )
     instructor_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True,
-        help_text=instructor_quality_help
+        max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
     )
     work_required = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True,
-        help_text=work_required_help
+        max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
     )
 
     @staticmethod
@@ -162,7 +164,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
 class RequirementListSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField(
         read_only=True,
-        help_text="A string representation of the requirement, in the form '{code}@{school}'"
+        help_text="A string representation of the requirement, in the form '{code}@{school}'",
     )
 
     @staticmethod
@@ -182,7 +184,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             """
         The full code of the course, in the form '{dept code}-{course code}'
         dash-joined department and code of the course, e.g. 'CIS-120' for CIS-120."""
-        )
+        ),
     )
 
     num_sections = type(
@@ -198,7 +200,8 @@ class CourseListSerializer(serializers.ModelSerializer):
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
     )
     difficulty = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help)
+        max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
+    )
     instructor_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
     )
@@ -238,14 +241,17 @@ class CourseDetailSerializer(CourseListSerializer):
         many=True, read_only=True, help_text="A list of the sections of this course."
     )
     requirements = RequirementListSerializer(
-        many=True, read_only=True, help_text="A list of the academic requirements this course fulfills."
+        many=True,
+        read_only=True,
+        help_text="A list of the academic requirements this course fulfills.",
     )
 
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
     )
     difficulty = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help)
+        max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
+    )
     instructor_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
     )

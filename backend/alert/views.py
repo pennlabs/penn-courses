@@ -12,8 +12,8 @@ from options.models import get_bool
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-import alert.examples as examples
 
+import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
     RegistrationCreateSerializer,
@@ -210,23 +210,21 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     406: "No contact information (phone or email) set for user.",
                     409: "Registration for given section already exists.",
                 },
-                "GET": {
-                    200: "[SCHEMA]Registrations successfully listed."
-                }
+                "GET": {200: "[SCHEMA]Registrations successfully listed."},
             },
             "/api/alert/registrations/{id}/": {
                 "PUT": {
                     200: "Registration successfully updated (or no changes necessary).",
                     400: "Bad request (see route description).",
-                    404: "Registration not found with given id."
+                    404: "Registration not found with given id.",
                 },
                 "GET": {
                     200: "[SCHEMA]Registration detail successfully retrieved.",
-                    404: "Registration not found with given id."
-                }
-            }
+                    404: "Registration not found with given id.",
+                },
+            },
         },
-        override_schema=examples.RegistrationViewSet_override_schema
+        override_schema=examples.RegistrationViewSet_override_schema,
     )
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]
@@ -407,7 +405,10 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return self.update(request, request.data.get("id"))
         return self.handle_registration(request)
 
-    queryset = Registration.objects.none()  # used to help out the AutoSchema in generating documentation
+    queryset = (
+        Registration.objects.none()
+    )  # used to help out the AutoSchema in generating documentation
+
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
 
@@ -443,7 +444,10 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
 
-    queryset = Registration.objects.none()  # used to help out the AutoSchema in generating documentation
+    queryset = (
+        Registration.objects.none()
+    )  # used to help out the AutoSchema in generating documentation
+
     def get_queryset(self):
         return Registration.objects.filter(
             user=self.request.user, section__course__semester=get_current_semester()

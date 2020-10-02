@@ -6,23 +6,31 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('alert', '0010_auto_20200817_0017'),
+        ("alert", "0010_auto_20200817_0017"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='registration',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, help_text='The datetime at which this registration was created.'),
+            model_name="registration",
+            name="created_at",
+            field=models.DateTimeField(
+                auto_now_add=True, help_text="The datetime at which this registration was created."
+            ),
         ),
         migrations.AlterField(
-            model_name='registration',
-            name='original_created_at',
-            field=models.DateTimeField(help_text='\nThe datetime at which the tail of the resubscribe chain to which this registration belongs \nwas created.  In other words, the datetime at which the user created the original \nregistration for this section, before resubscribing some number of times \n(0 or more) to reach this registration.\n', null=True),
+            model_name="registration",
+            name="original_created_at",
+            field=models.DateTimeField(
+                help_text="\nThe datetime at which the tail of the resubscribe chain to which this registration belongs \nwas created.  In other words, the datetime at which the user created the original \nregistration for this section, before resubscribing some number of times \n(0 or more) to reach this registration.\n",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='registration',
-            name='updated_at',
-            field=models.DateTimeField(auto_now=True, help_text='The datetime at which this registration was last modified.'),
+            model_name="registration",
+            name="updated_at",
+            field=models.DateTimeField(
+                auto_now=True,
+                help_text="The datetime at which this registration was last modified.",
+            ),
         ),
     ]

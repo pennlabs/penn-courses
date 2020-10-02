@@ -5,9 +5,8 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-import plan.examples as examples
-from rest_framework.exceptions import APIException
 
+import plan.examples as examples
 from courses.models import Section
 from courses.util import get_course_and_section, get_current_semester
 from courses.views import CourseList
@@ -20,24 +19,21 @@ from plan.serializers import ScheduleSerializer
 
 class CourseListSearch(CourseList):
     """
-    The main course API endpoint for PCP. Without any GET parameters, it simply returns all courses for
-    a given semester. There are a few filter query parameters which constitute ranges of floating-point numbers.
-    The values for these are <min>-<max> , with minimum excluded. For example, looking for classes in the range
-    of 0-2.5 in difficulty, you would add the parameter difficulty=0-2.5. If you are a backend developer,
-    you can find these filters in backend/plan/filters.py/CourseSearchFilterBackend. If you are reading
-    the frontend docs, these filters are listed below in the query parameters list
-    (with description starting with "Filter").
+    The main course API endpoint for PCP. Without any GET parameters, it simply returns all courses
+    for a given semester. There are a few filter query parameters which constitute ranges of
+    floating-point numbers. The values for these are <min>-<max> , with minimum excluded.
+    For example, looking for classes in the range of 0-2.5 in difficulty, you would add the
+    parameter difficulty=0-2.5. If you are a backend developer, you can find these filters in
+    backend/plan/filters.py/CourseSearchFilterBackend. If you are reading the frontend docs,
+    these filters are listed below in the query parameters list (with description starting with
+    "Filter").
     """
 
     schema = PcxAutoSchema(
         examples=examples.CourseListSearch_examples,
         response_codes={
-            "/api/plan/courses/": {
-                "GET": {
-                    200: "[SCHEMA]Courses listed successfully."
-                }
-            }
-        }
+            "/api/plan/courses/": {"GET": {200: "[SCHEMA]Courses listed successfully."}}
+        },
     )
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
@@ -60,9 +56,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     create:
     Use this route to create a schedule for the authenticated user.
     This route will return a 201 if it succeeds (or a 200 if the POST specifies an id which already
-    is associated with a schedule, causing that schedule to be updated), with a JSON in the same format
-    as if you were to get the schedule you just posted (the 200 response schema for Retrieve Schedule).
-    At a minimum, you must include the `name` and `sections` list (`meetings` can be
+    is associated with a schedule, causing that schedule to be updated), with a JSON in the same
+    format as if you were to get the schedule you just posted (the 200 response schema for Retrieve
+    Schedule). At a minimum, you must include the `name` and `sections` list (`meetings` can be
     substituted for `sections`; if you don't know why, ignore this and just use `sections`,
     or see below for an explanation... TLDR: it is grandfathered in from the old version of PCP).
     The `name` is the name of the schedule (all names must be distinct for a single user in a
@@ -113,39 +109,39 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         examples=examples.ScheduleViewSet_examples,
         response_codes={
             "/api/plan/schedules/": {
-               "GET": {
-                   200: "[SCHEMA]Schedules listed successfully.",
-                   403: "Authentication credentials were not provided."
-               },
-               "POST": {
-                   201: "Schedule successfully created.",
-                   200: "Schedule successfully updated (a schedule with the "
-                        "specified id already existed).",
-                   400: "Bad request (see description above).",
-                   403: "Authentication credentials were not provided."
-               }
+                "GET": {
+                    200: "[SCHEMA]Schedules listed successfully.",
+                    403: "Authentication credentials were not provided.",
+                },
+                "POST": {
+                    201: "Schedule successfully created.",
+                    200: "Schedule successfully updated (a schedule with the "
+                    "specified id already existed).",
+                    400: "Bad request (see description above).",
+                    403: "Authentication credentials were not provided.",
+                },
             },
             "/api/plan/schedules/{id}/": {
-               "GET": {
-                   200: "[SCHEMA]Successful retrieve (the specified schedule exists).",
-                   403: "Authentication credentials were not provided.",
-                   404: "No schedule with the specified id exists."
-               },
-               "PUT": {
-                   200: "Successful update (the specified schedule exists "
-                        "and was successfully updated).",
-                   400: "Bad request (see description above).",
-                   403: "Authentication credentials were not provided.",
-                   404: "No schedule with the specified id exists."
-               },
-               "DELETE": {
-                   204: "[SCHEMA]Successful delete (the specified schedule existed "
-                        "and was successfully deleted).",
-                   403: "Authentication credentials were not provided.",
-                   404: "No schedule with the specified id exists."
-               },
-            }
-        }
+                "GET": {
+                    200: "[SCHEMA]Successful retrieve (the specified schedule exists).",
+                    403: "Authentication credentials were not provided.",
+                    404: "No schedule with the specified id exists.",
+                },
+                "PUT": {
+                    200: "Successful update (the specified schedule exists "
+                    "and was successfully updated).",
+                    400: "Bad request (see description above).",
+                    403: "Authentication credentials were not provided.",
+                    404: "No schedule with the specified id exists.",
+                },
+                "DELETE": {
+                    204: "[SCHEMA]Successful delete (the specified schedule existed "
+                    "and was successfully deleted).",
+                    403: "Authentication credentials were not provided.",
+                    404: "No schedule with the specified id exists.",
+                },
+            },
+        },
     )
 
     serializer_class = ScheduleSerializer
@@ -202,9 +198,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             schedule.name = request.data.get("name")
             schedule.save()
             schedule.sections.set(sections)
-            return Response(
-                {"message": "success", "id": schedule.id}, status=status.HTTP_200_OK
-            )
+            return Response({"message": "success", "id": schedule.id}, status=status.HTTP_200_OK)
         except IntegrityError as e:
             return Response(
                 {
@@ -259,7 +253,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-    queryset = Schedule.objects.none()  # used to help out the AutoSchema in generating documentation
+    queryset = (
+        Schedule.objects.none()
+    )  # used to help out the AutoSchema in generating documentation
 
     def get_queryset(self):
         sem = get_current_semester()

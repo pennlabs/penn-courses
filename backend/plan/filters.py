@@ -95,7 +95,10 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "name": "difficulty",
                 "required": False,
                 "in": "query",
-                "description": "Filter course difficulty (average across all reviews) to be within the given range.",
+                "description": (
+                    "Filter course difficulty (average across all reviews) to be within "
+                    "the given range."
+                ),
                 "schema": {"type": "string"},
                 "example": "1-2.5",
             },
@@ -103,7 +106,10 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "name": "course_quality",
                 "required": False,
                 "in": "query",
-                "description": "Filter course quality (average across all reviews) to be within the given range.",
+                "description": (
+                    "Filter course quality (average across all reviews) to be within "
+                    "the given range."
+                ),
                 "schema": {"type": "string"},
                 "example": "2.5-4",
             },
@@ -111,7 +117,10 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "name": "instructor_quality",
                 "required": False,
                 "in": "query",
-                "description": "Filter instructor quality (average across all reviews) to be within the given range.",
+                "description": (
+                    "Filter instructor quality (average across all reviews) to be "
+                    "within the given range."
+                ),
                 "schema": {"type": "string"},
                 "example": "2.5-4",
             },

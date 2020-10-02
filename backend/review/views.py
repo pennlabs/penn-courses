@@ -7,8 +7,8 @@ from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from PennCourses.docs_settings import PcxAutoSchema
 from courses.models import Course, Department, Instructor, Section
+from PennCourses.docs_settings import PcxAutoSchema
 from review.annotations import annotate_average_and_recent, review_averages
 from review.models import ALL_FIELD_SLUGS, Review
 
@@ -334,7 +334,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
 
 
 @api_view(["GET"])
-
 def autocomplete(request):
     """
     Courses, departments, instructors. All objects are title, desc, url.
