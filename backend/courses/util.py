@@ -17,6 +17,7 @@ from courses.models import (
     Section,
     StatusUpdate,
 )
+from review.util import titleize
 
 
 def get_current_semester():
@@ -208,7 +209,7 @@ def upsert_course_from_opendata(info, semester):
         ]
     )
 
-    set_instructors(section, [instructor["name"] for instructor in info["instructors"]])
+    set_instructors(section, [titleize(instructor["name"]) for instructor in info["instructors"]])
     set_meetings(section, info["meetings"])
     add_associated_sections(section, info)
     add_restrictions(section, info["requirements"])
