@@ -866,6 +866,13 @@ class PcxAutoSchema(AutoSchema):
         else:
             response_schema = item_schema
 
+        # Automatically add 403 response if authentication is required
+        auth_response_dict = (
+            {403: {"description": "Authentication credentials were not provided."}}
+            if IsAuthenticated in self.view.permission_classes
+            else {}
+        )
+
         if (
             path not in self.response_codes.keys()
             or method not in self.response_codes[path].keys()
@@ -873,46 +880,72 @@ class PcxAutoSchema(AutoSchema):
         ):
             if path in self.override_schema and method in self.override_schema[path].keys():
                 return {
+                    **{
+                        "200": {
+                            "description": "",
+                            **(
+                                {
+                                    "content": {
+                                        ct: {"schema": self.override_schema[path][method][200]}
+                                        for ct in self.response_media_types
+                                    }
+                                    if 200 in self.override_schema[path][method].keys()
+                                    else {
+                                        ct: {"schema": response_schema}
+                                        for ct in self.response_media_types
+                                    }
+                                }
+                            ),
+                        }
+                    },
+                    **auth_response_dict,
+                }
+            return {
+                **{
                     "200": {
+                        "content": {
+                            ct: {"schema": response_schema} for ct in self.response_media_types
+                        },
+                        # description is a mandatory property,
+                        # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#responseObject  # noqa: E501
+                        # TODO: put something meaningful into it
                         "description": "",
+                    }
+                },
+                **auth_response_dict,
+            }
+        if path in self.override_schema and method in self.override_schema[path].keys():
+            return {
+                **{
+                    str(k): {
+                        "description": v.replace("[SCHEMA]", ""),
                         **(
                             {
                                 "content": {
-                                    ct: {"schema": self.override_schema[path][method][200]}
+                                    ct: {"schema": self.override_schema[path][method][k]}
                                     for ct in self.response_media_types
                                 }
-                                if 200 in self.override_schema[path][method].keys()
+                                if k in self.override_schema[path][method].keys()
                                 else {
                                     ct: {"schema": response_schema}
                                     for ct in self.response_media_types
                                 }
                             }
+                            if "[SCHEMA]" in v
+                            else {}
                         ),
                     }
-                }
-            return {
-                "200": {
-                    "content": {
-                        ct: {"schema": response_schema} for ct in self.response_media_types
-                    },
-                    # description is a mandatory property,
-                    # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#responseObject  # noqa: E501
-                    # TODO: put something meaningful into it
-                    "description": "",
-                }
+                    for k, v in self.response_codes[path][method].items()
+                },
+                **auth_response_dict,
             }
-        if path in self.override_schema and method in self.override_schema[path].keys():
-            return {
+        return {
+            **{
                 str(k): {
                     "description": v.replace("[SCHEMA]", ""),
                     **(
                         {
                             "content": {
-                                ct: {"schema": self.override_schema[path][method][k]}
-                                for ct in self.response_media_types
-                            }
-                            if k in self.override_schema[path][method].keys()
-                            else {
                                 ct: {"schema": response_schema} for ct in self.response_media_types
                             }
                         }
@@ -921,19 +954,6 @@ class PcxAutoSchema(AutoSchema):
                     ),
                 }
                 for k, v in self.response_codes[path][method].items()
-            }
-        return {
-            str(k): {
-                "description": v.replace("[SCHEMA]", ""),
-                **(
-                    {
-                        "content": {
-                            ct: {"schema": response_schema} for ct in self.response_media_types
-                        }
-                    }
-                    if "[SCHEMA]" in v
-                    else {}
-                ),
-            }
-            for k, v in self.response_codes[path][method].items()
+            },
+            **auth_response_dict,
         }
