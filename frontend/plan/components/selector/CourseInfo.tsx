@@ -1,14 +1,32 @@
 import React from "react";
 import PropTypes from "prop-types";
+import styled from "styled-components";
 import CourseDetails from "./CourseDetails";
 import SectionList from "./SectionList";
+import { Course } from "../../types";
 
-export default function CourseInfo({ course, back, getCourse, view }) {
+interface CourseInfoProps {
+    course: Course;
+    back: () => void;
+    getCourse: (id: string) => void;
+    view: number;
+}
+
+const InfoContainer = styled.div`
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+`;
+
+export default function CourseInfo({
+    course,
+    back,
+    getCourse,
+    view,
+}: CourseInfoProps) {
     const { id, title, sections } = course;
     return (
-        <div
-            style={{ height: "100%", display: "flex", flexDirection: "column" }}
-        >
+        <InfoContainer>
             <div style={{ maxHeight: "10%" }}>
                 {back && (
                     <button
@@ -38,7 +56,7 @@ export default function CourseInfo({ course, back, getCourse, view }) {
                 </div>
                 <SectionList view={view} sections={sections} />
             </ul>
-        </div>
+        </InfoContainer>
     );
 }
 
