@@ -2,6 +2,7 @@ export interface Section {
     id: string;
     status: Status;
     activity: Activity;
+    meetings: Meeting[];
 }
 
 export interface Meeting {
