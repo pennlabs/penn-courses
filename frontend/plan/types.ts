@@ -1,29 +1,3 @@
-export interface Section {
-    id: string;
-    status: Status;
-    activity: Activity;
-    credits: number;
-    semester: string;
-    meetings: Meeting[];
-    instructors: string[];
-    course_quality: number;
-    instructor_quality: number;
-    difficulty: number;
-    work_required: number;
-    associated_sections: Section[];
-}
-
-export interface Meeting {
-    day: string;
-    start: number;
-    end: number;
-    room: string;
-}
-
-export interface Profile {
-    email: string | null;
-    phone: string | null;
-}
 export enum School {
     SEAS = "SEAS",
     WHARTON = "WH",
@@ -50,6 +24,34 @@ export enum Activity {
     STUDIO = "STU",
     UNDEFINED = "***",
 }
+
+export interface Section {
+    id: string;
+    status: Status;
+    activity: Activity;
+    credits: number;
+    semester: string;
+    meetings: Meeting[];
+    instructors: string[];
+    course_quality: number;
+    instructor_quality: number;
+    difficulty: number;
+    work_required: number;
+    associated_sections: Section[];
+}
+
+export interface Meeting {
+    day: string;
+    start: number;
+    end: number;
+    room: string;
+}
+
+export interface Profile {
+    email: string | null;
+    phone: string | null;
+}
+
 export interface Requirement {
     id: string;
     code: string;
