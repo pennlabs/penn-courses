@@ -2,6 +2,15 @@ export interface Section {
     id: string;
     status: Status;
     activity: Activity;
+    credits: number;
+    semester: string;
+    meetings: Meeting[];
+    instructors: string[];
+    course_quality: number;
+    instructor_quality: number;
+    difficulty: number;
+    work_required: number;
+    associated_sections: Section[];
 }
 
 export interface Meeting {
@@ -67,15 +76,7 @@ export interface Course {
 export interface Schedule {
     id: string;
     sections: Section[];
-    credits: number;
     semester: string;
-    meetings: Meeting[];
-    instructors: string[];
-    course_quality: number;
-    instructor_quality: number;
-    difficulty: number;
-    work_required: number;
-    associated_sections: Section[];
     name: string;
     created_at: string;
     updated_at: string;
