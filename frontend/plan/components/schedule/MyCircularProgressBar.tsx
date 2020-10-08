@@ -6,11 +6,10 @@ interface MyCircularProgressBarProps {
     value: number;
 }
 
-export default function MyCircularProgressBar(
-    props: MyCircularProgressBarProps
-) {
+export default function MyCircularProgressBar({
+    value,
+}: MyCircularProgressBarProps) {
     let color;
-    const { value } = props;
     switch (true) {
         case value === 0:
             color = "#f1f1f1";
@@ -18,10 +17,10 @@ export default function MyCircularProgressBar(
         case value < 1:
             color = "#df5d56";
             break;
-        case props.value < 2:
+        case value < 2:
             color = "#FFC107";
             break;
-        case props.value < 3:
+        case value < 3:
             color = "#5891FC";
             break;
         default:

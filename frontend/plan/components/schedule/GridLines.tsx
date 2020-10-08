@@ -5,8 +5,7 @@ interface GridLinesProps {
     numCol: number;
 }
 
-export default function GridLines(props: GridLinesProps) {
-    const { numRow, numCol } = props;
+export default function GridLines({ numRow, numCol }: GridLinesProps) {
     const lastRow = Math.floor(numRow / 2) * 2;
     const rowstyle = {
         gridColumnStart: 2,

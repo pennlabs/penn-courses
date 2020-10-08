@@ -7,8 +7,12 @@ interface TimesProps {
     numRow: number;
 }
 
-export default function Times(props: TimesProps) {
-    const { startTime, endTime, offset, numRow } = props;
+export default function Times({
+    startTime,
+    endTime,
+    offset,
+    numRow,
+}: TimesProps) {
     const timestamps = [];
 
     const intToTime = (t: number) => {

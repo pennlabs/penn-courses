@@ -22,8 +22,7 @@ const MeterLabel = styled.div`
     margin-left: 10px;
 `;
 
-export default function Meter(props: MeterProps) {
-    const { value, name } = props;
+export default function Meter({ value, name }: MeterProps) {
     return (
         <MeterContainer>
             <CircularProgressBar>
