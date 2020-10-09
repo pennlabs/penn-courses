@@ -1,25 +1,3 @@
-<<<<<<< HEAD
-export interface Section {
-    id: string;
-    status: Status;
-    activity: Activity;
-    meetings: Meeting[];
-    credits: number;
-}
-
-export interface Meeting {
-    day: string;
-    start: number;
-    end: number;
-    room: string;
-}
-
-export interface Profile {
-    email: string | null;
-    phone: string | null;
-}
-=======
->>>>>>> ts_types
 export enum School {
     SEAS = "SEAS",
     WHARTON = "WH",
