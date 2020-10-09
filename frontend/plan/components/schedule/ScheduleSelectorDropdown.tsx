@@ -64,7 +64,7 @@ interface ScheduleSelectorDropdownProps {
     contents: {
         text: string;
         onClick: () => void;
-    }[]; // FIX TYPE
+    }[];
     mutators: {
         copy: (scheduleName: string) => void;
         remove: (scheduleName: string) => void;
@@ -79,6 +79,8 @@ const ScheduleSelectorDropdown = ({
     mutators: { copy, remove, rename, create },
 }: ScheduleSelectorDropdownProps) => {
     const [isActive, setIsActive] = useState(false);
+
+    // Is HTMLDivElement the correct type?
     const [ref, setRef] = useState(null);
 
     useEffect(() => {

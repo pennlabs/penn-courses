@@ -3,6 +3,7 @@ export interface Section {
     status: Status;
     activity: Activity;
     meetings: Meeting[];
+    credits: number;
 }
 
 export interface Meeting {
