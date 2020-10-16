@@ -1,0 +1,64 @@
+deploy_version: 0.1.21
+applications:
+  - name: redis
+    image: redis
+    tag: "4.0"
+    port: 6379
+  - name: celery
+    image: pennlabs/penn-courses-backend
+    secret: penn-courses
+    cmd: ["celery", "worker", "-A", "PennCourses", "-Q", "alerts,celery", "-linfo"]
+    extraEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: PennCourses.settings.production
+  - name: backend
+    image: pennlabs/penn-courses-backend
+    secret: penn-courses
+    replicas: 3
+    ingress:
+      hosts:
+        - host: penncourseplan.com
+          paths: ["/api", "/admin", "/accounts", "/assets"]
+        - host: penncoursealert.com
+          paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"]
+        - host: review.penncourses.org
+          paths: ["/api", "/admin", "/accounts", "/assets"]
+    extraEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: PennCourses.settings.production
+  - name: plan
+    image: pennlabs/pcp-frontend
+    ingress:
+      hosts:
+        - host: penncourseplan.com
+          paths: ["/"]
+    extraEnv:
+      - name: PORT
+        value: 80
+  - name: alert
+    image: pennlabs/pca-frontend
+    ingress:
+      hosts:
+        - host: penncoursealert.com
+          paths: ["/"]
+    extraEnv:
+      - name: PORT
+        value: 80
+  - name: review
+    image: pennlabs/pcr-frontend
+    ingress:
+      hosts:
+      - host: review.penncourses.org
+        paths: ["/"]
+
+cronjobs:
+  - name: load-courses
+    schedule: "0 3 * * *"
+    image: pennlabs/penn-courses-backend
+    secret: penn-courses
+    cmd: ["python", "manage.py", "registrarimport"]
+  - name: report-stats
+    schedule: "0 20 * * *"
+    image: pennlabs/penn-courses-backend
+    secret: penn-courses
+    cmd: ["python", "manage.py", "alertstats", "1", "--slack"]

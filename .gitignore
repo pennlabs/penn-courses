@@ -1,17 +1,21 @@
-.env
+.env*
 .vscode
 .idea/
 .DS_Store
 *.pyc
 __pycache__/
 .coverage
+.log
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 frontend/*/build/
+frontend/*/.next
 PennCourses/settings/static/
 *.sqlite3
 *-test.json
 celerybeat-schedule
 pcr-backup*
+
+# frontend/*/src/components/shared

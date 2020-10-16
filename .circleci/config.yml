@@ -1,93 +1,74 @@
-version: 2
-jobs:
-  build:
-    working_directory: ~/penncourses
-    docker:
-      - image: circleci/python:3.7-node
-        environment:
-          PIPENV_VENV_IN_PROJECT: true
-          DATABASE_URL: mysql://root:password@127.0.0.1:3306/circle_test
-      - image: circleci/mysql:latest
-        command: --default-authentication-plugin=mysql_native_password
-        environment:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: circle_test
-    steps:
-      - checkout
-      - run:
-          name: "Pull Submodules"
-          command: |
-            git submodule init
-            git submodule update --remote
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - restore_cache:
-          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run:
-          name: install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
-      - run:
-          name: Install dependencies
-          command: |
-            sudo pip install pipenv
-            pipenv install -d
-      - run:
-          name: Install PCP dependencies
-          command: |
-            cd frontend/plan && npm install
-      - run:
-          name: Wait for db
-          command: dockerize -wait tcp://localhost:3306 -timeout 1m
-      - save_cache:
-          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-          paths:
-            - ".venv"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.7/site-packages"
-      - run:
-          name: Lint
-          command: |
-            pipenv run flake8 .
-      - run:
-          name: PCP JS Lint
-          command: |
-            cd frontend/plan && npm run lint
-      - run:
-          name: Run tests
-          command: |
-            pipenv run coverage run manage.py test --settings=PennCourses.settings.test
-      - run:
-          name: Upload code coverage
-          command: |
-            pipenv run codecov
-      - store_test_results:
-          path: test-results
-      - store_artifacts:
-          path: test-results
-          destination: trl
-  deploy:
-    working_directory: ~/penncourses
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-      - run:
-          command: |
-            echo -e "Host apps.pennlabs.org\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-      - run:
-          name: Deploy master to Dokku
-          command: |
-            git push dokku@apps.pennlabs.org:penncourses master
+version: 2.1
+orbs:
+  docker: circleci/docker@0.5.19
+  django-tools: pennlabs/django-tools@0.0.6
+  helm-tools: pennlabs/helm-tools@0.1.10
+  react-tools: pennlabs/react-tools@0.0.5
+
+branch-filters: &branch-filters
+  filters:
+    branches:
+      only:
+        - master
+
 workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - build
-      - deploy:
+      - django-tools/check:
+          project-name: "PennCourses"
+          project-location: backend
+      - react-tools/check:
+          name: check-frontend
+          project-location: frontend
+      - docker/publish:
+          name: publish-backend
           requires:
-            - build
-          filters:
-            branches:
-              only: master
+            - django-tools/check
+          path: backend
+          cache_from: "pennlabs/penn-courses-backend:latest"
+          image: "pennlabs/penn-courses-backend"
+          tag: "${CIRCLE_SHA1},latest"
+          context: docker-publish
+          <<: *branch-filters
+      - docker/publish:
+          name: publish-plan
+          requires:
+            - check-frontend
+          path: frontend
+          dockerfile: plan/Dockerfile
+          cache_from: "pennlabs/pcp-frontend:latest"
+          image: "pennlabs/pcp-frontend"
+          tag: "${CIRCLE_SHA1},latest"
+          context: docker-publish
+          <<: *branch-filters
+      - docker/publish:
+          name: publish-alert
+          requires:
+            - check-frontend
+          path: frontend
+          dockerfile: alert/Dockerfile
+          cache_from: "pennlabs/pca-frontend:latest"
+          image: "pennlabs/pca-frontend"
+          tag: "${CIRCLE_SHA1},latest"
+          context: docker-publish
+          <<: *branch-filters
+      - docker/publish:
+          name: publish-review
+          requires:
+            - check-frontend
+          path: frontend
+          dockerfile: review/Dockerfile
+          cache_from: "pennlabs/pcr-frontend:latest"
+          image: "pennlabs/pcr-frontend"
+          tag: "${CIRCLE_SHA1},latest"
+          context: docker-publish
+          <<: *branch-filters
+      - helm-tools/deploy:
+          requires:
+            - publish-backend
+            - publish-plan
+            - publish-alert
+            - publish-review
+          context: k8s-deploy
+          <<: *branch-filters
