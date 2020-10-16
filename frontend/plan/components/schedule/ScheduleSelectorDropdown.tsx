@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface DropdownButton {
     isActive: boolean;
@@ -79,13 +79,11 @@ const ScheduleSelectorDropdown = ({
     mutators: { copy, remove, rename, create },
 }: ScheduleSelectorDropdownProps) => {
     const [isActive, setIsActive] = useState(false);
-
-    // Is HTMLDivElement the correct type?
-    const [ref, setRef] = useState(null);
+    const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const listener = (event: Event) => {
-            if (ref && !ref.contains(event.target)) {
+            if (ref.current && !ref.current.contains(event.target as HTMLElement)) {
                 setIsActive(false);
             }
         };
@@ -96,7 +94,7 @@ const ScheduleSelectorDropdown = ({
     });
     return (
         <div
-            ref={(node) => setRef(node)}
+            ref={ref}
             className={`classic dropdown${isActive ? " is-active" : ""}`}
         >
             <span className="selected_name">{activeName}</span>

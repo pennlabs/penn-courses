@@ -1,4 +1,4 @@
-import React from "react";
+import React, {CSSProperties} from "react";
 
 interface DaysProps {
     offset: number;
@@ -10,13 +10,13 @@ export default function Days(props: DaysProps) {
     const days = weekend
         ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         : ["Mon", "Tue", "Wed", "Thu", "Fri"];
-    const style = {
+    const style: CSSProperties = {
         display: "grid",
         gridColumnStart: 1 + offset,
         gridColumnEnd: days.length + 1 + offset,
         gridRow: 1,
         gridTemplateColumns: `repeat(${days.length}, 1fr)`,
-        textAlign: "center" as "center",
+        textAlign: "center",
     };
     return (
         <div style={style}>
@@ -28,8 +28,3 @@ export default function Days(props: DaysProps) {
         </div>
     );
 }
-
-// Days.propTypes = {
-//     offset: PropTypes.number,
-//     weekend: PropTypes.bool,
-// };
