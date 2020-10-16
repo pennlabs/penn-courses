@@ -1,4 +1,4 @@
-import React from "react";
+import React, {CSSProperties} from "react";
 
 interface GridLinesProps {
     numRow: number;
@@ -7,15 +7,15 @@ interface GridLinesProps {
 
 export default function GridLines({ numRow, numCol }: GridLinesProps) {
     const lastRow = Math.floor(numRow / 2) * 2;
-    const rowstyle = {
+    const rowstyle: CSSProperties = {
         gridColumnStart: 2,
         gridColumnEnd: numCol + 1,
-        position: "relative" as "relative",
+        position: "relative",
     };
-    const colstyle = {
+    const colstyle: CSSProperties = {
         gridRowStart: 2,
         gridRowEnd: lastRow,
-        position: "relative" as "relative",
+        position: "relative",
     };
 
     const lines = [];

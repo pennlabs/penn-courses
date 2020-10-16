@@ -1,4 +1,4 @@
-import React from "react";
+import React, {CSSProperties} from "react";
 
 interface TimesProps {
     startTime: number;
@@ -48,13 +48,13 @@ export default function Times({
         );
     }
 
-    const style = {
+    const style: CSSProperties = {
         display: "grid",
         gridTemplateRows: `repeat(${numRow - 1}, 1fr)`,
         gridColumn: 1,
         gridRowStart: 1 + offset,
         gridRowEnd: numRow + 1,
-        position: "relative" as "relative",
+        position: "relative",
     };
     return <div style={style}>{timestamps}</div>;
 }
