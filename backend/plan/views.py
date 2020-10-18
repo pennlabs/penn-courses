@@ -50,7 +50,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     retrieve:
     Get one of the logged-in user's schedules for the current semester, using the schedule's ID.
     If a schedule with the specified ID exists, a 200 response code is returned, along with
-    the schedule object.  TODO: finish
+    the schedule object.
     If the given id does not exist, a 404 is returned.
 
     create:
