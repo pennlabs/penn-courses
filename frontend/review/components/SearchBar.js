@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import AsyncSelect from "react-select/lib/Async";
 import { components } from "react-select";
 import { css } from "emotion";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "next/router";
 import fuzzysort from "fuzzysort";
 import { apiAutocomplete } from "../utils/api";
 
@@ -113,7 +113,8 @@ class SearchBar extends Component {
         );
       })
       .catch(e => {
-        window.Raven.captureException(e);
+        // TODO: Figure this out
+        // window.Raven.captureException(e);
         this.setState(
           {
             autocompleteOptions: []
@@ -206,7 +207,7 @@ class SearchBar extends Component {
 
   // Called when an option is selected in the AsyncSelect component
   handleChange(value) {
-    this.props.history.push(value.url);
+    this.props.router.push(value.url);
   }
 
   render() {
