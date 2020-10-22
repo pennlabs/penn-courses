@@ -71,8 +71,9 @@ export interface Course {
     instructor_quality: number;
     difficulty: number;
     work_required: number;
-    crosslistings: string[];
-    requirements: Requirement[];
+    crosslistings?: string[];
+    requirements?: Requirement[];
+    num_sections: number;
 }
 
 export interface Schedule {
@@ -89,4 +90,11 @@ export interface User {
     first_name: string;
     last_name: string;
     profile: Profile;
+}
+
+export enum SortMode {
+    NAME = "Name",
+    QUALITY = "Quality",
+    DIFFICULTY = "Difficulty",
+    GOODANDEASY = "Good & Easy",
 }

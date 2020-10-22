@@ -1,12 +1,30 @@
 import React from "react";
-import PropTypes from "prop-types";
 import TagList from "./TagList";
 import Badge from "../Badge";
 import ShowMore from "../ShowMore";
+import { Course, School } from "../../types";
 
-const getReqCode = (school, name) =>
-    `${{ SAS: "C", SEAS: "E", WH: "W" }[school]}: ${name}`;
-const annotatePrerequisites = (text, onClick) => {
+const schoolToLetter = (school: School) => {
+    switch (school) {
+        case School.COLLEGE:
+            return "C";
+        case School.NURSING:
+            return "N";
+        case School.SEAS:
+            return "E";
+        case School.WHARTON:
+            return "W";
+        default:
+            return "";
+    }
+};
+const getReqCode = (school: School, name: string) =>
+    `${schoolToLetter(school)}: ${name}`;
+
+const annotatePrerequisites = (
+    text: string | null,
+    onClick: (course: string) => void
+) => {
     if (typeof text !== "string" || !/\S/.test(text)) return null;
     const courseRegex = /((^|\W)[A-Z]{3}[A-Z]?(-|\s)[0-9]{3}($|(?=\W)))/;
     const tokens = text.split(courseRegex).filter((elem) => /\S/.test(elem));
@@ -28,6 +46,11 @@ const annotatePrerequisites = (text, onClick) => {
     );
 };
 
+interface CourseDetailsProps {
+    course: Course;
+    getCourse: (course: string) => void;
+    view: number;
+}
 export default function CourseDetails({
     course: {
         requirements = [],
@@ -40,7 +63,7 @@ export default function CourseDetails({
     },
     getCourse,
     view,
-}) {
+}: CourseDetailsProps) {
     const prerequisites = annotatePrerequisites(prereqText, getCourse);
     const isExpandedView = view === 1;
     return (
@@ -50,9 +73,9 @@ export default function CourseDetails({
                     <i className="far fa-chart-bar" />
                 </span>
                 &nbsp; Quality: &nbsp;
-                <Badge baseColor={[43, 236, 56]} value={courseQuality} />
+                <Badge value={courseQuality} />
                 &nbsp; Difficulty: &nbsp;
-                <Badge baseColor={[43, 236, 56]} value={difficulty} />
+                <Badge value={difficulty} />
             </li>
             {requirements.length > 0 ? (
                 <li>
@@ -90,7 +113,7 @@ export default function CourseDetails({
                 type="button"
                 href={`https://penncoursereview.com/course/${id}`}
                 style={{
-                    fontWeight: "700",
+                    fontWeight: 700,
                     fontSize: "0.8 em",
                     color: "#8F8F8F",
                     textAlign: "center",
@@ -135,9 +158,3 @@ export default function CourseDetails({
         </ul>
     );
 }
-
-CourseDetails.propTypes = {
-    course: PropTypes.objectOf(PropTypes.any).isRequired,
-    getCourse: PropTypes.func,
-    view: PropTypes.number,
-};

@@ -2,8 +2,14 @@ import React from "react";
 import PropTypes from "prop-types";
 
 import Badge from "../Badge";
+import { Course as CourseType } from "../../types";
 
-export default function Course({ course, onClick }) {
+interface CourseProps {
+    course: CourseType;
+    onClick: () => void;
+}
+
+export default function Course({ course, onClick }: CourseProps) {
     return (
         // eslint-disable-next-line
         <li className="selector-row">
@@ -28,16 +34,10 @@ export default function Course({ course, onClick }) {
                     </span>
                 </div>
                 <div style={{ marginRight: "2px", width: "20%" }}>
-                    <Badge
-                        baseColor={[45, 160, 240]}
-                        value={course.course_quality}
-                    />
+                    <Badge value={course.course_quality} />
                 </div>
                 <div style={{ width: "20%" }}>
-                    <Badge
-                        baseColor={[231, 76, 60]}
-                        value={course.difficulty}
-                    />
+                    <Badge value={course.difficulty} />
                 </div>
             </div>
         </li>
