@@ -32,7 +32,8 @@ def make_subdict(field_prefix, d):
     """
     Rows in a queryset that don't represent related database models are flat. But we want
     our JSON to have a nested structure that makes more sense to the client. This function
-    takes fields from a flat dictionary with a certain prefix
+    takes fields from a flat dictionary with a certain prefix and returns a dictionary
+    of those entries, with the prefix removed from the keys.
     """
     start_at = len(field_prefix)
     return {
@@ -48,10 +49,9 @@ def dict_average(entries: List[Dict[str, float]]) -> Dict[str, float]:
     :param entries:
     :return:
     """
-    keys = []
+    keys = set()
     for entry in entries:
-        keys.extend(entry.keys())
-    keys = set(keys)
+        keys.update(entry.keys())
 
     averages = {k: (0, 0) for k in keys}
     for entry in entries:
@@ -73,6 +73,7 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
     for the response to the frontend.
     """
     grouped_reviews = dict()
+    # First pass: Group individual reviews by the provided key.
     for review in reviews:
         key = review[group_by]
         grouped_reviews.setdefault(key, []).append(
@@ -86,6 +87,7 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
             }
         )
     aggregated = dict()
+    # Second pass: Aggregate grouped reviews by taking the average of all scores and recent scores.
     for k, reviews in grouped_reviews.items():
         latest_sem = max([r["semester"] for r in reviews])
         all_scores = [r["scores"] for r in reviews]
@@ -97,8 +99,8 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
             "latest_semester": latest_sem,
             "num_semesters": len(set([r["semester"] for r in reviews])),
             **{
-                response_prop: reviews[0][response_prop]
-                for response_prop, _ in extra_fields.items()
+                extra_field: reviews[0][extra_field]
+                for extra_field, _ in extra_fields.items()
             },
         }
 
