@@ -1,5 +1,4 @@
-import React, { Component } from "react";
-import PropTypes from "prop-types";
+import React, { Component, CSSProperties } from "react";
 import { isMobileOnly } from "react-device-detect";
 
 import { connect } from "react-redux";
@@ -21,9 +20,33 @@ import GridLines from "./GridLines";
 import Stats from "./Stats";
 import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
 
+import {Section} from "../../types";
+
+interface ScheduleProps {
+  schedData: {
+    meetings: Section[]
+  };
+  removeSection: (idDashed: string) => void;
+  focusSection: (id: string) => void;
+  scheduleNames: string[];
+  switchSchedule: (scheduleName: string) => void;
+  schedulesMutator: {
+      copy: (scheduleName: string) => void;
+      remove: (scheduleName: string) => void;
+      
+      // NOT IN ORIGINAL PROPS
+      create: () => void;
+      rename: (oldName: string) => void;
+  };
+  activeScheduleName: string;
+
+  // FIXME: correct the type of this state
+  setTab: (_: number) => void;
+}
+
 // Used for box coloring, from StackOverflow:
 // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
-const hashString = (s) => {
+const hashString = (s: string) => {
     let hash = 0;
     if (s.length === 0) return hash;
     for (let i = 0; i < s.length; i += 1) {
@@ -34,7 +57,7 @@ const hashString = (s) => {
     return hash;
 };
 
-const transformTime = (t, roundUp) => {
+const transformTime = (t: number, roundUp: boolean) => {
     const frac = t % 1;
     const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 10) / 10;
     if (roundUp) {
@@ -55,7 +78,7 @@ class Schedule extends Component {
             schedulesMutator,
             activeScheduleName,
             setTab,
-        } = this.props;
+        } = this.props as ScheduleProps;
         const sections = schedData.meetings || [];
 
         const notEmpty = sections.length > 0;
@@ -63,9 +86,10 @@ class Schedule extends Component {
         let startHour = 10.5;
         let endHour = 16;
 
+        // TODO: modify any type
         // show the weekend days only if there's a section which meets on saturday (S) or sunday (U)
         const showWeekend =
-            sections.filter((sec) => sec.day === "S" || sec.day === "U")
+            sections.filter((sec: any) => sec.day === "S" || sec.day === "U")
                 .length > 0;
 
         // actual schedule elements are offset by the row/col offset since
@@ -91,8 +115,8 @@ class Schedule extends Component {
                 "indigo",
             ];
             // some CIS120: `used` is a *closure* storing the colors currently in the schedule
-            let used = [];
-            return (c) => {
+            let used: string[] = [];
+            return (c: string) => {
                 if (used.length === colors.length) {
                     // if we've used all the colors, it's acceptable to start reusing colors.
                     used = [];
@@ -108,12 +132,23 @@ class Schedule extends Component {
         })();
         const sectionIds = sections.map((x) => x.id);
         // a meeting is the data that represents a single block on the schedule.
-        const meetings = [];
+        const meetings: {day: "M" | "T" | "W" | "R" | "F" | "S" | "U", 
+                        start: number,
+                        end: number,
+                        course: {
+                            color: string,
+                            id: string,
+                            coreqFulfilled: boolean
+                            },
+                        style: {
+                            width: string,
+                            left: string,
+                        }}[] = [];
         sections.forEach((s) => {
             const color = getColor(s.id);
             meetings.push(
                 ...s.meetings.map((m) => ({
-                    day: m.day,
+                    day: m.day as "M" | "T" | "W" | "R" | "F" | "S" | "U",
                     start: transformTime(m.start, false),
                     end: transformTime(m.end, true),
                     course: {
@@ -127,7 +162,7 @@ class Schedule extends Component {
                     },
                     style: {
                         width: "100%",
-                        left: 0,
+                        left: "0",
                     },
                 }))
             );
@@ -142,7 +177,18 @@ class Schedule extends Component {
             // for every conflict of size k, make the meetings in that conflict
             // take up (100/k) % of the square, and use `left` to place them
             // next to each other.
-            const group = Array.from(conflict.values());
+            const group: {day: "M" | "T" | "W" | "R" | "F" | "S" | "U", 
+                            start: number,
+                            end: number,
+                            course: {
+                                color: string,
+                                id: string,
+                                coreqFulfilled: boolean
+                                },
+                            style: {
+                                width: string,
+                                left: string,
+                            }}[] = Array.from(conflict.values());
             const w = 100 / group.length;
             for (let j = 0; j < group.length; j += 1) {
                 group[j].style = {
@@ -190,7 +236,6 @@ class Schedule extends Component {
                             text: scheduleName,
                             onClick: () => switchSchedule(scheduleName),
                         }))}
-                        modifyLabel={false}
                         mutators={schedulesMutator}
                     />
                 </h3>
@@ -210,12 +255,13 @@ class Schedule extends Component {
                                 offset={rowOffset}
                             />
                         )}
-                        {notEmpty && (
+                        {notEmpty 
+                        && (
                             <GridLines
                                 numRow={getNumRows()}
                                 numCol={getNumCol()}
-                            />
-                        )}
+                            />)
+                        }
                         {notEmpty && blocks}
                         {!notEmpty && <EmptySchedule />}
                     </div>
@@ -226,36 +272,23 @@ class Schedule extends Component {
     }
 }
 
-Schedule.propTypes = {
-    schedData: PropTypes.shape({
-        meetings: PropTypes.array,
-    }),
-    removeSection: PropTypes.func,
-    focusSection: PropTypes.func,
-    scheduleNames: PropTypes.arrayOf(PropTypes.string),
-    switchSchedule: PropTypes.func,
-    schedulesMutator: PropTypes.shape({
-        copy: PropTypes.func.isRequired,
-        remove: PropTypes.func.isRequired,
-    }),
-    activeScheduleName: PropTypes.string,
-    setTab: PropTypes.func,
-};
-
-const mapStateToProps = (state) => ({
+// FIXME: Change type of state (not 'any')
+const mapStateToProps = (state: any) => ({
     schedData: state.schedule.schedules[state.schedule.scheduleSelected],
     scheduleNames: Object.keys(state.schedule.schedules),
     activeScheduleName: state.schedule.scheduleSelected,
 });
 
-const mapDispatchToProps = (dispatch) => ({
-    removeSection: (idDashed) => dispatch(removeSchedItem(idDashed)),
-    focusSection: (id) => dispatch(fetchCourseDetails(id)),
-    switchSchedule: (scheduleName) => dispatch(changeSchedule(scheduleName)),
+
+// FIXME: Change input type to dispatch (not 'any')
+const mapDispatchToProps = (dispatch: (_: any) => void) => ({
+    removeSection: (idDashed: string) => dispatch(removeSchedItem(idDashed)),
+    focusSection: (id: string) => dispatch(fetchCourseDetails(id)),
+    switchSchedule: (scheduleName: string) => dispatch(changeSchedule(scheduleName)),
     schedulesMutator: {
-        copy: (scheduleName) => dispatch(duplicateSchedule(scheduleName)),
-        remove: (scheduleName) => dispatch(deleteSchedule(scheduleName)),
-        rename: (oldName) =>
+        copy: (scheduleName: string) => dispatch(duplicateSchedule(scheduleName)),
+        remove: (scheduleName: string) => dispatch(deleteSchedule(scheduleName)),
+        rename: (oldName: string) =>
             dispatch(
                 openModal(
                     "RENAME_SCHEDULE",

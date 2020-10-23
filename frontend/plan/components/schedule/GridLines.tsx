@@ -49,5 +49,6 @@ export default function GridLines({ numRow, numCol }: GridLinesProps) {
         />
     );
 
-    return lines;
+    // return lines;
+    return <>{lines.map(line => line)}</>
 }

@@ -1,5 +1,4 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 
 interface MyCircularProgressBarProps {
@@ -56,7 +55,3 @@ export default function MyCircularProgressBar({
         />
     );
 }
-
-MyCircularProgressBar.propTypes = {
-    value: PropTypes.number,
-};

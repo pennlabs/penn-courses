@@ -1,8 +1,13 @@
-import React, { Component } from "react";
-import PropTypes from "prop-types";
+import React, { Component, CSSProperties } from "react";
+import styled from "styled-components";
 import Meter from "./Meter";
+import {Meeting, Section} from "../../types"
 
-const purpleTimeStats = {
+interface StatsProps {
+    meetings: Section[]
+}
+
+const purpleTimeStats: CSSProperties = {
     color: "#7874CF",
     fontWeight: "bold",
     fontSize: "1.3rem",
@@ -11,33 +16,32 @@ const purpleTimeStats = {
     paddingRight: "10px",
 };
 
-class Stats extends Component {
-    parseTime = (t) => {
+class Stats extends Component<StatsProps> {
+    parseTime = (t: number) => {
         let hour = Math.floor(t % 12);
         let min = Math.round((t % 1) * 100);
+        
         if (hour === 0) {
             hour = 12;
         }
-        if (min === 0) {
-            min = "00";
-        }
-        return `${hour}:${min} ${t >= 12 ? "PM" : "AM"}`;
+        let minStr = min === 0 ? "00" : min.toString();
+        return `${hour}:${minStr} ${t >= 12 ? "PM" : "AM"}`;
     };
 
-    getMeetingLength = (meeting) =>
+    getMeetingLength = (meeting: Meeting) =>
         Math.floor(meeting.end) -
         Math.floor(meeting.start) +
         (100 * ((meeting.end % 1) - (meeting.start % 1))) / 60;
 
     render() {
-        const { meetings } = this.props;
+        const { meetings } = this.props as StatsProps;
         let earliestStart;
         let latestEnd;
         let totalCUs;
         let maxHoursADay;
         let totalHours;
         let averageHours;
-        let avgs = {};
+        let avgs: {[index: string]: number} = {};
         if (meetings.length === 0) {
             earliestStart = "—";
             latestEnd = "—";
@@ -52,10 +56,10 @@ class Stats extends Component {
                 course_quality: 0,
             };
         } else {
-            const startTimes = [];
-            const endTimes = [];
+            const startTimes: number[] = [];
+            const endTimes: number[] = [];
             const hoursPerDay = [0, 0, 0, 0, 0];
-            const mapDays = {
+            const mapDays: {[index: string]: number} = {
                 M: 0,
                 T: 1,
                 W: 2,
@@ -63,18 +67,19 @@ class Stats extends Component {
                 F: 4,
             };
 
-            const courseStats = {};
-            const statTypes = [
+            // TODO declare type of value for each key-value pair
+            const courseStats: {[index: string]: {[index: string]: number}}  = {};
+            const statTypes: ("difficulty" | "work_required" | "instructor_quality" | "course_quality")[] = [
                 "difficulty",
                 "work_required",
                 "instructor_quality",
                 "course_quality",
             ];
-            const courseRepeats = {};
-            const courseCUs = {};
+            const courseRepeats: {[index: string]: {[index: string]: number}} = {};
+            const courseCUs: {[index: string]: number} = {};
 
             meetings.forEach((section) => {
-                section.meetings.forEach((meeting) => {
+                section.meetings.forEach((meeting: Meeting) => {
                     startTimes.push(meeting.start);
                     endTimes.push(meeting.end);
                     hoursPerDay[mapDays[meeting.day]] += this.getMeetingLength(
@@ -103,13 +108,13 @@ class Stats extends Component {
                 }
             });
 
-            const sums = {};
+            const sums: {[index: string]: number[]} = {};
             statTypes.forEach((stat) => {
                 sums[stat] = [];
             });
 
             totalCUs = 0;
-            const denominator = {};
+            const denominator: {[index: string]: number} = {};
             for (const course in courseStats) {
                 if (Object.prototype.hasOwnProperty.call(courseStats, course)) {
                     statTypes.forEach((stat) => {
@@ -134,12 +139,13 @@ class Stats extends Component {
 
             maxHoursADay = parseFloat(Math.max(...hoursPerDay).toFixed(1));
             totalHours = hoursPerDay.reduce((a, b) => a + b, 0);
-            averageHours = parseFloat(totalHours / 5).toFixed(1);
+            averageHours = (totalHours / 5).toFixed(1);
+            // averageHours = parseFloat(totalHours / 5).toFixed(1);
             totalHours = parseFloat(totalHours.toFixed(1));
 
             statTypes.forEach((stat) => {
                 avgs[stat] = denominator[stat]
-                    ? sums[stat].reduce((a, b) => a + b, 0) / denominator[stat]
+                    ? sums[stat].reduce((a: number, b: number) => a + b, 0) / denominator[stat]
                     : 0;
             });
 
@@ -235,9 +241,5 @@ class Stats extends Component {
         );
     }
 }
-
-Stats.propTypes = {
-    meetings: PropTypes.arrayOf(PropTypes.any),
-};
 
 export default Stats;
