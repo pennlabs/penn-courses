@@ -98,10 +98,7 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
             "recent_reviews": dict_average(recent_scores),
             "latest_semester": latest_sem,
             "num_semesters": len(set([r["semester"] for r in reviews])),
-            **{
-                extra_field: reviews[0][extra_field]
-                for extra_field, _ in extra_fields.items()
-            },
+            **{extra_field: reviews[0][extra_field] for extra_field, _ in extra_fields.items()},
         }
 
     return aggregated
