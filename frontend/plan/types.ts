@@ -96,5 +96,5 @@ export enum SortMode {
     NAME = "Name",
     QUALITY = "Quality",
     DIFFICULTY = "Difficulty",
-    GOODANDEASY = "Good & Easy",
+    GOOD_AND_EASY = "Good & Easy",
 }

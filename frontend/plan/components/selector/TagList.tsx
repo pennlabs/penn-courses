@@ -29,7 +29,7 @@ export default function TagList({
                     className="taglist"
                     style={{ height: expanded ? "auto" : 0 }}
                 >
-                    {hiddenTags.map((elt, i) => (
+                    {hiddenTags.map((elt) => (
                         <Tag key={elt}>{elt}</Tag>
                     ))}
                 </span>

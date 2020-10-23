@@ -16,17 +16,18 @@ const goodEasy = ({ difficulty, course_quality: courseQuality }: CourseType) =>
 const courseSort = (courses: CourseType[], sortMode: SortMode) => {
     const sorted = [...courses];
     sorted.sort((courseA, courseB) => {
-        switch (sortMode && sortMode.toLowerCase()) {
-            case "quality":
+        switch (sortMode) {
+            case SortMode.QUALITY:
                 return !courseB.course_quality
                     ? -1
                     : courseB.course_quality - courseA.course_quality;
-            case "difficulty":
+            case SortMode.DIFFICULTY:
                 return !courseB.difficulty
                     ? -1
                     : courseA.difficulty - courseB.difficulty;
-            case "good & easy":
+            case SortMode.GOOD_AND_EASY:
                 return goodEasy(courseB) - goodEasy(courseA);
+            case SortMode.NAME:
             default:
                 return courseA.id.localeCompare(courseB.id);
         }

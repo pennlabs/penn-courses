@@ -6,7 +6,7 @@ import { Course } from "../../types";
 
 interface CourseInfoProps {
     course: Course;
-    back?: () => void;
+    back?: () => void; // Only show the back button if the `back` callback is provided.
     getCourse: (id: string) => void;
     view: number;
 }
