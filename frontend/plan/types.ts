@@ -25,6 +25,19 @@ export enum Activity {
     UNDEFINED = "***",
 }
 
+export interface ActivityFilter {
+    lab: boolean;
+    rec: boolean;
+    sem: boolean;
+    stu: boolean
+}
+
+export interface CUFilter {
+    .5: boolean;
+    1.0: boolean;
+    1.5: boolean;
+}
+
 export interface Section {
     id: string;
     status: Status;
@@ -90,3 +103,21 @@ export interface User {
     last_name: string;
     profile: Profile;
 }
+
+export interface FilterData {
+    searchString: string;
+    searchType: string;
+    selectedReq: string[];
+    difficulty: [number, number];
+    course_quality: [number, number] // upper and lower bound for course_quality
+    instructor_quality: [number, number];
+    activity: ActivityFilter
+    cu: CUFilter
+}
+
+export interface SearchObject {
+    searchType: string;
+    
+}
+
+
