@@ -1,22 +1,35 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { FilterData } from "../../types"
+import { FilterData } from "../../types";
 
-interface SearchFieldProps {
-    filterData: FilterData;
+interface CheckboxFilterData {
+    [key: string]: boolean;
+}
+
+interface SearchFieldProps<F, K extends keyof F> {
+    filterData: F;
+    // field, value and togglestate
+    // field == keyof F (filterData), value == keyof field
+    // field ("activity"), value ("lab"), togglestate (true)
     updateCheckboxFilter: (txt: string) => void;
     startSearch: (searchObj: object) => void;
-    checkboxProperty: string;
+    checkboxProperty: K;
 }
-export function CheckboxFilter({
+
+// mapped types
+
+export function CheckboxFilter<
+    F extends { [P in K]: CheckboxFilterData },
+    K extends keyof F
+>({
     filterData,
     updateCheckboxFilter,
     startSearch,
     checkboxProperty,
-} : SearchFieldProps) {
+}: SearchFieldProps<F, K>) {
     return (
         <div className="columns contained">
-            {Object.keys(filterData[checkboxProperty]) // 
+            {Object.keys(filterData[checkboxProperty]) //
                 .sort()
                 .map((filterProperty) => (
                     <div key={filterProperty} className="column">
@@ -28,13 +41,13 @@ export function CheckboxFilter({
                                 checked={
                                     filterData[checkboxProperty][
                                         filterProperty
-                                    ] === 1
+                                    ] === true
                                 }
                                 onChange={() => {
                                     const toChange =
                                         filterData[checkboxProperty][
                                             filterProperty
-                                        ] === 1
+                                        ] === true
                                             ? 0
                                             : 1;
                                     updateCheckboxFilter(
