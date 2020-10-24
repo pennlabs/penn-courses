@@ -837,8 +837,8 @@ class PcxAutoSchema(AutoSchema):
             ):
                 return {"204": {"description": ""}}
             return {
-                str(k): {"description": v.replace("[SCHEMA]", "")}
-                for k, v in self.response_codes[path][method].items()
+                str(code): {"description": description.replace("[SCHEMA]", "")}
+                for code, description in self.response_codes[path][method].items()
             }
 
         self.response_media_types = self.map_renderers(path, method)
@@ -878,7 +878,9 @@ class PcxAutoSchema(AutoSchema):
             or method not in self.response_codes[path].keys()
             or not self.response_codes[path][method]
         ):
+            # If custom response codes are not specified, use 200
             if path in self.override_schema and method in self.override_schema[path].keys():
+                # If schema is overridden by override_schema
                 return {
                     **{
                         "200": {
@@ -886,13 +888,14 @@ class PcxAutoSchema(AutoSchema):
                             **(
                                 {
                                     "content": {
-                                        ct: {"schema": self.override_schema[path][method][200]}
-                                        for ct in self.response_media_types
+                                        content_type:
+                                            {"schema": self.override_schema[path][method][200]}
+                                        for content_type in self.response_media_types
                                     }
                                     if 200 in self.override_schema[path][method].keys()
                                     else {
-                                        ct: {"schema": response_schema}
-                                        for ct in self.response_media_types
+                                        content_type: {"schema": response_schema}
+                                        for content_type in self.response_media_types
                                     }
                                 }
                             ),
@@ -900,11 +903,13 @@ class PcxAutoSchema(AutoSchema):
                     },
                     **auth_response_dict,
                 }
+            # Schema is not overridden by override_schema
             return {
                 **{
                     "200": {
                         "content": {
-                            ct: {"schema": response_schema} for ct in self.response_media_types
+                            content_type: {"schema": response_schema}
+                            for content_type in self.response_media_types
                         },
                         # description is a mandatory property,
                         # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#responseObject  # noqa: E501
@@ -914,46 +919,52 @@ class PcxAutoSchema(AutoSchema):
                 },
                 **auth_response_dict,
             }
+        # Custom response codes are specified (whether or not to include the auto-generated
+        # response schema in the route is dependant on whether "[SCHEMA]" is included in the
+        # description).
         if path in self.override_schema and method in self.override_schema[path].keys():
+            # If schema is overridden by override_schema
             return {
                 **{
-                    str(k): {
-                        "description": v.replace("[SCHEMA]", ""),
+                    str(code): {
+                        "description": description.replace("[SCHEMA]", ""),
                         **(
                             {
                                 "content": {
-                                    ct: {"schema": self.override_schema[path][method][k]}
-                                    for ct in self.response_media_types
+                                    content_type: {"schema": self.override_schema[path][method][k]}
+                                    for content_type in self.response_media_types
                                 }
-                                if k in self.override_schema[path][method].keys()
+                                if code in self.override_schema[path][method].keys()
                                 else {
-                                    ct: {"schema": response_schema}
-                                    for ct in self.response_media_types
+                                    content_type: {"schema": response_schema}
+                                    for content_type in self.response_media_types
                                 }
                             }
-                            if "[SCHEMA]" in v
+                            if "[SCHEMA]" in description
                             else {}
                         ),
                     }
-                    for k, v in self.response_codes[path][method].items()
+                    for code, description in self.response_codes[path][method].items()
                 },
                 **auth_response_dict,
             }
+        # Schema is not overridden by override_schema
         return {
             **{
-                str(k): {
-                    "description": v.replace("[SCHEMA]", ""),
+                str(code): {
+                    "description": description.replace("[SCHEMA]", ""),
                     **(
                         {
                             "content": {
-                                ct: {"schema": response_schema} for ct in self.response_media_types
+                                content_type: {"schema": response_schema} for
+                                content_type in self.response_media_types
                             }
                         }
-                        if "[SCHEMA]" in v
+                        if "[SCHEMA]" in description
                         else {}
                     ),
                 }
-                for k, v in self.response_codes[path][method].items()
+                for code, description in self.response_codes[path][method].items()
             },
             **auth_response_dict,
         }
