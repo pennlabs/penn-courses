@@ -888,8 +888,9 @@ class PcxAutoSchema(AutoSchema):
                             **(
                                 {
                                     "content": {
-                                        content_type:
-                                            {"schema": self.override_schema[path][method][200]}
+                                        content_type: {
+                                            "schema": self.override_schema[path][method][200]
+                                        }
                                         for content_type in self.response_media_types
                                     }
                                     if 200 in self.override_schema[path][method].keys()
@@ -931,7 +932,9 @@ class PcxAutoSchema(AutoSchema):
                         **(
                             {
                                 "content": {
-                                    content_type: {"schema": self.override_schema[path][method][k]}
+                                    content_type: {
+                                        "schema": self.override_schema[path][method][code]
+                                    }
                                     for content_type in self.response_media_types
                                 }
                                 if code in self.override_schema[path][method].keys()
@@ -956,8 +959,8 @@ class PcxAutoSchema(AutoSchema):
                     **(
                         {
                             "content": {
-                                content_type: {"schema": response_schema} for
-                                content_type in self.response_media_types
+                                content_type: {"schema": response_schema}
+                                for content_type in self.response_media_types
                             }
                         }
                         if "[SCHEMA]" in description
