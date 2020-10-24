@@ -21,7 +21,7 @@ interface SearchFieldProps<F, K extends keyof F, V extends keyof K> {
 export function CheckboxFilter<
     F extends { [P in K]: CheckboxFilterData },
     K extends keyof F,
-    V extends keyof K
+    V extends keyof K & string
 >({
     filterData,
     updateCheckboxFilter,
@@ -32,49 +32,55 @@ export function CheckboxFilter<
         <div className="columns contained">
             {Object.keys(filterData[checkboxProperty]) //
                 .sort()
-                .map((filterProperty) => (
-                    <div key={filterProperty} className="column">
-                        <div className="field" style={{ display: "table-row" }}>
-                            <input
-                                className="is-checkradio is-small"
-                                type="checkbox"
-                                id={filterProperty}
-                                checked={
-                                    filterData[checkboxProperty][
-                                        filterProperty
-                                    ] === true
-                                }
-                                onChange={() => {
-                                    const toChange =
+                .map((key) => {
+                    // Typecast is necessary since Object.keys() does not
+                    // return keyof Object
+                    const filterProperty = key as V;
+                    return (
+                        <div key={filterProperty} className="column">
+                            <div
+                                className="field"
+                                style={{ display: "table-row" }}
+                            >
+                                <input
+                                    className="is-checkradio is-small"
+                                    type="checkbox"
+                                    id={filterProperty}
+                                    checked={
                                         filterData[checkboxProperty][
                                             filterProperty
-                                        ] === true
-                                            ? 0
-                                            : 1;
-                                    updateCheckboxFilter(
-                                        checkboxProperty,
-                                        filterProperty,
-                                        toChange
-                                    );
-                                    startSearch({
-                                        ...filterData,
-                                        [checkboxProperty]: {
-                                            ...filterData[checkboxProperty],
-                                            [filterProperty]: toChange,
-                                        },
-                                    });
-                                }}
-                            />
-                            {/* eslint-disable-next-line jsx-a11y/label-has-for */}
-                            <label
-                                htmlFor={filterProperty}
-                                style={{ display: "table-cell" }}
-                            >
-                                {filterProperty}
-                            </label>
+                                        ]
+                                    }
+                                    onChange={() => {
+                                        const toChange =
+                                            filterData[checkboxProperty][
+                                                filterProperty
+                                            ];
+                                        updateCheckboxFilter(
+                                            checkboxProperty,
+                                            filterProperty,
+                                            toChange
+                                        );
+                                        startSearch({
+                                            ...filterData,
+                                            [checkboxProperty]: {
+                                                ...filterData[checkboxProperty],
+                                                [filterProperty]: toChange,
+                                            },
+                                        });
+                                    }}
+                                />
+                                {/* eslint-disable-next-line jsx-a11y/label-has-for */}
+                                <label
+                                    htmlFor={filterProperty}
+                                    style={{ display: "table-cell" }}
+                                >
+                                    {filterProperty}
+                                </label>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
         </div>
     );
 }
