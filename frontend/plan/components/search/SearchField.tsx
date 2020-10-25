@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { FilterData } from "../../../plan/types"
 
 interface SearchFieldProps {
-    startSearch: (searchObj: object) => void; // has filterData stuff + search string (add to types)
+    startSearch: (filterData: FilterData) => void; 
     updateSearchText: (txt: string) => void;
     filterData: FilterData;
     isDisabled: boolean;
