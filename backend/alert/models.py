@@ -25,12 +25,23 @@ SOURCE_PCA = "PCA"
 SOURCE_API = "API"
 
 
+class RegistrationGroup(models.Model):
+    created_at = models.DateTimeField(
+        auto_now_add=True, help_text="The datetime at which this registration group was created."
+    )
+
+    section = models.ForeignKey(
+        Section,
+        on_delete=models.CASCADE,
+        help_text="The base section for the registration group.",
+    )
+
+
 class Registration(models.Model):
     """
     A registration for sending an alert to the user upon the opening of a course
     during open registration.
     """
-
     created_at = models.DateTimeField(
         auto_now_add=True, help_text="The datetime at which this registration was created."
     )
@@ -61,7 +72,7 @@ class Registration(models.Model):
         max_length=16,
         choices=SOURCE_CHOICES,
         help_text="Where did the registration come from? Options and meanings: "
-        + string_dict_to_html(dict(SOURCE_CHOICES)),
+                  + string_dict_to_html(dict(SOURCE_CHOICES)),
     )
 
     api_key = models.ForeignKey(
@@ -198,7 +209,7 @@ class Registration(models.Model):
         default="",
         blank=True,
         help_text="What triggered the alert to be sent? Options and meanings: "
-        + string_dict_to_html(dict(METHOD_CHOICES)),
+                  + string_dict_to_html(dict(METHOD_CHOICES)),
     )
 
     # track resubscriptions
@@ -220,6 +231,22 @@ class Registration(models.Model):
         in which case it is the only element in its resubscribe chain).
         """
         ),
+    )
+
+    bulk_registration = models.ForeignKey(
+        RegistrationGroup,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        The User that registered for this alert. This object will be none if registration occurred
+        before the PCA refresh of Spring 2020 (before the refresh user's were only identified by
+        their email and phone numbers, which are legacy fields in this model now). This object
+        might also be none if registration occurred through a 3rd part API such as Penn Course
+        Notify (now that Notify has fallen this is an unlikely event).
+        """
+        )
     )
 
     def __str__(self):
@@ -299,7 +326,7 @@ class Registration(models.Model):
             if self.auto_resubscribe:
                 self.resubscribe()
             return (
-                email_result is not None and text_result is not None
+                    email_result is not None and text_result is not None
             )  # True if no error in email/text.
         else:
             return False
@@ -319,9 +346,9 @@ class Registration(models.Model):
         most_recent_reg = self.get_most_current_rec()
 
         if (
-            not most_recent_reg.notification_sent
-            and not most_recent_reg.cancelled
-            and not most_recent_reg.deleted
+                not most_recent_reg.notification_sent
+                and not most_recent_reg.cancelled
+                and not most_recent_reg.deleted
         ):  # if a notification hasn't been sent on this recent one
             # (and it hasn't been cancelled or deleted),
             return most_recent_reg  # don't create duplicate registrations for no reason.
@@ -452,13 +479,13 @@ class Registration(models.Model):
 
 
 def register_for_course(
-    course_code,
-    email_address=None,
-    phone=None,
-    source=SOURCE_PCA,
-    api_key=None,
-    user=None,
-    auto_resub=False,
+        course_code,
+        email_address=None,
+        phone=None,
+        source=SOURCE_PCA,
+        api_key=None,
+        user=None,
+        auto_resub=False,
 ):
     """
     This method is for the PCA 3rd party API (originally planned to service
@@ -483,17 +510,17 @@ def register_for_course(
         )
         registration.validate_phone()
         if Registration.objects.filter(
-            section=section,
-            email=email_address,
-            phone=registration.phone,
-            notification_sent=False,
-            deleted=False,
-            cancelled=False,
+                section=section,
+                email=email_address,
+                phone=registration.phone,
+                notification_sent=False,
+                deleted=False,
+                cancelled=False,
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
     else:
         if Registration.objects.filter(
-            section=section, user=user, notification_sent=False, deleted=False, cancelled=False,
+                section=section, user=user, notification_sent=False, deleted=False, cancelled=False,
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
         registration = Registration(section=section, user=user, source=source)

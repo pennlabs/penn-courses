@@ -10,11 +10,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_bool
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 import alert.examples as examples
-from alert.models import Registration, RegStatus, register_for_course
+from alert.models import Registration, RegStatus, register_for_course, RegistrationGroup
 from alert.serializers import (
     RegistrationCreateSerializer,
     RegistrationSerializer,
@@ -24,6 +25,7 @@ from alert.tasks import send_course_alerts
 from courses.util import get_current_semester, record_update, update_course_from_record
 from PennCourses.docs_settings import PcxAutoSchema
 
+from backend.courses.util import get_course_and_section
 
 logger = logging.getLogger(__name__)
 
@@ -90,9 +92,9 @@ def accept_webhook(request):
         return HttpResponse("Previous Status could not be extracted from response", status=400)
 
     should_send_alert = (
-        get_bool("SEND_FROM_WEBHOOK", False)
-        and course_status == "O"
-        and get_current_semester() == course_term
+            get_bool("SEND_FROM_WEBHOOK", False)
+            and course_status == "O"
+            and get_current_semester() == course_term
     )
 
     alert_for_course_called = False
@@ -229,6 +231,83 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]
 
+    @action(detail=False, methods=["post"])
+    def bulk(self, request):
+        # get section code
+        section_code = request.data['section']
+
+        course, section = get_course_and_section(section_code, get_current_semester())
+        associated_sections = section.associated_sections.all()
+
+        # if there is no section code
+        if section_code is None:
+            return Response(
+                {"message": "You must include a not null section"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_codes = []
+
+        for rel_sec in associated_sections:
+            # return Response(RegistrationGroup.objects.all())
+
+            # course_name = str(rel_sec).split(' ')[0]
+            course_name = str(rel_sec)
+            print(course_name)
+
+            res, normalized_course_code, reg = register_for_course(
+                course_code=course_name,
+                source="PCA",
+                user=request.user,
+                auto_resub=request.data.get("auto_resubscribe", False),
+            )
+
+            if res == RegStatus.SUCCESS:
+                response_codes.append(
+                    {
+                        "message": "Your registration for %s was successful!" % normalized_course_code,
+                        "id": reg.pk,
+                        "status": status.HTTP_201_CREATED
+                    }
+                )
+            elif res == RegStatus.OPEN_REG_EXISTS:
+                response_codes.append(
+                    {
+                        "message": "You've already registered to get alerts for %s!"
+                                   % normalized_course_code,
+                        "status": status.HTTP_409_CONFLICT
+
+                    }
+                )
+            elif res == RegStatus.COURSE_NOT_FOUND:
+                response_codes.append(
+                    {
+                        "message": "%s did not match any course in our database. Please try again!"
+                                   % section_code,
+                        "status": status.HTTP_404_NOT_FOUND,
+                    }
+                )
+            elif res == RegStatus.NO_CONTACT_INFO:
+                response_codes.append(
+                    {
+                        "message": "You must set a phone number and/or an email address to "
+                                   "register for an alert.",
+                        "status": status.HTTP_406_NOT_ACCEPTABLE
+                    }
+                )
+            else:
+                response_codes.append(
+                    {
+                        "message": "There was an error on our end. Please try again!",
+                        "status": status.HTTP_500_INTERNAL_SERVER_ERROR
+
+                    }
+                )
+
+            response_codes.append(res)
+
+        return Response("hello world")
+
     def get_serializer_class(self):
         if self.action == "create":
             return RegistrationCreateSerializer
@@ -272,7 +351,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response(
                 {
                     "message": "You've already registered to get alerts for %s!"
-                    % normalized_course_code
+                               % normalized_course_code
                 },
                 status=status.HTTP_409_CONFLICT,
             )
@@ -280,7 +359,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response(
                 {
                     "message": "%s did not match any course in our database. Please try again!"
-                    % section_code
+                               % section_code
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
@@ -288,7 +367,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response(
                 {
                     "message": "You must set a phone number and/or an email address to "
-                    "register for an alert."
+                               "register for an alert."
                 },
                 status=status.HTTP_406_NOT_ACCEPTABLE,
             )
@@ -338,7 +417,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     return Response(
                         {
                             "detail": "You can only resubscribe to a registration that "
-                            "has already been sent or has been cancelled."
+                                      "has already been sent or has been cancelled."
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -386,7 +465,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     return Response(
                         {
                             "detail": "auto_resubscribe updated to "
-                            + str(registration.auto_resubscribe)
+                                      + str(registration.auto_resubscribe)
                         },
                         status=status.HTTP_200_OK,
                     )
@@ -394,7 +473,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response(
                 {
                     "detail": "IntegrityError encountered while trying to update: "
-                    + str(e.__cause__)
+                              + str(e.__cause__)
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
