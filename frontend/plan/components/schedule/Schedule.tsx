@@ -2,6 +2,7 @@ import React, { Component, CSSProperties } from "react";
 import { isMobileOnly } from "react-device-detect";
 
 import { connect } from "react-redux";
+import { ThunkDispatch } from "redux-thunk";
 
 import {
     removeSchedItem,
@@ -20,28 +21,26 @@ import GridLines from "./GridLines";
 import Stats from "./Stats";
 import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
 
-import {Section} from "../../types";
+import { Day, Meeting, Section } from "../../types";
 
 interface ScheduleProps {
-  schedData: {
-    meetings: Section[]
-  };
-  removeSection: (idDashed: string) => void;
-  focusSection: (id: string) => void;
-  scheduleNames: string[];
-  switchSchedule: (scheduleName: string) => void;
-  schedulesMutator: {
-      copy: (scheduleName: string) => void;
-      remove: (scheduleName: string) => void;
-      
-      // NOT IN ORIGINAL PROPS
-      create: () => void;
-      rename: (oldName: string) => void;
-  };
-  activeScheduleName: string;
+    schedData: {
+        meetings: Section[];
+    };
+    removeSection: (idDashed: string) => void;
+    focusSection: (id: string) => void;
+    scheduleNames: string[];
+    switchSchedule: (scheduleName: string) => void;
+    schedulesMutator: {
+        copy: (scheduleName: string) => void;
+        remove: (scheduleName: string) => void;
 
-  // FIXME: correct the type of this state
-  setTab: (_: number) => void;
+        // NOT IN ORIGINAL PROPS
+        create: () => void;
+        rename: (oldName: string) => void;
+    };
+    activeScheduleName: string;
+    setTab: (_: number) => void;
 }
 
 // Used for box coloring, from StackOverflow:
@@ -86,11 +85,15 @@ class Schedule extends Component {
         let startHour = 10.5;
         let endHour = 16;
 
-        // TODO: modify any type
         // show the weekend days only if there's a section which meets on saturday (S) or sunday (U)
         const showWeekend =
-            sections.filter((sec: any) => sec.day === "S" || sec.day === "U")
-                .length > 0;
+            sections.filter(
+                (sec: Section) =>
+                    sec.meetings.filter(
+                        (meeting: Meeting) =>
+                            meeting.day === "S" || meeting.day === "U"
+                    ).length > 0
+            ).length > 0;
 
         // actual schedule elements are offset by the row/col offset since
         // days/times take up a row/col respectively.
@@ -131,24 +134,27 @@ class Schedule extends Component {
             };
         })();
         const sectionIds = sections.map((x) => x.id);
+
         // a meeting is the data that represents a single block on the schedule.
-        const meetings: {day: "M" | "T" | "W" | "R" | "F" | "S" | "U", 
-                        start: number,
-                        end: number,
-                        course: {
-                            color: string,
-                            id: string,
-                            coreqFulfilled: boolean
-                            },
-                        style: {
-                            width: string,
-                            left: string,
-                        }}[] = [];
+        const meetings: {
+            day: Day;
+            start: number;
+            end: number;
+            course: {
+                color: string;
+                id: string;
+                coreqFulfilled: boolean;
+            };
+            style: {
+                width: string;
+                left: string;
+            };
+        }[] = [];
         sections.forEach((s) => {
             const color = getColor(s.id);
             meetings.push(
                 ...s.meetings.map((m) => ({
-                    day: m.day as "M" | "T" | "W" | "R" | "F" | "S" | "U",
+                    day: m.day as Day,
                     start: transformTime(m.start, false),
                     end: transformTime(m.end, true),
                     course: {
@@ -177,18 +183,20 @@ class Schedule extends Component {
             // for every conflict of size k, make the meetings in that conflict
             // take up (100/k) % of the square, and use `left` to place them
             // next to each other.
-            const group: {day: "M" | "T" | "W" | "R" | "F" | "S" | "U", 
-                            start: number,
-                            end: number,
-                            course: {
-                                color: string,
-                                id: string,
-                                coreqFulfilled: boolean
-                                },
-                            style: {
-                                width: string,
-                                left: string,
-                            }}[] = Array.from(conflict.values());
+            const group: {
+                day: Day;
+                start: number;
+                end: number;
+                course: {
+                    color: string;
+                    id: string;
+                    coreqFulfilled: boolean;
+                };
+                style: {
+                    width: string;
+                    left: string;
+                };
+            }[] = Array.from(conflict.values());
             const w = 100 / group.length;
             for (let j = 0; j < group.length; j += 1) {
                 group[j].style = {
@@ -255,13 +263,12 @@ class Schedule extends Component {
                                 offset={rowOffset}
                             />
                         )}
-                        {notEmpty 
-                        && (
+                        {notEmpty && (
                             <GridLines
                                 numRow={getNumRows()}
                                 numCol={getNumCol()}
-                            />)
-                        }
+                            />
+                        )}
                         {notEmpty && blocks}
                         {!notEmpty && <EmptySchedule />}
                     </div>
@@ -272,22 +279,22 @@ class Schedule extends Component {
     }
 }
 
-// FIXME: Change type of state (not 'any')
 const mapStateToProps = (state: any) => ({
     schedData: state.schedule.schedules[state.schedule.scheduleSelected],
     scheduleNames: Object.keys(state.schedule.schedules),
     activeScheduleName: state.schedule.scheduleSelected,
 });
 
-
-// FIXME: Change input type to dispatch (not 'any')
-const mapDispatchToProps = (dispatch: (_: any) => void) => ({
+const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     removeSection: (idDashed: string) => dispatch(removeSchedItem(idDashed)),
     focusSection: (id: string) => dispatch(fetchCourseDetails(id)),
-    switchSchedule: (scheduleName: string) => dispatch(changeSchedule(scheduleName)),
+    switchSchedule: (scheduleName: string) =>
+        dispatch(changeSchedule(scheduleName)),
     schedulesMutator: {
-        copy: (scheduleName: string) => dispatch(duplicateSchedule(scheduleName)),
-        remove: (scheduleName: string) => dispatch(deleteSchedule(scheduleName)),
+        copy: (scheduleName: string) =>
+            dispatch(duplicateSchedule(scheduleName)),
+        remove: (scheduleName: string) =>
+            dispatch(deleteSchedule(scheduleName)),
         rename: (oldName: string) =>
             dispatch(
                 openModal(

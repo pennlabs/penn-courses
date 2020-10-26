@@ -1,26 +1,54 @@
 import React, { Component, CSSProperties } from "react";
-import styled from "styled-components";
 import Meter from "./Meter";
-import {Meeting, Section} from "../../types"
+import { Meeting, Section } from "../../types";
+import styled from "styled-components";
 
 interface StatsProps {
-    meetings: Section[]
+    meetings: Section[];
 }
 
-const purpleTimeStats: CSSProperties = {
-    color: "#7874CF",
-    fontWeight: "bold",
-    fontSize: "1.3rem",
-    textAlign: "right",
-    minWidth: "40px",
-    paddingRight: "10px",
-};
+const PurpleTimeContainer = styled.div`
+    display: grid;
+    grid-template-rows: 25% 25% 25% 25%;
+`;
+
+const PurpleTimeInnerBlock = styled.div`
+    display: flex;
+    align-items: center;
+`;
+
+const PurpleTimeStats = styled.div`
+    color: #7874cf;
+    font-weight: bold;
+    font-size: 1.3rem;
+    text-align: right;
+    min-width: 40px;
+    padding-right: 10px;
+`;
+
+const PurpleTimeStatsDescription = styled.div`
+    font-size: 0.8em;
+`;
+
+const StartEndTimeContainer = styled.div`
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: flex-start;
+`;
+
+const StartEndTimeBlock = styled.div`
+    color: #7874cf;
+    font-size: 1.3rem;
+    font-weight: bold;
+`;
 
 class Stats extends Component<StatsProps> {
     parseTime = (t: number) => {
         let hour = Math.floor(t % 12);
         let min = Math.round((t % 1) * 100);
-        
+
         if (hour === 0) {
             hour = 12;
         }
@@ -41,7 +69,7 @@ class Stats extends Component<StatsProps> {
         let maxHoursADay;
         let totalHours;
         let averageHours;
-        let avgs: {[index: string]: number} = {};
+        let avgs: { [index: string]: number } = {};
         if (meetings.length === 0) {
             earliestStart = "—";
             latestEnd = "—";
@@ -59,7 +87,7 @@ class Stats extends Component<StatsProps> {
             const startTimes: number[] = [];
             const endTimes: number[] = [];
             const hoursPerDay = [0, 0, 0, 0, 0];
-            const mapDays: {[index: string]: number} = {
+            const mapDays: { [index: string]: number } = {
                 M: 0,
                 T: 1,
                 W: 2,
@@ -68,15 +96,24 @@ class Stats extends Component<StatsProps> {
             };
 
             // TODO declare type of value for each key-value pair
-            const courseStats: {[index: string]: {[index: string]: number}}  = {};
-            const statTypes: ("difficulty" | "work_required" | "instructor_quality" | "course_quality")[] = [
+            const courseStats: {
+                [index: string]: { [index: string]: number };
+            } = {};
+            const statTypes: (
+                | "difficulty"
+                | "work_required"
+                | "instructor_quality"
+                | "course_quality"
+            )[] = [
                 "difficulty",
                 "work_required",
                 "instructor_quality",
                 "course_quality",
             ];
-            const courseRepeats: {[index: string]: {[index: string]: number}} = {};
-            const courseCUs: {[index: string]: number} = {};
+            const courseRepeats: {
+                [index: string]: { [index: string]: number };
+            } = {};
+            const courseCUs: { [index: string]: number } = {};
 
             meetings.forEach((section) => {
                 section.meetings.forEach((meeting: Meeting) => {
@@ -108,13 +145,13 @@ class Stats extends Component<StatsProps> {
                 }
             });
 
-            const sums: {[index: string]: number[]} = {};
+            const sums: { [index: string]: number[] } = {};
             statTypes.forEach((stat) => {
                 sums[stat] = [];
             });
 
             totalCUs = 0;
-            const denominator: {[index: string]: number} = {};
+            const denominator: { [index: string]: number } = {};
             for (const course in courseStats) {
                 if (Object.prototype.hasOwnProperty.call(courseStats, course)) {
                     statTypes.forEach((stat) => {
@@ -140,12 +177,12 @@ class Stats extends Component<StatsProps> {
             maxHoursADay = parseFloat(Math.max(...hoursPerDay).toFixed(1));
             totalHours = hoursPerDay.reduce((a, b) => a + b, 0);
             averageHours = (totalHours / 5).toFixed(1);
-            // averageHours = parseFloat(totalHours / 5).toFixed(1);
             totalHours = parseFloat(totalHours.toFixed(1));
 
             statTypes.forEach((stat) => {
                 avgs[stat] = denominator[stat]
-                    ? sums[stat].reduce((a: number, b: number) => a + b, 0) / denominator[stat]
+                    ? sums[stat].reduce((a: number, b: number) => a + b, 0) /
+                      denominator[stat]
                     : 0;
             });
 
@@ -171,71 +208,44 @@ class Stats extends Component<StatsProps> {
                 <div
                     style={{ display: "grid", gridTemplateColumns: "55% 45%" }}
                 >
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateRows: "25% 25% 25% 25%",
-                        }}
-                    >
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                            <div style={purpleTimeStats}>{totalCUs}</div>
-                            <div style={{ fontSize: "0.8em" }}>
+                    <PurpleTimeContainer>
+                        <PurpleTimeInnerBlock>
+                            <PurpleTimeStats>{totalCUs}</PurpleTimeStats>
+                            <PurpleTimeStatsDescription>
                                 total credits
-                            </div>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                            <div style={purpleTimeStats}>{maxHoursADay}</div>
-                            <div style={{ fontSize: "0.8em" }}>
+                            </PurpleTimeStatsDescription>
+                        </PurpleTimeInnerBlock>
+                        <PurpleTimeInnerBlock>
+                            <PurpleTimeStats>{maxHoursADay}</PurpleTimeStats>
+                            <PurpleTimeStatsDescription>
                                 max hours in a day
-                            </div>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                            <div style={purpleTimeStats}>{averageHours}</div>
-                            <div style={{ fontSize: "0.8em" }}>
+                            </PurpleTimeStatsDescription>
+                        </PurpleTimeInnerBlock>
+                        <PurpleTimeInnerBlock>
+                            <PurpleTimeStats>{averageHours}</PurpleTimeStats>
+                            <PurpleTimeStatsDescription>
                                 avg. hours a day
-                            </div>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                            <div style={purpleTimeStats}>{totalHours}</div>
-                            <div style={{ fontSize: "0.8em" }}>
+                            </PurpleTimeStatsDescription>
+                        </PurpleTimeInnerBlock>
+                        <PurpleTimeInnerBlock>
+                            <PurpleTimeStats>{totalHours}</PurpleTimeStats>
+                            <PurpleTimeStatsDescription>
                                 total hours of class
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        style={{
-                            padding: "10px",
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-evenly",
-                            alignItems: "flex-start",
-                        }}
-                    >
+                            </PurpleTimeStatsDescription>
+                        </PurpleTimeInnerBlock>
+                    </PurpleTimeContainer>
+                    <StartEndTimeContainer>
                         <div>
-                            <div
-                                style={{
-                                    color: "#7874CF",
-                                    fontSize: "1.3rem",
-                                    fontWeight: "bold",
-                                }}
-                            >
+                            <StartEndTimeBlock>
                                 {earliestStart}
-                            </div>
+                            </StartEndTimeBlock>
                             <div>earliest start time</div>
                         </div>
                         <div>
-                            <div
-                                style={{
-                                    color: "#7874CF",
-                                    fontSize: "1.3rem",
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                {latestEnd}
-                            </div>
+                            <StartEndTimeBlock>{latestEnd}</StartEndTimeBlock>
                             <div>latest end time</div>
                         </div>
-                    </div>
+                    </StartEndTimeContainer>
                 </div>
             </div>
         );

@@ -1,4 +1,4 @@
-import React, {CSSProperties} from "react";
+import React, { CSSProperties } from "react";
 
 interface GridLinesProps {
     numRow: number;
@@ -19,9 +19,11 @@ export default function GridLines({ numRow, numCol }: GridLinesProps) {
     };
 
     const lines = [];
+    let key = 0;
     for (let i = 2; i < Math.floor(numRow / 2) * 2; i += 2) {
         lines.push(
             <span
+                key={key++}
                 className="horizontalLine"
                 style={{ gridRow: i, ...rowstyle }}
             />
@@ -29,6 +31,7 @@ export default function GridLines({ numRow, numCol }: GridLinesProps) {
     }
     lines.push(
         <span
+            key={key++}
             className="horizontalLine-last"
             style={{ gridRow: lastRow - 1, ...rowstyle }}
         />
@@ -37,6 +40,7 @@ export default function GridLines({ numRow, numCol }: GridLinesProps) {
     for (let i = 2; i <= numCol; i += 1) {
         lines.push(
             <span
+                key={key++}
                 className="verticalLine"
                 style={{ gridColumn: i, ...colstyle }}
             />
@@ -44,11 +48,11 @@ export default function GridLines({ numRow, numCol }: GridLinesProps) {
     }
     lines.push(
         <span
+            key={key++}
             className="verticalLine-last"
             style={{ gridColumn: numCol, ...colstyle }}
         />
     );
 
-    // return lines;
-    return <>{lines.map(line => line)}</>
+    return <>{lines.map((line, i) => line)}</>;
 }

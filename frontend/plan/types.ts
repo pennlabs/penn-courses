@@ -25,6 +25,16 @@ export enum Activity {
     UNDEFINED = "***",
 }
 
+export enum Day {
+    M = "M",
+    T = "T",
+    W = "W",
+    R = "R",
+    F = "F",
+    S = "S",
+    U = "U",
+}
+
 export interface Section {
     id: string;
     status: Status;
