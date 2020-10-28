@@ -172,7 +172,7 @@ export const clearSchedule = () => ({
 });
 
 export const loadRequirements = () => (dispatch) =>
-    doAPIRequest("/requirements").then(
+    doAPIRequest("/requirements/").then(
         (response) =>
             response.json().then(
                 (data) => {
