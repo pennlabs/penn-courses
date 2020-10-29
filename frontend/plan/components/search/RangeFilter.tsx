@@ -1,25 +1,19 @@
 import React from "react";
 import { Range } from "rc-slider";
-import PropTypes from "prop-types";
 import { FilterData } from "../../types";
 
-interface RangeFilterData {
-    [key: string]: [number, number];
-}
-
-interface RangeFilterProps<F, K extends keyof F, V extends keyof K> {
+interface RangeFilterProps<F, K extends keyof F> {
     minRange: number;
     maxRange: number;
     filterData: F;
-    updateRangeFilter: (values: V) => void;
+    updateRangeFilter: (values: [number, number]) => void;
     startSearch: (searchObj: F) => void;
     rangeProperty: K;
-    step: number
+    step: number;
 }
 export function RangeFilter<
-    F extends { [P in K]: RangeFilterData },
-    K extends keyof F,
-    V extends keyof K & string
+    F extends { [P in K]: [number, number] },
+    K extends keyof F
 >({
     minRange,
     maxRange,
@@ -28,8 +22,8 @@ export function RangeFilter<
     startSearch,
     rangeProperty,
     step,
-} : RangeFilterProps<F, K, V>) {
-    const onSliderChange = (values: V) => {
+}: RangeFilterProps<F, K>) {
+    const onSliderChange = (values: [number, number]) => {
         updateRangeFilter(values);
         startSearch({
             ...filterData,
@@ -48,8 +42,8 @@ export function RangeFilter<
                     max={maxRange}
                     value={filterData[rangeProperty]}
                     marks={{
-                        0: filterData[rangeProperty][0],
-                        4: filterData[rangeProperty][1],
+                        0: filterData[rangeProperty][0].toString(),
+                        4: filterData[rangeProperty][1].toString(),
                     }}
                     step={step}
                     allowCross={false}
@@ -59,15 +53,3 @@ export function RangeFilter<
         </div>
     );
 }
-
-RangeFilter.propTypes = {
-    setIsActive: PropTypes.func,
-    minRange: PropTypes.number,
-    maxRange: PropTypes.number,
-    startSearch: PropTypes.func,
-    updateRangeFilter: PropTypes.func,
-    rangeProperty: PropTypes.string,
-    step: PropTypes.number,
-    // eslint-disable-next-line react/forbid-prop-types
-    filterData: PropTypes.object,
-};

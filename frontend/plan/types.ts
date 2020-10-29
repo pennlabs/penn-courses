@@ -29,11 +29,11 @@ export interface ActivityFilter {
     lab: boolean;
     rec: boolean;
     sem: boolean;
-    stu: boolean
+    stu: boolean;
 }
 
 export interface CUFilter {
-    .5: boolean;
+    0.5: boolean;
     1.0: boolean;
     1.5: boolean;
 }
@@ -109,15 +109,12 @@ export interface FilterData {
     searchType: string;
     selectedReq: string[]; // should this be a number[]??
     difficulty: [number, number];
-    course_quality: [number, number] // upper and lower bound for course_quality
+    course_quality: [number, number]; // upper and lower bound for course_quality
     instructor_quality: [number, number];
-    activity: ActivityFilter
-    cu: CUFilter
+    activity: ActivityFilter;
+    cu: CUFilter;
 }
 
 export interface SearchObject {
     searchType: string;
-    
 }
-
-
