@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import PropTypes from "prop-types";
 import Course from "./Course";
+import { Course as CourseType, SortMode } from "../../types";
 
-const goodEasy = ({ difficulty, course_quality: courseQuality }) =>
+const goodEasy = ({ difficulty, course_quality: courseQuality }: CourseType) =>
     !difficulty || !courseQuality
         ? 0
         : Math.pow(courseQuality + 0.5, 1.5) / (difficulty + 1);
@@ -13,20 +13,21 @@ const goodEasy = ({ difficulty, course_quality: courseQuality }) =>
  * @param sortMode The sort mode as a string
  * @returns {*} A sorted list of courses
  */
-const courseSort = (courses, sortMode) => {
+const courseSort = (courses: CourseType[], sortMode: SortMode) => {
     const sorted = [...courses];
     sorted.sort((courseA, courseB) => {
-        switch (sortMode && sortMode.toLowerCase()) {
-            case "quality":
+        switch (sortMode) {
+            case SortMode.QUALITY:
                 return !courseB.course_quality
                     ? -1
                     : courseB.course_quality - courseA.course_quality;
-            case "difficulty":
+            case SortMode.DIFFICULTY:
                 return !courseB.difficulty
                     ? -1
                     : courseA.difficulty - courseB.difficulty;
-            case "good & easy":
+            case SortMode.GOOD_AND_EASY:
                 return goodEasy(courseB) - goodEasy(courseA);
+            case SortMode.NAME:
             default:
                 return courseA.id.localeCompare(courseB.id);
         }
@@ -34,20 +35,28 @@ const courseSort = (courses, sortMode) => {
     return sorted;
 };
 
+export interface CourseListProps {
+    courses: CourseType[];
+    getCourse: (id: string) => void;
+    sortMode: SortMode;
+    scrollPos: number;
+    setScrollPos: (pos: number) => void;
+}
 const CourseList = ({
     courses,
     getCourse,
     sortMode,
     scrollPos,
     setScrollPos,
-}) => {
-    const listRef = useRef(null);
+}: CourseListProps) => {
+    const listRef = useRef<HTMLUListElement>(null);
     useEffect(() => {
         // Set sections list scroll position to stored position
-        const { current: ref } = listRef;
-        ref.scrollTop = scrollPos;
+        if (listRef.current) {
+            listRef.current.scrollTop = scrollPos;
+        }
         // Return cleanup function that stores current sections scroll position
-        return () => setScrollPos(ref.scrollTop);
+        return () => setScrollPos(listRef.current?.scrollTop || 0);
     }, [scrollPos, setScrollPos]);
 
     return (
@@ -90,11 +99,3 @@ const CourseList = ({
 };
 
 export default CourseList;
-
-CourseList.propTypes = {
-    courses: PropTypes.arrayOf(PropTypes.object).isRequired,
-    getCourse: PropTypes.func.isRequired,
-    sortMode: PropTypes.string.isRequired,
-    scrollPos: PropTypes.number,
-    setScrollPos: PropTypes.func,
-};

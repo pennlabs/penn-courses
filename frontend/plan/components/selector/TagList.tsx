@@ -1,13 +1,16 @@
 import React, { useState } from "react";
-import PropTypes from "prop-types";
 import Tag from "./Tag";
 
+interface TagListProps {
+    elements: string[];
+    limit?: number;
+    onClick?: (id: string) => void;
+}
 export default function TagList({
     elements,
-    onClick = null,
+    onClick,
     limit = 1,
-    select = null,
-}) {
+}: TagListProps) {
     const [expanded, setExpanded] = useState(false);
     const visibleTags = elements.slice(0, limit);
     const hiddenTags = elements.slice(limit);
@@ -52,10 +55,3 @@ export default function TagList({
         </span>
     );
 }
-
-TagList.propTypes = {
-    elements: PropTypes.arrayOf(PropTypes.any),
-    limit: PropTypes.number,
-    select: PropTypes.func,
-    onClick: PropTypes.func,
-};
