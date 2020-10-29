@@ -107,7 +107,7 @@ export interface User {
 export interface FilterData {
     searchString: string;
     searchType: string;
-    selectedReq: string[];
+    selectedReq: string[]; // should this be a number[]??
     difficulty: [number, number];
     course_quality: [number, number] // upper and lower bound for course_quality
     instructor_quality: [number, number];

@@ -12,7 +12,7 @@ interface SearchFieldProps<F, K extends keyof F, V extends keyof K> {
     // field == keyof F (filterData), value == keyof field
     // field ("activity"), value ("lab"), togglestate (true)
     updateCheckboxFilter: (field: K, value: V, toggleState: boolean) => void;
-    startSearch: (searchObj: object) => void;
+    startSearch: (searchObj: F) => void;
     checkboxProperty: K;
 }
 
