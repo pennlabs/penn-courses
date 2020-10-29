@@ -28,7 +28,7 @@ export default function MyCircularProgressBar({
     return (
         <CircularProgressbar
             value={(value / 4) * 100}
-            strokeWidth={14} // Changed from "14" to {14} to fix type string not assignable
+            strokeWidth={14}
             text={value === 0 ? "N/A" : `${parseFloat(value.toFixed(2))}`}
             styles={buildStyles({
                 // Rotation of path and trail, in number of turns (0-1)

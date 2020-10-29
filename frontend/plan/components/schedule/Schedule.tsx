@@ -21,7 +21,7 @@ import GridLines from "./GridLines";
 import Stats from "./Stats";
 import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
 
-import { Day, Meeting, Section } from "../../types";
+import { Color, Day, Meeting, Section, MeetingBlock } from "../../types";
 
 interface ScheduleProps {
     schedData: {
@@ -108,17 +108,17 @@ class Schedule extends Component {
         // colors array. Only start reusing colors when all the colors are used.
         const getColor = (() => {
             const colors = [
-                "blue",
-                "red",
-                "aqua",
-                "orange",
-                "green",
-                "pink",
-                "sea",
-                "indigo",
+                Color.BLUE,
+                Color.RED,
+                Color.AQUA,
+                Color.ORANGE,
+                Color.GREEN,
+                Color.PINK,
+                Color.SEA,
+                Color.INDIGO,
             ];
             // some CIS120: `used` is a *closure* storing the colors currently in the schedule
-            let used: string[] = [];
+            let used: Color[] = [];
             return (c: string) => {
                 if (used.length === colors.length) {
                     // if we've used all the colors, it's acceptable to start reusing colors.
@@ -136,20 +136,7 @@ class Schedule extends Component {
         const sectionIds = sections.map((x) => x.id);
 
         // a meeting is the data that represents a single block on the schedule.
-        const meetings: {
-            day: Day;
-            start: number;
-            end: number;
-            course: {
-                color: string;
-                id: string;
-                coreqFulfilled: boolean;
-            };
-            style: {
-                width: string;
-                left: string;
-            };
-        }[] = [];
+        const meetings: MeetingBlock[] = [];
         sections.forEach((s) => {
             const color = getColor(s.id);
             meetings.push(
@@ -183,20 +170,7 @@ class Schedule extends Component {
             // for every conflict of size k, make the meetings in that conflict
             // take up (100/k) % of the square, and use `left` to place them
             // next to each other.
-            const group: {
-                day: Day;
-                start: number;
-                end: number;
-                course: {
-                    color: string;
-                    id: string;
-                    coreqFulfilled: boolean;
-                };
-                style: {
-                    width: string;
-                    left: string;
-                };
-            }[] = Array.from(conflict.values());
+            const group: MeetingBlock[] = Array.from(conflict.values());
             const w = 100 / group.length;
             for (let j = 0; j < group.length; j += 1) {
                 group[j].style = {

@@ -35,6 +35,18 @@ export enum Day {
     U = "U",
 }
 
+export enum Color {
+    RED = "#D0021B",
+    ORANGE = "#F5A623",
+    BLUE = "#00BFDD",
+    AQUA = "#35E1BB",
+    GREEN = "#7ED321",
+    PINK = "#FF34CC",
+    SEA = "#3055CC",
+    INDIGO = "#7874CF",
+    BLACK = "#000",
+}
+
 export interface Section {
     id: string;
     status: Status;
@@ -55,6 +67,21 @@ export interface Meeting {
     start: number;
     end: number;
     room: string;
+}
+
+export interface MeetingBlock {
+    day: Day;
+    start: number;
+    end: number;
+    course: {
+        color: Color;
+        id: string;
+        coreqFulfilled: boolean;
+    };
+    style: {
+        width: string;
+        left: string;
+    };
 }
 
 export interface Profile {
@@ -81,8 +108,9 @@ export interface Course {
     instructor_quality: number;
     difficulty: number;
     work_required: number;
-    crosslistings: string[];
-    requirements: Requirement[];
+    crosslistings?: string[];
+    requirements?: Requirement[];
+    num_sections: number;
 }
 
 export interface Schedule {
@@ -99,4 +127,11 @@ export interface User {
     first_name: string;
     last_name: string;
     profile: Profile;
+}
+
+export enum SortMode {
+    NAME = "Name",
+    QUALITY = "Quality",
+    DIFFICULTY = "Difficulty",
+    GOOD_AND_EASY = "Good & Easy",
 }
