@@ -6,7 +6,10 @@ const illegalCharacters = /[^a-zA-Z\d\s-_]/;
  * @param existingScheduleNames
  * @returns {{message: string, error: boolean}}
  */
-export const validateScheduleName = (scheduleName, existingScheduleNames) => {
+export const validateScheduleName = (
+    scheduleName: string,
+    existingScheduleNames: string[]
+) => {
     if (scheduleName === "") {
         return { message: "Name cannot be empty", error: true };
     }
