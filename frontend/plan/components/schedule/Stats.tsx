@@ -95,7 +95,6 @@ class Stats extends Component<StatsProps> {
                 F: 4,
             };
 
-            // TODO declare type of value for each key-value pair
             const courseStats: {
                 [index: string]: { [index: string]: number };
             } = {};
