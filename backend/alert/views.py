@@ -388,10 +388,19 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                         {"detail": "You cannot make changes to a deleted registration."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+                auto_resubscribe_changed = registration.auto_resubscribe != request.data.get(
+                    "auto_resubscribe", registration.auto_resubscribe
+                )
+                close_notification_changed = registration.close_notification != request.data.get(
+                    "close_notification", registration.close_notification
+                )
+                push_notifications_changed = registration.push_notifications != request.data.get(
+                    "push_notifications", registration.push_notifications
+                )
                 changed = (
-                    registration.auto_resubscribe != request.data.get("auto_resubscribe")
-                    or registration.close_notification != request.data.get("close_notification")
-                    or registration.push_notifications != request.data.get("push_notifications")
+                    auto_resubscribe_changed
+                    or close_notification_changed
+                    or push_notifications_changed
                 )
                 registration.auto_resubscribe = request.data.get(
                     "auto_resubscribe", registration.auto_resubscribe
@@ -412,7 +421,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                                         "auto_resubscribe updated to "
                                         + str(registration.auto_resubscribe)
                                     ]
-                                    if "auto_resubscribe" in request.data
+                                    if auto_resubscribe_changed
                                     else []
                                 )
                                 + (
@@ -420,7 +429,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                                         "close_notification updated to "
                                         + str(registration.close_notification)
                                     ]
-                                    if "close_notification" in request.data
+                                    if close_notification_changed
                                     else []
                                 )
                                 + (
@@ -428,7 +437,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                                         "push_notifications updated to "
                                         + str(registration.push_notifications)
                                     ]
-                                    if "push_notifications" in request.data
+                                    if push_notifications_changed
                                     else []
                                 )
                             )
@@ -467,7 +476,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             deleted=False,
             resubscribed_to__isnull=True,
             section__course__semester=get_current_semester(),
-        ) # Change this to include close notifications once frontend supports them
+        )  # Change this to include close notifications once frontend supports them
 
 
 class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet):

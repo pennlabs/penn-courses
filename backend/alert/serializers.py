@@ -58,19 +58,20 @@ class RegistrationSerializer(serializers.ModelSerializer):
         read_only=True,
         help_text=dedent(
             """
-        TODO: fill out
+        True if the registration is waiting to send a close notification to the user
+        once the section closes.  False otherwise.
         """
         ),
     )
 
-    def get_section_status(self, o):
-        return o.section.status
+    def get_section_status(self, registration_object):
+        return registration_object.section.status
 
-    def get_is_active(self, o):
-        return o.is_active
+    def get_is_active(self, registration_object):
+        return registration_object.is_active
 
-    def get_is_waiting_for_close(self, o):
-        return o.is_waiting_for_close
+    def get_is_waiting_for_close(self, registration_object):
+        return registration_object.is_waiting_for_close
 
     class Meta:
         model = Registration

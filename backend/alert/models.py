@@ -124,7 +124,9 @@ class Registration(models.Model):
     )
     push_notifications = models.BooleanField(
         default=False,
-        help_text="Defaults to False, changed to True if the user enables mobile push notifications."
+        help_text=(
+            "Defaults to False, changed to True if the user enables mobile push notifications."
+        ),
     )
     cancelled = models.BooleanField(
         default=False,
@@ -192,13 +194,25 @@ class Registration(models.Model):
         default=False,
         help_text=dedent(
             """Defaults to False.  Changes to True if the user opts-in to receive
-        a notification when a section closes after an alert was sent for it opening.
+        a close notification (an alert when the section closes after an
+        alert was sent for it opening).
         """
-        )
+        ),
     )
-    # changed to True if close notification is sent out
-    close_notification_sent = models.BooleanField(default=False)
-    close_notification_sent_at = models.DateTimeField(blank=True, null=True)
+    close_notification_sent = models.BooleanField(
+        default=False,
+        help_text="True if a close notification has been sent to the user, false otherwise.",
+    )
+    close_notification_sent_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        When was a close notification sent to the user as a result of this registration?
+        Null if a close notification was not sent.
+        """
+        ),
+    )
 
     METHOD_CHOICES = (
         ("", "Unsent"),
@@ -216,7 +230,10 @@ class Registration(models.Model):
         + string_dict_to_html(dict(METHOD_CHOICES)),
     )
     close_notification_sent_by = models.CharField(
-        max_length=16, choices=METHOD_CHOICES, default="", blank=True,
+        max_length=16,
+        choices=METHOD_CHOICES,
+        default="",
+        blank=True,
         help_text="What triggered the close notification to be sent?  Options and meanings: "
         + string_dict_to_html(dict(METHOD_CHOICES)),
     )
