@@ -63,6 +63,7 @@ export interface Section {
 }
 
 export interface Meeting {
+    id: string;
     day: string;
     start: number;
     end: number;
@@ -82,6 +83,9 @@ export interface MeetingBlock {
         width: string;
         left: string;
     };
+
+    // used for finding course conflicts
+    id?: number;
 }
 
 export interface Profile {
