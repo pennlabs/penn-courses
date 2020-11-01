@@ -52,7 +52,7 @@ const initiateSync = async (store) => {
             store.dispatch(enforceSemester(semester));
             resolve();
         };
-        fetch("/api/options")
+        fetch("/api/options/")
             .then((response) => response.json())
             .then((options) => {
                 handleSemester(options.SEMESTER);

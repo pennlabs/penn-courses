@@ -1159,6 +1159,36 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120, response.data)
 
+    def test_semester_not_set(self):
+        Option.objects.filter(key="SEMESTER").delete()
+        response = self.client.get(reverse("registrations-list"))
+        self.assertEqual(500, response.status_code)
+        self.assertTrue("SEMESTER" in response.data["detail"])
+
+    def test_registrations_get_only_current_semester(self):
+        _, self.cis110in2019C = create_mock_data("CIS-110-001", "2019C")
+        registration = Registration(section=self.cis110in2019C, user=self.user, source="PCA")
+        registration.auto_resubscribe = False
+        registration.save()
+        response = self.client.get(reverse("registrations-list"))
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(200, response.status_code)
+        self.check_model_with_response_data(
+            Registration.objects.get(section=self.cis120), response.data[0]
+        )
+
+    def test_registration_history_get_only_current_semester(self):
+        _, self.cis110in2019C = create_mock_data("CIS-110-001", "2019C")
+        registration = Registration(section=self.cis110in2019C, user=self.user, source="PCA")
+        registration.auto_resubscribe = False
+        registration.save()
+        response = self.client.get(reverse("registrationhistory-list"))
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(200, response.status_code)
+        self.check_model_with_response_data(
+            Registration.objects.get(section=self.cis120), response.data[0]
+        )
+
     def registrations_resubscribe_get_old_and_history_helper(self, ids):
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)

@@ -42,7 +42,13 @@ def send_text(to, text):
 class Alert(ABC):
     def __init__(self, template, reg):
         t = loader.get_template(template)
-        self.text = t.render({"course": reg.section.full_code, "brand": "Penn Course Alert",})
+        self.text = t.render(
+            {
+                "course": reg.section.full_code,
+                "brand": "Penn Course Alert",
+                "auto_resubscribe": reg.auto_resubscribe,
+            }
+        )
         self.registration = reg
 
     @abstractmethod

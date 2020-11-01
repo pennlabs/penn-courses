@@ -1,10 +1,14 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 
-export default function MyCircularProgressBar(props) {
+interface MyCircularProgressBarProps {
+    value: number;
+}
+
+export default function MyCircularProgressBar({
+    value,
+}: MyCircularProgressBarProps) {
     let color;
-    const { value } = props;
     switch (true) {
         case value === 0:
             color = "#f1f1f1";
@@ -12,10 +16,10 @@ export default function MyCircularProgressBar(props) {
         case value < 1:
             color = "#df5d56";
             break;
-        case props.value < 2:
+        case value < 2:
             color = "#FFC107";
             break;
-        case props.value < 3:
+        case value < 3:
             color = "#5891FC";
             break;
         default:
@@ -24,7 +28,7 @@ export default function MyCircularProgressBar(props) {
     return (
         <CircularProgressbar
             value={(value / 4) * 100}
-            strokeWidth="14"
+            strokeWidth={14}
             text={value === 0 ? "N/A" : `${parseFloat(value.toFixed(2))}`}
             styles={buildStyles({
                 // Rotation of path and trail, in number of turns (0-1)
@@ -51,7 +55,3 @@ export default function MyCircularProgressBar(props) {
         />
     );
 }
-
-MyCircularProgressBar.propTypes = {
-    value: PropTypes.number,
-};

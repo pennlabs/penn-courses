@@ -1,7 +1,7 @@
-import React from "react";
-import PropTypes from "prop-types";
+import React, { FunctionComponent } from "react";
 
 import { connect } from "react-redux";
+import { ThunkDispatch } from "redux-thunk";
 
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
@@ -13,8 +13,23 @@ import {
     removeSchedItem,
     updateScrollPos,
 } from "../../actions";
+import { Course, Section, SortMode } from "../../types";
 
-const Selector = ({
+interface SelectorProps {
+    courses: Course[];
+    course: Course;
+    getCourse: (courseId: string) => void;
+    clearCourse: () => void;
+    addToSchedule: (section: string) => void;
+    removeFromSchedule: (id: string) => void;
+    isLoadingCourseInfo: boolean;
+    isSearchingCourseInfo: boolean;
+    view: number;
+    scrollPos: number;
+    setScrollPos: (scrollPos: number) => void;
+    sortMode: SortMode;
+}
+const Selector: FunctionComponent<SelectorProps> = ({
     courses,
     course,
     getCourse,
@@ -27,7 +42,7 @@ const Selector = ({
     view,
     scrollPos,
     setScrollPos,
-}) => {
+}: SelectorProps) => {
     const isExpanded = view === 1;
     const isLoading =
         isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
@@ -70,7 +85,6 @@ const Selector = ({
     const courseList = (
         <CourseList
             sortMode={sortMode}
-            isLoading={isLoadingCourseInfo}
             courses={courses}
             getCourse={getCourse}
             scrollPos={scrollPos}
@@ -119,10 +133,6 @@ const Selector = ({
                             getCourse={getCourse}
                             course={course}
                             view={view}
-                            manage={{
-                                addToSchedule,
-                                removeFromSchedule,
-                            }}
                         />
                     )}
                 </div>
@@ -132,29 +142,11 @@ const Selector = ({
                 getCourse={getCourse}
                 course={course}
                 back={clearCourse}
-                manage={{
-                    addToSchedule,
-                    removeFromSchedule,
-                }}
+                view={view}
             />
         );
     }
     return <>{isLoading ? loadingIndicator : element}</>;
-};
-
-Selector.propTypes = {
-    courses: PropTypes.arrayOf(PropTypes.object).isRequired,
-    course: PropTypes.objectOf(PropTypes.any),
-    getCourse: PropTypes.func.isRequired,
-    clearCourse: PropTypes.func,
-    addToSchedule: PropTypes.func,
-    sortMode: PropTypes.string,
-    removeFromSchedule: PropTypes.func,
-    isLoadingCourseInfo: PropTypes.bool,
-    isSearchingCourseInfo: PropTypes.bool,
-    view: PropTypes.number,
-    scrollPos: PropTypes.number,
-    setScrollPos: PropTypes.func,
 };
 
 const mapStateToProps = ({
@@ -166,8 +158,8 @@ const mapStateToProps = ({
         courseInfoLoading: isLoadingCourseInfo,
         searchInfoLoading: isSearchingCourseInfo,
     },
-}) => ({
-    courses: searchResults.filter(({ num_sections: num }) => num > 0),
+}: any) => ({
+    courses: searchResults.filter(({ num_sections: num }: Course) => num > 0),
     course,
     scrollPos,
     sortMode,
@@ -175,12 +167,14 @@ const mapStateToProps = ({
     isSearchingCourseInfo,
 });
 
-const mapDispatchToProps = (dispatch) => ({
-    getCourse: (courseId) => dispatch(fetchCourseDetails(courseId)),
+const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
+    getCourse: (courseId: string) => dispatch(fetchCourseDetails(courseId)),
     clearCourse: () => dispatch(updateCourseInfo(null)),
-    addToSchedule: (section) => dispatch(addSchedItem(section)),
-    removeFromSchedule: (id) => dispatch(removeSchedItem(id)),
-    setScrollPos: (scrollPos) => dispatch(updateScrollPos(scrollPos)),
+    addToSchedule: (section: Section) => dispatch(addSchedItem(section)),
+    removeFromSchedule: (id: string) => dispatch(removeSchedItem(id)),
+    setScrollPos: (scrollPos: number) => dispatch(updateScrollPos(scrollPos)),
 });
 
+// no clue why the higher-order connect function isn't working with typescript -- Selector is definitely a component.
+// @ts-ignore
 export default connect(mapStateToProps, mapDispatchToProps)(Selector);

@@ -1,12 +1,16 @@
-import React from "react";
-import PropTypes from "prop-types";
+import React, {CSSProperties} from "react";
 
-export default function Days(props) {
+interface DaysProps {
+    offset: number;
+    weekend: boolean;
+}
+
+export default function Days(props: DaysProps) {
     const { offset, weekend } = props;
     const days = weekend
         ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         : ["Mon", "Tue", "Wed", "Thu", "Fri"];
-    const style = {
+    const style: CSSProperties = {
         display: "grid",
         gridColumnStart: 1 + offset,
         gridColumnEnd: days.length + 1 + offset,
@@ -24,8 +28,3 @@ export default function Days(props) {
         </div>
     );
 }
-
-Days.propTypes = {
-    offset: PropTypes.number,
-    weekend: PropTypes.bool,
-};

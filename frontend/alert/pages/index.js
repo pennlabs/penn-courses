@@ -39,7 +39,7 @@ const LogoArea = () => (
 );
 
 const NavContainer = styled.nav`
-    margin: 20px;
+    //margin: 20px;
     display: flex;
     flex-align: left;
     width: 95%;
@@ -108,6 +108,17 @@ const genId = (() => {
     // eslint-disable-next-line
     return () => counter++;
 })();
+
+// const RecruitingBanner = styled.div`
+//     text-align: center;
+//     display: grid;
+//     padding: 20px;
+//     width: 100%;
+//     background-color: #fbcd4c;
+//     & > * {
+//         margin: auto;
+//     }
+// `;
 
 function App() {
     const [user, setUser] = useState(null);
@@ -179,6 +190,7 @@ function App() {
                     messages={messages}
                     removeMessage={removeMessage}
                 />
+
                 <Heading />
                 {page === "home" ? (
                     <Flex col grow={1}>

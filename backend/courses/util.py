@@ -2,6 +2,8 @@ import json
 import re
 
 from django.core.exceptions import ObjectDoesNotExist
+from options.models import get_value
+from rest_framework.exceptions import APIException
 
 from courses.models import (
     Building,
@@ -15,6 +17,19 @@ from courses.models import (
     Section,
     StatusUpdate,
 )
+from review.util import titleize
+
+
+def get_current_semester():
+    if get_value("SEMESTER", None) is None:
+        raise APIException(
+            "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+            "option by running the command "
+            "'python manage.py setoption SEMESTER 2020C', "
+            "replacing 2020C with the current semester, in the backend directory (remember "
+            "to run 'pipenv shell' before running this command, though)."
+        )
+    return get_value("SEMESTER")
 
 
 def separate_course_code(course_code):
@@ -194,7 +209,7 @@ def upsert_course_from_opendata(info, semester):
         ]
     )
 
-    set_instructors(section, [instructor["name"] for instructor in info["instructors"]])
+    set_instructors(section, [titleize(instructor["name"]) for instructor in info["instructors"]])
     set_meetings(section, info["meetings"])
     add_associated_sections(section, info)
     add_restrictions(section, info["requirements"])

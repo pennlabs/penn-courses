@@ -1,9 +1,10 @@
 import React from "react";
-import PropTypes from "prop-types";
 
-export default function Badge(props) {
-    const { value } = props;
-    let color = [];
+interface BadgeProps {
+    value: number;
+}
+export default function Badge({ value }: BadgeProps) {
+    let color: [number, number, number] = [-1, -1, -1];
     if (value < 2 && value >= 0) {
         color = [232, 173, 6];
     } else if (value < 3) {
@@ -32,7 +33,3 @@ export default function Badge(props) {
         </span>
     );
 }
-
-Badge.propTypes = {
-    value: PropTypes.number,
-};

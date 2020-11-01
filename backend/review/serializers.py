@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from courses.serializers import SectionIdField
+from courses.serializers import SectionIdSerializer
 from review.models import Review, ReviewBit
 
 
@@ -11,7 +11,7 @@ class ReviewBitSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    section = SectionIdField(read_only=True)
+    section = SectionIdSerializer(read_only=True)
     instructor = serializers.StringRelatedField()
     fields = ReviewBitSerializer(source="reviewbit_set", many=True)
 

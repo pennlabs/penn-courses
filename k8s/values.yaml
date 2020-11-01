@@ -56,7 +56,7 @@ cronjobs:
     schedule: "0 3 * * *"
     image: pennlabs/penn-courses-backend
     secret: penn-courses
-    cmd: ["python", "manage.py", "loadcourses"]
+    cmd: ["python", "manage.py", "registrarimport"]
   - name: report-stats
     schedule: "0 20 * * *"
     image: pennlabs/penn-courses-backend

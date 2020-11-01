@@ -5,6 +5,7 @@ from options.models import get_value
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
+import courses.examples as examples
 from courses.models import Course, Requirement, Section, StatusUpdate
 from courses.serializers import (
     CourseDetailSerializer,
@@ -15,10 +16,13 @@ from courses.serializers import (
     StatusUpdateSerializer,
     UserSerializer,
 )
+from PennCourses.docs_settings import PcxAutoSchema
 from plan.search import TypedSectionSearchBackend
 
 
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
+    schema = PcxAutoSchema()
+
     @staticmethod
     def get_semester_field():
         return "semester"
@@ -44,6 +48,19 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
 
 
 class SectionList(generics.ListAPIView, BaseCourseMixin):
+    """
+    Retrieve a list of sections (less detailed than [PCx] Section, or SectionDetail on the
+    backend).  The sections are filtered by the search term (assumed to be a prefix of a
+    section's full code, with each chunk either space-delimited, dash-delimited, or not delimited).
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.SectionList_examples,
+        response_codes={
+            "/api/alert/courses/": {"GET": {200: "[SCHEMA]Sections Listed Successfully."}}
+        },
+    )
+
     serializer_class = MiniSectionSerializer
     queryset = Section.with_reviews.all()
     filter_backends = [TypedSectionSearchBackend]
@@ -55,6 +72,19 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
 
 
 class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
+    """
+    Retrieve a detailed look at a specific course section.
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.SectionDetail_examples,
+        response_codes={
+            "/api/courses/{semester}/sections/{full_code}/": {
+                "GET": {200: "[SCHEMA]Section detail retrieved successfully."}
+            }
+        },
+    )
+
     serializer_class = SectionDetailSerializer
     queryset = Section.with_reviews.all()
     lookup_field = "full_code"
@@ -64,8 +94,21 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
+    """
+    Retrieve a list of (all) courses for the provided semester.
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.CourseList_examples,
+        response_codes={
+            "/api/courses/{semester}/courses/": {
+                "GET": {200: "[SCHEMA]Courses listed successfully."}
+            }
+        },
+    )
+
     serializer_class = CourseListSerializer
-    queryset = Course.with_reviews.filter(sections__isnull=False)
+    queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
@@ -84,8 +127,23 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
+    """
+    Retrieve a detailed look at a specific course. Includes all details necessary to display course
+    info, including requirements this class fulfills, and all sections.
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.CourseDetail_examples,
+        response_codes={
+            "/api/courses/{semester}/courses/{full_code}/": {
+                "GET": {200: "[SCHEMA]Courses detail retrieved successfully."}
+            }
+        },
+    )
+
     serializer_class = CourseDetailSerializer
     lookup_field = "full_code"
+    queryset = Course.with_reviews.all()  # included redundantly for docs
 
     def get_queryset(self):
         queryset = Course.with_reviews.all()
@@ -104,11 +162,30 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
 
 class RequirementList(generics.ListAPIView, BaseCourseMixin):
+    """
+    Retrieve a list of all academic requirements in the database for this semester.
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.RequirementList_examples,
+        response_codes={
+            "/api/plan/requirements/": {"GET": {200: "[SCHEMA]Requirements listed successfully."}},
+            "/api/courses/{semester}/requirements/": {
+                "GET": {200: "[SCHEMA]Requirements listed successfully."}
+            },
+        },
+    )
+
     serializer_class = RequirementListSerializer
     queryset = Requirement.objects.all()
 
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
+    """
+    This view exposes the Penn Labs Accounts User object.
+    """
+
+    schema = PcxAutoSchema()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
@@ -120,6 +197,18 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
 
 
 class StatusUpdateView(generics.ListAPIView):
+    """
+    Retrieve all Status Update objects for a specific section.
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.StatusUpdateView_examples,
+        response_codes={
+            "/api/courses/statusupdate/{full_code}/": {
+                "GET": {200: "[SCHEMA]Status Updates for section listed successfully."}
+            }
+        },
+    )
     serializer_class = StatusUpdateSerializer
     http_method_names = ["get"]
     lookup_field = "section__full_code"
