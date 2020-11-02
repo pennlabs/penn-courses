@@ -3,14 +3,18 @@ import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { changeSortType } from "../../actions";
 
-
 interface DropDownButtonProps {
     isActive: boolean;
     text: string;
     onClick: () => void;
     makeActive: () => void;
 }
-const DropdownButton = ({ isActive, text, onClick, makeActive } : DropDownButtonProps) => (
+const DropdownButton = ({
+    isActive,
+    text,
+    onClick,
+    makeActive,
+}: DropDownButtonProps) => (
     <div
         role="button"
         onClick={() => {
@@ -40,12 +44,12 @@ const contents: SortByType[] = ["Name", "Quality", "Difficulty", "Good & Easy"];
 const SearchSortDropdown = (obj: { updateSort: (s: SortByType) => void }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(0);
-    const ref = useRef<HTMLDivElement>();
+    const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const listener = (event : MouseEvent) => {
-        
-            if (ref.current && !ref.current.contains(event.target)) {
+        const listener = (event: MouseEvent) => {
+            // Cast is unavoidable https://github.com/Microsoft/TypeScript/issues/15394#issuecomment-297495746
+            if (ref.current && !ref.current.contains(event.target as Node)) {
                 setIsActive(false);
             }
         };
