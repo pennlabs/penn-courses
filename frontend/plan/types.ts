@@ -36,6 +36,28 @@ export interface CUFilter {
     0.5: boolean;
     1.0: boolean;
     1.5: boolean;
+} 
+
+export enum Day {
+    M = "M",
+    T = "T",
+    W = "W",
+    R = "R",
+    F = "F",
+    S = "S",
+    U = "U",
+}
+
+export enum Color {
+    RED = "#D0021B",
+    ORANGE = "#F5A623",
+    BLUE = "#00BFDD",
+    AQUA = "#35E1BB",
+    GREEN = "#7ED321",
+    PINK = "#FF34CC",
+    SEA = "#3055CC",
+    INDIGO = "#7874CF",
+    BLACK = "#000",
 }
 
 export interface Section {
@@ -58,6 +80,22 @@ export interface Meeting {
     start: number;
     end: number;
     room: string;
+}
+
+// Represents a single colored block on the schedule
+export interface MeetingBlock {
+    day: Day;
+    start: number;
+    end: number;
+    course: {
+        color: Color;
+        id: string;
+        coreqFulfilled: boolean;
+    };
+    style: {
+        width: string;
+        left: string;
+    };
 }
 
 export interface Profile {
@@ -84,8 +122,9 @@ export interface Course {
     instructor_quality: number;
     difficulty: number;
     work_required: number;
-    crosslistings: string[];
-    requirements: Requirement[];
+    crosslistings?: string[];
+    requirements?: Requirement[];
+    num_sections: number;
 }
 
 export interface Schedule {
@@ -115,6 +154,9 @@ export interface FilterData {
     cu: CUFilter;
 }
 
-export interface SearchObject {
-    searchType: string;
+export enum SortMode {
+    NAME = "Name",
+    QUALITY = "Quality",
+    DIFFICULTY = "Difficulty",
+    GOOD_AND_EASY = "Good & Easy",
 }

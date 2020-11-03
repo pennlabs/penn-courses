@@ -1,22 +1,33 @@
 import React from "react";
-import PropTypes from "prop-types";
 import scrollIntoView from "scroll-into-view-if-needed";
 
 import Badge from "../Badge";
 
 import { getTimeString } from "../meetUtil";
+import { Section as SectionType } from "../../types";
 
-export default function Section({ section, cart, inCart }) {
+interface SectionProps {
+    section: SectionType;
+    cart: {
+        add: () => void;
+        remove: () => void;
+    };
+    inCart: boolean;
+}
+
+export default function Section({ section, cart, inCart }: SectionProps) {
     const { instructors, meetings, status } = section;
-    const cartAdd = (sec) => {
+    const cartAdd = () => {
         cart.add();
         setTimeout(() => {
-            const target = document.getElementById(sec.id);
-            scrollIntoView(target, {
-                behavior: "smooth",
-                block: "end",
-                scrollMode: "if-needed",
-            });
+            const target = document.getElementById(section.id);
+            if (target !== null) {
+                scrollIntoView(target, {
+                    behavior: "smooth",
+                    block: "end",
+                    scrollMode: "if-needed",
+                });
+            }
         }, 50);
     };
     return (
@@ -34,7 +45,7 @@ export default function Section({ section, cart, inCart }) {
                         display: "flex",
                         flexDirection: "row",
                         flexWrap: "wrap",
-                        flexGrow: "1",
+                        flexGrow: 1,
                         justifyContent: "space-between",
                         padding: "1em",
                         paddingRight: "0",
@@ -72,7 +83,7 @@ export default function Section({ section, cart, inCart }) {
                                 fontSize: "0.85rem",
                                 fontWeight: "bold",
                                 textOverflow: "ellipsis",
-                                flexGrow: "6",
+                                flexGrow: 6,
                             }}
                         >
                             {instructors.length > 0 ? (
@@ -132,19 +143,13 @@ export default function Section({ section, cart, inCart }) {
                     <div>
                         {instructors.length > 0 ? (
                             <div className="popover is-popover-left">
-                                <Badge
-                                    baseColor={[43, 236, 56]}
-                                    value={section.instructor_quality}
-                                />
+                                <Badge value={section.instructor_quality} />
                                 <span className="popover-content">
                                     Instructor Quality
                                 </span>
                             </div>
                         ) : (
-                            <Badge
-                                baseColor={[43, 236, 56]}
-                                value={section.instructor_quality}
-                            />
+                            <Badge value={section.instructor_quality} />
                         )}
                     </div>
                     {status === "C" ? (
@@ -172,7 +177,7 @@ export default function Section({ section, cart, inCart }) {
                 </div>
                 <div
                     role="button"
-                    onClick={inCart ? cart.remove : () => cartAdd(section)}
+                    onClick={inCart ? cart.remove : () => cartAdd()}
                     style={{
                         padding: "1.8em",
                         paddingLeft: "1em",
@@ -192,10 +197,3 @@ export default function Section({ section, cart, inCart }) {
         </div>
     );
 }
-
-Section.propTypes = {
-    // eslint-disable-next-line
-    section: PropTypes.object.isRequired,
-    cart: PropTypes.objectOf(PropTypes.func),
-    inCart: PropTypes.bool,
-};

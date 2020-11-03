@@ -1,5 +1,4 @@
 import React from "react";
-import PropTypes from "prop-types";
 import styled from "styled-components";
 import CourseDetails from "./CourseDetails";
 import SectionList from "./SectionList";
@@ -7,7 +6,7 @@ import { Course } from "../../types";
 
 interface CourseInfoProps {
     course: Course;
-    back: () => void;
+    back?: () => void; // Only show the back button if the `back` callback is provided.
     getCourse: (id: string) => void;
     view: number;
 }
@@ -59,10 +58,3 @@ export default function CourseInfo({
         </InfoContainer>
     );
 }
-
-CourseInfo.propTypes = {
-    course: PropTypes.objectOf(PropTypes.any).isRequired,
-    back: PropTypes.func,
-    getCourse: PropTypes.func,
-    view: PropTypes.number,
-};
