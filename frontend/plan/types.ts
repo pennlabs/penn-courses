@@ -2,7 +2,7 @@ export enum School {
     SEAS = "SEAS",
     WHARTON = "WH",
     COLLEGE = "SAS",
-    NURSING = "NUR",
+    NURSING = "NURS",
 }
 
 export enum Status {

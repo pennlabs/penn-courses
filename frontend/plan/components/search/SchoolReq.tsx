@@ -2,10 +2,6 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { FilterData, School, Requirement } from "../../types";
 
-/**
- * ISSUES:
- * FilterData has no selectedReq
- */
 interface SchoolReqProps {
     startSearch: (searchObj: object) => void;
     filterData: FilterData;
