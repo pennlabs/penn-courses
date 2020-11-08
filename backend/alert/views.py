@@ -262,7 +262,6 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             user=request.user,
             auto_resub=request.data.get("auto_resubscribe", False),
             close_notification=request.data.get("close_notification", False),
-            push_notifications=request.data.get("push_notifications", False),
         )
 
         if res == RegStatus.SUCCESS:
@@ -378,11 +377,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     registration.cancelled_at = timezone.now()
                     registration.save()
                     return Response({"detail": "Registration cancelled"}, status=status.HTTP_200_OK)
-            elif (
-                "auto_resubscribe" in request.data
-                or "close_notification" in request.data
-                or "push_notifications" in request.data
-            ):
+            elif "auto_resubscribe" in request.data or "close_notification" in request.data:
                 if registration.deleted:
                     return Response(
                         {"detail": "You cannot make changes to a deleted registration."},
@@ -394,22 +389,12 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 close_notification_changed = registration.close_notification != request.data.get(
                     "close_notification", registration.close_notification
                 )
-                push_notifications_changed = registration.push_notifications != request.data.get(
-                    "push_notifications", registration.push_notifications
-                )
-                changed = (
-                    auto_resubscribe_changed
-                    or close_notification_changed
-                    or push_notifications_changed
-                )
+                changed = auto_resubscribe_changed or close_notification_changed
                 registration.auto_resubscribe = request.data.get(
                     "auto_resubscribe", registration.auto_resubscribe
                 )
                 registration.close_notification = request.data.get(
                     "close_notification", registration.close_notification
-                )
-                registration.push_notifications = request.data.get(
-                    "push_notifications", registration.push_notifications
                 )
                 registration.save()
                 if changed:  # else taken care of in generic return statement
@@ -430,14 +415,6 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                                         + str(registration.close_notification)
                                     ]
                                     if close_notification_changed
-                                    else []
-                                )
-                                + (
-                                    [
-                                        "push_notifications updated to "
-                                        + str(registration.push_notifications)
-                                    ]
-                                    if push_notifications_changed
                                     else []
                                 )
                             )

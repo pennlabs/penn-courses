@@ -20,7 +20,6 @@ registration_fields = [
     "close_notification",
     "close_notification_sent",
     "close_notification_sent_at",
-    "push_notifications",
     "deleted_at",
     "is_active",
     "section_status",

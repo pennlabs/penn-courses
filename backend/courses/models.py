@@ -783,6 +783,15 @@ class UserProfile(models.Model):
     email = models.EmailField(
         blank=True, null=True, help_text="The email of the User. Defaults to null."
     )
+    push_notifications = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+        Defaults to False, changed to True if the User enables mobile push notifications
+        for PCA, rather than text notifications.
+        """
+        ),
+    )
     # phone field defined underneath validate_phone function below
 
     def validate_phone(value):

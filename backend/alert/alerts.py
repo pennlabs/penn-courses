@@ -99,7 +99,11 @@ class PushNotification(Alert):
         super().__init__("alert/push_notif.txt", reg)
 
     def send_alert(self):
-        if self.registration.push_notifications:
+        if (
+            self.registration.user
+            and self.registration.user.profile
+            and self.registration.user.profile.push_notifications
+        ):
             pennkey = self.registration.user.username
             bearer_token = str(10101)
             requests.post(

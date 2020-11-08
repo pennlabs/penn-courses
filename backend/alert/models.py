@@ -122,12 +122,6 @@ class Registration(models.Model):
         on_delete=models.CASCADE,
         help_text="The section that the user registered to be notified about.",
     )
-    push_notifications = models.BooleanField(
-        default=False,
-        help_text=(
-            "Defaults to False, changed to True if the user enables mobile push notifications."
-        ),
-    )
     cancelled = models.BooleanField(
         default=False,
         help_text=dedent(
@@ -416,7 +410,6 @@ class Registration(models.Model):
             section=self.section,
             auto_resubscribe=self.auto_resubscribe,
             close_notification=self.close_notification,
-            push_notifications=self.push_notifications,
             resubscribed_from=most_recent_reg,
             original_created_at=self.original_created_at,
         )
@@ -545,7 +538,6 @@ def register_for_course(
     user=None,
     auto_resub=False,
     close_notification=False,
-    push_notifications=False,
 ):
     """
     This method is for the PCA 3rd party API (originally planned to service
@@ -584,7 +576,6 @@ def register_for_course(
         registration = Registration(section=section, user=user, source=source)
         registration.auto_resubscribe = auto_resub
         registration.close_notification = close_notification
-        registration.push_notifications = push_notifications
 
     registration.api_key = api_key
     registration.save()
