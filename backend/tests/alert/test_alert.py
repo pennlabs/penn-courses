@@ -587,16 +587,26 @@ class UserDetailTestCase(TestCase):
         self.assertEqual("", response.data["last_name"])
         self.assertEqual(None, response.data["profile"]["email"])
         self.assertEqual(None, response.data["profile"]["phone"])
+        self.assertFalse(response.data["profile"]["push_notifications"])
 
     def test_update_settings(self):
         response = self.client.put(
             reverse("user-profile"),
-            json.dumps({"profile": {"email": "example@email.com", "phone": "3131234567"}}),
+            json.dumps(
+                {
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "3131234567",
+                        "push_notifications": True,
+                    }
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -604,6 +614,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -615,7 +626,11 @@ class UserDetailTestCase(TestCase):
                 {
                     "first_name": "newname",
                     "last_name": "",
-                    "profile": {"email": "example@email.com", "phone": "3131234567"},
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "3131234567",
+                        "push_notifications": False,
+                    },
                 }
             ),
             content_type="application/json",
@@ -623,6 +638,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "newname")
         self.assertEqual(response.data["last_name"], "")
@@ -630,6 +646,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "newname")
         self.assertEqual(response.data["last_name"], "")
@@ -641,7 +658,11 @@ class UserDetailTestCase(TestCase):
                 {
                     "first_name": "",
                     "last_name": "newname",
-                    "profile": {"email": "example@email.com", "phone": "3131234567"},
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "3131234567",
+                        "push_notifications": False,
+                    },
                 }
             ),
             content_type="application/json",
@@ -649,6 +670,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "newname")
@@ -656,6 +678,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "newname")
@@ -668,7 +691,11 @@ class UserDetailTestCase(TestCase):
                     "username": "newusername",
                     "first_name": "",
                     "last_name": "",
-                    "profile": {"email": "example@email.com", "phone": "3131234567"},
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "3131234567",
+                        "push_notifications": False,
+                    },
                 }
             ),
             content_type="application/json",
@@ -676,6 +703,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -683,6 +711,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -698,6 +727,7 @@ class UserDetailTestCase(TestCase):
                     "profile": {
                         "email": "example@email.com",
                         "phone": "3131234567",
+                        "push_notifications": True,
                         "favorite_color": "blue",
                     },
                 }
@@ -707,6 +737,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertFalse("favorite_color" in response.data["profile"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
@@ -716,6 +747,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertFalse("favorite_color" in response.data["profile"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
@@ -729,7 +761,11 @@ class UserDetailTestCase(TestCase):
                 {
                     "first_name": "fname",
                     "last_name": "lname",
-                    "profile": {"email": "example@email.com", "phone": "3131234567"},
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "3131234567",
+                        "push_notifications": False,
+                    },
                 }
             ),
             content_type="application/json",
@@ -742,6 +778,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], "example2@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "fname")
         self.assertEqual(response.data["last_name"], "lname")
@@ -749,6 +786,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example2@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "fname")
         self.assertEqual(response.data["last_name"], "lname")
@@ -760,7 +798,11 @@ class UserDetailTestCase(TestCase):
                 {
                     "first_name": "fname",
                     "last_name": "lname",
-                    "profile": {"email": "example@email.com", "phone": "3131234567"},
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "3131234567",
+                        "push_notifications": True,
+                    },
                 }
             ),
             content_type="application/json",
@@ -773,6 +815,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["phone"], "+12121234567")
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "fname")
         self.assertEqual(response.data["last_name"], "lname")
@@ -780,6 +823,44 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["phone"], "+12121234567")
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
+        self.assertTrue(response.data["profile"]["push_notifications"])
+        self.assertEqual(response.data["username"], "jacob")
+        self.assertEqual(response.data["first_name"], "fname")
+        self.assertEqual(response.data["last_name"], "lname")
+
+    def test_ignore_fields_push_notifications_update(self):
+        self.client.put(
+            reverse("user-profile"),
+            json.dumps(
+                {
+                    "first_name": "fname",
+                    "last_name": "lname",
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "3131234567",
+                        "push_notifications": False,
+                    },
+                }
+            ),
+            content_type="application/json",
+        )
+        response = self.client.put(
+            reverse("user-profile"),
+            json.dumps({"profile": {"push_notifications": True}}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["profile"]["email"], "example@email.com")
+        self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
+        self.assertEqual(response.data["username"], "jacob")
+        self.assertEqual(response.data["first_name"], "fname")
+        self.assertEqual(response.data["last_name"], "lname")
+        response = self.client.get(reverse("user-profile"))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data["profile"]["email"], "example@email.com")
+        self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "fname")
         self.assertEqual(response.data["last_name"], "lname")
@@ -787,7 +868,15 @@ class UserDetailTestCase(TestCase):
     def test_invalid_phone(self):
         response = self.client.put(
             reverse("user-profile"),
-            json.dumps({"profile": {"email": "example@email.com", "phone": "abc"}}),
+            json.dumps(
+                {
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "abc",
+                        "push_notifications": True,
+                    }
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(400, response.status_code)
@@ -795,6 +884,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(None, response.data["profile"]["email"])
         self.assertEqual(None, response.data["profile"]["phone"])
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual("jacob", response.data["username"])
         self.assertEqual("", response.data["first_name"])
         self.assertEqual("", response.data["last_name"])
@@ -802,7 +892,15 @@ class UserDetailTestCase(TestCase):
     def test_invalid_email(self):
         response = self.client.put(
             reverse("user-profile"),
-            json.dumps({"profile": {"email": "example@", "phone": "3131234567"}}),
+            json.dumps(
+                {
+                    "profile": {
+                        "email": "example@",
+                        "phone": "3131234567",
+                        "push_notifications": True,
+                    }
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(400, response.status_code)
@@ -810,6 +908,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(None, response.data["profile"]["email"])
         self.assertEqual(None, response.data["profile"]["phone"])
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual("jacob", response.data["username"])
         self.assertEqual("", response.data["first_name"])
         self.assertEqual("", response.data["last_name"])
@@ -817,12 +916,15 @@ class UserDetailTestCase(TestCase):
     def test_null_email(self):
         response = self.client.put(
             reverse("user-profile"),
-            json.dumps({"profile": {"email": None, "phone": "3131234567"}}),
+            json.dumps(
+                {"profile": {"email": None, "phone": "3131234567", "push_notifications": True}}
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], None)
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -830,6 +932,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], None)
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -837,12 +940,21 @@ class UserDetailTestCase(TestCase):
     def test_null_phone(self):
         response = self.client.put(
             reverse("user-profile"),
-            json.dumps({"profile": {"email": "example@email.com", "phone": None}}),
+            json.dumps(
+                {
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": None,
+                        "push_notifications": True,
+                    }
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], None)
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -850,6 +962,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], None)
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -857,12 +970,13 @@ class UserDetailTestCase(TestCase):
     def test_both_null(self):
         response = self.client.put(
             reverse("user-profile"),
-            json.dumps({"profile": {"email": None, "phone": None}}),
+            json.dumps({"profile": {"email": None, "phone": None, "push_notifications": True}}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], None)
         self.assertEqual(response.data["profile"]["phone"], None)
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -870,9 +984,37 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], None)
         self.assertEqual(response.data["profile"]["phone"], None)
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
+
+    def test_push_notifications_non_boolean(self):
+        response = self.client.put(
+            reverse("user-profile"),
+            json.dumps(
+                {
+                    "username": "newusername",
+                    "first_name": "",
+                    "last_name": "",
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "3131234567",
+                        "push_notifications": "Rand",
+                    },
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(400, response.status_code)
+        response = self.client.get(reverse("user-profile"))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(None, response.data["profile"]["email"])
+        self.assertEqual(None, response.data["profile"]["phone"])
+        self.assertFalse(response.data["profile"]["push_notifications"])
+        self.assertEqual("jacob", response.data["username"])
+        self.assertEqual("", response.data["first_name"])
+        self.assertEqual("", response.data["last_name"])
 
     def test_multiple_users_independent(self):
         User.objects.create_user(username="murey", password="top_secret")
@@ -880,12 +1022,21 @@ class UserDetailTestCase(TestCase):
         client2.login(username="murey", password="top_secret")
         response = self.client.put(
             reverse("user-profile"),
-            json.dumps({"profile": {"email": "example@email.com", "phone": "3131234567"}}),
+            json.dumps(
+                {
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "3131234567",
+                        "push_notifications": "True",
+                    }
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -893,17 +1044,27 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+13131234567")
+        self.assertTrue(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "jacob")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
         response = client2.put(
             reverse("user-profile"),
-            json.dumps({"profile": {"email": "example2@email.com", "phone": "2121234567"}}),
+            json.dumps(
+                {
+                    "profile": {
+                        "email": "example2@email.com",
+                        "phone": "2121234567",
+                        "push_notifications": "False",
+                    }
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["profile"]["email"], "example2@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+12121234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "murey")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -911,6 +1072,7 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["profile"]["email"], "example2@email.com")
         self.assertEqual(response.data["profile"]["phone"], "+12121234567")
+        self.assertFalse(response.data["profile"]["push_notifications"])
         self.assertEqual(response.data["username"], "murey")
         self.assertEqual(response.data["first_name"], "")
         self.assertEqual(response.data["last_name"], "")
@@ -919,7 +1081,15 @@ class UserDetailTestCase(TestCase):
         client2 = APIClient()
         response = client2.put(
             reverse("user-profile"),
-            json.dumps({"profile": {"email": "example2@email.com", "phone": "2121234567"}}),
+            json.dumps(
+                {
+                    "profile": {
+                        "email": "example2@email.com",
+                        "phone": "2121234567",
+                        "push_notifications": "True",
+                    }
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(403, response.status_code)
