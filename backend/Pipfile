@@ -18,6 +18,7 @@ django-debug-toolbar = "*"
 
 [packages]
 django = "*"
+pickle="*"
 psycopg2 = "*"
 requests = "*"
 twilio = "*"
