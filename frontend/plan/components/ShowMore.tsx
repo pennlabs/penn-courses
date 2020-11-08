@@ -1,6 +1,13 @@
 import React, { useState } from "react";
-import PropTypes from "prop-types";
 import Truncate from "react-truncate-markup";
+
+interface ShowMoreProps {
+    more: Element | string;
+    less: Element | string;
+    children: Element | string;
+    disabled: boolean;
+    lines: number;
+}
 
 const ShowMore = ({
     more = "Retract",
@@ -9,7 +16,7 @@ const ShowMore = ({
     children,
     lines,
     ...props
-}) => {
+}: ShowMoreProps) => {
     const [expanded, setExpanded] = useState(false);
     const toggleExpanded = () => setExpanded(!expanded);
     return disabled ? (
@@ -46,14 +53,6 @@ const ShowMore = ({
             )}
         </>
     );
-};
-
-ShowMore.propTypes = {
-    more: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
-    less: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
-    children: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
-    disabled: PropTypes.bool,
-    lines: PropTypes.number,
 };
 
 export default ShowMore;

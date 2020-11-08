@@ -117,6 +117,12 @@ export interface Course {
     num_sections: number;
 }
 
+export interface CartCourse {
+    section: Section;
+    checked: boolean;
+    overlaps: boolean;
+}
+
 export interface Schedule {
     id: string;
     sections: Section[];

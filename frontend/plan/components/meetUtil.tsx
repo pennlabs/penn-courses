@@ -37,12 +37,10 @@ export const meetingsOverlap = (
 
 // From an array of meetings, get the groups which conflict in timing.
 export const getConflictGroups = (meetings: MeetingBlock[]) => {
-    for (let i = 0; i < meetings.length; i += 1) {
+    for (let i: number = 0; i < meetings.length; i += 1) {
         // eslint-disable-next-line
         meetings[i].id = i;
     }
-
-    // TODO: FIX EXPLICIT CASTS TO "AS NUMBER"
 
     // `conflicts` is a union-find datastructure representing "conflict sets".
     // https://en.wikipedia.org/wiki/Disjoint-set_data_structure

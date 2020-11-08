@@ -3,10 +3,18 @@ import PropTypes from "prop-types";
 import { isMobile } from "react-device-detect";
 import { getTimeString } from "./meetUtil";
 
-const CourseDetails = ({ meetings, code, overlaps }) => (
+import { Meeting } from "../types";
+
+interface CourseDetailsProps {
+    meetings: Meeting[];
+    code: string;
+    overlaps: boolean;
+}
+
+const CourseDetails = ({ meetings, code, overlaps }: CourseDetailsProps) => (
     <div
         style={{
-            flexGrow: "0",
+            flexGrow: 0,
             display: "flex",
             flexDirection: "column",
             maxWidth: "70%",
@@ -34,13 +42,11 @@ const CourseDetails = ({ meetings, code, overlaps }) => (
     </div>
 );
 
-CourseDetails.propTypes = {
-    meetings: PropTypes.arrayOf(PropTypes.object).isRequired,
-    code: PropTypes.string.isRequired,
-    overlaps: PropTypes.bool,
-};
+interface CourseCheckboxProps {
+    checked: boolean;
+}
 
-const CourseCheckbox = ({ checked }) => {
+const CourseCheckbox = ({ checked }: CourseCheckboxProps) => {
     const checkStyle = {
         width: "1rem",
         height: "1rem",
@@ -52,7 +58,7 @@ const CourseCheckbox = ({ checked }) => {
             aria-checked="false"
             role="checkbox"
             style={{
-                flexGrow: "0",
+                flexGrow: 0,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
@@ -70,29 +76,36 @@ const CourseCheckbox = ({ checked }) => {
     );
 };
 
-CourseCheckbox.propTypes = {
-    checked: PropTypes.bool,
-};
+interface CourseInfoButtonProps {
+    courseInfo: () => void;
+}
 
-const CourseInfoButton = ({ courseInfo }) => (
+const CourseInfoButton = ({ courseInfo }: CourseInfoButtonProps) => (
     <div role="button" onClick={courseInfo} className="cart-delete-course">
         <i className="fa fa-info-circle" />
     </div>
 );
 
-CourseInfoButton.propTypes = {
-    courseInfo: PropTypes.func.isRequired,
-};
+interface CourseTrashCanProps {
+    remove: () => void;
+}
 
-const CourseTrashCan = ({ remove }) => (
+const CourseTrashCan = ({ remove }: CourseTrashCanProps) => (
     <div role="button" onClick={remove} className="cart-delete-course">
         <i className="fas fa-trash" />
     </div>
 );
 
-CourseTrashCan.propTypes = {
-    remove: PropTypes.func.isRequired,
-};
+interface CartSectionProps {
+    meetings: Meeting[];
+    code: string;
+    checked: boolean;
+    overlaps: boolean;
+    toggleCheck: () => void;
+    remove: () => void;
+    courseInfo: () => void;
+    lastAdded: boolean;
+}
 
 const CartSection = ({
     toggleCheck,
@@ -103,7 +116,7 @@ const CartSection = ({
     courseInfo,
     overlaps,
     lastAdded,
-}) => (
+}: CartSectionProps) => (
     <div
         role="switch"
         id={code}
@@ -130,8 +143,10 @@ const CartSection = ({
         onClick={(e) => {
             // ensure that it's not the trash can being clicked
             if (
-                e.target.parentElement.getAttribute("class") !==
-                "cart-delete-course"
+                // NOTE: explicit typecase and not null assertion operator used
+                (e.target as HTMLElement).parentElement!.getAttribute(
+                    "class"
+                ) !== "cart-delete-course"
             ) {
                 toggleCheck();
             }
@@ -143,16 +158,5 @@ const CartSection = ({
         <CourseTrashCan remove={remove} />
     </div>
 );
-
-CartSection.propTypes = {
-    meetings: PropTypes.arrayOf(PropTypes.object).isRequired,
-    code: PropTypes.string.isRequired,
-    checked: PropTypes.bool,
-    overlaps: PropTypes.bool,
-    toggleCheck: PropTypes.func.isRequired,
-    remove: PropTypes.func.isRequired,
-    courseInfo: PropTypes.func.isRequired,
-    lastAdded: PropTypes.bool,
-};
 
 export default CartSection;

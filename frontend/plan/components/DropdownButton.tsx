@@ -1,6 +1,19 @@
 import React, { useState } from "react";
-import PropTypes from "prop-types";
-import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
+import { useOnClickOutside } from "../../shared-components/src/useOnClickOutside";
+
+interface DropdownButtonProps {
+    title: string;
+    children: Node;
+    filterData:
+        | number[]
+        | { "1": number; "0.5": number; "1.5": number }
+        | { LAB: number; REC: number; SEM: number; STU: number };
+    defaultFilter:
+        | number[]
+        | { "1": number; "0.5": number; "1.5": number }
+        | { LAB: number; REC: number; SEM: number; STU: number };
+    clearFilter: () => void;
+}
 
 export function DropdownButton({
     title,
@@ -8,7 +21,7 @@ export function DropdownButton({
     filterData,
     defaultFilter,
     clearFilter,
-}) {
+}: DropdownButtonProps) {
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
@@ -21,7 +34,10 @@ export function DropdownButton({
     const ref = useOnClickOutside(toggleButton, !isActive);
 
     return (
-        <div className={`dropdown ${isActive ? "is-active" : ""}`} ref={ref}>
+        <div
+            className={`dropdown ${isActive ? "is-active" : ""}`}
+            ref={ref as React.RefObject<HTMLDivElement>}
+        >
             <div className="dropdown-trigger">
                 <button
                     className={`button is-rounded
@@ -67,7 +83,8 @@ export function DropdownButton({
                 <div className="dropdown-content">
                     {/* This injects the setIsActive method to allow children */}
                     {/* to change state of dropdown  */}
-                    {React.Children.map(children, (c) =>
+                    {/* TODO: replace "any" type here */}
+                    {React.Children.map(children, (c: any) =>
                         React.cloneElement(c, {
                             setIsActive,
                         })
@@ -77,11 +94,3 @@ export function DropdownButton({
         </div>
     );
 }
-
-DropdownButton.propTypes = {
-    title: PropTypes.string,
-    children: PropTypes.node,
-    filterData: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
-    defaultFilter: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
-    clearFilter: PropTypes.func,
-};
