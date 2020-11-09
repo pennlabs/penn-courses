@@ -41,7 +41,7 @@ def courses_data_from_db():
     for schedule in Schedule.objects.all():
         for course in sections_to_courses(schedule.sections.all()):
             person_id = schedule.person.pk
-            yield (person_id, course, schedule.semester)
+            yield person_id, course, schedule.semester
 
 
 def courses_data_from_csv():
@@ -98,9 +98,16 @@ def group_courses(courses_data: Iterable[Tuple[int, str, str]]):
     return courses_by_semester_by_user
 
 
+def sem_to_key(sem):
+    sem = sem.strip(" ").strip("\n")
+    year, season = sem[:-1], sem[-1]
+    season_to_int = {"A": 0, "B": 1, "C": 2}
+    return int(year) + season_to_int[season]/3
+
 def vectorize_by_copresence(courses_by_semester_by_user) -> Dict[str, np.ndarray]:
     """
-    Vectorizes courses by whether they're in the user's schedule at the same time
+    Vectorizes courses by whether they're in the user's schedule at the same time, as well as whether the number
+    of times they come after other courses.
     :param courses_by_semester_by_user: Grouped courses data returned by group_courses
     :return:
     """
@@ -113,9 +120,10 @@ def vectorize_by_copresence(courses_by_semester_by_user) -> Dict[str, np.ndarray
     course_to_index = {course: i for i, course in enumerate(courses_list)}
 
     copresence_vectors_by_course = {course: np.zeros(len(courses_list)) for course in courses_list}
+    order_vectors_by_course = {course: np.zeros(len(courses_list)) for course in courses_list}
 
     for user, courses_by_semester in courses_by_semester_by_user.items():
-        for _, course_multiset in courses_by_semester.items():
+        for sem, course_multiset in courses_by_semester.items():
             for course_a, frequency_a in course_multiset.items():
                 for course_b, frequency_b in course_multiset.items():
                     co_frequency = min(frequency_a, frequency_b)
@@ -128,7 +136,19 @@ def vectorize_by_copresence(courses_by_semester_by_user) -> Dict[str, np.ndarray
                     # make sure that every course appears with itself
                     relevant_vector_a[index_a] += frequency_a
                     relevant_vector_a[index_b] += frequency_b
-    return copresence_vectors_by_course
+        ordered_sems = sorted(courses_by_semester, key=sem_to_key)
+        for i, sem in enumerate(ordered_sems):
+            courses_first_sem = courses_by_semester[sem]
+            for later_sem in ordered_sems[i + 1:]:
+                courses_later_sem = courses_by_semester[later_sem]
+                for course1, freq1 in courses_later_sem.items():
+                    for course2, freq2 in courses_first_sem.items():
+                        index2 = course_to_index[course2]
+                        order_vectors_by_course[course1][index2] += min(freq1, freq2)
+
+    concatenated = {key: order_vectors_by_course[key] + copresence_vectors_by_course[key] for key in order_vectors_by_course}
+
+    return concatenated
 
 
 def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]):
@@ -189,7 +209,7 @@ def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     courses_vectorized_by_description = vectorize_courses_by_description(courses)
     copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
     copresence_vectors = normalize(copresence_vectors)
-    dim_reduce = TruncatedSVD(n_components=round(10 * math.log2(len(courses))))
+    dim_reduce = TruncatedSVD(n_components=round(30 * math.log2(len(courses))))
     copresence_vectors = dim_reduce.fit_transform(copresence_vectors)
     for course, schedule_vector, description_vector, copresence_vector in zip(courses,
                                                                               courses_vectorized_by_schedule_presence,
@@ -200,7 +220,7 @@ def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
                 continue
             total_vector = np.concatenate([schedule_vector, description_vector, copresence_vector])
         else:
-            total_vector = np.concatenate([schedule_vector, copresence_vector])
+            total_vector = np.concatenate([schedule_vector, copresence_vector * 2])
         courses_to_vectors[course] = total_vector / np.linalg.norm(total_vector)
     return courses_to_vectors
 
