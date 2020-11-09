@@ -35,8 +35,8 @@
 //     addSchoolReq: (school: string) => void;
 //     remSchoolReq: (school: string) => void;
 //     updateSearchText: (text: string) => void;
-//     updateRangeFilter: (field: F, values: K),
-//     clearAll,
+//     updateRangeFilter: (field: F, values: K);
+//     clearAll: () => void,
 //     clearFilter, 
 //     defaultReqs,
 //     clearSearchResults,
@@ -56,7 +56,7 @@
 
 // }
 
-// function shouldSearch(filterData) {
+// function shouldSearch(filterData: FilterData) {
 //     const searchString = filterData.searchString.length >= 3;
 //     let selectedReq = false;
 //     if (filterData.selectedReq) {

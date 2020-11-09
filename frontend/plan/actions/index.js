@@ -211,7 +211,7 @@ function buildCourseSearchUrl(filterData) {
     const reqs = [];
     if (filterData.selectedReq) {
         for (const key of Object.keys(filterData.selectedReq)) {
-            if (filterData.selectedReq[key] === 1) {
+            if (filterData.selectedReq[key]) { // change from == 1
                 reqs.push(key);
             }
         }
@@ -267,7 +267,7 @@ function buildCourseSearchUrl(filterData) {
             const applied = [];
             Object.keys(filterData[checkboxFields[i]]).forEach((item) => {
                 // eslint-disable-line
-                if (filterData[checkboxFields[i]][item] === 1) {
+                if (filterData[checkboxFields[i]][item]) { // changed from ===1
                     applied.push(item);
                 }
             });
@@ -290,6 +290,7 @@ const debouncedCourseSearch = AwesomeDebouncePromise(courseSearch, 500);
 
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
+        console.log("in fetchCourseSearch ", filterData);
         dispatch(updateSearchRequest());
         debouncedCourseSearch(dispatch, filterData)
             .then((res) => res.json())

@@ -59,13 +59,13 @@ export function CheckboxFilter<
                                         updateCheckboxFilter(
                                             checkboxProperty,
                                             filterProperty,
-                                            toChange
+                                            !toChange
                                         );
                                         startSearch({
                                             ...filterData,
                                             [checkboxProperty]: {
                                                 ...filterData[checkboxProperty],
-                                                [filterProperty]: toChange,
+                                                [filterProperty]: !toChange,
                                             },
                                         });
                                     }}
