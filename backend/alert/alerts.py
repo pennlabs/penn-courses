@@ -36,7 +36,7 @@ def send_text(to, text):
             return True
     except TwilioRestException:
         logger.exception("Text Error")
-        return False
+        return None
 
 
 class Alert(ABC):
@@ -76,7 +76,7 @@ class Email(Alert):
             )
         except SMTPRecipientsRefused:
             logger.exception("Email Error")
-            return False
+            return None
 
 
 class Text(Alert):

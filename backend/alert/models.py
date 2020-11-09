@@ -355,10 +355,27 @@ class Registration(models.Model):
         return True
 
     def alert(self, forced=False, sent_by="", close_notification=False):
+        """
+        Returns true iff an alert was successfully sent through at least one medium to the user.
+        """
+
         if forced or self.is_active:
             text_result = Text(self).send_alert()
             email_result = Email(self).send_alert()
             push_notif_result = PushNotification(self).send_alert()
+            if email_result is None:
+                logging.debug("ERROR OCCURED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " +
+                              self.__str__())
+            if text_result is None:
+                logging.debug("ERROR OCCURED WHILE ATTEMPTING TEXT NOTIFICATION FOR " +
+                              self.__str__())
+            if push_notif_result is None:
+                logging.debug("ERROR OCCURED WHILE ATTEMPTING PUSH NOTIFICATION FOR " +
+                              self.__str__())
+            if (not email_result and not text_result and not push_notif_result):
+                logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " +
+                              self.__str__())
+                return False
             if not close_notification:
                 logging.debug("NOTIFICATION SENT FOR " + self.__str__())
                 self.notification_sent = True
@@ -367,17 +384,14 @@ class Registration(models.Model):
                 self.save()
                 if self.auto_resubscribe:
                     self.resubscribe()
+                return True
             else:
                 logging.debug("CLOSE NOTIFICATION SENT FOR " + self.__str__())
                 self.close_notification_sent = True
                 self.close_notification_sent_at = timezone.now()
                 self.close_notification_sent_by = sent_by
                 self.save()
-            return (
-                email_result is not None
-                and text_result is not None
-                and push_notif_result is not None
-            )  # True if no error in email/text/push-notification.
+                return True
         else:
             return False
 

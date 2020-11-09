@@ -71,6 +71,7 @@ def override_delay(modules_names, before_func, before_kwargs):
 
 @patch("alert.models.Text.send_alert")
 @patch("alert.models.Email.send_alert")
+@patch("alert.models.PushNotification.send_alert")
 class SendAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -79,27 +80,30 @@ class SendAlertTestCase(TestCase):
 
         self.r.save()
 
-    def test_send_alert(self, mock_email, mock_text):
+    def test_send_alert(self, mock_email, mock_text, mock_push_notification):
         self.assertFalse(Registration.objects.get(id=self.r.id).notification_sent)
         tasks.send_alert(self.r.id, sent_by="ADM")
         self.assertTrue(mock_email.called)
         self.assertTrue(mock_text.called)
+        self.assertTrue(mock_push_notification.called)
         self.assertTrue(Registration.objects.get(id=self.r.id).notification_sent)
         self.assertEqual("ADM", Registration.objects.get(id=self.r.id).notification_sent_by)
 
-    def test_dont_resend_alert(self, mock_email, mock_text):
+    def test_dont_resend_alert(self, mock_email, mock_text, mock_push_notification):
         self.r.notification_sent = True
         self.r.save()
         tasks.send_alert(self.r.id)
         self.assertFalse(mock_email.called)
         self.assertFalse(mock_text.called)
+        self.assertFalse(mock_push_notification.called)
 
-    def test_resend_alert_forced(self, mock_email, mock_text):
+    def test_resend_alert_forced(self, mock_email, mock_text, mock_push_notification):
         self.r.notification_sent = True
         self.r.save()
         self.r.alert(True)
         self.assertTrue(mock_email.called)
         self.assertTrue(mock_text.called)
+        self.assertTrue(mock_push_notification.called)
 
 
 class RegisterTestCase(TestCase):
@@ -291,7 +295,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
         self.r3.save()
 
     def test_collect_all(self):
-        result = tasks.get_active_registrations(self.section.full_code, TEST_SEMESTER)
+        result = tasks.get_registrations_for_alerts(self.section.full_code, TEST_SEMESTER)
         expected_ids = [r.id for r in [self.r1, self.r2, self.r3]]
         result_ids = [r.id for r in result]
         for id_ in expected_ids:
@@ -302,7 +306,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
 
     def test_collect_none(self):
         get_or_create_course_and_section("CIS-121-001", TEST_SEMESTER)
-        result = tasks.get_active_registrations("CIS-121-001", TEST_SEMESTER)
+        result = tasks.get_registrations_for_alerts("CIS-121-001", TEST_SEMESTER)
         self.assertTrue(len(result) == 0)
 
     def test_collect_one(self):
@@ -311,7 +315,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
         self.r2.save()
         self.r3.save()
         result_ids = [
-            r.id for r in tasks.get_active_registrations(self.section.full_code, TEST_SEMESTER)
+            r.id for r in tasks.get_registrations_for_alerts(self.section.full_code, TEST_SEMESTER)
         ]
         expected_ids = [self.r1.id]
         for id_ in expected_ids:
@@ -323,7 +327,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
         self.r2.notification_sent = True
         self.r2.save()
         result_ids = [
-            r.id for r in tasks.get_active_registrations(self.section.full_code, TEST_SEMESTER)
+            r.id for r in tasks.get_registrations_for_alerts(self.section.full_code, TEST_SEMESTER)
         ]
         expected_ids = [self.r1.id, self.r3.id]
         for id_ in expected_ids:
@@ -375,6 +379,7 @@ class WebhookViewTestCase(TestCase):
         self.assertTrue(mock_alert.called)
         self.assertEqual("INTLBUL001", mock_alert.call_args[0][0])
         self.assertEqual("2019A", mock_alert.call_args[1]["semester"])
+        self.assertEqual("O", mock_alert.call_args[1]["course_status"])
         self.assertTrue("sent" in json.loads(res.content)["message"])
         self.assertEqual(1, StatusUpdate.objects.count())
         u = StatusUpdate.objects.get()
@@ -392,6 +397,7 @@ class WebhookViewTestCase(TestCase):
         self.assertTrue(mock_alert.called)
         self.assertEqual("ANTH361401", mock_alert.call_args[0][0])
         self.assertEqual("2019A", mock_alert.call_args[1]["semester"])
+        self.assertEqual("O", mock_alert.call_args[1]["course_status"])
         self.assertTrue("sent" in json.loads(res.content)["message"])
         self.assertEqual(1, StatusUpdate.objects.count())
         u = StatusUpdate.objects.get()
@@ -422,6 +428,7 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(200, res.status_code)
         self.assertTrue("sent" in json.loads(res.content)["message"])
         self.assertTrue(mock_alert.called)
+        self.assertEqual("C", mock_alert.call_args[1]["course_status"])
         self.assertEqual(1, StatusUpdate.objects.count())
         u = StatusUpdate.objects.get()
         self.assertTrue(u.alert_sent)

@@ -40,7 +40,7 @@ def get_registrations_for_alerts(course_code, semester, course_status="O"):
     _, section = get_course_and_section(course_code, semester)
     if course_status == "O":
         # Use the is_active filters statically defined in the Registration model
-        return list(section.registration_set.filter(**Registration.is_active_filter()))
+        return get_active_registrations(course_code, semester)
     else:
         # Use the is_waiting_for_close_filter filters statically defined in the Registration model
         return list(section.registration_set.filter(**Registration.is_waiting_for_close_filter()))
