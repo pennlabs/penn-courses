@@ -45,7 +45,10 @@ def get_all_course_status(semester):
         return r.json().get("result_data", [])
     else:
         report_api_error(r.text)
-        return None
+        raise RuntimeError(
+            f"Registrar API request failed with code {r.status_code}. "
+            f'Message returned: "{r.text}"'
+        )
 
 
 def get_courses(query, semester):
