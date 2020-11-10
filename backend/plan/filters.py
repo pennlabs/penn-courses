@@ -2,6 +2,7 @@ from django.db.models import Q
 from rest_framework import filters
 
 from courses.models import Requirement
+from courses.util import get_current_semester
 
 
 def requirement_filter(queryset, req_ids):
@@ -9,7 +10,9 @@ def requirement_filter(queryset, req_ids):
     for req_id in req_ids.split(","):
         code, school = req_id.split("@")
         try:
-            requirement = Requirement.objects.get(code=code, school=school)
+            requirement = Requirement.objects.get(
+                code=code, school=school, semester=get_current_semester()
+            )
         except Requirement.DoesNotExist:
             continue
         query &= Q(id__in=requirement.satisfying_courses.all())
