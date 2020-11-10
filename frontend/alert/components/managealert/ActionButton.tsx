@@ -1,15 +1,19 @@
 import React from "react";
 import styled from "styled-components";
-import PropTypes from "prop-types";
-import { Flex } from "../common/layout";
+import { Flex, FlexProps } from "../common/layout";
 import { Img, P } from "../common/common";
 import { AlertAction } from "./AlertItemEnums";
+import { WrappedStyled } from "../../types";
+
+interface ActionFlexProps {
+    background: string;
+}
 
 const ActionFlex = styled(Flex)`
     background-color: ${(props) => props.background};
     border-radius: 0.2rem;
     cursor: pointer;
-`;
+` as WrappedStyled<FlexProps & ActionFlexProps>;
 
 const ActionButtonFlex = styled(Flex)`
     & > * {
@@ -20,20 +24,24 @@ const ActionButtonFlex = styled(Flex)`
 
 // Component associated with Resubscribe and Cancel buttons
 // for each alert
-export const ActionButton = ({ type, onClick }) => {
+interface ActionButtonProps {
+    type: AlertAction;
+    onClick: () => void;
+}
+export const ActionButton = ({ type, onClick }: ActionButtonProps) => {
     let img;
     let primary;
     let secondary;
     let text;
 
     switch (type) {
-        case "resub":
+        case AlertAction.RESUBSCRIBE:
             primary = "#5891fc";
             secondary = "rgba(88, 145, 252, 0.12)";
             img = "/svg/bell.svg";
             text = "Resubscribe";
             break;
-        case "cancel":
+        case AlertAction.CANCEL:
             primary = "#646e7a";
             secondary = "rgba(162, 169, 176, 0.15)";
             img = "/svg/bell-off.svg";
@@ -52,9 +60,4 @@ export const ActionButton = ({ type, onClick }) => {
             </ActionButtonFlex>
         </ActionFlex>
     );
-};
-
-ActionButton.propTypes = {
-    type: PropTypes.oneOf([AlertAction.Resubscribe, AlertAction.Cancel]),
-    onClick: PropTypes.func,
 };

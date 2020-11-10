@@ -1,7 +1,7 @@
 /**
  * @returns {string | boolean} The CSRF token used by the Django REST Framework
  */
-const getCsrf = () => {
+const getCsrf = (): string => {
     const result =
         document.cookie &&
         document.cookie

@@ -5,7 +5,6 @@ import Header from "./Header";
 import { Flex } from "../common/layout";
 import { AlertSearch } from "./AlertSearch";
 import { AlertItem } from "./AlertItem";
-import "./ManageAlert.module.css";
 import { maxWidth, PHONE } from "../../constants";
 
 const Container = styled.div`

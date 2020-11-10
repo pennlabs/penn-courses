@@ -5,7 +5,14 @@ export const Img = styled.img`
     height: ${(props) => props.height};
 `;
 
-export const P = styled.p`
+interface PProps {
+    size: number;
+    weight: number;
+    color: string;
+    margin: number;
+}
+
+export const P = styled.p<PProps>`
     font-size: ${(props) => props.size};
     font-weight: ${(props) => props.weight};
     color: ${(props) => props.color};
