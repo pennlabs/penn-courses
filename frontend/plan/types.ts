@@ -70,6 +70,7 @@ export interface Meeting {
     room: string;
 }
 
+// Represents a single colored block on the schedule
 export interface MeetingBlock {
     day: Day;
     start: number;
@@ -83,7 +84,6 @@ export interface MeetingBlock {
         width: string;
         left: string;
     };
-
     // used for finding course conflicts
     id?: number;
 }
