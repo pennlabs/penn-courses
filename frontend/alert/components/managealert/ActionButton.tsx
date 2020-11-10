@@ -5,17 +5,17 @@ import { Img, P } from "../common/common";
 import { AlertAction } from "./AlertItemEnums";
 import { WrappedStyled } from "../../types";
 
-interface ActionFlexProps {
+type ActionFlexProps = FlexProps & {
     background: string;
-}
+};
 
-const ActionFlex = styled(Flex)`
-    background-color: ${(props) => props.background};
+const ActionFlex: WrappedStyled<ActionFlexProps> = styled(Flex)`
+    background-color: ${(props: ActionFlexProps) => props.background};
     border-radius: 0.2rem;
     cursor: pointer;
-` as WrappedStyled<FlexProps & ActionFlexProps>;
+`;
 
-const ActionButtonFlex = styled(Flex)`
+const ActionButtonFlex: WrappedStyled<FlexProps> = styled(Flex)`
     & > * {
         display: block;
         margin: 0.1rem;
@@ -53,7 +53,7 @@ export const ActionButton = ({ type, onClick }: ActionButtonProps) => {
     return (
         <ActionFlex valign halign background={secondary}>
             <ActionButtonFlex valign margin="0.3rem" onClick={onClick}>
-                <P size="0.6rem" color={primary} weight="600">
+                <P size="0.6rem" color={primary} weight={600}>
                     {text}
                 </P>
                 <Img src={img} width="0.6rem" height="0.6rem" alt="" />

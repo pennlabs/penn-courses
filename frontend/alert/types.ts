@@ -1,4 +1,4 @@
-import { ComponentType, PropsWithChildren } from "react";
+import { ComponentType, HTMLAttributes, PropsWithChildren } from "react";
 
 export interface Profile {
     email: string | null;
@@ -12,4 +12,6 @@ export interface User {
     profile: Profile;
 }
 
-export type WrappedStyled<P> = ComponentType<PropsWithChildren<Partial<P>>>;
+export type WrappedStyled<P, E = HTMLDivElement> = ComponentType<
+    PropsWithChildren<P & HTMLAttributes<E>>
+>;

@@ -10,20 +10,20 @@ export const Container = styled.div`
 `;
 
 export interface FlexProps {
-    margin: string;
-    padding: string;
-    center: boolean;
-    valign: boolean;
-    halign: boolean;
-    spaceBetween: boolean;
-    col: boolean;
-    grow: number;
+    margin?: string;
+    padding?: string;
+    center?: boolean;
+    valign?: boolean;
+    halign?: boolean;
+    spaceBetween?: boolean;
+    col?: boolean;
+    grow?: number;
 }
 
 export const Flex = styled.div<FlexProps>`
     display: flex;
-    margin: ${(props) => props.margin};
-    padding: ${(props) => props.padding};
+    margin: ${(props) => props.margin || "inherit"};
+    padding: ${(props) => props.padding || "inherit"};
     text-align: ${(props) => (props.center ? "center" : null)};
     align-items: ${(props) => (props.valign ? "center" : null)};
     justify-content: ${(props) =>
@@ -37,13 +37,13 @@ export const Center = styled.div`
     text-align: center;
 `;
 
-interface GridItemProps {
-    valign: boolean;
-    halign: boolean;
+export interface GridItemProps {
+    valign?: boolean;
+    halign?: boolean;
     column: number;
     row: number;
-    color: string;
-    border: boolean;
+    color?: string;
+    border?: boolean;
 }
 
 export const GridItem = styled.div<GridItemProps>`

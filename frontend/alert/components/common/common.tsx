@@ -6,15 +6,15 @@ export const Img = styled.img`
 `;
 
 interface PProps {
-    size: number;
+    size: string;
     weight: number;
     color: string;
-    margin: number;
+    margin?: number;
 }
 
 export const P = styled.p<PProps>`
     font-size: ${(props) => props.size};
     font-weight: ${(props) => props.weight};
     color: ${(props) => props.color};
-    margin: ${(props) => props.margin};
+    margin: ${(props) => props.margin || "inherit"};
 `;
