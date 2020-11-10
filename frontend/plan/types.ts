@@ -47,6 +47,13 @@ export enum Color {
     BLACK = "#000",
 }
 
+export enum SortMode {
+    NAME = "Name",
+    QUALITY = "Quality",
+    DIFFICULTY = "Difficulty",
+    GOOD_AND_EASY = "Good & Easy",
+}
+
 export interface Section {
     id: string;
     status: Status;
@@ -139,9 +146,9 @@ export interface User {
     profile: Profile;
 }
 
-export enum SortMode {
-    NAME = "Name",
-    QUALITY = "Quality",
-    DIFFICULTY = "Difficulty",
-    GOOD_AND_EASY = "Good & Easy",
+export interface FilterType {
+    _:
+        | number[]
+        | { "1": number; "0.5": number; "1.5": number }
+        | { LAB: number; REC: number; SEM: number; STU: number };
 }

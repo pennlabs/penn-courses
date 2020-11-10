@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import Truncate from "react-truncate-markup";
 
 interface ShowMoreProps {
-    more: Element | string;
-    less: Element | string;
-    children: Element | string;
+    more: React.ReactNode;
+    less: React.ReactNode;
+    children: React.PropsWithChildren<ShowMoreProps>;
     disabled: boolean;
     lines: number;
 }

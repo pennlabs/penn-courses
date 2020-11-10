@@ -1,17 +1,13 @@
-import React, { useState } from "react";
+import React, { ReactElement, useState } from "react";
 import { useOnClickOutside } from "../../shared-components/src/useOnClickOutside";
+
+import { FilterType } from "../types";
 
 interface DropdownButtonProps {
     title: string;
-    children: Node;
-    filterData:
-        | number[]
-        | { "1": number; "0.5": number; "1.5": number }
-        | { LAB: number; REC: number; SEM: number; STU: number };
-    defaultFilter:
-        | number[]
-        | { "1": number; "0.5": number; "1.5": number }
-        | { LAB: number; REC: number; SEM: number; STU: number };
+    children: ReactElement;
+    filterData: FilterType;
+    defaultFilter: FilterType;
     clearFilter: () => void;
 }
 
@@ -83,8 +79,7 @@ export function DropdownButton({
                 <div className="dropdown-content">
                     {/* This injects the setIsActive method to allow children */}
                     {/* to change state of dropdown  */}
-                    {/* TODO: replace "any" type here */}
-                    {React.Children.map(children, (c: any) =>
+                    {React.Children.map(children, (c: ReactElement) =>
                         React.cloneElement(c, {
                             setIsActive,
                         })

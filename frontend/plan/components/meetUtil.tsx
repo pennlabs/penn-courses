@@ -48,15 +48,19 @@ export const getConflictGroups = (meetings: MeetingBlock[]) => {
     // with at least one meeting m3 which is also in the set (m3 can be m1 or m2).
     const conflicts: { [index: number]: Set<MeetingBlock> } = {};
     const merge = (m1: MeetingBlock, m2: MeetingBlock) => {
-        conflicts[m2.id as number] = new Set([
-            ...Array.from(conflicts[m1.id as number]),
-            ...Array.from(conflicts[m2.id as number]),
-        ]);
-        conflicts[m1.id as number] = conflicts[m2.id as number];
+        if (m1.id && m2.id) {
+            conflicts[m2.id] = new Set([
+                ...Array.from(conflicts[m1.id]),
+                ...Array.from(conflicts[m2.id]),
+            ]);
+            conflicts[m1.id] = conflicts[m2.id];
+        }
     };
 
     meetings.forEach((m) => {
-        conflicts[m.id as number] = new Set([m]);
+        if (m.id) {
+            conflicts[m.id] = new Set([m]);
+        }
     });
 
     // compare every pair of meetings. if they overlap, merge their sets.
