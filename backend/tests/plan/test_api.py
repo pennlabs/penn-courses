@@ -126,6 +126,17 @@ class RequirementFilterTestCase(TestCase):
         self.assertEqual(1, len(response.data))
         self.assertEqual("MATH-114", response.data[0]["id"])
 
+    def test_filter_for_req_dif_sem(self):
+        req2 = Requirement(
+            semester=("2019A" if TEST_SEMESTER == "2019C" else "2019C"), code="REQ", school="SAS"
+        )
+        req2.save()
+        req2.courses.add(self.math)
+        response = self.client.get(reverse("courses-current-list"), {"requirements": "REQ@SAS"})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual("MATH-114", response.data[0]["id"])
+
     def test_multi_req(self):
         course3, section3 = create_mock_data("CIS-240-001", TEST_SEMESTER)
         req2 = Requirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
