@@ -263,7 +263,7 @@ const AutoComplete = ({ onValueChange, disabled }) => {
             inputHeight={
                 inputRef.current
                     ? `${inputRef.current.getBoundingClientRect().height}px`
-                    : "0"
+                    : "inherit"
             }
             ref={useOnClickOutside(() => setActive(false), !show)}
         >
