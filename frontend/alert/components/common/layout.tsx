@@ -40,7 +40,7 @@ export const Center = styled.div`
 export interface GridItemProps {
     valign?: boolean;
     halign?: boolean;
-    column: number;
+    column: number | string;
     row: number;
     color?: string;
     border?: boolean;

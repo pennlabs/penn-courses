@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { GridItem } from "../common/layout";
 import { P } from "../common/common";
 import { ActionButton } from "./ActionButton";
-import { AlertAction, AlertRepeat, AlertStatus } from "./AlertItemEnums";
+import { AlertAction, AlertRepeat, SectionStatus } from "../../types";
 
 const StatusInd = styled.div<{ background: string }>`
     border-radius: 1rem;
@@ -23,7 +23,7 @@ const StatusGridItem = styled(GridItem)`
 interface AlertItemProps {
     alertLastSent: string;
     course: string;
-    status: AlertStatus;
+    status: SectionStatus;
     repeat: AlertRepeat;
     actions: AlertAction;
     rownum: number;
@@ -48,11 +48,11 @@ export const AlertItem = ({
     let alertcolor;
 
     switch (status) {
-        case AlertStatus.CLOSED:
+        case SectionStatus.CLOSED:
             statustext = "Closed";
             statuscolor = "#e1e6ea";
             break;
-        case AlertStatus.OPEN:
+        case SectionStatus.OPEN:
             statustext = "Open";
             statuscolor = "#78d381";
             break;

@@ -2,8 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { Flex, FlexProps } from "../common/layout";
 import { Img, P } from "../common/common";
-import { AlertAction } from "./AlertItemEnums";
-import { WrappedStyled } from "../../types";
+import { AlertAction, WrappedStyled } from "../../types";
 
 type ActionFlexProps = FlexProps & {
     background: string;

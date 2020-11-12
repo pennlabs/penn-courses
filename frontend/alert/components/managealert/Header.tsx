@@ -1,9 +1,8 @@
 import React from "react";
 import styled from "styled-components";
-import PropTypes from "prop-types";
-import { AlertAction } from "./AlertItemEnums";
 import { GridItem, Flex, RightItem } from "../common/layout";
 import { Img } from "../common/common";
+import { AlertAction } from "../../types";
 
 const HeaderText = styled.p`
     font-size: 0.7rem;
@@ -27,6 +26,13 @@ const HeaderRightItem = styled(RightItem)`
     margin-right: 0.5rem;
 `;
 
+interface HeaderProps {
+    selected: number;
+    batchActionHandler: (action: AlertAction) => void;
+    batchSelectHandler: (select: boolean) => void;
+    setBatchSelected: (select: boolean) => void;
+    batchSelected: boolean;
+}
 // Component for table header in alert management
 // Renders column titles or "x selected" depending
 // on if alerts are selected
@@ -36,7 +42,7 @@ const Header = ({
     batchSelectHandler,
     batchSelected,
     setBatchSelected,
-}) => {
+}: HeaderProps) => {
     const headings = [
         "LAST NOTIFIED",
         "COURSE ID",
@@ -46,7 +52,7 @@ const Header = ({
     ];
     return (
         <>
-            <GridItem column="1" row="1" color="#f8f8f8" halign valign>
+            <GridItem column={1} row={1} color="#f8f8f8" halign valign>
                 <input
                     type="checkbox"
                     checked={batchSelected}
@@ -61,8 +67,8 @@ const Header = ({
                     <GridItem
                         // eslint-disable-next-line
                         key={`header${i}`}
-                        column={(i + 2).toString()}
-                        row="1"
+                        column={i + 2}
+                        row={1}
                         color="#f8f8f8"
                         valign
                     >
@@ -72,10 +78,10 @@ const Header = ({
 
             {selected !== 0 && (
                 <>
-                    <GridItem column="2" row="1" color="#f8f8f8" valign>
+                    <GridItem column={2} row={1} color="#f8f8f8" valign>
                         <HeaderText color="#489be8">{`${selected} SELECTED`}</HeaderText>
                     </GridItem>
-                    <GridItem column="3/7" row="1" color="#f8f8f8" valign>
+                    <GridItem column="3/7" row={1} color="#f8f8f8" valign>
                         <HeaderRightItem>
                             <HeaderButtonsFlex valign>
                                 <Img
@@ -86,7 +92,7 @@ const Header = ({
                                 <HeaderAction
                                     onClick={() =>
                                         batchActionHandler(
-                                            AlertAction.Resubscribe
+                                            AlertAction.RESUBSCRIBE
                                         )
                                     }
                                 >
@@ -101,7 +107,7 @@ const Header = ({
                                 />
                                 <HeaderAction
                                     onClick={() =>
-                                        batchActionHandler(AlertAction.Cancel)
+                                        batchActionHandler(AlertAction.CANCEL)
                                     }
                                 >
                                     CANCEL
@@ -115,7 +121,7 @@ const Header = ({
                                 />
                                 <HeaderAction
                                     onClick={() =>
-                                        batchActionHandler(AlertAction.Delete)
+                                        batchActionHandler(AlertAction.DELETE)
                                     }
                                 >
                                     DELETE
@@ -127,14 +133,6 @@ const Header = ({
             )}
         </>
     );
-};
-
-Header.propTypes = {
-    selected: PropTypes.number,
-    batchActionHandler: PropTypes.func,
-    batchSelectHandler: PropTypes.func,
-    setBatchSelected: PropTypes.func,
-    batchSelected: PropTypes.bool,
 };
 
 export default Header;

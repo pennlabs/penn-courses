@@ -72,7 +72,7 @@ const ModalCardBody = styled.div`
 
 interface ModalProps {
     title: string;
-    headerIcon: string;
+    headerIcon?: string;
 }
 
 const Modal = ({
