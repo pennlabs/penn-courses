@@ -1,11 +1,21 @@
-import React from "react";
-import PropTypes from "prop-types";
+import React, { CSSProperties } from "react";
 
-export default function Times(props) {
-    const { startTime, endTime, offset, numRow } = props;
+interface TimesProps {
+    startTime: number;
+    endTime: number;
+    offset: number;
+    numRow: number;
+}
+
+export default function Times({
+    startTime,
+    endTime,
+    offset,
+    numRow,
+}: TimesProps) {
     const timestamps = [];
 
-    const intToTime = (t) => {
+    const intToTime = (t: number) => {
         let hour = Math.floor(t % 12);
         const min = (t % 1) * 60;
         let meridian;
@@ -38,7 +48,7 @@ export default function Times(props) {
         );
     }
 
-    const style = {
+    const style: CSSProperties = {
         display: "grid",
         gridTemplateRows: `repeat(${numRow - 1}, 1fr)`,
         gridColumn: 1,
@@ -48,10 +58,3 @@ export default function Times(props) {
     };
     return <div style={style}>{timestamps}</div>;
 }
-
-Times.propTypes = {
-    startTime: PropTypes.number,
-    endTime: PropTypes.number,
-    offset: PropTypes.number,
-    numRow: PropTypes.number,
-};

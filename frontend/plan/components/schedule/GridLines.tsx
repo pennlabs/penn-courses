@@ -1,23 +1,29 @@
-import React from "react";
+import React, { CSSProperties } from "react";
 
-export default function GridLines(props) {
-    const { numRow, numCol } = props;
+interface GridLinesProps {
+    numRow: number;
+    numCol: number;
+}
+
+export default function GridLines({ numRow, numCol }: GridLinesProps) {
     const lastRow = Math.floor(numRow / 2) * 2;
-    const rowstyle = {
+    const rowstyle: CSSProperties = {
         gridColumnStart: 2,
         gridColumnEnd: numCol + 1,
         position: "relative",
     };
-    const colstyle = {
+    const colstyle: CSSProperties = {
         gridRowStart: 2,
         gridRowEnd: lastRow,
         position: "relative",
     };
 
     const lines = [];
+    let key = 0;
     for (let i = 2; i < Math.floor(numRow / 2) * 2; i += 2) {
         lines.push(
             <span
+                key={key++}
                 className="horizontalLine"
                 style={{ gridRow: i, ...rowstyle }}
             />
@@ -25,6 +31,7 @@ export default function GridLines(props) {
     }
     lines.push(
         <span
+            key={key++}
             className="horizontalLine-last"
             style={{ gridRow: lastRow - 1, ...rowstyle }}
         />
@@ -33,6 +40,7 @@ export default function GridLines(props) {
     for (let i = 2; i <= numCol; i += 1) {
         lines.push(
             <span
+                key={key++}
                 className="verticalLine"
                 style={{ gridColumn: i, ...colstyle }}
             />
@@ -40,10 +48,11 @@ export default function GridLines(props) {
     }
     lines.push(
         <span
+            key={key++}
             className="verticalLine-last"
             style={{ gridColumn: numCol, ...colstyle }}
         />
     );
 
-    return lines;
+    return <>{lines.map((line, i) => line)}</>;
 }

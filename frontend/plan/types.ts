@@ -25,6 +25,28 @@ export enum Activity {
     UNDEFINED = "***",
 }
 
+export enum Day {
+    M = "M",
+    T = "T",
+    W = "W",
+    R = "R",
+    F = "F",
+    S = "S",
+    U = "U",
+}
+
+export enum Color {
+    RED = "#D0021B",
+    ORANGE = "#F5A623",
+    BLUE = "#00BFDD",
+    AQUA = "#35E1BB",
+    GREEN = "#7ED321",
+    PINK = "#FF34CC",
+    SEA = "#3055CC",
+    INDIGO = "#7874CF",
+    BLACK = "#000",
+}
+
 export interface Section {
     id: string;
     status: Status;
@@ -45,6 +67,22 @@ export interface Meeting {
     start: number;
     end: number;
     room: string;
+}
+
+// Represents a single colored block on the schedule
+export interface MeetingBlock {
+    day: Day;
+    start: number;
+    end: number;
+    course: {
+        color: Color;
+        id: string;
+        coreqFulfilled: boolean;
+    };
+    style: {
+        width: string;
+        left: string;
+    };
 }
 
 export interface Profile {

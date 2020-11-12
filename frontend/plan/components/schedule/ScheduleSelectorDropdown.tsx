@@ -1,5 +1,16 @@
-import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
+import React, { useState, useEffect, useRef } from "react";
+
+interface DropdownButton {
+    isActive: boolean;
+    text: string;
+    onClick: () => void;
+    makeActive: () => void;
+    mutators: {
+        copy: () => void;
+        remove: () => void;
+        rename: () => void;
+    };
+}
 
 const DropdownButton = ({
     isActive,
@@ -7,11 +18,13 @@ const DropdownButton = ({
     onClick,
     makeActive,
     mutators: { copy, remove, rename },
-}) => (
+}: DropdownButton) => (
     <div
         role="button"
         onClick={(e) => {
-            const targetClass = e.target.getAttribute("class");
+            // NOTE: explicit cast to HTMLElement to resolve compile error
+            // .getAttribute doesn't exist on type EventTarget
+            const targetClass = (e.target as HTMLElement).getAttribute("class");
             if (targetClass && targetClass.indexOf("s-option") !== -1) {
                 // one of the icons has been clicked
                 return;
@@ -46,29 +59,31 @@ const DropdownButton = ({
     </div>
 );
 
-DropdownButton.propTypes = {
-    isActive: PropTypes.bool,
-    text: PropTypes.string,
-    onClick: PropTypes.func,
-    makeActive: PropTypes.func,
-    mutators: PropTypes.shape({
-        copy: PropTypes.func.isRequired,
-        remove: PropTypes.func.isRequired,
-        rename: PropTypes.func.isRequired,
-    }),
-};
+interface ScheduleSelectorDropdownProps {
+    activeName: string;
+    contents: {
+        text: string;
+        onClick: () => void;
+    }[];
+    mutators: {
+        copy: (scheduleName: string) => void;
+        remove: (scheduleName: string) => void;
+        create: () => void;
+        rename: (oldName: string) => void;
+    };
+}
 
 const ScheduleSelectorDropdown = ({
     activeName,
     contents,
     mutators: { copy, remove, rename, create },
-}) => {
+}: ScheduleSelectorDropdownProps) => {
     const [isActive, setIsActive] = useState(false);
-    const [ref, setRef] = useState(null);
+    const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const listener = (event) => {
-            if (ref && !ref.contains(event.target)) {
+        const listener = (event: Event) => {
+            if (ref.current && !ref.current.contains(event.target as HTMLElement)) {
                 setIsActive(false);
             }
         };
@@ -79,7 +94,7 @@ const ScheduleSelectorDropdown = ({
     });
     return (
         <div
-            ref={(node) => setRef(node)}
+            ref={ref}
             className={`classic dropdown${isActive ? " is-active" : ""}`}
         >
             <span className="selected_name">{activeName}</span>
@@ -129,17 +144,6 @@ const ScheduleSelectorDropdown = ({
             </div>
         </div>
     );
-};
-
-ScheduleSelectorDropdown.propTypes = {
-    activeName: PropTypes.string,
-    contents: PropTypes.arrayOf(PropTypes.object).isRequired,
-    mutators: PropTypes.shape({
-        copy: PropTypes.func.isRequired,
-        remove: PropTypes.func.isRequired,
-        create: PropTypes.func.isRequired,
-        rename: PropTypes.func.isRequired,
-    }),
 };
 
 export default ScheduleSelectorDropdown;

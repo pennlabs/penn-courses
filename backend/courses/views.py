@@ -182,7 +182,7 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
     """
-    TODO: fill this in
+    This view exposes the Penn Labs Accounts User object.
     """
 
     schema = PcxAutoSchema()

@@ -50,7 +50,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     retrieve:
     Get one of the logged-in user's schedules for the current semester, using the schedule's ID.
     If a schedule with the specified ID exists, a 200 response code is returned, along with
-    the schedule object.  TODO: finish
+    the schedule object.
     If the given id does not exist, a 404 is returned.
 
     create:
@@ -109,35 +109,28 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         examples=examples.ScheduleViewSet_examples,
         response_codes={
             "/api/plan/schedules/": {
-                "GET": {
-                    200: "[SCHEMA]Schedules listed successfully.",
-                    403: "Authentication credentials were not provided.",
-                },
+                "GET": {200: "[SCHEMA]Schedules listed successfully.",},
                 "POST": {
                     201: "Schedule successfully created.",
                     200: "Schedule successfully updated (a schedule with the "
                     "specified id already existed).",
                     400: "Bad request (see description above).",
-                    403: "Authentication credentials were not provided.",
                 },
             },
             "/api/plan/schedules/{id}/": {
                 "GET": {
                     200: "[SCHEMA]Successful retrieve (the specified schedule exists).",
-                    403: "Authentication credentials were not provided.",
                     404: "No schedule with the specified id exists.",
                 },
                 "PUT": {
                     200: "Successful update (the specified schedule exists "
                     "and was successfully updated).",
                     400: "Bad request (see description above).",
-                    403: "Authentication credentials were not provided.",
                     404: "No schedule with the specified id exists.",
                 },
                 "DELETE": {
                     204: "[SCHEMA]Successful delete (the specified schedule existed "
                     "and was successfully deleted).",
-                    403: "Authentication credentials were not provided.",
                     404: "No schedule with the specified id exists.",
                 },
             },
