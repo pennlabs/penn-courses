@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import PropTypes from "prop-types";
 import ReactGA from "react-ga";
 import * as Sentry from "@sentry/browser";
 
@@ -13,6 +12,7 @@ import AlertForm from "../components/AlertForm";
 import { Center, Container, Flex } from "../components/common/layout";
 import MessageList from "../components/MessageList";
 import LoginModal from "../components/LoginModal";
+import { User } from "../types";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
@@ -45,7 +45,7 @@ const NavContainer = styled.nav`
     width: 95%;
 `;
 
-const NavElt = styled.span`
+const NavElt = styled.span<{ active?: boolean }>`
     padding: 20px;
     color: #4a4a4a;
     display: flex;
@@ -55,7 +55,15 @@ const NavElt = styled.span`
     cursor: pointer;
 `;
 
-const Nav = ({ login, logout, user, page, setPage }) => (
+interface NavProps {
+    login: (u: User) => void;
+    logout: () => void;
+    page: string;
+    setPage: (p: string) => void;
+    user: User | null;
+}
+
+const Nav = ({ login, logout, user, page, setPage }: NavProps) => (
     <NavContainer>
         <NavElt>
             <AccountIndicator
@@ -88,14 +96,6 @@ const Nav = ({ login, logout, user, page, setPage }) => (
     </NavContainer>
 );
 
-Nav.propTypes = {
-    login: PropTypes.func.isRequired,
-    logout: PropTypes.func.isRequired,
-    page: PropTypes.string.isRequired,
-    setPage: PropTypes.func.isRequired,
-    user: PropTypes.objectOf(PropTypes.any),
-};
-
 const Heading = () => (
     <Center>
         <LogoArea />
@@ -121,9 +121,11 @@ const genId = (() => {
 // `;
 
 function App() {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState<User | null>(null);
     const [page, setPage] = useState("home");
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState<
+        { message: string; status: number; key: number }[]
+    >([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
 
     useEffect(() => {
@@ -155,7 +157,7 @@ function App() {
     };
 
     // Separates showLoginModal from state so that the login modal doesn't show up on page load
-    const updateUser = (newUserVal) => {
+    const updateUser = (newUserVal: User | null) => {
         if (!newUserVal) {
             // the user has logged out; show the login modal
             setShowLoginModal(true);
