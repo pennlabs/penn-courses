@@ -121,7 +121,10 @@ class RegisterTestCase(TestCase):
         self.assertEqual("e@example.com", r.email)
         self.assertEqual("+15555555555", r.phone)
         self.assertFalse(r.notification_sent)
+        self.assertIsNone(r.notification_sent_at)
         self.assertEqual(SOURCE_PCA, r.source)
+        self.assertFalse(r.close_notification_sent)
+        self.assertIsNone(r.close_notification_sent_at)
         self.assertIsNone(r.api_key)
 
     def test_nonnormalized_course_code(self):
@@ -214,6 +217,10 @@ class ResubscribeTestCase(TestCase):
         reg = self.base_reg.resubscribe()
         self.assertNotEqual(reg, self.base_reg)
         self.assertEqual(self.base_reg, reg.resubscribed_from)
+        self.assertFalse(reg.notification_sent)
+        self.assertIsNone(reg.notification_sent_at)
+        self.assertFalse(reg.close_notification_sent)
+        self.assertIsNone(reg.close_notification_sent_at)
 
     def test_try_resubscribe_noalert(self):
         reg = self.base_reg.resubscribe()
