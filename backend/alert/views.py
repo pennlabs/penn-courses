@@ -455,7 +455,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             deleted=False,
             resubscribed_to__isnull=True,
             section__course__semester=get_current_semester(),
-        )  # Change this to include close notifications once frontend supports them
+        )
 
 
 class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet):
