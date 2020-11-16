@@ -365,31 +365,31 @@ class Registration(models.Model):
 
         if forced or self.is_active or (close_notification and self.is_waiting_for_close):
             push_notification = (
-                self.user
-                and self.user.profile
-                and self.user.profile.push_notifications
+                self.user and self.user.profile and self.user.profile.push_notifications
             )  # specifies whether we should use a push notification instead of a text
             text_result = False
             if not push_notification:
                 text_result = Text(self).send_alert(close_notification=close_notification)
                 if text_result is None:
-                    logging.debug("ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR " +
-                                  self.__str__())
+                    logging.debug(
+                        "ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR " + self.__str__()
+                    )
             email_result = Email(self).send_alert(close_notification=close_notification)
             if email_result is None:
-                logging.debug("ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " +
-                              self.__str__())
+                logging.debug(
+                    "ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " + self.__str__()
+                )
             push_notif_result = False
             if push_notification:
                 push_notif_result = PushNotification(self).send_alert(
                     close_notification=close_notification
                 )
                 if push_notif_result is None:
-                    logging.debug("ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " +
-                                  self.__str__())
+                    logging.debug(
+                        "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " + self.__str__()
+                    )
             if not email_result and not text_result and not push_notif_result:
-                logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " +
-                              self.__str__())
+                logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__())
                 return False
             if not close_notification:
                 logging.debug("NOTIFICATION SENT FOR " + self.__str__())

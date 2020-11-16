@@ -69,9 +69,7 @@ class Alert(ABC):
 class Email(Alert):
     def __init__(self, reg):
         super().__init__(
-            "alert/email_alert.html",
-            reg,
-            close_template="alert/email_close_alert.html"
+            "alert/email_alert.html", reg, close_template="alert/email_close_alert.html"
         )
 
     def send_alert(self, close_notification=False):
@@ -109,11 +107,7 @@ class Email(Alert):
 
 class Text(Alert):
     def __init__(self, reg):
-        super().__init__(
-            "alert/text_alert.txt",
-            reg,
-            close_template="alert/text_alert_close.txt"
-        )
+        super().__init__("alert/text_alert.txt", reg, close_template="alert/text_alert_close.txt")
 
     def send_alert(self, close_notification=False):
         """
@@ -146,11 +140,7 @@ class Text(Alert):
 
 class PushNotification(Alert):
     def __init__(self, reg):
-        super().__init__(
-            "alert/push_notif.txt",
-            reg,
-            close_template="alert/push_notif_close.txt"
-        )
+        super().__init__("alert/push_notif.txt", reg, close_template="alert/push_notif_close.txt")
 
     def send_alert(self, close_notification=False):
         """
@@ -177,11 +167,7 @@ class PushNotification(Alert):
             try:
                 response = requests.post(
                     "https:/api.pennlabs.org/notifications/send/internal",
-                    data={
-                        "title": alert_title,
-                        "body": alert_body,
-                        "pennkey": pennkey,
-                    },
+                    data={"title": alert_title, "body": alert_body, "pennkey": pennkey,},
                     headers={"Authorization": "Bearer %s" % bearer_token},
                 )
                 if response.status_code != 200:

@@ -194,9 +194,6 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     or undelete (cancelled registrations can be resubscribed to and deleted registrations
     are effectively nonexistent).
 
-    A new feature we have implemented is a close notification.  If close_notification is set to
-    true,
-
     If the update is successful, a 200 is returned.  If there is some issue with the request,
     a 400 is returned.  This could be caused by trying to update a registration from a different
     semester, trying to resubscribe to a deleted registration, resubscribing to a registration
