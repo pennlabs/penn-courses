@@ -171,10 +171,12 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     that would get modified by a PUT request would be the head of the resubscribe chain of the
     Registration with the specified id (so if you try to update an outdated Registration it will
     instead update the most recent Registration).  The parameters which can be
-    included in the request body are `resubscribe`, `auto_resubscribe`, `cancelled`, and `deleted`.
-    If you include multiple parameters, the order of precedence in choosing what action to take is
-    `resubscribe` > `deleted` > `cancelled` > `auto_resubscribe` (so if you include multiple
-    parameters only the action associated with the highest priority parameter will be executed).
+    included in the request body are `resubscribe`, `auto_resubscribe`, 'close_notification',
+    `cancelled`, and `deleted`. If you include multiple parameters, the order of precedence in
+    choosing what action to take is `resubscribe` > `deleted` > `cancelled` >
+    [`auto_resubscribe` and `close_notification`] (so if you include multiple
+    parameters only the action associated with the highest priority parameter will be executed,
+    except both auto_resubscribe and close_notification can be updated in the same request).
     Note that a registration will send an alert when the section it is watching opens, if and only
     if it hasn't sent one before, it isn't cancelled, and it isn't deleted.  If a registration would
     send an alert when the section it is watching opens, we call it "active".  Registrations which
@@ -191,6 +193,9 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     parameter to true in your PUT request (and the same for delete/deleted), you cannot uncancel
     or undelete (cancelled registrations can be resubscribed to and deleted registrations
     are effectively nonexistent).
+
+    A new feature we have implemented is a close notification.  If close_notification is set to
+    true,
 
     If the update is successful, a 200 is returned.  If there is some issue with the request,
     a 400 is returned.  This could be caused by trying to update a registration from a different

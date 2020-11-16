@@ -296,11 +296,15 @@ class Registration(models.Model):
                 user_data, _ = UserProfile.objects.get_or_create(user=self.user)
                 user_data.email = self.email
                 user_data.save()
+                self.user.profile = user_data
+                self.user.save()
                 self.email = None
             if self.phone is not None:
                 user_data, _ = UserProfile.objects.get_or_create(user=self.user)
                 user_data.phone = self.phone
                 user_data.save()
+                self.user.profile = user_data
+                self.user.save()
                 self.phone = None
         super().save(*args, **kwargs)
         if self.original_created_at is None:
@@ -359,20 +363,31 @@ class Registration(models.Model):
         Returns true iff an alert was successfully sent through at least one medium to the user.
         """
 
-        if forced or self.is_active:
-            text_result = Text(self).send_alert()
-            email_result = Email(self).send_alert()
-            push_notif_result = PushNotification(self).send_alert()
+        if forced or self.is_active or (close_notification and self.is_waiting_for_close):
+            push_notification = (
+                self.user
+                and self.user.profile
+                and self.user.profile.push_notifications
+            )  # specifies whether we should use a push notification instead of a text
+            text_result = False
+            if not push_notification:
+                text_result = Text(self).send_alert(close_notification=close_notification)
+                if text_result is None:
+                    logging.debug("ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR " +
+                                  self.__str__())
+            email_result = Email(self).send_alert(close_notification=close_notification)
             if email_result is None:
-                logging.debug("ERROR OCCURED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " +
+                logging.debug("ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " +
                               self.__str__())
-            if text_result is None:
-                logging.debug("ERROR OCCURED WHILE ATTEMPTING TEXT NOTIFICATION FOR " +
-                              self.__str__())
-            if push_notif_result is None:
-                logging.debug("ERROR OCCURED WHILE ATTEMPTING PUSH NOTIFICATION FOR " +
-                              self.__str__())
-            if (not email_result and not text_result and not push_notif_result):
+            push_notif_result = False
+            if push_notification:
+                push_notif_result = PushNotification(self).send_alert(
+                    close_notification=close_notification
+                )
+                if push_notif_result is None:
+                    logging.debug("ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " +
+                                  self.__str__())
+            if not email_result and not text_result and not push_notif_result:
                 logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " +
                               self.__str__())
                 return False

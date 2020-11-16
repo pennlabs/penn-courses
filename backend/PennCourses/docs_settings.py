@@ -320,9 +320,34 @@ custom_tag_descriptions = {
         is a registration created by resubscribing to the previous registration (once that
         registration had triggered an alert to be sent), either manually by the user or
         automatically if auto_resubscribe was set to true.  Then, it follows that the head of the
-        resubscribe chain is the most relevant registration for that section; if any of the
-        registrations in the chain are active, it would be the head.  And if the head is active,
-        none of the other registrations in the chain are active.
+        resubscribe chain is the most relevant Registration for that user/section combo; if any 
+        of the registrations in the chain are active, it would be the head.  And if the head 
+        is active, none of the other registrations in the chain are active.
+        
+        Note that a registration will send an alert when the section it is watching opens, if and 
+        only if it hasn't sent one before, it isn't cancelled, and it isn't deleted.  If a 
+        registration would send an alert when the section it is watching opens, we call it 
+        "active".  See the Create Registration docs for an explanation of how to create a new 
+        registration, and the Update Registration docs for an explanation of how you can modify 
+        a registration after it is created.
+        
+        In addition to sending alerts for when a class opens up, we have also implemented 
+        an optionally user-enabled feature called "close notifications".  
+        If a registration has close_notification enabled, it will act normally when the watched 
+        section opens up for the first time (triggering an alert to be sent). However, once the 
+        watched section closes, it will send another alert (the email alert will be in the same 
+        chain as the original alert) to let the user know that the section has closed. Thus, 
+        if a user sees a PCA notification on their phone during a class for instance, they won't 
+        need to frantically open up their laptop and check PennInTouch to see if the class is still 
+        open just to find that it is already closed.  Note that the close_notification setting 
+        carries over across resubscriptions, but can be disabled at any time using 
+        Update Registration.
+        
+        After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a `user` field 
+        pointing to the user's Penn Labs Accounts User object.  In other words 
+        (for frontend people), we implemented a user/accounts system for PCA which required that 
+        people log in to use the service. Thus, the contact information used in PCA alerts 
+        is taken from 
         """
     ),
     "[PCA] User": dedent(

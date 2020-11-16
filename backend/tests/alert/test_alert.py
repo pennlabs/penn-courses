@@ -4,13 +4,17 @@ import json
 from unittest.mock import patch
 
 from ddt import data, ddt, unpack
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from options.models import Option
 from rest_framework.test import APIClient
+
+from alert.tasks import get_registrations_for_alerts, get_active_registrations
 from tests.courses.util import create_mock_data
+from django.utils import timezone
 
 from alert import tasks
 from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course
@@ -69,41 +73,247 @@ def override_delay(modules_names, before_func, before_kwargs):
                 override_delay(modules_names[:-1], before_func, before_kwargs)
 
 
+@patch("alert.models.PushNotification.send_alert")
 @patch("alert.models.Text.send_alert")
 @patch("alert.models.Email.send_alert")
-@patch("alert.models.PushNotification.send_alert")
 class SendAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
         course, section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
-        self.r = Registration(email="yo@example.com", phone="+15555555555", section=section)
-
+        self.r_legacy = Registration(email="yo@example.com", phone="+15555555555", section=section)
+        self.r_legacy.save()
+        user = User.objects.create_user(username="jacob", password="top_secret")
+        user.save()
+        self.r = Registration(
+            email="yo@example.com", phone="+15555555555", section=section,
+            user=user
+        )
         self.r.save()
 
-    def test_send_alert(self, mock_email, mock_text, mock_push_notification):
-        self.assertFalse(Registration.objects.get(id=self.r.id).notification_sent)
-        tasks.send_alert(self.r.id, sent_by="ADM")
+    def test_send_alert_legacy(self, mock_email, mock_text, mock_push_notification):
+        r_legacy = Registration.objects.get(id=self.r_legacy.id)
+        self.assertIsNone(r_legacy.user)
+        self.assertEquals("yo@example.com", r_legacy.email)
+        self.assertEquals("+15555555555", r_legacy.phone)
+        self.assertEquals("CIS-160-001", r_legacy.section.full_code)
+        self.assertFalse(r_legacy.notification_sent)
+        self.assertTrue(r_legacy.is_active)
+        tasks.send_alert(self.r_legacy.id, sent_by="ADM")
         self.assertTrue(mock_email.called)
         self.assertTrue(mock_text.called)
-        self.assertTrue(mock_push_notification.called)
-        self.assertTrue(Registration.objects.get(id=self.r.id).notification_sent)
-        self.assertEqual("ADM", Registration.objects.get(id=self.r.id).notification_sent_by)
+        self.assertFalse(mock_push_notification.called)
+        r_legacy = Registration.objects.get(id=self.r_legacy.id)
+        self.assertTrue(r_legacy.notification_sent)
+        self.assertEqual("ADM", r_legacy.notification_sent_by)
 
-    def test_dont_resend_alert(self, mock_email, mock_text, mock_push_notification):
+    def send_alert_helper(self, mock_email, mock_text, mock_push_notification, push_notification):
+        self.r.user.profile.push_notifications = push_notification
+        self.r.user.profile.save()
+        r = Registration.objects.get(id=self.r.id)
+        self.assertIsNotNone(r.user)
+        self.assertIsNotNone(r.user.profile)
+        self.assertEquals("yo@example.com", r.user.profile.email)
+        self.assertEquals("+15555555555", r.user.profile.phone)
+        self.assertEquals("CIS-160-001", r.section.full_code)
+        self.assertIsNone(r.email)
+        self.assertIsNone(r.phone)
+        self.assertEquals(push_notification, r.user.profile.push_notifications)
+        self.assertFalse(r.notification_sent)
+        self.assertTrue(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
+        self.assertTrue(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="O"
+        ))
+        self.assertFalse(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="C"
+        ))
+        self.assertEquals(0, len(get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="X"
+        )))
+        self.assertEquals(0, len(get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status=""
+        )))
+        tasks.send_alert(self.r.id, sent_by="ADM")
+        r = Registration.objects.get(id=self.r.id)
+        self.assertTrue(mock_email.called)
+        self.assertEquals(not push_notification, mock_text.called)
+        self.assertEquals(push_notification, mock_push_notification.called)
+        self.assertTrue(r.notification_sent)
+        self.assertIsNotNone("ADM", r.notification_sent_by)
+        self.assertEqual("ADM", r.notification_sent_by)
+        self.assertFalse(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
+        self.assertFalse(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="O"
+        ))
+        self.assertFalse(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="C"
+        ))
+
+    def test_send_alert_push(self, mock_email, mock_text, mock_push_notification):
+        self.send_alert_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=True
+        )
+
+    def test_send_alert(self, mock_email, mock_text, mock_push_notification):
+        self.send_alert_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=False
+        )
+
+    def send_close_notification_helper(
+        self, mock_email, mock_text, mock_push_notification, push_notification, auto_resubscribe,
+            manual_resubscribe
+    ):
+        self.r.user.profile.push_notifications = push_notification
+        self.r.user.profile.save()
+        if not manual_resubscribe:
+            self.r.auto_resubscribe = auto_resubscribe
+        self.r.close_notification = True
         self.r.notification_sent = True
+        self.r.notification_sent_by = "ADM"
+        self.r.notification_sent_at = timezone.now()
         self.r.save()
-        tasks.send_alert(self.r.id)
+        r = Registration.objects.get(id=self.r.id)
+        self.assertFalse(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
+        self.assertFalse(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="O"
+        ))
+        self.assertTrue(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="C"
+        ))
+        tasks.send_alert(self.r.id, sent_by="ADM", close_notification=True)
+        if manual_resubscribe:
+            r.resubscribe()
+        r = Registration.objects.get(id=self.r.id)
+        self.assertTrue(mock_email.called)
+        self.assertEquals(not push_notification, mock_text.called)
+        self.assertEquals(push_notification, mock_push_notification.called)
+        self.assertTrue(r.notification_sent)
+        self.assertIsNotNone(r.notification_sent_at)
+        self.assertEqual("ADM", r.notification_sent_by)
+        self.assertTrue(r.close_notification_sent)
+        self.assertIsNotNone(r.close_notification_sent_at)
+        self.assertEqual("ADM", r.close_notification_sent_by)
+        self.assertFalse(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
+        self.assertFalse(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="O"
+        ))
+        self.assertFalse(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="C"
+        ))
+
+    def test_send_close_notification_push(
+        self, mock_email, mock_text, mock_push_notification
+    ):
+        self.send_close_notification_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=True,
+            auto_resubscribe=True, manual_resubscribe=False
+        )
+
+    def test_send_close_notification_push_autoresub(
+        self, mock_email, mock_text, mock_push_notification
+    ):
+        self.send_close_notification_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=True,
+            auto_resubscribe=False, manual_resubscribe=False
+        )
+
+    def test_send_close_notification_autoresub(
+        self, mock_email, mock_text, mock_push_notification
+    ):
+        self.send_close_notification_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=False,
+            auto_resubscribe=True, manual_resubscribe=False
+        )
+
+    def test_send_close_notification(
+        self, mock_email, mock_text, mock_push_notification
+    ):
+        self.send_close_notification_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=False,
+            auto_resubscribe=False, manual_resubscribe=False
+        )
+
+    def test_send_close_notification_push_resub(
+        self, mock_email, mock_text, mock_push_notification
+    ):
+        self.send_close_notification_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=True,
+            auto_resubscribe=False, manual_resubscribe=True
+        )
+
+    def test_send_close_notification_resub(
+        self, mock_email, mock_text, mock_push_notification
+    ):
+        self.send_close_notification_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=False,
+            auto_resubscribe=False, manual_resubscribe=True
+        )
+
+    def dont_resend_alert_helper(self, mock_email, mock_text, mock_push_notification,
+                                 close_notification):
+        self.r.notification_sent = True
+        self.r.close_notification_sent = True
+        self.r.save()
+        r = Registration.objects.get(id=self.r.id)
+        self.assertFalse(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
+        self.assertFalse(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="O"
+        ))
+        self.assertFalse(r in get_registrations_for_alerts(
+            "CIS-160-001", TEST_SEMESTER, course_status="C"
+        ))
+        tasks.send_alert(self.r.id, close_notification=close_notification)
         self.assertFalse(mock_email.called)
         self.assertFalse(mock_text.called)
         self.assertFalse(mock_push_notification.called)
 
-    def test_resend_alert_forced(self, mock_email, mock_text, mock_push_notification):
+    def test_dont_resend_alert(self, mock_email, mock_text, mock_push_notification):
+        self.dont_resend_alert_helper(
+            mock_email, mock_text, mock_push_notification, close_notification=False
+        )
+
+    def test_dont_resend_close_notification(self, mock_email, mock_text, mock_push_notification):
+        self.dont_resend_alert_helper(
+            mock_email, mock_text, mock_push_notification, close_notification=True
+        )
+
+    def resend_alert_forced_helper(self, mock_email, mock_text, mock_push_notification,
+                                   push_notification, close_notification):
+        self.r.user.profile.push_notifications = push_notification
+        self.r.user.profile.save()
+        self.r.close_notification = close_notification
         self.r.notification_sent = True
+        self.r.close_notification_sent = True
         self.r.save()
         self.r.alert(True)
         self.assertTrue(mock_email.called)
-        self.assertTrue(mock_text.called)
-        self.assertTrue(mock_push_notification.called)
+        self.assertEquals(not push_notification, mock_text.called)
+        self.assertEquals(push_notification, mock_push_notification.called)
+
+    def test_resend_alert_forced(self, mock_email, mock_text, mock_push_notification):
+        self.resend_alert_forced_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=False,
+            close_notification=False
+        )
+
+    def test_resend_alert_forced_push(self, mock_email, mock_text, mock_push_notification):
+        self.resend_alert_forced_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=True,
+            close_notification=False
+        )
+
+    def test_resend_close_notification_forced(self, mock_email, mock_text, mock_push_notification):
+        self.resend_alert_forced_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=False,
+            close_notification=True
+        )
+
+    def test_resend_close_notification_forced_push(
+            self, mock_email, mock_text, mock_push_notification
+    ):
+        self.resend_alert_forced_helper(
+            mock_email, mock_text, mock_push_notification, push_notification=True,
+            close_notification=True
+        )
 
 
 class RegisterTestCase(TestCase):
@@ -1145,18 +1355,24 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(
             model.notification_sent_at, self.convert_date(data["notification_sent_at"])
         )
+        self.assertEqual(model.close_notification, data["close_notification"])
+        self.assertEqual(model.close_notification, data["close_notification_sent"])
+        self.assertEqual(
+            model.close_notification_sent_at, self.convert_date(data["close_notification_sent_at"])
+        )
+        self.assertEqual(model.original_created_at, self.convert_date(data["original_created_at"]))
         self.assertEqual(model.created_at, self.convert_date(data["created_at"]))
         self.assertEqual(model.updated_at, self.convert_date(data["updated_at"]))
 
-    def simulate_alert_helper_before(self, section):
+    def simulate_alert_helper_before(self, section, from_status="X", to_status="O"):
         auth = base64.standard_b64encode("webhook:password".encode("ascii"))
         headers = {
             "Authorization": f"Basic {auth.decode()}",
         }
         body = {
             "course_section": section.full_code.replace("-", ""),
-            "previous_status": "X",
-            "status": "O",
+            "previous_status": from_status,
+            "status": to_status,
             "status_code_normalized": "Open",
             "term": section.semester,
         }
@@ -1170,48 +1386,93 @@ class AlertRegistrationTestCase(TestCase):
         self.assertTrue("sent" in json.loads(res.content)["message"])
 
     def simulate_alert(
-        self, section, num_status_updates=None, contact_infos=None, should_send=True
+        self, section, num_status_updates=None, contact_infos=None, should_send=True,
+            close_notification=False
     ):
         contact_infos = (
-            [{"number": "+11234567890", "email": "j@gmail.com"}]
+            # If we enabled push notifications by default in these tests, push_username would be
+            # set to "jacob", since that is the username of the default user for these tests.
+            [{"number": "+11234567890", "email": "j@gmail.com", "push_username": None}]
             if contact_infos is None
             else contact_infos
         )
+        # ensure no duplicate contact info in contact_infos list
+        for i, c in enumerate(contact_infos):
+            for j in range(i+1, len(contact_infos)):
+                if (
+                    contact_infos[j]["number"] == c["number"] or
+                    contact_infos[j]["email"] == c["email"]
+                ):
+                    raise ValueError(
+                        "Duplicate contact information found in contact_infos list between "
+                        f"{c} and {contact_infos[j]}."
+                    )
         with patch("alert.alerts.send_email", return_value=True) as send_email_mock:
             with patch("alert.alerts.send_text", return_value=True) as send_text_mock:
-                override_delay(
-                    [("alert.tasks", "send_course_alerts"), ("alert.tasks", "send_alert"),],
-                    self.simulate_alert_helper_before,
-                    {"section": section},
-                )
-                self.assertEqual(
-                    0 if not should_send else len(contact_infos), send_email_mock.call_count,
-                )
-                self.assertEqual(
-                    0 if not should_send else len(contact_infos), send_text_mock.call_count,
-                )
-                for c in contact_infos:
-                    self.assertEqual(
-                        0 if not should_send else 1,
-                        len([m for m in send_text_mock.call_args_list if m[0][0] == c["number"]]),
+                with patch("requests.post", return_value={
+                    "status_code": 200
+                }) as push_notification_mock:
+                    override_delay(
+                        [("alert.tasks", "send_course_alerts"), ("alert.tasks", "send_alert"),],
+                        self.simulate_alert_helper_before,
+                        {"section": section,
+                         "from_status": ("C" if not close_notification else "O"),
+                         "to_status": ("O" if not close_notification else "C")},
                     )
                     self.assertEqual(
-                        0 if not should_send else 1,
-                        len(
-                            [m for m in send_email_mock.call_args_list if m[1]["to"] == c["email"]]
+                        0 if not should_send else len(
+                            [c for c in contact_infos if "email" in c.keys() and c["email"]]
                         ),
+                        send_email_mock.call_count
                     )
-                for r in Registration.objects.filter(section=section):
-                    if hasattr(r, "resubscribed_to"):
-                        self.assertEquals(should_send, r.notification_sent)
-                        if should_send:
-                            self.assertIsNotNone(r.notification_sent_at)
-                        else:
-                            self.assertNone(r.notification_sent_at)
-                if num_status_updates is not None:
-                    self.assertEqual(num_status_updates, StatusUpdate.objects.count())
-                for u in StatusUpdate.objects.all():
-                    self.assertTrue(u.alert_sent)
+                    self.assertEqual(
+                        0 if not should_send else len(
+                            [c for c in contact_infos if "number" in c.keys() and c["number"] and
+                             ("push_username" not in c.keys() or not c["push_username"])]
+                        ),
+                        send_text_mock.call_count,
+                    )
+                    self.assertEqual(
+                        0 if not should_send else len(
+                            [c for c in contact_infos if "push_username" in c.keys() and
+                             c["push_username"]]
+                        ),
+                        push_notification_mock.call_count,
+                    )
+                    for c in contact_infos:
+                        self.assertEqual(
+                            0 if not should_send or "email" not in c.keys() or not c["email"] else 1,
+                            len([m for m in send_text_mock.call_args_list if "number" in c.keys()
+                                 and m[0][0] == c["number"]]),
+                        )
+                        self.assertEqual(
+                            0 if not should_send or "number" not in c.keys() or not c["number"] or
+                                 ("push_username" in c.keys() and c["push_username"]) else 1,
+                            len(
+                                [m for m in send_email_mock.call_args_list if "email" in c.keys()
+                                 and m[1]["to"] == c["email"]]
+                            ),
+                        )
+                        self.assertEqual(
+                            0 if not should_send or "push_username" not in c.keys() or
+                            not c["push_username"] else 1,
+                            len(
+                                [m for m in push_notification_mock.call_args_list if
+                                 "push_username" in c.keys() and
+                                 m[1]["data"]["pennkey"] == c["push_username"]]
+                            )
+                        )
+                    for r in Registration.objects.filter(section=section):
+                        if hasattr(r, "resubscribed_to"):
+                            self.assertEquals(should_send, r.notification_sent)
+                            if should_send:
+                                self.assertIsNotNone(r.notification_sent_at)
+                            else:
+                                self.assertNone(r.notification_sent_at)
+                    if num_status_updates is not None:
+                        self.assertEqual(num_status_updates, StatusUpdate.objects.count())
+                    for u in StatusUpdate.objects.all():
+                        self.assertTrue(u.alert_sent)
 
     def create_resubscribe_group(self):
         first_id = self.registration_cis120.id
@@ -1487,6 +1748,52 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(409, response.status_code)
         self.assertEqual(num, Registration.objects.count())
+
+    def push_notification_simple_test(self):
+        new_user = User.objects.create_user(username="new_jacob", password="top_secret")
+        new_user.save()
+        new_user.profile.email = "newj@gmail.com"
+        new_user.profile.phone = "+12234567890"
+        new_user.profile.push_notifications = True
+        new_user.profile.save()
+        new_client = APIClient()
+        new_client.login(username="new_jacob", password="top_secret")
+        create_mock_data("CIS-192-201", TEST_SEMESTER)
+        response = new_client.post(
+            reverse("registrations-list"),
+            json.dumps({"section": "CIS-192-201", "auto_resubscribe": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(201, response.status_code)
+        new_first_id = response.data["id"]
+        response = new_client.post(
+            reverse("registrations-list"),
+            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(201, response.status_code)
+        new_second_id = response.data["id"]
+        self.simulate_alert(
+            "CIS-192-201", num_status_updates=1,
+            contact_infos=[{"number": new_user.profile.phone, "email":new_user.profile.email,
+                            "push_username": new_user.username}],
+            should_send=True,
+            close_notification=False
+        )
+        self.simulate_alert(
+            "CIS-120-201", num_status_updates=1,
+            contact_infos=[{"number": new_user.profile.phone, "email":new_user.profile.email,
+                            "push_username": new_user.username},
+                           {"number": "+11234567890", "email": "j@gmail.com",
+                            "push_username": None}],
+            should_send=True,
+            close_notification=False
+        )
+        self.assertTrue(Registration.objects.get(id=new_first_id).notification_sent)
+        self.assertIsNotNone(Registration.objects.get(id=new_first_id).resubscribed_to)
+        self.assertFalse(Registration.objects.get(id=new_second_id).notification_sent)
+        self.assertIsNone(Registration.objects.get(id=new_second_id).resubscribed_to)
+
 
     def registrations_multiple_users_helper(self, ids, auto_resub=False):
         new_user = User.objects.create_user(username="new_jacob", password="top_secret")

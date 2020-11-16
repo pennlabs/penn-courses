@@ -40,7 +40,7 @@ def send_text(to, text):
 
 
 class Alert(ABC):
-    def __init__(self, template, reg):
+    def __init__(self, template, reg, close_template=None):
         t = loader.get_template(template)
         self.text = t.render(
             {
@@ -49,30 +49,58 @@ class Alert(ABC):
                 "auto_resubscribe": reg.auto_resubscribe,
             }
         )
+        self.close_text = None
+        if close_template:
+            t = loader.get_template(close_template)
+            self.close_text = t.render(
+                {
+                    "course": reg.section.full_code,
+                    "brand": "Penn Course Alert",
+                    "auto_resubscribe": reg.auto_resubscribe,
+                }
+            )
         self.registration = reg
 
     @abstractmethod
-    def send_alert(self):
+    def send_alert(self, close_notification=False):
         pass
 
 
 class Email(Alert):
     def __init__(self, reg):
-        super().__init__("alert/email_alert.html", reg)
+        super().__init__(
+            "alert/email_alert.html",
+            reg,
+            close_template="alert/email_close_alert.html"
+        )
 
-    def send_alert(self):
+    def send_alert(self, close_notification=False):
+        """
+        Returns False if notification was not sent intentionally,
+        and None if notification was attempted to be sent but an error occurred.
+        """
         if self.registration.user is not None and self.registration.user.profile.email is not None:
             email = self.registration.user.profile.email
         elif self.registration.email is not None:
             email = self.registration.email
         else:
             return False
+
         try:
+            if close_notification:
+                if not self.close_text:
+                    # This should be unreachable
+                    return None
+                alert_subject = "RE: %s is now open!" % self.registration.section.full_code
+                alert_text = self.close_text
+            else:
+                alert_subject = "%s is now open!" % self.registration.section.full_code
+                alert_text = self.text
             return send_email(
                 from_="Penn Course Alert <team@penncoursealert.com>",
                 to=email,
-                subject="%s is now open!" % self.registration.section.full_code,
-                html=self.text,
+                subject=alert_subject,
+                html=alert_text,
             )
         except SMTPRecipientsRefused:
             logger.exception("Email Error")
@@ -81,9 +109,24 @@ class Email(Alert):
 
 class Text(Alert):
     def __init__(self, reg):
-        super().__init__("alert/text_alert.txt", reg)
+        super().__init__(
+            "alert/text_alert.txt",
+            reg,
+            close_template="alert/text_alert_close.txt"
+        )
 
-    def send_alert(self):
+    def send_alert(self, close_notification=False):
+        """
+        Returns False if notification was not sent intentionally,
+        and None if notification was attempted to be sent but an error occurred.
+        """
+        if (
+            self.registration.user
+            and self.registration.user.profile
+            and self.registration.user.profile.push_notifications
+        ):
+            # Do not send text if push_notifications is enabled
+            return False
         if self.registration.user is not None and self.registration.user.profile.phone is not None:
             phone_number = self.registration.user.profile.phone
         elif self.registration.phone is not None:
@@ -91,29 +134,63 @@ class Text(Alert):
         else:
             return False
 
-        return send_text(phone_number, self.text)
+        if close_notification:
+            if not self.close_text:
+                # This should be unreachable
+                return None
+            alert_text = self.close_text
+        else:
+            alert_text = self.text
+        return send_text(phone_number, alert_text)
 
 
 class PushNotification(Alert):
     def __init__(self, reg):
-        super().__init__("alert/push_notif.txt", reg)
+        super().__init__(
+            "alert/push_notif.txt",
+            reg,
+            close_template="alert/push_notif_close.txt"
+        )
 
-    def send_alert(self):
+    def send_alert(self, close_notification=False):
+        """
+        Returns False if notification was not sent intentionally,
+        and None if notification was attempted to be sent but an error occurred.
+        """
         if (
             self.registration.user
             and self.registration.user.profile
             and self.registration.user.profile.push_notifications
         ):
+            # Only send push notification if push_notifications is enabled
             pennkey = self.registration.user.username
             bearer_token = str(10101)
-            requests.post(
-                "https:/api.pennlabs.org/notifications/send/internal",
-                data={
-                    "title": "%s is now open!" % self.registration.section.full_code,
-                    "body": self.text,
-                    "pennkey": pennkey,
-                },
-                headers={"Authorization": "Bearer %s" + bearer_token},
-            )
+            if close_notification:
+                if not self.close_text:
+                    # This should be unreachable
+                    return None
+                alert_title = "%s just closed." % self.registration.section.full_code
+                alert_body = self.close_text
+            else:
+                alert_title = "%s is now open!" % self.registration.section.full_code
+                alert_body = self.text
+            try:
+                response = requests.post(
+                    "https:/api.pennlabs.org/notifications/send/internal",
+                    data={
+                        "title": alert_title,
+                        "body": alert_body,
+                        "pennkey": pennkey,
+                    },
+                    headers={"Authorization": "Bearer %s" % bearer_token},
+                )
+                if response.status_code != 200:
+                    logger.exception(
+                        f"Push Notification {response.status_code} Response: {response.content}"
+                    )
+                    return None
+            except requests.exceptions.RequestException as e:
+                logger.exception(f"Push Notification Request Error: {e}")
+                return None
             return True
         return False
