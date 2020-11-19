@@ -9,8 +9,8 @@ import { Section, CartCourse } from "../types";
 
 interface CartProps {
     courses: CartCourse[];
-    toggleCourse: (courseId: Section) => void;
-    removeItem: (courseId: string) => void;
+    toggleCourse: (sectionId: Section) => void;
+    removeItem: (sectionId: string) => void;
     courseInfo: (id: string) => void;
     courseInfoLoading: boolean;
     setTab: (_: number) => void;
@@ -104,25 +104,27 @@ const mapStateToProps = ({
     sections: { courseInfoLoading },
 }: any) => ({
     courseInfoLoading,
-    courses: cartSections.map((course: any) => ({
+    courses: cartSections.map((course: Section) => ({
         section: course,
         checked: meetingsContainSection(
             schedules[scheduleSelected].meetings,
             course
         ),
-        overlaps: meetingSetsIntersect(
-            course.meetings,
-            schedules[scheduleSelected].meetings
-                .filter((s: any) => s.id !== course.id)
-                .map((s: any) => s.meetings)
-                .flat()
-        ),
+        overlaps: course.meetings
+            ? meetingSetsIntersect(
+                  course.meetings,
+                  schedules[scheduleSelected].meetings
+                      .filter((s: Section) => s.id !== course.id)
+                      .map((s: Section) => s.meetings)
+                      .flat()
+              )
+            : false,
     })),
     lastAdded,
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-    toggleCourse: (courseId: Section) => dispatch(toggleCheck(courseId)),
+    toggleCourse: (sectionId: Section) => dispatch(toggleCheck(sectionId)),
     removeItem: (courseId: string) => dispatch(removeCartItem(courseId)),
     courseInfo: (id: string) => dispatch(fetchCourseDetails(id)),
 });
