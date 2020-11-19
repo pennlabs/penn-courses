@@ -84,11 +84,3 @@ export function CheckboxFilter<
         </div>
     );
 }
-
-CheckboxFilter.propTypes = {
-    startSearch: PropTypes.func,
-    updateCheckboxFilter: PropTypes.func,
-    checkboxProperty: PropTypes.string,
-    // eslint-disable-next-line react/forbid-prop-types
-    filterData: PropTypes.object,
-};
