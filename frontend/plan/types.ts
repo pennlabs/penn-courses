@@ -60,12 +60,12 @@ export interface Section {
     activity: Activity;
     credits: number;
     semester: string;
-    meetings: Meeting[];
+    meetings?: Meeting[];
     instructors: string[];
-    course_quality: number;
-    instructor_quality: number;
-    difficulty: number;
-    work_required: number;
+    course_quality?: number;
+    instructor_quality?: number;
+    difficulty?: number;
+    work_required?: number;
     associated_sections: Section[];
 }
 

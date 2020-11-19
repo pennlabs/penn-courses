@@ -28,6 +28,9 @@ export const meetingsOverlap = (
     m1: MeetingBlock | Meeting,
     m2: MeetingBlock | Meeting
 ) => {
+    if (!m1 || !m2) {
+        return false;
+    }
     const start1 = m1.start;
     const start2 = m2.start;
     const end1 = m1.end;

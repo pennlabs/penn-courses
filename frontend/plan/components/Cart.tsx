@@ -1,9 +1,22 @@
 import React from "react";
 import { connect } from "react-redux";
-import PropTypes from "prop-types";
 import CartSection from "./CartSection";
 import { meetingsContainSection, meetingSetsIntersect } from "./meetUtil";
 import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
+
+import { ThunkDispatch } from "redux-thunk";
+import { Section, CartCourse } from "../types";
+
+interface CartProps {
+    courses: CartCourse[];
+    toggleCourse: (courseId: Section) => void;
+    removeItem: (courseId: string) => void;
+    courseInfo: (id: string) => void;
+    courseInfoLoading: boolean;
+    setTab: (_: number) => void;
+    lastAdded: { id: string; code: string };
+    mobileView: boolean;
+}
 
 const CartEmpty = () => (
     <div
@@ -40,7 +53,7 @@ const Cart = ({
     setTab,
     lastAdded,
     mobileView,
-}) => (
+}: CartProps) => (
     <section
         style={{
             display: "flex",
@@ -56,16 +69,16 @@ const Cart = ({
         ) : (
             courses
                 .sort((a, b) => a.section.id.localeCompare(b.section.id))
-                .map(({ section, checked, overlaps }) => {
-                    const { id: code, description: name, meetings } = section;
+                .map(({ section, checked, overlaps }, i) => {
+                    const { id: code, meetings } = section;
                     return (
                         <CartSection
+                            key={i}
                             toggleCheck={() => toggleCourse(section)}
                             code={code}
                             lastAdded={lastAdded && code === lastAdded.id}
                             checked={checked}
-                            name={name}
-                            meetings={meetings}
+                            meetings={meetings ? meetings : []}
                             remove={() => removeItem(code)}
                             overlaps={overlaps}
                             courseInfo={() => {
@@ -86,24 +99,12 @@ const Cart = ({
     </section>
 );
 
-Cart.propTypes = {
-    courses: PropTypes.arrayOf(PropTypes.object).isRequired,
-    toggleCourse: PropTypes.func.isRequired,
-    removeItem: PropTypes.func.isRequired,
-    courseInfo: PropTypes.func.isRequired,
-    courseInfoLoading: PropTypes.bool,
-    setTab: PropTypes.func,
-    lastAdded: PropTypes.objectOf(PropTypes.string),
-    mobileView: PropTypes.bool,
-};
-
-// const mapStateToProps = ({ schedule: { cartSections, schedules, scheduleSelected } }) => ({
 const mapStateToProps = ({
     schedule: { cartSections = [], schedules, scheduleSelected, lastAdded },
     sections: { courseInfoLoading },
-}) => ({
+}: any) => ({
     courseInfoLoading,
-    courses: cartSections.map((course) => ({
+    courses: cartSections.map((course: any) => ({
         section: course,
         checked: meetingsContainSection(
             schedules[scheduleSelected].meetings,
@@ -112,18 +113,18 @@ const mapStateToProps = ({
         overlaps: meetingSetsIntersect(
             course.meetings,
             schedules[scheduleSelected].meetings
-                .filter((s) => s.id !== course.id)
-                .map((s) => s.meetings)
+                .filter((s: any) => s.id !== course.id)
+                .map((s: any) => s.meetings)
                 .flat()
         ),
     })),
     lastAdded,
 });
 
-const mapDispatchToProps = (dispatch) => ({
-    toggleCourse: (courseId) => dispatch(toggleCheck(courseId)),
-    removeItem: (courseId) => dispatch(removeCartItem(courseId)),
-    courseInfo: (id) => dispatch(fetchCourseDetails(id)),
+const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
+    toggleCourse: (courseId: Section) => dispatch(toggleCheck(courseId)),
+    removeItem: (courseId: string) => dispatch(removeCartItem(courseId)),
+    courseInfo: (id: string) => dispatch(fetchCourseDetails(id)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Cart);
