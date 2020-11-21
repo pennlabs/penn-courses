@@ -28,8 +28,8 @@ from PennCourses.docs_settings import PcxAutoSchema
 logger = logging.getLogger(__name__)
 
 
-def alert_for_course(c_id, semester, sent_by, course_status="O"):
-    send_course_alerts.delay(c_id, semester=semester, sent_by=sent_by, course_status=course_status)
+def alert_for_course(c_id, semester, sent_by, course_status):
+    send_course_alerts.delay(c_id, course_status=course_status, semester=semester, sent_by=sent_by)
 
 
 def extract_basic_auth(auth_header):

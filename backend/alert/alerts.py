@@ -85,14 +85,15 @@ class Email(Alert):
             return False
 
         try:
+            thread_subject = f"{self.registration.section.full_code} is now open!"
             if close_notification:
                 if not self.close_text:
                     # This should be unreachable
                     return None
-                alert_subject = "RE: %s is now open!" % self.registration.section.full_code
+                alert_subject = f"RE: {thread_subject}"
                 alert_text = self.close_text
             else:
-                alert_subject = "%s is now open!" % self.registration.section.full_code
+                alert_subject = thread_subject
                 alert_text = self.text
             return send_email(
                 from_="Penn Course Alert <team@penncoursealert.com>",
@@ -114,11 +115,7 @@ class Text(Alert):
         Returns False if notification was not sent intentionally,
         and None if notification was attempted to be sent but an error occurred.
         """
-        if (
-            self.registration.user
-            and self.registration.user.profile
-            and self.registration.user.profile.push_notifications
-        ):
+        if self.registration.user is not None and self.registration.user.profile.push_notifications:
             # Do not send text if push_notifications is enabled
             return False
         if self.registration.user is not None and self.registration.user.profile.phone is not None:
@@ -147,11 +144,7 @@ class PushNotification(Alert):
         Returns False if notification was not sent intentionally,
         and None if notification was attempted to be sent but an error occurred.
         """
-        if (
-            self.registration.user
-            and self.registration.user.profile
-            and self.registration.user.profile.push_notifications
-        ):
+        if self.registration.user is not None and self.registration.user.profile.push_notifications:
             # Only send push notification if push_notifications is enabled
             pennkey = self.registration.user.username
             bearer_token = str(10101)
@@ -159,16 +152,16 @@ class PushNotification(Alert):
                 if not self.close_text:
                     # This should be unreachable
                     return None
-                alert_title = "%s just closed." % self.registration.section.full_code
+                alert_title = f"{self.registration.section.full_code} just closed."
                 alert_body = self.close_text
             else:
-                alert_title = "%s is now open!" % self.registration.section.full_code
+                alert_title = f"{self.registration.section.full_code} is now open!"
                 alert_body = self.text
             try:
                 response = requests.post(
                     "https:/api.pennlabs.org/notifications/send/internal",
                     data={"title": alert_title, "body": alert_body, "pennkey": pennkey,},
-                    headers={"Authorization": "Bearer %s" % bearer_token},
+                    headers={"Authorization": f"Bearer {bearer_token}"},
                 )
                 if response.status_code != 200:
                     logger.exception(

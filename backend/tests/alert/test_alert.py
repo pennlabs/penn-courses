@@ -15,7 +15,7 @@ from tests.courses.util import create_mock_data
 
 from alert import tasks
 from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course
-from alert.tasks import get_active_registrations, get_registrations_for_alerts
+from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
 from courses.util import get_or_create_course_and_section
 
@@ -95,7 +95,7 @@ class SendAlertTestCase(TestCase):
         self.assertEquals("CIS-160-001", r_legacy.section.full_code)
         self.assertFalse(r_legacy.notification_sent)
         self.assertTrue(r_legacy.is_active)
-        tasks.send_alert(self.r_legacy.id, sent_by="ADM")
+        tasks.send_alert(self.r_legacy.id, False, sent_by="ADM")
         self.assertTrue(mock_email.called)
         self.assertTrue(mock_text.called)
         self.assertFalse(mock_push_notification.called)
@@ -104,6 +104,11 @@ class SendAlertTestCase(TestCase):
         self.assertEqual("ADM", r_legacy.notification_sent_by)
 
     def send_alert_helper(self, mock_email, mock_text, mock_push_notification, push_notification):
+        """
+        This function checks that tasks.send_alert triggers the proper Alert subclass
+        send_alert methods in two cases.  The first case is when push notifications are enabled
+        on the underlying registration, and the second case is when they are not.
+        """
         self.r.user.profile.push_notifications = push_notification
         self.r.user.profile.save()
         r = Registration.objects.get(id=self.r.id)
@@ -116,7 +121,6 @@ class SendAlertTestCase(TestCase):
         self.assertIsNone(r.phone)
         self.assertEquals(push_notification, r.user.profile.push_notifications)
         self.assertFalse(r.notification_sent)
-        self.assertTrue(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
         self.assertTrue(
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
         )
@@ -129,7 +133,7 @@ class SendAlertTestCase(TestCase):
         self.assertEquals(
             0, len(get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status=""))
         )
-        tasks.send_alert(self.r.id, sent_by="ADM")
+        tasks.send_alert(self.r.id, False, sent_by="ADM")
         r = Registration.objects.get(id=self.r.id)
         self.assertTrue(mock_email.called)
         self.assertEquals(not push_notification, mock_text.called)
@@ -137,7 +141,6 @@ class SendAlertTestCase(TestCase):
         self.assertTrue(r.notification_sent)
         self.assertIsNotNone("ADM", r.notification_sent_by)
         self.assertEqual("ADM", r.notification_sent_by)
-        self.assertFalse(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
         self.assertFalse(
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
         )
@@ -164,6 +167,14 @@ class SendAlertTestCase(TestCase):
         auto_resubscribe,
         manual_resubscribe,
     ):
+        """
+        This function checks that a call to tasks.send_alert for a close notification triggers
+        the proper Alert subclass send_alert methods in 6 cases.  Either push notifications
+        are enabled or disabled (push_notification is True or False), auto resubscribe is
+        enabled or disabled on the underlying registration (auto_resubscribe is True or False),
+        and a manual resubscribe is either triggered or not triggered in the case that
+        auto_resubscribe is False (manual_resubscribe is True of False).
+        """
         self.r.user.profile.push_notifications = push_notification
         self.r.user.profile.save()
         if not manual_resubscribe:
@@ -174,14 +185,13 @@ class SendAlertTestCase(TestCase):
         self.r.notification_sent_at = timezone.now()
         self.r.save()
         r = Registration.objects.get(id=self.r.id)
-        self.assertFalse(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
         self.assertFalse(
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
         )
         self.assertTrue(
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
         )
-        tasks.send_alert(self.r.id, sent_by="ADM", close_notification=True)
+        tasks.send_alert(self.r.id, close_notification=True, sent_by="ADM")
         if manual_resubscribe:
             r.resubscribe()
         r = Registration.objects.get(id=self.r.id)
@@ -194,7 +204,6 @@ class SendAlertTestCase(TestCase):
         self.assertTrue(r.close_notification_sent)
         self.assertIsNotNone(r.close_notification_sent_at)
         self.assertEqual("ADM", r.close_notification_sent_by)
-        self.assertFalse(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
         self.assertFalse(
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
         )
@@ -269,18 +278,22 @@ class SendAlertTestCase(TestCase):
     def dont_resend_alert_helper(
         self, mock_email, mock_text, mock_push_notification, close_notification
     ):
+        """
+        This helper checks that tasks.send_alert does not send new alerts for a registration that
+        has already triggered an alert in 2 possible cases.  Either it is a regular
+        open notification or it is a close notification (close_notification is True or False).
+        """
         self.r.notification_sent = True
         self.r.close_notification_sent = True
         self.r.save()
         r = Registration.objects.get(id=self.r.id)
-        self.assertFalse(r in get_active_registrations("CIS-160-001", TEST_SEMESTER))
         self.assertFalse(
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
         )
-        tasks.send_alert(self.r.id, close_notification=close_notification)
+        tasks.send_alert(self.r.id, close_notification=close_notification, sent_by="ADM")
         self.assertFalse(mock_email.called)
         self.assertFalse(mock_text.called)
         self.assertFalse(mock_push_notification.called)
@@ -298,6 +311,13 @@ class SendAlertTestCase(TestCase):
     def resend_alert_forced_helper(
         self, mock_email, mock_text, mock_push_notification, push_notification, close_notification
     ):
+        """
+        This helper checks that calling tasks.send_alert with the forced parameter as True
+        will send an alert even if an alert has already been sent for that registration, in
+        4 possible cases.  Either push notifications are enabled or disabled (push_notification
+        is True or False), and the alert is either normal or it is a close notification
+        (close_notification is True or False).
+        """
         self.r.user.profile.push_notifications = push_notification
         self.r.user.profile.save()
         self.r.close_notification = close_notification
@@ -1078,6 +1098,10 @@ class UserDetailTestCase(TestCase):
         self.assertEqual(response.data["last_name"], "lname")
 
     def test_ignore_fields_push_notifications_update(self):
+        """
+        Tests that you can update just the push notification setting without specifying any other
+        settings, and those other settings will not be changed.
+        """
         self.client.put(
             reverse("user-profile"),
             json.dumps(
@@ -1397,6 +1421,10 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(model.updated_at, self.convert_date(data["updated_at"]))
 
     def simulate_alert_helper_before(self, section, from_status="X", to_status="O"):
+        """
+        This helper is run before simulate_alert is run, with all the proper functions mocked.
+        This is what actually simulates the webook action.
+        """
         auth = base64.standard_b64encode("webhook:password".encode("ascii"))
         headers = {
             "Authorization": f"Basic {auth.decode()}",
@@ -1425,6 +1453,22 @@ class AlertRegistrationTestCase(TestCase):
         should_send=True,
         close_notification=False,
     ):
+        """
+        This helper simulates a webhook status update for a class opening (if close_notification is
+        false), or for a class closing (if close_notification is True). It simulates the working
+        of the entire system by mocking the alerts.send_email, alerts.send_text, and
+        requests.post (the function used for sending push notifications) functions. Note that it
+        does NOT test the aforementioned functions, but rather ensures that they are called as
+        specified.  Specifically, by default it will ensure they are called for the default
+        user's contact information. However, you can customize this check by passing in a list
+        of dictionaries (see the default contact_infos dict for an example of the proper schema).
+        This function will ensure that for each specified contact, the proper notification
+        function is called with the proper contact information. Also, you can specify whether
+        the webhook should cause an alert to be sent at all with the should_send parameter.
+        Finally, you can specify how many cumulative Status Updates objects should be saved in the
+        database after this webhook status update is triggered by using the num_status_updates
+        parameter.
+        """
         contact_infos = (
             # If we enabled push notifications by default in these tests, push_username would be
             # set to "jacob", since that is the username of the default user for these tests.
@@ -1703,6 +1747,10 @@ class AlertRegistrationTestCase(TestCase):
         )
 
     def registrations_resubscribe_get_old_and_history_helper(self, ids):
+        """
+        This helper tests the GET Registrations route and GET Registration History, using the
+        passed in Registration ids.
+        """
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
@@ -1775,6 +1823,12 @@ class AlertRegistrationTestCase(TestCase):
         self.registrations_resubscribe_get_old_and_history_helper(ids)
 
     def resubscribe_to_old_helper(self, ids, auto_resub=False):
+        """
+        This helper tests that resubscribing to an old alert still adds to the head of the
+        resubscribe chain, in two cases.  Either auto_resub is False (in which case
+        the function manually resubscribes to an old registration), or auto_resub is True
+        (in which case the registration auto-resubscribes itself).
+        """
         first_ob = Registration.objects.get(id=ids["first_id"])
         fourth_ob = Registration.objects.get(id=ids["fourth_id"])
         self.simulate_alert(self.cis120, 3)
@@ -1881,6 +1935,11 @@ class AlertRegistrationTestCase(TestCase):
         self.assertIsNone(Registration.objects.get(id=new_second_id).resubscribed_to)
 
     def registrations_multiple_users_helper(self, ids, auto_resub=False):
+        """
+        This helper tests that proper functionality occurs even with multiple users in the DB.
+        It runs for the given set of registration ids, and enables or disables auto resubscribe
+        depending on the auto_resub parameter.
+        """
         new_user = User.objects.create_user(username="new_jacob", password="top_secret")
         new_user.save()
         new_user.profile.email = "newj@gmail.com"
@@ -2001,6 +2060,14 @@ class AlertRegistrationTestCase(TestCase):
         self.create_auto_resubscribe_group(put=True)
 
     def delete_and_resub_helper(self, auto_resub, put, delete_before_sim_webhook):
+        """
+        This function tests the desired functionality that you cannot resubscribe to
+        a deleted registration, in a number of possible cases.  The parameter auto_resub
+        specifies whether the test is run with auto resubscribe enabled or disabled,
+        the put parameter specifies whether the test is run using PUT requests or POST requests
+        to update, and delete_before_sim_webhook specifies whether the function should simulate
+        the webhook and then delete, or delete before the webook triggers.
+        """
         first_id = self.registration_cis120.id
         if auto_resub:
             if put:
@@ -2124,6 +2191,13 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(sixth_id, response.data["id"])
 
     def cancel_and_resub_helper(self, auto_resub, put, cancel_before_sim_webhook):
+        """
+        This function tests that you can resubscribe to a cancelled alert, in multiple possible
+        cases.  The auto_resub parameter specifies whether or not the auto resubscribe should be
+        enabled, the put paraeter specifies whether the update request should be PUT or POST,
+        and the cancel_before_sim_webhook paramater specifies whether or not the function should
+        cancel the registration before or after the webhook triggers.
+        """
         first_id = self.registration_cis120.id
         if auto_resub:
             if put:
@@ -2275,6 +2349,12 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(200, response.status_code)
 
     def changeattrs_update_order_helper(self, put, update_field):
+        """
+        This function tests changing attributes of a registration, and checks that the proper
+        order of priorities is satisfied, in multiple possible cases.  The put parameter
+        specifies whether to send the update as a PUT or POST request, while the update_field
+        parameter specifies which dominant field to update ("resub" or "deleted").
+        """
         first_id = self.registration_cis120.id
         if update_field == "resub":
             self.simulate_alert(self.cis120, 1)
@@ -2349,6 +2429,11 @@ class AlertRegistrationTestCase(TestCase):
         self.changeattrs_update_order_helper(*value)
 
     def close_notification_creation_helper(self, push_notif):
+        """
+        This helper tests the creation of a registration with close notifications enabled, in two
+        possible cases; with push notifications enabled (push_notif parameter set to True),
+        or disabled (push_notif set to False).
+        """
         contact_infos = [{"number": "+11234567890", "email": "j@gmail.com", "push_username": None}]
         if push_notif:
             response = self.client.put(
@@ -2423,6 +2508,12 @@ class AlertRegistrationTestCase(TestCase):
         self.close_notification_creation_helper(True)
 
     def close_notification_update_helper(self, put, auto_resub):
+        """
+        This helper tests the updating of a registration with close notifications enabled, in
+        multiple possible cases.  The put parameter specifies whether to send the update via a
+        PUT or POST request, and the auto_resub parameter specifies whether the enable or disable
+        auto resubscription on the registration.
+        """
         first_id = self.registration_cis120.id
         if put:
             self.client.put(
@@ -2448,6 +2539,12 @@ class AlertRegistrationTestCase(TestCase):
         self.close_notification_update_helper(*value)
 
     def close_notification_resub_helper(self, put, auto_resub):
+        """
+        This function tests that resubscription properly carries over the close notification
+        setting, in a number of possible cases.  The put parameter specifies whether to send the
+        resubscribe request in a PUT or POST request, and the auto_resub parameter specifies
+        whether to enable or disable auto resubscription on the registration.
+        """
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps(
@@ -2498,6 +2595,10 @@ class AlertRegistrationTestCase(TestCase):
         self.close_notification_resub_helper(*value)
 
     def resub_attrs_maintained_helper(self, put):
+        """
+        This function checks that auto resubscribing carries over the auto_resubscribe property,
+        for both PUT requests and POST requests.
+        """
         first_id = self.registration_cis120.id
         if put:
             self.client.put(
@@ -2523,6 +2624,10 @@ class AlertRegistrationTestCase(TestCase):
         self.resub_attrs_maintained_helper(value)
 
     def delete_and_change_attrs_helper(self, put):
+        """
+        This function tests that attributes are not changed if a registration is deleted in a
+        PUT or POST update request.
+        """
         first_id = self.registration_cis120.id
         if put:
             self.client.put(
