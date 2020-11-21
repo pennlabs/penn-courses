@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 
-from alert.alerts import Email, Text
+from alert.alerts import Email, PushNotification, Text
 from courses.models import Course, Section, UserProfile, string_dict_to_html
 from courses.util import get_course_and_section, get_current_semester
 
@@ -184,6 +184,29 @@ class Registration(models.Model):
         """
         ),
     )
+    close_notification = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """Defaults to False.  Changes to True if the user opts-in to receive
+        a close notification (an alert when the section closes after an
+        alert was sent for it opening).
+        """
+        ),
+    )
+    close_notification_sent = models.BooleanField(
+        default=False,
+        help_text="True if a close notification has been sent to the user, false otherwise.",
+    )
+    close_notification_sent_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        When was a close notification sent to the user as a result of this registration?
+        Null if a close notification was not sent.
+        """
+        ),
+    )
 
     METHOD_CHOICES = (
         ("", "Unsent"),
@@ -198,6 +221,14 @@ class Registration(models.Model):
         default="",
         blank=True,
         help_text="What triggered the alert to be sent? Options and meanings: "
+        + string_dict_to_html(dict(METHOD_CHOICES)),
+    )
+    close_notification_sent_by = models.CharField(
+        max_length=16,
+        choices=METHOD_CHOICES,
+        default="",
+        blank=True,
+        help_text="What triggered the close notification to be sent?  Options and meanings: "
         + string_dict_to_html(dict(METHOD_CHOICES)),
     )
 
@@ -265,11 +296,15 @@ class Registration(models.Model):
                 user_data, _ = UserProfile.objects.get_or_create(user=self.user)
                 user_data.email = self.email
                 user_data.save()
+                self.user.profile = user_data
+                self.user.save()
                 self.email = None
             if self.phone is not None:
                 user_data, _ = UserProfile.objects.get_or_create(user=self.user)
                 user_data.phone = self.phone
                 user_data.save()
+                self.user.profile = user_data
+                self.user.save()
                 self.phone = None
         super().save(*args, **kwargs)
         if self.original_created_at is None:
@@ -279,28 +314,99 @@ class Registration(models.Model):
                 self.original_created_at = self.get_original_registration_rec().created_at
         super().save()
 
+    @staticmethod
+    def is_active_filter():
+        """
+        Returns a dict of filters defining the behavior of the is_active property.
+        Also used in database filtering of registrations (you cannot filter by a property value).
+        """
+        return {"notification_sent": False, "deleted": False, "cancelled": False}
+
     @property
     def is_active(self):
         """
         True if the registration would send an alert hen the watched section changes to open,
         False otherwise. This is equivalent to not(notification_sent or deleted or cancelled).
         """
-        return not (self.notification_sent or self.deleted or self.cancelled)
+        for k, v in self.is_active_filter().items():
+            if getattr(self, k) != v:
+                return False
+        return True
 
-    def alert(self, forced=False, sent_by=""):
-        if forced or self.is_active:
-            text_result = Text(self).send_alert()
-            email_result = Email(self).send_alert()
-            logging.debug("NOTIFICATION SENT FOR " + self.__str__())
-            self.notification_sent = True
-            self.notification_sent_at = timezone.now()
-            self.notification_sent_by = sent_by
-            self.save()
-            if self.auto_resubscribe:
-                self.resubscribe()
-            return (
-                email_result is not None and text_result is not None
-            )  # True if no error in email/text.
+    @staticmethod
+    def is_waiting_for_close_filter():
+        """
+        Returns a dict of filters defining the behavior of the is_waiting_for_close property.
+        Also used in database filtering of registrations (you cannot filter by a property value).
+        """
+        return {
+            "notification_sent": True,
+            "close_notification": True,
+            "deleted": False,
+            "cancelled": False,
+            "close_notification_sent": False,
+        }
+
+    @property
+    def is_waiting_for_close(self):
+        """
+        Returns True iff the registration would send a close notification
+        when the watched section changes to closed
+        """
+        for k, v in self.is_waiting_for_close_filter().items():
+            if getattr(self, k) != v:
+                return False
+        return True
+
+    def alert(self, forced=False, sent_by="", close_notification=False):
+        """
+        Returns true iff an alert was successfully sent through at least one medium to the user.
+        """
+
+        if forced or self.is_active or (close_notification and self.is_waiting_for_close):
+            push_notification = (
+                self.user and self.user.profile and self.user.profile.push_notifications
+            )  # specifies whether we should use a push notification instead of a text
+            text_result = False
+            if not push_notification:
+                text_result = Text(self).send_alert(close_notification=close_notification)
+                if text_result is None:
+                    logging.debug(
+                        "ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR " + self.__str__()
+                    )
+            email_result = Email(self).send_alert(close_notification=close_notification)
+            if email_result is None:
+                logging.debug(
+                    "ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " + self.__str__()
+                )
+            push_notif_result = False
+            if push_notification:
+                push_notif_result = PushNotification(self).send_alert(
+                    close_notification=close_notification
+                )
+                if push_notif_result is None:
+                    logging.debug(
+                        "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " + self.__str__()
+                    )
+            if not email_result and not text_result and not push_notif_result:
+                logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__())
+                return False
+            if not close_notification:
+                logging.debug("NOTIFICATION SENT FOR " + self.__str__())
+                self.notification_sent = True
+                self.notification_sent_at = timezone.now()
+                self.notification_sent_by = sent_by
+                self.save()
+                if self.auto_resubscribe:
+                    self.resubscribe()
+                return True
+            else:
+                logging.debug("CLOSE NOTIFICATION SENT FOR " + self.__str__())
+                self.close_notification_sent = True
+                self.close_notification_sent_at = timezone.now()
+                self.close_notification_sent_by = sent_by
+                self.save()
+                return True
         else:
             return False
 
@@ -332,6 +438,7 @@ class Registration(models.Model):
             phone=self.phone,
             section=self.section,
             auto_resubscribe=self.auto_resubscribe,
+            close_notification=self.close_notification,
             resubscribed_from=most_recent_reg,
             original_created_at=self.original_created_at,
         )
@@ -459,6 +566,7 @@ def register_for_course(
     api_key=None,
     user=None,
     auto_resub=False,
+    close_notification=False,
 ):
     """
     This method is for the PCA 3rd party API (originally planned to service
@@ -486,18 +594,17 @@ def register_for_course(
             section=section,
             email=email_address,
             phone=registration.phone,
-            notification_sent=False,
-            deleted=False,
-            cancelled=False,
+            **Registration.is_active_filter()
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
     else:
         if Registration.objects.filter(
-            section=section, user=user, notification_sent=False, deleted=False, cancelled=False,
+            section=section, user=user, **Registration.is_active_filter()
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
         registration = Registration(section=section, user=user, source=source)
         registration.auto_resubscribe = auto_resub
+        registration.close_notification = close_notification
 
     registration.api_key = api_key
     registration.save()

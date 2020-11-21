@@ -169,6 +169,21 @@ http://spec.openapis.org/oas/v3.0.3.html#fixed-fields-14).  An example:
         }
     }
 
+If you want to manually set the description of a path parameter for a certain path/method,
+you can do so by including a custom_path_parameter_desc kwarg in your PcxAutoSchema instantiation,
+with keys of the form path > method > variable_name pointing to a string description.  Example:
+    custom_path_parameter_desc={
+        "/api/courses/statusupdate/{full_code}/": {
+            "GET": {
+                "full_code": (
+                    "The code of the section which this status update applies to, in the "
+                    "form '{dept code}-{course code}-{section code}', e.g. 'CIS-120-001' for the "
+                    "001 section of CIS-120."
+                )
+            }
+        }
+    }
+
 Finally, if you still need to further customize your API schema, you can do this in the
 make_manual_schema_changes function below. This is applied to the final schema after all
 automatic changes / customizations are applied.  For more about the format of an OpenAPI
@@ -320,9 +335,39 @@ custom_tag_descriptions = {
         is a registration created by resubscribing to the previous registration (once that
         registration had triggered an alert to be sent), either manually by the user or
         automatically if auto_resubscribe was set to true.  Then, it follows that the head of the
-        resubscribe chain is the most relevant registration for that section; if any of the
-        registrations in the chain are active, it would be the head.  And if the head is active,
-        none of the other registrations in the chain are active.
+        resubscribe chain is the most relevant Registration for that user/section combo; if any
+        of the registrations in the chain are active, it would be the head.  And if the head
+        is active, none of the other registrations in the chain are active.
+
+        Note that a registration will send an alert when the section it is watching opens, if and
+        only if it hasn't sent one before, it isn't cancelled, and it isn't deleted.  If a
+        registration would send an alert when the section it is watching opens, we call it
+        "active".  See the Create Registration docs for an explanation of how to create a new
+        registration, and the Update Registration docs for an explanation of how you can modify
+        a registration after it is created.
+
+        In addition to sending alerts for when a class opens up, we have also implemented
+        an optionally user-enabled feature called "close notifications".
+        If a registration has close_notification enabled, it will act normally when the watched
+        section opens up for the first time (triggering an alert to be sent). However, once the
+        watched section closes, it will send another alert (the email alert will be in the same
+        chain as the original alert) to let the user know that the section has closed. Thus,
+        if a user sees a PCA notification on their phone during a class for instance, they won't
+        need to frantically open up their laptop and check PennInTouch to see if the class is still
+        open just to find that it is already closed.  Note that the close_notification setting
+        carries over across resubscriptions, but can be disabled at any time using
+        Update Registration.
+
+        After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a `user` field
+        pointing to the user's Penn Labs Accounts User object.  In other words, we implemented a
+        user/accounts system for PCA which required that
+        people log in to use the website. Thus, the contact information used in PCA alerts
+        is taken from the user's User Profile.  You can edit this contact information using
+        Update User or Partial Update User.  If push_notifications is set to True, then
+        a push notification will be sent when the user is alerted, but no text notifications will
+        be sent (as that would be a redundant alert to the user's phone). Otherwise, an email
+        or a text alert is sent if and only if contact information for that medium exists in
+        the user's profile.
         """
     ),
     "[PCA] User": dedent(
@@ -668,7 +713,14 @@ class PcxAutoSchema(AutoSchema):
     removed from __init__.
     """
 
-    def __init__(self, tags=None, examples={}, response_codes={}, override_schema={}):
+    def __init__(
+        self,
+        tags=None,
+        examples={},
+        response_codes={},
+        override_schema={},
+        custom_path_parameter_desc={},
+    ):
         global examples_dict
         """
             Parameters:
@@ -679,12 +731,15 @@ class PcxAutoSchema(AutoSchema):
             raise ValueError("tags must be a list or tuple of string.")
         self._tags = tags
 
-        for k, d in response_codes.items():
-            response_codes[k] = {k.upper(): v for k, v in d.items()}
+        for key, d in response_codes.items():
+            response_codes[key] = {k.upper(): v for k, v in d.items()}
         self.response_codes = response_codes
-        for k, d in override_schema.items():
-            override_schema[k] = {k.upper(): v for k, v in d.items()}
+        for key, d in override_schema.items():
+            override_schema[key] = {k.upper(): v for k, v in d.items()}
         self.override_schema = override_schema
+        for key, d in custom_path_parameter_desc.items():
+            custom_path_parameter_desc[key] = {k.upper(): v for k, v in d.items()}
+        self.custom_path_parameter_desc = custom_path_parameter_desc
 
         examples_dict.update(examples)
 
@@ -815,6 +870,15 @@ class PcxAutoSchema(AutoSchema):
 
                 if not description or "A unique integer value" in description and variable == "id":
                     description = f"The id of the {str(model.__name__).lower()}."
+
+            if (
+                self.custom_path_parameter_desc
+                and path in self.custom_path_parameter_desc.keys()
+                and method.upper() in self.custom_path_parameter_desc[path].keys()
+                and variable in self.custom_path_parameter_desc[path][method].keys()
+                and self.custom_path_parameter_desc[path][method][variable]
+            ):
+                description = self.custom_path_parameter_desc[path][method][variable]
 
             parameter = {
                 "name": variable,
