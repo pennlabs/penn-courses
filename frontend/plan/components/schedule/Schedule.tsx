@@ -1,4 +1,4 @@
-import React, { Component, CSSProperties } from "react";
+import React, { Component } from "react";
 import { isMobileOnly } from "react-device-detect";
 
 import { connect } from "react-redux";
@@ -47,7 +47,7 @@ interface ScheduleProps {
 // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
 const hashString = (s: string) => {
     let hash = 0;
-    if (s.length === 0) return hash;
+    if (!s || s.length === 0) return hash;
     for (let i = 0; i < s.length; i += 1) {
         const chr = s.charCodeAt(i);
         hash = (hash << 5) - hash + chr;
@@ -87,13 +87,14 @@ class Schedule extends Component {
 
         // show the weekend days only if there's a section which meets on saturday (S) or sunday (U)
         const showWeekend =
-            sections.filter(
-                (sec: Section) =>
+            sections.filter((sec: Section) => {
+                if (sec.meetings) {
                     sec.meetings.filter(
                         (meeting: Meeting) =>
                             meeting.day === "S" || meeting.day === "U"
-                    ).length > 0
-            ).length > 0;
+                    ).length > 0;
+                }
+            }).length > 0;
 
         // actual schedule elements are offset by the row/col offset since
         // days/times take up a row/col respectively.
@@ -139,26 +140,29 @@ class Schedule extends Component {
         const meetings: MeetingBlock[] = [];
         sections.forEach((s) => {
             const color = getColor(s.id);
-            meetings.push(
-                ...s.meetings.map((m) => ({
-                    day: m.day as Day,
-                    start: transformTime(m.start, false),
-                    end: transformTime(m.end, true),
-                    course: {
-                        color,
-                        id: s.id,
-                        coreqFulfilled:
-                            s.associated_sections.length === 0 ||
-                            s.associated_sections.filter(
-                                (coreq) => sectionIds.indexOf(coreq.id) !== -1
-                            ).length > 0,
-                    },
-                    style: {
-                        width: "100%",
-                        left: "0",
-                    },
-                }))
-            );
+            if (s.meetings) {
+                meetings.push(
+                    ...s.meetings.map((m) => ({
+                        day: m.day as Day,
+                        start: transformTime(m.start, false),
+                        end: transformTime(m.end, true),
+                        course: {
+                            color,
+                            id: s.id,
+                            coreqFulfilled:
+                                s.associated_sections.length === 0 ||
+                                s.associated_sections.filter(
+                                    (coreq) =>
+                                        sectionIds.indexOf(coreq.id) !== -1
+                                ).length > 0,
+                        },
+                        style: {
+                            width: "100%",
+                            left: "0",
+                        },
+                    }))
+                );
+            }
         });
         // get the minimum start hour and the max end hour to set bounds on the schedule.
         startHour = Math.floor(

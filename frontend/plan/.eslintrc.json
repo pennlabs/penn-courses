@@ -1,5 +1,5 @@
 {
-    "parser": "babel-eslint",
+    "parser": "@typescript-eslint/parser",
     "plugins": ["prettier"],
     "extends": ["airbnb", "react-app", "prettier", "prettier/react"],
     "env": {

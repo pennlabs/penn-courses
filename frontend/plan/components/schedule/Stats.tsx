@@ -113,15 +113,16 @@ class Stats extends Component<StatsProps> {
                 [index: string]: { [index: string]: number };
             } = {};
             const courseCUs: { [index: string]: number } = {};
-
             meetings.forEach((section) => {
-                section.meetings.forEach((meeting: Meeting) => {
-                    startTimes.push(meeting.start);
-                    endTimes.push(meeting.end);
-                    hoursPerDay[mapDays[meeting.day]] += this.getMeetingLength(
-                        meeting
-                    );
-                });
+                if (section.meetings) {
+                    section.meetings.forEach((meeting: Meeting) => {
+                        startTimes.push(meeting.start);
+                        endTimes.push(meeting.end);
+                        hoursPerDay[
+                            mapDays[meeting.day]
+                        ] += this.getMeetingLength(meeting);
+                    });
+                }
                 const str = section.id;
                 if (str) {
                     const course = str.substring(
@@ -134,7 +135,7 @@ class Stats extends Component<StatsProps> {
                         if (section[stat]) {
                             courseStats[course][stat] =
                                 (courseStats[course][stat] || 0) +
-                                section[stat];
+                                (section[stat] || 0);
                             courseRepeats[course][stat] =
                                 (courseRepeats[course][stat] || 0) + 1;
                         }
