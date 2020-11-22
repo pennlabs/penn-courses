@@ -1,4 +1,5 @@
 import logging
+import os
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from smtplib import SMTP, SMTPRecipientsRefused
@@ -147,7 +148,7 @@ class PushNotification(Alert):
         if self.registration.user is not None and self.registration.user.profile.push_notifications:
             # Only send push notification if push_notifications is enabled
             pennkey = self.registration.user.username
-            bearer_token = str(10101)
+            bearer_token = os.environ.get("MOBILE_NOTIFICATION_SECRET", "")
             if close_notification:
                 if not self.close_text:
                     # This should be unreachable
