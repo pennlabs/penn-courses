@@ -8,3 +8,10 @@ def sections_to_courses(sections) -> Set[str]:
     :return: A string set
     """
     return {str(section.course).split(" ")[0] for section in sections}
+
+
+def sem_to_key(sem):
+    sem = sem.strip(" ").strip("\n")
+    year, season = sem[:-1], sem[-1]
+    season_to_int = {"A": 0, "B": 1, "C": 2}
+    return int(year) + season_to_int[season]/3

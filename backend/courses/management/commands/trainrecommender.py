@@ -9,7 +9,7 @@ from sklearn.decomposition import TruncatedSVD, PCA
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 
-from courses.management.commands.recommendation_utils.utils import sections_to_courses
+from courses.management.commands.recommendation_utils.utils import sections_to_courses, sem_to_key
 from courses.models import Course
 from plan.models import Schedule
 
@@ -98,13 +98,7 @@ def group_courses(courses_data: Iterable[Tuple[int, str, str]]):
     return courses_by_semester_by_user
 
 
-def sem_to_key(sem):
-    sem = sem.strip(" ").strip("\n")
-    year, season = sem[:-1], sem[-1]
-    season_to_int = {"A": 0, "B": 1, "C": 2}
-    return int(year) + season_to_int[season]/3
-
-def vectorize_by_copresence(courses_by_semester_by_user) -> Dict[str, np.ndarray]:
+def vectorize_by_copresence(courses_by_semester_by_user, as_past_class=False) -> Dict[str, np.ndarray]:
     """
     Vectorizes courses by whether they're in the user's schedule at the same time, as well as whether the number
     of times they come after other courses.
@@ -125,26 +119,32 @@ def vectorize_by_copresence(courses_by_semester_by_user) -> Dict[str, np.ndarray
     for user, courses_by_semester in courses_by_semester_by_user.items():
         for sem, course_multiset in courses_by_semester.items():
             for course_a, frequency_a in course_multiset.items():
-                for course_b, frequency_b in course_multiset.items():
-                    co_frequency = min(frequency_a, frequency_b)
-                    relevant_vector_a = copresence_vectors_by_course[course_a]
-                    relevant_vector_b = copresence_vectors_by_course[course_b]
-                    index_a = course_to_index[course_a]
-                    index_b = course_to_index[course_b]
-                    relevant_vector_a[index_b] += co_frequency
-                    relevant_vector_b[index_a] += co_frequency
-                    # make sure that every course appears with itself
-                    relevant_vector_a[index_a] += frequency_a
-                    relevant_vector_a[index_b] += frequency_b
+                index_a = course_to_index[course_a]
+                relevant_vector_a = copresence_vectors_by_course[course_a]
+                # A past class does not occur with classes in the same semester
+                if not as_past_class:
+                    for course_b, frequency_b in course_multiset.items():
+                        co_frequency = min(frequency_a, frequency_b)
+                        index_b = course_to_index[course_b]
+                        relevant_vector_a[index_b] += co_frequency
+                # make sure that every course appears with itself
+                relevant_vector_a[index_a] += frequency_a
         ordered_sems = sorted(courses_by_semester, key=sem_to_key)
         for i, sem in enumerate(ordered_sems):
             courses_first_sem = courses_by_semester[sem]
-            for later_sem in ordered_sems[i + 1:]:
+            # if this class is being encoded as a past class, it happens after itself
+            start_sem_index = i if as_past_class else i + 1
+            for later_sem in ordered_sems[start_sem_index:]:
                 courses_later_sem = courses_by_semester[later_sem]
-                for course1, freq1 in courses_later_sem.items():
-                    for course2, freq2 in courses_first_sem.items():
-                        index2 = course_to_index[course2]
-                        order_vectors_by_course[course1][index2] += min(freq1, freq2)
+                for course_later, freq1 in courses_later_sem.items():
+                    add_to_copres = as_past_class and later_sem != ordered_sems[start_sem_index]
+                    for course_earlier, freq2 in courses_first_sem.items():
+                        earlier_index = course_to_index[course_earlier]
+                        cofreq = min(freq1, freq2)
+                        order_vectors_by_course[course_later][earlier_index] += cofreq
+                        if add_to_copres:
+                            later_index = course_to_index[course_later]
+                            copresence_vectors_by_course[course_earlier][later_index] += cofreq
 
     concatenated = {key: order_vectors_by_course[key] + copresence_vectors_by_course[key] for key in order_vectors_by_course}
 
