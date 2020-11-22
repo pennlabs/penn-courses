@@ -1,5 +1,4 @@
 import logging
-import os
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from smtplib import SMTP, SMTPRecipientsRefused
@@ -9,6 +8,8 @@ from django.conf import settings
 from django.template import loader
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
+
+from PennCourses.settings.production import MOBILE_NOTIFICATION_SECRET
 
 
 logger = logging.getLogger(__name__)
@@ -148,7 +149,7 @@ class PushNotification(Alert):
         if self.registration.user is not None and self.registration.user.profile.push_notifications:
             # Only send push notification if push_notifications is enabled
             pennkey = self.registration.user.username
-            bearer_token = os.environ.get("MOBILE_NOTIFICATION_SECRET", "")
+            bearer_token = MOBILE_NOTIFICATION_SECRET
             if close_notification:
                 if not self.close_text:
                     # This should be unreachable
