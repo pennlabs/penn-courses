@@ -146,7 +146,8 @@ def vectorize_by_copresence(courses_by_semester_by_user, as_past_class=False) ->
                             later_index = course_to_index[course_later]
                             copresence_vectors_by_course[course_earlier][later_index] += cofreq
 
-    concatenated = {key: order_vectors_by_course[key] + copresence_vectors_by_course[key] for key in order_vectors_by_course}
+    concatenated = {key: order_vectors_by_course[key] + copresence_vectors_by_course[key] for key in
+                    order_vectors_by_course}
 
     return concatenated
 
@@ -197,32 +198,43 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
 
     return list(unsequenced_courses_by_user.values())
 
+
 def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
-    courses_to_vectors = {}
+    courses_to_vectors_curr = {}
+    courses_to_vectors_past = {}
     courses_data = courses_data_from_csv() if from_csv else courses_data_from_db()
     grouped_courses = group_courses(courses_data)
     copresence_vectors_by_course = vectorize_by_copresence(grouped_courses)
+    copresence_vectors_by_course_past = vectorize_by_copresence(grouped_courses, as_past_class=True)
     courses_by_user = get_unsequenced_courses_by_user(grouped_courses)
 
     courses, courses_vectorized_by_schedule_presence = zip(
         *vectorize_courses_by_schedule_presence(courses_by_user).items())
     courses_vectorized_by_description = vectorize_courses_by_description(courses)
     copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
+    copresence_vectors_past = [copresence_vectors_by_course_past[course] for course in courses]
     copresence_vectors = normalize(copresence_vectors)
+    copresence_vectors_past = normalize(copresence_vectors_past)
     dim_reduce = TruncatedSVD(n_components=round(30 * math.log2(len(courses))))
     copresence_vectors = dim_reduce.fit_transform(copresence_vectors)
-    for course, schedule_vector, description_vector, copresence_vector in zip(courses,
-                                                                              courses_vectorized_by_schedule_presence,
-                                                                              courses_vectorized_by_description,
-                                                                              copresence_vectors):
+    dim_reduce = TruncatedSVD(n_components=round(30 * math.log2(len(courses))))
+    copresence_vectors_past = dim_reduce.fit_transform(copresence_vectors_past)
+    for course, schedule_vector, description_vector, copresence_vector, copresence_vector_past in zip(courses,
+                                                                                                      courses_vectorized_by_schedule_presence,
+                                                                                                      courses_vectorized_by_description,
+                                                                                                      copresence_vectors,
+                                                                                                      copresence_vectors_past):
         if use_descriptions:
             if np.linalg.norm(description_vector) == 0:
                 continue
-            total_vector = np.concatenate([schedule_vector, description_vector, copresence_vector])
+            total_vector_curr = np.concatenate([schedule_vector, description_vector, copresence_vector * 2])
+            total_vector_past = np.concatenate([schedule_vector, description_vector, copresence_vector_past * 2])
         else:
-            total_vector = np.concatenate([schedule_vector, copresence_vector * 2])
-        courses_to_vectors[course] = total_vector / np.linalg.norm(total_vector)
-    return courses_to_vectors
+            total_vector_curr = np.concatenate([schedule_vector, copresence_vector * 2])
+            total_vector_past = np.concatenate([schedule_vector, copresence_vector_past * 2])
+        courses_to_vectors_curr[course] = total_vector_curr / np.linalg.norm(total_vector_curr)
+        courses_to_vectors_past[course] = total_vector_past / np.linalg.norm(total_vector_past)
+    return courses_to_vectors_curr, courses_to_vectors_past
 
 
 def normalize_class_name(class_name):
@@ -240,7 +252,7 @@ def cosine_similarity(vec_a, vec_b):
 
 
 def generate_course_clusters(n_per_cluster=100):
-    course_vectors_dict = generate_course_vectors_dict()
+    course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict()
     _courses, _course_vectors = zip(*course_vectors_dict.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = round(len(courses) / n_per_cluster)
