@@ -139,7 +139,7 @@ export default function CourseDetails({
                     </ShowMore>
                 </li>
             )}
-            {description && (
+            {
                 <li
                     style={{
                         marginTop: "2em",
@@ -155,7 +155,7 @@ export default function CourseDetails({
                         {description}
                     </ShowMore>
                 </li>
-            )}
+            }
         </ul>
     );
 }

@@ -4,7 +4,7 @@ import Truncate from "react-truncate-markup";
 interface ShowMoreProps {
     more: React.ReactNode;
     less: React.ReactNode;
-    children: React.PropsWithChildren<ShowMoreProps>;
+    children: React.ReactNode; // React.PropsWithChildren<ShowMoreProps>
     disabled: boolean;
     lines: number;
 }
@@ -20,7 +20,7 @@ const ShowMore = ({
     const [expanded, setExpanded] = useState(false);
     const toggleExpanded = () => setExpanded(!expanded);
     return disabled ? (
-        children
+        <>{children}</>
     ) : (
         <>
             <Truncate
