@@ -36,7 +36,10 @@ const schedActions = [
     RENAME_SCHEDULE,
 ];
 
-export const analyticsMiddleware = (store) => (next) => (action) => {
+// TODO: confirm type of store, next, and action
+export const analyticsMiddleware = (store: any) => (next: (_: any) => void) => (
+    action: any
+) => {
     if (filterActions.includes(action.type)) {
         logEvent("filter", action.type, JSON.stringify(action));
     } else if (schedActions.includes(action.type)) {

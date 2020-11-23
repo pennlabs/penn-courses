@@ -5,13 +5,18 @@
  * the format HH.MM.
  */
 
+import { Meeting, MeetingBlock, Section, Day } from "../types";
+
 /**
  *  Returns whether the given section object is contained within the meetings list
  * @param meetings A meetings list in the same format as in the redux state
  * @param section A section object
  * @returns {boolean} Whether section is in the list of meetings (based on id)
  */
-export const meetingsContainSection = (meetings, section) => {
+export const meetingsContainSection = (
+    meetings: Meeting[],
+    section: Section
+): boolean => {
     let sectionFound = false;
     meetings.forEach(({ id }) => {
         sectionFound = sectionFound || id === section.id;
@@ -19,7 +24,13 @@ export const meetingsContainSection = (meetings, section) => {
     return sectionFound;
 };
 
-export const meetingsOverlap = (m1, m2) => {
+export const meetingsOverlap = (
+    m1: MeetingBlock | Meeting,
+    m2: MeetingBlock | Meeting
+) => {
+    if (!m1 || !m2) {
+        return false;
+    }
     const start1 = m1.start;
     const start2 = m2.start;
     const end1 = m1.end;
@@ -28,8 +39,8 @@ export const meetingsOverlap = (m1, m2) => {
 };
 
 // From an array of meetings, get the groups which conflict in timing.
-export const getConflictGroups = (meetings) => {
-    for (let i = 0; i < meetings.length; i += 1) {
+export const getConflictGroups = (meetings: MeetingBlock[]) => {
+    for (let i: number = 0; i < meetings.length; i += 1) {
         // eslint-disable-next-line
         meetings[i].id = i;
     }
@@ -38,14 +49,21 @@ export const getConflictGroups = (meetings) => {
     // https://en.wikipedia.org/wiki/Disjoint-set_data_structure
     // meetings m1 and m2 are in the same conflict set if m1 and m2 conflict
     // with at least one meeting m3 which is also in the set (m3 can be m1 or m2).
-    const conflicts = {};
-    const merge = (m1, m2) => {
-        conflicts[m2.id] = new Set([...conflicts[m1.id], ...conflicts[m2.id]]);
-        conflicts[m1.id] = conflicts[m2.id];
+    const conflicts: { [index: number]: Set<MeetingBlock> } = {};
+    const merge = (m1: MeetingBlock, m2: MeetingBlock) => {
+        if (m1.id && m2.id) {
+            conflicts[m2.id] = new Set([
+                ...Array.from(conflicts[m1.id]),
+                ...Array.from(conflicts[m2.id]),
+            ]);
+            conflicts[m1.id] = conflicts[m2.id];
+        }
     };
 
     meetings.forEach((m) => {
-        conflicts[m.id] = new Set([m]);
+        if (m.id) {
+            conflicts[m.id] = new Set([m]);
+        }
     });
 
     // compare every pair of meetings. if they overlap, merge their sets.
@@ -58,16 +76,19 @@ export const getConflictGroups = (meetings) => {
     }
 
     // remove sets of size 1 from the results; they're not conflicting with anything.
-    Object.keys(conflicts).forEach((key) => {
-        if (conflicts[key].size <= 1) {
-            delete conflicts[key];
+    Object.keys(conflicts).forEach((key: string) => {
+        if (conflicts[parseInt(key, 10)].size <= 1) {
+            delete conflicts[parseInt(key, 10)];
         }
     });
     // use a Set to remove duplicates, so we get only unique conflict sets.
     return Array.from(new Set(Object.values(conflicts)).values());
 };
 
-export const meetingSetsIntersect = (meetingTimesA, meetingTimesB) => {
+export const meetingSetsIntersect = (
+    meetingTimesA: Meeting[],
+    meetingTimesB: Meeting[]
+) => {
     for (let i = 0; i < meetingTimesA.length; i += 1) {
         for (let j = 0; j < meetingTimesB.length; j += 1) {
             const meetingA = meetingTimesA[i];
@@ -80,24 +101,23 @@ export const meetingSetsIntersect = (meetingTimesA, meetingTimesB) => {
     return false;
 };
 
-export const getTimeString = (meetings) => {
-    const intToTime = (t) => {
+export const getTimeString = (meetings: Meeting[]) => {
+    const intToTime = (t: number) => {
         let hour = Math.floor(t % 12);
         let min = Math.round((t % 1) * 100);
         if (hour === 0) {
             hour = 12;
         }
-        if (min === 0) {
-            min = "00";
-        }
-        return `${hour}:${min}`;
+        let minStr = min === 0 ? "00" : min.toString();
+        return `${hour}:${minStr}`;
     };
-    const times = {};
-    let maxcount = 0;
-    let maxrange = null;
+
     if (!meetings || meetings.length === 0) {
         return "TBA";
     }
+    const times: { [index: string]: string[] } = {};
+    let maxcount = 0;
+    let maxrange: string = "";
     meetings.forEach((meeting) => {
         const rangeId = `${meeting.start}-${meeting.end}`;
         if (!times[rangeId]) {
@@ -111,9 +131,8 @@ export const getTimeString = (meetings) => {
         }
     });
 
-    const days = ["M", "T", "W", "R", "F", "S", "U"];
     let daySet = "";
-    days.forEach((day) => {
+    Object.values(Day).forEach((day) => {
         times[maxrange].forEach((d) => {
             if (d === day) {
                 daySet += day;
@@ -121,7 +140,7 @@ export const getTimeString = (meetings) => {
         });
     });
 
-    return `${intToTime(maxrange.split("-")[0])}-${intToTime(
-        maxrange.split("-")[1]
+    return `${intToTime(parseFloat(maxrange.split("-")[0]))}-${intToTime(
+        parseFloat(maxrange.split("-")[1])
     )} ${daySet}`;
 };
