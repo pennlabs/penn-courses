@@ -30,33 +30,41 @@ import { login, logout } from "../../actions/login";
 // removed: <F, K extends keyof F, V extends keyof K>
 interface SearchBarProps {
     startSearch: (searchObj: FilterData) => void;
-    loadRequirements: () => void; 
-    schoolReq: { SEAS: Requirement[]; WH: Requirement[]; SAS: Requirement[]; NURS: Requirement[]; }; 
+    loadRequirements: () => void;
+    schoolReq: {
+        SEAS: Requirement[];
+        WH: Requirement[];
+        SAS: Requirement[];
+        NURS: Requirement[];
+    };
     filterData: FilterData;
     addSchoolReq: (school: string) => void;
     remSchoolReq: (school: string) => void;
     updateSearchText: (text: string) => void;
     // updateRangeFilter: (field: F, values: K) => void; // double check this
-    updateRangeFilter: (field: string, values: string) => void; 
+    updateRangeFilter: (field: string) => (values: [number, number]) => void;
     clearAll: () => void;
-    clearFilter: (search: string) => void, 
-    defaultReqs: { [x: string]: boolean; },
-    clearSearchResults: () => void,
-    isLoadingCourseInfo: boolean,
-    isSearchingCourseInfo: boolean,
+    clearFilter: (search: string) => void;
+    defaultReqs: { [x: string]: boolean };
+    clearSearchResults: () => void;
+    isLoadingCourseInfo: boolean;
+    isSearchingCourseInfo: boolean;
     // updateCheckboxFilter: (field: K, value: V, toggleState: boolean) => void; // will this be ok or do i need diff generics
-    updateCheckboxFilter: (field: string, value: string, toggleState: boolean) => void;
-    setTab: (tab: number) => void ,
-    setView: (view: number) => void,
-    user: User,
-    login: (u : User) => void,
-    logout: () => void,
-    mobileView: boolean,
-    isExpanded: boolean,
-    clearScheduleData: () => void,
-    store: object,
-    storeLoaded: boolean,
-
+    updateCheckboxFilter: (
+        field: string,
+        value: string,
+        toggleState: boolean
+    ) => void;
+    setTab: (tab: number) => void;
+    setView: (view: number) => void;
+    user: User;
+    login: (u: User) => void;
+    logout: () => void;
+    mobileView: boolean;
+    isExpanded: boolean;
+    clearScheduleData: () => void;
+    store: object;
+    storeLoaded: boolean;
 }
 
 function shouldSearch(filterData: FilterData) {
@@ -100,8 +108,8 @@ function SearchBar({
     clearScheduleData,
     store,
     storeLoaded,
-    /* eslint-enable no-shadow */
-}: SearchBarProps) {
+}: /* eslint-enable no-shadow */
+SearchBarProps) {
     const router = useRouter();
 
     useEffect(() => {
@@ -165,7 +173,7 @@ function SearchBar({
                     maxRange={4}
                     step={0.25}
                     filterData={filterData}
-                    updateRangeFilter={updateRangeFilter => ("difficulty")}
+                    updateRangeFilter={updateRangeFilter("difficulty")}
                     startSearch={conditionalStartSearch}
                     rangeProperty="difficulty"
                 />
@@ -181,7 +189,7 @@ function SearchBar({
                     maxRange={4}
                     step={0.25}
                     filterData={filterData}
-                    updateRangeFilter={updateRangeFilter => ("course_quality")}
+                    updateRangeFilter={updateRangeFilter("course_quality")}
                     startSearch={conditionalStartSearch}
                     rangeProperty="course_quality"
                 />
@@ -197,7 +205,7 @@ function SearchBar({
                     maxRange={4}
                     step={0.25}
                     filterData={filterData}
-                    updateRangeFilter={updateRangeFilter => ("instructor_quality")}
+                    updateRangeFilter={updateRangeFilter("instructor_quality")}
                     startSearch={conditionalStartSearch}
                     rangeProperty="instructor_quality"
                 />
@@ -440,7 +448,8 @@ const mapDispatchToProps = (dispatch) => ({
     login: (user: User) => dispatch(login(user)),
     logout: () => dispatch(logout()),
     loadRequirements: () => dispatch(loadRequirements()),
-    startSearch: (filterData: FilterData) => dispatch(fetchCourseSearch(filterData)),
+    startSearch: (filterData: FilterData) =>
+        dispatch(fetchCourseSearch(filterData)),
     addSchoolReq: (reqID: number) => dispatch(addSchoolReq(reqID)),
     remSchoolReq: (reqID) => dispatch(remSchoolReq(reqID)),
     updateSearchText: (s) => dispatch(updateSearchText(s)),

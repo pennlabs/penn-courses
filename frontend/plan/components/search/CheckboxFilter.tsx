@@ -1,33 +1,28 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { FilterData } from "../../types";
 
-interface CheckboxFilterData {
-    [key: string]: boolean;
-}
+type CheckboxFilterData<D> = {
+    [K in keyof D]: boolean;
+};
 
-interface SearchFieldProps<FilterData, K extends keyof FilterData, V extends keyof K> {
-    filterData: FilterData;
-    // field, value and togglestate
-    // field == keyof F (filterData), value == keyof field
-    // field ("activity"), value ("lab"), togglestate (true)
+interface SearchFieldProps<F, K, V> {
+    filterData: F;
     updateCheckboxFilter: (field: K, value: V, toggleState: boolean) => void;
-    startSearch: (searchObj: FilterData) => void;
+    startSearch: (searchObj: F) => void;
     checkboxProperty: K;
 }
 
-// mapped types
-
 export function CheckboxFilter<
-    FilterData extends { [P in K]: CheckboxFilterData },
-    K extends keyof FilterData,
-    V extends keyof K & string
+    F extends { [P in K]: D },
+    D extends CheckboxFilterData<D>,
+    K extends keyof F,
+    V extends keyof F[K] & string
 >({
     filterData,
     updateCheckboxFilter,
     startSearch,
     checkboxProperty,
-}: SearchFieldProps<FilterData, K, V>) {
+}: SearchFieldProps<F, K, V>) {
     return (
         <div className="columns contained">
             {Object.keys(filterData[checkboxProperty]) //
@@ -84,11 +79,3 @@ export function CheckboxFilter<
         </div>
     );
 }
-
-CheckboxFilter.propTypes = {
-    startSearch: PropTypes.func,
-    updateCheckboxFilter: PropTypes.func,
-    checkboxProperty: PropTypes.string,
-    // eslint-disable-next-line react/forbid-prop-types
-    filterData: PropTypes.object,
-};
