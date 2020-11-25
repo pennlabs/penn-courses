@@ -16,7 +16,7 @@ export function CheckboxFilter<
     F extends { [P in K]: D },
     D extends CheckboxFilterData<D>,
     K extends keyof F,
-    V extends keyof F[K] & string
+    V extends keyof D & string
 >({
     filterData,
     updateCheckboxFilter,
