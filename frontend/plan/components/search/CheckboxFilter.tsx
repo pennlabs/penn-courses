@@ -6,28 +6,28 @@ interface CheckboxFilterData {
     [key: string]: boolean;
 }
 
-interface SearchFieldProps<F, K extends keyof F, V extends keyof K> {
-    filterData: F;
+interface SearchFieldProps<FilterData, K extends keyof FilterData, V extends keyof K> {
+    filterData: FilterData;
     // field, value and togglestate
     // field == keyof F (filterData), value == keyof field
     // field ("activity"), value ("lab"), togglestate (true)
     updateCheckboxFilter: (field: K, value: V, toggleState: boolean) => void;
-    startSearch: (searchObj: F) => void;
+    startSearch: (searchObj: FilterData) => void;
     checkboxProperty: K;
 }
 
 // mapped types
 
 export function CheckboxFilter<
-    F extends { [P in K]: CheckboxFilterData },
-    K extends keyof F,
+    FilterData extends { [P in K]: CheckboxFilterData },
+    K extends keyof FilterData,
     V extends keyof K & string
 >({
     filterData,
     updateCheckboxFilter,
     startSearch,
     checkboxProperty,
-}: SearchFieldProps<F, K, V>) {
+}: SearchFieldProps<FilterData, K, V>) {
     return (
         <div className="columns contained">
             {Object.keys(filterData[checkboxProperty]) //

@@ -10,7 +10,7 @@ import { CheckboxFilter } from "./CheckboxFilter";
 import { SearchField } from "./SearchField";
 import { initialState as defaultFilters } from "../../reducers/filters";
 import initiateSync from "../syncutils";
-import { FilterData } from "../../types";
+import { FilterData, User, Requirement } from "../../types";
 
 import {
     fetchCourseSearch,
@@ -27,31 +27,34 @@ import {
 } from "../../actions";
 import { login, logout } from "../../actions/login";
 
-interface SearchBarProps<F, K extends keyof F, V extends keyof K> {
-    startSearch: (searchObj: object) => void;
-    loadRequirements: () => void; // TODO: figure out type 
-    schoolReq: string; // IS THIS RIGHT??
+// removed: <F, K extends keyof F, V extends keyof K>
+interface SearchBarProps {
+    startSearch: (searchObj: FilterData) => void;
+    loadRequirements: () => void; 
+    schoolReq: { SEAS: Requirement[]; WH: Requirement[]; SAS: Requirement[]; NURS: Requirement[]; }; 
     filterData: FilterData;
     addSchoolReq: (school: string) => void;
     remSchoolReq: (school: string) => void;
     updateSearchText: (text: string) => void;
-    updateRangeFilter: (field: F, values: K) => void; // double check this
+    // updateRangeFilter: (field: F, values: K) => void; // double check this
+    updateRangeFilter: (field: string, values: string) => void; 
     clearAll: () => void;
     clearFilter: (search: string) => void, 
-    defaultReqs: number,
+    defaultReqs: { [x: string]: boolean; },
     clearSearchResults: () => void,
     isLoadingCourseInfo: boolean,
     isSearchingCourseInfo: boolean,
-    updateCheckboxFilter: (field: K, value: V, toggleState: boolean) => void; // will this be ok or do i need diff generics
-    setTab,
-    setView,
-    user,
-    login,
-    logout,
+    // updateCheckboxFilter: (field: K, value: V, toggleState: boolean) => void; // will this be ok or do i need diff generics
+    updateCheckboxFilter: (field: string, value: string, toggleState: boolean) => void;
+    setTab: (tab: number) => void ,
+    setView: (view: number) => void,
+    user: User,
+    login: (u : User) => void,
+    logout: () => void,
     mobileView: boolean,
     isExpanded: boolean,
-    clearScheduleData,
-    store,
+    clearScheduleData: () => void,
+    store: object,
     storeLoaded: boolean,
 
 }
@@ -61,7 +64,7 @@ function shouldSearch(filterData: FilterData) {
     let selectedReq = false;
     if (filterData.selectedReq) {
         for (const key of Object.keys(filterData.selectedReq)) {
-            if (filterData.selectedReq[key] === 1) {
+            if (filterData.selectedReq[key]) {
                 selectedReq = true;
                 break;
             }
@@ -98,7 +101,7 @@ function SearchBar({
     store,
     storeLoaded,
     /* eslint-enable no-shadow */
-}) {
+}: SearchBarProps) {
     const router = useRouter();
 
     useEffect(() => {
@@ -114,14 +117,15 @@ function SearchBar({
 
     const [reqsShown, showHideReqs] = useState(false);
 
-    const conditionalStartSearch = (filterInfo) => {
+    const conditionalStartSearch = (filterInfo: FilterData) => {
         if (shouldSearch(filterInfo)) {
             startSearch(filterInfo);
         }
     };
 
-    const clearFilterSearch = (property) => () => {
+    const clearFilterSearch = (property: string) => () => {
         clearFilter(property);
+        // filterData["selectedReq"] = defaultReqs;
         if (property === "selectedReq") {
             conditionalStartSearch({
                 ...filterData,
@@ -161,7 +165,7 @@ function SearchBar({
                     maxRange={4}
                     step={0.25}
                     filterData={filterData}
-                    updateRangeFilter={updateRangeFilter("difficulty")}
+                    updateRangeFilter={updateRangeFilter => ("difficulty")}
                     startSearch={conditionalStartSearch}
                     rangeProperty="difficulty"
                 />
@@ -177,7 +181,7 @@ function SearchBar({
                     maxRange={4}
                     step={0.25}
                     filterData={filterData}
-                    updateRangeFilter={updateRangeFilter("course_quality")}
+                    updateRangeFilter={updateRangeFilter => ("course_quality")}
                     startSearch={conditionalStartSearch}
                     rangeProperty="course_quality"
                 />
@@ -193,7 +197,7 @@ function SearchBar({
                     maxRange={4}
                     step={0.25}
                     filterData={filterData}
-                    updateRangeFilter={updateRangeFilter("instructor_quality")}
+                    updateRangeFilter={updateRangeFilter => ("instructor_quality")}
                     startSearch={conditionalStartSearch}
                     rangeProperty="instructor_quality"
                 />
@@ -266,7 +270,7 @@ function SearchBar({
                 {reqsShown && (
                     <div
                         style={{
-                            zIndex: "100",
+                            zIndex: 100,
                             marginTop: "-20px",
                             padding: "10px",
                             marginBottom: "20px",
@@ -421,6 +425,7 @@ SearchBar.propTypes = {
     storeLoaded: PropTypes.bool,
 };
 
+//@ts-ignore
 const mapStateToProps = (state) => ({
     schoolReq: state.filters.schoolReq,
     filterData: state.filters.filterData,
@@ -430,12 +435,13 @@ const mapStateToProps = (state) => ({
     user: state.login.user,
 });
 
+//@ts-ignore
 const mapDispatchToProps = (dispatch) => ({
-    login: (user) => dispatch(login(user)),
+    login: (user: User) => dispatch(login(user)),
     logout: () => dispatch(logout()),
     loadRequirements: () => dispatch(loadRequirements()),
-    startSearch: (filterData) => dispatch(fetchCourseSearch(filterData)),
-    addSchoolReq: (reqID) => dispatch(addSchoolReq(reqID)),
+    startSearch: (filterData: FilterData) => dispatch(fetchCourseSearch(filterData)),
+    addSchoolReq: (reqID: number) => dispatch(addSchoolReq(reqID)),
     remSchoolReq: (reqID) => dispatch(remSchoolReq(reqID)),
     updateSearchText: (s) => dispatch(updateSearchText(s)),
     updateRangeFilter: (field) => (values) =>
@@ -447,4 +453,5 @@ const mapDispatchToProps = (dispatch) => ({
     clearSearchResults: () => dispatch(updateSearch([])),
     clearScheduleData: () => dispatch(clearAllScheduleData()),
 });
+//@ts-ignore
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

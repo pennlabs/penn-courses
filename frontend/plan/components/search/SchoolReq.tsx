@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { FilterData, School, Requirement } from "../../types";
 
 interface SchoolReqProps {
-    startSearch: (searchObj: object) => void;
+    startSearch: (searchObj: FilterData) => void; // changed from generic object
     filterData: FilterData;
     schoolReq: { [K in School]: Requirement[] };
     addSchoolReq: (s: string) => void;

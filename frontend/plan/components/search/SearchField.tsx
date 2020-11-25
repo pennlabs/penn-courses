@@ -6,9 +6,9 @@ interface SearchFieldProps {
     startSearch: (filterData: FilterData) => void; 
     updateSearchText: (txt: string) => void;
     filterData: FilterData;
-    isDisabled: boolean;
-    setTab: (tabNum: number) => void;
-    mobileView: boolean;
+    isDisabled?: boolean;
+    setTab?: (tabNum: number) => void;
+    mobileView?: boolean;
 }
 export function SearchField({
     startSearch,
@@ -33,7 +33,7 @@ export function SearchField({
     return (
         <div
             role="button"
-            onClick={() => (mobileView ? setTab(0) : null)}
+            onClick={() => (mobileView && setTab && setTab(0) ? setTab(0) : null)}
             className="control has-icons-left"
         >
             <input
