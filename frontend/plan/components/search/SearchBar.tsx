@@ -131,7 +131,7 @@ SearchBarProps) {
         }
     };
 
-    const clearFilterSearch = (property: string) => () => {
+    const clearFilterSearch = <V extends keyof FilterData>(property: V) => () => {
         clearFilter(property);
         // filterData["selectedReq"] = defaultReqs;
         if (property === "selectedReq") {

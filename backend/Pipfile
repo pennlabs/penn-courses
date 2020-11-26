@@ -4,17 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [dev-packages]
-codecov = "*"
-coverage = "*"
-black = "==19.10b0"
-unittest-xml-reporting = "*"
-flake8 = "*"
-flake8-isort = "*"
-isort = "<5"
-flake8-quotes = "*"
-pytest = "*"
-pytest-django = "*"
-django-debug-toolbar = "*"
 
 [packages]
 django = "*"
@@ -40,7 +29,6 @@ django-cors-headers = "*"
 django-runtime-options = "*"
 pyyaml = "*"
 uritemplate = "*"
-uwsgi = "*"
 ddt = "*"
 lark-parser = "*"
 tqdm = "*"
