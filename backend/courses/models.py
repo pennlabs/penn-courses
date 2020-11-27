@@ -419,6 +419,7 @@ class Section(models.Model):
         this property will equal None (or null in JSON).
         """
         from alert.models import Registration  # imported here to avoid circular imports
+
         if self.capacity == 0:
             return None
         aggregate_scores = (
