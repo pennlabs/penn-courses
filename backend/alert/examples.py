@@ -183,3 +183,7 @@ RegistrationViewSet_override_schema = {
         "POST": {201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},}
     }
 }
+
+PcaSectionsWithStatistics_examples = {
+    # TODO: add examples
+}

@@ -148,3 +148,49 @@ class RegistrationUpdateSerializer(serializers.ModelSerializer):
         model = Registration
         fields = registration_fields + ["cancelled", "deleted", "resubscribe"]
         read_only_fields = [f for f in registration_fields if f != "auto_resubscribe"]
+
+
+class PcaSectionsWithStatisticsSerializer(serializers.ModelSerializer):
+    section_id = serializers.CharField(
+        source="full_code",
+        read_only=True,
+        help_text=dedent(
+            """
+            The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
+            001 lecture section of CIS-120.
+            """
+        ),
+    )
+    instructors = serializers.StringRelatedField(
+        many=True,
+        read_only=True,
+        help_text="A list of the names of the instructors teaching this section.",
+    )
+    course_title = serializers.SerializerMethodField(
+        read_only=True,
+        help_text=dedent(
+            """
+            The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.
+            """
+        ),
+    )
+
+    def get_course_title(self, obj):
+        return obj.course.title
+
+    class Meta:
+        model = Section
+        fields = [
+            "section_id",
+            "status",
+            "activity",
+            "meeting_times",
+            "instructors",
+            "course_title",
+            "current_popularity",
+        ]
+        read_only_fields = fields
+
+    @staticmethod
+    def get_semester(obj):
+        return obj.course.semester

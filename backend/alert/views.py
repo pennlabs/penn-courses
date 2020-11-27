@@ -9,20 +9,24 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_bool
-from rest_framework import status, viewsets
+from rest_framework import generics, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
+    PcaSectionsWithStatisticsSerializer,
     RegistrationCreateSerializer,
     RegistrationSerializer,
     RegistrationUpdateSerializer,
 )
 from alert.tasks import send_course_alerts
+from courses.models import Section
 from courses.util import get_current_semester, record_update, update_course_from_record
+from courses.views import BaseCourseMixin
 from PennCourses.docs_settings import PcxAutoSchema
+from plan.search import TypedSectionSearchBackend
 
 
 logger = logging.getLogger(__name__)
@@ -485,3 +489,30 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
         return Registration.objects.filter(
             user=self.request.user, section__course__semester=get_current_semester()
         ).prefetch_related("section")
+
+
+class PcaSectionsWithStatistics(generics.ListAPIView, BaseCourseMixin):
+    """
+    Retrieve a list of PCA summary statistics for multiple sections (less detailed than
+    [PCA] PCADetailedStatistics).  The sections are filtered by the search term (assumed to be a
+    prefix of a section's full code, with each chunk either space-delimited, dash-delimited,
+    or not delimited). Note that section search here works the same way as for [PCA] List Sections.
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.PcaSectionsWithStatistics_examples,
+        response_codes={
+            "/api/alert/sections-with-statistics/": {
+                "GET": {200: "[SCHEMA]Sections With Summary Statistics Listed Successfully."}
+            }
+        },
+    )
+
+    serializer_class = PcaSectionsWithStatisticsSerializer
+    queryset = Section.objects.all()
+    filter_backends = [TypedSectionSearchBackend]
+    search_fields = ["^full_code"]
+
+    @staticmethod
+    def get_semester_field():
+        return "course__semester"
