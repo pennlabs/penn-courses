@@ -31,12 +31,12 @@ export const initialState = {
                    STU: false,
                },
                cu: {
-                   0.5: false, // TODO: make these booleans instead of ints
+                   0.5: false, 
                    1: false,
                    1.5: false,
                },
            },
-           defaultReqs: null,
+           defaultReqs: {},
        };
 
 export const filters = (state = initialState, action) => {

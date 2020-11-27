@@ -41,7 +41,6 @@ interface SearchBarProps {
     addSchoolReq: (school: string) => void;
     remSchoolReq: (school: string) => void;
     updateSearchText: (text: string) => void;
-    // updateRangeFilter: (field: F, values: K) => void; // double check this
     updateRangeFilter: (field: string) => (values: [number, number]) => void;
     clearAll: () => void;
     clearFilter: (search: string) => void;
@@ -49,7 +48,6 @@ interface SearchBarProps {
     clearSearchResults: () => void;
     isLoadingCourseInfo: boolean;
     isSearchingCourseInfo: boolean;
-    // updateCheckboxFilter: (field: K, value: V, toggleState: boolean) => void; // will this be ok or do i need diff generics
     updateCheckboxFilter: (
         field: string,
         value: string,
@@ -372,7 +370,8 @@ SearchBarProps) {
                         onClick={() => {
                             clearSearchResults();
                             conditionalStartSearch({
-                                ...defaultFilters.filterData,
+                                // TODO: remove any cast when getting rid of redux
+                                 ...(defaultFilters.filterData as any),
                                 searchString: filterData.searchString,
                                 selectedReq: defaultReqs,
                             });
@@ -403,36 +402,6 @@ SearchBarProps) {
     );
 }
 
-SearchBar.propTypes = {
-    startSearch: PropTypes.func,
-    loadRequirements: PropTypes.func,
-    schoolReq: PropTypes.objectOf(PropTypes.array),
-    addSchoolReq: PropTypes.func,
-    remSchoolReq: PropTypes.func,
-    updateSearchText: PropTypes.func,
-    updateRangeFilter: PropTypes.func,
-    updateCheckboxFilter: PropTypes.func,
-    clearAll: PropTypes.func,
-    clearFilter: PropTypes.func,
-    clearSearchResults: PropTypes.func,
-    // eslint-disable-next-line react/forbid-prop-types
-    filterData: PropTypes.object,
-    // eslint-disable-next-line react/forbid-prop-types
-    store: PropTypes.object,
-    defaultReqs: PropTypes.objectOf(PropTypes.number),
-    isLoadingCourseInfo: PropTypes.bool,
-    isSearchingCourseInfo: PropTypes.bool,
-    isExpanded: PropTypes.bool,
-    setTab: PropTypes.func,
-    setView: PropTypes.func,
-    user: PropTypes.objectOf(PropTypes.any),
-    login: PropTypes.func,
-    logout: PropTypes.func,
-    mobileView: PropTypes.bool,
-    clearScheduleData: PropTypes.func,
-    storeLoaded: PropTypes.bool,
-};
-
 //@ts-ignore
 const mapStateToProps = (state) => ({
     schoolReq: state.filters.schoolReq,
@@ -450,15 +419,15 @@ const mapDispatchToProps = (dispatch) => ({
     loadRequirements: () => dispatch(loadRequirements()),
     startSearch: (filterData: FilterData) =>
         dispatch(fetchCourseSearch(filterData)),
-    addSchoolReq: (reqID: number) => dispatch(addSchoolReq(reqID)),
-    remSchoolReq: (reqID) => dispatch(remSchoolReq(reqID)),
-    updateSearchText: (s) => dispatch(updateSearchText(s)),
-    updateRangeFilter: (field) => (values) =>
+    addSchoolReq: (reqID: string) => dispatch(addSchoolReq(reqID)),
+    remSchoolReq: (reqID: string) => dispatch(remSchoolReq(reqID)),
+    updateSearchText: (s: string) => dispatch(updateSearchText(s)),
+    updateRangeFilter: (field: string) => (values: [number, number]) =>
         dispatch(updateRangeFilter(field, values)),
-    updateCheckboxFilter: (field, value, toggleState) =>
+    updateCheckboxFilter: (field: string, value: string, toggleState: boolean) =>
         dispatch(updateCheckboxFilter(field, value, toggleState)),
     clearAll: () => dispatch(clearAll()),
-    clearFilter: (propertyName) => dispatch(clearFilter(propertyName)),
+    clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),
     clearScheduleData: () => dispatch(clearAllScheduleData()),
 });
