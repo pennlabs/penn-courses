@@ -111,10 +111,10 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                             gridTemplateColumns: "40% 15% 40%",
                         }}
                     >
-                        <div>{getTimeString(meetings)}</div>
+                        <div>{meetings && getTimeString(meetings)}</div>
                         <div>{`${section.credits} CU`}</div>
                         <div>
-                            {meetings.length > 0 ? (
+                            {meetings && meetings.length > 0 ? (
                                 <div>
                                     <i className="fas fa-map-marker-alt grey-text" />
                                     &nbsp;

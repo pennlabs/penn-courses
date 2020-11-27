@@ -10,6 +10,7 @@ import {
 } from "../actions";
 
 export const initialState = {
+<<<<<<< HEAD
            schoolReq: {
                SAS: [],
                SEAS: [],
@@ -38,6 +39,36 @@ export const initialState = {
            },
            defaultReqs: {},
        };
+=======
+    schoolReq: {
+        SAS: [],
+        SEAS: [],
+        NURS: [],
+        WH: [],
+    },
+    filterData: {
+        searchString: "",
+        searchType: "courseIDSearch",
+        selectedReq: null,
+        difficulty: [0, 4],
+        course_quality: [0, 4],
+        instructor_quality: [0, 4],
+        time: null,
+        activity: {
+            LAB: false,
+            REC: false,
+            SEM: false,
+            STU: false,
+        },
+        cu: {
+            0.5: false, // TODO: make these booleans instead of ints
+            1: false,
+            1.5: false,
+        },
+    },
+    defaultReqs: null,
+};
+>>>>>>> 9f4374895b9c6f9d27655480218615f2d58e21fa
 
 export const filters = (state = initialState, action) => {
     switch (action.type) {

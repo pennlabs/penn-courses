@@ -211,7 +211,11 @@ function buildCourseSearchUrl(filterData) {
     const reqs = [];
     if (filterData.selectedReq) {
         for (const key of Object.keys(filterData.selectedReq)) {
+<<<<<<< HEAD
             if (filterData.selectedReq[key]) { // change from == 1
+=======
+            if (filterData.selectedReq[key]) {
+>>>>>>> 9f4374895b9c6f9d27655480218615f2d58e21fa
                 reqs.push(key);
             }
         }
@@ -267,7 +271,11 @@ function buildCourseSearchUrl(filterData) {
             const applied = [];
             Object.keys(filterData[checkboxFields[i]]).forEach((item) => {
                 // eslint-disable-line
+<<<<<<< HEAD
                 if (filterData[checkboxFields[i]][item]) { // changed from ===1
+=======
+                if (filterData[checkboxFields[i]][item]) {
+>>>>>>> 9f4374895b9c6f9d27655480218615f2d58e21fa
                     applied.push(item);
                 }
             });
