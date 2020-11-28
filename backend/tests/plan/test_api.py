@@ -109,6 +109,9 @@ class RequirementFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
+        self.different_math, self.different_math1 = create_mock_data(
+            "MATH-116-001", ("2019A" if TEST_SEMESTER == "2019C" else "2019C")
+        )
         self.req = Requirement(semester=TEST_SEMESTER, code="REQ", school="SAS")
         self.req.save()
         self.req.courses.add(self.math)
@@ -131,11 +134,12 @@ class RequirementFilterTestCase(TestCase):
             semester=("2019A" if TEST_SEMESTER == "2019C" else "2019C"), code="REQ", school="SAS"
         )
         req2.save()
-        req2.courses.add(self.math)
+        req2.courses.add(self.different_math)
         response = self.client.get(reverse("courses-current-list"), {"requirements": "REQ@SAS"})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual("MATH-114", response.data[0]["id"])
+        self.assertEqual(TEST_SEMESTER, response.data[0]["semester"])
 
     def test_multi_req(self):
         course3, section3 = create_mock_data("CIS-240-001", TEST_SEMESTER)
