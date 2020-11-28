@@ -41,7 +41,7 @@ function shouldSearch(filterData) {
 
 function SearchBar({
     /* eslint-disable no-shadow */
-    startSearch,
+    startSearch, // from redux - dispatches fetch course search function (actions/index.js)
     loadRequirements,
     schoolReq,
     filterData,

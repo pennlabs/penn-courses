@@ -63,27 +63,19 @@ class Stats extends Component<StatsProps> {
 
     render() {
         const { meetings } = this.props as StatsProps;
-        let earliestStart;
-        let latestEnd;
-        let totalCUs;
-        let maxHoursADay;
-        let totalHours;
-        let averageHours;
-        let avgs: { [index: string]: number } = {};
-        if (meetings.length === 0) {
-            earliestStart = "—";
-            latestEnd = "—";
-            totalCUs = "—";
-            maxHoursADay = "—";
-            totalHours = "—";
-            averageHours = "—";
-            avgs = {
-                difficulty: 0,
-                work_required: 0,
-                instructor_quality: 0,
-                course_quality: 0,
-            };
-        } else {
+        let earliestStart = "—";
+        let latestEnd = "—";
+        let totalCUs: number | string = "—";
+        let maxHoursADay: number | string = "—";
+        let totalHours: number | string = "—";
+        let averageHours: number | string = "—";
+        const avgs = {
+            difficulty: 0,
+            work_required: 0,
+            instructor_quality: 0,
+            course_quality: 0,
+        };
+        if (meetings && meetings.length > 0) {
             const startTimes: number[] = [];
             const endTimes: number[] = [];
             const hoursPerDay = [0, 0, 0, 0, 0];
@@ -113,15 +105,16 @@ class Stats extends Component<StatsProps> {
                 [index: string]: { [index: string]: number };
             } = {};
             const courseCUs: { [index: string]: number } = {};
-
             meetings.forEach((section) => {
-                section.meetings.forEach((meeting: Meeting) => {
-                    startTimes.push(meeting.start);
-                    endTimes.push(meeting.end);
-                    hoursPerDay[mapDays[meeting.day]] += this.getMeetingLength(
-                        meeting
-                    );
-                });
+                if (section.meetings) {
+                    section.meetings.forEach((meeting: Meeting) => {
+                        startTimes.push(meeting.start);
+                        endTimes.push(meeting.end);
+                        hoursPerDay[
+                            mapDays[meeting.day]
+                        ] += this.getMeetingLength(meeting);
+                    });
+                }
                 const str = section.id;
                 if (str) {
                     const course = str.substring(
@@ -134,7 +127,7 @@ class Stats extends Component<StatsProps> {
                         if (section[stat]) {
                             courseStats[course][stat] =
                                 (courseStats[course][stat] || 0) +
-                                section[stat];
+                                (section[stat] || 0);
                             courseRepeats[course][stat] =
                                 (courseRepeats[course][stat] || 0) + 1;
                         }
@@ -170,8 +163,12 @@ class Stats extends Component<StatsProps> {
 
             // final computation of stats
 
-            earliestStart = this.parseTime(Math.min(...startTimes));
-            latestEnd = this.parseTime(Math.max(...endTimes));
+            if (startTimes.length > 0) {
+                earliestStart = this.parseTime(Math.min(...startTimes));
+            }
+            if (endTimes.length > 0) {
+                latestEnd = this.parseTime(Math.max(...endTimes));
+            }
 
             maxHoursADay = parseFloat(Math.max(...hoursPerDay).toFixed(1));
             totalHours = hoursPerDay.reduce((a, b) => a + b, 0);
