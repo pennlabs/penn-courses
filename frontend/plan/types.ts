@@ -169,18 +169,16 @@ export interface FilterData {
     activity: ActivityFilter;
     cu: CUFilter;
 }
-<<<<<<< HEAD
 
 export enum SortMode {
     NAME = "Name",
     QUALITY = "Quality",
     DIFFICULTY = "Difficulty",
     GOOD_AND_EASY = "Good & Easy",
-=======
+}
 export interface FilterType {
     _:
         | number[]
         | { "1": number; "0.5": number; "1.5": number }
         | { LAB: number; REC: number; SEM: number; STU: number };     
->>>>>>> 9f4374895b9c6f9d27655480218615f2d58e21fa
 }
