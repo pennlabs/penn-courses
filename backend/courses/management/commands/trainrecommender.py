@@ -14,19 +14,6 @@ from courses.models import Course
 from plan.models import Schedule
 
 
-def cache_result(function):
-    memo = {}
-
-    def inner(*args, **kwargs):
-        if len(memo) > 0:
-            return memo["val"]
-        result = function(*args, **kwargs)
-        memo["val"] = result
-        return result
-
-    return inner
-
-
 def lookup_course(course):
     try:
         return Course.objects.filter(full_code=course)[0]
