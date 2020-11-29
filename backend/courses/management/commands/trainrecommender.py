@@ -87,7 +87,7 @@ def group_courses(courses_data: Iterable[Tuple[int, str, str]]):
 
 def vectorize_by_copresence(courses_by_semester_by_user, as_past_class=False) -> Dict[str, np.ndarray]:
     """
-    Vectorizes courses by whether they're in the user's schedule at the same time, as well as whether the number
+    Vectorizes courses by whether they're in the user's schedule at the same time, as well as the number
     of times they come after other courses.
     :param courses_by_semester_by_user: Grouped courses data returned by group_courses
     :return:
@@ -187,6 +187,10 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
 
 
 def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
+    """
+    Generates a dict associating courses to vectors for those courses, as well as courses to vector representations
+    of having taken that class in the past.
+    """
     courses_to_vectors_curr = {}
     courses_to_vectors_past = {}
     courses_data = courses_data_from_csv() if from_csv else courses_data_from_db()
@@ -225,6 +229,9 @@ def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
 
 
 def normalize_class_name(class_name):
+    """
+    Take in a class name and return the standard name for that class
+    """
     course_obj: Course = lookup_course(class_name)
     if course_obj is None:
         return class_name
@@ -239,6 +246,10 @@ def cosine_similarity(vec_a, vec_b):
 
 
 def generate_course_clusters(n_per_cluster=100):
+    """
+    Clusters courses and also returns a vector representation of each class (one for having taken that class now,
+    and another for having taken it in the past)
+    """
     course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict()
     _courses, _course_vectors = zip(*course_vectors_dict_curr.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
