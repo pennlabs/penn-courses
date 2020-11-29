@@ -11,10 +11,13 @@ from plan.models import Schedule
 
 
 def vectorize_user_by_courses(curr_courses, past_courses, curr_course_vectors_dict, past_course_vectors_dict):
-    vector = sum(
+    n = len(next(iter(curr_course_vectors_dict.values())))
+    curr_courses_vector = np.zeros(n) if len(curr_courses) == 0 else sum(
+        curr_course_vectors_dict[course] for course in curr_courses)
+    past_courses_vector = np.zeros(n) if len(past_courses) == 0 else sum(
         past_course_vectors_dict[course] for course in past_courses)
-    vector = vector / np.linalg.norm(vector) + (
-        0 if len(curr_courses) == 0 else sum(curr_course_vectors_dict[course] for course in curr_courses))
+    vector = curr_courses_vector + past_courses_vector
+    vector = vector / np.linalg.norm(vector)
     all_courses = set(curr_courses) | set(past_courses)
     return vector, all_courses
 
