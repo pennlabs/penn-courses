@@ -253,7 +253,7 @@ def cosine_similarity(vec_a, vec_b):
 
 def generate_course_clusters(n_per_cluster=100):
     course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict()
-    _courses, _course_vectors = zip(*course_vectors_dict.items())
+    _courses, _course_vectors = zip(*course_vectors_dict_curr.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = round(len(courses) / n_per_cluster)
     model = KMeans(n_clusters=num_clusters)
@@ -262,9 +262,9 @@ def generate_course_clusters(n_per_cluster=100):
     for course_index, cluster_index in enumerate(raw_cluster_result):
         clusters[cluster_index].append(courses[course_index])
 
-    cluster_centroids = [sum(course_vectors_dict[course] for course in cluster) / len(cluster) for cluster in
+    cluster_centroids = [sum(course_vectors_dict_curr[course] for course in cluster) / len(cluster) for cluster in
                          clusters]
-    return cluster_centroids, clusters, course_vectors_dict
+    return cluster_centroids, clusters, course_vectors_dict_curr, course_vectors_dict_past
 
 
 def save_course_clusters(cluster_data):

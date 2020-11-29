@@ -11,10 +11,12 @@ from plan.models import Schedule
 
 
 def vectorize_user_by_courses(curr_courses, past_courses, curr_course_vectors_dict, past_course_vectors_dict):
-    vector = sum(curr_course_vectors_dict[course] for course in curr_courses) + sum(
+    vector = sum(
         past_course_vectors_dict[course] for course in past_courses)
-    vector = vector / np.linalg.norm(vector)
-    return vector, set(curr_courses), set(past_courses)
+    vector = vector / np.linalg.norm(vector) + (
+        0 if len(curr_courses) == 0 else sum(curr_course_vectors_dict[course] for course in curr_courses))
+    all_courses = set(curr_courses) | set(past_courses)
+    return vector, all_courses
 
 
 def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict, curr_semester="2020C"):
@@ -34,19 +36,21 @@ def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict, cur
     return vectorize_user_by_courses(curr_courses, past_courses, curr_course_vectors_dict, past_course_vectors_dict)
 
 
-def best_recommendations(cluster, curr_course_vectors_dict, past_course_vectors_dict, user_vector, exclude: Optional[Set[str]] = None,
+def best_recommendations(cluster, curr_course_vectors_dict, user_vector,
+                         exclude: Optional[Set[str]] = None,
                          n_recommendations=5):
     recs = []
     for course in cluster:
         if exclude is not None and course in exclude:
             continue
-        course_vector = course_vectors_dict[course]
+        course_vector = curr_course_vectors_dict[course]
         similarity = np.dot(course_vector, user_vector) / (np.linalg.norm(course_vector) * np.linalg.norm(user_vector))
         recs.append((course, similarity))
     return [course for course, _ in heapq.nlargest(n_recommendations, recs, lambda x: x[1])]
 
 
-def recommend_courses(course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses, n_recommendations=5):
+def recommend_courses(curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses,
+                      n_recommendations=5):
     min_distance = -1
     best_cluster_index = -1
     for cluster_index, centroid in enumerate(cluster_centroids):
@@ -55,7 +59,8 @@ def recommend_courses(course_vectors_dict, cluster_centroids, clusters, user_vec
             min_distance = distance
             best_cluster_index = cluster_index
 
-    return best_recommendations(clusters[best_cluster_index], course_vectors_dict, user_vector, exclude=user_courses,
+    return best_recommendations(clusters[best_cluster_index], curr_course_vectors_dict, user_vector,
+                                exclude=user_courses,
                                 n_recommendations=n_recommendations)
 
 
@@ -63,22 +68,29 @@ def retrieve_course_clusters():
     return pickle.load(open("./course-cluster-data.pkl", "rb"))
 
 
+def clean_course_input(course_input):
+    return [course for course in course_input if len(course) > 0]
+
+
 class Command(BaseCommand):
     help = 'Recommend courses for a user.'
 
     def add_arguments(self, parser):
         parser.add_argument('--user', nargs='?', type=str)
-        parser.add_argument('--courses', nargs='?', type=str)
+        parser.add_argument('--curr_courses', nargs='?', type=str)
+        parser.add_argument('--past_courses', nargs='?', type=str)
 
     def handle(self, *args, **kwargs):
 
-        cluster_centroids, clusters, course_vectors_dict = retrieve_course_clusters()
+        cluster_centroids, clusters, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
         if "user" in kwargs and kwargs["user"] is not None:
-            user_vector, user_courses = vectorize_user(kwargs["user"], course_vectors_dict)
+            user_vector, user_courses = vectorize_user(kwargs["user"], curr_course_vectors_dict,
+                                                       past_course_vectors_dict)
         else:
-            user_vector, user_courses = vectorize_user_by_courses(kwargs["curr_courses"].split(","),
-                                                                  kwargs["past_courses"].split(","),
-                                                                  course_vectors_dict
+            user_vector, user_courses = vectorize_user_by_courses(clean_course_input(kwargs["curr_courses"].split(",")),
+                                                                  clean_course_input(kwargs["past_courses"].split(",")),
+                                                                  curr_course_vectors_dict,
+                                                                  past_course_vectors_dict
                                                                   )
 
-        print(recommend_courses(course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses))
+        print(recommend_courses(curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses))
