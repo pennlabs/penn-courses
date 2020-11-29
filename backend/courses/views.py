@@ -116,7 +116,6 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
             Prefetch(
                 "sections",
                 Section.with_reviews.all()
-                .filter(meetings__isnull=False)
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct(),
@@ -151,7 +150,6 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
             Prefetch(
                 "sections",
                 Section.with_reviews.all()
-                .filter(meetings__isnull=False)
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct(),
@@ -182,7 +180,7 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
     """
-    TODO: fill this in
+    This view exposes the Penn Labs Accounts User object.
     """
 
     schema = PcxAutoSchema()
