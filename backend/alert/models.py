@@ -486,6 +486,7 @@ def register_for_course(
         api_key=None,
         user=None,
         auto_resub=False,
+        registration_group=None
 ):
     """
     This method is for the PCA 3rd party API (originally planned to service
@@ -508,6 +509,7 @@ def register_for_course(
         registration = Registration(
             section=section, email=email_address, phone=phone, source=source
         )
+
         registration.validate_phone()
         if Registration.objects.filter(
                 section=section,
@@ -524,7 +526,11 @@ def register_for_course(
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
         registration = Registration(section=section, user=user, source=source)
+
         registration.auto_resubscribe = auto_resub
+
+    if registration_group:
+        registration.bulk_registration = registration_group
 
     registration.api_key = api_key
     registration.save()

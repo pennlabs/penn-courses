@@ -3,6 +3,14 @@ from courses.util import get_or_create_course_and_section, set_meetings
 from review.models import Review
 
 
+def create_data_with_type(code, semester, type):
+    course, section, _, _ = get_or_create_course_and_section(code, semester)
+    section.credits = 1
+    section.status = "O"
+    section.activity = type
+    section.save()
+    course.sections.add(section)
+
 def create_mock_data(code, semester):
     course, section, _, _ = get_or_create_course_and_section(code, semester)
     section.credits = 1

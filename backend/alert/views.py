@@ -13,7 +13,6 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
 import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course, RegistrationGroup
 from alert.serializers import (
@@ -22,10 +21,8 @@ from alert.serializers import (
     RegistrationUpdateSerializer,
 )
 from alert.tasks import send_course_alerts
-from courses.util import get_current_semester, record_update, update_course_from_record
+from courses.util import get_current_semester, record_update, update_course_from_record, get_course_and_section
 from PennCourses.docs_settings import PcxAutoSchema
-
-from backend.courses.util import get_course_and_section
 
 logger = logging.getLogger(__name__)
 
@@ -231,35 +228,19 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=["post"])
-    def bulk(self, request):
-        # get section code
-        section_code = request.data['section']
-
-        course, section = get_course_and_section(section_code, get_current_semester())
-        associated_sections = section.associated_sections.all()
-
-        # if there is no section code
-        if section_code is None:
-            return Response(
-                {"message": "You must include a not null section"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
+    @staticmethod
+    def bulk_register_sections(request, sections, registration_group):
         response_codes = []
 
-        for rel_sec in associated_sections:
-            # return Response(RegistrationGroup.objects.all())
-
-            # course_name = str(rel_sec).split(' ')[0]
-            course_name = str(rel_sec)
-            print(course_name)
+        for rel_sec in sections:
+            section_code = course_name = str(rel_sec)
 
             res, normalized_course_code, reg = register_for_course(
                 course_code=course_name,
                 source="PCA",
                 user=request.user,
                 auto_resub=request.data.get("auto_resubscribe", False),
+                registration_group=registration_group
             )
 
             if res == RegStatus.SUCCESS:
@@ -304,9 +285,189 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     }
                 )
 
-            response_codes.append(res)
+        return response_codes
 
-        return Response("hello world")
+    @staticmethod
+    def response_code_convert(res, normalized_course_code, reg, section_code):
+        if res == RegStatus.SUCCESS:
+            return {
+                "message": "Your registration for %s was successful!" % normalized_course_code,
+                "id": reg.pk,
+                "status": status.HTTP_201_CREATED
+            }
+        elif res == RegStatus.OPEN_REG_EXISTS:
+            return {
+                "message": "You've already registered to get alerts for %s!"
+                           % normalized_course_code,
+                "status": status.HTTP_409_CONFLICT
+
+            }
+        elif res == RegStatus.COURSE_NOT_FOUND:
+            return {
+                "message": "%s did not match any course in our database. Please try again!"
+                           % section_code,
+                "status": status.HTTP_404_NOT_FOUND,
+            }
+        elif res == RegStatus.NO_CONTACT_INFO:
+            return {
+                "message": "You must set a phone number and/or an email address to "
+                           "register for an alert.",
+                "status": status.HTTP_406_NOT_ACCEPTABLE
+            }
+        else:
+            return {
+                "message": "There was an error on our end. Please try again!",
+                "status": status.HTTP_500_INTERNAL_SERVER_ERROR
+
+            }
+
+    @action(detail=False, methods=["post"])
+    def bulk(self, request):
+        """
+        Post - use this endpoint to create a bulk registration with a given section.
+
+        Depending on whether 'recitation' or 'lecture' is specified in the type: [TYPE HERE],
+        the post request will cause the backend to register for all *recitations* and/or *lectures*
+        with an associated section.
+
+        Return Type: This endpoint will return a list of either one or two lists depending on
+        size of types list. Each nested list will contain the section that was registered and the
+        response (already registered, success, etc.)
+
+        Method Body: The method body should be as follows
+
+        {
+            "section": "CIS-120-001", # must be a course code
+            "type": ["LEC", "REC"] # ineffective if empty
+            "auto-resubscribe": True
+        }
+
+
+        """
+
+        # creating a list that will hold the response codes
+        response_codes = {}
+
+        # if there is no section code or type specified, return a response
+        if 'section' not in request.data or \
+                'type' not in request.data or \
+                request.data['section'] is None:
+            return Response(
+                {"message": "You must include a not null section"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # get section code from the form (string)
+        section_code = request.data['section']
+
+        # get types of bulk registrations (list)
+        types = request.data['type']
+
+        # getting course / section
+        course, section = get_course_and_section(section_code, get_current_semester())
+
+        # getting associated sections from a given section
+        associated_sections = section.associated_sections.all()
+
+        # creating registration group
+        registration_group = RegistrationGroup(section=section)
+
+        # save the registration group
+        registration_group.save()
+
+        # all course sections from the given course
+        # ex. if CIS-120-001, then all_secitons would
+        # all CIS-120 sections
+        all_sections = course.sections.all()
+
+        if 'LEC' in types:
+            # to_register will get registered
+            # array of all 'lecture' sections of COURSE
+            to_register = [x for x in all_sections if x.activity == 'LEC']
+            response_codes["LEC"] = self.bulk_register_sections(request=request, sections=to_register,
+                                                                registration_group=registration_group)
+
+        # using this way so that accidental checks are ok on FE
+        if 'REC' in types or 'LAB' in types:
+            # setting the variable s. depending on rec or lab
+            # however, if lab is passed w class w recs or vice versa
+            # as long as either rec or lec is passed, the "Supplementary"
+            # classes are registered for
+            supplement = 'REC'
+
+            if section.activity == 'LAB' or \
+                    (associated_sections and associated_sections[0].activity == 'LAB'):
+                supplement = 'LAB'
+
+            # if it is a REC, then need to look at associated lec -> associated rec
+            # needed for examples like MATH 240 / 114
+            if section.activity == 'REC' or section.activity == 'LAB':
+                associated_recs = associated_sections[0].associated_sections.all()
+                response_codes[supplement] = self.bulk_register_sections(request=request, sections=associated_recs,
+                                                                         registration_group=registration_group)
+            else:
+                response_codes[supplement] = self.bulk_register_sections(request=request, sections=associated_sections,
+                                                                         registration_group=registration_group)
+        # response is
+        return Response(response_codes)
+
+    @action(detail=False, methods=["post"])
+    def multi(self, request):
+        """
+        This is a method that takes a list of registrations in the form
+        of an array and registers for all of them.
+
+        Here is an example of a request.
+        {
+            "courses": ["CIS-120-001", "CIS-120-001"],
+            "auto_resubscribe": true
+        }
+
+        The response is going to be a dictionary that contains has the
+        name of the course as the key and the response message/data as the body.
+        """
+        # creating a list that will hold the response codes
+        response_codes = {}
+
+        # array with all the courses in object
+        courses = request.data.get("courses")
+        if courses is None or len(courses) == 0:
+            return Response(
+                {"message": "You must include a courses field"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # bass course for reg group
+            base_course = courses[0]
+            base_course, base_section = get_course_and_section(base_course, get_current_semester())
+        except:
+            return Response(
+                {"message": "Must include valid courses"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # creating registration group
+        registration_group = RegistrationGroup(section=base_section)
+
+        # save the registration group
+        registration_group.save()
+
+        for course in courses:
+            res, normalized_course_code, reg = register_for_course(
+                course_code=course,
+                source="PCA",
+                user=request.user,
+                auto_resub=request.data.get("auto_resubscribe", False),
+                registration_group=registration_group
+            )
+
+            # converting the codes to a proper response
+            response_codes[course] = self.response_code_convert(reg=reg,
+                                                                normalized_course_code=normalized_course_code,
+                                                                res=res,
+                                                                section_code=course)
+        return Response(response_codes)
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -339,43 +500,51 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             auto_resub=request.data.get("auto_resubscribe", False),
         )
 
-        if res == RegStatus.SUCCESS:
-            return Response(
-                {
-                    "message": "Your registration for %s was successful!" % normalized_course_code,
-                    "id": reg.pk,
-                },
-                status=status.HTTP_201_CREATED,
-            )
-        elif res == RegStatus.OPEN_REG_EXISTS:
-            return Response(
-                {
-                    "message": "You've already registered to get alerts for %s!"
-                               % normalized_course_code
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-        elif res == RegStatus.COURSE_NOT_FOUND:
-            return Response(
-                {
-                    "message": "%s did not match any course in our database. Please try again!"
-                               % section_code
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        elif res == RegStatus.NO_CONTACT_INFO:
-            return Response(
-                {
-                    "message": "You must set a phone number and/or an email address to "
-                               "register for an alert."
-                },
-                status=status.HTTP_406_NOT_ACCEPTABLE,
-            )
-        else:
-            return Response(
-                {"message": "There was an error on our end. Please try again!"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        return Response(RegistrationViewSet.response_code_convert(
+            reg=reg,
+            normalized_course_code=normalized_course_code,
+            res=res,
+            section_code=section_code
+        ))
+
+        ##### TO DELETE IF TESTS PASS! ####
+        # if res == RegStatus.SUCCESS:
+        #     return Response(
+        #         {
+        #             "message": "Your registration for %s was successful!" % normalized_course_code,
+        #             "id": reg.pk,
+        #         },
+        #         status=status.HTTP_201_CREATED,
+        #     )
+        # elif res == RegStatus.OPEN_REG_EXISTS:
+        #     return Response(
+        #         {
+        #             "message": "You've already registered to get alerts for %s!"
+        #                        % normalized_course_code
+        #         },
+        #         status=status.HTTP_409_CONFLICT,
+        #     )
+        # elif res == RegStatus.COURSE_NOT_FOUND:
+        #     return Response(
+        #         {
+        #             "message": "%s did not match any course in our database. Please try again!"
+        #                        % section_code
+        #         },
+        #         status=status.HTTP_404_NOT_FOUND,
+        #     )
+        # elif res == RegStatus.NO_CONTACT_INFO:
+        #     return Response(
+        #         {
+        #             "message": "You must set a phone number and/or an email address to "
+        #                        "register for an alert."
+        #         },
+        #         status=status.HTTP_406_NOT_ACCEPTABLE,
+        #     )
+        # else:
+        #     return Response(
+        #         {"message": "There was an error on our end. Please try again!"},
+        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     )
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset_current())
