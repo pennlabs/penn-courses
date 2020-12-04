@@ -11,6 +11,7 @@ def create_data_with_type(code, semester, type):
     section.save()
     course.sections.add(section)
 
+
 def create_mock_data(code, semester):
     course, section, _, _ = get_or_create_course_and_section(code, semester)
     section.credits = 1

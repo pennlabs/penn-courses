@@ -13,16 +13,23 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
 import alert.examples as examples
-from alert.models import Registration, RegStatus, register_for_course, RegistrationGroup
+from alert.models import Registration, RegistrationGroup, RegStatus, register_for_course
 from alert.serializers import (
     RegistrationCreateSerializer,
     RegistrationSerializer,
     RegistrationUpdateSerializer,
 )
 from alert.tasks import send_course_alerts
-from courses.util import get_current_semester, record_update, update_course_from_record, get_course_and_section
+from courses.util import (
+    get_course_and_section,
+    get_current_semester,
+    record_update,
+    update_course_from_record,
+)
 from PennCourses.docs_settings import PcxAutoSchema
+
 
 logger = logging.getLogger(__name__)
 
@@ -89,9 +96,9 @@ def accept_webhook(request):
         return HttpResponse("Previous Status could not be extracted from response", status=400)
 
     should_send_alert = (
-            get_bool("SEND_FROM_WEBHOOK", False)
-            and course_status == "O"
-            and get_current_semester() == course_term
+        get_bool("SEND_FROM_WEBHOOK", False)
+        and course_status == "O"
+        and get_current_semester() == course_term
     )
 
     alert_for_course_called = False
@@ -240,15 +247,16 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 source="PCA",
                 user=request.user,
                 auto_resub=request.data.get("auto_resubscribe", False),
-                registration_group=registration_group
+                registration_group=registration_group,
             )
 
             if res == RegStatus.SUCCESS:
                 response_codes.append(
                     {
-                        "message": "Your registration for %s was successful!" % normalized_course_code,
+                        "message": "Your registration for %s was successful!"
+                                   % normalized_course_code,
                         "id": reg.pk,
-                        "status": status.HTTP_201_CREATED
+                        "status": status.HTTP_201_CREATED,
                     }
                 )
             elif res == RegStatus.OPEN_REG_EXISTS:
@@ -256,8 +264,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     {
                         "message": "You've already registered to get alerts for %s!"
                                    % normalized_course_code,
-                        "status": status.HTTP_409_CONFLICT
-
+                        "status": status.HTTP_409_CONFLICT,
                     }
                 )
             elif res == RegStatus.COURSE_NOT_FOUND:
@@ -273,15 +280,14 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     {
                         "message": "You must set a phone number and/or an email address to "
                                    "register for an alert.",
-                        "status": status.HTTP_406_NOT_ACCEPTABLE
+                        "status": status.HTTP_406_NOT_ACCEPTABLE,
                     }
                 )
             else:
                 response_codes.append(
                     {
                         "message": "There was an error on our end. Please try again!",
-                        "status": status.HTTP_500_INTERNAL_SERVER_ERROR
-
+                        "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
                     }
                 )
 
@@ -293,14 +299,13 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return {
                 "message": "Your registration for %s was successful!" % normalized_course_code,
                 "id": reg.pk,
-                "status": status.HTTP_201_CREATED
+                "status": status.HTTP_201_CREATED,
             }
         elif res == RegStatus.OPEN_REG_EXISTS:
             return {
                 "message": "You've already registered to get alerts for %s!"
                            % normalized_course_code,
-                "status": status.HTTP_409_CONFLICT
-
+                "status": status.HTTP_409_CONFLICT,
             }
         elif res == RegStatus.COURSE_NOT_FOUND:
             return {
@@ -312,13 +317,12 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return {
                 "message": "You must set a phone number and/or an email address to "
                            "register for an alert.",
-                "status": status.HTTP_406_NOT_ACCEPTABLE
+                "status": status.HTTP_406_NOT_ACCEPTABLE,
             }
         else:
             return {
                 "message": "There was an error on our end. Please try again!",
-                "status": status.HTTP_500_INTERNAL_SERVER_ERROR
-
+                "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
             }
 
     @action(detail=False, methods=["post"])
@@ -349,19 +353,21 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         response_codes = {}
 
         # if there is no section code or type specified, return a response
-        if 'section' not in request.data or \
-                'type' not in request.data or \
-                request.data['section'] is None:
+        if (
+                "section" not in request.data
+                or "type" not in request.data
+                or request.data["section"] is None
+        ):
             return Response(
                 {"message": "You must include a not null section"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         # get section code from the form (string)
-        section_code = request.data['section']
+        section_code = request.data["section"]
 
         # get types of bulk registrations (list)
-        types = request.data['type']
+        types = request.data["type"]
 
         # getting course / section
         course, section = get_course_and_section(section_code, get_current_semester())
@@ -380,34 +386,40 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         # all CIS-120 sections
         all_sections = course.sections.all()
 
-        if 'LEC' in types:
+        if "LEC" in types:
             # to_register will get registered
             # array of all 'lecture' sections of COURSE
-            to_register = [x for x in all_sections if x.activity == 'LEC']
-            response_codes["LEC"] = self.bulk_register_sections(request=request, sections=to_register,
-                                                                registration_group=registration_group)
+            to_register = [x for x in all_sections if x.activity == "LEC"]
+            response_codes["LEC"] = self.bulk_register_sections(
+                request=request, sections=to_register, registration_group=registration_group
+            )
 
         # using this way so that accidental checks are ok on FE
-        if 'REC' in types or 'LAB' in types:
+        if "REC" in types or "LAB" in types:
             # setting the variable s. depending on rec or lab
             # however, if lab is passed w class w recs or vice versa
             # as long as either rec or lec is passed, the "Supplementary"
             # classes are registered for
-            supplement = 'REC'
+            supplement = "REC"
 
-            if section.activity == 'LAB' or \
-                    (associated_sections and associated_sections[0].activity == 'LAB'):
-                supplement = 'LAB'
+            if section.activity == "LAB" or (
+                    associated_sections and associated_sections[0].activity == "LAB"
+            ):
+                supplement = "LAB"
 
             # if it is a REC, then need to look at associated lec -> associated rec
             # needed for examples like MATH 240 / 114
-            if section.activity == 'REC' or section.activity == 'LAB':
+            if section.activity == "REC" or section.activity == "LAB":
                 associated_recs = associated_sections[0].associated_sections.all()
-                response_codes[supplement] = self.bulk_register_sections(request=request, sections=associated_recs,
-                                                                         registration_group=registration_group)
+                response_codes[supplement] = self.bulk_register_sections(
+                    request=request, sections=associated_recs, registration_group=registration_group
+                )
             else:
-                response_codes[supplement] = self.bulk_register_sections(request=request, sections=associated_sections,
-                                                                         registration_group=registration_group)
+                response_codes[supplement] = self.bulk_register_sections(
+                    request=request,
+                    sections=associated_sections,
+                    registration_group=registration_group,
+                )
         # response is
         return Response(response_codes)
 
@@ -419,7 +431,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         Here is an example of a request.
         {
-            "courses": ["CIS-120-001", "CIS-120-001"],
+            "courses": ["CIS-120-001", "CIS-120-002"],
             "auto_resubscribe": true
         }
 
@@ -433,18 +445,16 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         courses = request.data.get("courses")
         if courses is None or len(courses) == 0:
             return Response(
-                {"message": "You must include a courses field"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"message": "You must include a courses field"}, status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             # bass course for reg group
             base_course = courses[0]
             base_course, base_section = get_course_and_section(base_course, get_current_semester())
-        except:
+        except (IndexError, ValueError):
             return Response(
-                {"message": "Must include valid courses"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"message": "Must include valid courses"}, status=status.HTTP_400_BAD_REQUEST,
             )
 
         # creating registration group
@@ -459,14 +469,13 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 source="PCA",
                 user=request.user,
                 auto_resub=request.data.get("auto_resubscribe", False),
-                registration_group=registration_group
+                registration_group=registration_group,
             )
 
             # converting the codes to a proper response
-            response_codes[course] = self.response_code_convert(reg=reg,
-                                                                normalized_course_code=normalized_course_code,
-                                                                res=res,
-                                                                section_code=course)
+            response_codes[course] = self.response_code_convert(
+                reg=reg, normalized_course_code=normalized_course_code, res=res, section_code=course
+            )
         return Response(response_codes)
 
     def get_serializer_class(self):
@@ -500,51 +509,21 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             auto_resub=request.data.get("auto_resubscribe", False),
         )
 
-        return Response(RegistrationViewSet.response_code_convert(
+        obj = RegistrationViewSet.response_code_convert(
             reg=reg,
             normalized_course_code=normalized_course_code,
             res=res,
-            section_code=section_code
-        ))
+            section_code=section_code,
+        )
 
-        ##### TO DELETE IF TESTS PASS! ####
-        # if res == RegStatus.SUCCESS:
-        #     return Response(
-        #         {
-        #             "message": "Your registration for %s was successful!" % normalized_course_code,
-        #             "id": reg.pk,
-        #         },
-        #         status=status.HTTP_201_CREATED,
-        #     )
-        # elif res == RegStatus.OPEN_REG_EXISTS:
-        #     return Response(
-        #         {
-        #             "message": "You've already registered to get alerts for %s!"
-        #                        % normalized_course_code
-        #         },
-        #         status=status.HTTP_409_CONFLICT,
-        #     )
-        # elif res == RegStatus.COURSE_NOT_FOUND:
-        #     return Response(
-        #         {
-        #             "message": "%s did not match any course in our database. Please try again!"
-        #                        % section_code
-        #         },
-        #         status=status.HTTP_404_NOT_FOUND,
-        #     )
-        # elif res == RegStatus.NO_CONTACT_INFO:
-        #     return Response(
-        #         {
-        #             "message": "You must set a phone number and/or an email address to "
-        #                        "register for an alert."
-        #         },
-        #         status=status.HTTP_406_NOT_ACCEPTABLE,
-        #     )
-        # else:
-        #     return Response(
-        #         {"message": "There was an error on our end. Please try again!"},
-        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     )
+        return_dict = {
+            "message": obj.get("message"),
+        }
+
+        if "id" in obj:
+            return_dict["id"] = obj.get("id")
+
+        return Response(return_dict, status=obj.get("status"))
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset_current())

@@ -18,7 +18,7 @@ registration_fields = [
     "notification_sent",
     "notification_sent_at",
     "deleted_at",
-    "bulk_registration"
+    "bulk_registration",
 ]
 
 
@@ -35,9 +35,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         help_text="The Penn Labs Accounts username of the User who owns this Registration.",
     )
     bulk_registration = serializers.SlugRelatedField(
-        slug_field="id",
-        read_only=True,
-        help_text="$$",
+        slug_field="id", read_only=True, help_text="$$",
     )
     section_status = serializers.SerializerMethodField(
         read_only=True,
