@@ -992,7 +992,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertTrue("sent" in json.loads(res.content)["message"])
 
     def simulate_alert(
-            self, section, num_status_updates=None, contact_infos=None, should_send=True
+        self, section, num_status_updates=None, contact_infos=None, should_send=True
     ):
         contact_infos = (
             [{"number": "+11234567890", "email": "j@gmail.com"}]
@@ -1002,7 +1002,7 @@ class AlertRegistrationTestCase(TestCase):
         with patch("alert.alerts.send_email", return_value=True) as send_email_mock:
             with patch("alert.alerts.send_text", return_value=True) as send_text_mock:
                 override_delay(
-                    [("alert.tasks", "send_course_alerts"), ("alert.tasks", "send_alert"), ],
+                    [("alert.tasks", "send_course_alerts"), ("alert.tasks", "send_alert"),],
                     self.simulate_alert_helper_before,
                     {"section": section},
                 )
@@ -1711,7 +1711,7 @@ class AlertRegistrationTestCase(TestCase):
             if put:
                 self.client.put(
                     reverse("registrations-detail", args=[first_id]),
-                    json.dumps({"resubscribe": True, "deleted": True, "auto_resubscribe": False, }),
+                    json.dumps({"resubscribe": True, "deleted": True, "auto_resubscribe": False,}),
                     content_type="application/json",
                 )
             else:
@@ -2203,8 +2203,7 @@ class MultiTestCases(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(all_bulk), 1)
         self.assertEqual(len(all_regs), 3)
-        self.assertEqual(all_bulk[0].section.full_code,
-                         "CIS-120-001")
+        self.assertEqual(all_bulk[0].section.full_code, "CIS-120-001")
         for reg in all_regs:
             self.assertEqual(reg.bulk_registration, all_bulk[0])
             self.assertFalse(reg.auto_resubscribe, True)
