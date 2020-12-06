@@ -151,7 +151,12 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     include a section field (with the dash-separated full code of the section) and optionally
     can contain an auto_resubscribe field (defaults to false) which sets whether the registration
     will automatically create a new registration once it triggers an alerts (i.e. whether it will
-    automatically resubscribe the user to receive alerts for that section).
+    automatically resubscribe the user to receive alerts for that section). It can also optionally
+    contain a "close_notification" field, to enable close notifications on the registration.
+    Note that close notifications CANNOT be sent by text so you shouldn't allow the user to
+    enable close notifications for any registration unless they have an email set in their
+    User Profile or have push notifications enabled.  If they do, then they simply won't
+    end up receiving close notifications by any medium.
     Note that if you include the "id" field in the body of your POST request, and that id
     does not already exist, the id of the created registration will be set to the given value.
     However, if the given id does exist, the request will instead be treated as a PUT request for

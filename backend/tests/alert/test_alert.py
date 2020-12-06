@@ -196,7 +196,7 @@ class SendAlertTestCase(TestCase):
             r.resubscribe()
         r = Registration.objects.get(id=self.r.id)
         self.assertTrue(mock_email.called)
-        self.assertEquals(not push_notification, mock_text.called)
+        self.assertFalse(mock_text.called)
         self.assertEquals(push_notification, mock_push_notification.called)
         self.assertTrue(r.notification_sent)
         self.assertIsNotNone(r.notification_sent_at)
@@ -2490,6 +2490,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertTrue(
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
         )
+        contact_infos[0]["number"] = None
         self.simulate_alert(
             self.cis160, 3, close_notification=True, should_send=True, contact_infos=contact_infos
         )

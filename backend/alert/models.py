@@ -38,7 +38,9 @@ class Registration(models.Model):
     chain as the original alert) to let the user know that the section has closed. Thus,
     if a user sees a PCA notification on their phone during a class for instance, they won't
     need to frantically open up their laptop and check PennInTouch to see if the class is still
-    open just to find that it is already closed.  Note that the close_notification setting
+    open just to find that it is already closed.  To avoid spam and wasted money, we DO NOT
+    send any close notifications over text. So the user must have an email saved or use
+    push notifications to receive a close notification. Note that the close_notification setting
     carries over across resubscriptions, but can be disabled at any time using
     a PUT request to /api/alert/registrations/{id}/.
 
@@ -434,7 +436,8 @@ class Registration(models.Model):
                 self.user and self.user.profile and self.user.profile.push_notifications
             )  # specifies whether we should use a push notification instead of a text
             text_result = False
-            if not push_notification:
+            if not push_notification and not close_notification:
+                # never send close notifications by text
                 text_result = Text(self).send_alert(close_notification=close_notification)
                 if text_result is None:
                     logging.debug(
@@ -454,7 +457,12 @@ class Registration(models.Model):
                     logging.debug(
                         "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " + self.__str__()
                     )
-            if not email_result and not text_result and not push_notif_result:
+            if (
+                not email_result
+                and not text_result
+                and not push_notif_result
+                and not close_notification
+            ):
                 logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__())
                 return False
             if not close_notification:

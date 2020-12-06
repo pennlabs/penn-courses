@@ -354,8 +354,10 @@ custom_tag_descriptions = {
         chain as the original alert) to let the user know that the section has closed. Thus,
         if a user sees a PCA notification on their phone during a class for instance, they won't
         need to frantically open up their laptop and check PennInTouch to see if the class is still
-        open just to find that it is already closed.  Note that the close_notification setting
-        carries over across resubscriptions, but can be disabled at any time using
+        open just to find that it is already closed.  To avoid spam and wasted money, we DO NOT
+        send any close notifications over text. So the user must have an email saved or use
+        push notifications to receive a close notification. Note that the close_notification
+        setting carries over across resubscriptions, but can be disabled at any time using
         Update Registration.
 
         After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a `user` field
