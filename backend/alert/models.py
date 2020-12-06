@@ -458,12 +458,7 @@ class Registration(models.Model):
                     logging.debug(
                         "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " + self.__str__()
                     )
-            if (
-                not email_result
-                and not text_result
-                and not push_notif_result
-                and not close_notification
-            ):
+            if not email_result and not text_result and not push_notif_result:
                 logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__())
                 return False
             if not close_notification:
