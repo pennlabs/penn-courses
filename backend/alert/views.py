@@ -250,9 +250,11 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 registration_group=registration_group,
             )
 
-            response_codes.append(RegistrationViewSet.
-                                  response_code_convert(res, normalized_course_code,
-                                                        reg, section_code))
+            response_codes.append(
+                RegistrationViewSet.response_code_convert(
+                    res, normalized_course_code, reg, section_code
+                )
+            )
 
         return response_codes
 
@@ -267,19 +269,19 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         elif res == RegStatus.OPEN_REG_EXISTS:
             return {
                 "message": "You've already registered to get alerts for %s!"
-                           % normalized_course_code,
+                % normalized_course_code,
                 "status": status.HTTP_409_CONFLICT,
             }
         elif res == RegStatus.COURSE_NOT_FOUND:
             return {
                 "message": "%s did not match any course in our database. Please try again!"
-                           % section_code,
+                % section_code,
                 "status": status.HTTP_404_NOT_FOUND,
             }
         elif res == RegStatus.NO_CONTACT_INFO:
             return {
                 "message": "You must set a phone number and/or an email address to "
-                           "register for an alert.",
+                "register for an alert.",
                 "status": status.HTTP_406_NOT_ACCEPTABLE,
             }
         else:
@@ -317,9 +319,9 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         # if there is no section code or type specified, return a response
         if (
-                "section" not in request.data
-                or "type" not in request.data
-                or request.data["section"] is None
+            "section" not in request.data
+            or "type" not in request.data
+            or request.data["section"] is None
         ):
             return Response(
                 {"message": "You cannot have a null type or section"},
@@ -367,7 +369,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             supplement = "REC"
 
             if section.activity == "LAB" or (
-                    associated_sections and associated_sections[0].activity == "LAB"
+                associated_sections and associated_sections[0].activity == "LAB"
             ):
                 supplement = "LAB"
 
@@ -437,9 +439,16 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
             # converting the codes to a proper response
-            response_codes.append({course: self.response_code_convert(
-                reg=reg, normalized_course_code=normalized_course_code, res=res, section_code=course
-            )})
+            response_codes.append(
+                {
+                    course: self.response_code_convert(
+                        reg=reg,
+                        normalized_course_code=normalized_course_code,
+                        res=res,
+                        section_code=course,
+                    )
+                }
+            )
         return Response(response_codes)
 
     def get_serializer_class(self):
@@ -527,7 +536,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     return Response(
                         {
                             "detail": "You can only resubscribe to a registration that "
-                                      "has already been sent or has been cancelled."
+                            "has already been sent or has been cancelled."
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -575,7 +584,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     return Response(
                         {
                             "detail": "auto_resubscribe updated to "
-                                      + str(registration.auto_resubscribe)
+                            + str(registration.auto_resubscribe)
                         },
                         status=status.HTTP_200_OK,
                     )
@@ -583,7 +592,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response(
                 {
                     "detail": "IntegrityError encountered while trying to update: "
-                              + str(e.__cause__)
+                    + str(e.__cause__)
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
