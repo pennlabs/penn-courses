@@ -217,3 +217,12 @@ class RequirementListTestCase(TestCase):
         response = self.client.get(reverse("requirements-list", kwargs={"semester": "XXXXX"}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(1, len(response.data))
+
+
+class DocumentationTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_no_error(self):
+        response = self.client.get(reverse("openapi-schema"))
+        self.assertEqual(response.status_code, 200)

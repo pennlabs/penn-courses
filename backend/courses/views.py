@@ -206,6 +206,17 @@ class StatusUpdateView(generics.ListAPIView):
                 "GET": {200: "[SCHEMA]Status Updates for section listed successfully."}
             }
         },
+        custom_path_parameter_desc={
+            "/api/courses/statusupdate/{full_code}/": {
+                "GET": {
+                    "full_code": (
+                        "The code of the section which this status update applies to, in the "
+                        "form '{dept code}-{course code}-{section code}', e.g. 'CIS-120-001' for "
+                        "the 001 section of CIS-120."
+                    )
+                }
+            }
+        },
     )
     serializer_class = StatusUpdateSerializer
     http_method_names = ["get"]
