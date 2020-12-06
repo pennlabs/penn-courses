@@ -11,6 +11,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
+from courses.util import get_current_semester
 from review.annotations import review_averages
 
 
@@ -423,7 +424,8 @@ class Section(models.Model):
         if self.capacity == 0:
             return None
         aggregate_scores = (
-            Registration.objects.filter(setion__capacity__gt=0)
+            Registration.objects.filter(section__course__semester=get_current_semester(),
+                                        section__capacity__gt=0)
             .values("section", "section__capacity")
             .annotate(score=Count("section") / Max("section__capacity"))
             .aggregate(min=Min("score"), max=Max("score"))
