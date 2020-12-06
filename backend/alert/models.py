@@ -239,11 +239,8 @@ class Registration(models.Model):
         null=True,
         help_text=dedent(
             """
-        The User that registered for this alert. This object will be none if registration occurred
-        before the PCA refresh of Spring 2020 (before the refresh user's were only identified by
-        their email and phone numbers, which are legacy fields in this model now). This object
-        might also be none if registration occurred through a 3rd part API such as Penn Course
-        Notify (now that Notify has fallen this is an unlikely event).
+        Defaults to null. Foreign key to the bulk registration that
+        this particular registration is associated with.
         """
         ),
     )

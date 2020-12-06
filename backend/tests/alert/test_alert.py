@@ -2158,7 +2158,34 @@ class MultiTestCases(TestCase):
         all_secs = [r.section.full_code for r in all_regs]
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertTrue("CIS-120-001" in response.data[0])
         self.assertEqual(len(Registration.objects.all()), 1)
+        self.assertEqual(len(RegistrationGroup.objects.all()), 1)
+        self.assertEqual(all_bulk[0].section.full_code, "CIS-120-001")
+        for reg in all_regs:
+            self.assertEqual(reg.bulk_registration, all_bulk[0])
+        for course in courses:
+            self.assertIn(course, all_secs)
+
+    def test_multi_repeat(self):
+        courses = ["CIS-120-001", "CIS-120-001"]
+
+        response = self.client.post(
+            reverse("registrations-multi"),
+            json.dumps({"courses": courses}),
+            content_type="application/json",
+        )
+
+        all_regs = Registration.objects.all()
+        all_bulk = RegistrationGroup.objects.all()
+        all_secs = [r.section.full_code for r in all_regs]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(Registration.objects.all()), 1)
+        self.assertEqual(len(response.data), 2)
+        self.assertTrue("CIS-120-001" in response.data[0])
+        self.assertTrue("CIS-120-001" in response.data[1])
         self.assertEqual(len(RegistrationGroup.objects.all()), 1)
         self.assertEqual(all_bulk[0].section.full_code, "CIS-120-001")
         for reg in all_regs:

@@ -35,7 +35,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
         help_text="The Penn Labs Accounts username of the User who owns this Registration.",
     )
     bulk_registration = serializers.SlugRelatedField(
-        slug_field="id", read_only=True, help_text="$$",
+        slug_field="id",
+        read_only=True,
+        help_text="The Bulk Registration associated with this Registration",
     )
     section_status = serializers.SerializerMethodField(
         read_only=True,
