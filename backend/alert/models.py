@@ -19,6 +19,7 @@ class RegStatus(Enum):
     COURSE_OPEN = auto()
     COURSE_NOT_FOUND = auto()
     NO_CONTACT_INFO = auto()
+    TEXT_CLOSE_NOTIFICATION = auto()
 
 
 SOURCE_PCA = "PCA"
@@ -40,9 +41,9 @@ class Registration(models.Model):
     need to frantically open up their laptop and check PennInTouch to see if the class is still
     open just to find that it is already closed.  To avoid spam and wasted money, we DO NOT
     send any close notifications over text. So the user must have an email saved or use
-    push notifications to receive a close notification. Note that the close_notification setting
-    carries over across resubscriptions, but can be disabled at any time using
-    a PUT request to /api/alert/registrations/{id}/.
+    push notifications in order to be able to enable close notifications on a registration.
+    Note that the close_notification setting carries over across resubscriptions, but can be
+    disabled at any time using a PUT request to /api/alert/registrations/{id}/.
 
     An important concept for this Model is that of the "resubscribe chain".  A resubscribe chain
     is a chain of Registration objects where the tail of the chain was the original Registration
@@ -647,8 +648,15 @@ def register_for_course(
     Penn Course Notify, until Notify's rejection of PCA's help and eventual downfall
     (coincidence? we think not...). It still may be used in the future so we are
     keeping the code.
+    Returns RegStatus.<STATUS>, section.full_code, registration
+    or None for the second two when appropriate
     """
-    if not email_address and not phone and not user:
+    if (not user and not email_address and not phone) or (
+        user
+        and not user.profile.email
+        and not user.profile.phone
+        and not user.profile.push_notifications
+    ):
         return RegStatus.NO_CONTACT_INFO, None, None
     try:
         course, section = get_course_and_section(course_code, get_current_semester())
@@ -676,6 +684,8 @@ def register_for_course(
             section=section, user=user, **Registration.is_active_filter()
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
+        if close_notification and not user.profile.email and not user.profile.push_notifications:
+            return RegStatus.TEXT_CLOSE_NOTIFICATION, section.full_code, None
         registration = Registration(section=section, user=user, source=source)
         registration.auto_resubscribe = auto_resub
         registration.close_notification = close_notification

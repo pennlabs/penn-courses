@@ -155,8 +155,9 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     contain a "close_notification" field, to enable close notifications on the registration.
     Note that close notifications CANNOT be sent by text so you shouldn't allow the user to
     enable close notifications for any registration unless they have an email set in their
-    User Profile or have push notifications enabled.  If they do, then they simply won't
-    end up receiving close notifications by any medium.
+    User Profile or have push notifications enabled.  If you try to create a registration with
+    close_notification enabled and the user only has texts enabled, , a 406 will be returned
+    and the registration will not be created.
     Note that if you include the "id" field in the body of your POST request, and that id
     does not already exist, the id of the created registration will be set to the given value.
     However, if the given id does exist, the request will instead be treated as a PUT request for
@@ -182,6 +183,11 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     [`auto_resubscribe` and `close_notification`] (so if you include multiple
     parameters only the action associated with the highest priority parameter will be executed,
     except both auto_resubscribe and close_notification can be updated in the same request).
+    Note that close notifications CANNOT be sent by text so you shouldn't allow the user to
+    enable close notifications for any registration unless they have an email set in their
+    User Profile or have push notifications enabled.  If you try to update a registration to
+    enable close_notification and the user only has texts enabled, a 406 will be returned
+    and the registration will not be created.
     Note that a registration will send an alert when the section it is watching opens, if and only
     if it hasn't sent one before, it isn't cancelled, and it isn't deleted.  If a registration would
     send an alert when the section it is watching opens, we call it "active".  Registrations which
@@ -303,6 +309,15 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 },
                 status=status.HTTP_406_NOT_ACCEPTABLE,
             )
+        elif res == RegStatus.TEXT_CLOSE_NOTIFICATION:
+            return Response(
+                {
+                    "message": "You can only enable close notifications on a registration if the "
+                    "user enables some form of communication other than just texts (we don't "
+                    "send any close notifications by text)."
+                },
+                status=status.HTTP_406_NOT_ACCEPTABLE,
+            )
         else:
             return Response(
                 {"message": "There was an error on our end. Please try again!"},
@@ -396,6 +411,18 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 close_notification_changed = registration.close_notification != request.data.get(
                     "close_notification", registration.close_notification
                 )
+                if (
+                    request.data.get("close_notification", registration.close_notification)
+                    and not request.user.profile.email
+                    and not request.user.profile.push_notifications
+                ):
+                    return Response(
+                        {
+                            "detail": "You cannot enable close_notifications with only your phone "
+                            "number saved in your user profile."
+                        },
+                        status=status.HTTP_406_NOT_ACCEPTABLE,
+                    )
                 changed = auto_resubscribe_changed or close_notification_changed
                 registration.auto_resubscribe = request.data.get(
                     "auto_resubscribe", registration.auto_resubscribe

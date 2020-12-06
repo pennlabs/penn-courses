@@ -356,9 +356,9 @@ custom_tag_descriptions = {
         need to frantically open up their laptop and check PennInTouch to see if the class is still
         open just to find that it is already closed.  To avoid spam and wasted money, we DO NOT
         send any close notifications over text. So the user must have an email saved or use
-        push notifications to receive a close notification. Note that the close_notification
-        setting carries over across resubscriptions, but can be disabled at any time using
-        Update Registration.
+        push notifications in order to be able to enable close notifications on a registration.
+        Note that the close_notification setting carries over across resubscriptions, but can be
+        disabled at any time using Update Registration.
 
         After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a `user` field
         pointing to the user's Penn Labs Accounts User object.  In other words, we implemented a
