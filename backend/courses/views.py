@@ -62,7 +62,7 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = MiniSectionSerializer
-    queryset = Section.with_reviews.all()
+    queryset = Section.with_reviews.all().exclude(activity="")
     filter_backends = [TypedSectionSearchBackend]
     search_fields = ["^full_code"]
 
