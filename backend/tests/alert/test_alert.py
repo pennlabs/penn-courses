@@ -196,7 +196,7 @@ class SendAlertTestCase(TestCase):
             r.resubscribe()
         r = Registration.objects.get(id=self.r.id)
         self.assertTrue(mock_email.called)
-        self.assertEquals(not push_notification, mock_text.called)
+        self.assertFalse(mock_text.called)
         self.assertEquals(push_notification, mock_push_notification.called)
         self.assertTrue(r.notification_sent)
         self.assertIsNotNone(r.notification_sent_at)
@@ -461,6 +461,19 @@ class RegisterTestCase(TestCase):
 
     def test_nocontact(self):
         res, norm, _ = register_for_course(self.sections[0].full_code, None, None)
+        self.assertEqual(RegStatus.NO_CONTACT_INFO, res)
+        self.assertEqual(0, len(Registration.objects.all()))
+
+    def test_nocontact_new(self):
+        user = User.objects.create_user(username="new_jacob", password="top_secret")
+        user.save()
+        new_client = APIClient()
+        new_client.login(username="new_jacob", password="top_secret")
+        user = User.objects.get(username="new_jacob")
+        self.assertIsNone(user.profile.email)
+        self.assertIsNone(user.profile.phone)
+        self.assertFalse(user.profile.push_notifications)
+        res, norm, _ = register_for_course(self.sections[0].full_code, user=user)
         self.assertEqual(RegStatus.NO_CONTACT_INFO, res)
         self.assertEqual(0, len(Registration.objects.all()))
 
@@ -1382,6 +1395,7 @@ class AlertRegistrationTestCase(TestCase):
         self.user.profile.email = "j@gmail.com"
         self.user.profile.phone = "+11234567890"
         self.user.profile.save()
+        self.user = User.objects.get(username="jacob")
         self.client = APIClient()
         self.client.login(username="jacob", password="top_secret")
         _, self.cis120 = create_mock_data("CIS-120-001", TEST_SEMESTER)
@@ -1878,6 +1892,25 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(409, response.status_code)
         self.assertEqual(num, Registration.objects.count())
 
+    def test_register_no_contact(self):
+        self.user.profile.email = None
+        self.user.profile.phone = None
+        self.user.profile.push_notifications = False
+        self.user.save()
+        response = self.client.post(
+            reverse("registrations-list"),
+            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(406, response.status_code)
+        response = self.client.post(
+            reverse("registrations-list"),
+            json.dumps({"section": "CIS-121-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(406, response.status_code)
+        self.assertEqual(1, Registration.objects.count())
+
     def push_notification_simple_test(self):
         new_user = User.objects.create_user(username="new_jacob", password="top_secret")
         new_user.save()
@@ -1887,6 +1920,7 @@ class AlertRegistrationTestCase(TestCase):
         new_user.profile.save()
         new_client = APIClient()
         new_client.login(username="new_jacob", password="top_secret")
+        new_user = User.objects.get(username="new_jacob")
         create_mock_data("CIS-192-201", TEST_SEMESTER)
         response = new_client.post(
             reverse("registrations-list"),
@@ -2490,6 +2524,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertTrue(
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
         )
+        contact_infos[0]["number"] = None
         self.simulate_alert(
             self.cis160, 3, close_notification=True, should_send=True, contact_infos=contact_infos
         )
@@ -2506,6 +2541,21 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_close_notification_creation_helper_push(self):
         self.close_notification_creation_helper(True)
+
+    def test_close_notification_create_only_text(self):
+        self.user.profile.push_notifications = False
+        self.user.profile.email = None
+        self.user.profile.save()
+        self.user.save()
+        response = self.client.post(
+            reverse("registrations-list"),
+            json.dumps(
+                {"section": "CIS-160-001", "auto_resubscribe": True, "close_notification": True}
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 406)
+        self.assertEqual(1, Registration.objects.count())
 
     def close_notification_update_helper(self, put, auto_resub):
         """
@@ -2537,6 +2587,20 @@ class AlertRegistrationTestCase(TestCase):
     @unpack
     def test_close_notification_update(self, value, result):
         self.close_notification_update_helper(*value)
+
+    def test_close_notification_update_only_text(self):
+        self.user.profile.push_notifications = False
+        self.user.profile.email = None
+        self.user.profile.save()
+        self.user.save()
+        first_id = self.registration_cis120.id
+        response = self.client.put(
+            reverse("registrations-detail", args=[first_id]),
+            json.dumps({"auto_resubscribe": True, "close_notification": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 406)
+        self.assertEqual(1, Registration.objects.count())
 
     def close_notification_resub_helper(self, put, auto_resub):
         """

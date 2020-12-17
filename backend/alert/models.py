@@ -19,6 +19,7 @@ class RegStatus(Enum):
     COURSE_OPEN = auto()
     COURSE_NOT_FOUND = auto()
     NO_CONTACT_INFO = auto()
+    TEXT_CLOSE_NOTIFICATION = auto()
 
 
 SOURCE_PCA = "PCA"
@@ -29,6 +30,74 @@ class Registration(models.Model):
     """
     A registration for sending an alert to the user upon the opening of a course
     during open registration.
+
+    In addition to sending alerts for when a class opens up, we have also implemented
+    an optionally user-enabled feature called "close notifications".
+    If a registration has close_notification enabled, it will act normally when the watched
+    section opens up for the first time (triggering an alert to be sent). However, once the
+    watched section closes, it will send another alert (the email alert will be in the same
+    chain as the original alert) to let the user know that the section has closed. Thus,
+    if a user sees a PCA notification on their phone during a class for instance, they won't
+    need to frantically open up their laptop and check PennInTouch to see if the class is still
+    open just to find that it is already closed.  To avoid spam and wasted money, we DO NOT
+    send any close notifications over text. So the user must have an email saved or use
+    push notifications in order to be able to enable close notifications on a registration.
+    Note that the close_notification setting carries over across resubscriptions, but can be
+    disabled at any time using a PUT request to /api/alert/registrations/{id}/.
+
+    An important concept for this Model is that of the "resubscribe chain".  A resubscribe chain
+    is a chain of Registration objects where the tail of the chain was the original Registration
+    created through a POST request to /api/alert/registrations/ specifying a new section (one
+    that the user wasn't already registered to receive alerts for).  Each next element in the chain
+    is a Registration created by resubscribing to the previous Registration (once that
+    Registration had triggered an alert to be sent), either manually by the user or
+    automatically if auto_resubscribe was set to true.  Then, it follows that the head of the
+    resubscribe chain is the most relevant Registration for that user/section combo; if any
+    of the registrations in the chain are active, it would be the head.  And if the head
+    is active, none of the other registrations in the chain are active.  That said, a non-head
+    Registration may be waiting to send a close notification (if the watched section hasn't closed
+    yet).
+
+    Note that a Registration will send an alert when the section it is watching opens, if and
+    only if it hasn't sent one before, it isn't cancelled, and it isn't deleted.  If a
+    registration would send an alert when the section it is watching opens, we call it
+    "active".  This rule is encoded in the is_active property.  You can also filter
+    for active registrations by unpacking the static is_active_filter() method which returns a
+    dictionary (you cannot filter on a property). A Registration will send a close notification
+    when the section it is watching closes, if and only if it has already sent an open alert,
+    the user has enabled close notifications for that section, the Registration hasn't sent a
+    close_notification before, is not cancelled, and it is not deleted.  If a registration would
+    send a close notification when the section it is watching closes, we call it "waiting for
+    close".  This rule is encoded in the is_waiting_for_close property.  You can also filter
+    for such registrations by unpacking the static is_waiting_for_close_filter() method which
+    returns a dictionary (you cannot filter on a property).
+
+    After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a user field
+    pointing to the user's Penn Labs Accounts User object.  In other words, we implemented a
+    user/accounts system for PCA which required that
+    people log in to use the website. Thus, the contact information used in PCA alerts
+    is taken from the user's User Profile.  You can edit this contact information using
+    a PUT or PATCH request to /accounts/me/.  If push_notifications is set to True, then
+    a push notification will be sent when the user is alerted, but no text notifications will
+    be sent (as that would be a redundant alert to the user's phone). Otherwise, an email
+    or a text alert is sent if and only if contact information for that medium exists in
+    the user's profile.
+
+    Alerts are triggered by webhook requests from the UPenn OpenData API
+    (https://esb.isc-seo.upenn.edu/8091/documentation/#coursestatuswebhookservice), and accepted
+    by alert/views.py/accept_webhook. Then if the SEND_FROM_WEBHOOK Option is set to True,
+    the semester of the webhook request equals courses.util.get_current_semester(), and the new
+    course status is either "O" (meaning open) or "C" (meaning closed), the method calls
+    alert/views.py/alert_for_course for the relevant course.  That method then calls
+    alert/tasks.py/send_course_alerts asynchronously using the Celery delay function.
+    This allows for alerts to be queued without holding up the response.  The send_course_alerts
+    function then loops through all registrations for the given section and calls
+    alert/tasks.py/send_alert asynchronously (again using Celery delay) which then calls the
+    Registration's alert method. In each Registration's alert method, a subclass of the
+    alert/alerts.py/Alert class is instantiated for each of the appropriate notification
+    channels (text, email, and/or push notification based on the User's settings).  The
+    notification is then sent with the send_alert method on each Alert object.  The send_alert
+    method calls other functions in alert/alerts.py to actually send out the alerts.
     """
 
     created_at = models.DateTimeField(
@@ -368,7 +437,8 @@ class Registration(models.Model):
                 self.user and self.user.profile and self.user.profile.push_notifications
             )  # specifies whether we should use a push notification instead of a text
             text_result = False
-            if not push_notification:
+            if not push_notification and not close_notification:
+                # never send close notifications by text
                 text_result = Text(self).send_alert(close_notification=close_notification)
                 if text_result is None:
                     logging.debug(
@@ -573,8 +643,15 @@ def register_for_course(
     Penn Course Notify, until Notify's rejection of PCA's help and eventual downfall
     (coincidence? we think not...). It still may be used in the future so we are
     keeping the code.
+    Returns RegStatus.<STATUS>, section.full_code, registration
+    or None for the second two when appropriate
     """
-    if not email_address and not phone and not user:
+    if (not user and not email_address and not phone) or (
+        user
+        and not user.profile.email
+        and not user.profile.phone
+        and not user.profile.push_notifications
+    ):
         return RegStatus.NO_CONTACT_INFO, None, None
     try:
         course, section = get_course_and_section(course_code, get_current_semester())
@@ -602,6 +679,8 @@ def register_for_course(
             section=section, user=user, **Registration.is_active_filter()
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
+        if close_notification and not user.profile.email and not user.profile.push_notifications:
+            return RegStatus.TEXT_CLOSE_NOTIFICATION, section.full_code, None
         registration = Registration(section=section, user=user, source=source)
         registration.auto_resubscribe = auto_resub
         registration.close_notification = close_notification

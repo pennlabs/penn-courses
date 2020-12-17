@@ -2,7 +2,7 @@ export enum School {
     SEAS = "SEAS",
     WHARTON = "WH",
     COLLEGE = "SAS",
-    NURSING = "NUR",
+    NURSING = "NURS",
 }
 
 export enum Status {
@@ -24,6 +24,19 @@ export enum Activity {
     STUDIO = "STU",
     UNDEFINED = "***",
 }
+
+export interface ActivityFilter {
+    lab: boolean;
+    rec: boolean;
+    sem: boolean;
+    stu: boolean;
+}
+
+export interface CUFilter {
+    0.5: boolean;
+    1.0: boolean;
+    1.5: boolean;
+} 
 
 export enum Day {
     M = "M",
@@ -47,22 +60,30 @@ export enum Color {
     BLACK = "#000",
 }
 
+export enum SortMode {
+    NAME = "Name",
+    QUALITY = "Quality",
+    DIFFICULTY = "Difficulty",
+    GOOD_AND_EASY = "Good & Easy",
+}
+
 export interface Section {
     id: string;
     status: Status;
     activity: Activity;
     credits: number;
     semester: string;
-    meetings: Meeting[];
+    meetings?: Meeting[];
     instructors: string[];
-    course_quality: number;
-    instructor_quality: number;
-    difficulty: number;
-    work_required: number;
+    course_quality?: number;
+    instructor_quality?: number;
+    difficulty?: number;
+    work_required?: number;
     associated_sections: Section[];
 }
 
 export interface Meeting {
+    id: string;
     day: string;
     start: number;
     end: number;
@@ -83,6 +104,8 @@ export interface MeetingBlock {
         width: string;
         left: string;
     };
+    // used for finding course conflicts
+    id?: number;
 }
 
 export interface Profile {
@@ -114,6 +137,12 @@ export interface Course {
     num_sections: number;
 }
 
+export interface CartCourse {
+    section: Section;
+    checked: boolean;
+    overlaps: boolean;
+}
+
 export interface Schedule {
     id: string;
     sections: Section[];
@@ -130,9 +159,19 @@ export interface User {
     profile: Profile;
 }
 
-export enum SortMode {
-    NAME = "Name",
-    QUALITY = "Quality",
-    DIFFICULTY = "Difficulty",
-    GOOD_AND_EASY = "Good & Easy",
+export interface FilterData {
+    searchString: string;
+    searchType: string;
+    selectedReq: { [K in string]: boolean };
+    difficulty: [number, number];
+    course_quality: [number, number]; // upper and lower bound for course_quality
+    instructor_quality: [number, number];
+    activity: ActivityFilter;
+    cu: CUFilter;
+}
+export interface FilterType {
+    _:
+        | number[]
+        | { "1": number; "0.5": number; "1.5": number }
+        | { LAB: number; REC: number; SEM: number; STU: number };     
 }

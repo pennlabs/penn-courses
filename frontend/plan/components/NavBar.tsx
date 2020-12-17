@@ -1,7 +1,11 @@
 import React from "react";
-import PropTypes from "prop-types";
+import { CSSProperties } from "styled-components";
 
-export default function NavBar({ style }) {
+interface NavBarProps {
+    style: CSSProperties;
+}
+
+export default function NavBar({ style }: NavBarProps) {
     return (
         <nav
             className="navbar"
@@ -18,7 +22,3 @@ export default function NavBar({ style }) {
         </nav>
     );
 }
-
-NavBar.propTypes = {
-    style: PropTypes.objectOf(PropTypes.string),
-};

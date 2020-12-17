@@ -62,7 +62,7 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = MiniSectionSerializer
-    queryset = Section.with_reviews.all()
+    queryset = Section.with_reviews.all().exclude(activity="")
     filter_backends = [TypedSectionSearchBackend]
     search_fields = ["^full_code"]
 
@@ -116,7 +116,6 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
             Prefetch(
                 "sections",
                 Section.with_reviews.all()
-                .filter(meetings__isnull=False)
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct(),
@@ -151,7 +150,6 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
             Prefetch(
                 "sections",
                 Section.with_reviews.all()
-                .filter(meetings__isnull=False)
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct(),

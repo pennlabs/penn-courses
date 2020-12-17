@@ -9,6 +9,8 @@ from django.template import loader
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 
+from PennCourses.settings.production import MOBILE_NOTIFICATION_SECRET
+
 
 logger = logging.getLogger(__name__)
 
@@ -108,13 +110,16 @@ class Email(Alert):
 
 class Text(Alert):
     def __init__(self, reg):
-        super().__init__("alert/text_alert.txt", reg, close_template="alert/text_alert_close.txt")
+        super().__init__("alert/text_alert.txt", reg)
 
     def send_alert(self, close_notification=False):
         """
         Returns False if notification was not sent intentionally,
         and None if notification was attempted to be sent but an error occurred.
         """
+        if close_notification:
+            # Do not send close notifications by text
+            return False
         if self.registration.user is not None and self.registration.user.profile.push_notifications:
             # Do not send text if push_notifications is enabled
             return False
@@ -125,13 +130,7 @@ class Text(Alert):
         else:
             return False
 
-        if close_notification:
-            if not self.close_text:
-                # This should be unreachable
-                return None
-            alert_text = self.close_text
-        else:
-            alert_text = self.text
+        alert_text = self.text
         return send_text(phone_number, alert_text)
 
 
@@ -147,7 +146,7 @@ class PushNotification(Alert):
         if self.registration.user is not None and self.registration.user.profile.push_notifications:
             # Only send push notification if push_notifications is enabled
             pennkey = self.registration.user.username
-            bearer_token = str(10101)
+            bearer_token = MOBILE_NOTIFICATION_SECRET
             if close_notification:
                 if not self.close_text:
                     # This should be unreachable
