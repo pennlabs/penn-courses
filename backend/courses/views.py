@@ -118,7 +118,8 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
                 Section.with_reviews.all()
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
-                .distinct(),
+                .distinct()
+                .prefetch_related("course", "meetings__room"),
             )
         )
         queryset = self.filter_by_semester(queryset)
@@ -152,7 +153,10 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 Section.with_reviews.all()
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
-                .distinct(),
+                .distinct()
+                .prefetch_related(
+                    "course", "meetings", "associated_sections", "meetings__room", "instructors"
+                ),
             )
         )
         queryset = self.filter_by_semester(queryset)

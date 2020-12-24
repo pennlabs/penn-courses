@@ -5,25 +5,27 @@ import { Link } from "react-router-dom";
 import { CourseDetails, Popover, PopoverTitle } from "../common";
 import {
   convertInstructorName,
-  convertSemesterToInt
+  convertSemesterToInt,
+  toNormalizedSemester,
 } from "../../utils/helpers";
+import { act } from "react-dom/test-utils";
 
-const getSyllabusData = courses =>
+const getSyllabusData = (courses) =>
   Object.values(courses)
-    .map(course =>
+    .map((course) =>
       Object.values(course)
         .filter(({ syllabus_url: url }) => url)
         .map(
           ({
             syllabus_url: url,
             section_id_normalized: sectionId,
-            instructors = []
+            instructors = [],
           }) => {
             const instructedBy =
-              instructors.map(c => c.name).join(", ") || "Unknown";
+              instructors.map((c) => c.name).join(", ") || "Unknown";
             return {
               url,
-              name: `${sectionId} - ${instructedBy}`
+              name: `${sectionId} - ${instructedBy}`,
             };
           }
         )
@@ -31,143 +33,141 @@ const getSyllabusData = courses =>
     .flat()
     .sort((a, b) => a.name.localeCompare(b.name));
 
-const getPrereqData = courses => {
+const getPrereqData = (courses) => {
   const prereqString = Object.values(courses)
-    .map(a =>
+    .map((a) =>
       Object.values(a)
         .map(({ prerequisite_notes: notes = [] }) => notes.join(" "))
-        .filter(b => b)
+        .filter((b) => b)
     )
     .flat()
     .join(" ");
   const prereqs = [
-    ...new Set(prereqString.match(/[A-Z]{2,4}[ -]\d{3}/g))
-  ].map(a => a.replace(" ", "-"));
+    ...new Set(prereqString.match(/[A-Z]{2,4}[ -]\d{3}/g)),
+  ].map((a) => a.replace(" ", "-"));
   return prereqs;
 };
 
-const Tags = ({
-  data = {},
-  courses = {},
-  credits,
-  existingInstructors,
-  instructors,
-  instructor_links: links,
-  term
-}) => {
+const activityMap = {
+  REC: "Recitation",
+  LEC: "Lecture",
+  SEM: "Seminar",
+  LAB: "Laboratory",
+};
+const TagsNotOffered = ({ data }) => {
   const { instructors: instructorData = {}, code = "" } = data;
   const courseName = code.replace("-", " ");
-  const [syllabi, prereqs] = useMemo(
-    () => [getSyllabusData(courses), getPrereqData(courses)],
-    [courses]
-  );
-  const newInstructors = useMemo(() => {
-    const existingFilter = existingInstructors.map(convertInstructorName);
-    const newInstructors = {};
-    if (instructors) {
-      instructors.forEach(instructor => {
-        const key = convertInstructorName(instructor);
-        newInstructors[key] = instructor;
-      });
-    }
-    existingFilter.forEach(i => {
-      delete newInstructors[i];
-    });
-    return newInstructors;
-  }, [existingInstructors, instructors]);
-
-  const isTaught = Boolean(Object.values(courses).length);
   const mostRecent = useMemo(() => {
-    if (!isTaught) {
-      const semesterTaught = Math.max(
-        ...Object.values(instructorData)
-          .map(a => a.most_recent_semester)
-          .filter(a => typeof a !== "undefined")
-          .map(convertSemesterToInt)
-      );
-      if (semesterTaught > 0) {
-        return `${
-          ["Spring", "Summer", "Fall"][semesterTaught % 3]
-        } ${Math.floor(semesterTaught / 3)}`;
-      }
+    const semesterTaught = Math.max(
+      ...Object.values(instructorData)
+        .map((a) => a.most_recent_semester)
+        .filter((a) => typeof a !== "undefined")
+        .map(convertSemesterToInt)
+    );
+    if (semesterTaught > 0) {
+      return `${["Spring", "Summer", "Fall"][semesterTaught % 3]} ${Math.floor(
+        semesterTaught / 3
+      )}`;
     }
-    return null;
-  }, [isTaught, instructorData]);
+  }, [instructorData]);
 
   return (
     <div>
       <div id="live">
-        {isTaught ? (
-          <PopoverTitle
-            title={
-              <span>
-                {courseName} will be taught in <b>{term}</b>.
-              </span>
-            }
-          >
-            <span className="badge badge-info">{term}</span>
-          </PopoverTitle>
-        ) : (
-          <PopoverTitle
-            title={
-              <span>
-                {courseName} was last taught in <b>{mostRecent}</b>.
-              </span>
-            }
-          >
-            <span className="badge badge-secondary">{mostRecent}</span>
-          </PopoverTitle>
-        )}
-        {isTaught && (
-          <PopoverTitle
-            title={
-              <span>
-                {courseName} is <b>{credits}</b> credit unit
-                {credits === 1 ? "" : "s"}
-              </span>
-            }
-          >
-            <span className="badge badge-primary">{credits} CU</span>
-          </PopoverTitle>
-        )}
-        {Object.values(courses).map((info, i) => {
-          if (!info.length) {
-            return null;
+        <PopoverTitle
+          title={
+            <span>
+              {courseName} was last taught in <b>{mostRecent}</b>.
+            </span>
           }
-          const [{ activity_description: desc }] = info;
-          const open = info.filter(a => !a.is_closed && !a.is_cancelled);
+        >
+          <span className="badge badge-secondary">{mostRecent}</span>
+        </PopoverTitle>
+      </div>
+    </div>
+  );
+};
+const TagsWhenOffered = ({
+  liveData = null,
+  data = {},
+  existingInstructors,
+}) => {
+  const { instructors: instructorData = {}, code = "" } = data;
+  const courseName = code.replace("-", " ");
+  // TODO: Get syllabus data
+  // const [syllabi, prereqs] = useMemo(
+  //   () => [getSyllabusData(courses), getPrereqData(courses)],
+  //   [courses]
+  // );
+  const { sections, semester } = liveData;
+  const term = toNormalizedSemester(semester);
+  const credits = sections
+    .map(({ credits }) => credits)
+    .reduce((a, b) => Math.max(a, b));
+  const activityTypes = [...new Set(sections.map(({ activity }) => activity))];
+  const sectionsByActivity = {};
+  activityTypes.forEach((activity) => {
+    sectionsByActivity[activity] = sections.filter(
+      ({ activity: sectionActivity }) => activity === sectionActivity
+    );
+  });
+  const oldInstructors = Object.values(instructorData).map(({ name }) => name);
+  const newInstructors = sections
+    .flatMap(({ instructors }) => instructors)
+    .filter((inst) => oldInstructors.indexOf(inst) === -1);
+
+  const syllabi = [];
+  const courses = [];
+  const prereqs = [];
+  const links = [];
+
+  return (
+    <div>
+      <div id="live">
+        <PopoverTitle
+          title={
+            <span>
+              {courseName} will be taught in <b>{term}</b>.
+            </span>
+          }
+        >
+          <span className="badge badge-info">{term}</span>
+        </PopoverTitle>
+        <PopoverTitle
+          title={
+            <span>
+              {courseName} is <b>{credits}</b> credit unit
+              {credits === 1 ? "" : "s"}
+            </span>
+          }
+        >
+          <span className="badge badge-primary">{credits} CU</span>
+        </PopoverTitle>
+        {Object.entries(sectionsByActivity).map(([activity, sections], i) => {
+          const openSections = sections.filter(({ status }) => status === "O");
           return (
             <PopoverTitle
               key={i}
               title={
                 <span>
-                  <b>{open.length}</b> out of <b>{info.length}</b>{" "}
-                  {desc.toLowerCase()} sections are open for {courseName}.
+                  <b>{openSections.length}</b> out of <b>{sections.length}</b>{" "}
+                  sections are open for {courseName}.
                   <ul style={{ marginBottom: 0 }}>
-                    {info
-                      .sort((x, y) =>
-                        x.section_id_normalized.localeCompare(
-                          y.section_id_normalized
-                        )
-                      )
-                      .map(data => (
-                        <CourseDetails
-                          key={data.section_id_normalized}
-                          data={data}
-                        />
-                      ))}
+                    {sections.map((data) => (
+                      <CourseDetails key={data.id} data={data} />
+                    ))}
                   </ul>
                 </span>
               }
             >
               <span
                 className={`badge ${
-                  open.length ? "badge-success" : "badge-danger"
+                  openSections.length ? "badge-success" : "badge-danger"
                 }`}
               >
-                {desc}
+                {activityMap[activity] || ""}
                 <span className="count">
-                  {open.length}/{info.length}
+                  {openSections.length}/{sections.length}
                 </span>
               </span>
             </PopoverTitle>
@@ -198,25 +198,23 @@ const Tags = ({
             i > 0 && ", ",
             <span key={i}>
               <Link to={`/course/${a}`}>{a.replace("-", " ")}</Link>
-            </span>
+            </span>,
           ])}
         </div>
       )}
-      {Boolean(Object.keys(newInstructors).length) && (
+      {Boolean(newInstructors.length) && (
         <div>
-          New Instructors:
-          {Object.values(newInstructors)
-            .sort()
-            .map((item, i) => (
-              <span key={i}>
-                {i > 0 && ", "}
-                {links[item] ? (
-                  <Link to={`/instructor/${links[item]}`}>{item}</Link>
-                ) : (
-                  item
-                )}
-              </span>
-            ))}
+          New Instructors:{" "}
+          {newInstructors.sort().map((item, i) => (
+            <span key={i}>
+              {i > 0 && ", "}
+              {links[item] ? ( // TODO: get the ID for the link to work
+                <Link to={`/instructor/${links[item]}`}>{item}</Link>
+              ) : (
+                item
+              )}
+            </span>
+          ))}
         </div>
       )}
     </div>
@@ -233,7 +231,7 @@ export const CourseHeader = ({
   handleAdd,
   handleRemove,
   liveData,
-  data
+  data,
 }) => (
   <div className="course">
     <div className="title">
@@ -272,7 +270,7 @@ export const CourseHeader = ({
                     .sort((a, b) =>
                       instructors[a].name.localeCompare(instructors[b].name)
                     )
-                    .map(key => (
+                    .map((key) => (
                       <li key={key}>
                         <button onClick={() => handleAdd(key)}>
                           {instructors[key].name}
@@ -302,24 +300,26 @@ export const CourseHeader = ({
           i > 0 && ", ",
           <Link key={cls} to={`/course/${cls}`}>
             {cls}
-          </Link>
+          </Link>,
         ])}
       </div>
     )}
     <p className="subtitle">{name}</p>
     {notes &&
-      notes.map(note => (
+      notes.map((note) => (
         <div key={note} className="note">
           <i className="fa fa-thumbtack" /> {note}
         </div>
       ))}
-    {liveData && (
-      <Tags
-        {...liveData}
+    {liveData && liveData.sections ? (
+      <TagsWhenOffered
+        liveData={liveData}
         data={data}
-        existingInstructors={Object.values(instructors).map(a => a.name)}
+        existingInstructors={Object.values(instructors).map((a) => a.name)}
       />
-    )}
+    ) : liveData && !liveData.sections ? (
+      <TagsNotOffered data={data} />
+    ) : null}
   </div>
 );
 

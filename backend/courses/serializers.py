@@ -21,6 +21,8 @@ class MeetingSerializer(serializers.ModelSerializer):
 
 
 class SectionIdSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(source="full_code")
+
     class Meta:
         model = Section
         fields = [
@@ -271,6 +273,7 @@ class CourseDetailSerializer(CourseListSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
+            "semester",
         ] + ["crosslistings", "requirements", "sections",]
         read_only_fields = fields
 
