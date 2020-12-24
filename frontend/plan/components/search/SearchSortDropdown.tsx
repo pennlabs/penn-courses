@@ -1,9 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { changeSortType } from "../../actions";
 
-const DropdownButton = ({ isActive, text, onClick, makeActive }) => (
+interface DropDownButtonProps {
+    isActive: boolean;
+    text: string;
+    onClick: () => void;
+    makeActive: () => void;
+}
+const DropdownButton = ({
+    isActive,
+    text,
+    onClick,
+    makeActive,
+}: DropDownButtonProps) => (
     <div
         role="button"
         onClick={() => {
@@ -27,16 +38,18 @@ DropdownButton.propTypes = {
     makeActive: PropTypes.func,
 };
 
-const contents = ["Name", "Quality", "Difficulty", "Good & Easy"];
+type SortByType = "Name" | "Quality" | "Difficulty" | "Good & Easy";
+const contents: SortByType[] = ["Name", "Quality", "Difficulty", "Good & Easy"];
 
-const SearchSortDropdown = ({ updateSort }) => {
+const SearchSortDropdown = (obj: { updateSort: (s: SortByType) => void }) => {
     const [isActive, setIsActive] = useState(false);
     const [activeItem, setActiveItem] = useState(0);
-    const [ref, setRef] = useState(null);
+    const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const listener = (event) => {
-            if (ref && !ref.contains(event.target)) {
+        const listener = (event: MouseEvent) => {
+            // Cast is unavoidable https://github.com/Microsoft/TypeScript/issues/15394#issuecomment-297495746
+            if (ref.current && !ref.current.contains(event.target as Node)) {
                 setIsActive(false);
             }
         };
@@ -47,7 +60,7 @@ const SearchSortDropdown = ({ updateSort }) => {
     });
     return (
         <div
-            ref={(node) => setRef(node)}
+            ref={ref}
             className={`classic dropdown${isActive ? " is-active" : ""}`}
         >
             <span className="selected_name">Sort by</span>
@@ -64,7 +77,7 @@ const SearchSortDropdown = ({ updateSort }) => {
             </div>
             <div className="dropdown-menu" role="menu">
                 <div className="dropdown-content" style={{ width: "6rem" }}>
-                    {Array.from(contents.entries()).map(([index, sortType]) => (
+                    {contents.map((sortType, index) => (
                         <DropdownButton
                             key={index}
                             isActive={activeItem === index}
@@ -72,7 +85,7 @@ const SearchSortDropdown = ({ updateSort }) => {
                                 setActiveItem(index);
                                 setIsActive(false);
                             }}
-                            onClick={() => updateSort(sortType)}
+                            onClick={() => obj.updateSort(sortType)}
                             text={sortType}
                         />
                     ))}
@@ -87,8 +100,11 @@ SearchSortDropdown.propTypes = {
 };
 
 const mapStateToProps = () => ({});
+//@ts-ignore
 const mapDispatchToProps = (dispatch) => ({
+    //@ts-ignore
     updateSort: (sortMode) => dispatch(changeSortType(sortMode)),
 });
 
+//@ts-ignore
 export default connect(mapStateToProps, mapDispatchToProps)(SearchSortDropdown);

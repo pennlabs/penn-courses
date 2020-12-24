@@ -1,6 +1,15 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
+import { FilterData } from "../../../plan/types"
 
+interface SearchFieldProps {
+    startSearch: (filterData: FilterData) => void; 
+    updateSearchText: (txt: string) => void;
+    filterData: FilterData;
+    isDisabled: boolean;
+    setTab: (tabNum: number) => void;
+    mobileView: boolean;
+}
 export function SearchField({
     startSearch,
     updateSearchText,
@@ -8,10 +17,10 @@ export function SearchField({
     isDisabled,
     setTab,
     mobileView,
-}) {
+} : SearchFieldProps) {
     const [searchValue, setSearchValue] = useState("");
 
-    const handleChangeVal = (event) => {
+    const handleChangeVal = (event: React.ChangeEvent<HTMLInputElement>) => {
         const searchText = event.target.value;
         updateSearchText(searchText);
         startSearch({
@@ -35,7 +44,7 @@ export function SearchField({
                 className="input is-small is-rounded"
                 autoComplete="off"
                 placeholder="Search"
-                disabled={isDisabled ? "disabled" : false}
+                disabled={isDisabled}
             />
             <span className="icon is-small is-left">
                 <i className="fas fa-search" />

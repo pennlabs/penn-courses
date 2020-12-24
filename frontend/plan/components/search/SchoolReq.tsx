@@ -1,5 +1,16 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
+import { FilterData, School, Requirement } from "../../types";
+
+interface SchoolReqProps {
+    startSearch: (searchObj: object) => void;
+    filterData: FilterData;
+    schoolReq: { [K in School]: Requirement[] };
+    addSchoolReq: (s: string) => void;
+    remSchoolReq: (s: string) => void;
+}
+
+type SchoolDisplay = "College" | "Engineering" | "Nursing" | "Wharton";
 
 export function SchoolReq({
     startSearch,
@@ -7,18 +18,26 @@ export function SchoolReq({
     schoolReq,
     addSchoolReq,
     remSchoolReq,
-}) {
-    const schools = ["College", "Engineering", "Nursing", "Wharton"];
-    const [selSchool, setSelSchool] = useState("College");
+}: SchoolReqProps) {
+    const schools: SchoolDisplay[] = [
+        "College",
+        "Engineering",
+        "Nursing",
+        "Wharton",
+    ];
+    const [selSchool, setSelSchool] = useState<SchoolDisplay>("College");
 
-    const schoolCode = new Map();
-    schoolCode.set("College", "SAS");
-    schoolCode.set("Engineering", "SEAS");
-    schoolCode.set("Wharton", "WH");
-    schoolCode.set("Nursing", "NURS");
+    const schoolCode: { [K in SchoolDisplay]: School } = {
+        College: School.COLLEGE,
+        Engineering: School.SEAS,
+        Wharton: School.WHARTON,
+        Nursing: School.NURSING,
+    };
 
-    const schoolHandleChange = (event) => {
-        setSelSchool(event.target.value);
+    const schoolHandleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        // Cast is sound because the value of an input comes directly from
+        // the "schools" variable
+        setSelSchool(event.target.value as SchoolDisplay);
     };
 
     return (
@@ -59,20 +78,19 @@ export function SchoolReq({
                     {selSchool === "Nursing" && (
                         <p> Nursing requirements are coming soon!</p>
                     )}
-                    {schoolReq[schoolCode.get(selSchool)].map((req) => (
+                    {schoolReq[schoolCode[selSchool]].map((req) => (
                         <li key={req.id}>
                             <input
                                 className="is-checkradio is-small"
                                 id={req.id}
                                 type="checkbox"
                                 value={req.id}
-                                checked={filterData.selectedReq[req.id] === 1}
+                                checked={filterData.selectedReq[req.id]}
                                 onChange={() => {
-                                    const toggleState =
-                                        filterData.selectedReq[req.id] === 1
-                                            ? 0
-                                            : 1;
-                                    if (filterData.selectedReq[req.id] === 1) {
+                                    const toggleState = !filterData.selectedReq[
+                                        req.id
+                                    ];
+                                    if (filterData.selectedReq[req.id]) {
                                         remSchoolReq(req.id);
                                     } else {
                                         addSchoolReq(req.id);

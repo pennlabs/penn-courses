@@ -278,7 +278,7 @@ class CourseDetailSerializer(CourseListSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ["email", "phone"]
+        fields = ["email", "phone", "push_notifications"]
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -292,7 +292,7 @@ class UserSerializer(serializers.ModelSerializer):
         for key in ["first_name", "last_name"]:
             if key in validated_data:
                 setattr(instance, key, validated_data[key])
-        for key in ["phone", "email"]:
+        for key in ["phone", "email", "push_notifications"]:
             if key in prof_data:
                 setattr(prof, key, prof_data[key])
         prof.save()

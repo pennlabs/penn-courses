@@ -25,15 +25,15 @@ export const initialState = {
         instructor_quality: [0, 4],
         time: null,
         activity: {
-            LAB: 0,
-            REC: 0,
-            SEM: 0,
-            STU: 0,
+            LAB: false,
+            REC: false,
+            SEM: false,
+            STU: false,
         },
         cu: {
-            0.5: 0,
-            1: 0,
-            1.5: 0,
+            0.5: false, // TODO: make these booleans instead of ints
+            1: false,
+            1.5: false,
         },
     },
     defaultReqs: null,

@@ -1,6 +1,15 @@
-import React, { useState } from "react";
-import PropTypes from "prop-types";
-import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
+import React, { ReactElement, useState } from "react";
+import { useOnClickOutside } from "../../shared-components/src/useOnClickOutside";
+
+import { FilterType } from "../types";
+
+interface DropdownButtonProps {
+    title: string;
+    children: ReactElement;
+    filterData: FilterType;
+    defaultFilter: FilterType;
+    clearFilter: () => void;
+}
 
 export function DropdownButton({
     title,
@@ -8,7 +17,7 @@ export function DropdownButton({
     filterData,
     defaultFilter,
     clearFilter,
-}) {
+}: DropdownButtonProps) {
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
@@ -21,7 +30,10 @@ export function DropdownButton({
     const ref = useOnClickOutside(toggleButton, !isActive);
 
     return (
-        <div className={`dropdown ${isActive ? "is-active" : ""}`} ref={ref}>
+        <div
+            className={`dropdown ${isActive ? "is-active" : ""}`}
+            ref={ref as React.RefObject<HTMLDivElement>}
+        >
             <div className="dropdown-trigger">
                 <button
                     className={`button is-rounded
@@ -67,7 +79,7 @@ export function DropdownButton({
                 <div className="dropdown-content">
                     {/* This injects the setIsActive method to allow children */}
                     {/* to change state of dropdown  */}
-                    {React.Children.map(children, (c) =>
+                    {React.Children.map(children, (c: ReactElement) =>
                         React.cloneElement(c, {
                             setIsActive,
                         })
@@ -77,11 +89,3 @@ export function DropdownButton({
         </div>
     );
 }
-
-DropdownButton.propTypes = {
-    title: PropTypes.string,
-    children: PropTypes.node,
-    filterData: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
-    defaultFilter: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
-    clearFilter: PropTypes.func,
-};
