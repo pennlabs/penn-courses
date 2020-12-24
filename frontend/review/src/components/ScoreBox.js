@@ -8,13 +8,13 @@ import {
   getColumnName,
   orderColumns,
   convertSemesterToInt,
-  toNormalizedSemester
+  toNormalizedSemester,
 } from "../utils/helpers";
 import {
   ColumnSelector,
   CourseDetails,
   PopoverTitle,
-  ScoreTable
+  ScoreTable,
 } from "./common";
 
 import "react-table/react-table.css";
@@ -38,7 +38,7 @@ class ScoreBox extends Component {
       currentInstructors: {},
       currentCourses: {},
       filterAll: "",
-      selected: null
+      selected: null,
     };
 
     this.updateLiveData = this.updateLiveData.bind(this);
@@ -55,67 +55,73 @@ class ScoreBox extends Component {
     const instructorTaught = {};
     const { data, liveData, type } = this.props;
     if (type === "course") {
-      Object.values(data.instructors).forEach(a => {
+      Object.values(data.instructors).forEach((a) => {
         const key = convertInstructorName(a.name);
         instructorTaught[key] = convertSemesterToInt(a.most_recent_semester);
       });
 
       if (liveData) {
         const instructorsThisSemester = {};
-        const { instructors = [], courses } = liveData;
-        instructors.forEach(a => {
+        // const { instructors = [], courses } = liveData;
+        const instructors = liveData.sections.flatMap(({ instructors }) =>
+          instructors.map(convertInstructorName)
+        );
+        instructors.forEach((inst) => {
+          const key = convertInstructorName(inst);
           const data = {
             open: 0,
             all: 0,
-            sections: []
+            sections: [],
           };
-          const key = convertInstructorName(a);
-          Object.values(courses).forEach(cat => {
-            const coursesByInstructor = cat
-              .filter(
-                ({ instructors }) =>
-                  instructors
-                    .map(b => convertInstructorName(b.name))
-                    .indexOf(key) !== -1
-              )
-              .filter(a => !a.is_cancelled);
-            data.open += coursesByInstructor.filter(a => !a.is_closed).length;
-            data.all += coursesByInstructor.length;
-            data.sections = data.sections.concat(
-              coursesByInstructor.map(a => a)
-            );
-          });
+          const coursesByInstructor = liveData.sections.filter(
+            ({ instructors }) =>
+              instructors.map(convertInstructorName).indexOf(key) !== -1
+          );
+          console.log("liveData sections", liveData.sections);
+          console.log("liveData by instructor", coursesByInstructor);
+          // .filter((section) => !a.is_cancelled);
+          data.open += coursesByInstructor.filter(
+            (section) => section.status === "O"
+          ).length;
+          data.all += coursesByInstructor.length;
+          data.sections = data.sections.concat(
+            coursesByInstructor.map((section) => section)
+          );
           instructorsThisSemester[key] = data;
           instructorTaught[key] = Infinity;
         });
+        console.log("instructors", instructorsThisSemester);
+        console.log("data", this.state.data);
         this.setState(({ data }) => ({
           currentInstructors: instructorTaught,
-          data: data.map(a => ({
+          data: data.map((a) => ({
             ...a,
-            star: instructorsThisSemester[convertInstructorName(a.name)]
-          }))
+            star: instructorsThisSemester[convertInstructorName(a.name)],
+          })),
         }));
       } else {
         this.setState(({ data }) => ({
           currentInstructors: instructorTaught,
-          data: data.map(a => ({ ...a, star: null }))
+          data: data.map((a) => ({ ...a, star: null })),
         }));
       }
-    } else if (type === "instructor") {
-      if (liveData) {
-        const courses = {};
-        Object.values(liveData.courses).forEach(a => {
-          const key = `${a.course_department}-${a.course_number}`;
-          if (!(key in courses)) {
-            courses[key] = [];
-          }
-          courses[key].push(a);
-        });
-        this.setState({
-          currentCourses: courses
-        });
-      }
     }
+    // TODO: semester data for instructors
+    // else if (type === "instructor") {
+    //   if (liveData) {
+    //     const courses = {};
+    //     Object.values(liveData.courses).forEach((a) => {
+    //       const key = `${a.course_department}-${a.course_number}`;
+    //       if (!(key in courses)) {
+    //         courses[key] = [];
+    //       }
+    //       courses[key].push(a);
+    //     });
+    //     this.setState({
+    //       currentCourses: courses,
+    //     });
+    //   }
+    // }
   }
 
   generateColumns() {
@@ -129,21 +135,21 @@ class ScoreBox extends Component {
     const EXTRA_KEYS = ["latest_semester", "num_semesters"];
     const SEM_SORT_KEY = "latest_semester";
 
-    const data = Object.keys(infoMap).map(key => {
+    const data = Object.keys(infoMap).map((key) => {
       const val = isCourse ? results.instructors[key] : results.courses[key];
       const output = {};
-      Object.keys(val.average_reviews).forEach(col => {
+      Object.keys(val.average_reviews).forEach((col) => {
         if (col === "rSemesterCalc" || col === "rSemesterCount") {
           return;
         }
         output[col] = {
           average: val.average_reviews[col]?.toFixed(2),
-          recent: val.recent_reviews[col]?.toFixed(2)
+          recent: val.recent_reviews[col]?.toFixed(2),
         };
         columns[col] = true;
       });
       if (isInstructor) {
-        EXTRA_KEYS.forEach(col => {
+        EXTRA_KEYS.forEach((col) => {
           if (col === "latest_semester") {
             output[col] = val[col] && toNormalizedSemester(val[col]);
           } else {
@@ -161,7 +167,7 @@ class ScoreBox extends Component {
 
     const cols = [];
     if (isInstructor) {
-      EXTRA_KEYS.forEach(colName =>
+      EXTRA_KEYS.forEach((colName) =>
         cols.push({
           id: colName,
           Header: capitalize(colName.replace("_", " ")),
@@ -187,7 +193,7 @@ class ScoreBox extends Component {
             );
           },
           width: 140,
-          show: true
+          show: true,
         })
       );
     }
@@ -195,8 +201,8 @@ class ScoreBox extends Component {
     orderColumns(Object.keys(columns))
       // Remove columns that don't start with r, as they are not RatingBit values and
       // shouldn't be generated by this logic
-      .filter(key => key && key.charAt(0) === "r")
-      .forEach(key => {
+      .filter((key) => key && key.charAt(0) === "r")
+      .forEach((key) => {
         const header = getColumnName(key);
         cols.push({
           id: key,
@@ -254,7 +260,7 @@ class ScoreBox extends Component {
             );
           },
           width: 140,
-          show: true
+          show: true,
         });
       });
 
@@ -282,22 +288,16 @@ class ScoreBox extends Component {
             <PopoverTitle
               title={
                 <span>
-                  <b>{value}</b> is teaching during <b>{liveData.term}</b> and{" "}
+                  <b>{value}</b> is teaching during{" "}
+                  <b>{toNormalizedSemester(liveData.semester)}</b> and{" "}
                   <b>{star.open}</b> out of <b>{star.all}</b>{" "}
                   {star.all === 1 ? "section" : "sections"}{" "}
                   {star.open === 1 ? "is" : "are"} open.
                   <ul>
                     {star.sections
-                      .sort((x, y) =>
-                        x.section_id_normalized.localeCompare(
-                          y.section_id_normalized
-                        )
-                      )
-                      .map(data => (
-                        <CourseDetails
-                          key={data.section_id_normalized}
-                          data={data}
-                        />
+                      .sort((x, y) => x.id.localeCompare(y.id))
+                      .map((data) => (
+                        <CourseDetails key={data.id} data={data} />
                       ))}
                   </ul>
                 </span>
@@ -314,7 +314,7 @@ class ScoreBox extends Component {
                   <b>{code.replace("-", " ")}</b> in{" "}
                   <b>{this.state.currentCourses[code][0].term_normalized}</b>.
                   <ul>
-                    {this.state.currentCourses[code].map(data => (
+                    {this.state.currentCourses[code].map((data) => (
                       <CourseDetails
                         key={data.section_id_normalized}
                         data={data}
@@ -327,7 +327,7 @@ class ScoreBox extends Component {
               <i
                 className={`ml-1 fa-star ${
                   this.state.currentCourses[code].filter(
-                    a => !a.is_closed && !a.is_cancelled
+                    (a) => !a.is_closed && !a.is_cancelled
                   ).length
                     ? "fa"
                     : "far"
@@ -360,7 +360,7 @@ class ScoreBox extends Component {
         return rows[filter.id]
           .toLowerCase()
           .includes(filter.value.toLowerCase());
-      }
+      },
     });
     if (!isCourse) {
       cols.unshift({
@@ -376,7 +376,7 @@ class ScoreBox extends Component {
               {value}
             </Link>
           </center>
-        )
+        ),
       });
     }
     this.setState({ data, columns: cols });
@@ -431,16 +431,16 @@ class ScoreBox extends Component {
             name="score"
             type={type}
             columns={columns}
-            onSelect={columns => this.setState({ columns })}
+            onSelect={(columns) => this.setState({ columns })}
           />
           <div className="float-right">
             <label className="table-search">
               <input
                 value={filterAll}
-                onChange={val =>
+                onChange={(val) =>
                   this.setState({
                     filtered: [{ id: "name", value: val.target.value }],
-                    filterAll: val.target.value
+                    filterAll: val.target.value,
                   })
                 }
                 type="search"
