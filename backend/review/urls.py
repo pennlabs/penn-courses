@@ -14,7 +14,7 @@ DAY_IN_SECONDS = 60 * 60 * 24
 
 
 def review_cache(fun):
-    return cache_control(max_age="0")(cache_page(DAY_IN_SECONDS)(fun))
+    return cache_control(max_age=0)(cache_page(DAY_IN_SECONDS)(fun))
 
 
 urlpatterns = [
