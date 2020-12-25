@@ -211,7 +211,11 @@ def autocomplete(request):
     and url.
     """
 
-    courses = Course.objects.filter(sections__review__isnull=False).values("full_code", "title")
+    courses = (
+        Course.objects.filter(sections__review__isnull=False)
+        .values("full_code", "title")
+        .distinct()
+    )
     course_set = [
         {
             "title": course["full_code"],
