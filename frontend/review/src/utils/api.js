@@ -52,9 +52,7 @@ export function apiIsAuthenticated(func) {
 
 export function apiLive(code) {
   return apiFetch(
-    `${API_DOMAIN}/api/token/live/${encodeURIComponent(
-      code
-    )}?token=${encodeURIComponent(PUBLIC_API_TOKEN)}`
+    `${API_DOMAIN}/api/plan/courses/${encodeURIComponent(code)}/`
   );
 }
 

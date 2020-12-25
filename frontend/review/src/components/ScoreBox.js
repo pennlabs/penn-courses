@@ -62,32 +62,36 @@ class ScoreBox extends Component {
 
       if (liveData) {
         const instructorsThisSemester = {};
-        const { instructors = [], courses } = liveData;
-        instructors.forEach(a => {
+        // const { instructors = [], courses } = liveData;
+        const instructors = liveData.sections.flatMap(({ instructors }) =>
+          instructors.map(convertInstructorName)
+        );
+        instructors.forEach(inst => {
+          const key = convertInstructorName(inst);
           const data = {
             open: 0,
             all: 0,
             sections: []
           };
-          const key = convertInstructorName(a);
-          Object.values(courses).forEach(cat => {
-            const coursesByInstructor = cat
-              .filter(
-                ({ instructors }) =>
-                  instructors
-                    .map(b => convertInstructorName(b.name))
-                    .indexOf(key) !== -1
-              )
-              .filter(a => !a.is_cancelled);
-            data.open += coursesByInstructor.filter(a => !a.is_closed).length;
-            data.all += coursesByInstructor.length;
-            data.sections = data.sections.concat(
-              coursesByInstructor.map(a => a)
-            );
-          });
+          const coursesByInstructor = liveData.sections.filter(
+            ({ instructors }) =>
+              instructors.map(convertInstructorName).indexOf(key) !== -1
+          );
+          console.log("liveData sections", liveData.sections);
+          console.log("liveData by instructor", coursesByInstructor);
+          // .filter((section) => !a.is_cancelled);
+          data.open += coursesByInstructor.filter(
+            section => section.status === "O"
+          ).length;
+          data.all += coursesByInstructor.length;
+          data.sections = data.sections.concat(
+            coursesByInstructor.map(section => section)
+          );
           instructorsThisSemester[key] = data;
           instructorTaught[key] = Infinity;
         });
+        console.log("instructors", instructorsThisSemester);
+        console.log("data", this.state.data);
         this.setState(({ data }) => ({
           currentInstructors: instructorTaught,
           data: data.map(a => ({
@@ -101,21 +105,23 @@ class ScoreBox extends Component {
           data: data.map(a => ({ ...a, star: null }))
         }));
       }
-    } else if (type === "instructor") {
-      if (liveData) {
-        const courses = {};
-        Object.values(liveData.courses).forEach(a => {
-          const key = `${a.course_department}-${a.course_number}`;
-          if (!(key in courses)) {
-            courses[key] = [];
-          }
-          courses[key].push(a);
-        });
-        this.setState({
-          currentCourses: courses
-        });
-      }
     }
+    // TODO: semester data for instructors
+    // else if (type === "instructor") {
+    //   if (liveData) {
+    //     const courses = {};
+    //     Object.values(liveData.courses).forEach((a) => {
+    //       const key = `${a.course_department}-${a.course_number}`;
+    //       if (!(key in courses)) {
+    //         courses[key] = [];
+    //       }
+    //       courses[key].push(a);
+    //     });
+    //     this.setState({
+    //       currentCourses: courses,
+    //     });
+    //   }
+    // }
   }
 
   generateColumns() {
@@ -282,22 +288,16 @@ class ScoreBox extends Component {
             <PopoverTitle
               title={
                 <span>
-                  <b>{value}</b> is teaching during <b>{liveData.term}</b> and{" "}
+                  <b>{value}</b> is teaching during{" "}
+                  <b>{toNormalizedSemester(liveData.semester)}</b> and{" "}
                   <b>{star.open}</b> out of <b>{star.all}</b>{" "}
                   {star.all === 1 ? "section" : "sections"}{" "}
                   {star.open === 1 ? "is" : "are"} open.
                   <ul>
                     {star.sections
-                      .sort((x, y) =>
-                        x.section_id_normalized.localeCompare(
-                          y.section_id_normalized
-                        )
-                      )
+                      .sort((x, y) => x.id.localeCompare(y.id))
                       .map(data => (
-                        <CourseDetails
-                          key={data.section_id_normalized}
-                          data={data}
-                        />
+                        <CourseDetails key={data.id} data={data} />
                       ))}
                   </ul>
                 </span>
