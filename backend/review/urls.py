@@ -1,5 +1,5 @@
 from django.urls import path
-from django.views.decorators.cache import cache_page, cache_control
+from django.views.decorators.cache import cache_control, cache_page
 
 from review.views import (
     autocomplete,
