@@ -34,7 +34,7 @@ def course_reviews(request, course_code):
     """
     Get all reviews for a given course, aggregated by instructor.
     """
-    if not Course.objects.filter(full_code=course_code).exists():
+    if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
         raise Http404()
 
     reviews = (
@@ -97,7 +97,9 @@ def instructor_reviews(request, instructor_id):
     )
 
     courses = annotate_average_and_recent(
-        Course.objects.filter(sections__instructors__pk=instructor.pk).distinct(),
+        Course.objects.filter(
+            sections__review__isnull=False, sections__instructors__pk=instructor.pk
+        ).distinct(),
         match_on=Q(
             section__course__full_code=OuterRef(OuterRef("full_code")),
             instructor__pk=instructor.pk,
@@ -203,7 +205,7 @@ def autocomplete(request):
     and url.
     """
 
-    courses = Course.objects.filter().values("full_code", "title")
+    courses = Course.objects.filter(sections__review__isnull=False).values("full_code", "title")
     course_set = [
         {
             "title": course["full_code"],

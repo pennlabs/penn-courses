@@ -418,6 +418,12 @@ class NotFoundTestCase(TestCase):
             404, self.client.get(reverse("course-history", args=["BLAH", 123])).status_code
         )
 
+    def test_no_reviews(self):
+        get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        self.assertEqual(
+            404, self.client.get(reverse("course-reviews", args=["CIS-120"])).status_code
+        )
+
 
 class NoAuthTestCase(TestCase):
     def setUp(self):
