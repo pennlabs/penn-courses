@@ -3,7 +3,7 @@ const PUBLIC_API_TOKEN = "public";
 const API_TOKEN = "platform";
 
 function apiFetch(url) {
-  return fetch(url).then((res) => res.json());
+  return fetch(url).then(res => res.json());
 }
 
 export function redirectForAuth() {
@@ -25,7 +25,7 @@ export function apiAutocomplete() {
   const cached_autocomplete = localStorage.getItem(key);
   if (cached_autocomplete) {
     // If a cached version exists, replace it in the cache asynchronously and return the old cache.
-    apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then((data) =>
+    apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data =>
       localStorage.setItem(key, JSON.stringify(data))
     );
     return new Promise((resolve, reject) =>
@@ -34,7 +34,7 @@ export function apiAutocomplete() {
   } else {
     // If no cached data exists, fetch, set the cache and return in the same promise.
     return new Promise((resolve, reject) => {
-      apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then((data) => {
+      apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data => {
         localStorage.setItem(key, JSON.stringify(data));
         resolve(data);
       });
@@ -56,10 +56,10 @@ export function apiIsAuthenticated(func) {
     `${API_DOMAIN}/api/review/auth?token=${encodeURIComponent(
       PUBLIC_API_TOKEN
     )}`
-  ).then((data) => {
+  ).then(data => {
     if (typeof data.authed === "undefined") {
       window.Raven.captureMessage(`Auth check error: ${JSON.stringify(data)}`, {
-        level: "error",
+        level: "error"
       });
     }
     func(data.authed);
@@ -91,7 +91,7 @@ export function apiReviewData(type, code) {
 export function apiContact(name) {
   return apiFetch(
     `https://api.pennlabs.org/directory/search?name=${encodeURIComponent(name)}`
-  ).then((res) => {
+  ).then(res => {
     if (res.result_data.length !== 1) {
       return null;
     }
@@ -99,7 +99,7 @@ export function apiContact(name) {
     return {
       email: res.result_data[0].list_email,
       organization: res.result_data[0].list_organization,
-      title: res.result_data[0].list_title_or_major,
+      title: res.result_data[0].list_title_or_major
     };
   });
 }
