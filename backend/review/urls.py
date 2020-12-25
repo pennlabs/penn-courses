@@ -10,7 +10,8 @@ from review.views import (
 )
 
 
-DAY_IN_SECONDS = 60 * 60 * 24
+HOUR_IN_SECONDS = 60 * 60
+DAY_IN_SECONDS = HOUR_IN_SECONDS * 24
 
 
 def review_cache(fun):
@@ -34,5 +35,5 @@ urlpatterns = [
         review_cache(instructor_for_course_reviews),
         name="course-history",
     ),
-    path("autocomplete", review_cache(autocomplete), name="review-autocomplete"),
+    path("autocomplete", cache_page(HOUR_IN_SECONDS)(autocomplete), name="review-autocomplete"),
 ]
