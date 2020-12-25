@@ -19,11 +19,27 @@ export function getLogoutUrl() {
 }
 
 export function apiAutocomplete() {
-  return apiFetch(
-    `${API_DOMAIN}/api/review/autocomplete?token=${encodeURIComponent(
-      PUBLIC_API_TOKEN
-    )}`
-  );
+  // Cache the autocomplete JSON in local storage using the stale-while-revalidate
+  // strategy.
+  const key = "pcr-autocomplete";
+  const cached_autocomplete = localStorage.getItem(key);
+  if (cached_autocomplete) {
+    // If a cached version exists, replace it in the cache asynchronously and return the old cache.
+    apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data =>
+      localStorage.setItem(key, JSON.stringify(data))
+    );
+    return new Promise((resolve, reject) =>
+      resolve(JSON.parse(cached_autocomplete))
+    );
+  } else {
+    // If no cached data exists, fetch, set the cache and return in the same promise.
+    return new Promise((resolve, reject) => {
+      apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data => {
+        localStorage.setItem(key, JSON.stringify(data));
+        resolve(data);
+      });
+    });
+  }
 }
 
 export async function apiCheckAuth() {

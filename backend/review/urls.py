@@ -35,5 +35,5 @@ urlpatterns = [
         review_cache(instructor_for_course_reviews),
         name="course-history",
     ),
-    path("autocomplete", cache_page(HOUR_IN_SECONDS)(autocomplete), name="review-autocomplete"),
+    path("autocomplete", review_cache(autocomplete), name="review-autocomplete"),
 ]
