@@ -226,7 +226,9 @@ def autocomplete(request):
         for dept in departments
     ]
 
-    instructors = Instructor.objects.all().values("name", "id", "section__course__department__code")
+    instructors = Instructor.objects.filter(section__review__isnull=False).values(
+        "name", "id", "section__course__department__code"
+    )
     instructor_set = {}
     for inst in instructors:
         if inst["id"] not in instructor_set:
