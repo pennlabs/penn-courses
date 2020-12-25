@@ -70,14 +70,16 @@ def course_reviews(request, course_code):
             "num_sections": Section.objects.filter(
                 course__full_code=course_code, review__isnull=False
             )
-            .values("full_code")
+            .values("full_code", "course__semester")
+            .distinct()
             .count(),
             "num_sections_recent": Section.objects.filter(
                 course__full_code=course_code,
                 course__semester=course["recent_semester_calc"],
                 review__isnull=False,
             )
-            .values("full_code")
+            .values("full_code", "course__semester")
+            .distinct()
             .count(),
             "average_reviews": make_subdict("average_", course),
             "recent_reviews": make_subdict("recent_", course),
