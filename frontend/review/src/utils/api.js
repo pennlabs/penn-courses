@@ -25,9 +25,11 @@ export function apiAutocomplete() {
   const cached_autocomplete = localStorage.getItem(key);
   if (cached_autocomplete) {
     // If a cached version exists, replace it in the cache asynchronously and return the old cache.
-    apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data =>
-      localStorage.setItem(key, JSON.stringify(data))
-    );
+    apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data => {
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch (e) {}
+    });
     return new Promise((resolve, reject) =>
       resolve(JSON.parse(cached_autocomplete))
     );
@@ -35,7 +37,9 @@ export function apiAutocomplete() {
     // If no cached data exists, fetch, set the cache and return in the same promise.
     return new Promise((resolve, reject) => {
       apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data => {
-        localStorage.setItem(key, JSON.stringify(data));
+        try {
+          localStorage.setItem(key, JSON.stringify(data));
+        } catch (e) {}
         resolve(data);
       });
     });
