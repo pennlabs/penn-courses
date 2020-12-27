@@ -235,6 +235,23 @@ class DescriptionImportTestCase(TestCase):
         for c in [c1, c2]:
             self.assertEqual("Hello", c.description)
 
+    def test_section_with_existing_description(self):
+        get_or_create_course("CIS", "120", TEST_SEMESTER)
+        get_or_create_course("CIS", "120", "3008A")
+        c, _ = get_or_create_course("CIS", "120", "3005A")
+        c.description = "TILL 3005"
+        c.save()
+
+        rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
+        import_description_rows(rows, show_progress_bar=False)
+        self.assertEqual(3, Course.objects.count())
+        c1 = Course.objects.get(semester=TEST_SEMESTER)
+        c2 = Course.objects.get(semester="3008A")
+        for c in [c1, c2]:
+            self.assertEqual("Hello", c.description)
+        c3 = Course.objects.get(semester="3005A")
+        self.assertEqual("TILL 3005", c3.description)
+
     def test_two_courses(self):
         get_or_create_course("CIS", "120", TEST_SEMESTER)
         get_or_create_course("CIS", "121", TEST_SEMESTER)
