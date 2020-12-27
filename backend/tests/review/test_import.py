@@ -14,7 +14,7 @@ from review.import_utils.import_to_db import (
     import_instructor,
     import_summary_row,
 )
-from review.import_utils.parse_sql import parse_row
+from review.import_utils.parse_sql import parse_row, entry_regex
 from review.models import Review, ReviewBit
 
 
@@ -61,6 +61,22 @@ class SQLParseTestCase(TestCase):
         expected = {"a": 1, "b": "two", "c": "y'all"}
         actual = parse_row(query)
         self.assertDictEqual(expected, actual)
+
+    def test_regex_hyphen(self):
+        query = """
+        INSERT into DATABASE (a, b, c)
+        VaLues (1, 'Chris Callison-Burch', 'y''all');
+        """
+        self.assertEqual(1, (len(entry_regex.findall(query))))
+
+    def test_regex_hyphen_sequence(self):
+        query = """
+        INSERT into DATABASE (a, b, c)
+        VaLues (1, 'Chris Callison-Burch', 'y''all');
+        INSERT into DATABASE (a, b, c)
+        VaLues (1, 'Chris:!!!***++++ Callison-Burch', 'y''all');
+        """
+        self.assertEqual(2, (len(entry_regex.findall(query))))
 
     def test_parse_summary(self):
         # Just make sure we're not throwing parse errors.
