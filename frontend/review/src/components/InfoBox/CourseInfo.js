@@ -94,9 +94,11 @@ const TagsWhenOffered = ({
   // );
   const { sections, semester } = liveData;
   const term = toNormalizedSemester(semester);
-  const credits = sections
-    .map(({ credits }) => credits)
-    .reduce((a, b) => Math.max(a, b));
+  const credits =
+    sections.length > 0
+      ? sections.map(({ credits }) => credits).reduce((a, b) => Math.max(a, b))
+      : null;
+
   const activityTypes = [...new Set(sections.map(({ activity }) => activity))];
   const sectionsByActivity = {};
   activityTypes.forEach(activity => {
@@ -126,16 +128,19 @@ const TagsWhenOffered = ({
         >
           <span className="badge badge-info">{term}</span>
         </PopoverTitle>
-        <PopoverTitle
-          title={
-            <span>
-              {courseName} is <b>{credits}</b> credit unit
-              {credits === 1 ? "" : "s"}
-            </span>
-          }
-        >
-          <span className="badge badge-primary">{credits} CU</span>
-        </PopoverTitle>
+        {credits && (
+          <PopoverTitle
+            title={
+              <span>
+                {courseName} is <b>{credits}</b> credit unit
+                {credits === 1 ? "" : "s"}
+              </span>
+            }
+          >
+            <span className="badge badge-primary">{credits} CU</span>
+          </PopoverTitle>
+        )}
+
         {Object.entries(sectionsByActivity).map(([activity, sections], i) => {
           const openSections = sections.filter(({ status }) => status === "O");
           return (
