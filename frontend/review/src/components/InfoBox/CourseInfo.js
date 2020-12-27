@@ -315,7 +315,7 @@ export const CourseHeader = ({
         data={data}
         existingInstructors={Object.values(instructors).map(a => a.name)}
       />
-    ) : !liveData || !liveData.sections ? (
+    ) : !liveData || liveData.sections.length === 0 ? (
       <TagsNotOffered data={data} />
     ) : null}
   </div>
