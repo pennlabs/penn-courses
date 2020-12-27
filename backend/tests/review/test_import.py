@@ -14,7 +14,7 @@ from review.import_utils.import_to_db import (
     import_instructor,
     import_summary_row,
 )
-from review.import_utils.parse_sql import parse_row, entry_regex
+from review.import_utils.parse_sql import entry_regex, parse_row
 from review.models import Review, ReviewBit
 
 
