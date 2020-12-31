@@ -4,7 +4,11 @@ type CheckboxFilterData<D> = {
     [K in keyof D]: boolean;
 };
 
-interface SearchFieldProps<F, K extends keyof F, V extends keyof K> {
+interface SearchFieldProps<
+    F,
+    K extends keyof F,
+    V extends keyof F[K] & string
+> {
     filterData: F;
     // field, value and togglestate
     // field == keyof F (filterData), value == keyof field
