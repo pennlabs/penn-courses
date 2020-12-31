@@ -447,8 +447,8 @@ class StatusUpdate(models.Model):
         help_text="Was an alert was sent to a User as a result of this status update?"
     )
     # ^^^ alert_sent is true iff alert_for_course was called in accept_webhook in alert/views.py
-    # equivalently, iff SEND_FROM_WEBHOOK == True and SEMESTER == course_term, or the request
-    # is otherwise invalid
+    # equivalently, iff SEND_FROM_WEBHOOK == True and SEMESTER == course_term, and the request
+    # is not otherwise invalid
     request_body = models.TextField()
 
     def __str__(self):
@@ -782,6 +782,15 @@ class UserProfile(models.Model):
     )
     email = models.EmailField(
         blank=True, null=True, help_text="The email of the User. Defaults to null."
+    )
+    push_notifications = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+        Defaults to False, changed to True if the User enables mobile push notifications
+        for PCA, rather than text notifications.
+        """
+        ),
     )
     # phone field defined underneath validate_phone function below
 

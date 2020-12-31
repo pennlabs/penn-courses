@@ -62,7 +62,7 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = MiniSectionSerializer
-    queryset = Section.with_reviews.all()
+    queryset = Section.with_reviews.all().exclude(activity="")
     filter_backends = [TypedSectionSearchBackend]
     search_fields = ["^full_code"]
 
@@ -118,7 +118,8 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
                 Section.with_reviews.all()
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
-                .distinct(),
+                .distinct()
+                .prefetch_related("course", "meetings__room"),
             )
         )
         queryset = self.filter_by_semester(queryset)
@@ -152,7 +153,10 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 Section.with_reviews.all()
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
-                .distinct(),
+                .distinct()
+                .prefetch_related(
+                    "course", "meetings", "associated_sections", "meetings__room", "instructors"
+                ),
             )
         )
         queryset = self.filter_by_semester(queryset)
@@ -204,6 +208,17 @@ class StatusUpdateView(generics.ListAPIView):
         response_codes={
             "/api/courses/statusupdate/{full_code}/": {
                 "GET": {200: "[SCHEMA]Status Updates for section listed successfully."}
+            }
+        },
+        custom_path_parameter_desc={
+            "/api/courses/statusupdate/{full_code}/": {
+                "GET": {
+                    "full_code": (
+                        "The code of the section which this status update applies to, in the "
+                        "form '{dept code}-{course code}-{section code}', e.g. 'CIS-120-001' for "
+                        "the 001 section of CIS-120."
+                    )
+                }
             }
         },
     )

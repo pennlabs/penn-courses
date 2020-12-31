@@ -309,7 +309,10 @@ def import_description_rows(rows, semesters=None, show_progress_bar=True):
     # for separate_course_code.
     for course_id, paragraphs in tqdm(descriptions.items(), disable=(not show_progress_bar)):
         dept_code, course_code, _ = separate_course_code(course_id + "000")
-        courses = Course.objects.filter(department__code=dept_code, code=course_code)
+        # Don't replace descriptions which are already present (from registrar import, most likely).
+        courses = Course.objects.filter(
+            department__code=dept_code, code=course_code, description=""
+        )
 
         if semesters is not None:
             courses = courses.filter(semester__in=semesters)

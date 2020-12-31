@@ -1,6 +1,7 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from options.models import get_bool
 from tqdm import tqdm
 
 from alert.views import alert_for_course
@@ -48,13 +49,17 @@ class Command(BaseCommand):
                 stats["missing_data"] += 1
                 continue
 
-            # _, section = get_course_and_section(course_id, semester)
-
-            should_send_alert = course_status == "O" and semester == course_term
+            should_send_alert = (
+                get_bool("SEND_FROM_WEBHOOK", False)
+                and (course_status == "O" or course_status == "C")
+                and get_current_semester() == course_term
+            )
 
             if should_send_alert:
                 try:
-                    alert_for_course(course_id, semester=course_term, sent_by="WEB")
+                    alert_for_course(
+                        course_id, semester=course_term, sent_by="WEB", course_status=course_status
+                    )
                     stats["sent"] += 1
                 except ValueError:
                     stats["parse_error"] += 1
