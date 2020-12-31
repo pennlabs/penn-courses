@@ -54,12 +54,26 @@ const activityMap = {
   SEM: "Seminar",
   LAB: "Laboratory"
 };
+const laterSemester = (a, b) => {
+  if (!a.localeCompare) {
+    return b;
+  } else if (!b.localeCompare) {
+    return a;
+  }
+
+  if (a.localeCompare(b) > 0) {
+    return a;
+  } else {
+    return b;
+  }
+};
 const TagsNotOffered = ({ data }) => {
   const { instructors: instructorData = {}, code = "" } = data;
   const courseName = code.replace("-", " ");
   let mostRecent = Object.values(instructorData)
     .map(a => a.latest_semester)
-    .reduce((a, b) => Math.max(a, b));
+    .reduce(laterSemester);
+
   if (!mostRecent) {
     return <div />;
   }
@@ -309,15 +323,15 @@ export const CourseHeader = ({
           <i className="fa fa-thumbtack" /> {note}
         </div>
       ))}
-    {liveData && liveData.sections.length > 0 ? (
+    {liveData && liveData.sections && liveData.sections.length > 0 ? (
       <TagsWhenOffered
         liveData={liveData}
         data={data}
         existingInstructors={Object.values(instructors).map(a => a.name)}
       />
-    ) : !liveData || liveData.sections.length === 0 ? (
+    ) : (
       <TagsNotOffered data={data} />
-    ) : null}
+    )}
   </div>
 );
 
