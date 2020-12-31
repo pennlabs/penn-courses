@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
+// TODO: Move shared components to typescript
+// @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
 import { DropdownButton } from "../DropdownButton";
