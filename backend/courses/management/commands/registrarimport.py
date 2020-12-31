@@ -6,6 +6,7 @@ from tqdm import tqdm
 from courses import registrar
 from courses.management.commands.loadrequirements import load_requirements
 from courses.management.commands.loadstatus import set_all_status
+from courses.models import Department
 from courses.util import get_current_semester, upsert_course_from_opendata
 
 
@@ -30,6 +31,13 @@ class Command(BaseCommand):
 
         for course in tqdm(results):
             upsert_course_from_opendata(course, semester)
+
+        print("Updating department names...")
+        departments = registrar.get_departments()
+        for dept_code, dept_name in tqdm(departments.items()):
+            dept, _ = Department.objects.get_or_create(code=dept_code)
+            dept.name = dept_name
+            dept.save()
 
         print("loading requirements from SEAS...")
         load_requirements(school="SEAS", semester=semester)
