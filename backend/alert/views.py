@@ -34,8 +34,8 @@ from PennCourses.docs_settings import PcxAutoSchema
 logger = logging.getLogger(__name__)
 
 
-def alert_for_course(c_id, semester, sent_by):
-    send_course_alerts.delay(c_id, semester=semester, sent_by=sent_by)
+def alert_for_course(c_id, semester, sent_by, course_status):
+    send_course_alerts.delay(c_id, course_status=course_status, semester=semester, sent_by=sent_by)
 
 
 def extract_basic_auth(auth_header):
@@ -95,16 +95,19 @@ def accept_webhook(request):
     if prev_status is None:
         return HttpResponse("Previous Status could not be extracted from response", status=400)
 
+    alert_for_course_called = False
+
     should_send_alert = (
         get_bool("SEND_FROM_WEBHOOK", False)
-        and course_status == "O"
+        and (course_status == "O" or course_status == "C")
         and get_current_semester() == course_term
     )
 
-    alert_for_course_called = False
     if should_send_alert:
         try:
-            alert_for_course(course_id, semester=course_term, sent_by="WEB")
+            alert_for_course(
+                course_id, semester=course_term, sent_by="WEB", course_status=course_status
+            )
             alert_for_course_called = True
             response = JsonResponse({"message": "webhook recieved, alerts sent"})
         except ValueError:
@@ -154,7 +157,13 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     include a section field (with the dash-separated full code of the section) and optionally
     can contain an auto_resubscribe field (defaults to false) which sets whether the registration
     will automatically create a new registration once it triggers an alerts (i.e. whether it will
-    automatically resubscribe the user to receive alerts for that section).
+    automatically resubscribe the user to receive alerts for that section). It can also optionally
+    contain a "close_notification" field, to enable close notifications on the registration.
+    Note that close notifications CANNOT be sent by text so you shouldn't allow the user to
+    enable close notifications for any registration unless they have an email set in their
+    User Profile or have push notifications enabled.  If you try to create a registration with
+    close_notification enabled and the user only has texts enabled, , a 406 will be returned
+    and the registration will not be created.
     Note that if you include the "id" field in the body of your POST request, and that id
     does not already exist, the id of the created registration will be set to the given value.
     However, if the given id does exist, the request will instead be treated as a PUT request for
@@ -174,10 +183,17 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     that would get modified by a PUT request would be the head of the resubscribe chain of the
     Registration with the specified id (so if you try to update an outdated Registration it will
     instead update the most recent Registration).  The parameters which can be
-    included in the request body are `resubscribe`, `auto_resubscribe`, `cancelled`, and `deleted`.
-    If you include multiple parameters, the order of precedence in choosing what action to take is
-    `resubscribe` > `deleted` > `cancelled` > `auto_resubscribe` (so if you include multiple
-    parameters only the action associated with the highest priority parameter will be executed).
+    included in the request body are `resubscribe`, `auto_resubscribe`, 'close_notification',
+    `cancelled`, and `deleted`. If you include multiple parameters, the order of precedence in
+    choosing what action to take is `resubscribe` > `deleted` > `cancelled` >
+    [`auto_resubscribe` and `close_notification`] (so if you include multiple
+    parameters only the action associated with the highest priority parameter will be executed,
+    except both auto_resubscribe and close_notification can be updated in the same request).
+    Note that close notifications CANNOT be sent by text so you shouldn't allow the user to
+    enable close notifications for any registration unless they have an email set in their
+    User Profile or have push notifications enabled.  If you try to update a registration to
+    enable close_notification and the user only has texts enabled, a 406 will be returned
+    and the registration will not be created.
     Note that a registration will send an alert when the section it is watching opens, if and only
     if it hasn't sent one before, it isn't cancelled, and it isn't deleted.  If a registration would
     send an alert when the section it is watching opens, we call it "active".  Registrations which
@@ -480,6 +496,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             source="PCA",
             user=request.user,
             auto_resub=request.data.get("auto_resubscribe", False),
+            close_notification=request.data.get("close_notification", False),
         )
 
         # converting from dictionary to response
@@ -512,7 +529,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-    def update(self, request, pk=None):
+    def update(self, request, pk=None, *args, **kwargs):
         try:
             registration = self.get_queryset().get(id=pk)
         except Registration.DoesNotExist:
@@ -571,20 +588,59 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     registration.cancelled_at = timezone.now()
                     registration.save()
                     return Response({"detail": "Registration cancelled"}, status=status.HTTP_200_OK)
-            elif "auto_resubscribe" in request.data:
+            elif "auto_resubscribe" in request.data or "close_notification" in request.data:
                 if registration.deleted:
                     return Response(
                         {"detail": "You cannot make changes to a deleted registration."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                changed = registration.auto_resubscribe != request.data.get("auto_resubscribe")
-                registration.auto_resubscribe = request.data.get("auto_resubscribe")
+                auto_resubscribe_changed = registration.auto_resubscribe != request.data.get(
+                    "auto_resubscribe", registration.auto_resubscribe
+                )
+                close_notification_changed = registration.close_notification != request.data.get(
+                    "close_notification", registration.close_notification
+                )
+                if (
+                    request.data.get("close_notification", registration.close_notification)
+                    and not request.user.profile.email
+                    and not request.user.profile.push_notifications
+                ):
+                    return Response(
+                        {
+                            "detail": "You cannot enable close_notifications with only your phone "
+                            "number saved in your user profile."
+                        },
+                        status=status.HTTP_406_NOT_ACCEPTABLE,
+                    )
+                changed = auto_resubscribe_changed or close_notification_changed
+                registration.auto_resubscribe = request.data.get(
+                    "auto_resubscribe", registration.auto_resubscribe
+                )
+                registration.close_notification = request.data.get(
+                    "close_notification", registration.close_notification
+                )
                 registration.save()
                 if changed:  # else taken care of in generic return statement
                     return Response(
                         {
-                            "detail": "auto_resubscribe updated to "
-                            + str(registration.auto_resubscribe)
+                            "detail": ", ".join(
+                                (
+                                    [
+                                        "auto_resubscribe updated to "
+                                        + str(registration.auto_resubscribe)
+                                    ]
+                                    if auto_resubscribe_changed
+                                    else []
+                                )
+                                + (
+                                    [
+                                        "close_notification updated to "
+                                        + str(registration.close_notification)
+                                    ]
+                                    if close_notification_changed
+                                    else []
+                                )
+                            )
                         },
                         status=status.HTTP_200_OK,
                     )

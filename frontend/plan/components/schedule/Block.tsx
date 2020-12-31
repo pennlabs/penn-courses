@@ -2,6 +2,7 @@ import React from "react";
 import { isMobile } from "react-device-detect";
 import styled from "styled-components";
 import { rgba } from "polished";
+import { Color } from "../../types";
 
 interface BlockProps {
     offsets: {
@@ -16,7 +17,7 @@ interface BlockProps {
     };
     course: {
         id: string;
-        color: string;
+        color: Color;
         coreqFulfilled: boolean;
     };
     remove: () => void;
@@ -27,34 +28,9 @@ interface BlockProps {
     };
 }
 
-enum BlockColor {
-    RED = "#D0021B",
-    ORANGE = "#F5A623",
-    BLUE = "#00BFDD",
-    AQUA = "#35E1BB",
-    GREEN = "#7ED321",
-    PINK = "#FF34CC",
-    SEA = "#3055CC",
-    INDIGO = "#7874CF",
-    BLACK = "#000",
-}
-
-// TODO: Remove this function when the entire schedule component has been refactored to use enums.
-const colorMap = (color: string): BlockColor => {
-    if (color === "red") return BlockColor.RED;
-    if (color === "orange") return BlockColor.ORANGE;
-    if (color === "blue") return BlockColor.BLUE;
-    if (color === "aqua") return BlockColor.AQUA;
-    if (color === "green") return BlockColor.GREEN;
-    if (color === "pink") return BlockColor.PINK;
-    if (color === "sea") return BlockColor.SEA;
-    if (color === "indigo") return BlockColor.INDIGO;
-    return BlockColor.BLACK;
-};
-
 const GridBlock = styled.div``;
 interface VisibleBlockProps {
-    color: BlockColor;
+    color: Color;
 }
 const VisibleBlock = styled.div<VisibleBlockProps>`
     border-top-color: ${({ color }: VisibleBlockProps) => color};
@@ -126,7 +102,7 @@ export default function Block(props: BlockProps) {
     return (
         <GridBlock style={{ ...pos }}>
             <VisibleBlock
-                color={colorMap(color)}
+                color={color}
                 role="button"
                 style={style}
                 onClick={focusSection}
@@ -140,7 +116,7 @@ export default function Block(props: BlockProps) {
                             }}
                         />
                     )}
-                    {!coreqFulfilled && <CoreqWarning />}
+                    {false && !coreqFulfilled && <CoreqWarning />}
 
                     <span>{id.replace(/-/g, " ")}</span>
                 </InnerBlock>

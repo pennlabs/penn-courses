@@ -217,3 +217,33 @@ class RequirementListTestCase(TestCase):
         response = self.client.get(reverse("requirements-list", kwargs={"semester": "XXXXX"}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(1, len(response.data))
+
+
+class DocumentationTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_no_error(self):
+        response = self.client.get(reverse("openapi-schema"))
+        self.assertEqual(response.status_code, 200)
+
+
+class SectionListTestCase(TestCase):
+    def setUp(self):
+        self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
+        self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
+        self.client = APIClient()
+        set_semester()
+
+    def test_sections_appear(self):
+        response = self.client.get(reverse("section-search"), kwargs={"semester": TEST_SEMESTER})
+        course_codes = [d["section_id"] for d in response.data]
+        self.assertTrue("CIS-120-001" in course_codes and "MATH-114-001" in course_codes)
+        self.assertEqual(2, len(response.data))
+
+    def test_section_without_(self):
+        self.math1.activity = ""
+        self.math1.save()
+        response = self.client.get(reverse("section-search"), kwargs={"semester": TEST_SEMESTER})
+        self.assertEqual(1, len(response.data))
+        self.assertEqual("CIS-120-001", response.data[0]["section_id"])

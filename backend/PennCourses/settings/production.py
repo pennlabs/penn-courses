@@ -35,3 +35,5 @@ CACHES = {
         "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient",},
     }
 }
+
+MOBILE_NOTIFICATION_SECRET = os.environ.get("MOBILE_NOTIFICATION_SECRET", "")
