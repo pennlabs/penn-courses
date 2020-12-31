@@ -60,6 +60,7 @@ const TagsNotOffered = ({ data }) => {
   let mostRecent = Object.values(instructorData)
     .map(a => a.latest_semester)
     .reduce((a, b) => Math.max(a, b));
+  console.log(Object.values(instructorData));
   if (!mostRecent) {
     return <div />;
   }
