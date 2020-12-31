@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { FilterData } from "../../../plan/types"
+import { FilterData } from "../../../plan/types";
 
 interface SearchFieldProps {
-    startSearch: (filterData: FilterData) => void; 
+    startSearch: (filterData: FilterData) => void;
     updateSearchText: (txt: string) => void;
     filterData: FilterData;
-    isDisabled: boolean;
-    setTab: (tabNum: number) => void;
-    mobileView: boolean;
+    isDisabled?: boolean;
+    setTab?: (tabNum: number) => void;
+    mobileView?: boolean;
 }
 export function SearchField({
     startSearch,
@@ -17,7 +17,7 @@ export function SearchField({
     isDisabled,
     setTab,
     mobileView,
-} : SearchFieldProps) {
+}: SearchFieldProps) {
     const [searchValue, setSearchValue] = useState("");
 
     const handleChangeVal = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +33,7 @@ export function SearchField({
     return (
         <div
             role="button"
-            onClick={() => (mobileView ? setTab(0) : null)}
+            onClick={() => (mobileView && setTab ? setTab(0) : null)}
             className="control has-icons-left"
         >
             <input

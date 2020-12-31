@@ -1,10 +1,8 @@
 import React from "react";
-import PropTypes from "prop-types";
-import { FilterData } from "../../types";
 
-interface CheckboxFilterData {
-    [key: string]: boolean;
-}
+type CheckboxFilterData<D> = {
+    [K in keyof D]: boolean;
+};
 
 interface SearchFieldProps<F, K extends keyof F, V extends keyof K> {
     filterData: F;
@@ -19,9 +17,10 @@ interface SearchFieldProps<F, K extends keyof F, V extends keyof K> {
 // mapped types
 
 export function CheckboxFilter<
-    F extends { [P in K]: CheckboxFilterData },
+    F extends { [P in K]: D },
+    D extends CheckboxFilterData<D>,
     K extends keyof F,
-    V extends keyof K & string
+    V extends keyof D & string
 >({
     filterData,
     updateCheckboxFilter,

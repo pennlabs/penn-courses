@@ -36,7 +36,7 @@ export interface CUFilter {
     0.5: boolean;
     1.0: boolean;
     1.5: boolean;
-} 
+}
 
 export enum Day {
     M = "M",
@@ -169,9 +169,11 @@ export interface FilterData {
     activity: ActivityFilter;
     cu: CUFilter;
 }
-export interface FilterType {
-    _:
-        | number[]
-        | { "1": number; "0.5": number; "1.5": number }
-        | { LAB: number; REC: number; SEM: number; STU: number };     
-}
+
+export type FilterType =
+    | number[]
+    | [number, number]
+    | { "1": boolean; "0.5": boolean; "1.5": boolean }
+    | { [key: string]: boolean }
+    | ActivityFilter
+    | { LAB: boolean; REC: boolean; SEM: boolean; STU: boolean };

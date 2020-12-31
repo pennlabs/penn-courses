@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
@@ -10,6 +9,8 @@ import { CheckboxFilter } from "./CheckboxFilter";
 import { SearchField } from "./SearchField";
 import { initialState as defaultFilters } from "../../reducers/filters";
 import initiateSync from "../syncutils";
+import { FilterData, User, Requirement } from "../../types";
+
 import {
     fetchCourseSearch,
     loadRequirements,
@@ -25,12 +26,50 @@ import {
 } from "../../actions";
 import { login, logout } from "../../actions/login";
 
-function shouldSearch(filterData) {
+// removed: <F, K extends keyof F, V extends keyof K>
+interface SearchBarProps {
+    startSearch: (searchObj: FilterData) => void;
+    loadRequirements: () => void;
+    schoolReq: {
+        SEAS: Requirement[];
+        WH: Requirement[];
+        SAS: Requirement[];
+        NURS: Requirement[];
+    };
+    filterData: FilterData;
+    addSchoolReq: (school: string) => void;
+    remSchoolReq: (school: string) => void;
+    updateSearchText: (text: string) => void;
+    updateRangeFilter: (field: string) => (values: [number, number]) => void;
+    clearAll: () => void;
+    clearFilter: (search: string) => void;
+    defaultReqs: { [x: string]: boolean };
+    clearSearchResults: () => void;
+    isLoadingCourseInfo: boolean;
+    isSearchingCourseInfo: boolean;
+    updateCheckboxFilter: (
+        field: string,
+        value: string,
+        toggleState: boolean
+    ) => void;
+    setTab: (tab: number) => void;
+    setView: (view: number) => void;
+    user: User;
+    login: (u: User) => void;
+    logout: () => void;
+    mobileView: boolean;
+    isExpanded: boolean;
+    clearScheduleData: () => void;
+    store: object;
+    storeLoaded: boolean;
+}
+
+function shouldSearch(filterData: FilterData) {
     const searchString = filterData.searchString.length >= 3;
     let selectedReq = false;
     if (filterData.selectedReq) {
         for (const key of Object.keys(filterData.selectedReq)) {
-            if (filterData.selectedReq[key] === 1) {
+            if (filterData.selectedReq[key]) {
                 selectedReq = true;
                 break;
             }
@@ -66,8 +105,8 @@ function SearchBar({
     clearScheduleData,
     store,
     storeLoaded,
-    /* eslint-enable no-shadow */
-}) {
+}: /* eslint-enable no-shadow */
+SearchBarProps) {
     const router = useRouter();
 
     useEffect(() => {
@@ -83,14 +122,17 @@ function SearchBar({
 
     const [reqsShown, showHideReqs] = useState(false);
 
-    const conditionalStartSearch = (filterInfo) => {
+    const conditionalStartSearch = (filterInfo: FilterData) => {
         if (shouldSearch(filterInfo)) {
             startSearch(filterInfo);
         }
     };
 
-    const clearFilterSearch = (property) => () => {
+    const clearFilterSearch = <V extends keyof FilterData>(
+        property: V
+    ) => () => {
         clearFilter(property);
+        // filterData["selectedReq"] = defaultReqs;
         if (property === "selectedReq") {
             conditionalStartSearch({
                 ...filterData,
@@ -235,7 +277,7 @@ function SearchBar({
                 {reqsShown && (
                     <div
                         style={{
-                            zIndex: "100",
+                            zIndex: 100,
                             marginTop: "-20px",
                             padding: "10px",
                             marginBottom: "20px",
@@ -329,7 +371,8 @@ function SearchBar({
                         onClick={() => {
                             clearSearchResults();
                             conditionalStartSearch({
-                                ...defaultFilters.filterData,
+                                // TODO: remove any cast when getting rid of redux
+                                ...(defaultFilters.filterData as any),
                                 searchString: filterData.searchString,
                                 selectedReq: defaultReqs,
                             });
@@ -360,36 +403,7 @@ function SearchBar({
     );
 }
 
-SearchBar.propTypes = {
-    startSearch: PropTypes.func,
-    loadRequirements: PropTypes.func,
-    schoolReq: PropTypes.objectOf(PropTypes.array),
-    addSchoolReq: PropTypes.func,
-    remSchoolReq: PropTypes.func,
-    updateSearchText: PropTypes.func,
-    updateRangeFilter: PropTypes.func,
-    updateCheckboxFilter: PropTypes.func,
-    clearAll: PropTypes.func,
-    clearFilter: PropTypes.func,
-    clearSearchResults: PropTypes.func,
-    // eslint-disable-next-line react/forbid-prop-types
-    filterData: PropTypes.object,
-    // eslint-disable-next-line react/forbid-prop-types
-    store: PropTypes.object,
-    defaultReqs: PropTypes.objectOf(PropTypes.number),
-    isLoadingCourseInfo: PropTypes.bool,
-    isSearchingCourseInfo: PropTypes.bool,
-    isExpanded: PropTypes.bool,
-    setTab: PropTypes.func,
-    setView: PropTypes.func,
-    user: PropTypes.objectOf(PropTypes.any),
-    login: PropTypes.func,
-    logout: PropTypes.func,
-    mobileView: PropTypes.bool,
-    clearScheduleData: PropTypes.func,
-    storeLoaded: PropTypes.bool,
-};
-
+//@ts-ignore
 const mapStateToProps = (state) => ({
     schoolReq: state.filters.schoolReq,
     filterData: state.filters.filterData,
@@ -399,21 +413,27 @@ const mapStateToProps = (state) => ({
     user: state.login.user,
 });
 
+//@ts-ignore
 const mapDispatchToProps = (dispatch) => ({
-    login: (user) => dispatch(login(user)),
+    login: (user: User) => dispatch(login(user)),
     logout: () => dispatch(logout()),
     loadRequirements: () => dispatch(loadRequirements()),
-    startSearch: (filterData) => dispatch(fetchCourseSearch(filterData)),
-    addSchoolReq: (reqID) => dispatch(addSchoolReq(reqID)),
-    remSchoolReq: (reqID) => dispatch(remSchoolReq(reqID)),
-    updateSearchText: (s) => dispatch(updateSearchText(s)),
-    updateRangeFilter: (field) => (values) =>
+    startSearch: (filterData: FilterData) =>
+        dispatch(fetchCourseSearch(filterData)),
+    addSchoolReq: (reqID: string) => dispatch(addSchoolReq(reqID)),
+    remSchoolReq: (reqID: string) => dispatch(remSchoolReq(reqID)),
+    updateSearchText: (s: string) => dispatch(updateSearchText(s)),
+    updateRangeFilter: (field: string) => (values: [number, number]) =>
         dispatch(updateRangeFilter(field, values)),
-    updateCheckboxFilter: (field, value, toggleState) =>
-        dispatch(updateCheckboxFilter(field, value, toggleState)),
+    updateCheckboxFilter: (
+        field: string,
+        value: string,
+        toggleState: boolean
+    ) => dispatch(updateCheckboxFilter(field, value, toggleState)),
     clearAll: () => dispatch(clearAll()),
-    clearFilter: (propertyName) => dispatch(clearFilter(propertyName)),
+    clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),
     clearScheduleData: () => dispatch(clearAllScheduleData()),
 });
+//@ts-ignore
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);
