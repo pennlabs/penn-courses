@@ -309,13 +309,13 @@ export const CourseHeader = ({
           <i className="fa fa-thumbtack" /> {note}
         </div>
       ))}
-    {liveData && liveData.sections.length > 0 ? (
+    {liveData && liveData.sections && liveData.sections.length > 0 ? (
       <TagsWhenOffered
         liveData={liveData}
         data={data}
         existingInstructors={Object.values(instructors).map(a => a.name)}
       />
-    ) : !liveData || liveData.sections.length === 0 ? (
+    ) : !liveData || (liveData.sections && liveData.sections.length === 0) ? (
       <TagsNotOffered data={data} />
     ) : null}
   </div>
