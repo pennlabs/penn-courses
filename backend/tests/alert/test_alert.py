@@ -14,7 +14,13 @@ from rest_framework.test import APIClient
 from tests.courses.util import create_data_with_type, create_mock_data
 
 from alert import tasks
-from alert.models import SOURCE_PCA, Registration, RegistrationGroup, RegStatus, register_for_course
+from alert.models import (
+    SOURCE_PCA,
+    Registration,
+    RegistrationGroup,
+    RegStatus,
+    register_for_course,
+)
 from alert.tasks import get_registrations_for_alerts
 from courses.models import Section, StatusUpdate
 from courses.util import get_or_create_course_and_section
@@ -127,10 +133,10 @@ class SendAlertTestCase(TestCase):
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
         )
         self.assertEquals(
-            0, len(get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="X"))
+            0, len(get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="X")),
         )
         self.assertEquals(
-            0, len(get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status=""))
+            0, len(get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="")),
         )
         tasks.send_alert(self.r.id, False, sent_by="ADM")
         r = Registration.objects.get(id=self.r.id)
@@ -308,7 +314,7 @@ class SendAlertTestCase(TestCase):
         )
 
     def resend_alert_forced_helper(
-        self, mock_email, mock_text, mock_push_notification, push_notification, close_notification
+        self, mock_email, mock_text, mock_push_notification, push_notification, close_notification,
     ):
         """
         This helper checks that calling tasks.send_alert with the forced parameter as True
@@ -1202,7 +1208,7 @@ class UserDetailTestCase(TestCase):
         response = self.client.put(
             reverse("user-profile"),
             json.dumps(
-                {"profile": {"email": None, "phone": "3131234567", "push_notifications": True}}
+                {"profile": {"email": None, "phone": "3131234567", "push_notifications": True,}}
             ),
             content_type="application/json",
         )
@@ -1427,7 +1433,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(model.close_notification, data["close_notification"])
         self.assertEqual(model.close_notification_sent, data["close_notification_sent"])
         self.assertEqual(
-            model.close_notification_sent_at, self.convert_date(data["close_notification_sent_at"])
+            model.close_notification_sent_at, self.convert_date(data["close_notification_sent_at"]),
         )
         self.assertEqual(model.original_created_at, self.convert_date(data["original_created_at"]))
         self.assertEqual(model.created_at, self.convert_date(data["created_at"]))
@@ -1957,7 +1963,7 @@ class AlertRegistrationTestCase(TestCase):
                     "email": new_user.profile.email,
                     "push_username": new_user.username,
                 },
-                {"number": "+11234567890", "email": "j@gmail.com", "push_username": None},
+                {"number": "+11234567890", "email": "j@gmail.com", "push_username": None,},
             ],
             should_send=True,
             close_notification=False,
@@ -2434,7 +2440,7 @@ class AlertRegistrationTestCase(TestCase):
                 self.client.put(
                     reverse("registrations-detail", args=[first_id]),
                     json.dumps(
-                        {"deleted": True, "auto_resubscribe": True, "close_notification": True}
+                        {"deleted": True, "auto_resubscribe": True, "close_notification": True,}
                     ),
                     content_type="application/json",
                 )
@@ -2487,7 +2493,7 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps(
-                {"section": "CIS-160-001", "auto_resubscribe": True, "close_notification": True}
+                {"section": "CIS-160-001", "auto_resubscribe": True, "close_notification": True,}
             ),
             content_type="application/json",
         )
@@ -2506,7 +2512,7 @@ class AlertRegistrationTestCase(TestCase):
             r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
         )
         self.simulate_alert(
-            self.cis160, 1, close_notification=True, should_send=False, contact_infos=contact_infos
+            self.cis160, 1, close_notification=True, should_send=False, contact_infos=contact_infos,
         )
         r = Registration.objects.get(id=first_id)
         self.assertTrue(
@@ -2525,7 +2531,7 @@ class AlertRegistrationTestCase(TestCase):
         )
         contact_infos[0]["number"] = None
         self.simulate_alert(
-            self.cis160, 3, close_notification=True, should_send=True, contact_infos=contact_infos
+            self.cis160, 3, close_notification=True, should_send=True, contact_infos=contact_infos,
         )
         r = Registration.objects.get(id=first_id)
         self.assertFalse(
@@ -2549,7 +2555,7 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps(
-                {"section": "CIS-160-001", "auto_resubscribe": True, "close_notification": True}
+                {"section": "CIS-160-001", "auto_resubscribe": True, "close_notification": True,}
             ),
             content_type="application/json",
         )
@@ -2574,7 +2580,7 @@ class AlertRegistrationTestCase(TestCase):
             self.client.post(
                 reverse("registrations-list"),
                 json.dumps(
-                    {"id": first_id, "auto_resubscribe": auto_resub, "close_notification": True}
+                    {"id": first_id, "auto_resubscribe": auto_resub, "close_notification": True,}
                 ),
                 content_type="application/json",
             )
@@ -2889,18 +2895,11 @@ class BulkTestCases(TestCase):
         set_semester()
         self.add_courses()
         self.client = Client()
-        User.objects.create_user(username="jacob", password="top_secret")
+        user = User.objects.create_user(username="jacob", password="top_secret")
+        user.profile.email = "user@example.com"
+        user.profile.save()
         self.client = APIClient()
-        self.client.login(username="jacob", password="top_secret")
-
-    def test_settings_before_create(self):
-        response = self.client.get(reverse("user-profile"))
-        self.assertEqual(200, response.status_code)
-        self.assertEqual("jacob", response.data["username"])
-        self.assertEqual("", response.data["first_name"])
-        self.assertEqual("", response.data["last_name"])
-        self.assertEqual(None, response.data["profile"]["email"])
-        self.assertEqual(None, response.data["profile"]["phone"])
+        self.client.force_authenticate(user)
 
     def test_bulk_register_lec_with_lec(self):
         response = self.client.post(
@@ -2993,6 +2992,7 @@ class BulkTestCases(TestCase):
         all_bulk = RegistrationGroup.objects.all()
 
         self.assertEqual(response.status_code, 200)
+        print("RESPONSE", response.data)
         self.assertEqual(len(Registration.objects.all()), 2)
         self.assertEqual(len(RegistrationGroup.objects.all()), 1)
         for reg in all_regs:
@@ -3037,18 +3037,11 @@ class MultiTestCases(TestCase):
         set_semester()
         self.add_courses()
         self.client = Client()
-        User.objects.create_user(username="jacob", password="top_secret")
+        user = User.objects.create_user(username="jacob", password="top_secret")
+        user.profile.email = "user@example.com"
+        user.profile.save()
         self.client = APIClient()
-        self.client.login(username="jacob", password="top_secret")
-
-    def test_settings_before_create(self):
-        response = self.client.get(reverse("user-profile"))
-        self.assertEqual(200, response.status_code)
-        self.assertEqual("jacob", response.data["username"])
-        self.assertEqual("", response.data["first_name"])
-        self.assertEqual("", response.data["last_name"])
-        self.assertEqual(None, response.data["profile"]["email"])
-        self.assertEqual(None, response.data["profile"]["phone"])
+        self.client.force_authenticate(user)
 
     def test_multi_singleton(self):
         courses = ["CIS-120-001"]
