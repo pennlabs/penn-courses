@@ -6,12 +6,11 @@ import phonenumbers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Count, Max, Min, OuterRef, Q, Subquery
+from django.db.models import OuterRef, Q, Subquery
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from courses.util import get_current_semester
 from review.annotations import review_averages
 
 
@@ -272,14 +271,6 @@ class SectionManager(models.Manager):
         return sections_with_reviews(super().get_queryset()).distinct()
 
 
-def normalize(value, min, max):
-    """
-    This function normalizes the given value to a 0-1 scale based on the given min and max.
-    WARNING: ensure that max-min != 0 before calling this function.
-    """
-    return float(value - min) / float(max - min)
-
-
 class Section(models.Model):
     """
     This model represents a section of a course at Penn, e.g. CIS-120-001 for the CIS-120 course.
@@ -407,35 +398,6 @@ class Section(models.Model):
 
     def __str__(self):
         return "%s %s" % (self.full_code, self.course.semester)
-
-    @property
-    def current_popularity(self):
-        """
-        The current popularity of the section, which is defined as:
-        [the number of active PCA registrations for this section]/[the class capacity]
-        mapped onto the range [0,1] where the lowest current popularity (across all sections)
-        maps to 0 and the highest current popularity maps to 1.
-        NOTE: sections with an invalid class capacity (0 or negative) are excluded from
-        computation of the statistic, and if this section has an invalid class capacity, then
-        this property will equal None (or null in JSON).
-        """
-        from alert.models import Registration  # imported here to avoid circular imports
-
-        if self.capacity == 0:
-            return None
-        aggregate_scores = (
-            Registration.objects.filter(section__course__semester=get_current_semester(),
-                                        section__capacity__gt=0)
-            .values("section", "section__capacity")
-            .annotate(score=Count("section") / Max("section__capacity"))
-            .aggregate(min=Min("score"), max=Max("score"))
-        )
-        if aggregate_scores.min == aggregate_scores.max:
-            return 0.5
-        this_score = float(Registration.objects.filter(section=self).count()) / float(self.capacity)
-        # normalize(...) maps the range [aggregate_scores.min, aggregate_scores.max] to [0,1] and
-        # returns the position of this_score on this new range
-        return normalize(this_score, aggregate_scores.min, aggregate_scores.max)
 
     @property
     def semester(self):

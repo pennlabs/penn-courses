@@ -184,6 +184,6 @@ RegistrationViewSet_override_schema = {
     }
 }
 
-PcaSectionsWithStatistics_examples = {
+SectionsWithStatistics_examples = {
     # TODO: add examples
 }

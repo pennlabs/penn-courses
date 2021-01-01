@@ -16,7 +16,7 @@ from rest_framework.response import Response
 import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
-    PcaSectionsWithStatisticsSerializer,
+    SectionStatisticsSerializer,
     RegistrationCreateSerializer,
     RegistrationSerializer,
     RegistrationUpdateSerializer,
@@ -523,16 +523,16 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
         ).prefetch_related("section")
 
 
-class PcaSectionsWithStatistics(generics.ListAPIView, BaseCourseMixin):
+class SectionStatistics(generics.ListAPIView, BaseCourseMixin):
     """
     Retrieve a list of PCA summary statistics for multiple sections (less detailed than
-    [PCA] PCADetailedStatistics).  The sections are filtered by the search term (assumed to be a
+    [PCA] DetailedStatistics).  The sections are filtered by the search term (assumed to be a
     prefix of a section's full code, with each chunk either space-delimited, dash-delimited,
     or not delimited). Note that section search here works the same way as for [PCA] List Sections.
     """
 
     schema = PcxAutoSchema(
-        examples=examples.PcaSectionsWithStatistics_examples,
+        examples=examples.SectionsWithStatistics_examples,
         response_codes={
             "/api/alert/sections-with-statistics/": {
                 "GET": {200: "[SCHEMA]Sections With Summary Statistics Listed Successfully."}
@@ -540,7 +540,7 @@ class PcaSectionsWithStatistics(generics.ListAPIView, BaseCourseMixin):
         },
     )
 
-    serializer_class = PcaSectionsWithStatisticsSerializer
+    serializer_class = SectionStatisticsSerializer
     queryset = Section.objects.all()
     filter_backends = [TypedSectionSearchBackend]
     search_fields = ["^full_code"]

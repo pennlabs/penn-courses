@@ -15,9 +15,9 @@ router.register(r"registrationhistory", RegistrationHistoryViewSet, basename="re
 urlpatterns = [
     path("courses/", courses.views.SectionList.as_view(), name="section-search"),
     path(
-        "sections-with-statistics/",
-        cache_page(60 * 60)(views.PcaSectionsWithStatistics.as_view()),
-        name="section-with-statistics-search",
+        "sections/stats",
+        cache_page(60 * 60)(views.SectionStatistics.as_view()),
+        name="section-stats",
     ),
     path("webhook", views.accept_webhook, name="webhook"),
     path("settings/", UserView.as_view(), name="user-profile"),
