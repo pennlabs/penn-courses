@@ -1,15 +1,12 @@
 from textwrap import dedent
 
+from django.core.cache import cache
+from django.db.models import Count, Max, Min
 from rest_framework import serializers
 
 from alert.models import Registration
 from courses.models import Section, StatusUpdate, string_dict_to_html
-
-from django.db.models import Count, Max, Min
-
 from courses.util import get_current_semester
-
-from django.core.cache import cache
 
 
 registration_fields = [
@@ -177,8 +174,7 @@ class SectionStatisticsSerializer(serializers.ModelSerializer):
         ),
     )
     instructors = serializers.StringRelatedField(
-        many=True,
-        help_text="A list of the names of the instructors teaching this section.",
+        many=True, help_text="A list of the names of the instructors teaching this section.",
     )
     course_title = serializers.SerializerMethodField(
         help_text=dedent(
@@ -219,16 +215,17 @@ class SectionStatisticsSerializer(serializers.ModelSerializer):
         if self.capacity == 0:
             return None
 
-        section_popularity_extrema = cache.get('section_popularity_extrema')
+        section_popularity_extrema = cache.get("section_popularity_extrema")
         if section_popularity_extrema is None:
             section_popularity_extrema = (
-                Registration.objects.filter(section__course__semester=get_current_semester(),
-                                            section__capacity__gt=0)
+                Registration.objects.filter(
+                    section__course__semester=get_current_semester(), section__capacity__gt=0
+                )
                 .values("section", "section__capacity")
                 .annotate(score=Count("section") / Max("section__capacity"))
                 .aggregate(min=Min("score"), max=Max("score"))
             )
-            cache.set('section_popularity_extrema', section_popularity_extrema, timeout=(60 * 60))
+            cache.set("section_popularity_extrema", section_popularity_extrema, timeout=(60 * 60))
 
         if section_popularity_extrema.min == section_popularity_extrema.max:
             return 0.5
@@ -246,7 +243,7 @@ class SectionStatisticsSerializer(serializers.ModelSerializer):
             "meeting_times",
             "instructors",
             "course_title",
-            "current_popularity"
+            "current_popularity",
         ]
         read_only_fields = fields
 

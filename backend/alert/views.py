@@ -16,10 +16,10 @@ from rest_framework.response import Response
 import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
-    SectionStatisticsSerializer,
     RegistrationCreateSerializer,
     RegistrationSerializer,
     RegistrationUpdateSerializer,
+    SectionStatisticsSerializer,
 )
 from alert.tasks import send_course_alerts
 from courses.models import Section

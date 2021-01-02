@@ -48,6 +48,7 @@ tqdm = "*"
 nose = "*"
 importlib-metadata = "*"
 django-redis = "*"
+pandas = "*"
 
 [requires]
 python_version = "3"
