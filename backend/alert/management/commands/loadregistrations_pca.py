@@ -206,6 +206,13 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
             )
         registration.save()
 
+    print("Correcting original_created_at values...")
+    for tup in tqdm(registrations):
+        (_, _, _, _, _, id, _) = tup
+        registration = Registration.objects.get(id=id_corrections[id])
+        registration.original_created_at = None
+        registration.save()
+
     print(
         f"Done! {len(registrations)} registrations and {num_dummy_sections} dummy sections "
         "added to database."

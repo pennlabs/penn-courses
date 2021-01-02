@@ -182,6 +182,7 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
             registration = Registration(section=section, notification_sent=row["notification_sent"])
         registration.save()
         registration.created_at = row["created_at"]
+        registration.original_created_at = None
         registration.save()
 
     print(
