@@ -184,6 +184,10 @@ RegistrationViewSet_override_schema = {
     }
 }
 
-SectionsWithStatistics_examples = {
+SectionsStatisticsList_examples = {
+    # TODO: add examples
+}
+
+SectionStatisticsDetail_examples = {
     # TODO: add examples
 }

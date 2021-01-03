@@ -13,6 +13,9 @@ from django.utils import timezone
 
 from review.annotations import review_averages
 
+from django.core.cache import cache
+from django.db.models import Count, Max, Min
+
 
 User = get_user_model()
 
@@ -413,6 +416,64 @@ class Section(models.Model):
         True if self.status == "O", False otherwise
         """
         return self.status == "O"
+
+    @property
+    def current_pca_registration_volume(self):
+        """
+        The number of currently active registrations watching this section on PCA.
+        """
+        from alert.models import Registration  # imported here to avoid circular imports
+        return Registration.objects.filter(
+            section=self, **Registration.is_active_filter()
+            # section=self also encodes the proper semester
+        ).count()
+
+    @property
+    def current_relative_pca_popularity(self):
+        """
+        The current relative PCA popularity of the section, which is defined as:
+        [the number of active PCA registrations for this section]/[the class capacity]
+        mapped onto the range [0,1] where the lowest current popularity (across all sections)
+        maps to 0 and the highest current popularity maps to 1.
+        NOTE: sections with an invalid class capacity (0 or negative) are excluded from
+        computation of this statistic, and if this section has a class capacity of 0, then
+        this method will return None.
+        """
+        from alert.models import Registration  # imported here to avoid circular imports
+        from courses.util import get_current_semester
+
+        if self.capacity <= 0:
+            return None
+
+        section_popularity_extrema = cache.get("section_popularity_extrema")
+        if section_popularity_extrema is None:
+            section_popularity_extrema = (
+                Registration.objects.filter(
+                    section__course__semester=get_current_semester(), section__capacity__gt=0,
+                    **Registration.is_active_filter()
+                )
+                .values("section", "section__capacity")
+                .annotate(score=Count("section") / Max("section__capacity"))
+                .aggregate(min=Min("score"), max=Max("score"))
+            )
+            cache.set("section_popularity_extrema", section_popularity_extrema, timeout=(60 * 60))
+
+        if section_popularity_extrema.min == section_popularity_extrema.max:
+            return 0.5
+        this_score = self.get_current_registration_volume / float(self.capacity)
+
+        def normalize(value, min, max):
+            """
+            This function normalizes the given value to a 0-1 scale based on the given min and max.
+            Raises ValueError if min >= max.
+            """
+            if min >= max:
+                raise ValueError(f"normalize called with min >= max ({min} >= {max})")
+            return float(value - min) / float(max - min)
+
+        # we map the range [aggregate_scores.min, aggregate_scores.max] to [0,1] and
+        # return the position of this_score on this new range
+        return normalize(this_score, section_popularity_extrema.min, section_popularity_extrema.max)
 
     def save(self, *args, **kwargs):
         self.full_code = f"{self.course.full_code}-{self.code}"

@@ -13,11 +13,11 @@ router.register(r"registrations", RegistrationViewSet, basename="registrations")
 router.register(r"registrationhistory", RegistrationHistoryViewSet, basename="registrationhistory")
 
 urlpatterns = [
-    path("courses/", courses.views.SectionList.as_view(), name="section-search"),
+    path("courses/", views.SectionStatsList.as_view(), name="section-search"),
     path(
-        "sections/stats",
-        cache_page(60 * 60)(views.SectionStatistics.as_view()),
-        name="section-stats",
+        "<slug:semester>/sections/<slug:full_code>/statistics/",
+        views.SectionStatsDetail.as_view(),  # cache_page(60 * 60)(views...)
+        name="section-statistics-detail",
     ),
     path("webhook", views.accept_webhook, name="webhook"),
     path("settings/", UserView.as_view(), name="user-profile"),

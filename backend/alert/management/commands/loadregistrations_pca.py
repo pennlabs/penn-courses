@@ -28,7 +28,8 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
     """
     :param file_path: Path to the csv specifying the registrations.
         The CSV for PCA registrations must have the following columns (one row per registration):
-            dept code, course code, section code, semester, created_at, id [, resubscribed_from_id]
+            dept code, course code, section code, semester, created_at, id,
+            resubscribed_from_id, notification_sent, notification_sent_at
     :param dummy_missing_sections: Set to True to fill in missing sections with dummy info
         (only containing dept_code, course_code, section_code, and semester).
     """
@@ -39,9 +40,9 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
 
     def load_fail_print(i, line):
         print(
-            f"Row {i} (1-indexed) of {file_path} is invalid:\n{line.strip()}\n"
-            f"Columns must be: dept code, course code, section code, semester, "
-            "created_at, id [, resubscribed_from_id]\n\n"
+            f"For the above reason, row {i} (1-indexed) of {file_path} is invalid:\n{line.strip()}"
+            f"\n(Not necessarily helpful reminder: Columns must be: dept code, course code, "
+            "section code, semester, created_at, id [, resubscribed_from_id])\n\n"
             "Invalid input; no registrations were added to the database.\n"
         )
 
@@ -53,12 +54,8 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
         for line in tqdm(f, total=get_num_lines(file_path)):
             i += 1
             bits = line.strip().split(",")
-            if len(bits) < 6:
-                print(f"\nRow found with {len(bits)} (<6) columns.")
-                load_fail_print(i, line)
-                return False
-            if len(bits) > 7:
-                print(f"\nRow found with {len(bits)} (>7) columns.")
+            if len(bits) != 9:
+                print(f"\nRow found with {len(bits)} (!=9) columns.")
                 load_fail_print(i, line)
                 return False
             dept_code = bits[0].upper()
@@ -90,22 +87,28 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
             try:
                 if semester[-1].upper() not in ["A", "B", "C"]:
                     raise ValueError()
-            except ValueError:
+            except Exception as e:
                 print(f"\nSemester {semester} is invalid.")
+                print(e)
                 load_fail_print(i, line)
                 return False
             exception = ""
+            dt = None
             try:
-                created_at = make_aware(parse_datetime(bits[4]))
+                dt = parse_datetime(bits[4])
             except Exception as e:
-                created_at = None
+                dt = None
                 exception = e
-            if created_at is None:
+            if dt is None:
                 print(f"\nDatetime '{bits[4]}' could not be parsed to a datetime object.")
                 if exception != "":
                     print(exception)
                 load_fail_print(i, line)
                 return False
+            try:
+                created_at = make_aware(dt)
+            except ValueError:
+                created_at = dt
             try:
                 id = int(bits[5])
             except ValueError:
@@ -114,7 +117,7 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
                 return False
 
             resubscribed_from_id = None
-            if len(bits) == 7 and bits[6] != "":
+            if bits[6] != "":
                 try:
                     resubscribed_from_id = int(bits[6])
                 except ValueError:
@@ -124,6 +127,49 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
                     )
                     load_fail_print(i, line)
                     return False
+            try:
+                notification_sent = bool(int(bits[7]))
+            except ValueError:
+                print(
+                        f"\nNotification_sent value '{bits[7]}' could not be parsed "
+                        "as a bool."
+                )
+                load_fail_print(i, line)
+                return False
+            notification_sent_at = None
+            if notification_sent:
+                fail = False
+                dt = None
+                try:
+                    dt = parse_datetime(bits[8])
+                except ValueError:
+                    fail = True
+                if dt is None:
+                    fail = True
+                if fail:
+                    print(
+                        f"\nNotification_sent_at value '{bits[8]}' could not be parsed "
+                        "as a datetime."
+                    )
+                    load_fail_print(i, line)
+                    return False
+                try:
+                    notification_sent_at = make_aware(dt)
+                except ValueError:
+                    notification_sent_at = dt
+
+            if found_section is not None and Registration.objects.filter(
+                section=found_section, created_at=created_at, notification_sent=notification_sent,
+                notification_sent_at=notification_sent_at
+            ).exists():
+                print(
+                    f"A registration with section {dept_code}-{course_code}-{section_code} "
+                    f"{semester}, 'created_at'='{created_at}' and 'notification_sent_at'="
+                    f"'{notification_sent_at}' already exists in database. Did you accidentally "
+                    "run this script twice?"
+                )
+                load_fail_print(i, line)
+                return False
 
             registrations.append(
                 (
@@ -135,6 +181,8 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
                     created_at,
                     id,
                     resubscribed_from_id,
+                    notification_sent,
+                    notification_sent_at
                 )
             )
 
@@ -164,6 +212,8 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
             created_at,
             id,
             resubscribed_from_id,
+            notification_sent,
+            notification_sent_at
         ) = tup
 
         if found_section is None:
@@ -184,12 +234,15 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
 
         correction = False
         if Registration.objects.filter(id=id).exists():
-            registration = Registration(section=section)
+            registration = Registration(section=section, source="SCRIPT_PCA")
             correction = True
         else:
             registration = Registration(section=section, id=id)
         registration.save()
         registration.created_at = created_at
+        registration.notification_sent = notification_sent
+        if notification_sent:
+            registration.notification_sent_at = notification_sent_at
         registration.save()
         if correction:
             id_corrections[id] = registration.id
@@ -197,7 +250,7 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
     print("Connecting resubscribe chains...")
 
     for tup in tqdm(registrations):
-        (dept_code, course_code, section_code, semester, created_at, id, resubscribed_from_id) = tup
+        (_, _, _, _, _, _, id, resubscribed_from_id, _, _) = tup
 
         registration = Registration.objects.get(id=id_corrections[id])
         if resubscribed_from_id is not None:
@@ -208,7 +261,7 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
 
     print("Correcting original_created_at values...")
     for tup in tqdm(registrations):
-        (_, _, _, _, _, id, _) = tup
+        (_, _, _, _, _, _, id, _, _, _) = tup
         registration = Registration.objects.get(id=id_corrections[id])
         registration.original_created_at = None
         registration.save()
@@ -237,6 +290,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
+        if "production" in os.environ["DJANGO_SETTINGS_MODULE"]:
+            print("Do not load PCA registrations into production using this script without "
+                  "testing it more thoroughly.")
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
         src = os.path.abspath(kwargs["file_path"])

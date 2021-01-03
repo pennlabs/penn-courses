@@ -124,6 +124,8 @@ class Registration(models.Model):
         ("PCP", "Penn Course Plan"),
         ("PCR", "Penn Course Review"),
         ("PM", "Penn Mobile"),
+        ("SCRIPT_PCN", "The loadregistrations_pcn shell command"),
+        ("SCRIPT_PCA", "The loadregistrations_pca shell command")
     )
 
     source = models.CharField(

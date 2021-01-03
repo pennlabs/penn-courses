@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from alert.models import Registration
 from courses.models import Section, StatusUpdate, string_dict_to_html
+from courses.serializers import MiniSectionSerializer, SectionDetailSerializer
 from courses.util import get_current_semester
 
 
@@ -153,87 +154,11 @@ class RegistrationUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = [f for f in registration_fields if f != "auto_resubscribe"]
 
 
-def normalize(value, min, max):
+class MiniSectionStatsSerializer(MiniSectionSerializer):
     """
-    This function normalizes the given value to a 0-1 scale based on the given min and max.
-    Raises ValueError if min >= max.
+    A copy of MiniSectionSerializer, except includes the current_pca_registration_volume and
+    current_relative_pca_popularity statistics additionally.
     """
-    if min >= max:
-        raise ValueError(f"normalize called with min >= max ({min} >= {max})")
-    return float(value - min) / float(max - min)
-
-
-class SectionStatisticsSerializer(serializers.ModelSerializer):
-    section_id = serializers.CharField(
-        source="full_code",
-        help_text=dedent(
-            """
-            The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
-            001 lecture section of CIS-120.
-            """
-        ),
-    )
-    instructors = serializers.StringRelatedField(
-        many=True, help_text="A list of the names of the instructors teaching this section.",
-    )
-    course_title = serializers.SerializerMethodField(
-        help_text=dedent(
-            """
-            The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.
-            """
-        ),
-    )
-    current_popularity = serializers.SerializerMethodField(
-        help_text=dedent(
-            """
-            The current popularity of the section, which is defined as:
-            [the number of active PCA registrations for this section]/[the class capacity]
-            mapped onto the range [0,1] where the lowest current popularity (across all sections)
-            maps to 0 and the highest current popularity maps to 1.
-            NOTE: sections with an invalid class capacity (0 or negative) are excluded from
-            computation of the statistic, and if this section has an invalid class capacity, then
-            this method will return None (or null in JSON).
-            """
-        ),
-    )
-
-    def get_course_title(self, obj):
-        return obj.course.title
-
-    def get_current_popularity(self):
-        """
-        The current popularity of the section, which is defined as:
-        [the number of active PCA registrations for this section]/[the class capacity]
-        mapped onto the range [0,1] where the lowest current popularity (across all sections)
-        maps to 0 and the highest current popularity maps to 1.
-        NOTE: sections with an invalid class capacity (0 or negative) are excluded from
-        computation of the statistic, and if this section has an invalid class capacity, then
-        this method will return None (or null in JSON).
-        """
-        from alert.models import Registration  # imported here to avoid circular imports
-
-        if self.capacity == 0:
-            return None
-
-        section_popularity_extrema = cache.get("section_popularity_extrema")
-        if section_popularity_extrema is None:
-            section_popularity_extrema = (
-                Registration.objects.filter(
-                    section__course__semester=get_current_semester(), section__capacity__gt=0
-                )
-                .values("section", "section__capacity")
-                .annotate(score=Count("section") / Max("section__capacity"))
-                .aggregate(min=Min("score"), max=Max("score"))
-            )
-            cache.set("section_popularity_extrema", section_popularity_extrema, timeout=(60 * 60))
-
-        if section_popularity_extrema.min == section_popularity_extrema.max:
-            return 0.5
-        this_score = float(Registration.objects.filter(section=self).count()) / float(self.capacity)
-        # normalize(...) maps the range [aggregate_scores.min, aggregate_scores.max] to [0,1] and
-        # returns the position of this_score on this new range
-        return normalize(this_score, section_popularity_extrema.min, section_popularity_extrema.max)
-
     class Meta:
         model = Section
         fields = [
@@ -243,10 +168,33 @@ class SectionStatisticsSerializer(serializers.ModelSerializer):
             "meeting_times",
             "instructors",
             "course_title",
-            "current_popularity",
+            "current_pca_registration_volume",  # added
+            "current_relative_pca_popularity"  # added
         ]
         read_only_fields = fields
 
-    @staticmethod
-    def get_semester(obj):
-        return obj.course.semester
+
+class SectionDetailStatsSerializer(SectionDetailSerializer):
+    """
+    A copy of SectionDetailSerializer, except includes the current_pca_registration_volume and
+    current_relative_pca_popularity statistics additionally.
+    """
+    class Meta:
+        model = Section
+        fields = [
+            "id",
+            "status",
+            "activity",
+            "credits",
+            "semester",
+            "meetings",
+            "instructors",
+            "course_quality",
+            "instructor_quality",
+            "difficulty",
+            "work_required",
+            "associated_sections",
+            "current_pca_registration_volume",  # added
+            "current_relative_pca_popularity"  # added
+        ]
+        read_only_fields = fields

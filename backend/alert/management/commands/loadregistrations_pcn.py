@@ -127,6 +127,16 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
                 )
                 raise ValueError
             return None
+        if Registration.objects.filter(section=found_section,
+                                       created_at=row["created_at"],
+                                       notification_sent=row["notification_sent"],
+                                       notification_sent_at=row["notification_sent_at"]).exists():
+            error_message = (
+                f"A registration with section {dept_code}-{course_code}-{section_code} {semester}, "
+                f"'created'='{row['created']}' and 'updated'='{row['updated']}' already exists in "
+                "database. Did you accidentally run this script twice?"
+            )
+            raise ValueError
         return found_section.id
 
     print("Checking if specified sections exist in database...")
@@ -179,7 +189,9 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
                 notification_sent_at=row["notification_sent_at"],
             )
         else:
-            registration = Registration(section=section, notification_sent=row["notification_sent"])
+            registration = Registration(section=section,
+                                        notification_sent=row["notification_sent"],
+                                        source="SCRIPT_PCN")
         registration.save()
         registration.created_at = row["created_at"]
         registration.original_created_at = None

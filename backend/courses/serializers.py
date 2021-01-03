@@ -54,7 +54,8 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         ),
     )
 
-    def get_course_title(self, obj):
+    @staticmethod
+    def get_course_title(obj):
         return obj.course.title
 
     class Meta:
@@ -65,13 +66,9 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             "activity",
             "meeting_times",
             "instructors",
-            "course_title",
+            "course_title"
         ]
         read_only_fields = fields
-
-    @staticmethod
-    def get_semester(obj):
-        return obj.course.semester
 
 
 course_quality_help = "The average course quality rating for this section, on a scale of 0-4."
