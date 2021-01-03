@@ -428,9 +428,6 @@ def make_manual_schema_changes(data):
 
     # Remove ID from the documented PUT request body for /api/plan/schedules/
     # (the id field in the request body is ignored in favor of the id path parameter)
-    print(data["paths"]["/api/plan/schedules/{id}/"]["put"]["requestBody"][
-        "content"
-    ])
     for content_ob in data["paths"]["/api/plan/schedules/{id}/"]["put"]["requestBody"][
         "content"
     ].values():
