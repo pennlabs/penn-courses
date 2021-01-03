@@ -268,3 +268,13 @@ class UserTestCase(TestCase):
         response = self.client.get(reverse("user-profile"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["first_name"], "new_name")
+        response = self.client.patch(
+            "/accounts/me/",
+            json.dumps({"profile": {"phone": "3131234567"}}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse("user-profile"))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data["first_name"], "new_name")
+        self.assertEqual(response.data["profile"]["phone"], "+13131234567")
