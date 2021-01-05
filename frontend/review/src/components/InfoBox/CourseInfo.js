@@ -226,7 +226,7 @@ const TagsWhenOffered = ({
             .map((item, idx) => (
               <span key={item.id}>
                 {idx > 0 && ", "}
-                <Link to={`/instructor/${item.id}`}>{item.name}</Link>}
+                <Link to={`/instructor/${item.id}`}>{item.name}</Link>
               </span>
             ))}
         </div>
