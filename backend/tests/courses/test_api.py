@@ -82,7 +82,7 @@ class CourseDetailTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["id"], "CIS-120")
         self.assertEqual(len(response.data["sections"]), 2)
-        self.assertEqual("Test Instructor", response.data["sections"][0]["instructors"][0])
+        self.assertEqual("Test Instructor", response.data["sections"][0]["instructors"][0]["name"])
 
     def test_section_cancelled(self):
         course, section = create_mock_data("CIS-120-201", TEST_SEMESTER)

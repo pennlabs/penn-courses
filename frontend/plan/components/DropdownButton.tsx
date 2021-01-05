@@ -66,7 +66,7 @@ export function DropdownButton({
                             <button
                                 type="button"
                                 className="delete is-small"
-                                onClick={(e) => {
+                                onClick={e => {
                                     clearFilter();
                                     e.stopPropagation();
                                 }}

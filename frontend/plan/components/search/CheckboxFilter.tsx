@@ -32,7 +32,7 @@ export function CheckboxFilter<
         <div className="columns contained">
             {Object.keys(filterData[checkboxProperty]) //
                 .sort()
-                .map((key) => {
+                .map(key => {
                     // Typecast is necessary since Object.keys() does not
                     // return keyof Object
                     const filterProperty = key as V;

@@ -139,7 +139,7 @@ const CartSection = ({
                       borderBottom: "1px solid #E5E8EB",
                   }
         }
-        onClick={(e) => {
+        onClick={e => {
             // ensure that it's not the trash can being clicked
             if (
                 // NOTE: explicit typecase and not null assertion operator used

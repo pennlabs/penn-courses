@@ -1,4 +1,4 @@
-import React, {CSSProperties} from "react";
+import React, { CSSProperties } from "react";
 
 interface DaysProps {
     offset: number;
@@ -20,7 +20,7 @@ export default function Days(props: DaysProps) {
     };
     return (
         <div style={style}>
-            {days.map((e) => (
+            {days.map(e => (
                 <span className="day" key={e}>
                     {e}
                 </span>

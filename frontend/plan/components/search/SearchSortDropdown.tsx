@@ -101,9 +101,9 @@ SearchSortDropdown.propTypes = {
 
 const mapStateToProps = () => ({});
 //@ts-ignore
-const mapDispatchToProps = (dispatch) => ({
+const mapDispatchToProps = dispatch => ({
     //@ts-ignore
-    updateSort: (sortMode) => dispatch(changeSortType(sortMode)),
+    updateSort: sortMode => dispatch(changeSortType(sortMode)),
 });
 
 //@ts-ignore

@@ -89,11 +89,11 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                             {instructors.length > 0 ? (
                                 <>
                                     {instructors.map((elem, ind) => (
-                                        <div key={elem}>
+                                        <div key={elem.id}>
                                             {ind !== 0 ? <br /> : null}
                                             {ind !== instructors.length - 1
-                                                ? `${elem},`
-                                                : elem}
+                                                ? `${elem.name},`
+                                                : elem.name}
                                         </div>
                                     ))}
                                 </>
@@ -118,7 +118,7 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                                 <div>
                                     <i className="fas fa-map-marker-alt grey-text" />
                                     &nbsp;
-                                    {((l) => {
+                                    {(l => {
                                         // formats location names
                                         const ret = new Set();
                                         l.forEach(({ room }) =>

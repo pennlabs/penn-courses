@@ -27,14 +27,14 @@ const annotatePrerequisites = (
 ) => {
     if (typeof text !== "string" || !/\S/.test(text)) return null;
     const courseRegex = /((^|\W)[A-Z]{3}[A-Z]?(-|\s)[0-9]{3}($|(?=\W)))/;
-    const tokens = text.split(courseRegex).filter((elem) => /\S/.test(elem));
+    const tokens = text.split(courseRegex).filter(elem => /\S/.test(elem));
     tokens.unshift("Prerequisites: ");
     return tokens.map((token, i) =>
         courseRegex.test(token) ? (
             <a
                 key={i}
                 role="button"
-                onClick={(e) => {
+                onClick={e => {
                     e.preventDefault();
                     onClick && onClick(token.trim().replace(/\s/g, "-"));
                 }}
@@ -99,9 +99,7 @@ export default function CourseDetails({
                     </span>
                     &nbsp; Crosslisted as: &nbsp;
                     <TagList
-                        elements={crosslistings.map((e) =>
-                            e.replace(/-/g, " ")
-                        )}
+                        elements={crosslistings.map(e => e.replace(/-/g, " "))}
                         limit={2}
                         onClick={getCourse}
                     />
