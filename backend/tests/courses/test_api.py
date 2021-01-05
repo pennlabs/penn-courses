@@ -1,3 +1,6 @@
+import json
+
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
@@ -247,3 +250,31 @@ class SectionListTestCase(TestCase):
         response = self.client.get(reverse("section-search"), kwargs={"semester": TEST_SEMESTER})
         self.assertEqual(1, len(response.data))
         self.assertEqual("CIS-120-001", response.data[0]["section_id"])
+
+
+class UserTestCase(TestCase):
+    def setUp(self):
+        User.objects.create_user(username="jacob", password="top_secret")
+        self.client = APIClient()
+        self.client.login(username="jacob", password="top_secret")
+
+    def test_patch(self):
+        response = self.client.patch(
+            "/accounts/me/",
+            json.dumps({"first_name": "new_name"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse("user-profile"))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data["first_name"], "new_name")
+        response = self.client.patch(
+            "/accounts/me/",
+            json.dumps({"profile": {"phone": "3131234567"}}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse("user-profile"))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data["first_name"], "new_name")
+        self.assertEqual(response.data["profile"]["phone"], "+13131234567")
