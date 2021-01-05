@@ -4,13 +4,13 @@ from inspect import getdoc
 from textwrap import dedent
 
 from django.utils.encoding import force_str
+from jsonref import JsonRef
 from rest_framework import serializers
 from rest_framework.compat import uritemplate
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONOpenAPIRenderer
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.schemas.utils import get_pk_description, is_list_view
-from jsonref import JsonRef
 
 
 """
