@@ -66,6 +66,7 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
     try:
         table["created_at"] = table["created"].progress_map(lambda x: get_date(x, "created"))
     except ValueError:
+        print("\n\n")
         print(error_message)
         return False
     print("Parsing updated dates...")
@@ -75,6 +76,7 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
             axis=1,
         )
     except ValueError:
+        print("\n\n")
         print(error_message)
         return False
 
@@ -143,6 +145,7 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
     try:
         table["found_section_id"] = table.progress_apply(lambda row: find_section(row), axis=1)
     except ValueError:
+        print("\n\n")
         print(error_message)
         return False
 
@@ -187,6 +190,7 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
                 section=section,
                 notification_sent=row["notification_sent"],
                 notification_sent_at=row["notification_sent_at"],
+                source="SCRIPT_PCN"
             )
         else:
             registration = Registration(section=section,

@@ -78,8 +78,9 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
                 found_section = None
                 searched_for_sections[f"{full_code} {semester}"] = None
             if found_section is None and not dummy_missing_sections:
+                print("\n\n")
                 print(
-                    f"\nSection {dept_code}-{course_code}-{section_code} from semester {semester} "
+                    f"Section {dept_code}-{course_code}-{section_code} from semester {semester} "
                     f"not found and dummy_missing_sections was not flagged."
                 )
                 load_fail_print(i, line)
@@ -88,7 +89,8 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
                 if semester[-1].upper() not in ["A", "B", "C"]:
                     raise ValueError()
             except Exception as e:
-                print(f"\nSemester {semester} is invalid.")
+                print("\n\n")
+                print(f"Semester {semester} is invalid.")
                 print(e)
                 load_fail_print(i, line)
                 return False
@@ -100,7 +102,8 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
                 dt = None
                 exception = e
             if dt is None:
-                print(f"\nDatetime '{bits[4]}' could not be parsed to a datetime object.")
+                print("\n\n")
+                print(f"Datetime '{bits[4]}' could not be parsed to a datetime object.")
                 if exception != "":
                     print(exception)
                 load_fail_print(i, line)
@@ -112,7 +115,8 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
             try:
                 id = int(bits[5])
             except ValueError:
-                print(f"\nId value '{bits[5]}' could not be parsed as an int.")
+                print("\n\n")
+                print(f"Id value '{bits[5]}' could not be parsed as an int.")
                 load_fail_print(i, line)
                 return False
 
@@ -121,18 +125,18 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
                 try:
                     resubscribed_from_id = int(bits[6])
                 except ValueError:
+                    print("\n\n")
                     print(
-                        f"\nResubscribed_from_id value '{bits[6]}' could not be parsed "
-                        "as an int."
+                        f"Resubscribed_from_id value '{bits[6]}' could not be parsed as an int."
                     )
                     load_fail_print(i, line)
                     return False
             try:
                 notification_sent = bool(int(bits[7]))
             except ValueError:
+                print("\n\n")
                 print(
-                        f"\nNotification_sent value '{bits[7]}' could not be parsed "
-                        "as a bool."
+                    f"Notification_sent value '{bits[7]}' could not be parsed as a bool."
                 )
                 load_fail_print(i, line)
                 return False
@@ -147,9 +151,9 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
                 if dt is None:
                     fail = True
                 if fail:
+                    print("\n\n")
                     print(
-                        f"\nNotification_sent_at value '{bits[8]}' could not be parsed "
-                        "as a datetime."
+                        f"Notification_sent_at value '{bits[8]}' could not be parsed as a datetime."
                     )
                     load_fail_print(i, line)
                     return False
@@ -162,6 +166,7 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
                 section=found_section, created_at=created_at, notification_sent=notification_sent,
                 notification_sent_at=notification_sent_at
             ).exists():
+                print("\n\n")
                 print(
                     f"A registration with section {dept_code}-{course_code}-{section_code} "
                     f"{semester}, 'created_at'='{created_at}' and 'notification_sent_at'="
@@ -188,18 +193,8 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
 
     print("Verification succeeded! Proceeding to load registrations (adding to database)...")
 
-    class injection_dict(dict):
-        """
-        If a specified key has not yet been set, an injection_dict returns the key.
-        """
-
-        def __missing__(self, key):
-            return key
-
-    id_corrections = injection_dict()
-
+    id_corrections = dict()
     num_dummy_sections = 0
-
     created_sections = dict()
 
     for tup in tqdm(registrations):
@@ -232,37 +227,31 @@ def load_pca_registrations(file_path, dummy_missing_sections=False):
         else:
             section = found_section
 
-        correction = False
-        if Registration.objects.filter(id=id).exists():
-            registration = Registration(section=section, source="SCRIPT_PCA")
-            correction = True
-        else:
-            registration = Registration(section=section, id=id)
+        registration = Registration(section=section, source="SCRIPT_PCA")
         registration.save()
         registration.created_at = created_at
         registration.notification_sent = notification_sent
         if notification_sent:
             registration.notification_sent_at = notification_sent_at
         registration.save()
-        if correction:
-            id_corrections[id] = registration.id
+        id_corrections[id] = registration.id
 
     print("Connecting resubscribe chains...")
 
     for tup in tqdm(registrations):
         (_, _, _, _, _, _, id, resubscribed_from_id, _, _) = tup
 
-        registration = Registration.objects.get(id=id_corrections[id])
+        registration = Registration.objects.get(id=id_corrections[id], source="SCRIPT_PCA")
         if resubscribed_from_id is not None:
             registration.resubscribed_from = Registration.objects.get(
-                id=id_corrections[resubscribed_from_id]
+                id=id_corrections[resubscribed_from_id], source="SCRIPT_PCA"
             )
         registration.save()
 
     print("Correcting original_created_at values...")
     for tup in tqdm(registrations):
         (_, _, _, _, _, _, id, _, _, _) = tup
-        registration = Registration.objects.get(id=id_corrections[id])
+        registration = Registration.objects.get(id=id_corrections[id], source="SCRIPT_PCA")
         registration.original_created_at = None
         registration.save()
 
@@ -290,9 +279,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        if "production" in os.environ["DJANGO_SETTINGS_MODULE"]:
-            print("Do not load PCA registrations into production using this script without "
-                  "testing it more thoroughly.")
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
         src = os.path.abspath(kwargs["file_path"])
