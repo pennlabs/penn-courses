@@ -13,19 +13,19 @@ interface PProps {
 }
 
 function optionalRule<P>(
-    property: string,
-    field: keyof P,
+    cssProp: string,
+    componentProp: keyof P,
     dflt?: string | number
 ): (props: P) => string | number {
     return (props) =>
-        props[field] || dflt !== undefined
-            ? `${property}: ${props[field] || dflt}`
+        props[componentProp] || dflt !== undefined
+            ? `${cssProp}: ${props[componentProp] || dflt};`
             : "";
 }
 
 export const P = styled.p<PProps>`
     ${optionalRule("font-size", "size")}
     ${optionalRule("font-weight", "weight")}
-    ${optionalRule("color", "size")}
+    ${optionalRule("color", "color")}
     ${optionalRule("margin", "margin")}
 `;
