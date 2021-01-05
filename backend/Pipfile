@@ -6,7 +6,6 @@ name = "pypi"
 [dev-packages]
 codecov = "*"
 coverage = "*"
-black = "==19.10b0"
 unittest-xml-reporting = "*"
 flake8 = "*"
 flake8-isort = "*"
@@ -15,6 +14,7 @@ flake8-quotes = "*"
 pytest = "*"
 pytest-django = "*"
 django-debug-toolbar = "*"
+black = "==19.10b0"
 
 [packages]
 django = "*"
@@ -48,6 +48,7 @@ tqdm = "*"
 nose = "*"
 importlib-metadata = "*"
 django-redis = "*"
+jsonref = "*"
 pandas = "*"
 
 [requires]
