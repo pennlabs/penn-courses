@@ -90,7 +90,7 @@ class ScoreBox extends Component {
           currentInstructors: instructorTaught,
           data: data.map(a => ({
             ...a,
-            star: instructorsThisSemester[convertInstructorName(a.name)]
+            star: instructorsThisSemester[a.id]
           }))
         }));
       } else {
@@ -332,10 +332,8 @@ class ScoreBox extends Component {
         </span>
       ),
       sortMethod: (a, b) => {
-        const aname = convertInstructorName(a);
-        const bname = convertInstructorName(b);
-        const hasStarA = this.state.currentInstructors[aname];
-        const hasStarB = this.state.currentInstructors[bname];
+        const hasStarA = this.state.currentInstructors[a.id];
+        const hasStarB = this.state.currentInstructors[b.id];
         if (hasStarA && !hasStarB) {
           return -1;
         }
@@ -345,7 +343,7 @@ class ScoreBox extends Component {
         if (hasStarA !== hasStarB) {
           return hasStarB - hasStarA;
         }
-        return a.localeCompare(b);
+        return a.name.localeCompare(b.name);
       },
       filterMethod: (filter, rows) => {
         if (filter.value === "") {
