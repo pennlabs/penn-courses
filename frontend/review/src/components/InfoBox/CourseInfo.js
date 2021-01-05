@@ -219,7 +219,10 @@ const TagsWhenOffered = ({
           New Instructors:{" "}
           {newInstructors
             .sort()
-            .filter((elt, idx, arr) => elt.id !== arr[idx - 1].id)
+            .filter(
+              (elt, idx, arr) =>
+                arr[idx - 1] === undefined || elt.id !== arr[idx - 1].id
+            )
             .map((item, idx) => (
               <span key={item.id}>
                 {idx > 0 && ", "}
