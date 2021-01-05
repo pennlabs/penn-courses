@@ -36,7 +36,7 @@ export interface CUFilter {
     0.5: boolean;
     1.0: boolean;
     1.5: boolean;
-} 
+}
 
 export enum Day {
     M = "M",
@@ -67,6 +67,11 @@ export enum SortMode {
     GOOD_AND_EASY = "Good & Easy",
 }
 
+export interface Instructor {
+    id: number;
+    name: string;
+}
+
 export interface Section {
     id: string;
     status: Status;
@@ -74,7 +79,7 @@ export interface Section {
     credits: number;
     semester: string;
     meetings?: Meeting[];
-    instructors: string[];
+    instructors: Instructor[];
     course_quality?: number;
     instructor_quality?: number;
     difficulty?: number;
@@ -173,5 +178,5 @@ export interface FilterType {
     _:
         | number[]
         | { "1": number; "0.5": number; "1.5": number }
-        | { LAB: number; REC: number; SEM: number; STU: number };     
+        | { LAB: number; REC: number; SEM: number; STU: number };
 }
