@@ -55,17 +55,19 @@ class ScoreBox extends Component {
     const instructorTaught = {};
     const { data, liveData, type } = this.props;
     if (type === "course") {
-      Object.values(data.instructors).forEach(inst => {
-        instructorTaught[inst.id] = convertSemesterToInt(inst.latest_semester);
+      Object.values(data.instructors).forEach(a => {
+        const key = convertInstructorName(a.name);
+        instructorTaught[key] = convertSemesterToInt(a.most_recent_semester);
       });
 
       if (liveData && liveData.sections) {
         const instructorsThisSemester = {};
         // const { instructors = [], courses } = liveData;
-        const instructors = liveData.sections.flatMap(
-          ({ instructors }) => instructors
+        const instructors = liveData.sections.flatMap(({ instructors }) =>
+          instructors.map(convertInstructorName)
         );
         instructors.forEach(inst => {
+          const key = convertInstructorName(inst);
           const data = {
             open: 0,
             all: 0,
@@ -73,8 +75,10 @@ class ScoreBox extends Component {
           };
           const coursesByInstructor = liveData.sections.filter(
             ({ instructors }) =>
-              instructors.map(({ id }) => id).indexOf(inst.id) !== -1
+              instructors.map(convertInstructorName).indexOf(key) !== -1
           );
+          console.log("liveData sections", liveData.sections);
+          console.log("liveData by instructor", coursesByInstructor);
           // .filter((section) => !a.is_cancelled);
           data.open += coursesByInstructor.filter(
             section => section.status === "O"
@@ -83,9 +87,11 @@ class ScoreBox extends Component {
           data.sections = data.sections.concat(
             coursesByInstructor.map(section => section)
           );
-          instructorsThisSemester[inst.id] = data;
-          instructorTaught[inst.id] = Infinity;
+          instructorsThisSemester[key] = data;
+          instructorTaught[key] = Infinity;
         });
+        console.log("instructors", instructorsThisSemester);
+        console.log("data", this.state.data);
         this.setState(({ data }) => ({
           currentInstructors: instructorTaught,
           data: data.map(a => ({
