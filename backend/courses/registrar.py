@@ -52,6 +52,16 @@ def get_all_course_status(semester):
         )
 
 
+def get_departments():
+    headers = get_headers()
+    url = "https://esb.isc-seo.upenn.edu/8091/open_data/course_section_search_parameters/"
+    r = requests.get(url, headers=headers)
+    if r.status_code == requests.codes.ok:
+        result_data = r.json().get("result_data", [])
+        if len(result_data) > 0:
+            return result_data[0]["departments_map"]
+
+
 def get_courses(query, semester):
     headers = get_headers()
 

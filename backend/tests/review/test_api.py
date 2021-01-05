@@ -234,6 +234,8 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                     self.instructor1.pk: average_and_recent(4, 4),
                     self.instructor2.pk: average_and_recent(2, 2),
                 },
+                "num_sections": 1,
+                "num_sections_recent": 1,
             },
         )
 
@@ -314,6 +316,28 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
                     },
                     self.instructor2.pk: {**average_and_recent(1.5, 2), "latest_semester": "2017A"},
                 },
+            },
+        )
+
+    def test_course_with_cotaught_section(self):
+        create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 1})
+        self.assertRequestContains(
+            "course-reviews",
+            "CIS-120",
+            {
+                **average_and_recent(2, 2.5),
+                "instructors": {
+                    self.instructor1.pk: {
+                        **average_and_recent(3, 4),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                    self.instructor2.pk: {
+                        **average_and_recent(1.33, 1),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+                "num_sections": 4,
+                "num_sections_recent": 1,
             },
         )
 
@@ -416,6 +440,12 @@ class NotFoundTestCase(TestCase):
     def test_history(self):
         self.assertEqual(
             404, self.client.get(reverse("course-history", args=["BLAH", 123])).status_code
+        )
+
+    def test_no_reviews(self):
+        get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        self.assertEqual(
+            404, self.client.get(reverse("course-reviews", args=["CIS-120"])).status_code
         )
 
 
