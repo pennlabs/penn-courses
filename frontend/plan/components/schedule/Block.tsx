@@ -45,7 +45,7 @@ const VisibleBlock = styled.div<VisibleBlockProps>`
     }
 `;
 
-const RemoveButton = styled.i.attrs(props => ({
+const RemoveButton = styled.i.attrs((props) => ({
     role: "button",
     className: "fas fa-times",
 }))`
@@ -57,7 +57,7 @@ const RemoveButton = styled.i.attrs(props => ({
     transition: opacity 0.25s ease-in-out;
 `;
 
-const WarningIcon = styled.i.attrs(props => ({
+const WarningIcon = styled.i.attrs((props) => ({
     className: "fas fa-exclamation",
 }))`
     position: absolute;
@@ -110,7 +110,7 @@ export default function Block(props: BlockProps) {
                 <InnerBlock>
                     {!isMobile && (
                         <RemoveButton
-                            onClick={e => {
+                            onClick={(e) => {
                                 remove();
                                 e.stopPropagation();
                             }}

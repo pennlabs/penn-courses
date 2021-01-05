@@ -25,7 +25,7 @@ function SectionList({
     return (
         <div className="results">
             <ul>
-                {sections.map(s => (
+                {sections.map((s) => (
                     <Section
                         key={s.id}
                         section={s}

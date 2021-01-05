@@ -86,7 +86,7 @@ const CourseList = ({
                 </div>
             </div>
             <ul className="scrollable course-list" ref={listRef}>
-                {courseSort(courses, sortMode).map(course => (
+                {courseSort(courses, sortMode).map((course) => (
                     <Course
                         key={course.id}
                         course={course}

@@ -21,7 +21,7 @@ const DropdownButton = ({
 }: DropdownButton) => (
     <div
         role="button"
-        onClick={e => {
+        onClick={(e) => {
             // NOTE: explicit cast to HTMLElement to resolve compile error
             // .getAttribute doesn't exist on type EventTarget
             const targetClass = (e.target as HTMLElement).getAttribute("class");

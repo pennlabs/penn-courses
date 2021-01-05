@@ -60,7 +60,7 @@ export const getConflictGroups = (meetings: MeetingBlock[]) => {
         }
     };
 
-    meetings.forEach(m => {
+    meetings.forEach((m) => {
         if (m.id) {
             conflicts[m.id] = new Set([m]);
         }
@@ -118,7 +118,7 @@ export const getTimeString = (meetings: Meeting[]) => {
     const times: { [index: string]: string[] } = {};
     let maxcount = 0;
     let maxrange: string = "";
-    meetings.forEach(meeting => {
+    meetings.forEach((meeting) => {
         const rangeId = `${meeting.start}-${meeting.end}`;
         if (!times[rangeId]) {
             times[rangeId] = [meeting.day];
@@ -132,8 +132,8 @@ export const getTimeString = (meetings: Meeting[]) => {
     });
 
     let daySet = "";
-    Object.values(Day).forEach(day => {
-        times[maxrange].forEach(d => {
+    Object.values(Day).forEach((day) => {
+        times[maxrange].forEach((d) => {
             if (d === day) {
                 daySet += day;
             }

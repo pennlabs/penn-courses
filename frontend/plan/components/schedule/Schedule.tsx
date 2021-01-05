@@ -134,15 +134,15 @@ class Schedule extends Component {
                 return color;
             };
         })();
-        const sectionIds = sections.map(x => x.id);
+        const sectionIds = sections.map((x) => x.id);
 
         // a meeting is the data that represents a single block on the schedule.
         const meetings: MeetingBlock[] = [];
-        sections.forEach(s => {
+        sections.forEach((s) => {
             const color = getColor(s.id);
             if (s.meetings) {
                 meetings.push(
-                    ...s.meetings.map(m => ({
+                    ...s.meetings.map((m) => ({
                         day: m.day as Day,
                         start: transformTime(m.start, false),
                         end: transformTime(m.end, true),
@@ -152,7 +152,8 @@ class Schedule extends Component {
                             coreqFulfilled:
                                 s.associated_sections.length === 0 ||
                                 s.associated_sections.filter(
-                                    coreq => sectionIds.indexOf(coreq.id) !== -1
+                                    (coreq) =>
+                                        sectionIds.indexOf(coreq.id) !== -1
                                 ).length > 0,
                         },
                         style: {
@@ -165,11 +166,11 @@ class Schedule extends Component {
         });
         // get the minimum start hour and the max end hour to set bounds on the schedule.
         startHour = Math.floor(
-            Math.min(startHour, ...meetings.map(m => m.start))
+            Math.min(startHour, ...meetings.map((m) => m.start))
         );
-        endHour = Math.ceil(Math.max(endHour, ...meetings.map(m => m.end)));
+        endHour = Math.ceil(Math.max(endHour, ...meetings.map((m) => m.end)));
 
-        getConflictGroups(meetings).forEach(conflict => {
+        getConflictGroups(meetings).forEach((conflict) => {
             // for every conflict of size k, make the meetings in that conflict
             // take up (100/k) % of the square, and use `left` to place them
             // next to each other.
@@ -184,7 +185,7 @@ class Schedule extends Component {
         });
         // generate actual block components.
         // position in grid is determined by the block given the meeting info and grid offsets.
-        const blocks = meetings.map(meeting => (
+        const blocks = meetings.map((meeting) => (
             <Block
                 meeting={meeting}
                 course={meeting.course}
@@ -217,7 +218,7 @@ class Schedule extends Component {
                 <h3 className="section-header">
                     <ScheduleSelectorDropdown
                         activeName={activeScheduleName}
-                        contents={scheduleNames.map(scheduleName => ({
+                        contents={scheduleNames.map((scheduleName) => ({
                             text: scheduleName,
                             onClick: () => switchSchedule(scheduleName),
                         }))}

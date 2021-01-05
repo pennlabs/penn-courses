@@ -105,7 +105,7 @@ class Stats extends Component<StatsProps> {
                 [index: string]: { [index: string]: number };
             } = {};
             const courseCUs: { [index: string]: number } = {};
-            meetings.forEach(section => {
+            meetings.forEach((section) => {
                 if (section.meetings) {
                     section.meetings.forEach((meeting: Meeting) => {
                         startTimes.push(meeting.start);
@@ -123,7 +123,7 @@ class Stats extends Component<StatsProps> {
                     ); // finds course (irrespective of section)
                     courseStats[course] = courseStats[course] || {};
                     courseRepeats[course] = courseRepeats[course] || {};
-                    statTypes.forEach(stat => {
+                    statTypes.forEach((stat) => {
                         if (section[stat]) {
                             courseStats[course][stat] =
                                 (courseStats[course][stat] || 0) +
@@ -138,7 +138,7 @@ class Stats extends Component<StatsProps> {
             });
 
             const sums: { [index: string]: number[] } = {};
-            statTypes.forEach(stat => {
+            statTypes.forEach((stat) => {
                 sums[stat] = [];
             });
 
@@ -146,7 +146,7 @@ class Stats extends Component<StatsProps> {
             const denominator: { [index: string]: number } = {};
             for (const course in courseStats) {
                 if (Object.prototype.hasOwnProperty.call(courseStats, course)) {
-                    statTypes.forEach(stat => {
+                    statTypes.forEach((stat) => {
                         if (courseRepeats[course][stat] > 0) {
                             sums[stat].push(
                                 (courseStats[course][stat] /
@@ -175,7 +175,7 @@ class Stats extends Component<StatsProps> {
             averageHours = (totalHours / 5).toFixed(1);
             totalHours = parseFloat(totalHours.toFixed(1));
 
-            statTypes.forEach(stat => {
+            statTypes.forEach((stat) => {
                 avgs[stat] = denominator[stat]
                     ? sums[stat].reduce((a: number, b: number) => a + b, 0) /
                       denominator[stat]

@@ -47,7 +47,7 @@ export function SchoolReq({
                     <strong>School</strong>
                 </p>
                 <ul className="field" style={{ marginTop: "0.5rem" }}>
-                    {schools.map(school => (
+                    {schools.map((school) => (
                         <li key={school} style={{ display: "table-row" }}>
                             <input
                                 style={{ display: "table-cell" }}
@@ -78,7 +78,7 @@ export function SchoolReq({
                     {selSchool === "Nursing" && (
                         <p> Nursing requirements are coming soon!</p>
                     )}
-                    {schoolReq[schoolCode[selSchool]].map(req => (
+                    {schoolReq[schoolCode[selSchool]].map((req) => (
                         <li key={req.id}>
                             <input
                                 className="is-checkradio is-small"

@@ -118,7 +118,7 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                                 <div>
                                     <i className="fas fa-map-marker-alt grey-text" />
                                     &nbsp;
-                                    {(l => {
+                                    {((l) => {
                                         // formats location names
                                         const ret = new Set();
                                         l.forEach(({ room }) =>
