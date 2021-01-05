@@ -2,7 +2,8 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
-from tests.courses.util import create_mock_data
+from tests.courses.util import create_mock_data, create_mock_data_days, create_mock_data_multiple_meetings, \
+    create_mock_async_class
 
 from courses.models import Instructor, Requirement
 from plan.search import TypedCourseSearchBackend
@@ -229,3 +230,89 @@ class CourseReviewAverageTestCase(TestCase):
         response = self.client.get(reverse("courses-current-list"), {"difficulty": "0-2"})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+
+class DayFilterTestCase(TestCase):
+    def setUp(self):
+        self.course, self.section1 = create_mock_data_days("CIS-120-001", TEST_SEMESTER)
+        _, self.section2 = create_mock_data_days(code="CIS-120-002", semester=TEST_SEMESTER, days="TR")
+        _, self.section3 = create_mock_data_days(code="CIS-160-001", semester=TEST_SEMESTER, days="F")
+        _, self.section4 = create_mock_data_days(code="CIS-160-002", semester=TEST_SEMESTER, days="S")
+        _, self.section7 = create_mock_data_multiple_meetings(code="CIS-121-002", semester=TEST_SEMESTER)
+
+        # asynchronous so should always show up
+        _, self.section8 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+        self.client = APIClient()
+        set_semester()
+
+    def test_all_days(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"days": "MTWRFS"}
+        )
+        self.assertEqual(4, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_no_days(self):
+        # only async
+        response = self.client.get(
+            reverse("courses-current-list"), {"days": ""}
+        )
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]["id"], "CIS-262")
+        self.assertEqual(200, response.status_code)
+
+    def test_both_sections_work(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"days": "FS"}
+        )
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-160", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_one_section_works(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"days": "FS"}
+        )
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-160", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_both_meetings_work(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"days": "MTWR"}
+        )
+        self.assertEqual(3, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-120", "CIS-121", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_one_meeting_works(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"days": "MT"}
+        )
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+class TimeFilterTestCase(TestCase):
+    def setUp(self):
+        self.course, self.section1 = create_mock_data_days("CIS-120-001", TEST_SEMESTER)
+        _, self.section2 = create_mock_data_days(code="CIS-120-002", semester=TEST_SEMESTER, start=12.0, end=13.0)
+        _, self.section3 = create_mock_data_days(code="CIS-160-001", semester=TEST_SEMESTER, start=1.0, end=5.0)
+        _, self.section4 = create_mock_data_days(code="CIS-160-002", semester=TEST_SEMESTER, start=2.0, end=4.0)
+        _, self.section7 = create_mock_data_multiple_meetings(code="CIS-121-002", semester=TEST_SEMESTER)
+
+        # asynchronous so should always show up
+        _, self.section8 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+        self.client = APIClient()
+        set_semester()
