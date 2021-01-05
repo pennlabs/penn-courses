@@ -329,7 +329,7 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                                     setValue(suggestion.section_id);
                                 }}
                                 title={suggestion.course_title}
-                                instructor={suggestion.instructors[0].name}
+                                instructor={suggestion.instructors[0]}
                             />
                         ))}
                 </DropdownBox>

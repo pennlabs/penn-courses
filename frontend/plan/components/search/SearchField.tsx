@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { FilterData } from "../../../plan/types";
+import { FilterData } from "../../../plan/types"
 
 interface SearchFieldProps {
-    startSearch: (filterData: FilterData) => void;
+    startSearch: (filterData: FilterData) => void; 
     updateSearchText: (txt: string) => void;
     filterData: FilterData;
     isDisabled: boolean;
@@ -17,7 +17,7 @@ export function SearchField({
     isDisabled,
     setTab,
     mobileView,
-}: SearchFieldProps) {
+} : SearchFieldProps) {
     const [searchValue, setSearchValue] = useState("");
 
     const handleChangeVal = (event: React.ChangeEvent<HTMLInputElement>) => {

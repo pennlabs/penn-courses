@@ -1,4 +1,4 @@
-import React, { CSSProperties } from "react";
+import React, {CSSProperties} from "react";
 
 interface DaysProps {
     offset: number;

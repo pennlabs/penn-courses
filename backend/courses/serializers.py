@@ -3,15 +3,7 @@ from textwrap import dedent
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from courses.models import (
-    Course,
-    Instructor,
-    Meeting,
-    Requirement,
-    Section,
-    StatusUpdate,
-    UserProfile,
-)
+from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserProfile
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -39,12 +31,6 @@ class SectionIdSerializer(serializers.ModelSerializer):
         ]
 
 
-class InstructorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Instructor
-        fields = ["id", "name"]
-
-
 class MiniSectionSerializer(serializers.ModelSerializer):
     section_id = serializers.CharField(
         source="full_code",
@@ -56,7 +42,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    instructors = InstructorSerializer(
+    instructors = serializers.StringRelatedField(
         many=True,
         read_only=True,
         help_text="A list of the names of the instructors teaching this section.",
@@ -125,7 +111,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    instructors = InstructorSerializer(
+    instructors = serializers.StringRelatedField(
         read_only=True,
         many=True,
         help_text="A list of the names of the instructors teaching this section.",

@@ -89,11 +89,11 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                             {instructors.length > 0 ? (
                                 <>
                                     {instructors.map((elem, ind) => (
-                                        <div key={elem.id}>
+                                        <div key={elem}>
                                             {ind !== 0 ? <br /> : null}
                                             {ind !== instructors.length - 1
-                                                ? `${elem.name},`
-                                                : elem.name}
+                                                ? `${elem},`
+                                                : elem}
                                         </div>
                                     ))}
                                 </>
