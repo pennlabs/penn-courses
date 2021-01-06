@@ -2,12 +2,12 @@
 # yarn lockfile v1
 
 
-"@pennlabs/kraken@^0.3.0":
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/@pennlabs/kraken/-/kraken-0.3.0.tgz#e1fbb2a3821854c496ce2d4573fe8101302c459c"
-  integrity sha512-zUz5WPO5R9euhx1ntAAHa5LkJB1TNcCFy/V0rOM9zLo9shxm9sC7y8MfLEl2/n1uzDCkV1LM3vvryYBqivKnNg==
+"@pennlabs/kraken@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@pennlabs/kraken/-/kraken-0.4.0.tgz#706d145e61792cfe3e5e9044aa7f4988359ca237"
+  integrity sha512-5DvffwOm1UxuRLWL4iCFZVfkoKdNfN/1a6rlpOqJscNSaMerMx5zKCh6byyb4T4wZek/j1eYV6J60DsXXBJMEQ==
   dependencies:
-    cdkactions "^0.1.4"
+    cdkactions "^0.2.0"
     constructs "^3.2.80"
     dedent-js "^1.0.1"
 
@@ -35,6 +35,11 @@ argparse@^1.0.7:
   dependencies:
     sprintf-js "~1.0.2"
 
+argparse@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
+  integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
+
 cdkactions-cli@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/cdkactions-cli/-/cdkactions-cli-0.1.4.tgz#2c5a9c251370a3691cfeb51c5717373e7cebeb8f"
@@ -54,6 +59,14 @@ cdkactions@^0.1.4:
   dependencies:
     dedent-js "^1.0.1"
     js-yaml "^3.14.1"
+
+cdkactions@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/cdkactions/-/cdkactions-0.2.0.tgz#58c3f3631b42f98ef92193e7b21b4e06def0f911"
+  integrity sha512-5YC6GVfW6oYkc29o77RLojj8stXxwFIFGZW1nmNNqEGBEBP7wSN1JpChWFy3Hthd9ZQ8aGAaud3BXR4ghJ9u1A==
+  dependencies:
+    js-yaml "^4.0.0"
+    ts-dedent "^2.0.0"
 
 cliui@^7.0.2:
   version "7.0.4"
@@ -133,6 +146,13 @@ js-yaml@^3.14.1:
     argparse "^1.0.7"
     esprima "^4.0.0"
 
+js-yaml@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.0.0.tgz#f426bc0ff4b4051926cd588c71113183409a121f"
+  integrity sha512-pqon0s+4ScYUvX30wxQi3PogGFAlUyH0awepWvwkj4jD4v+ova3RiYw8bmA6x2rDrEaj8i/oWKoRxpVNW+Re8Q==
+  dependencies:
+    argparse "^2.0.1"
+
 jsonfile@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/jsonfile/-/jsonfile-4.0.0.tgz#8771aae0799b64076b76640fca058f9c10e33ecb"
@@ -170,6 +190,11 @@ strip-ansi@^6.0.0:
   integrity sha512-AuvKTrTfQNYNIctbR1K/YGTR1756GycPsg7b9bdV9Duqur4gv6aKqHXah67Z8ImS7WEz5QVcOtlfW2rZEugt6w==
   dependencies:
     ansi-regex "^5.0.0"
+
+ts-dedent@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/ts-dedent/-/ts-dedent-2.0.0.tgz#47c5eb23d9096f3237cc413bc82d387d36dbe690"
+  integrity sha512-DfxKjSFQfw9+uf7N9Cy8Ebx9fv5fquK4hZ6SD3Rzr+1jKP6AVA6H8+B5457ZpUs0JKsGpGqIevbpZ9DMQJDp1A==
 
 typescript@^4.1.3:
   version "4.1.3"

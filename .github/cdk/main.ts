@@ -1,4 +1,3 @@
-// import * as dedent from 'dedent-js';
 import { Construct } from "constructs";
 import { App, Stack, Workflow } from "cdkactions";
 import { DeployJob, DjangoProject, ReactProject } from "@pennlabs/kraken";
@@ -21,20 +20,29 @@ export class MyStack extends Stack {
 
     const plan = new ReactProject(workflow, {
       id: "pcp",
-      path: "frontend/plan",
+      path: "frontend",
       imageName: "pcp-frontend",
+      publishProps: {
+        dockerfile: "plan/Dockerfile",
+      },
     });
 
     const alert = new ReactProject(workflow, {
       id: "pca",
-      path: "frontend/alert",
+      path: "frontend",
       imageName: "pca-frontend",
+      publishProps: {
+        dockerfile: "alert/Dockerfile",
+      },
     });
 
     const review = new ReactProject(workflow, {
       id: "pcr",
-      path: "frontend/review",
+      path: "frontend",
       imageName: "pcr-frontend",
+      publishProps: {
+        dockerfile: "review/Dockerfile",
+      },
     });
 
     new DeployJob(
