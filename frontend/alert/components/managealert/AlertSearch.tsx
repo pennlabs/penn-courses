@@ -1,10 +1,11 @@
-import React from "react";
+import React, { ChangeEventHandler, PropsWithChildren } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
-import { Flex } from "../common/layout";
+import { Flex, FlexProps } from "../common/layout";
 import { Img } from "../common/common";
+import { WrappedStyled } from "../../types";
 
-const SearchFlex = styled(Flex)`
+const SearchFlex: WrappedStyled<FlexProps> = styled(Flex)`
     background-color: #f4f4f4;
     border: solid 0.5px #dfe3e8;
     border-radius: 0.2rem;
@@ -17,7 +18,7 @@ const SearchInput = styled.input`
     width: 10rem;
 `;
 
-const SearchBarFlex = styled(Flex)`
+const SearchBarFlex: WrappedStyled<FlexProps> = styled(Flex)`
     & > * {
         display: block;
         margin: 0.1rem;
@@ -26,7 +27,12 @@ const SearchBarFlex = styled(Flex)`
 
 // Component for search filter
 // in alert management
-export const AlertSearch = ({ value, onChange }) => (
+interface AlertSearchProps {
+    value: string;
+    onChange: ChangeEventHandler;
+}
+
+export const AlertSearch = ({ value, onChange }: AlertSearchProps) => (
     <SearchFlex valign>
         <SearchBarFlex valign margin="0.2rem">
             <Img src="/svg/search.svg" alt="" width="0.6rem" height="0.6rem" />

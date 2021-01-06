@@ -1,12 +1,21 @@
-import React from "react";
+import React, { PropsWithChildren } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    FontAwesomeIcon,
+    FontAwesomeIconProps,
+} from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 
 import { between, TABLET, SMALLDESKTOP } from "../constants";
+import { WrappedStyled } from "../types";
 
-const Rectangle = styled.div`
+interface BorderProps {
+    border: string;
+    background: string;
+}
+
+const Rectangle = styled.div<BorderProps>`
     display: flex;
     flex-direction: row;
     border-radius: 0.5rem;
@@ -33,7 +42,10 @@ const Icon = styled.img`
     margin: auto;
 `;
 
-const IconDiv = styled.div`
+interface IconDivProps {
+    background: string;
+}
+const IconDiv = styled.div<IconDivProps>`
     width: 1.5rem;
     height: 1.5rem;
     margin-left: 1rem;
@@ -67,25 +79,35 @@ const RightItem = styled.div`
     margin-left: auto;
 `;
 
-export const ToastType = Object.freeze({ Success: 1, Warning: 2, Error: 3 });
+// export const ToastType = Object.freeze({ Success: 1, Warning: 2, Error: 3 });
+export enum ToastType {
+    SUCCESS,
+    WARNING,
+    ERROR,
+}
 
-const Toast = ({ onClose, children, type }) => {
-    let primary;
-    let secondary;
-    let textcolor;
-    let image;
+interface ToastProps {
+    onClose: () => void;
+    type: ToastType;
+}
 
-    if (type === ToastType.Success) {
+const Toast = ({ onClose, children, type }: PropsWithChildren<ToastProps>) => {
+    let primary: string;
+    let secondary: string;
+    let textcolor: string;
+    let image: string;
+
+    if (type === ToastType.SUCCESS) {
         primary = "#78d381";
         secondary = "#e9f8eb";
         textcolor = "#4ab255";
         image = "/svg/check.svg";
-    } else if (type === ToastType.Warning) {
+    } else if (type === ToastType.WARNING) {
         primary = "#fbcd4c";
         secondary = "#fcf5e1";
         textcolor = "#e8ad06";
         image = "/svg/bang.svg";
-    } else if (type === ToastType.Error) {
+    } else {
         primary = "#e8746a";
         secondary = "#fbebe9";
         textcolor = "#e8746a";
@@ -100,7 +122,7 @@ const Toast = ({ onClose, children, type }) => {
                 </IconDiv>
                 <ToastText color={textcolor}>{children}</ToastText>
                 <CloseButton
-                    src="/svg/close.svg"
+                    // src="/svg/close.svg"
                     color={textcolor}
                     onClick={onClose}
                 />

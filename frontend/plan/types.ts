@@ -67,6 +67,11 @@ export enum SortMode {
     GOOD_AND_EASY = "Good & Easy",
 }
 
+export interface Instructor {
+    id: number;
+    name: string;
+}
+
 export interface Section {
     id: string;
     status: Status;
@@ -74,7 +79,7 @@ export interface Section {
     credits: number;
     semester: string;
     meetings?: Meeting[];
-    instructors: string[];
+    instructors: Instructor[];
     course_quality?: number;
     instructor_quality?: number;
     difficulty?: number;

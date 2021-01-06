@@ -9,6 +9,7 @@ import { Input } from "../Input";
 import AutoComplete from "../AutoComplete";
 import { Center } from "../common/layout";
 import getCsrf from "../../csrf";
+import { User } from "../../types";
 
 const SubmitButton = styled.button`
     border-radius: 5px;
@@ -36,7 +37,13 @@ const Form = styled.form`
     flex-direction: column;
 `;
 
-const RadioSet = ({ selected, options, setSelected }) => (
+interface RadioSetProps {
+    selected: string;
+    options: { label: string; value: string }[];
+    setSelected: (val: string) => void;
+}
+
+const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
     <span>
         {options.map(({ label, value }) => (
             <>
@@ -62,7 +69,12 @@ RadioSet.propTypes = {
     setSelected: PropTypes.func,
 };
 
-const doAPIRequest = (url, method = "GET", body = {}, extraHeaders = {}) =>
+const doAPIRequest = (
+    url: string,
+    method: string = "GET",
+    body: any = {},
+    extraHeaders: Record<string, string> = {}
+) =>
     fetch(url, {
         method,
         credentials: "include",
@@ -76,7 +88,12 @@ const doAPIRequest = (url, method = "GET", body = {}, extraHeaders = {}) =>
         body: JSON.stringify(body),
     });
 
-const AlertForm = ({ user, setResponse }) => {
+interface AlertFormProps {
+    user: User;
+    setResponse: (res: Response) => void;
+}
+
+const AlertForm = ({ user, setResponse }: AlertFormProps) => {
     const [section, setSection] = useState("");
     const [email, setEmail] = useState("");
 
@@ -195,11 +212,6 @@ const AlertForm = ({ user, setResponse }) => {
             </Center>
         </Form>
     );
-};
-
-AlertForm.propTypes = {
-    user: PropTypes.objectOf(PropTypes.any),
-    setResponse: PropTypes.func,
 };
 
 export default AlertForm;
