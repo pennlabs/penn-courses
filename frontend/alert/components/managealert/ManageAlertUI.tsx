@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import PropTypes from "prop-types";
 import Header from "./Header";
 import { Flex } from "../common/layout";
 import { AlertSearch } from "./AlertSearch";
 import { AlertItem } from "./AlertItem";
-import "./ManageAlert.module.css";
 import { maxWidth, PHONE } from "../../constants";
+import { Alert, AlertAction, TAlertSel } from "../../types";
 
 const Container = styled.div`
     background: #ffffff;
@@ -94,6 +93,17 @@ export const ManageAlertHeader = () => (
     </Flex>
 );
 
+interface ManageAlertProps {
+    alerts: Alert[];
+    actionButtonHandler: (id: number, action: AlertAction) => void;
+    batchActionHandler: (action: AlertAction) => void;
+    batchSelectHandler: (select: boolean) => void;
+    batchSelected: boolean;
+    setBatchSelected: (batchSelected: boolean) => void;
+    alertSel: TAlertSel;
+    setAlertSel: (alertSel: TAlertSel) => void;
+    setFilter: (filter: { search: string }) => void;
+}
 export const ManageAlert = ({
     alerts,
     alertSel,
@@ -104,17 +114,19 @@ export const ManageAlert = ({
     batchSelectHandler,
     batchSelected,
     setBatchSelected,
-}) => {
+}: ManageAlertProps) => {
     const toggleAlert = (id) => () => {
         setAlertSel({ ...alertSel, [id]: !alertSel[id] });
     };
 
     const [searchValue, setSearchValue] = useState("");
-    const [searchTimeout, setSearchTimeout] = useState();
+    const [searchTimeout, setSearchTimeout] = useState<number>();
     const [numSelected, setNumSelected] = useState(0);
 
     useEffect(() => {
-        setNumSelected(Object.values(alertSel).reduce((acc, x) => acc + x, 0));
+        setNumSelected(
+            Object.values(alertSel).reduce((acc, x) => acc + (x ? 1 : 0), 0)
+        );
     }, [alertSel]);
 
     const handleChange = (event) => {
@@ -163,18 +175,4 @@ export const ManageAlert = ({
             </Grid>
         </Container>
     );
-};
-
-ManageAlert.propTypes = {
-    alerts: PropTypes.arrayOf(PropTypes.object),
-    actionButtonHandler: PropTypes.func,
-    batchActionHandler: PropTypes.func,
-    batchSelectHandler: PropTypes.func,
-    batchSelected: PropTypes.bool,
-    setBatchSelected: PropTypes.func,
-    setAlertSel: PropTypes.func,
-    setFilter: PropTypes.func,
-    // alertSel is an object with potentially many fields, since it is used as a map
-    // eslint-disable-next-line
-    alertSel: PropTypes.object,
 };

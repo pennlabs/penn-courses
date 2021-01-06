@@ -20,32 +20,37 @@ const ToastContainer = styled.div`
     }
 `;
 
-const MessageToast = ({ message, status, onClose }) => {
+interface MessageToastProps {
+    message: string;
+    status: number;
+    onClose: () => void;
+}
+const MessageToast = ({ message, status, onClose }: MessageToastProps) => {
     let type;
     switch (status) {
         case 201:
-            type = ToastType.Success;
+            type = ToastType.SUCCESS;
             break;
         case 503:
-            type = ToastType.Error;
+            type = ToastType.ERROR;
             break;
         case 400: // no section
-            type = ToastType.Warning;
+            type = ToastType.WARNING;
             break;
         case 409: // duplicate
-            type = ToastType.Warning;
+            type = ToastType.WARNING;
             break;
         case 404:
-            type = ToastType.Error;
+            type = ToastType.ERROR;
             break;
         case 406:
-            type = ToastType.Warning;
+            type = ToastType.WARNING;
             break;
         case 500:
-            type = ToastType.Error;
+            type = ToastType.ERROR;
             break;
         default:
-            type = ToastType.Warning;
+            type = ToastType.WARNING;
     }
     return (
         <Toast type={type} onClose={onClose}>
@@ -54,12 +59,14 @@ const MessageToast = ({ message, status, onClose }) => {
     );
 };
 
-MessageToast.propTypes = {
-    message: PropTypes.string,
-    status: PropTypes.number,
-    onClose: PropTypes.func,
-};
-
+interface MessageList {
+    messages: {
+        message: string;
+        status: number;
+        key: number;
+    }[];
+    removeMessage: (key: number) => void;
+}
 const MessageList = ({ messages, removeMessage }) => (
     <ToastContainer>
         {messages.map(({ message, status, key }) => (
@@ -72,10 +79,5 @@ const MessageList = ({ messages, removeMessage }) => (
         ))}
     </ToastContainer>
 );
-
-MessageList.propTypes = {
-    messages: PropTypes.arrayOf(PropTypes.object),
-    removeMessage: PropTypes.func,
-};
 
 export default MessageList;

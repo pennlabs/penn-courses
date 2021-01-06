@@ -1,6 +1,5 @@
-import React from "react";
+import React, { PropsWithChildren } from "react";
 import styled from "styled-components";
-import PropTypes from "prop-types";
 
 const ModalContainer = styled.div`
     display: flex;
@@ -39,7 +38,11 @@ const ModalCard = styled.div`
     width: 100%;
 `;
 
-const ModalCardHead = styled.header`
+interface ModalCardHeadProps {
+    center: boolean;
+}
+
+const ModalCardHead = styled.header<ModalCardHeadProps>`
     border-bottom: none !important;
     background-color: #fff !important;
     font-weight: 700;
@@ -67,7 +70,16 @@ const ModalCardBody = styled.div`
     display: block;
 `;
 
-const Modal = ({ children, title, headerIcon }) => (
+interface ModalProps {
+    title: string;
+    headerIcon?: string;
+}
+
+const Modal = ({
+    children,
+    title,
+    headerIcon,
+}: PropsWithChildren<ModalProps>) => (
     <ModalContainer>
         <ModalBackground />
         <ModalCard>
@@ -79,11 +91,5 @@ const Modal = ({ children, title, headerIcon }) => (
         </ModalCard>
     </ModalContainer>
 );
-
-Modal.propTypes = {
-    children: PropTypes.objectOf(PropTypes.any),
-    title: PropTypes.string,
-    headerIcon: PropTypes.objectOf(PropTypes.any),
-};
 
 export default Modal;
