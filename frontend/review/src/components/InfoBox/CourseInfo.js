@@ -217,16 +217,18 @@ const TagsWhenOffered = ({
       {Boolean(newInstructors.length) && (
         <div>
           New Instructors:{" "}
-          {newInstructors.sort().map((item, i) => (
-            <span key={i}>
-              {i > 0 && ", "}
-              {links[item] ? ( // TODO: get the ID for the link to work
-                <Link to={`/instructor/${links[item]}`}>{item}</Link>
-              ) : (
-                item
-              )}
-            </span>
-          ))}
+          {newInstructors
+            .sort()
+            .filter(
+              (elt, idx, arr) =>
+                arr[idx - 1] === undefined || elt.id !== arr[idx - 1].id
+            )
+            .map((item, idx) => (
+              <span key={item.id}>
+                {idx > 0 && ", "}
+                <Link to={`/instructor/${item.id}`}>{item.name}</Link>
+              </span>
+            ))}
         </div>
       )}
     </div>
