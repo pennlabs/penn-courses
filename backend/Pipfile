@@ -49,6 +49,7 @@ nose = "*"
 importlib-metadata = "*"
 django-redis = "*"
 jsonref = "*"
+tblib = "*"
 
 [requires]
 python_version = "3"
