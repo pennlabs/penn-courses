@@ -9,35 +9,9 @@ from rest_framework.response import Response
 import plan.examples as examples
 from courses.models import Section
 from courses.util import get_course_and_section, get_current_semester
-from courses.views import CourseList
 from PennCourses.docs_settings import PcxAutoSchema
-from plan.filters import CourseSearchFilterBackend
 from plan.models import Schedule
-from plan.search import TypedCourseSearchBackend
 from plan.serializers import ScheduleSerializer
-
-
-class CourseListSearch(CourseList):
-    """
-    The main course API endpoint for PCP. Without any GET parameters, it simply returns all courses
-    for a given semester. There are a few filter query parameters which constitute ranges of
-    floating-point numbers. The values for these are <min>-<max> , with minimum excluded.
-    For example, looking for classes in the range of 0-2.5 in difficulty, you would add the
-    parameter difficulty=0-2.5. If you are a backend developer, you can find these filters in
-    backend/plan/filters.py/CourseSearchFilterBackend. If you are reading the frontend docs,
-    these filters are listed below in the query parameters list (with description starting with
-    "Filter").
-    """
-
-    schema = PcxAutoSchema(
-        examples=examples.CourseListSearch_examples,
-        response_codes={
-            "/api/plan/courses/": {"GET": {200: "[SCHEMA]Courses listed successfully."}}
-        },
-    )
-
-    filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
-    search_fields = ("full_code", "title", "sections__instructors__name")
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
@@ -109,7 +83,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         examples=examples.ScheduleViewSet_examples,
         response_codes={
             "/api/plan/schedules/": {
-                "GET": {200: "[SCHEMA]Schedules listed successfully.",},
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",},
                 "POST": {
                     201: "Schedule successfully created.",
                     200: "Schedule successfully updated (a schedule with the "
@@ -119,7 +93,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             },
             "/api/plan/schedules/{id}/": {
                 "GET": {
-                    200: "[SCHEMA]Successful retrieve (the specified schedule exists).",
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Successful retrieve "
+                    "(the specified schedule exists).",
                     404: "No schedule with the specified id exists.",
                 },
                 "PUT": {
@@ -129,8 +104,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     404: "No schedule with the specified id exists.",
                 },
                 "DELETE": {
-                    204: "[SCHEMA]Successful delete (the specified schedule existed "
-                    "and was successfully deleted).",
+                    204: "[DESCRIBE_RESPONSE_SCHEMA]Successful delete "
+                    "(the specified schedule existed and was successfully deleted).",
                     404: "No schedule with the specified id exists.",
                 },
             },

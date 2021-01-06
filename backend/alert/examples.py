@@ -177,9 +177,3 @@ RegistrationViewSet_examples = {
         }
     },
 }
-
-RegistrationViewSet_override_schema = {
-    "/api/alert/registrations/": {
-        "POST": {201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},}
-    }
-}

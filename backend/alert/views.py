@@ -220,13 +220,13 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         response_codes={
             "/api/alert/registrations/": {
                 "POST": {
-                    201: "[SCHEMA]Registration successfully created.",
+                    201: "[DESCRIBE_RESPONSE_SCHEMA]Registration successfully created.",
                     400: "Bad request (e.g. given null section).",
                     404: "Given section not found in database.",
                     406: "No contact information (phone or email) set for user.",
                     409: "Registration for given section already exists.",
                 },
-                "GET": {200: "[SCHEMA]Registrations successfully listed."},
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registrations successfully listed."},
             },
             "/api/alert/registrations/{id}/": {
                 "PUT": {
@@ -235,12 +235,18 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     404: "Registration not found with given id.",
                 },
                 "GET": {
-                    200: "[SCHEMA]Registration detail successfully retrieved.",
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Registration detail successfully retrieved.",
                     404: "Registration not found with given id.",
                 },
             },
         },
-        override_schema=examples.RegistrationViewSet_override_schema,
+        override_schema={
+            "/api/alert/registrations/": {
+                "POST": {
+                    201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},
+                }
+            }
+        },
     )
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]
