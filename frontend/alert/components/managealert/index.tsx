@@ -2,8 +2,14 @@ import React, { useState, useEffect } from "react";
 import ReactGA from "react-ga";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { ManageAlert } from "./ManageAlertUI";
-import { AlertStatus, AlertRepeat, AlertAction } from "./AlertItemEnums";
 import getCsrf from "../../csrf";
+import {
+    Alert,
+    AlertAction,
+    AlertRepeat,
+    SectionStatus,
+    TAlertSel,
+} from "../../types";
 
 const fetchAlerts = () =>
     fetch("/api/alert/registrations/").then((res) => res.json());
@@ -12,7 +18,7 @@ const processAlerts = (setAlerts) => {
     const fetchPromise = () =>
         fetchAlerts().then((res) =>
             res.map((registration) => {
-                let datetime = null;
+                let datetime: string | null = null;
                 if (registration.notification_sent) {
                     const date = Intl.DateTimeFormat("en-US").format(
                         new Date(registration.notification_sent_at)
@@ -25,21 +31,17 @@ const processAlerts = (setAlerts) => {
                     datetime = `${date} at ${time}`;
                 }
 
-                const status =
-                    registration.section_status &&
-                    registration.section_status === "O"
-                        ? AlertStatus.Open
-                        : AlertStatus.Closed;
+                const status = registration.section_status;
 
                 let repeat;
                 if (registration.is_active) {
                     if (registration.auto_resubscribe) {
                         repeat = AlertRepeat.EOS;
                     } else {
-                        repeat = AlertRepeat.Once;
+                        repeat = AlertRepeat.ONCE;
                     }
                 } else {
-                    repeat = AlertRepeat.Inactive;
+                    repeat = AlertRepeat.INACTIVE;
                 }
 
                 return {
@@ -50,10 +52,10 @@ const processAlerts = (setAlerts) => {
                     status,
                     repeat,
                     actions:
-                        repeat === AlertRepeat.Once ||
+                        repeat === AlertRepeat.ONCE ||
                         repeat === AlertRepeat.EOS
-                            ? AlertAction.Cancel
-                            : AlertAction.Resubscribe,
+                            ? AlertAction.CANCEL
+                            : AlertAction.RESUBSCRIBE,
                 };
             })
         );
@@ -85,13 +87,13 @@ const filterAlerts = (alerts, filter) => {
 const getActionPromise = (id, actionenum) => {
     let body;
     switch (actionenum) {
-        case AlertAction.Resubscribe:
+        case AlertAction.RESUBSCRIBE:
             body = { resubscribe: true };
             break;
-        case AlertAction.Cancel:
+        case AlertAction.CANCEL:
             body = { cancelled: true };
             break;
-        case AlertAction.Delete:
+        case AlertAction.DELETE:
             body = { deleted: true };
             break;
         default:
@@ -156,13 +158,13 @@ const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
 
 const ManageAlertWrapper = () => {
     // alerts processed directly from registrationhistory
-    const [alerts, setAlerts] = useState([]);
+    const [alerts, setAlerts] = useState<Alert[]>([]);
     // state tracking the batch select button
     const [batchSelected, setBatchSelected] = useState(false);
     // state tracking which alert has been selected/ticked
-    const [alertSel, setAlertSel] = useState({});
+    const [alertSel, setAlertSel] = useState<TAlertSel>({});
     // alerts after passing through frontend filters
-    const [currAlerts, setCurrAlerts] = useState([]);
+    const [currAlerts, setCurrAlerts] = useState<Alert[]>([]);
     const [filter, setFilter] = useState({ search: "" });
 
     useEffect(() => {
@@ -170,7 +172,7 @@ const ManageAlertWrapper = () => {
     }, [alerts, filter, setCurrAlerts]);
 
     useEffect(() => {
-        const selMap = {};
+        const selMap: TAlertSel = {};
         alerts.forEach((alert) => {
             selMap[alert.id] = false;
         });
@@ -201,7 +203,8 @@ const ManageAlertWrapper = () => {
                     ReactGA.event({
                         category: "Manage Alerts",
                         action: "filter",
-                        value: f,
+                        // ReactGA doesn't want non-numerical values, but GA can handle that just fine.
+                        value: (f.search as unknown) as number,
                     });
                     setFilter(f);
                 }}
