@@ -283,8 +283,7 @@ function buildCourseSearchUrl(filterData) {
     return queryString;
 }
 
-const courseSearch = (_, filterData) =>
-    fetch(buildCourseSearchUrl(filterData));
+const courseSearch = (_, filterData) => fetch(buildCourseSearchUrl(filterData));
 
 const debouncedCourseSearch = AwesomeDebouncePromise(courseSearch, 500);
 
