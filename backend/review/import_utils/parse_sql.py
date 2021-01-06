@@ -125,6 +125,15 @@ def parse_row(s, T=SQLDumpTransformer):
     return row
 
 
+# This regex will extract strings in the form
+# INSERT INTO <table> (<columns>) VALUES (<values>);.
+# The regex group after VALUES can include any character that isn't a semicolon,
+# since that's the delineator.
+entry_regex = re.compile(
+    r"Insert into [\w\.]*\W*\(([\n ,\w]*)\)\W*Values\W*\(([^;]*)\);", re.IGNORECASE
+)
+
+
 def process_file(fo, process_row=None, T=SQLDumpTransformer, progress=True):
     """
     Read in and parse a SQL dump, with each row as a Python dictionary.
@@ -134,15 +143,9 @@ def process_file(fo, process_row=None, T=SQLDumpTransformer, progress=True):
     The `progess` option ensures we're piping the progress bar to the right
     place, and not just always polluting sys.stderr.
     """
-    # This regex will extract strings in the form
-    # INSERT INTO <table> (<columns>) VALUES (<values>).
-    # The values regex is kind of funky because it is manually including punctuation
-    # that may appear in course descriptions.
-    regex = re.compile(
-        r"Insert into [\w\.]*\W*\(([\n ,\w]*)\)\W*Values\W*\((['\w, \&\n.:/\(\)!?$%*-+#]*)\);"
-    )
+
     contents = fo.read()
-    matches = list(regex.finditer(contents))
+    matches = list(entry_regex.finditer(contents))
     for x in tqdm(matches, disable=(not progress)):
         row = parse_row(x.group(), T)
         if process_row is not None:

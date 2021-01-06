@@ -41,12 +41,17 @@ export interface Alert {
     actions: AlertAction;
 }
 
+export interface Instructor {
+    id: number;
+    name: string;
+}
+
 export interface Section {
     section_id: string;
     status: SectionStatus;
     activity: string;
     meeting_times: string;
-    instructors: string[];
+    instructors: Instructor[];
     course_title: string;
 }
 

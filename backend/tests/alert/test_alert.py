@@ -855,7 +855,7 @@ class CourseStatusUpdateTestCase(TestCase):
         self.assertEqual(0, len(response.data))
 
 
-class UserDetailTestCase(TestCase):
+class UserProfileTestCase(TestCase):
     def setUp(self):
         User.objects.create_user(username="jacob", password="top_secret")
         self.client = APIClient()

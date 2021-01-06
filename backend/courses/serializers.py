@@ -3,7 +3,15 @@ from textwrap import dedent
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserProfile
+from courses.models import (
+    Course,
+    Instructor,
+    Meeting,
+    Requirement,
+    Section,
+    StatusUpdate,
+    UserProfile,
+)
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -21,12 +29,20 @@ class MeetingSerializer(serializers.ModelSerializer):
 
 
 class SectionIdSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(source="full_code")
+
     class Meta:
         model = Section
         fields = [
             "id",
             "activity",
         ]
+
+
+class InstructorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Instructor
+        fields = ["id", "name"]
 
 
 class MiniSectionSerializer(serializers.ModelSerializer):
@@ -40,7 +56,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    instructors = serializers.StringRelatedField(
+    instructors = InstructorSerializer(
         many=True,
         read_only=True,
         help_text="A list of the names of the instructors teaching this section.",
@@ -109,7 +125,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    instructors = serializers.StringRelatedField(
+    instructors = InstructorSerializer(
         read_only=True,
         many=True,
         help_text="A list of the names of the instructors teaching this section.",
@@ -271,6 +287,7 @@ class CourseDetailSerializer(CourseListSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
+            "semester",
         ] + ["crosslistings", "requirements", "sections",]
         read_only_fields = fields
 
@@ -288,13 +305,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         prof, _ = UserProfile.objects.get_or_create(user=instance)
-        prof_data = validated_data.pop("profile")
+        prof_data = validated_data.get("profile", None)
         for key in ["first_name", "last_name"]:
             if key in validated_data:
                 setattr(instance, key, validated_data[key])
-        for key in ["phone", "email", "push_notifications"]:
-            if key in prof_data:
-                setattr(prof, key, prof_data[key])
+        if prof_data is not None:
+            for key in ["phone", "email", "push_notifications"]:
+                if key in prof_data:
+                    setattr(prof, key, prof_data[key])
         prof.save()
         setattr(instance, "profile", prof)
         instance.save()
