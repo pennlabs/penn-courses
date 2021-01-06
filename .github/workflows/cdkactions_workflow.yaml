@@ -34,7 +34,7 @@ jobs:
         run: |-
           ROOT=$(pwd)
           cd backend
-          pipenv run codecov --root ROOT --flags backend
+          pipenv run codecov --root $ROOT --flags backend
     container:
       image: python:3.8
     env:
