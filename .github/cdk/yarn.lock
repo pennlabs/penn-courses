@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@pennlabs/kraken@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@pennlabs/kraken/-/kraken-0.4.0.tgz#706d145e61792cfe3e5e9044aa7f4988359ca237"
-  integrity sha512-5DvffwOm1UxuRLWL4iCFZVfkoKdNfN/1a6rlpOqJscNSaMerMx5zKCh6byyb4T4wZek/j1eYV6J60DsXXBJMEQ==
+"@pennlabs/kraken@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@pennlabs/kraken/-/kraken-0.4.1.tgz#74b83793fb37c76e751365e482117012ee76edb7"
+  integrity sha512-CsAAYqga3NN7GgHunpJHY7l2KoMF7aQVErEgmy86nqKVHhIVEvqdKEYURMm7BWoy2r12X+9z/UE//+i9lDBmEg==
   dependencies:
     cdkactions "^0.2.0"
     constructs "^3.2.80"
