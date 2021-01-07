@@ -284,7 +284,7 @@ class DayFilterTestCase(TestCase):
         for res in response.data:
             self.assertIn(res["id"], all_codes)
 
-    def test_both_meetings_work(self):
+    def test_all_meetings_work(self):
         response = self.client.get(
             reverse("courses-current-list"), {"days": "MTWR"}
         )
@@ -304,6 +304,7 @@ class DayFilterTestCase(TestCase):
         for res in response.data:
             self.assertIn(res["id"], all_codes)
 
+
 class TimeFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section1 = create_mock_data_days("CIS-120-001", TEST_SEMESTER)
@@ -316,3 +317,96 @@ class TimeFilterTestCase(TestCase):
         _, self.section8 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
         self.client = APIClient()
         set_semester()
+
+    def test_null_passed(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {}
+        )
+        self.assertEqual(4, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_all_times(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"start_time": 0.0, "end_time": 23.59}
+        )
+        self.assertEqual(4, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_no_days_start_end_same(self):
+        # only async
+        response = self.client.get(
+            reverse("courses-current-list"), {"start_time": 5.5, "end_time": 5.5}
+        )
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]["id"], "CIS-262")
+        self.assertEqual(200, response.status_code)
+
+    def test_only_one_section_works(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"start_time": 1.0, "end_time": 4.2}
+        )
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-160", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_both_sections_works(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"start_time": 1.0, "end_time": 5.5}
+        )
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-160", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_contains_parts_not_whole_sec(self):
+        response = self.client.get(
+            # only contains part of first sec for CIS 120 and second sec for CIS 120
+            # starts and ends at different places
+            reverse("courses-current-list"), {"start_time": 11.5, "end_time": 12.5}
+        )
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_contains_whole_sec(self):
+        response = self.client.get(
+            # only contains part of first sec for CIS 120 and second sec for CIS 120
+            # starts and ends at different places
+            reverse("courses-current-list"), {"start_time": 11.0, "end_time": 12.0}
+        )
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-262", "CIS-120"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_only_one_meeting_works(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"start_time": 21.0, "end_time": 22.0}
+        )
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_both_meetings_work(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"start_time": 20.0, "end_time": 22.0}
+        )
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)

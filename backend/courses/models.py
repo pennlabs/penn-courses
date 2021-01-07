@@ -396,6 +396,30 @@ class Section(models.Model):
         help_text="The number of credits this section is worth.",
     )
 
+    meeting_days = models.CharField(
+        max_length=6,
+        null=True,
+        blank=True,
+        help_text="The single day or days on which the meeting takes place (one of M, T, W, R, or F)"
+                  " or any combination of the above characters (MW, MWF, TR) in chronological ordering.",
+    )
+
+    earliest_meeting = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="The earliest start time of a meeting; hh:mm is formatted as hh.mm = h+mm/100.",
+    )
+
+    latest_meeting = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="The latest end time of a meeting; hh:mm is formatted as hh.mm = h+mm/100.",
+    )
+
     def __str__(self):
         return "%s %s" % (self.full_code, self.course.semester)
 
@@ -416,6 +440,19 @@ class Section(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_code = f"{self.course.full_code}-{self.code}"
+
+        # adding in meeting days
+        day_list = [meeting.day for meeting in self.meetings.all()]
+        day_list = sorted(day_list, key=lambda days: ["MTWRFS".index(day) for day in days])
+        self.meeting_days = "".join(day_list)
+
+        # adding in meeting times
+        for meeting in self.meetings.all():
+            if (self.earliest_meeting is None) or (meeting.start < self.earliest_meeting):
+                self.earliest_meeting = meeting.start
+            if (self.latest_meeting is None) or (meeting.end > self.latest_meeting):
+                self.latest_meeting = meeting.end
+
         super().save(*args, **kwargs)
 
 

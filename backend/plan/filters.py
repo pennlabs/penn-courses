@@ -66,14 +66,35 @@ def day_filter(queryset, days):
     #         course.delete()
     # return queryset
 
+    # day_letters = [day for day in days]
+    # all_days = [day for day in "MTWRFS"]
+    # to_remove = list(set(all_days) - set(day_letters))
+    # valid_sections = Section.objects.filter(course__in=list(queryset))\
+    #     .exclude(meetings__day__in=to_remove)
+    # queryset = queryset.filter(sections__in=list(valid_sections))
+    # return queryset
+
     day_letters = [day for day in days]
-    all_days = [day for day in "MTWRFS"]
-    to_remove = list(set(all_days) - set(day_letters))
-    valid_sections = Section.objects.filter(course__in=list(queryset))\
-        .exclude(meetings__day__in=to_remove)
-    queryset = queryset.filter(sections__in=list(valid_sections))
+    all_days = list(powerset(day_letters))
+    combined_days = [''.join(tup) for tup in all_days]
+    queryset = queryset.filter(sections__meeting_days__in=combined_days)
     return queryset
 
+
+def time_filter(queryset, start_time, end_time):
+    queryset = queryset.filter(sections__earliest_meeting__gte=start_time,
+                               sections__latest_meeting__lte=end_time) | \
+               queryset.filter(sections__meetings__isnull=True)
+    return queryset
+
+    # queryset = queryset.filter(sections__earliest_meeting__gte=start_time)\
+    #                .filter(sections__latest_meeting__lte=end_time) \
+    #            | queryset.filter(sections__meetings__isnull=True)
+    # return queryset
+
+    # queryset = queryset.exclude(sections__earliest_meeting__lt=start_time)\
+    #     .exclude(sections__latest_meeting__gt=end_time)
+    # return queryset
 
 def bound_filter(field):
     def filter_bounds(queryset, bounds):
@@ -114,6 +135,11 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             param = request.query_params.get(field)
             if param is not None:
                 queryset = filter_func(queryset, param)
+
+        start_time = request.query_params.get("start_time")
+        end_time = request.query_params.get("end_time")
+        if (start_time is not None) and (end_time is not None):
+            queryset = time_filter(queryset, start_time, end_time)
 
         return queryset.distinct()
 

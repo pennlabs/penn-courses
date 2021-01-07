@@ -94,15 +94,15 @@ def create_mock_data_multiple_meetings(code, semester):
             "end_hour_24": 12,
             "end_minutes": 0,
             "end_time": "12:00 PM",
-            "end_time_24": 15.0,
+            "end_time_24": 21.0,
             "meeting_days": "MT",
             "room_number": "10",
             "section_id": "CIS 120001",
             "section_id_normalized": "CIS -120-001",
-            "start_hour_24": 11,
+            "start_hour_24": 20,
             "start_minutes": 0,
             "start_time": "11:00 AM",
-            "start_time_24": 14.0,
+            "start_time_24": 20.0,
             "term": "2019C",
         },
         {
@@ -111,20 +111,21 @@ def create_mock_data_multiple_meetings(code, semester):
             "end_hour_24": 12,
             "end_minutes": 0,
             "end_time": "12:00 PM",
-            "end_time_24": 16.0,
+            "end_time_24": 23.0,
             "meeting_days": "WR",
             "room_number": "10",
             "section_id": "CIS 120001",
             "section_id_normalized": "CIS -120-001",
-            "start_hour_24": 11,
+            "start_hour_24": 21.0,
             "start_minutes": 0,
             "start_time": "11:00 AM",
-            "start_time_24": 15.0,
+            "start_time_24": 22.0,
             "term": "2019C",
         }
     ]
     set_meetings(section, m)
     return course, section
+
 
 def create_mock_async_class(code, semester):
     course, section, _, _ = get_or_create_course_and_section(code, semester)

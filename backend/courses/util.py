@@ -114,6 +114,9 @@ def set_meetings(section, meetings):
                 section=section, day=day, start=start_time, end=end_time, defaults={"room": room}
             )
 
+            # need to save the section in order to have the meetings update
+            section.save()
+
 
 def add_associated_sections(section, info):
     semester = section.course.semester
