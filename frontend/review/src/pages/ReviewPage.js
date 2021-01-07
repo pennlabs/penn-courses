@@ -153,7 +153,7 @@ export class ReviewPage extends Component {
   }
 
   static getDerivedStateFromError() {
-    return { error: "An unknown error occured." };
+    return { error: "An unknown error occurred." };
   }
 
   render() {
