@@ -209,7 +209,7 @@ jobs:
 
           # this specifies what tag of icarus to pull down
           DEPLOY_TAG=$(yq r k8s/values.yaml deploy_version)
-          if [ "$DEPLOY_TAG" == "null" ]; then
+          if [ "$DEPLOY_TAG" = "null" ]; then
               echo "Could not find deploy tag"
               exit 1
           fi
