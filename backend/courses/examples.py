@@ -1,7 +1,7 @@
 # See backend/PennCourses/docs_settings.py for more info on how to format these examples files.
 
 RequirementList_examples = {
-    "/api/courses/{semester}/requirements/": {
+    "/api/base/{semester}/requirements/": {
         "GET": {
             "requests": [],
             "responses": [
@@ -45,7 +45,7 @@ RequirementList_examples = {
 }
 
 SectionList_examples = {
-    "/api/courses/{semester}/search/sections/": {
+    "/api/base/{semester}/search/sections/": {
         "GET": {
             "requests": [],
             "responses": [
@@ -85,7 +85,7 @@ SectionList_examples = {
 }
 
 StatusUpdateView_examples = {
-    "/api/courses/statusupdate/{full_code}/": {
+    "/api/base/statusupdate/{full_code}/": {
         "GET": {
             "requests": [],
             "responses": [
@@ -119,7 +119,7 @@ StatusUpdateView_examples = {
 }
 
 SectionDetail_examples = {
-    "/api/courses/{semester}/sections/{full_code}/": {
+    "/api/base/{semester}/sections/{full_code}/": {
         "GET": {
             "requests": [],
             "responses": [
@@ -172,7 +172,7 @@ SectionDetail_examples = {
 }
 
 CourseList_examples = {
-    "/api/courses/{semester}/courses/": {
+    "/api/base/{semester}/courses/": {
         "GET": {
             "requests": [],
             "responses": [
@@ -210,7 +210,7 @@ CourseList_examples = {
 }
 
 CourseListSearch_examples = {
-    "/api/courses/{semester}/courses/": {
+    "/api/base/{semester}/courses/": {
         "GET": {
             "requests": [],
             "responses": [
@@ -245,7 +245,7 @@ CourseListSearch_examples = {
             ],
         }
     },
-    "/api/courses/{semester}/search/courses/": {
+    "/api/base/{semester}/search/courses/": {
         "GET": {
             "requests": [],
             "responses": [
@@ -334,7 +334,7 @@ CourseListSearch_examples = {
 }
 
 CourseDetail_examples = {
-    "/api/courses/{semester}/courses/{full_code}/": {
+    "/api/base/{semester}/courses/{full_code}/": {
         "GET": {
             "requests": [],
             "responses": [

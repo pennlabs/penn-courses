@@ -15,7 +15,7 @@ the search results.
 Including the search term makes it possible to determine if the search result is stale.
  */
 const suggestionsFor = (search) =>
-    fetch(`/api/courses/current/search/sections/?search=${search}`).then(
+    fetch(`/api/base/current/search/sections/?search=${search}`).then(
         (res) =>
             res.json().then((searchResult) => ({
                 searchResult,

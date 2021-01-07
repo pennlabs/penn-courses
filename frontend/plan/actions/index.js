@@ -172,7 +172,7 @@ export const clearSchedule = () => ({
 });
 
 export const loadRequirements = () => (dispatch) =>
-    fetch("/api/courses/current/requirements/").then(
+    fetch("/api/base/current/requirements/").then(
         (response) =>
             response.json().then(
                 (data) => {
@@ -205,7 +205,7 @@ export const loadRequirements = () => (dispatch) =>
     );
 
 function buildCourseSearchUrl(filterData) {
-    let queryString = `/api/courses/current/search/courses/?search=${filterData.searchString}`;
+    let queryString = `/api/base/current/search/courses/?search=${filterData.searchString}`;
 
     // Requirements filter
     const reqs = [];
@@ -314,7 +314,7 @@ export function updateSearchText(s) {
 }
 
 function buildSectionInfoSearchUrl(searchData) {
-    return `/api/courses/current/search/courses/${searchData.param}`;
+    return `/api/base/current/search/courses/${searchData.param}`;
 }
 
 export function courseSearchError(error) {
@@ -436,7 +436,7 @@ const rateLimitedFetch = (url, init) =>
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
-        fetch(`/api/courses/current/search/courses/${courseId}`)
+        fetch(`/api/base/current/search/courses/${courseId}`)
             .then((res) => res.json())
             .then((course) => dispatch(updateCourseInfo(course)))
             .catch((error) => dispatch(sectionInfoSearchError(error)));

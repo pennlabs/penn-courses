@@ -72,7 +72,7 @@ export function apiIsAuthenticated(func) {
 
 export function apiLive(code) {
   return apiFetch(
-    `${API_DOMAIN}/api/courses/current/search/courses/${encodeURIComponent(
+    `${API_DOMAIN}/api/base/current/search/courses/${encodeURIComponent(
       code
     )}/`
   );

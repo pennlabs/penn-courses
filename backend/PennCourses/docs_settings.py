@@ -173,7 +173,7 @@ If you want to manually set the description of a path parameter for a certain pa
 you can do so by including a custom_path_parameter_desc kwarg in your PcxAutoSchema instantiation,
 with keys of the form path > method > variable_name pointing to a string description.  Example:
     custom_path_parameter_desc={
-        "/api/courses/statusupdate/{full_code}/": {
+        "/api/base/statusupdate/{full_code}/": {
             "GET": {
                 "full_code": (
                     "The code of the section which this status update applies to, in the "
@@ -246,7 +246,7 @@ subpath_abbreviations = {
     "plan": "PCP",
     "alert": "PCA",
     "review": "PCR",
-    "courses": "PCx",
+    "base": "PCx",
     "accounts": "Accounts",
 }
 
@@ -280,16 +280,16 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
     # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
     ("/api/alert/registrationhistory/", "GET"): "Registration History",
     ("/api/alert/registrationhistory/{id}/", "GET"): "Registration History",
-    ("/api/courses/statusupdate/{full_code}/", "GET"): "Status Update",
+    ("/api/base/statusupdate/{full_code}/", "GET"): "Status Update",
 }
 
 custom_operation_id = {  # keys are (path, method) tuples, values are custom names
     # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
     ("/api/alert/registrationhistory/", "GET"): "List Registration History",
     ("/api/alert/registrationhistory/{id}/", "GET"): "Retrieve Historic Registration",
-    ("/api/courses/statusupdate/{full_code}/", "GET"): "List Status Updates",
-    ("/api/courses/{semester}/search/courses/", "GET"): "Course Search",
-    ("/api/courses/{semester}/search/sections/", "GET"): "Section Search",
+    ("/api/base/statusupdate/{full_code}/", "GET"): "List Status Updates",
+    ("/api/base/{semester}/search/courses/", "GET"): "Course Search",
+    ("/api/base/{semester}/search/sections/", "GET"): "Section Search",
 }
 
 # Use this dictionary to rename tags, if you wish to do so

@@ -58,7 +58,7 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.SectionList_examples,
         response_codes={
-            "/api/courses/{semester}/search/sections/": {
+            "/api/base/{semester}/search/sections/": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Sections Listed Successfully."}
             }
         },
@@ -82,7 +82,7 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.SectionDetail_examples,
         response_codes={
-            "/api/courses/{semester}/sections/{full_code}/": {
+            "/api/base/{semester}/sections/{full_code}/": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
             }
         },
@@ -104,7 +104,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.CourseList_examples,
         response_codes={
-            "/api/courses/{semester}/courses/": {
+            "/api/base/{semester}/courses/": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
             }
         },
@@ -145,7 +145,7 @@ class CourseListSearch(CourseList):
     schema = PcxAutoSchema(
         examples=examples.CourseListSearch_examples,
         response_codes={
-            "/api/courses/{semester}/search/courses/": {
+            "/api/base/{semester}/search/courses/": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
             }
         },
@@ -164,7 +164,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.CourseDetail_examples,
         response_codes={
-            "/api/courses/{semester}/courses/{full_code}/": {
+            "/api/base/{semester}/courses/{full_code}/": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
             }
         },
@@ -203,7 +203,7 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
             "/api/plan/requirements/": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
             },
-            "/api/courses/{semester}/requirements/": {
+            "/api/base/{semester}/requirements/": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
             },
         },
@@ -237,14 +237,14 @@ class StatusUpdateView(generics.ListAPIView):
     schema = PcxAutoSchema(
         examples=examples.StatusUpdateView_examples,
         response_codes={
-            "/api/courses/statusupdate/{full_code}/": {
+            "/api/base/statusupdate/{full_code}/": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Status Updates for section listed successfully."
                 }
             }
         },
         custom_path_parameter_desc={
-            "/api/courses/statusupdate/{full_code}/": {
+            "/api/base/statusupdate/{full_code}/": {
                 "GET": {
                     "full_code": (
                         "The code of the section which this status update applies to, in the "
