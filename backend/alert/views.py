@@ -12,6 +12,7 @@ from options.models import get_bool
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.urls import reverse_lazy
 
 import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
@@ -218,7 +219,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     schema = PcxAutoSchema(
         examples=examples.RegistrationViewSet_examples,
         response_codes={
-            "/api/alert/registrations/": {
+            reverse_lazy("registrations-list"): {
                 "POST": {
                     201: "[DESCRIBE_RESPONSE_SCHEMA]Registration successfully created.",
                     400: "Bad request (e.g. given null section).",
@@ -228,7 +229,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 },
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registrations successfully listed."},
             },
-            "/api/alert/registrations/{id}/": {
+            reverse_lazy("registrations-detail", args=["{id}"]): {
                 "PUT": {
                     200: "Registration successfully updated (or no changes necessary).",
                     400: "Bad request (see route description).",
@@ -241,7 +242,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             },
         },
         override_schema={
-            "/api/alert/registrations/": {
+            reverse_lazy("registrations-list"): {
                 "POST": {
                     201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},
                 }

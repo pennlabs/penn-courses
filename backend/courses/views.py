@@ -4,6 +4,7 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_value
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
+from django.urls import reverse_lazy
 
 import courses.examples as examples
 from courses.models import Course, Requirement, Section, StatusUpdate
@@ -58,7 +59,7 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.SectionList_examples,
         response_codes={
-            "/api/base/{semester}/search/sections/": {
+            reverse_lazy("section-search", args=["{semester}"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Sections Listed Successfully."}
             }
         },
@@ -82,7 +83,7 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.SectionDetail_examples,
         response_codes={
-            "/api/base/{semester}/sections/{full_code}/": {
+            reverse_lazy("sections-detail", args=["{semester}", "{full_code}"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
             }
         },
@@ -104,7 +105,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.CourseList_examples,
         response_codes={
-            "/api/base/{semester}/courses/": {
+            reverse_lazy("courses-list", args=["{semester}"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
             }
         },
@@ -145,7 +146,7 @@ class CourseListSearch(CourseList):
     schema = PcxAutoSchema(
         examples=examples.CourseListSearch_examples,
         response_codes={
-            "/api/base/{semester}/search/courses/": {
+            reverse_lazy("courses-search", args=["{semester}"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
             }
         },
@@ -164,7 +165,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.CourseDetail_examples,
         response_codes={
-            "/api/base/{semester}/courses/{full_code}/": {
+            reverse_lazy("courses-detail", args=["{semester}", "{full_code}"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
             }
         },
@@ -200,10 +201,7 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.RequirementList_examples,
         response_codes={
-            "/api/plan/requirements/": {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
-            },
-            "/api/base/{semester}/requirements/": {
+            reverse_lazy("requirements-list", args=["{semester}"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
             },
         },
@@ -237,14 +235,14 @@ class StatusUpdateView(generics.ListAPIView):
     schema = PcxAutoSchema(
         examples=examples.StatusUpdateView_examples,
         response_codes={
-            "/api/base/statusupdate/{full_code}/": {
+            reverse_lazy("statusupdate", args=["{full_code}"]): {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Status Updates for section listed successfully."
                 }
             }
         },
         custom_path_parameter_desc={
-            "/api/base/statusupdate/{full_code}/": {
+            reverse_lazy("statusupdate", args=["{full_code}"]): {
                 "GET": {
                     "full_code": (
                         "The code of the section which this status update applies to, in the "

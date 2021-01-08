@@ -1,3 +1,4 @@
+import inspect
 import json
 import re
 from copy import deepcopy
@@ -10,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONOpenAPIRenderer
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.schemas.utils import is_list_view
+from django.urls import reverse_lazy
 
 
 """
@@ -39,6 +41,17 @@ In all cases, you must include the following import for PcxAutoSchema:
 from PennCourses.docs_settings import PcxAutoSchema
 PcxAutoSchema (defined below) is a subclass of Django's AutoSchema, and it makes some improvements
 on that class for use with Redoc as well as some customizations specific to the Labs PCX use-case.
+
+General note: whenever you see a reverse_lazy(...) function in these docs or in the code,
+think of that as the string of the url corresponding to the passed-in url name
+with path parameters replaced in order by the arguments in the args=[...] kwarg list.
+https://docs.djangoproject.com/en/3.1/ref/urlresolvers/#reverse-lazy
+We use reverse_lazy so that the only places with hardcoded urls are urls.py files (so urls can
+easily be changed). Note that the OpenAPI schema indicates path parameters in string urls
+using the form {path-parameter}, i.e. the name of the path parameter inside curly brackets.
+This is why the args=[...] kwarg passed into reverse_lazy functions in these docs or our code
+will also contain path parameters in this form, so the resulting string url is in the right form.
+https://swagger.io/docs/specification/describing-parameters/
 
 You should include docstrings in views (see
 https://www.django-rest-framework.org/coreapi/from-documenting-your-api/#documenting-your-views)
@@ -78,7 +91,7 @@ response_codes kwarg in your PcxAutoSchema instantiation.  You should input
 a dict mapping string paths to dicts, where each subdict maps string methods to dicts, and
 each further subdict maps int response codes to string descriptions.  An example:
     response_codes={
-        "/api/plan/schedules/": {
+        reverse_lazy("schedules-list"): {
            "GET": {
                200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",
                403: "Authentication credentials were not provided."
@@ -116,7 +129,7 @@ the format of which is governed by the OpenAPI specification
 you must include a "code":int key/value in any object in the responses list, specifying which
 response code that example corresponds to.  Here is a full example of the entire examples dict:
     examples = {
-        "/api/alert/registrations/": {
+        reverse_lazy("registrations-list"): {
             "POST": {
                 "requests": [
                     {
@@ -153,7 +166,7 @@ The format of these objects is governed by the OpenAPI specification
 (see the dicts mapped to by "schema" keys in the examples at the following link:
 http://spec.openapis.org/oas/v3.0.3.html#fixed-fields-14).  An example:
     override_schema={
-        "/api/alert/registrations/": {
+        reverse_lazy("registrations-list"): {
             "POST": {
                 201: {
                     "properties": {
@@ -173,7 +186,7 @@ If you want to manually set the description of a path parameter for a certain pa
 you can do so by including a custom_path_parameter_desc kwarg in your PcxAutoSchema instantiation,
 with keys of the form path > method > variable_name pointing to a string description.  Example:
     custom_path_parameter_desc={
-        "/api/base/statusupdate/{full_code}/": {
+        reverse_lazy("statusupdate", args=["{full_code}"]): {
             "GET": {
                 "full_code": (
                     "The code of the section which this status update applies to, in the "
@@ -278,18 +291,18 @@ tag_group_abbreviations = {
 # also defines what the automatically-set tag name will be.
 custom_name = {  # keys are (path, method) tuples, values are custom names
     # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
-    ("/api/alert/registrationhistory/", "GET"): "Registration History",
-    ("/api/alert/registrationhistory/{id}/", "GET"): "Registration History",
-    ("/api/base/statusupdate/{full_code}/", "GET"): "Status Update",
+    (reverse_lazy("registrationhistory-list"), "GET"): "Registration History",
+    (reverse_lazy("registrationhistory-detail", args=["{id}"]), "GET"): "Registration History",
+    (reverse_lazy("statusupdate", args=["{full_code}"]), "GET"): "Status Update",
 }
 
 custom_operation_id = {  # keys are (path, method) tuples, values are custom names
     # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
-    ("/api/alert/registrationhistory/", "GET"): "List Registration History",
-    ("/api/alert/registrationhistory/{id}/", "GET"): "Retrieve Historic Registration",
-    ("/api/base/statusupdate/{full_code}/", "GET"): "List Status Updates",
-    ("/api/base/{semester}/search/courses/", "GET"): "Course Search",
-    ("/api/base/{semester}/search/sections/", "GET"): "Section Search",
+    (reverse_lazy("registrationhistory-list"), "GET"): "List Registration History",
+    (reverse_lazy("registrationhistory-detail", args=["{id}"]), "GET"): "Retrieve Historic Registration",
+    (reverse_lazy("statusupdate", args=["{full_code}"]), "GET"): "List Status Updates",
+    (reverse_lazy("courses-search", args=["{semester}"]), "GET"): "Course Search",
+    (reverse_lazy("section-search", args=["{semester}"]), "GET"): "Section Search",
 }
 
 # Use this dictionary to rename tags, if you wish to do so
@@ -430,15 +443,16 @@ def make_manual_schema_changes(data):
 
     # Remove ID from the documented PUT request body for /api/plan/schedules/
     # (the id field in the request body is ignored in favor of the id path parameter)
-    for content_ob in data["paths"]["/api/plan/schedules/{id}/"]["put"]["requestBody"][
-        "content"
-    ].values():
+    for content_ob in (
+            data["paths"][reverse_lazy("schedules-detail", args=["{id}"])]
+            ["put"]["requestBody"]["content"].values()
+    ):
         content_ob["schema"]["properties"].pop("id", None)
 
     # Make the id and semester fields show up in PCP schedule request body under sections
     # (and make id required)
     for path, path_ob in data["paths"].items():
-        if "plan/schedules" not in path:
+        if reverse_lazy("schedules-list") not in path:
             continue
         for method_ob in path_ob.values():
             if "requestBody" not in method_ob.keys():
@@ -469,7 +483,7 @@ def make_manual_schema_changes(data):
     delete_other_content_types_dfs(data)
 
 
-examples_dict = {}  # populated by PcxAutoSchema __init__ method calls
+cumulative_examples = {}  # populated by PcxAutoSchema __init__ method calls
 
 
 class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
@@ -485,17 +499,6 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
 
         # The following resolves JSON references which are not handled automatically in Python dicts
         data = jsonref.loads(json.dumps(data_raw))
-
-        # Change all the response codes in the examples_dict to strings
-        # and change the methods to lower case
-        global examples_dict
-        for key, val in examples_dict.items():
-            examples_dict[key] = {k.lower(): v for k, v in examples_dict[key].items()}
-            for val2 in examples_dict[key].values():
-                if "responses" in val2.keys():
-                    for res in val2["responses"]:
-                        if "code" in res.keys() and isinstance(res["code"], int):
-                            res["code"] = str(res["code"])
 
         # Determine existing tags and create a map from tag to a list of the corresponding dicts
         # of nested schema objects at paths/{path}/{method} in the OpenAPI schema (for all
@@ -588,45 +591,65 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
         # Remove empty tag groups
         data["x-tagGroups"] = [g for g in data["x-tagGroups"] if len(g["tags"]) != 0]
 
+        # Change all the response codes in cumulative_examples to strings
+        # and change the methods to lower case
+        global cumulative_examples
+        for key, val in cumulative_examples.items():
+            cumulative_examples[key] = {k.lower(): v for k, v in cumulative_examples[key].items()}
+            for val2 in cumulative_examples[key].values():
+                if "responses" in val2.keys():
+                    for res in val2["responses"]:
+                        if "code" in res.keys() and isinstance(res["code"], int):
+                            res["code"] = str(res["code"])
+
+        def fail(location, hint):
+            """
+            A function to generate an error message if validation of the examples dict fails
+            """
+            raise ValueError(
+                f"Invalid examples kwarg passed into AutoSchema at {location}; please "
+                f"check the meta docs in PennCourses/docs_settings.py for an explanation of "
+                f"the proper format of this kwarg. Hint:\n{hint}"
+            )
+
         # Add request/response examples to the documentation (instructions on how to customize a
         # route's examples can be found above).
-        for path in examples_dict.keys():
-            for method in examples_dict[path].keys():
-                ob = examples_dict[path][method]
+        for path in cumulative_examples.keys():
+            traceback = cumulative_examples[path]["traceback"]
+            for method in cumulative_examples[path].keys():
+                ob = cumulative_examples[path][method]
                 if path not in data["paths"].keys():
-                    raise ValueError(
-                        f"Check your examples file for:\n{method} {path}\n"
-                        "no such path exists in schema"
-                    )
+                    fail(traceback, f"No such path exists in schema: '{path}'")
                 if method not in data["paths"][path].keys():
-                    raise ValueError(
-                        f"Check your examples file for:\n{method} {path}\n"
-                        "no such method exists for the given path"
-                    )
+                    fail(traceback, f"No such method exists in schema: '{method}'")
                 if "responses" in ob.keys():
                     for response in ob["responses"]:
                         if "code" not in response.keys():
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                "an object in the responses list does not contain "
-                                "a response code key/value pair."
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                "An object in the responses list  does not contain a response code "
+                                "key/value pair."
                             )
                         code = response["code"]
                         if "responses" not in data["paths"][path][method].keys():
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                "the given path and method does not have a responses "
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                "The given path and method does not have a responses "
                                 "object in the schema, but an example response was given."
                             )
                         if code not in data["paths"][path][method]["responses"].keys():
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                f"an example response with code {code} is invalid "
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example response with code {code} is invalid "
                                 "because that is not a response code in the schema "
                                 "for the given path/method."
                             )
                         if "content" not in data["paths"][path][method]["responses"][code].keys():
                             raise ValueError(
+                                f"Invalid inputs to AutoSchema at {traceback}.\n"
                                 f"Check your response_codes dictionary for:\n"
                                 f"{method.upper()} {path}, response code {code}\n"
                                 f"If '[DESCRIBE_RESPONSE_SCHEMA]' is not in the description for "
@@ -639,9 +662,10 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                             "application/json"
                             not in data["paths"][path][method]["responses"][code]["content"].keys()
                         ):
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                f"an example response with code {code} is invalid "
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example response with code {code} is invalid "
                                 "because the response corresponding to the given "
                                 "path/method/code does not have data type application/json."
                             )
@@ -651,33 +675,37 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                         if "examples" not in final_ob.keys():
                             final_ob["examples"] = {}
                         if "summary" not in response.keys():
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                f"an example response with code {code} is invalid "
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example response with code {code} is invalid "
                                 "because it does not contain required field 'summary'."
                             )
                         if "value" not in response.keys():
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                f"an example response with code {code} is invalid "
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example response with code {code} is invalid "
                                 "because it does not contain required field 'value'."
                             )
                         final_ob["examples"][response["summary"]] = response
                 if "requests" in ob.keys():
                     for request in ob["requests"]:
                         if "requestBody" not in data["paths"][path][method].keys():
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                "the given path and method does not have a requestBody "
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                "The given path and method does not have a requestBody "
                                 "object in the schema, but an example request was given."
                             )
                         if (
                             "application/json"
                             not in data["paths"][path][method]["requestBody"]["content"].keys()
                         ):
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                f"an example request is invalid "
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example request is invalid "
                                 "because the request corresponding to the given "
                                 "path/method/code does not have data type application/json."
                             )
@@ -687,22 +715,58 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                         if "examples" not in final_ob.keys():
                             final_ob["examples"] = {}
                         if "summary" not in request.keys():
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                f"an example request is invalid "
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example request is invalid "
                                 "because it does not contain required field 'summary'."
                             )
                         if "value" not in request.keys():
-                            raise ValueError(
-                                f"Check your examples file for:\n{method} {path}\n"
-                                f"an example request is invalid "
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example request is invalid "
                                 "because it does not contain required field 'value'."
                             )
                         final_ob["examples"][request["summary"]] = request
 
+        def path_method_exist(path, method):
+            """
+            A method to determine if the given path/method combo exists in the schema
+            """
+            if path not in data["paths"].keys():
+                return False
+            if method not in data["paths"][path].keys():
+                return False
+            return True
+
+        # This code ensures that no path/methods in optional dictionary kwargs passed to
+        # AutoSchema __init__ methods are invalid (indicating user error)
+        for parameter_name, parameter_dict in [
+            ("cumulative_response_codes", cumulative_response_codes),
+            ("cumulative_override_schema", cumulative_override_schema),
+            ("cumulative_cppd", cumulative_cppd)
+        ]:
+            for path in parameter_dict:
+                for method in parameter_dict[path]:
+                    traceback = parameter_dict[path][method]["traceback"]
+                    if not path_method_exist(path, method):
+                        raise ValueError(
+                            f"Check the {parameter_name} input to AutoSchema instantiation at "
+                            f"{traceback}; invalid path/method combo found: '{path}'/'{method}'")
+
+        # Make any additional manual changes to the schema programmed by the user
         make_manual_schema_changes(data)
 
         return jsonref.dumps(data, indent=2).encode("utf-8")
+
+
+# A cumulative version of the response_codes parameter to PcxAutoSchema:
+cumulative_response_codes = dict()
+# A cumulative version of the override_schema parameter to PcxAutoSchema:
+cumulative_override_schema = dict()
+# A cumulative version of the custom_path_parameter_desc parameter to PcxAutoSchema:
+cumulative_cppd = dict()
 
 
 class PcxAutoSchema(AutoSchema):
@@ -710,6 +774,18 @@ class PcxAutoSchema(AutoSchema):
     This custom subclass serves to improve AutoSchema in terms of customizability, and
     quality of inference in some non-customized cases.
     """
+
+    def __new__(cls, *args, **kwargs):
+        """
+        An overridden __new__ method which adds a created_at property to each AutoSchema
+        instance indicating the file/line from which it was instantiated (useful for debugging).
+        """
+        new_instance = super(PcxAutoSchema, cls).__new__(cls, *args, **kwargs)
+        stack_trace = inspect.stack()
+        created_at = '%s:%d' % (
+            stack_trace[1][1], stack_trace[1][2])
+        new_instance.created_at = created_at
+        return new_instance
 
     def __init__(
         self,
@@ -720,34 +796,88 @@ class PcxAutoSchema(AutoSchema):
         custom_path_parameter_desc=None,
         **kwargs,
     ):
+        """
+        This custom __init__ method deals with optional passed-in kwargs such as examples,
+        response_codes, override_schema, and custom_path_parameter_desc.
+        """
+
+        def fail(param, hint):
+            """
+            A function to generate an error message if validation of one of the passed-in
+            kwargs fails.
+            """
+            raise ValueError(
+                f"Invalid {param} kwarg passed into AutoSchema at {self.created_at}; please "
+                f"check the meta docs in PennCourses/docs_settings.py for an explanation of "
+                f"the proper format of this kwarg. Hint:\n{hint}"
+            )
+
+        # Validate that each of the passed-in kwargs are nested dictionaries of the correct depth
+        for param_name, param_dict in [
+            ("examples", examples),
+            ("response_codes", response_codes),
+            ("override_schema", override_schema),
+            ("custom_path_parameter_desc", custom_path_parameter_desc)
+        ]:
+            if param_dict is not None:
+                if not isinstance(param_dict, dict):
+                    fail(param_name, f"The {param_name} kwarg must be a dict.")
+                for dictionary in examples.values():
+                    if not isinstance(dictionary, dict):
+                        fail(param_name, f"All values of the {param_name} dict must be dicts.")
+                    for nested_dictionary in dictionary.values():
+                        if not isinstance(nested_dictionary, dict):
+                            fail(param_name, f"All values of the dict values of {param_name} must be dicts.")
+                        for value in nested_dictionary.values():
+                            if not isinstance(value, str):
+                                fail(param_name, f"Too deep nested dictionaries found in {param_name}.")
+
+
         # Handle passed-in examples
-        global examples_dict
+        global cumulative_examples
         if examples is not None:
-            examples_dict.update(examples)
+            for dictionary in examples.values():
+                dictionary["traceback"] = self.created_at
+            cumulative_examples.update(examples)
 
         # Handle passed-in custom response codes
+        global cumulative_response_codes
         if response_codes is None:
             self.response_codes = dict()
         else:
             for key, d in response_codes.items():
                 response_codes[key] = {k.upper(): v for k, v in d.items()}
             self.response_codes = response_codes
+            for_cumulative_response_codes = deepcopy(response_codes)
+            for dictionary in for_cumulative_response_codes.values():
+                dictionary["traceback"] = self.created_at
+            cumulative_response_codes = {**cumulative_response_codes, **for_cumulative_response_codes}
 
         # Handle passed-in customized schemas
+        global cumulative_override_schema
         if override_schema is None:
             self.override_schema = dict()
         else:
             for key, d in override_schema.items():
                 override_schema[key] = {k.upper(): v for k, v in d.items()}
             self.override_schema = override_schema
+            for_cumulative_override_schema = deepcopy(override_schema)
+            for dictionary in for_cumulative_override_schema.values():
+                dictionary["traceback"] = self.created_at
+            cumulative_override_schema = {**cumulative_override_schema, **for_cumulative_override_schema}
 
         # Handle passed-in custom path parameter descriptions
+        global cumulative_cppd
         if custom_path_parameter_desc is None:
             self.custom_path_parameter_desc = dict()
         else:
             for key, d in custom_path_parameter_desc.items():
                 custom_path_parameter_desc[key] = {k.upper(): v for k, v in d.items()}
             self.custom_path_parameter_desc = custom_path_parameter_desc
+            for_cumulative_cppd = deepcopy(custom_path_parameter_desc)
+            for dictionary in for_cumulative_cppd.values():
+                dictionary["traceback"] = self.created_at
+            cumulative_cppd = {**cumulative_cppd, **for_cumulative_cppd}
 
         super().__init__(*args, **kwargs)
 

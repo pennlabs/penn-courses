@@ -1,7 +1,9 @@
+from django.urls import reverse_lazy
+
 # See backend/PennCourses/docs_settings.py for more info on how to format these examples files.
 
 RegistrationViewSet_examples = {
-    "/api/alert/registrations/": {
+    reverse_lazy("registrations-list"): {
         "POST": {
             "requests": [
                 {"summary": "Minimally Customized POST", "value": {"section": "CIS-120-001"}},
@@ -53,7 +55,7 @@ RegistrationViewSet_examples = {
             ],
         },
     },
-    "/api/alert/registrations/{id}/": {
+    reverse_lazy("registrations-detail", args=["{id}"]): {
         "GET": {
             "requests": [],
             "responses": [
@@ -92,7 +94,7 @@ RegistrationViewSet_examples = {
             "responses": [],
         },
     },
-    "/api/alert/registrationhistory/": {
+    reverse_lazy("registrationhistory-list"): {
         "GET": {
             "requests": [],
             "responses": [
@@ -150,7 +152,7 @@ RegistrationViewSet_examples = {
             ],
         }
     },
-    "/api/alert/registrationhistory/{id}/": {
+    reverse_lazy("registrationhistory-detail", args=["{id}"]): {
         "GET": {
             "requests": [],
             "responses": [

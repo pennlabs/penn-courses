@@ -12,6 +12,7 @@ from courses.util import get_course_and_section, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema
 from plan.models import Schedule
 from plan.serializers import ScheduleSerializer
+from django.urls import reverse_lazy
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
@@ -82,7 +83,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     schema = PcxAutoSchema(
         examples=examples.ScheduleViewSet_examples,
         response_codes={
-            "/api/plan/schedules/": {
+            reverse_lazy("schedules-list"): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",},
                 "POST": {
                     201: "Schedule successfully created.",
@@ -91,7 +92,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     400: "Bad request (see description above).",
                 },
             },
-            "/api/plan/schedules/{id}/": {
+            reverse_lazy("schedules-detail", args=["{id}"]): {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Successful retrieve "
                     "(the specified schedule exists).",
