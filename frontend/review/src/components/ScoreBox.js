@@ -343,6 +343,12 @@ class ScoreBox extends Component {
         if (hasStarA !== hasStarB) {
           return hasStarB - hasStarA;
         }
+        if (a === undefined || a.name === undefined) {
+          return 1;
+        }
+        if (b === undefined || b.name === undefined) {
+          return -1;
+        }
         return a.name.localeCompare(b.name);
       },
       filterMethod: (filter, rows) => {
