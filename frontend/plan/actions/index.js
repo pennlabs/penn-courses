@@ -73,7 +73,7 @@ export const markCartSynced = () => ({
     type: MARK_CART_SYNCED,
 });
 
-const doAPIRequest = (path, options = {}) => fetch(`/api/plan${path}`, options);
+const doAPIRequest = (path, options = {}) => fetch(`/api${path}`, options);
 
 export const duplicateSchedule = (scheduleName) => ({
     type: DUPLICATE_SCHEDULE,
@@ -172,7 +172,7 @@ export const clearSchedule = () => ({
 });
 
 export const loadRequirements = () => (dispatch) =>
-    fetch("/api/base/current/requirements/").then(
+    doAPIRequest("/base/current/requirements/").then(
         (response) =>
             response.json().then(
                 (data) => {
@@ -205,7 +205,7 @@ export const loadRequirements = () => (dispatch) =>
     );
 
 function buildCourseSearchUrl(filterData) {
-    let queryString = `/api/base/current/search/courses/?search=${filterData.searchString}`;
+    let queryString = `/base/current/search/courses/?search=${filterData.searchString}`;
 
     // Requirements filter
     const reqs = [];
@@ -283,7 +283,8 @@ function buildCourseSearchUrl(filterData) {
     return queryString;
 }
 
-const courseSearch = (_, filterData) => fetch(buildCourseSearchUrl(filterData));
+const courseSearch = (_, filterData) =>
+    doAPIRequest(buildCourseSearchUrl(filterData));
 
 const debouncedCourseSearch = AwesomeDebouncePromise(courseSearch, 500);
 
@@ -314,7 +315,7 @@ export function updateSearchText(s) {
 }
 
 function buildSectionInfoSearchUrl(searchData) {
-    return `/api/base/current/search/courses/${searchData.param}`;
+    return `/base/current/search/courses/${searchData.param}`;
 }
 
 export function courseSearchError(error) {
@@ -436,7 +437,7 @@ const rateLimitedFetch = (url, init) =>
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
-        fetch(`/api/base/current/search/courses/${courseId}`)
+        doAPIRequest(`/base/current/search/courses/${courseId}`)
             .then((res) => res.json())
             .then((course) => dispatch(updateCourseInfo(course)))
             .catch((error) => dispatch(sectionInfoSearchError(error)));
@@ -457,7 +458,7 @@ export const fetchBackendSchedulesAndInitializeCart = (
     shouldInitCart,
     onComplete = () => null
 ) => (dispatch) => {
-    doAPIRequest("/schedules/")
+    doAPIRequest("/plan/schedules/")
         .then((res) => res.json())
         .then((schedules) => {
             if (schedules) {
@@ -502,7 +503,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         name,
         sections: schedule.meetings,
     };
-    doAPIRequest(`/schedules/${id}/`, {
+    doAPIRequest(`/plan/schedules/${id}/`, {
         method: "PUT",
         credentials: "include",
         mode: "same-origin",
@@ -525,7 +526,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
 
 export function fetchSectionInfo(searchData) {
     return (dispatch) =>
-        fetch(buildSectionInfoSearchUrl(searchData)).then(
+        doAPIRequest(buildSectionInfoSearchUrl(searchData)).then(
             (response) =>
                 response.json().then(
                     (json) => {
@@ -551,7 +552,7 @@ export function fetchSectionInfo(searchData) {
  */
 export const createScheduleOnBackend = (name, sections) => (dispatch) => {
     dispatch(creationAttempted(name));
-    rateLimitedFetch("/schedules/", {
+    rateLimitedFetch("/plan/schedules/", {
         method: "POST",
         credentials: "include",
         mode: "same-origin",
@@ -580,7 +581,7 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
 
 export const deleteScheduleOnBackend = (deletedScheduleId) => (dispatch) => {
     dispatch(attemptDeletion(deletedScheduleId));
-    rateLimitedFetch(`/schedules/${deletedScheduleId}/`, {
+    rateLimitedFetch(`/plan/schedules/${deletedScheduleId}/`, {
         method: "DELETE",
         credentials: "include",
         mode: "same-origin",
