@@ -1,9 +1,10 @@
-from django.urls import reverse_lazy
+from PennCourses.docs_settings import reverse_func
+
 
 # See backend/PennCourses/docs_settings.py for more info on how to format these examples files.
 
 RequirementList_examples = {
-    reverse_lazy("requirements-list", args=["{semester}"]): {
+    reverse_func("requirements-list", args=["semester"]): {
         "GET": {
             "requests": [],
             "responses": [
@@ -47,7 +48,7 @@ RequirementList_examples = {
 }
 
 SectionList_examples = {
-    reverse_lazy("section-search", args=["{semester}"]): {
+    reverse_func("section-search", args=["semester"]): {
         "GET": {
             "requests": [],
             "responses": [
@@ -87,7 +88,7 @@ SectionList_examples = {
 }
 
 StatusUpdateView_examples = {
-    reverse_lazy("statusupdate", args=["{full_code}"]): {
+    reverse_func("statusupdate", args=["full_code"]): {
         "GET": {
             "requests": [],
             "responses": [
@@ -121,7 +122,7 @@ StatusUpdateView_examples = {
 }
 
 SectionDetail_examples = {
-    reverse_lazy("sections-detail", args=["{semester}", "{full_code}"]): {
+    reverse_func("sections-detail", args=["semester", "full_code"]): {
         "GET": {
             "requests": [],
             "responses": [
@@ -174,7 +175,7 @@ SectionDetail_examples = {
 }
 
 CourseList_examples = {
-    reverse_lazy("courses-list", args=["{semester}"]): {
+    reverse_func("courses-list", args=["semester"]): {
         "GET": {
             "requests": [],
             "responses": [
@@ -212,7 +213,7 @@ CourseList_examples = {
 }
 
 CourseListSearch_examples = {
-    reverse_lazy("courses-search", args=["{semester}"]): {
+    reverse_func("courses-search", args=["semester"]): {
         "GET": {
             "requests": [],
             "responses": [
@@ -250,7 +251,7 @@ CourseListSearch_examples = {
 }
 
 CourseDetail_examples = {
-    reverse_lazy("courses-detail", args=["{semester}", "{full_code}"]): {
+    reverse_func("courses-detail", args=["semester", "full_code"]): {
         "GET": {
             "requests": [],
             "responses": [

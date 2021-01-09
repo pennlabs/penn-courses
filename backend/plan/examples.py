@@ -1,9 +1,10 @@
-from django.urls import reverse_lazy
+from PennCourses.docs_settings import reverse_func
+
 
 # See backend/PennCourses/docs_settings.py for more info on how to format these examples files.
 
 ScheduleViewSet_examples = {
-    reverse_lazy("schedules-list"): {
+    reverse_func("schedules-list"): {
         "GET": {
             "requests": [],
             "responses": [
@@ -145,7 +146,7 @@ ScheduleViewSet_examples = {
             "responses": [],
         },
     },
-    reverse_lazy("schedules-detail", args=["{id}"]): {
+    reverse_func("schedules-detail", args=["id"]): {
         "GET": {
             "requests": [],
             "responses": [

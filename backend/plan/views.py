@@ -9,10 +9,9 @@ from rest_framework.response import Response
 import plan.examples as examples
 from courses.models import Section
 from courses.util import get_course_and_section, get_current_semester
-from PennCourses.docs_settings import PcxAutoSchema
+from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from plan.models import Schedule
 from plan.serializers import ScheduleSerializer
-from django.urls import reverse_lazy
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
@@ -83,7 +82,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     schema = PcxAutoSchema(
         examples=examples.ScheduleViewSet_examples,
         response_codes={
-            reverse_lazy("schedules-list"): {
+            reverse_func("schedules-list"): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",},
                 "POST": {
                     201: "Schedule successfully created.",
@@ -92,21 +91,19 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     400: "Bad request (see description above).",
                 },
             },
-            reverse_lazy("schedules-detail", args=["{id}"]): {
+            reverse_func("schedules-detail", args=["id"]): {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Successful retrieve "
                     "(the specified schedule exists).",
                     404: "No schedule with the specified id exists.",
                 },
                 "PUT": {
-                    200: "Successful update (the specified schedule exists "
-                    "and was successfully updated).",
+                    200: "Successful update (the specified schedule was found and updated).",
                     400: "Bad request (see description above).",
                     404: "No schedule with the specified id exists.",
                 },
                 "DELETE": {
-                    204: "[DESCRIBE_RESPONSE_SCHEMA]Successful delete "
-                    "(the specified schedule existed and was successfully deleted).",
+                    204: "Successful delete (the specified schedule was found and deleted).",
                     404: "No schedule with the specified id exists.",
                 },
             },

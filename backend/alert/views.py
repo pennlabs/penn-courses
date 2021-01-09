@@ -12,7 +12,6 @@ from options.models import get_bool
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.urls import reverse_lazy
 
 import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
@@ -23,7 +22,7 @@ from alert.serializers import (
 )
 from alert.tasks import send_course_alerts
 from courses.util import get_current_semester, record_update, update_course_from_record
-from PennCourses.docs_settings import PcxAutoSchema
+from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 
 logger = logging.getLogger(__name__)
@@ -219,7 +218,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     schema = PcxAutoSchema(
         examples=examples.RegistrationViewSet_examples,
         response_codes={
-            reverse_lazy("registrations-list"): {
+            reverse_func("registrations-list"): {
                 "POST": {
                     201: "[DESCRIBE_RESPONSE_SCHEMA]Registration successfully created.",
                     400: "Bad request (e.g. given null section).",
@@ -229,7 +228,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 },
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registrations successfully listed."},
             },
-            reverse_lazy("registrations-detail", args=["{id}"]): {
+            reverse_func("registrations-detail", args=["id"]): {
                 "PUT": {
                     200: "Registration successfully updated (or no changes necessary).",
                     400: "Bad request (see route description).",
@@ -242,7 +241,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             },
         },
         override_schema={
-            reverse_lazy("registrations-list"): {
+            reverse_func("registrations-list"): {
                 "POST": {
                     201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},
                 }
@@ -512,7 +511,21 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     (GET `/api/alert/registrations/{id}/`) rather than this endpoint.
     """
 
-    schema = PcxAutoSchema()
+    schema = PcxAutoSchema(
+        examples=examples.RegistrationViewSet_examples,
+        response_codes={
+            reverse_func("registrationhistory-list"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registration history successfully listed."}
+            },
+            reverse_func("registrationhistory-detail", args=["id"]): {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Historic registration detail "
+                    "successfully retrieved.",
+                    404: "Historic registration not found with given id.",
+                }
+            },
+        },
+    )
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
 
