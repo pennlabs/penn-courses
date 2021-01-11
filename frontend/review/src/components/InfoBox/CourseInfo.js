@@ -120,10 +120,11 @@ const TagsWhenOffered = ({
       ({ activity: sectionActivity }) => activity === sectionActivity
     );
   });
-  const oldInstructors = Object.values(instructorData).map(({ name }) => name);
+  console.log("inst data", instructorData);
+  const oldInstructors = Object.values(instructorData).map(({ id }) => id);
   const newInstructors = sections
     .flatMap(({ instructors }) => instructors)
-    .filter(inst => oldInstructors.indexOf(inst) === -1);
+    .filter(({ id }) => oldInstructors.indexOf(id) === -1);
 
   const syllabi = [];
   const courses = [];
