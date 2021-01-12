@@ -245,6 +245,16 @@ class DayFilterTestCase(TestCase):
         self.client = APIClient()
         set_semester()
 
+    def test_no_days_passed_in(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {}
+        )
+        self.assertEqual(4, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
     def test_all_days(self):
         response = self.client.get(
             reverse("courses-current-list"), {"days": "MTWRFS"}
@@ -335,6 +345,26 @@ class TimeFilterTestCase(TestCase):
         self.assertEqual(4, len(response.data))
         self.assertEqual(200, response.status_code)
         all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_outside_bounds(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"start_time": -15.0, "end_time": 42.0}
+        )
+        self.assertEqual(4, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
+        for res in response.data:
+            self.assertIn(res["id"], all_codes)
+
+    def test_crossover_times(self):
+        response = self.client.get(
+            reverse("courses-current-list"), {"start_time": 15.0, "end_time": 2.0}
+        )
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(200, response.status_code)
+        all_codes = ["CIS-262"]
         for res in response.data:
             self.assertIn(res["id"], all_codes)
 
