@@ -393,8 +393,6 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
                         "url": f"/instructor/{self.instructor2.pk}",
                     },
                 ],
-                "courses": [{"title": "CIS-120", "desc": [""], "url": "/course/CIS-120"}],
-                "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
             },
         )
 

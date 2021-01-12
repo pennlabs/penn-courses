@@ -83,7 +83,10 @@ const ScheduleSelectorDropdown = ({
 
     useEffect(() => {
         const listener = (event: Event) => {
-            if (ref.current && !ref.current.contains(event.target as HTMLElement)) {
+            if (
+                ref.current &&
+                !ref.current.contains(event.target as HTMLElement)
+            ) {
                 setIsActive(false);
             }
         };

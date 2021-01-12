@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { RefObject, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 
@@ -8,6 +8,7 @@ import AwesomeDebouncePromise from "awesome-debounce-promise";
 
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { Input } from "./Input";
+import { Section } from "../types";
 
 /* A function that takes in a search term and returns a promise with both the search term and
 the search results.
@@ -37,13 +38,14 @@ const RIGHT_ARROW = 39;
 const DOWN_ARROW = 40;
 const RETURN_KEY = 13;
 
-const DropdownContainer = styled.div`
+const DropdownContainer = styled.div<{ below: RefObject<HTMLInputElement> }>`
     position: absolute;
     left: 0;
     top: 100%;
     width: ${({ below }) =>
-        below &&
-        below.getBoundingClientRect().width - AUTOCOMPLETE_BORDER_WIDTH * 2}px;
+        below.current &&
+        below.current.getBoundingClientRect().width -
+            AUTOCOMPLETE_BORDER_WIDTH * 2}px;
     visibility: ${({ hidden }) => (hidden ? "hidden" : "visible")};
     z-index: 5000;
     text-align: left;
@@ -66,7 +68,7 @@ const DropdownBox = styled.div`
     }
 `;
 
-const DropdownItemBox = styled.div`
+const DropdownItemBox = styled.div<{ selected: boolean }>`
     border-bottom-style: solid;
     border-width: 1px;
     border-color: #d6d6d6;
@@ -115,17 +117,17 @@ const DropdownItemLeftCol = styled.div`
 
 const AutoCompleteInput = styled(Input)`
     position: absolute;
-    ${(props) => (props.disabled ? "" : "background: transparent;")}
     z-index: 1;
+    ${(props) => (props.disabled ? "" : "background: transparent;")}
 `;
 
 const AutoCompleteInputBackground = styled(AutoCompleteInput)`
-    ${(props) => (props.disabled ? "" : "background: white;")}
     z-index: 0;
     color: grey;
+    ${(props) => (props.disabled ? "" : "background: white;")}
 `;
 
-const Container = styled.div`
+const Container = styled.div<{ inputHeight: string }>`
     position: relative;
     display: block;
     margin-bottom: 1rem;
@@ -133,11 +135,11 @@ const Container = styled.div`
 `;
 
 const Suggestion = ({ onClick, courseCode, title, instructor, selected }) => {
-    const ref = useRef();
+    const ref = useRef<HTMLDivElement>(null);
     // If the suggestion becomes selected, make sure that it is
     // not fully or partially scrolled out of view
     useEffect(() => {
-        if (selected && ref.current) {
+        if (selected && ref.current && ref.current.parentElement) {
             const { bottom, top } = ref.current.getBoundingClientRect();
             const { parentElement } = ref.current;
             const {
@@ -194,11 +196,19 @@ const generateBackdrop = (value, suggestions) => {
     return suggestion;
 };
 
+interface TSuggestion {
+    searchResult: Section[];
+    searchTerm: string;
+}
+
 const AutoComplete = ({ onValueChange, disabled }) => {
-    const [inputRef, setInputRef] = useState(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const [value, setInternalValue] = useState("");
-    const [suggestions, setSuggestions] = useState([]);
-    const [suggestionsFromBackend, setSuggestionsFromBackend] = useState(null);
+    const [suggestions, setSuggestions] = useState<Section[]>([]);
+    const [
+        suggestionsFromBackend,
+        setSuggestionsFromBackend,
+    ] = useState<TSuggestion | null>(null);
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
 
@@ -210,8 +220,10 @@ const AutoComplete = ({ onValueChange, disabled }) => {
     };
 
     useEffect(() => {
-        setBackdrop(generateBackdrop(inputRef && value, show && suggestions));
-    }, [inputRef, show, suggestions, value]);
+        setBackdrop(
+            generateBackdrop(inputRef.current && value, show && suggestions)
+        );
+    }, [show, suggestions, value]);
 
     // Make sure that the suggestions from the backend are up-to-date before displaying them
     useEffect(() => {
@@ -230,10 +242,10 @@ const AutoComplete = ({ onValueChange, disabled }) => {
     const handleSuggestionSelect = (newSelectedSuggestion) => {
         const newVal =
             newSelectedSuggestion !== -1 && suggestions[newSelectedSuggestion];
-        if (newVal) {
+        if (newVal && inputRef.current) {
             const newValue = newVal.section_id;
             setValue(newValue);
-            inputRef.value = newValue;
+            inputRef.current.value = newValue;
         }
     };
 
@@ -249,15 +261,18 @@ const AutoComplete = ({ onValueChange, disabled }) => {
     return (
         <Container
             inputHeight={
-                inputRef && `${inputRef.getBoundingClientRect().height}px`
+                inputRef.current
+                    ? `${inputRef.current.getBoundingClientRect().height}px`
+                    : "inherit"
             }
             ref={useOnClickOutside(() => setActive(false), !show)}
         >
             <AutoCompleteInput
                 disabled={disabled}
+                // @ts-ignore
                 autocomplete="off"
                 placeholder="Course"
-                ref={setInputRef}
+                ref={inputRef}
                 onKeyDown={(e) => {
                     if (e.keyCode === RETURN_KEY && suggestions) {
                         e.preventDefault();
@@ -267,14 +282,14 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                     if (
                         (e.keyCode === RIGHT_ARROW ||
                             e.keyCode === RETURN_KEY) &&
-                        inputRef &&
+                        inputRef.current &&
                         suggestions &&
                         suggestions[0]
                     ) {
                         // autocomplete with backdrop when the right arrow key is pressed
                         setValue(backdrop);
                         setActive(false);
-                        inputRef.value = backdrop;
+                        inputRef.current.value = backdrop;
                     } else if (e.keyCode === DOWN_ARROW && suggestions) {
                         // select a suggestion when the down arrow key is pressed
                         const newIndex = getCurrentIndex() + 1;
@@ -291,6 +306,7 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                         );
                         handleSuggestionSelect(newSelectedSuggestion);
                     } else {
+                        // @ts-ignore
                         const newValue = e.target.value;
                         setValue(newValue);
                         if (!newValue || newValue.length < 3) {
@@ -305,6 +321,7 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                 onClick={() => setActive(true)}
             />
             <AutoCompleteInputBackground
+                // @ts-ignore
                 autocomplete="off"
                 disabled={disabled}
                 value={backdrop}
@@ -324,12 +341,15 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                                 }
                                 courseCode={suggestion.section_id}
                                 onClick={() => {
-                                    inputRef.value = suggestion.section_id;
+                                    if (inputRef.current) {
+                                        inputRef.current.value =
+                                            suggestion.section_id;
+                                    }
                                     setActive(false);
                                     setValue(suggestion.section_id);
                                 }}
                                 title={suggestion.course_title}
-                                instructor={suggestion.instructors[0]}
+                                instructor={suggestion.instructors[0]?.name}
                             />
                         ))}
                 </DropdownBox>

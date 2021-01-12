@@ -55,19 +55,20 @@ class ScoreBox extends Component {
     const instructorTaught = {};
     const { data, liveData, type } = this.props;
     if (type === "course") {
-      Object.values(data.instructors).forEach(a => {
-        const key = convertInstructorName(a.name);
-        instructorTaught[key] = convertSemesterToInt(a.most_recent_semester);
+      Object.values(data.instructors).forEach(inst => {
+        instructorTaught[
+          convertInstructorName(inst.name)
+        ] = convertSemesterToInt(inst.latest_semester);
       });
 
       if (liveData && liveData.sections) {
         const instructorsThisSemester = {};
         // const { instructors = [], courses } = liveData;
-        const instructors = liveData.sections.flatMap(({ instructors }) =>
-          instructors.map(convertInstructorName)
+        const instructors = liveData.sections.flatMap(
+          ({ instructors }) => instructors
         );
         instructors.forEach(inst => {
-          const key = convertInstructorName(inst);
+          const key = convertInstructorName(inst.name);
           const data = {
             open: 0,
             all: 0,
@@ -75,10 +76,11 @@ class ScoreBox extends Component {
           };
           const coursesByInstructor = liveData.sections.filter(
             ({ instructors }) =>
-              instructors.map(convertInstructorName).indexOf(key) !== -1
+              instructors
+                .map(({ name }) => convertInstructorName(name))
+                .indexOf(key) !== -1
           );
-          console.log("liveData sections", liveData.sections);
-          console.log("liveData by instructor", coursesByInstructor);
+          console.log(inst.name, coursesByInstructor);
           // .filter((section) => !a.is_cancelled);
           data.open += coursesByInstructor.filter(
             section => section.status === "O"
@@ -90,13 +92,12 @@ class ScoreBox extends Component {
           instructorsThisSemester[key] = data;
           instructorTaught[key] = Infinity;
         });
-        console.log("instructors", instructorsThisSemester);
-        console.log("data", this.state.data);
+        console.log("state", this.state);
         this.setState(({ data }) => ({
           currentInstructors: instructorTaught,
-          data: data.map(a => ({
-            ...a,
-            star: instructorsThisSemester[convertInstructorName(a.name)]
+          data: data.map(rev => ({
+            ...rev,
+            star: instructorsThisSemester[convertInstructorName(rev.name)]
           }))
         }));
       } else {
@@ -338,10 +339,14 @@ class ScoreBox extends Component {
         </span>
       ),
       sortMethod: (a, b) => {
-        const aname = convertInstructorName(a);
-        const bname = convertInstructorName(b);
-        const hasStarA = this.state.currentInstructors[aname];
-        const hasStarB = this.state.currentInstructors[bname];
+        console.log("comparing", a, b);
+        console.log("instructors", this.state.currentInstructors);
+        const hasStarA = this.state.currentInstructors[
+          convertInstructorName(a)
+        ];
+        const hasStarB = this.state.currentInstructors[
+          convertInstructorName(b)
+        ];
         if (hasStarA && !hasStarB) {
           return -1;
         }
