@@ -2,7 +2,7 @@ from django.db.models import Q
 from more_itertools import powerset
 from rest_framework import filters
 
-from courses.models import Requirement, Section, Course
+from courses.models import Requirement
 from courses.util import get_current_semester
 
 
@@ -25,15 +25,15 @@ def requirement_filter(queryset, req_ids):
 def day_filter(queryset, days):
     day_letters = [day for day in days]
     all_days = list(powerset(day_letters))
-    combined_days = [''.join(tup) for tup in all_days]
+    combined_days = ["".join(tup) for tup in all_days]
     queryset = queryset.filter(sections__meeting_days__in=combined_days)
     return queryset
 
 
 def time_filter(queryset, start_time, end_time):
-    queryset = queryset.filter(sections__earliest_meeting__gte=start_time,
-                               sections__latest_meeting__lte=end_time) | \
-               queryset.filter(sections__meetings__isnull=True)
+    queryset = queryset.filter(
+        sections__earliest_meeting__gte=start_time, sections__latest_meeting__lte=end_time
+    ) | queryset.filter(sections__meetings__isnull=True)
     return queryset
 
 
@@ -43,7 +43,7 @@ def bound_filter(field):
         lower_bound = float(lower_bound)
         upper_bound = float(upper_bound)
         return queryset.filter(
-            Q(**{f"{field}__gte": lower_bound, f"{field}__lte": upper_bound, })
+            Q(**{f"{field}__gte": lower_bound, f"{field}__lte": upper_bound,})
             | Q(**{f"{field}__isnull": True})
         )
 
@@ -69,7 +69,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             "course_quality": bound_filter("course_quality"),
             "instructor_quality": bound_filter("instructor_quality"),
             "difficulty": bound_filter("difficulty"),
-            "days": day_filter
+            "days": day_filter,
         }
 
         for field, filter_func in filters.items():
@@ -91,7 +91,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "required": False,
                 "in": "query",
                 "description": "Can specify what kind of query to run. Course queries are faster, "
-                               "keyword queries look against professor name and course title.",
+                "keyword queries look against professor name and course title.",
                 "schema": {
                     "type": "string",
                     "default": "auto",
@@ -103,7 +103,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "required": False,
                 "in": "query",
                 "description": "Filter courses by comma-separated requirements, ANDed together. "
-                               "Use `/requirements` endpoint to get requirement IDs.",
+                "Use `/requirements` endpoint to get requirement IDs.",
                 "schema": {"type": "string"},
                 "example": "SS@SEAS,H@SEAS",
             },

@@ -6,23 +6,40 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0031_userprofile_push_notifications'),
+        ("courses", "0031_userprofile_push_notifications"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='section',
-            name='earliest_meeting',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='The earliest start time of a meeting; hh:mm is formatted as hh.mm = h+mm/100.', max_digits=4, null=True),
+            model_name="section",
+            name="earliest_meeting",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="The earliest start time of a meeting; hh:mm is formatted as hh.mm = h+mm/100.",
+                max_digits=4,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='section',
-            name='latest_meeting',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='The latest end time of a meeting; hh:mm is formatted as hh.mm = h+mm/100.', max_digits=4, null=True),
+            model_name="section",
+            name="latest_meeting",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="The latest end time of a meeting; hh:mm is formatted as hh.mm = h+mm/100.",
+                max_digits=4,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='section',
-            name='meeting_days',
-            field=models.CharField(blank=True, help_text='The single day or days on which the meeting takes place (one of M, T, W, R, or F) or any combination of the above characters (MW, MWF, TR) in chronological ordering.', max_length=6, null=True),
+            model_name="section",
+            name="meeting_days",
+            field=models.CharField(
+                blank=True,
+                help_text="The single day or days on which the meeting takes place (one of M, T, W, R, or F) or any combination of the above characters (MW, MWF, TR) in chronological ordering.",
+                max_length=6,
+                null=True,
+            ),
         ),
     ]

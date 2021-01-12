@@ -121,7 +121,7 @@ def create_mock_data_multiple_meetings(code, semester):
             "start_time": "11:00 AM",
             "start_time_24": 22.0,
             "term": "2019C",
-        }
+        },
     ]
     set_meetings(section, m)
     return course, section

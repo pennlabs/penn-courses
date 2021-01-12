@@ -395,8 +395,8 @@ class Section(models.Model):
         max_length=6,
         null=True,
         blank=True,
-        help_text="The single day or days on which the meeting takes place (one of M, T, W, R, or F) " +
-                  "or any combination of the above characters (MW, TWF, TS) in chronological ordering.",
+        help_text="The single day or days on which the meeting takes place (one of M,T,W,R,F,S)"
+        + " or any combination of the above characters (MW, TWF, TS) in chronological ordering.",
     )
     earliest_meeting = models.DecimalField(
         max_digits=4,
