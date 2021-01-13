@@ -1,5 +1,5 @@
 import React from "react";
-import PropTypes from "prop-types";
+import styled from "styled-components";
 
 import Badge from "../Badge";
 import { Course as CourseType } from "../../types";
@@ -9,43 +9,71 @@ interface CourseProps {
     onClick: () => void;
 }
 
+const RowSelectors = styled.li`
+    transition: 250ms ease background;
+
+    &:hover {
+        background-color: rgb(240, 240, 240);
+        cursor: pointer;
+    }
+
+    &:active {
+        background-color: rgb(230, 230, 230);
+        cursor: pointer;
+    }
+`;
+
+const CourseContainer = styled.div`
+    padding-left: 2.85em;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+`;
+
+const CourseIdentityContainer = styled.div`
+    overflow: hidden;
+    width: 60%;
+`;
+
+const CourseID = styled.h3`
+    // classname = "title is-6"
+    margin-bottom: 0;
+`;
+
+const CourseTitle = styled.span`
+    fontweight: normal;
+    color: #888888;
+`;
+
+const CourseQualityContainer = styled.div`
+    margin-right: 2px;
+    width: 20%;
+`;
+
+const CourseDifficultyContainer = styled.div`
+    width: 20%;
+`;
+
 export default function Course({ course, onClick }: CourseProps) {
     return (
         // eslint-disable-next-line
-        <li className="selector-row">
-            <div
-                onClick={onClick}
-                role="button"
-                style={{
-                    paddingLeft: "2.85em",
-                    paddingTop: "1em",
-                    paddingBottom: "1em",
-                    alignItems: "center",
-                    display: "flex",
-                    flexDirection: "row",
-                }}
-            >
-                <div style={{ overflow: "hidden", width: "60%" }}>
+        <RowSelectors>
+            <CourseContainer onClick={onClick} role="button">
+                <CourseIdentityContainer>
                     <h3 className="title is-6" style={{ marginBottom: 0 }}>
                         {course.id.replace(/-/g, " ")}
                     </h3>
-                    <span style={{ fontWeight: "normal", color: "#888888" }}>
-                        {course.title}
-                    </span>
-                </div>
-                <div style={{ marginRight: "2px", width: "20%" }}>
+                    <CourseTitle>{course.title}</CourseTitle>
+                </CourseIdentityContainer>
+                <CourseQualityContainer>
                     <Badge value={course.course_quality} />
-                </div>
-                <div style={{ width: "20%" }}>
+                </CourseQualityContainer>
+                <CourseDifficultyContainer>
                     <Badge value={course.difficulty} />
-                </div>
-            </div>
-        </li>
+                </CourseDifficultyContainer>
+            </CourseContainer>
+        </RowSelectors>
     );
 }
-
-Course.propTypes = {
-    // eslint-disable-next-line
-    course: PropTypes.object.isRequired,
-    onClick: PropTypes.func,
-};

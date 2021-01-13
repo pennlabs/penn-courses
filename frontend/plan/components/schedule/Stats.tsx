@@ -7,6 +7,38 @@ interface StatsProps {
     meetings: Section[];
 }
 
+const StatsContainer = styled.div`
+    width: 100%;
+    height: 10em;
+    padding: 0px 20px;
+    display: grid;
+    grid-template-columns: 50% 50%;
+
+    @media only screen and (max-width: 480px) {
+        width: 100%;
+        height: 300px;
+        padding: 0px 20px;
+        display: block;
+    }
+
+    @media only screen and (min-width: 480px) and (max-height: 600px) {
+        height: 0px;
+        display: none;
+        padding: 0px 0px;
+    }
+`;
+
+const MeterContainer = styled.div`
+    display: grid;
+    grid-template-rows: 50% 50%;
+    grid-template-columns: 50% 50%;
+`;
+
+const CreditHoursContainer = styled.div`
+    display: grid;
+    grid-template-columns: 55% 45%;
+`;
+
 const PurpleTimeContainer = styled.div`
     display: grid;
     grid-template-rows: 25% 25% 25% 25%;
@@ -185,14 +217,8 @@ class Stats extends Component<StatsProps> {
             totalCUs = parseFloat(totalCUs.toFixed(1));
         }
         return (
-            <div className="statsStyles">
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateRows: "50% 50%",
-                        gridTemplateColumns: "50% 50%",
-                    }}
-                >
+            <StatsContainer>
+                <MeterContainer>
                     <Meter value={avgs.course_quality} name="Course Quality" />
                     <Meter
                         value={avgs.instructor_quality}
@@ -200,10 +226,8 @@ class Stats extends Component<StatsProps> {
                     />
                     <Meter value={avgs.difficulty} name="Course Difficulty" />
                     <Meter value={avgs.work_required} name="Work Required" />
-                </div>
-                <div
-                    style={{ display: "grid", gridTemplateColumns: "55% 45%" }}
-                >
+                </MeterContainer>
+                <CreditHoursContainer>
                     <PurpleTimeContainer>
                         <PurpleTimeInnerBlock>
                             <PurpleTimeStats>{totalCUs}</PurpleTimeStats>
@@ -242,8 +266,8 @@ class Stats extends Component<StatsProps> {
                             <div>latest end time</div>
                         </div>
                     </StartEndTimeContainer>
-                </div>
-            </div>
+                </CreditHoursContainer>
+            </StatsContainer>
         );
     }
 }

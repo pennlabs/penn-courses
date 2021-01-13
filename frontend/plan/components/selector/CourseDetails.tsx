@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 import TagList from "./TagList";
 import Badge from "../Badge";
 import ShowMore from "../ShowMore";
@@ -52,6 +53,31 @@ interface CourseDetailsProps {
     getCourse: (course: string) => void;
     view: number;
 }
+
+const CourseDetailsContainer = styled.ul`
+    font-size: 0.8em;
+    margin-top: 1em;
+`;
+
+const PCRButtonLink = styled.a`
+    font-weight: 700;
+    font-size: 0.8 em;
+    color: #8f8f8f;
+    text-align: center;
+    border: 2px solid #eeeeee;
+    border-radius: 4px;
+
+    &:hover {
+        border: 2px solid #cbcbcb;
+        border-radius: 4px;
+    }
+`;
+
+const ShowMoreContainer = styled.li`
+    margin-top: 2em;
+    margin-bottom: 2em !important;
+`;
+
 export default function CourseDetails({
     course: {
         requirements = [],
@@ -68,7 +94,7 @@ export default function CourseDetails({
     const prerequisites = annotatePrerequisites(prereqText, getCourse);
     const isExpandedView = view === 1;
     return (
-        <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
+        <CourseDetailsContainer>
             <li>
                 <span className="icon is-small">
                     <i className="far fa-chart-bar" />
@@ -107,28 +133,17 @@ export default function CourseDetails({
                     />
                 </li>
             ) : null}
-            <a
+            <PCRButtonLink
                 target="_blank"
                 rel="noopener noreferrer"
-                className="button is-small pcr-svg"
+                className="button is-small"
                 type="button"
                 href={`https://penncoursereview.com/course/${id}`}
-                style={{
-                    fontWeight: 700,
-                    fontSize: "0.8 em",
-                    color: "#8F8F8F",
-                    textAlign: "center",
-                }}
             >
                 View on Penn Course Review
-            </a>
+            </PCRButtonLink>
             {prerequisites && (
-                <li
-                    style={{
-                        marginTop: "2em",
-                        marginBottom: "2em",
-                    }}
-                >
+                <ShowMoreContainer>
                     <ShowMore
                         disabled={isExpandedView}
                         lines={2}
@@ -137,15 +152,10 @@ export default function CourseDetails({
                     >
                         {prerequisites}
                     </ShowMore>
-                </li>
+                </ShowMoreContainer>
             )}
             {
-                <li
-                    style={{
-                        marginTop: "2em",
-                        marginBottom: "2em",
-                    }}
-                >
+                <ShowMoreContainer>
                     <ShowMore
                         disabled={isExpandedView}
                         lines={2}
@@ -154,8 +164,8 @@ export default function CourseDetails({
                     >
                         {description}
                     </ShowMore>
-                </li>
+                </ShowMoreContainer>
             }
-        </ul>
+        </CourseDetailsContainer>
     );
 }
