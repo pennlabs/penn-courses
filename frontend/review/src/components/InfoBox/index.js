@@ -33,7 +33,6 @@ const InfoBox = ({
   const [inCourseCart, setInCourseCart] = useState(
     Boolean(localStorage.getItem(code))
   );
-  console.log(average);
   const {
     rInstructorQuality: avgInstructorQuality,
     rCourseQuality: avgCourseQuality,

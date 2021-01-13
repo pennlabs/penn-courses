@@ -56,7 +56,9 @@ class ScoreBox extends Component {
     const { data, liveData, type } = this.props;
     if (type === "course") {
       Object.values(data.instructors).forEach(inst => {
-        instructorTaught[inst.id] = convertSemesterToInt(inst.latest_semester);
+        instructorTaught[
+          convertInstructorName(inst.name)
+        ] = convertSemesterToInt(inst.latest_semester);
       });
 
       if (liveData && liveData.sections) {
@@ -66,6 +68,7 @@ class ScoreBox extends Component {
           ({ instructors }) => instructors
         );
         instructors.forEach(inst => {
+          const key = convertInstructorName(inst.name);
           const data = {
             open: 0,
             all: 0,
@@ -73,8 +76,11 @@ class ScoreBox extends Component {
           };
           const coursesByInstructor = liveData.sections.filter(
             ({ instructors }) =>
-              instructors.map(({ id }) => id).indexOf(inst.id) !== -1
+              instructors
+                .map(({ name }) => convertInstructorName(name))
+                .indexOf(key) !== -1
           );
+          console.log(inst.name, coursesByInstructor);
           // .filter((section) => !a.is_cancelled);
           data.open += coursesByInstructor.filter(
             section => section.status === "O"
@@ -83,14 +89,15 @@ class ScoreBox extends Component {
           data.sections = data.sections.concat(
             coursesByInstructor.map(section => section)
           );
-          instructorsThisSemester[inst.id] = data;
-          instructorTaught[inst.id] = Infinity;
+          instructorsThisSemester[key] = data;
+          instructorTaught[key] = Infinity;
         });
+        console.log("state", this.state);
         this.setState(({ data }) => ({
           currentInstructors: instructorTaught,
-          data: data.map(a => ({
-            ...a,
-            star: instructorsThisSemester[a.id]
+          data: data.map(rev => ({
+            ...rev,
+            star: instructorsThisSemester[convertInstructorName(rev.name)]
           }))
         }));
       } else {
@@ -332,8 +339,14 @@ class ScoreBox extends Component {
         </span>
       ),
       sortMethod: (a, b) => {
-        const hasStarA = this.state.currentInstructors[a.id];
-        const hasStarB = this.state.currentInstructors[b.id];
+        console.log("comparing", a, b);
+        console.log("instructors", this.state.currentInstructors);
+        const hasStarA = this.state.currentInstructors[
+          convertInstructorName(a)
+        ];
+        const hasStarB = this.state.currentInstructors[
+          convertInstructorName(b)
+        ];
         if (hasStarA && !hasStarB) {
           return -1;
         }
@@ -343,13 +356,7 @@ class ScoreBox extends Component {
         if (hasStarA !== hasStarB) {
           return hasStarB - hasStarA;
         }
-        if (a === undefined || a.name === undefined) {
-          return 1;
-        }
-        if (b === undefined || b.name === undefined) {
-          return -1;
-        }
-        return a.name.localeCompare(b.name);
+        return a.localeCompare(b);
       },
       filterMethod: (filter, rows) => {
         if (filter.value === "") {
