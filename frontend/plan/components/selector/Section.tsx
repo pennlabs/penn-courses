@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 import scrollIntoView from "scroll-into-view-if-needed";
 
 import Badge from "../Badge";
@@ -14,6 +15,78 @@ interface SectionProps {
     };
     inCart: boolean;
 }
+
+const SectionContainer = styled.div`
+    transition: 250ms;
+    &:hover {
+        background-color: rgba(105, 117, 244, 0.05);
+    }
+`;
+
+const SectionInfoContainer = styled.li`
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+    border-bottom: 1px solid rgb(230, 230, 230);
+`;
+
+const SectionInfo = styled.div`
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    justify-content: space-between;
+    padding: 1em;
+    padding-right: 0;
+`;
+
+const IdAndInstructorContainer = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+`;
+
+const IdAndActivityContainer = styled.div`
+    font-size: 1rem;
+    font-weight: bold;
+    margin-right: 1em;
+    display: flex;
+    align-items: center;
+`;
+
+const ActivityType = styled.span`
+    font-size: 0.7rem;
+    margin-left: 0.5em;
+    font-weight: normal;
+`;
+
+const InstructorContainer = styled.div`
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-overflow: ellipsis;
+    flex-grow: 6;
+`;
+
+const MiscellaneousInfoContainer = styled.div`
+    min-width: 200px;
+    margin-top: 0.5em;
+    display: grid;
+    font-size: 0.7rem;
+    grid-template-columns: 40% 15% 40%;
+`;
+
+const BadgesContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+`;
+
+const AddRemoveButton = styled.div`
+    padding: 1.8em 1.8em 1.8em 1em;
+    width: 2.5em;
+`;
 
 export default function Section({ section, cart, inCart }: SectionProps) {
     const { instructors, meetings, status } = section;
@@ -31,61 +104,15 @@ export default function Section({ section, cart, inCart }: SectionProps) {
         }, 50);
     };
     return (
-        <div className="course_section">
-            <li
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: "0",
-                    borderBottom: "1px solid rgb(230, 230, 230)",
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        flexGrow: 1,
-                        justifyContent: "space-between",
-                        padding: "1em",
-                        paddingRight: "0",
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                        }}
-                    >
-                        <div
-                            style={{
-                                fontSize: "1rem",
-                                fontWeight: "bold",
-                                marginRight: "1em",
-                                display: "flex",
-                                alignItems: "center",
-                            }}
-                        >
+        <SectionContainer>
+            <SectionInfoContainer>
+                <SectionInfo>
+                    <IdAndInstructorContainer>
+                        <IdAndActivityContainer>
                             {`${section.id.split("-").pop()} `}
-                            <span
-                                style={{
-                                    fontSize: "0.70rem",
-                                    marginLeft: "0.5em",
-                                    fontWeight: "normal",
-                                }}
-                            >
-                                {section.activity}
-                            </span>
-                        </div>
-                        <div
-                            style={{
-                                fontSize: "0.85rem",
-                                fontWeight: "bold",
-                                textOverflow: "ellipsis",
-                                flexGrow: 6,
-                            }}
-                        >
+                            <ActivityType>{section.activity}</ActivityType>
+                        </IdAndActivityContainer>
+                        <InstructorContainer>
                             {instructors.length > 0 ? (
                                 <>
                                     {instructors.map((elem, ind) => (
@@ -100,17 +127,9 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                             ) : (
                                 <div> N/A </div>
                             )}
-                        </div>
-                    </div>
-                    <div
-                        style={{
-                            minWidth: "200px",
-                            marginTop: "0.5em",
-                            display: "grid",
-                            fontSize: "0.7rem",
-                            gridTemplateColumns: "40% 15% 40%",
-                        }}
-                    >
+                        </InstructorContainer>
+                    </IdAndInstructorContainer>
+                    <MiscellaneousInfoContainer>
                         <div>{meetings && getTimeString(meetings)}</div>
                         <div>{`${section.credits} CU`}</div>
                         <div>
@@ -129,17 +148,9 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                                 </div>
                             ) : null}
                         </div>
-                    </div>
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                        alignItems: "center",
-                    }}
-                >
+                    </MiscellaneousInfoContainer>
+                </SectionInfo>
+                <BadgesContainer>
                     <div>
                         {instructors.length > 0 ? (
                             <div className="popover is-popover-left">
@@ -174,15 +185,10 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                     ) : (
                         <div />
                     )}
-                </div>
-                <div
+                </BadgesContainer>
+                <AddRemoveButton
                     role="button"
                     onClick={inCart ? cart.remove : () => cartAdd()}
-                    style={{
-                        padding: "1.8em",
-                        paddingLeft: "1em",
-                        width: "2.5em",
-                    }}
                 >
                     {inCart ? (
                         <div className="hover-switch">
@@ -192,8 +198,8 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                     ) : (
                         <i className="fas fa-plus" />
                     )}
-                </div>
-            </li>
-        </div>
+                </AddRemoveButton>
+            </SectionInfoContainer>
+        </SectionContainer>
     );
 }

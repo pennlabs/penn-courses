@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import styled from "styled-components";
 import Tag from "./Tag";
 
 interface TagListProps {
@@ -6,6 +7,16 @@ interface TagListProps {
     limit?: number;
     onClick?: (id: string) => void;
 }
+
+const HiddenTagListContainer = styled.span`
+    overflow: hidden;
+    display: inline-block;
+    height: ${({ expanded }: { expanded: boolean }) => (expanded ? "auto" : 0)};
+    * {
+        user-select: none;
+    }
+`;
+
 export default function TagList({
     elements,
     onClick,
@@ -25,14 +36,11 @@ export default function TagList({
                             : `+${hiddenTags.length}`}
                     </Tag>
                 )}
-                <span
-                    className="taglist"
-                    style={{ height: expanded ? "auto" : 0 }}
-                >
+                <HiddenTagListContainer expanded={expanded}>
                     {hiddenTags.map((elt) => (
                         <Tag key={elt}>{elt}</Tag>
                     ))}
-                </span>
+                </HiddenTagListContainer>
                 {expanded && (
                     <a role="button" onClick={() => setExpanded(false)}>
                         Hide requirements

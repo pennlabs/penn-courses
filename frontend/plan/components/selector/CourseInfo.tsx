@@ -17,6 +17,33 @@ const InfoContainer = styled.div`
     flex-direction: column;
 `;
 
+const BackContainer = styled.div`
+    max-height: 10;
+`;
+
+const BackButton = styled.button`
+    font-size: 1em;
+    border-color: transparent;
+`;
+
+const DetailsContainer = styled.div`
+    margin: 0.5em 0.5em 0.5em 2em;
+`;
+
+const CourseInformationContainer = styled.ul`
+    height: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+
+    &::-webkit-scrollbar {
+        width: 0 !important;
+    }
+
+    li {
+        margin-bottom: 0.5em;
+    }
+`;
+
 export default function CourseInfo({
     course,
     back,
@@ -26,35 +53,34 @@ export default function CourseInfo({
     const { id, title, sections } = course;
     return (
         <InfoContainer>
-            <div style={{ maxHeight: "10%" }}>
+            <BackContainer>
                 {back && (
-                    <button
+                    <BackButton
                         type="button"
                         className="button back-button grey-text"
                         onClick={back}
-                        style={{ fontSize: "1em" }}
                     >
                         <span className="icon">
                             <i className="fas fa-arrow-left" />
                         </span>
                         &nbsp; Back
-                    </button>
+                    </BackButton>
                 )}
-            </div>
-            <div style={{ margin: ".5em .5em .5em 2em" }}>
+            </BackContainer>
+            <DetailsContainer>
                 <h3 className="title is-4">{id.replace(/-/g, " ")}</h3>
                 <h5 className="subtitle is-6">{title}</h5>
-            </div>
-            <ul className="badges-list scrollable">
-                <div style={{ margin: ".5em .5em .5em 2em" }}>
+            </DetailsContainer>
+            <CourseInformationContainer>
+                <DetailsContainer>
                     <CourseDetails
                         view={view}
                         course={course}
                         getCourse={getCourse}
                     />
-                </div>
+                </DetailsContainer>
                 <SectionList view={view} sections={sections} />
-            </ul>
+            </CourseInformationContainer>
         </InfoContainer>
     );
 }

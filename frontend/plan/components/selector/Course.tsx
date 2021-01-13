@@ -38,7 +38,6 @@ const CourseIdentityContainer = styled.div`
 `;
 
 const CourseID = styled.h3`
-    // classname = "title is-6"
     margin-bottom: 0;
 `;
 
