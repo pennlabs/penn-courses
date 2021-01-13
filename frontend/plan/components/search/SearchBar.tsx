@@ -405,7 +405,7 @@ SearchBarProps) {
     );
 }
 
-//@ts-ignore
+// @ts-ignore
 const mapStateToProps = (state) => ({
     schoolReq: state.filters.schoolReq,
     filterData: state.filters.filterData,
@@ -415,7 +415,7 @@ const mapStateToProps = (state) => ({
     user: state.login.user,
 });
 
-//@ts-ignore
+// @ts-ignore
 const mapDispatchToProps = (dispatch) => ({
     login: (user: User) => dispatch(login(user)),
     logout: () => dispatch(logout()),
@@ -437,5 +437,5 @@ const mapDispatchToProps = (dispatch) => ({
     clearSearchResults: () => dispatch(updateSearch([])),
     clearScheduleData: () => dispatch(clearAllScheduleData()),
 });
-//@ts-ignore
+// @ts-ignore
 export default connect(mapStateToProps, mapDispatchToProps)(SearchBar);

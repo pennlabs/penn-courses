@@ -40,7 +40,7 @@ interface ScheduleProps {
         rename: (oldName: string) => void;
     };
     activeScheduleName: string;
-    setTab: (_: number) => void;
+    setTab?: (_: number) => void;
 }
 
 // Used for box coloring, from StackOverflow:
@@ -198,7 +198,7 @@ class Schedule extends Component {
                 key={`${meeting.course.id}-${meeting.day}`}
                 remove={() => removeSection(meeting.course.id)}
                 focusSection={() => {
-                    if (isMobileOnly) {
+                    if (isMobileOnly && setTab) {
                         setTab(0);
                     }
                     const split = meeting.course.id.split("-");

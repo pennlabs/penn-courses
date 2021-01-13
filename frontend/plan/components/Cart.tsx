@@ -13,7 +13,7 @@ interface CartProps {
     removeItem: (sectionId: string) => void;
     courseInfo: (id: string) => void;
     courseInfoLoading: boolean;
-    setTab: (_: number) => void;
+    setTab?: (_: number) => void;
     lastAdded: { id: string; code: string };
     mobileView: boolean;
 }
@@ -87,7 +87,7 @@ const Cart = ({
                                     courseInfo(
                                         `${codeParts[0]}-${codeParts[1]}`
                                     );
-                                    if (mobileView) {
+                                    if (mobileView && setTab) {
                                         setTab(0);
                                     }
                                 }

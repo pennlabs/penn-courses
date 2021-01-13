@@ -28,6 +28,7 @@ interface SelectorProps {
     scrollPos: number;
     setScrollPos: (scrollPos: number) => void;
     sortMode: SortMode;
+    mobileView: boolean;
 }
 const Selector: FunctionComponent<SelectorProps> = ({
     courses,
