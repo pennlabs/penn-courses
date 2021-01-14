@@ -75,7 +75,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     marginBottom: "0.5rem",
                 }}
             >
-                No result found
+                No results found
             </h3>
             Search for courses, departments, or instructors above. Looking for
             something specific? Try using the filters!

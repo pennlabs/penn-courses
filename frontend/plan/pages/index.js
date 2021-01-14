@@ -20,6 +20,7 @@ import Footer from "../components/footer";
 import Cart from "../components/Cart";
 import ModalContainer from "../components/modals/generic_modal_container";
 import SearchSortDropdown from "../components/search/SearchSortDropdown";
+import Recs from "../components/recomendations/Recs";
 import { openModal } from "../actions";
 import { preventMultipleTabs } from "../components/syncutils";
 import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
@@ -284,6 +285,12 @@ function Index() {
                             }}
                         >
                             <Selector view={view} />
+                            
+                            <Recs
+                                style ={{
+                                    bottom: 0
+                                }}
+                            />
                         </div>
                     </div>
                     <div
