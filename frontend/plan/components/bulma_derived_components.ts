@@ -8,6 +8,15 @@ export const Column = styled.div`
     padding: 0.75rem;
 `;
 
+export const Icon = styled.span`
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    height: 1.5rem;
+    width: 1.5rem;
+    pointer-events: none;
+`;
+
 export const RadioInput = styled.input`
     display: table-cell;
 

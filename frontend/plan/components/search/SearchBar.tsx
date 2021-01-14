@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
+import styled from "styled-components";
 // TODO: Move shared components to typescript
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
@@ -27,6 +28,8 @@ import {
     clearAllScheduleData,
 } from "../../actions";
 import { login, logout } from "../../actions/login";
+
+import { Icon } from "../bulma_derived_components";
 
 // removed: <F, K extends keyof F, V extends keyof K>
 interface SearchBarProps {
@@ -79,6 +82,157 @@ function shouldSearch(filterData: FilterData) {
     }
     return searchString || selectedReq;
 }
+
+const MobileSearchBarOuterContainer = styled.div`
+    margin-bottom: 0;
+`;
+
+const MobileSearchBarInnerContainer = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    background: white;
+    padding-top: 20px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+`;
+
+const MobileFilterContainer = styled.div`
+    padding: 0.5rem;
+`;
+
+const MobileFilterDropdowns = styled.div`
+    z-index: 100;
+    margin-top: -20px;
+    margin-bottom: 20px;
+    padding: 10px;
+    display: flex;
+    width: 100vw;
+    align-items: center;
+    flex-wrap: wrap;
+    background: white;
+    justify-content: flex-start;
+`;
+
+const SearchBarContainer = styled.div`
+    margin: 1rem 1.5rem;
+    padding: 0.25rem;
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px 0 lightgrey;
+    width: inherit;
+    align-items: center;
+    justify-content: space-between;
+    height: auto;
+    margin-bottom: 1.5rem;
+
+    @media screen and (min-width: 769px) {
+        display: flex;
+    }
+`;
+
+const SearchBarFilters = styled.div`
+    flex-basis: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: flex-start;
+    max-width: 80vw !important;
+
+    @media screen and (min-width: 769px) {
+        display: flex;
+    }
+`;
+
+const ClearContainer = styled.div`
+    flex-basis: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: flex-end;
+    display: none;
+
+    @media screen and (min-width: 769px) {
+        display: flex;
+    }
+`;
+
+const LevelItem = styled.div`
+    align-items: center;
+    display: flex;
+    flex-basis: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
+    justify-content: center;
+    margin-right: 0.75rem;
+`;
+
+const FilterLevelItem = styled.div`
+    align-items: center;
+    flex-basis: auto;
+    flex-shrink: 0;
+    flex-grow: 1;
+    flex-wrap: wrap;
+    padding: 0.3em 0em;
+    justify-content: flex-start;
+    max-width: calc(100% - 17rem);
+    display: flex;
+    margin-right: 0.75rem;
+
+    > * {
+        padding-right: 0.5rem;
+    }
+`;
+
+const PlanViewButton = styled.a`
+    background-color: ${({
+        isExpanded,
+        expandedButton,
+    }: {
+        isExpanded: boolean;
+        expandedButton: boolean;
+    }) => (isExpanded === expandedButton ? "white" : "#f0f1f3")};
+    padding: 0.5em;
+    padding-bottom: 0;
+
+    img {
+        width: 1.5em;
+    }
+`;
+
+const ClearButton = styled.button`
+    user-select: none;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    box-shadow: none;
+    display: inline-flex;
+    font-size: 1rem;
+    height: 2.25em;
+    line-height: 1.5;
+    position: relative;
+    vertical-align: top;
+    border-width: 1px;
+    cursor: pointer;
+    justify-content: center;
+    padding-bottom: calc(0.375em - 1px);
+    padding-left: 0.75em;
+    padding-right: 0.75em;
+    padding-top: calc(0.375em - 1px);
+    text-align: center;
+    white-space: nowrap;
+    background-color: white;
+    border-color: transparent;
+    margin-right: 1em;
+    color: #7e7e7e;
+`;
+
+const PCPImage = styled.img`
+    height: 2.5rem;
+    padding-left: 1.5rem;
+`;
 
 function SearchBar({
     /* eslint-disable no-shadow */
@@ -241,20 +395,8 @@ SearchBarProps) {
     );
     if (mobileView) {
         return (
-            <div style={{ marginTop: "0px" }}>
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        background: "white",
-                        paddingTop: "20px",
-                        paddingBottom: "10px",
-                        marginBottom: "10px",
-                        borderRadius: "6px",
-                    }}
-                >
+            <MobileSearchBarOuterContainer>
+                <MobileSearchBarInnerContainer>
                     <AccountIndicator
                         user={user}
                         login={login}
@@ -268,33 +410,17 @@ SearchBarProps) {
                         filterData={filterData}
                         updateSearchText={updateSearchText}
                     />
-                    <div
-                        style={{ padding: "0.5rem" }}
+                    <MobileFilterContainer
                         role="button"
                         onClick={() => showHideReqs(!reqsShown)}
                     >
                         <i className="fas fa-filter" />
-                    </div>
-                </div>
+                    </MobileFilterContainer>
+                </MobileSearchBarInnerContainer>
                 {reqsShown && (
-                    <div
-                        style={{
-                            zIndex: 100,
-                            marginTop: "-20px",
-                            padding: "10px",
-                            marginBottom: "20px",
-                            display: "flex",
-                            width: "100vw",
-                            alignItems: "center",
-                            flexWrap: "wrap",
-                            background: "white",
-                            justifyContent: "flex-start",
-                        }}
-                    >
-                        {dropDowns}
-                    </div>
+                    <MobileFilterDropdowns>{dropDowns}</MobileFilterDropdowns>
                 )}
-            </div>
+            </MobileSearchBarOuterContainer>
         );
     }
 
