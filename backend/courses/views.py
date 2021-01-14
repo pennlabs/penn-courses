@@ -6,7 +6,9 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 import courses.examples as examples
+from courses.filters import CourseSearchFilterBackend
 from courses.models import Course, Requirement, Section, StatusUpdate
+from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
     CourseDetailSerializer,
     CourseListSerializer,
@@ -17,8 +19,6 @@ from courses.serializers import (
     UserSerializer,
 )
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
-from plan.filters import CourseSearchFilterBackend
-from plan.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 
 
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
