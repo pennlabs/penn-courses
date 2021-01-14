@@ -14,62 +14,6 @@ from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.schemas.utils import is_list_view
 
 
-def reverse_func(*pargs, args=None, **kwargs):
-    """
-    This function returns a function which, when called, will return the string url associated
-    with the given args and kwargs, just like the reverse function would:
-    https://docs.djangoproject.com/en/3.1/ref/urlresolvers/#reverse
-    Importantly, it allows for evaluation of the string to
-    occur later when the docs are generated, rather than during the creation of the views
-    (which causes an unavoidable circular import problem).
-    """
-    if args is None:
-        args = []
-
-    def get_url():
-        # replace args with unique pattern which won't be found in the rest of the url
-        # (DRF throws an error if we include curly braces in a string in args, so this hack
-        # allows us to identify each path parameter in the url and replace it).
-        if "hopefully_unique_str_path_parameter" in reverse(
-            *pargs, args=["0" for _ in args], **kwargs
-        ):
-            raise ValueError(
-                "Please remove the string 'hopefully_unique_str_path_parameter' from all urls. Wtf."
-            )
-        new_args = [f"hopefully_unique_str_path_parameter_{i}" for i in range(len(args))]
-        url = reverse(*pargs, args=new_args, **kwargs)
-        for i, pretend_param in enumerate(new_args):
-            # Surround given path parameters with curly braces (can't be used in the args
-            # list of reverse, but is required by the OpenAPI specification:
-            # https://swagger.io/docs/specification/describing-parameters/)
-            url = url.replace(pretend_param, "{" + args[i] + "}")
-        return url
-
-    return get_url
-
-
-def not_using_reverse_func(dictionary_name, key, PcxAutoSchema=False, traceback=None):
-    """
-    This function should be called when it is detected that a user did not use the reverse_func
-    function to generate a url (and instead hardcoded the url as a string or otherwise
-    messed up). It raises an error to let the user know about their mistake.
-    """
-    if not PcxAutoSchema:
-        # Error occurred in a dictionary in docs_settings.py, not in PcxAutoSchema initialization.
-        raise ValueError(
-            f"Check your {dictionary_name} dictionary in PennCourses/docs_settings.py "
-            f"for an invalid key: {str(key)}. You should be calling the reverse_func function "
-            "for all your keys. Reverse_func returns a function which returns a string."
-        )
-    else:
-        assert traceback is not None  # indicates autodoc code error, not user error
-        raise ValueError(
-            f"Check your {dictionary_name} dictionary in PcxAutoSchema initialization at "
-            f"{traceback} for an invalid key: {str(key)}. You should be calling the reverse_func "
-            "function for all your keys. Reverse_func returns a function which returns a string."
-        )
-
-
 """
 This file includes code and settings for our PCx autodocumentation
 (based on a Django-generated OpenAPI schema and Redoc, which formats that schema into a
@@ -274,8 +218,45 @@ documentation:
 http://spec.openapis.org/oas/v3.0.3.html
 """
 
-# The following is the description which shows up at the top of the documentation site
 
+def reverse_func(*pargs, args=None, **kwargs):
+    """
+    This function returns a function which, when called, will return the string url associated
+    with the given args and kwargs, just like the reverse function would:
+    https://docs.djangoproject.com/en/3.1/ref/urlresolvers/#reverse
+    Importantly, it allows for evaluation of the string to
+    occur later when the docs are generated, rather than during the creation of the views
+    (which causes an unavoidable circular import problem).
+    """
+    if args is None:
+        args = []
+
+    def get_url():
+        # replace args with unique pattern which won't be found in the rest of the url
+        # (DRF throws an error if we include curly braces in a string in args, so this hack
+        # allows us to identify each path parameter in the url and replace it).
+        if "hopefully_unique_str_path_parameter" in reverse(
+            *pargs, args=["0" for _ in args], **kwargs
+        ):
+            raise ValueError(
+                "Please remove the string 'hopefully_unique_str_path_parameter' from all urls. Wtf."
+            )
+        new_args = [f"hopefully_unique_str_path_parameter_{i}" for i in range(len(args))]
+        url = reverse(*pargs, args=new_args, **kwargs)
+        for i, pretend_param in enumerate(new_args):
+            # Surround given path parameters with curly braces (can't be used in the args
+            # list of reverse, but is required by the OpenAPI specification:
+            # https://swagger.io/docs/specification/describing-parameters/)
+            url = url.replace(pretend_param, "{" + args[i] + "}")
+        return url
+
+    return get_url
+
+
+# ============================= Begin Customizable Settings ========================================
+
+
+# The following is the description which shows up at the top of the documentation site
 openapi_description = """
 # Introduction
 Penn Courses ([GitHub](https://github.com/pennlabs/penn-courses)) is the umbrella
@@ -533,14 +514,6 @@ assert all(
 labs_logo_url = "https://i.imgur.com/tVsRNxJ.png"
 
 
-def split_camel(w):
-    return re.sub("([a-z0-9])([A-Z])", lambda x: x.groups()[0] + " " + x.groups()[1], w)
-
-
-def pluralize_word(s):
-    return s + "s"  # naive solution because this is how it is done in DRF
-
-
 def make_manual_schema_changes(data):
     """
     Use this space to make manual modifications to the schema before it is
@@ -594,6 +567,39 @@ def make_manual_schema_changes(data):
             delete_other_content_types_dfs(value)
 
     delete_other_content_types_dfs(data)
+
+
+# ============================== End Customizable Settings =========================================
+
+
+def not_using_reverse_func(dictionary_name, key, PcxAutoSchema=False, traceback=None):
+    """
+    This function should be called when it is detected that a user did not use the reverse_func
+    function to generate a url (and instead hardcoded the url as a string or otherwise
+    messed up). It raises an error to let the user know about their mistake.
+    """
+    if not PcxAutoSchema:
+        # Error occurred in a dictionary in docs_settings.py, not in PcxAutoSchema initialization.
+        raise ValueError(
+            f"Check your {dictionary_name} dictionary in PennCourses/docs_settings.py "
+            f"for an invalid key: {str(key)}. You should be calling the reverse_func function "
+            "for all your keys. Reverse_func returns a function which returns a string."
+        )
+    else:
+        assert traceback is not None  # indicates autodoc code error, not user error
+        raise ValueError(
+            f"Check your {dictionary_name} dictionary in PcxAutoSchema initialization at "
+            f"{traceback} for an invalid key: {str(key)}. You should be calling the reverse_func "
+            "function for all your keys. Reverse_func returns a function which returns a string."
+        )
+
+
+def split_camel(w):
+    return re.sub("([a-z0-9])([A-Z])", lambda x: x.groups()[0] + " " + x.groups()[1], w)
+
+
+def pluralize_word(s):
+    return s + "s"  # naive solution because this is how it is done in DRF
 
 
 cumulative_examples = dict()  # populated by PcxAutoSchema __init__ method calls
