@@ -37,7 +37,13 @@ const CourseIdentityContainer = styled.div`
     width: 60%;
 `;
 
+// Bulma: title is-6
 const CourseID = styled.h3`
+    font-size: 1rem;
+    color: #363636;
+    font-weight: 600;
+    line-height: 1.125;
+    word-break: break-word;
     margin-bottom: 0;
 `;
 
@@ -61,9 +67,7 @@ export default function Course({ course, onClick }: CourseProps) {
         <RowSelectors>
             <CourseContainer onClick={onClick} role="button">
                 <CourseIdentityContainer>
-                    <h3 className="title is-6" style={{ marginBottom: 0 }}>
-                        {course.id.replace(/-/g, " ")}
-                    </h3>
+                    <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
                     <CourseTitle>{course.title}</CourseTitle>
                 </CourseIdentityContainer>
                 <CourseQualityContainer>

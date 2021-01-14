@@ -44,6 +44,25 @@ const CourseInformationContainer = styled.ul`
     }
 `;
 
+// Bulma: title is-4
+const CourseID = styled.h3`
+    color: #363636;
+    font-weight: 600;
+    line-height: 1.125;
+    font-size: 1.5rem;
+    word-break: break-word;
+    margin-bottom: 1.5rem;
+`;
+
+// Bulma: subtitle is-6
+const CourseName = styled.h5`
+    color: #4a4a4a;
+    font-weight: 400;
+    line-height: 1.25;
+    font-size: 1rem;
+    margin-top: -1.25rem;
+`;
+
 export default function CourseInfo({
     course,
     back,
@@ -68,8 +87,8 @@ export default function CourseInfo({
                 )}
             </BackContainer>
             <DetailsContainer>
-                <h3 className="title is-4">{id.replace(/-/g, " ")}</h3>
-                <h5 className="subtitle is-6">{title}</h5>
+                <CourseID>{id.replace(/-/g, " ")}</CourseID>
+                <CourseName>{title}</CourseName>
             </DetailsContainer>
             <CourseInformationContainer>
                 <DetailsContainer>
