@@ -87,7 +87,7 @@ class Email(Alert):
             return False
 
         try:
-            thread_subject = f"{self.registration.section.full_code} is now open!"
+            thread_subject = f"{self.registration.section.full_code} Status Update"
             if close_notification:
                 if not self.close_text:
                     # This should be unreachable

@@ -368,6 +368,19 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+                if Registration.objects.filter(
+                    user=registration.user,
+                    section=registration.section,
+                    **Registration.is_active_filter()
+                ).exists():
+                    # An active registration for this section already exists
+                    return Response(
+                        {
+                            "message": "You've already registered to get alerts for %s!"
+                            % registration.section.full_code
+                        },
+                        status=status.HTTP_409_CONFLICT,
+                    )
                 resub = registration.resubscribe()
                 return Response(
                     {"detail": "Resubscribed successfully", "id": resub.id},

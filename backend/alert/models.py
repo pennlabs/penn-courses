@@ -6,6 +6,7 @@ import phonenumbers  # library for parsing and formatting phone numbers.
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db.models import Max
 from django.utils import timezone
 
 from alert.alerts import Email, PushNotification, Text
@@ -426,6 +427,21 @@ class Registration(models.Model):
             if getattr(self, k) != v:
                 return False
         return True
+
+    @property
+    def last_notification_sent_at(self):
+        """
+        The last last time the user was sent an opening notification for this registration's
+        section. This property is None (or null in JSON) if no notification has been sent to the
+        user for this registration's section.
+        """
+        return (
+            Registration.objects.filter(
+                user=self.user, section=self.section, notification_sent_at__isnull=False
+            )
+            .aggregate(Max("notification_sent_at"))
+            .get("notification_sent_at__max", None)
+        )
 
     def alert(self, forced=False, sent_by="", close_notification=False):
         """

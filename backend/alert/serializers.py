@@ -17,6 +17,7 @@ registration_fields = [
     "auto_resubscribe",
     "notification_sent",
     "notification_sent_at",
+    "last_notification_sent_at",
     "close_notification",
     "close_notification_sent",
     "close_notification_sent_at",
