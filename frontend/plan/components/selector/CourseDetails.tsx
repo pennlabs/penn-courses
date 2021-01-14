@@ -62,10 +62,16 @@ const CourseDetailsContainer = styled.ul`
 const PCRButtonLink = styled.a`
     font-weight: 700;
     font-size: 0.8 em;
-    color: #8f8f8f;
+    color: #8f8f8f !important;
     text-align: center;
     border: 2px solid #eeeeee;
-    border-radius: 4px;
+    border-radius: 2px;
+
+    background-color: #fff;
+    cursor: pointer;
+    justify-content: center;
+    padding: calc(0.375em - 1px) 0.75em;
+    white-space: nowrap;
 
     &:hover {
         border: 2px solid #cbcbcb;
@@ -76,6 +82,16 @@ const PCRButtonLink = styled.a`
 const ShowMoreContainer = styled.li`
     margin-top: 2em;
     margin-bottom: 2em !important;
+`;
+
+// Bulma: icon is-small
+const Icon = styled.span`
+    pointer-events: none;
+    height: 1rem;
+    width: 1rem;
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
 `;
 
 export default function CourseDetails({
@@ -96,9 +112,9 @@ export default function CourseDetails({
     return (
         <CourseDetailsContainer>
             <li>
-                <span className="icon is-small">
+                <Icon>
                     <i className="far fa-chart-bar" />
-                </span>
+                </Icon>
                 &nbsp; Quality: &nbsp;
                 <Badge value={courseQuality} />
                 &nbsp; Difficulty: &nbsp;
@@ -106,9 +122,9 @@ export default function CourseDetails({
             </li>
             {requirements.length > 0 ? (
                 <li>
-                    <span className="icon is-small">
+                    <Icon>
                         <i className="far fa-check-circle" />
-                    </span>
+                    </Icon>
                     &nbsp; Fulfills: &nbsp;
                     <TagList
                         elements={requirements.map(({ school, name }) =>
@@ -120,9 +136,9 @@ export default function CourseDetails({
             ) : null}
             {crosslistings.length > 0 ? (
                 <li>
-                    <span className="icon is-small">
+                    <Icon>
                         <i className="fas fa-random" />
-                    </span>
+                    </Icon>
                     &nbsp; Crosslisted as: &nbsp;
                     <TagList
                         elements={crosslistings.map((e) =>
@@ -136,7 +152,6 @@ export default function CourseDetails({
             <PCRButtonLink
                 target="_blank"
                 rel="noopener noreferrer"
-                className="button is-small"
                 type="button"
                 href={`https://penncoursereview.com/course/${id}`}
             >

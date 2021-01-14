@@ -10,7 +10,6 @@ import "../styles/modal.css";
 import "../styles/slider.css";
 import "../styles/dropdown.css";
 import "../styles/course-cart.css";
-import "../styles/schedule.css";
 import "../styles/Search.css";
 import "../styles/selector.css";
 import * as Sentry from "@sentry/browser";
