@@ -1,7 +1,11 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-const WelcomeModalInterior = ({ close }) => (
+interface WelcomeModalInteriorProps {
+    close: () => void;
+}
+
+const WelcomeModalInterior = ({ close }: WelcomeModalInteriorProps) => (
     <div>
         <p>
             Penn Course Plan (formerly Penn Course Search) is designed to make
@@ -41,9 +45,5 @@ const WelcomeModalInterior = ({ close }) => (
         </button>
     </div>
 );
-
-WelcomeModalInterior.propTypes = {
-    close: PropTypes.func,
-};
 
 export default WelcomeModalInterior;
