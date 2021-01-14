@@ -4,6 +4,7 @@ import logging
 
 from django.conf import settings
 from django.db import IntegrityError
+from django.db.models import Max
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -143,8 +144,22 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     another way, this endpoint will return a superset of all active registrations: all
     active registrations (meaning registrations which would trigger an alert to be sent if their
     section were to open up), IN ADDITION TO all inactive registrations from the current semester
-    which are at the head of their resubscribe chains.  Each object in the returned list of
-    registrations is of the same form as the object returned by Retrieve Registration.
+    which are at the head of their resubscribe chains.  However, one extra modification is made:
+    if multiple registrations for the same section are included in the above-specified set,
+    then all but the most recent (latest `created_at` value) are removed from the list. This ensures
+    that at most 1 registration is returned for each section. Note that this is still a superset
+    of all active registrations. If a registration is active, its `created_at` value will be
+    greater than any other registrations for the same section (our code ensures no registration
+    can be created or resubscribed to when an active registration exists for the same section).
+    This extra modification is actually made to prevent the user from being able to resubscribe
+    to an older registration after creating a new one (which would cause the backend to return
+    a 409 error).
+
+    Tip: if you sort this list by `original_created_at` (the `created_at` value of the tail of
+    a registration's resubscribe chain), cancelling or resubscribing to registrations will
+    not cause the registration to jump to a different place in the list (which makes for
+    more intuitive/understandable behavior for the user if the registrations are displayed
+    in that order). This is what PCA currently does on the manage alerts page.
 
     create: Use this route to create a PCA registration for a certain section.  A PCA registration
     represents a "subscription" to receive alerts for that section.  The body of the request must
@@ -493,13 +508,22 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_queryset_current(self):
         """
         Returns a superset of all active registrations (also includes cancelled registrations
-        from the current semester at the head of their resubscribe chains).
+        from the current semester at the head of their resubscribe chains). Returns at most 1
+        registration per section (if multiple candidate registrations for a certain section exist,
+        the registration with the later created_at value is chosen).
         """
-        return Registration.objects.filter(
+        registrations = Registration.objects.filter(
             user=self.request.user,
             deleted=False,
             resubscribed_to__isnull=True,
             section__course__semester=get_current_semester(),
+        )
+        # Now resolve conflicts where multiple registrations exist for the same section
+        # (by taking the registration with the later created_at date)
+        return registrations.filter(
+            created_at__in=registrations.values("section")
+            .annotate(max_created_at=Max("created_at"))
+            .values_list("max_created_at", flat=True)
         )
 
 

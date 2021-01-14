@@ -6,7 +6,7 @@ import phonenumbers  # library for parsing and formatting phone numbers.
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.utils import timezone
 
 from alert.alerts import Email, PushNotification, Text
@@ -70,8 +70,8 @@ class Registration(models.Model):
     close_notification before, is not cancelled, and it is not deleted.  If a registration would
     send a close notification when the section it is watching closes, we call it "waiting for
     close".  This rule is encoded in the is_waiting_for_close property.  You can also filter
-    for such registrations by unpacking the static is_waiting_for_close_filter() method which
-    returns a dictionary (you cannot filter on a property).
+    for such registrations by unpacking the static is_waiting_for_close_filter() method with a which
+    returns a tuple of Q filters (you cannot filter on a property).
 
     After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a user field
     pointing to the user's Penn Labs Accounts User object.  In other words, we implemented a
@@ -388,7 +388,10 @@ class Registration(models.Model):
     def is_active_filter():
         """
         Returns a dict of filters defining the behavior of the is_active property.
-        Also used in database filtering of registrations (you cannot filter by a property value).
+        Also used in database filtering of registrations (you cannot filter by a property value);
+        unpack the filters with two stars (NOT a single star like is_waiting_for_close_filter).
+        Example:
+            Registration.objects.filter(**Registration.is_active_filter())
         """
         return {"notification_sent": False, "deleted": False, "cancelled": False}
 
@@ -406,27 +409,56 @@ class Registration(models.Model):
     @staticmethod
     def is_waiting_for_close_filter():
         """
-        Returns a dict of filters defining the behavior of the is_waiting_for_close property.
-        Also used in database filtering of registrations (you cannot filter by a property value).
+        Returns a tuple of filters MIRRORING (not defining) the behavior of the
+        is_waiting_for_close property. Used for database filtering of registrations (you cannot
+        filter by a property value); unpack the filters with a single star
+        (NOT a double star like is_active_filter).
+        Example:
+            Registration.objects.filter(*Registration.is_waiting_for_close_filter())
+
+        As is the case with any Q filters, you must unpack these filters positionally before any
+        kwarg filters. If you are unfamiliar with Q queries, see the following docs:
+        https://docs.djangoproject.com/en/3.1/topics/db/queries/#complex-lookups-with-q-objects
+
+        All of these conditions are straightforward except for the last. The last condition
+        effectively guarantees the next registration in this registration's resubscribe chain
+        (if it exists) hasn't been deleted or cancelled. If the user has auto-resubscribe on and
+        then cancels the next registration, we don't want the previous registration to send
+        a close notification. Based on the way registrations are shown to the user in PCA,
+        they would expect cancelling or deleting the head of a resubscribe chain to halt all
+        notifications, close or otherwise, from that chain; this condition guarantees that.
+        Note that the only way for a registration 2 away from this one would be canceled is if
+        an alert was sent for the next registration, meaning a close notification for this
+        registration must have already been sent so close_notification_sent=True, or otherwise
+        the user cancelled and resubscribed multiple times, which would mean the next registration
+        would be cancelled. In all cases, is_waiting_for_close would correctly be False based
+        on these filters.
         """
-        return {
-            "notification_sent": True,
-            "close_notification": True,
-            "deleted": False,
-            "cancelled": False,
-            "close_notification_sent": False,
-        }
+        return (
+            Q(notification_sent=True),
+            Q(close_notification=True),
+            Q(deleted=False),
+            Q(cancelled=False),
+            Q(close_notification_sent=False),
+            (
+                Q(resubscribed_to__isnull=True)
+                | (
+                    Q(resubscribed_to__isnull=False)  # SQL short-circuit logic is not guaranteed
+                    & Q(resubscribed_to__cancelled=False)
+                    & Q(resubscribed_to__deleted=False)
+                )
+            ),
+        )
 
     @property
     def is_waiting_for_close(self):
         """
-        Returns True iff the registration would send a close notification
-        when the watched section changes to closed
+        True if the registration is waiting to send a close notification to the user
+        once the section closes.  False otherwise.
         """
-        for k, v in self.is_waiting_for_close_filter().items():
-            if getattr(self, k) != v:
-                return False
-        return True
+        return Registration.objects.filter(
+            *Registration.is_waiting_for_close_filter(), id=self.id
+        ).exists()
 
     @property
     def last_notification_sent_at(self):
@@ -439,8 +471,8 @@ class Registration(models.Model):
             Registration.objects.filter(
                 user=self.user, section=self.section, notification_sent_at__isnull=False
             )
-            .aggregate(Max("notification_sent_at"))
-            .get("notification_sent_at__max", None)
+            .aggregate(max_notification_sent_at=Max("notification_sent_at"))
+            .get("max_notification_sent_at", None)
         )
 
     def alert(self, forced=False, sent_by="", close_notification=False):

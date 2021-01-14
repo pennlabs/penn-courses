@@ -1595,13 +1595,14 @@ class AlertRegistrationTestCase(TestCase):
                                 ]
                             ),
                         )
-                    for r in Registration.objects.filter(section=section):
-                        if hasattr(r, "resubscribed_to"):
-                            self.assertEquals(should_send, r.notification_sent)
-                            if should_send:
-                                self.assertIsNotNone(r.notification_sent_at)
-                            else:
-                                self.assertNone(r.notification_sent_at)
+                    if not close_notification:
+                        for r in Registration.objects.filter(section=section):
+                            if hasattr(r, "resubscribed_to"):
+                                self.assertEquals(should_send, r.notification_sent)
+                                if should_send:
+                                    self.assertIsNotNone(r.notification_sent_at)
+                                else:
+                                    self.assertNone(r.notification_sent_at)
                     if num_status_updates is not None:
                         self.assertEqual(num_status_updates, StatusUpdate.objects.count())
                     for u in StatusUpdate.objects.all():
@@ -2214,6 +2215,8 @@ class AlertRegistrationTestCase(TestCase):
             content_type="application/json",
         )
         self.assertEqual(200, response.status_code)
+        fifth_reg = Registration.objects.get(id=ids["fifth_id"])
+        self.assertTrue(fifth_reg.cancelled)
         response = self.client.put(
             reverse("registrations-detail", args=[ids["fifth_id"]]),
             json.dumps({"resubscribe": True}),
@@ -2266,6 +2269,50 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_resub_after_new_registration_for_section_post(self):
         self.resub_after_new_registration_for_section(put=False)
+
+    def test_registration_list_multiple_candidates_same_section(self):
+        """
+        This function tests that registrations-list does not return multiple registrations
+        for the same section.
+        """
+
+        ids = self.create_auto_resubscribe_group()
+
+        """
+        Resubscribe chains created:
+        first -> third -> fourth (CIS-120-001)
+        second (CIS-160-001)
+        fifth (CIS-121-001)
+        """
+
+        response = self.client.put(
+            reverse("registrations-detail", args=[ids["first_id"]]),
+            json.dumps({"auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(200, response.status_code)
+
+        self.simulate_alert(self.cis120, 3, should_send=True)
+
+        response = self.client.post(
+            reverse("registrations-list"),
+            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(201, response.status_code)
+        sixth_id = response.data.get("id")
+
+        response = self.client.get(reverse("registrations-list"))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len(response.data))
+        self.assertEqual(3, len(set(item.get("id") for item in response.data)))
+        self.assertEqual(1, len([item for item in response.data if item.get("id") == sixth_id]))
+        self.assertEqual(
+            1, len([item for item in response.data if item.get("id") == ids["second_id"]])
+        )
+        self.assertEqual(
+            1, len([item for item in response.data if item.get("id") == ids["fifth_id"]])
+        )
 
     def cancel_and_resub_helper(self, auto_resub, put, cancel_before_sim_webhook):
         """
@@ -2644,6 +2691,49 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 406)
         self.assertEqual(1, Registration.objects.count())
+
+    def close_notification_cancel_helper(self, delete=False):
+        """
+        Ensure that cancelling or deleting a registration also cancels a pending close notification
+        """
+        contact_infos = [
+            {"number": "+11234567890", "email": "j@gmail.com", "push_username": self.user.username}
+        ]
+        first_id = self.registration_cis120.id
+
+        response = self.client.put(
+            reverse("registrations-detail", args=[first_id]),
+            json.dumps({"auto_resubscribe": True, "close_notification": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.simulate_alert(self.cis120, 1, should_send=True)
+
+        second_id = self.registration_cis120.resubscribed_to.id
+
+        response = self.client.put(
+            reverse("registrations-detail", args=[second_id]),
+            json.dumps({("deleted" if delete else "cancelled"): True}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        first_reg = Registration.objects.get(id=second_id)
+
+        if delete:
+            self.assertTrue(first_reg.deleted)
+        else:
+            self.assertTrue(first_reg.cancelled)
+
+        self.simulate_alert(
+            self.cis120, 2, close_notification=True, should_send=False, contact_infos=contact_infos
+        )
+
+    def test_close_notification_cancel(self):
+        self.close_notification_cancel_helper(delete=False)
+
+    def test_close_notification_delete(self):
+        self.close_notification_cancel_helper(delete=True)
 
     def close_notification_resub_helper(self, put, auto_resub):
         """
