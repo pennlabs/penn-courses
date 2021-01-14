@@ -70,7 +70,7 @@ class Registration(models.Model):
     close_notification before, is not cancelled, and it is not deleted.  If a registration would
     send a close notification when the section it is watching closes, we call it "waiting for
     close".  This rule is encoded in the is_waiting_for_close property.  You can also filter
-    for such registrations by unpacking the static is_waiting_for_close_filter() method with a which
+    for such registrations by unpacking the static is_waiting_for_close_filter() method which
     returns a tuple of Q filters (you cannot filter on a property).
 
     After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a user field
