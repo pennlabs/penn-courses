@@ -456,6 +456,10 @@ class Registration(models.Model):
         True if the registration is waiting to send a close notification to the user
         once the section closes.  False otherwise.
         """
+
+        # WARNING: you should be frugal with your usage of this property, since it hits the DB
+        # each time it is called.
+
         return Registration.objects.filter(
             *Registration.is_waiting_for_close_filter(), id=self.id
         ).exists()
