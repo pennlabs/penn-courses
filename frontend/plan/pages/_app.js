@@ -7,7 +7,6 @@ import "react-circular-progressbar/dist/styles.css";
 import "rc-slider/assets/index.css";
 import "../styles/App.css";
 import "../styles/modal.css";
-import "../styles/slider.css";
 import "../styles/dropdown.css";
 import "../styles/course-cart.css";
 import "../styles/Search.css";

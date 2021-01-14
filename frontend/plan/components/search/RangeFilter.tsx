@@ -1,6 +1,38 @@
 import React from "react";
 import { Range } from "rc-slider";
-import { FilterData } from "../../types";
+// import { FilterData } from "../../types";
+import styled from "styled-components";
+
+const RangeFilterContainer = styled.div`
+    margin: -0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    padding: 0.2rem 0.8rem 20px;
+
+    @media screen and (min-width: 769px) {
+        display: flex;
+    }
+`;
+
+const StyledRangeWrapper = styled.div`
+    display: block;
+    padding: 0.75rem;
+
+    @media screen and (min-width: 769px) {
+        flex: none;
+        width: 100%;
+    }
+
+    & .rc-slider-handle {
+        border-color: #7876f3 !important;
+    }
+
+    & .rc-slider-handle,
+    & .rc-slider-track {
+        background-color: #7876f3 !important;
+    }
+`;
 
 interface RangeFilterProps<F, K extends keyof F> {
     minRange: number;
@@ -32,11 +64,8 @@ export function RangeFilter<
     };
 
     return (
-        <div
-            className="columns contained is-multiline is-centered"
-            style={{ paddingBottom: "20px" }}
-        >
-            <div className="column is-full">
+        <RangeFilterContainer>
+            <StyledRangeWrapper>
                 <Range
                     min={minRange}
                     max={maxRange}
@@ -49,7 +78,7 @@ export function RangeFilter<
                     allowCross={false}
                     onChange={onSliderChange}
                 />
-            </div>
-        </div>
+            </StyledRangeWrapper>
+        </RangeFilterContainer>
     );
 }
