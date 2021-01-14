@@ -1,24 +1,3 @@
-.contained p {
-    font-size: 0.7rem;
-    text-align: left;
-}
-
-@media all and (max-width: 480px){
-  .contained {
-      font-size: 1rem;
-  }
-  .contained p{
-      font-size: 0.8rem;
-  }
-  #schoolreq {
-      min-width: 25rem !important;
-  }
-}
-
-.reqBorder {
-    border-right: 1px solid #C1C1C1;
-}
-
 .bar {
     margin: 1rem 1.5rem;
     padding: 0.25rem;
@@ -27,12 +6,6 @@
     box-shadow: 0 1px 3px 0 lightgrey;
     height: 3rem;
     width: inherit;
-}
-
-.contained {
-    padding-top: 0.2rem;
-    padding-left: 0.8rem;
-    padding-right: 0.8rem;
 }
 
 .is-divider-vertical {
@@ -53,7 +26,6 @@
     margin-top: -0.7rem;
 }
 
-
 #searchdiv {
     padding-left: 2rem;
 }
@@ -71,14 +43,10 @@
 }
 
 #filterdiv > * {
-    padding-right: .5rem;
+    padding-right: 0.5rem;
 }
 
 #searchbar {
     min-width: 17rem;
     background-color: #f4f4f4;
-}
-
-#schoolreq {
-    min-width: 27rem;
 }
