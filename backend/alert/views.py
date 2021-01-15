@@ -143,8 +143,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     another way, this endpoint will return a superset of all active registrations: all
     active registrations (meaning registrations which would trigger an alert to be sent if their
     section were to open up), IN ADDITION TO all inactive registrations from the current semester
-    which are at the head of their resubscribe chains.  Each object in the returned list of
-    registrations is of the same form as the object returned by Retrieve Registration.
+    which are at the head of their resubscribe chains and not deleted.  Each object in the returned
+    list of registrations is of the same form as the object returned by Retrieve Registration.
 
     create: Use this route to create a PCA registration for a certain section.  A PCA registration
     represents a "subscription" to receive alerts for that section.  The body of the request must
