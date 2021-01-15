@@ -315,7 +315,7 @@ export function updateSearchText(s) {
 }
 
 function buildSectionInfoSearchUrl(searchData) {
-    return `/base/current/search/courses/${searchData.param}`;
+    return `/base/current/courses/${searchData.param}/`;
 }
 
 export function courseSearchError(error) {
