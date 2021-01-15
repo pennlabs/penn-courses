@@ -437,7 +437,7 @@ const rateLimitedFetch = (url, init) =>
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
-        doAPIRequest(`/base/current/search/courses/${courseId}`)
+        doAPIRequest(`/base/current/courses/${courseId}/`)
             .then((res) => res.json())
             .then((course) => dispatch(updateCourseInfo(course)))
             .catch((error) => dispatch(sectionInfoSearchError(error)));
