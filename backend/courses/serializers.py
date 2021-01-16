@@ -300,7 +300,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(
-        read_only=False, help_text="The user profile object, storing collected info about the user."
+        read_only=False,
+        help_text="The user profile object, storing collected info about the user.",
+        required=False,
     )
 
     def update(self, instance, validated_data):

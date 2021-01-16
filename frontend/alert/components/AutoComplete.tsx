@@ -15,11 +15,12 @@ the search results.
 Including the search term makes it possible to determine if the search result is stale.
  */
 const suggestionsFor = (search) =>
-    fetch(`/api/alert/courses?search=${search}`).then((res) =>
-        res.json().then((searchResult) => ({
-            searchResult,
-            searchTerm: search,
-        }))
+    fetch(`/api/base/current/search/sections/?search=${search}`).then(
+        (res) =>
+            res.json().then((searchResult) => ({
+                searchResult,
+                searchTerm: search,
+            }))
     );
 
 /* Debounce the search promise so that it doesn't make requests to the backend more frequently

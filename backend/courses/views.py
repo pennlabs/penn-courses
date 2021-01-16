@@ -6,7 +6,9 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 import courses.examples as examples
+from courses.filters import CourseSearchFilterBackend
 from courses.models import Course, Requirement, Section, StatusUpdate
+from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
     CourseDetailSerializer,
     CourseListSerializer,
@@ -16,8 +18,7 @@ from courses.serializers import (
     StatusUpdateSerializer,
     UserSerializer,
 )
-from PennCourses.docs_settings import PcxAutoSchema
-from plan.search import TypedSectionSearchBackend
+from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
@@ -57,7 +58,9 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.SectionList_examples,
         response_codes={
-            "/api/alert/courses/": {"GET": {200: "[SCHEMA]Sections Listed Successfully."}}
+            reverse_func("section-search", args=["semester"]): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Sections Listed Successfully."}
+            }
         },
     )
 
@@ -79,8 +82,8 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.SectionDetail_examples,
         response_codes={
-            "/api/courses/{semester}/sections/{full_code}/": {
-                "GET": {200: "[SCHEMA]Section detail retrieved successfully."}
+            reverse_func("sections-detail", args=["semester", "full_code"]): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
             }
         },
     )
@@ -101,8 +104,8 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.CourseList_examples,
         response_codes={
-            "/api/courses/{semester}/courses/": {
-                "GET": {200: "[SCHEMA]Courses listed successfully."}
+            reverse_func("courses-list", args=["semester"]): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
             }
         },
     )
@@ -126,6 +129,32 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
         return queryset
 
 
+class CourseListSearch(CourseList):
+    """
+    This route allows you to list courses by certain search terms and/or filters.
+    Without any GET parameters, this route simply returns all courses
+    for a given semester. There are a few filter query parameters which constitute ranges of
+    floating-point numbers. The values for these are <min>-<max> , with minimum excluded.
+    For example, looking for classes in the range of 0-2.5 in difficulty, you would add the
+    parameter difficulty=0-2.5. If you are a backend developer, you can find these filters in
+    backend/plan/filters.py/CourseSearchFilterBackend. If you are reading the frontend docs,
+    these filters are listed below in the query parameters list (with description starting with
+    "Filter").
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.CourseListSearch_examples,
+        response_codes={
+            reverse_func("courses-search", args=["semester"]): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
+            }
+        },
+    )
+
+    filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
+    search_fields = ("full_code", "title", "sections__instructors__name")
+
+
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     """
     Retrieve a detailed look at a specific course. Includes all details necessary to display course
@@ -135,8 +164,8 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.CourseDetail_examples,
         response_codes={
-            "/api/courses/{semester}/courses/{full_code}/": {
-                "GET": {200: "[SCHEMA]Courses detail retrieved successfully."}
+            reverse_func("courses-detail", args=["semester", "full_code"]): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
             }
         },
     )
@@ -171,9 +200,8 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         examples=examples.RequirementList_examples,
         response_codes={
-            "/api/plan/requirements/": {"GET": {200: "[SCHEMA]Requirements listed successfully."}},
-            "/api/courses/{semester}/requirements/": {
-                "GET": {200: "[SCHEMA]Requirements listed successfully."}
+            reverse_func("requirements-list", args=["semester"]): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
             },
         },
     )
@@ -206,12 +234,14 @@ class StatusUpdateView(generics.ListAPIView):
     schema = PcxAutoSchema(
         examples=examples.StatusUpdateView_examples,
         response_codes={
-            "/api/courses/statusupdate/{full_code}/": {
-                "GET": {200: "[SCHEMA]Status Updates for section listed successfully."}
+            reverse_func("statusupdate", args=["full_code"]): {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Status Updates for section listed successfully."
+                }
             }
         },
         custom_path_parameter_desc={
-            "/api/courses/statusupdate/{full_code}/": {
+            reverse_func("statusupdate", args=["full_code"]): {
                 "GET": {
                     "full_code": (
                         "The code of the section which this status update applies to, in the "

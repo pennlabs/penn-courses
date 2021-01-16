@@ -1,54 +1,16 @@
+from PennCourses.docs_settings import reverse_func
+
+
 # See backend/PennCourses/docs_settings.py for more info on how to format these examples files.
 
 RequirementList_examples = {
-    "/api/plan/requirements/": {
+    reverse_func("requirements-list", args=["semester"]): {
         "GET": {
             "requests": [],
             "responses": [
                 {
                     "code": 200,
-                    "summary": "GET List Requirements",
-                    "value": [
-                        {
-                            "id": "MC2@SAS",
-                            "code": "MC2",
-                            "school": "SAS",
-                            "semester": "2020C",
-                            "name": "Cultural Diversity in the US",
-                        },
-                        {
-                            "id": "H@SEAS",
-                            "code": "H",
-                            "school": "SEAS",
-                            "semester": "2020C",
-                            "name": "Humanities",
-                        },
-                        {
-                            "id": "SS@WH",
-                            "code": "SS",
-                            "school": "WH",
-                            "semester": "2020C",
-                            "name": "Social Science",
-                        },
-                        {
-                            "id": "example@school",
-                            "code": "example",
-                            "school": "school",
-                            "semester": "2020C",
-                            "name": "Example Requirement",
-                        },
-                    ],
-                }
-            ],
-        }
-    },
-    "/api/courses/{semester}/requirements/": {
-        "GET": {
-            "requests": [],
-            "responses": [
-                {
-                    "code": 200,
-                    "summary": "GET List Requirements",
+                    "summary": "List Requirements",
                     "value": [
                         {
                             "id": "MC2@SAS",
@@ -86,13 +48,13 @@ RequirementList_examples = {
 }
 
 SectionList_examples = {
-    "/api/alert/courses/": {
+    reverse_func("section-search", args=["semester"]): {
         "GET": {
             "requests": [],
             "responses": [
                 {
                     "code": 200,
-                    "summary": "GET Section List search=CIS-120",
+                    "summary": "GET Section List, search=CIS-120",
                     "value": [
                         {
                             "section_id": "CIS-120-001",
@@ -126,13 +88,13 @@ SectionList_examples = {
 }
 
 StatusUpdateView_examples = {
-    "/api/courses/statusupdate/{full_code}/": {
+    reverse_func("statusupdate", args=["full_code"]): {
         "GET": {
             "requests": [],
             "responses": [
                 {
                     "code": 200,
-                    "summary": "List Status Updates for section",
+                    "summary": "List Status Updates for Section",
                     "value": [
                         {
                             "old_status": "C",
@@ -160,13 +122,13 @@ StatusUpdateView_examples = {
 }
 
 SectionDetail_examples = {
-    "/api/courses/{semester}/sections/{full_code}/": {
+    reverse_func("sections-detail", args=["semester", "full_code"]): {
         "GET": {
             "requests": [],
             "responses": [
                 {
                     "code": 200,
-                    "summary": "Retrieve Section detail",
+                    "summary": "Retrieve Section Detail",
                     "value": {
                         "id": "CIS-120-001",
                         "status": "O",
@@ -212,14 +174,90 @@ SectionDetail_examples = {
     }
 }
 
-CourseDetail_examples = {
-    "/api/courses/{semester}/courses/{full_code}/": {
+CourseList_examples = {
+    reverse_func("courses-list", args=["semester"]): {
         "GET": {
             "requests": [],
             "responses": [
                 {
                     "code": 200,
-                    "summary": "Retrieve Course detail",
+                    "summary": "List Courses",
+                    "value": [
+                        {
+                            "id": "AAMW-523",
+                            "title": "Narrative in Ancient Art",
+                            "description": 'Art history, and its cousins in religious, social, political and literary studies, have long been fascinated with the question of narrative: how do images engage time, tell stories? These are fundamental questions for ancient Near Eastern, Egyptian and Mediterranean art history and archaeology, whose rich corpus of narrative images is rarely considered in the context of "Western" art. Relations between words and things, texts and images, were as fundamental to the ancient cultures we examine as they are to modern studies. As we weigh classic modern descriptions of narrative and narratology, we will bring to bear recent debates about how (ancient) images, things, monuments, and designed spaces engage with time, space, and event, and interact with cultural memory. We will ask "who is the story for, and why?" for public and private narratives ranging from political histories to mythological encounters. Our case studies will be drawn from the instructors\' expertise in Mesopotamian visual culture, and in the visual cultures of the larger Mediterranean world from early Greek antiquity to the Hellenistic, Roman, and Late Antique periods. One central and comparative question, for instance, is the nature of recording history in pictures and texts in the imperial projects of Assyria, Achaemenid Persia, the Hellenistic kingdoms, and Rome.',  # noqa: E501
+                            "semester": "2020C",
+                            "num_sections": 1,
+                            "course_quality": 2,
+                            "instructor_quality": 2,
+                            "difficulty": 2,
+                            "work_required": 2,
+                        },
+                        {
+                            "id": "ARTH-523",
+                            "title": "Narrative in Ancient Art",
+                            "description": 'Art history, and its cousins in religious, social, political and literary studies, have long been fascinated with the question of narrative: how do images engage time, tell stories? These are fundamental questions for ancient Near Eastern, Egyptian and Mediterranean art history and archaeology, whose rich corpus of narrative images is rarely considered in the context of "Western" art. Relations between words and things, texts and images, were as fundamental to the ancient cultures we examine as they are to modern studies. As we weigh classic modern descriptions of narrative and narratology, we will bring to bear recent debates about how (ancient) images, things, monuments, and designed spaces engage with time, space, and event, and interact with cultural memory. We will ask "who is the story for, and why?" for public and private narratives ranging from political histories to mythological encounters. Our case studies will be drawn from the instructors\' expertise in Mesopotamian visual culture, and in the visual cultures of the larger Mediterranean world from early Greek antiquity to the Hellenistic, Roman, and Late Antique periods. One central and comparative question, for instance, is the nature of recording history in pictures and texts in the imperial projects of Assyria, Achaemenid Persia, the Hellenistic kingdoms, and Rome.',  # noqa: E501
+                            "semester": "2020C",
+                            "num_sections": 1,
+                            "course_quality": 2,
+                            "instructor_quality": 2,
+                            "difficulty": 2,
+                            "work_required": 2,
+                        },
+                    ],
+                }
+            ],
+        }
+    }
+}
+
+CourseListSearch_examples = {
+    reverse_func("courses-search", args=["semester"]): {
+        "GET": {
+            "requests": [],
+            "responses": [
+                {
+                    "code": 200,
+                    "summary": "List Courses, Filter by Search",
+                    "value": [
+                        {
+                            "id": "CIS-120",
+                            "title": "Programming Languages and Techniques I",
+                            "description": "A fast-paced introduction to the fundamental concepts of programming and software design. This course assumes some previous programming experience, at the level of a high school computer science class or CIS110. (If you got at least 4 in the AP Computer Science A or AB exam, you will do great.) No specific programming language background is assumed: basic experience with any language (for instance Java, C, C++, VB, Python, Perl, or Scheme) is fine. If you have never programmed before, you should take CIS 110 first.",  # noqa: E501
+                            "semester": "2020C",
+                            "num_sections": 22,
+                            "course_quality": 2.76,
+                            "instructor_quality": 3.17,
+                            "difficulty": 3.08,
+                            "work_required": 3.35,
+                        },
+                        {
+                            "id": "CIS-121",
+                            "title": "Programming Languages and Techniques II",
+                            "description": "This is a course about Algorithms and Data Structures using the JAVA programming language. We introduce the basic concepts about complexity of an algorithm and methods on how to compute the running time of algorithms. Then, we describe data structures like stacks, queues, maps, trees, and graphs, and we construct efficient algorithms based on these representations. The course builds upon existing implementations of basic data structures in JAVA and extends them for the structures like trees, studying the performance of operations on such structures, and theiefficiency when used in real-world applications. A large project introducing students to the challenges of software engineering concludes the course.",  # noqa: E501
+                            "semester": "2020C",
+                            "num_sections": 16,
+                            "course_quality": 4.00,
+                            "instructor_quality": 4.00,
+                            "difficulty": 4.00,
+                            "work_required": 4.00,
+                        },
+                    ],
+                }
+            ],
+        }
+    }
+}
+
+CourseDetail_examples = {
+    reverse_func("courses-detail", args=["semester", "full_code"]): {
+        "GET": {
+            "requests": [],
+            "responses": [
+                {
+                    "code": 200,
+                    "summary": "Retrieve Course Detail",
                     "value": {
                         "id": "CIS-192",
                         "title": "Python Programming",
@@ -295,44 +333,6 @@ CourseDetail_examples = {
                             },
                         ],
                     },
-                }
-            ],
-        }
-    }
-}
-
-CourseList_examples = {
-    "/api/courses/{semester}/courses/": {
-        "GET": {
-            "requests": [],
-            "responses": [
-                {
-                    "code": 200,
-                    "summary": "Retrieve Course detail",
-                    "value": [
-                        {
-                            "id": "AAMW-523",
-                            "title": "Narrative in Ancient Art",
-                            "description": 'Art history, and its cousins in religious, social, political and literary studies, have long been fascinated with the question of narrative: how do images engage time, tell stories? These are fundamental questions for ancient Near Eastern, Egyptian and Mediterranean art history and archaeology, whose rich corpus of narrative images is rarely considered in the context of "Western" art. Relations between words and things, texts and images, were as fundamental to the ancient cultures we examine as they are to modern studies. As we weigh classic modern descriptions of narrative and narratology, we will bring to bear recent debates about how (ancient) images, things, monuments, and designed spaces engage with time, space, and event, and interact with cultural memory. We will ask "who is the story for, and why?" for public and private narratives ranging from political histories to mythological encounters. Our case studies will be drawn from the instructors\' expertise in Mesopotamian visual culture, and in the visual cultures of the larger Mediterranean world from early Greek antiquity to the Hellenistic, Roman, and Late Antique periods. One central and comparative question, for instance, is the nature of recording history in pictures and texts in the imperial projects of Assyria, Achaemenid Persia, the Hellenistic kingdoms, and Rome.',  # noqa: E501
-                            "semester": "2020C",
-                            "num_sections": 1,
-                            "course_quality": 2,
-                            "instructor_quality": 2,
-                            "difficulty": 2,
-                            "work_required": 2,
-                        },
-                        {
-                            "id": "ARTH-523",
-                            "title": "Narrative in Ancient Art",
-                            "description": 'Art history, and its cousins in religious, social, political and literary studies, have long been fascinated with the question of narrative: how do images engage time, tell stories? These are fundamental questions for ancient Near Eastern, Egyptian and Mediterranean art history and archaeology, whose rich corpus of narrative images is rarely considered in the context of "Western" art. Relations between words and things, texts and images, were as fundamental to the ancient cultures we examine as they are to modern studies. As we weigh classic modern descriptions of narrative and narratology, we will bring to bear recent debates about how (ancient) images, things, monuments, and designed spaces engage with time, space, and event, and interact with cultural memory. We will ask "who is the story for, and why?" for public and private narratives ranging from political histories to mythological encounters. Our case studies will be drawn from the instructors\' expertise in Mesopotamian visual culture, and in the visual cultures of the larger Mediterranean world from early Greek antiquity to the Hellenistic, Roman, and Late Antique periods. One central and comparative question, for instance, is the nature of recording history in pictures and texts in the imperial projects of Assyria, Achaemenid Persia, the Hellenistic kingdoms, and Rome.',  # noqa: E501
-                            "semester": "2020C",
-                            "num_sections": 1,
-                            "course_quality": 2,
-                            "instructor_quality": 2,
-                            "difficulty": 2,
-                            "work_required": 2,
-                        },
-                    ],
                 }
             ],
         }
