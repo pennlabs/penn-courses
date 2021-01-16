@@ -22,7 +22,7 @@ from alert.serializers import (
 )
 from alert.tasks import send_course_alerts
 from courses.util import get_current_semester, record_update, update_course_from_record
-from PennCourses.docs_settings import PcxAutoSchema
+from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 
 logger = logging.getLogger(__name__)
@@ -143,8 +143,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     another way, this endpoint will return a superset of all active registrations: all
     active registrations (meaning registrations which would trigger an alert to be sent if their
     section were to open up), IN ADDITION TO all inactive registrations from the current semester
-    which are at the head of their resubscribe chains.  Each object in the returned list of
-    registrations is of the same form as the object returned by Retrieve Registration.
+    which are at the head of their resubscribe chains and not deleted.  Each object in the returned
+    list of registrations is of the same form as the object returned by Retrieve Registration.
 
     create: Use this route to create a PCA registration for a certain section.  A PCA registration
     represents a "subscription" to receive alerts for that section.  The body of the request must
@@ -218,29 +218,35 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     schema = PcxAutoSchema(
         examples=examples.RegistrationViewSet_examples,
         response_codes={
-            "/api/alert/registrations/": {
+            reverse_func("registrations-list"): {
                 "POST": {
-                    201: "[SCHEMA]Registration successfully created.",
+                    201: "[DESCRIBE_RESPONSE_SCHEMA]Registration successfully created.",
                     400: "Bad request (e.g. given null section).",
                     404: "Given section not found in database.",
                     406: "No contact information (phone or email) set for user.",
                     409: "Registration for given section already exists.",
                 },
-                "GET": {200: "[SCHEMA]Registrations successfully listed."},
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registrations successfully listed."},
             },
-            "/api/alert/registrations/{id}/": {
+            reverse_func("registrations-detail", args=["id"]): {
                 "PUT": {
                     200: "Registration successfully updated (or no changes necessary).",
                     400: "Bad request (see route description).",
                     404: "Registration not found with given id.",
                 },
                 "GET": {
-                    200: "[SCHEMA]Registration detail successfully retrieved.",
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Registration detail successfully retrieved.",
                     404: "Registration not found with given id.",
                 },
             },
         },
-        override_schema=examples.RegistrationViewSet_override_schema,
+        override_schema={
+            reverse_func("registrations-list"): {
+                "POST": {
+                    201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},
+                }
+            }
+        },
     )
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]
@@ -505,7 +511,21 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     (GET `/api/alert/registrations/{id}/`) rather than this endpoint.
     """
 
-    schema = PcxAutoSchema()
+    schema = PcxAutoSchema(
+        examples=examples.RegistrationViewSet_examples,
+        response_codes={
+            reverse_func("registrationhistory-list"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registration history successfully listed."}
+            },
+            reverse_func("registrationhistory-detail", args=["id"]): {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Historic registration detail "
+                    "successfully retrieved.",
+                    404: "Historic registration not found with given id.",
+                }
+            },
+        },
+    )
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
 
