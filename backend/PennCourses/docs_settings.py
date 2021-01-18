@@ -7,7 +7,6 @@ from textwrap import dedent
 
 import jsonref
 from django.urls import reverse
-from django.utils.encoding import smart_str
 from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONOpenAPIRenderer
