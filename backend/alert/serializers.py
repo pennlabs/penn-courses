@@ -13,7 +13,10 @@ registration_fields = [
     "updated_at",
     "section",
     "user",
+    "cancelled",
+    "cancelled_at",
     "deleted",
+    "deleted_at",
     "auto_resubscribe",
     "notification_sent",
     "notification_sent_at",
@@ -21,7 +24,6 @@ registration_fields = [
     "close_notification",
     "close_notification_sent",
     "close_notification_sent_at",
-    "deleted_at",
     "is_active",
     "is_waiting_for_close",
 ]

@@ -323,67 +323,6 @@ class Registration(models.Model):
         ),
     )
 
-    def __str__(self):
-        return "%s: %s" % (
-            (self.user.__str__() if self.user is not None else None) or self.email or self.phone,
-            self.section.__str__(),
-        )
-
-    def validate_phone(self):
-        """
-        This method converts the phone field to the E164 format, unless the number is in a form
-        unparseable by the [phonenumbers library](https://pypi.org/project/phonenumbers/),
-        in which case it sets it to None.
-        """
-        try:
-            phone_number = phonenumbers.parse(self.phone, "US")
-            self.phone = phonenumbers.format_number(
-                phone_number, phonenumbers.PhoneNumberFormat.E164
-            )
-        except phonenumbers.phonenumberutil.NumberParseException:
-            # if the phone number is unparseable, don't include it.
-            self.phone = None
-
-    def save(self, *args, **kwargs):
-        """
-        This save method converts the phone field to E164 format, or sets it to
-        None if it is unparseable. Then, if the user field is not None, but either of the phone
-        or email fields are not None, it moves the info in the phone / email fields
-        to the user object (this was only a concern during the PCA refresh transition
-        process and is left in for redundancy).
-        Then, if original_created_at is None, it sets the original_created_at field to be
-        created_at if the registration is the tail of its resubscribe chain, and traverses the
-        resubscribe chain to get the original registration's created at otherwise, properly
-        setting the original_created_at field. Note that the resubscribe logic carries over
-        the original_created_at field to new registrations created by a resubscribe, so the
-        case in which the chain is traversed to find the proper value for original_created_at is
-        only for redundancy.
-        It finally calls the normal save method with args and kwargs.
-        """
-        self.validate_phone()
-        if self.user is not None:
-            if self.email is not None:
-                user_data, _ = UserProfile.objects.get_or_create(user=self.user)
-                user_data.email = self.email
-                user_data.save()
-                self.user.profile = user_data
-                self.user.save()
-                self.email = None
-            if self.phone is not None:
-                user_data, _ = UserProfile.objects.get_or_create(user=self.user)
-                user_data.phone = self.phone
-                user_data.save()
-                self.user.profile = user_data
-                self.user.save()
-                self.phone = None
-        super().save(*args, **kwargs)
-        if self.original_created_at is None:
-            if self.resubscribed_from is None:
-                self.original_created_at = self.created_at
-            else:
-                self.original_created_at = self.get_original_registration_rec().created_at
-        super().save()
-
     @staticmethod
     def is_active_filter():
         """
@@ -478,6 +417,67 @@ class Registration(models.Model):
             .aggregate(max_notification_sent_at=Max("notification_sent_at"))
             .get("max_notification_sent_at", None)
         )
+
+    def __str__(self):
+        return "%s: %s" % (
+            (self.user.__str__() if self.user is not None else None) or self.email or self.phone,
+            self.section.__str__(),
+        )
+
+    def validate_phone(self):
+        """
+        This method converts the phone field to the E164 format, unless the number is in a form
+        unparseable by the [phonenumbers library](https://pypi.org/project/phonenumbers/),
+        in which case it sets it to None.
+        """
+        try:
+            phone_number = phonenumbers.parse(self.phone, "US")
+            self.phone = phonenumbers.format_number(
+                phone_number, phonenumbers.PhoneNumberFormat.E164
+            )
+        except phonenumbers.phonenumberutil.NumberParseException:
+            # if the phone number is unparseable, don't include it.
+            self.phone = None
+
+    def save(self, *args, **kwargs):
+        """
+        This save method converts the phone field to E164 format, or sets it to
+        None if it is unparseable. Then, if the user field is not None, but either of the phone
+        or email fields are not None, it moves the info in the phone / email fields
+        to the user object (this was only a concern during the PCA refresh transition
+        process and is left in for redundancy).
+        Then, if original_created_at is None, it sets the original_created_at field to be
+        created_at if the registration is the tail of its resubscribe chain, and traverses the
+        resubscribe chain to get the original registration's created at otherwise, properly
+        setting the original_created_at field. Note that the resubscribe logic carries over
+        the original_created_at field to new registrations created by a resubscribe, so the
+        case in which the chain is traversed to find the proper value for original_created_at is
+        only for redundancy.
+        It finally calls the normal save method with args and kwargs.
+        """
+        self.validate_phone()
+        if self.user is not None:
+            if self.email is not None:
+                user_data, _ = UserProfile.objects.get_or_create(user=self.user)
+                user_data.email = self.email
+                user_data.save()
+                self.user.profile = user_data
+                self.user.save()
+                self.email = None
+            if self.phone is not None:
+                user_data, _ = UserProfile.objects.get_or_create(user=self.user)
+                user_data.phone = self.phone
+                user_data.save()
+                self.user.profile = user_data
+                self.user.save()
+                self.phone = None
+        super().save(*args, **kwargs)
+        if self.original_created_at is None:
+            if self.resubscribed_from is None:
+                self.original_created_at = self.created_at
+            else:
+                self.original_created_at = self.get_original_registration_rec().created_at
+        super().save()
 
     def alert(self, forced=False, sent_by="", close_notification=False):
         """
