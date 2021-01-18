@@ -144,18 +144,19 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     another way, this endpoint will return a superset of all active registrations: all
     active registrations (meaning registrations which would trigger an alert to be sent if their
     section were to open up), IN ADDITION TO all inactive registrations from the current semester
-    which are at the head of their resubscribe chains and not deleted.  However, one extra modification is made:
-    if multiple registrations for the same section are included in the above-specified set,
-    then all but the most recent (latest `created_at` value) are removed from the list. This ensures
-    that at most 1 registration is returned for each section. Note that this is still a superset
-    of all active registrations. If a registration is active, its `created_at` value will be
-    greater than any other registrations for the same section (our code ensures no registration
-    can be created or resubscribed to when an active registration exists for the same section).
-    This extra modification is actually made to prevent the user from being able to resubscribe
-    to an older registration after creating a new one (which would cause the backend to return
-    a 409 error).
+    which are at the head of their resubscribe chains and not deleted.  However, one extra
+    modification is made: if multiple registrations for the same section are included in the
+    above-specified set, then all but the most recent (latest `created_at` value) are removed from
+    the list. This ensures that at most 1 registration is returned for each section. Note that this
+    is still a superset of all active registrations. If a registration is active, its `created_at`
+    value will be greater than any other registrations for the same section (our code ensures no
+    registration can be created or resubscribed to when an active registration exists for the same
+    section). This extra modification is actually made to prevent the user from being able to
+    resubscribe to an older registration after creating a new one (which would cause the backend to
+    return a 409 error).
 
-    Each object in the returned list of registrations is of the same form as the object returned by Retrieve Registration.
+    Each object in the returned list of registrations is of the same form as the object returned
+    by Retrieve Registration.
 
     Tip: if you sort this list by `original_created_at` (the `created_at` value of the tail of
     a registration's resubscribe chain), cancelling or resubscribing to registrations will

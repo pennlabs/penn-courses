@@ -7,6 +7,7 @@ from textwrap import dedent
 
 import jsonref
 from django.urls import reverse
+from django.utils.encoding import smart_str
 from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONOpenAPIRenderer
@@ -1059,6 +1060,34 @@ class PcxAutoSchema(AutoSchema):
         if IsAuthenticated in view.permission_classes:
             desc += '\n\n<span style="color:red;">User authentication required</span>.'
         return desc
+
+    # Overrides, uses overridden method
+    def map_serializer(self, serializer):
+        """
+        This method adds property docstrings as field descriptions when appropriate, in addition
+        to calling the overridden map_serializer function.
+        """
+
+        result = super().map_serializer(serializer)
+        properties = result["properties"]
+        model = None
+        if hasattr(serializer, "Meta") and hasattr(serializer.Meta, "model"):
+            model = serializer.Meta.model
+
+        for field in serializer.fields.values():
+            if isinstance(field, serializers.HiddenField):
+                continue
+            schema = properties[field.field_name]
+            if (
+                "description" not in schema
+                and model is not None
+                and hasattr(model, field.field_name)
+                and isinstance(getattr(model, field.field_name), property)
+                and getattr(model, field.field_name).__doc__
+            ):
+                schema["description"] = dedent(getattr(model, field.field_name).__doc__)
+
+        return result
 
     # Helper method
     def get_action(self, path, method):
