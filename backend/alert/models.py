@@ -411,6 +411,12 @@ class Registration(models.Model):
         The last time the user was sent an opening notification for this registration's
         section. This property is None (or null in JSON) if no notification has been sent to the
         user for this registration's section.
+
+        This is used on the frontend to tell the user a last time an alert was sent for
+        the SECTION of a certain registration in the manage alerts page. Since the idea of
+        Registration objects and resubscribe chains is completely abstracted out of the User's
+        understanding, they expect alerts to work by section (so the "last notification sent"
+        column should tell them the last time they were alerted about that section).
         """
         return (
             Registration.objects.filter(
