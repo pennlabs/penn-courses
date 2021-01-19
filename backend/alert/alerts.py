@@ -70,9 +70,37 @@ class Alert(ABC):
 
 class Email(Alert):
     def __init__(self, reg):
-        super().__init__(
-            "alert/email_alert.html", reg, close_template="alert/email_close_alert.html"
+        t = loader.get_template("alert/email_alert.html")
+        self.text = t.render(
+            {
+                "course": reg.section.full_code,
+                "brand": "Penn Course Alert",
+                "auto_resubscribe": reg.auto_resubscribe,
+                "course_event": '<span style="color:#78D381;">opened up</span>!',
+                "email_body": (
+                    """
+                    <a href="https://pennintouch.apps.upenn.edu/"
+                       style="cursor: pointer; border-width: 0; text-decoration: none; padding: 10px 25px; font-size: 1.2em; margin-top: 20px; color: white; background-color: #3eaa6d; border-radius: 5px; font-weight: bold">
+                        Register now on Penn InTouch
+                    </a>
+                    """  # noqa: E501
+                ),
+            }
         )
+        self.close_text = t.render(
+            {
+                "course": reg.section.full_code,
+                "brand": "Penn Course Alert",
+                "auto_resubscribe": reg.auto_resubscribe,
+                "course_event": '<span style="color:#E8746A;">closed</span>!',
+                "email_body": (
+                    "No need to check Penn InTouch, if you haven't already.<br>"
+                    "(You are receiving this message because you enabled close notifications "
+                    "for this alert.)"
+                ),
+            }
+        )
+        self.registration = reg
 
     def send_alert(self, close_notification=False):
         """

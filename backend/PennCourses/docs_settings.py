@@ -902,6 +902,8 @@ class PcxAutoSchema(AutoSchema):
     """
     This custom subclass serves to improve AutoSchema in terms of customizability, and
     quality of inference in some non-customized cases.
+
+    https://www.django-rest-framework.org/api-guide/schemas/#autoschema
     """
 
     def __new__(
@@ -923,6 +925,8 @@ class PcxAutoSchema(AutoSchema):
         new_instance.created_at = created_at
         return new_instance
 
+    # Overrides, uses overridden method
+    # https://www.django-rest-framework.org/api-guide/schemas/#autoschema__init__-kwargs
     def __init__(
         self,
         *args,
@@ -1042,12 +1046,17 @@ class PcxAutoSchema(AutoSchema):
 
         super().__init__(*args, **kwargs)
 
-    # Overrides, DOES NOT call overridden method
+    # Overrides, uses overridden method
     def get_description(self, path, method):
         """
         This overridden method adds the method and path to the top of each route description
         and a note if authentication is required (in addition to calling/using the
-        super method).
+        super method). Docstring of overridden method:
+
+        Determine a path description.
+
+        This will be based on the method docstring if one exists,
+        or else the class docstring.
         """
 
         # Add the method and path to the description so it is more readable.
@@ -1061,10 +1070,16 @@ class PcxAutoSchema(AutoSchema):
         return desc
 
     # Overrides, uses overridden method
+    # (https://www.django-rest-framework.org/api-guide/schemas/#map_serializer)
     def map_serializer(self, serializer):
         """
-        This method adds property docstrings as field descriptions when appropriate, in addition
+        This method adds property docstrings as field descriptions when appropriate
+        (to request/response schemas in the API docs), in addition
         to calling the overridden map_serializer function.
+        For instance, in the response schema of
+        [PCA] Registration, List Registration (GET /api/alert/registrations/)
+        the description of the is_active property is inferred from the property docstring
+        by this method (before it was blank).
         """
 
         result = super().map_serializer(serializer)
@@ -1180,12 +1195,15 @@ class PcxAutoSchema(AutoSchema):
         return name
 
     # Overrides, DOES NOT call overridden method
+    # https://www.django-rest-framework.org/api-guide/schemas/#get_operation_id_base
     def get_operation_id_base(self, path, method, action):
         """
         This method returns the base operation id (i.e. the name) of the path/method. It
         uses get_name as a helper but makes the last character "s" if the action is "list".
         See the docstring for the get_name method of this class for an explanation as
-        to why we do this.
+        to why we do this. Docstring of overridden method:
+
+        Compute the base part for operation ID from the model, serializer or view name.
         """
 
         name = self.get_name(path, method, action)
@@ -1196,13 +1214,16 @@ class PcxAutoSchema(AutoSchema):
         return name
 
     # Overrides, uses overridden method
+    # https://www.django-rest-framework.org/api-guide/schemas/#get_operation_id
     def get_operation_id(self, path, method):
         """
         This method gets the operation id for the given path/method. It first checks if
         the user has specified a custom operation id for this path/method using the
         custom_operation_id dict at the top of docs_settings.py, and if not it returns the result
         of the overridden method (which is modified from default by the overriden
-        get_operation_id_base method above).
+        get_operation_id_base method above). Docstring of overridden method:
+
+        Compute an operation ID from the view type and get_operation_id_base method.
         """
 
         # Return the custom operation id if specified by the user
@@ -1220,6 +1241,7 @@ class PcxAutoSchema(AutoSchema):
 
     # Overrides, DOES NOT call overridden method
     # Keep an eye on DRF changes to see if the overridden get_tags method is improved
+    # https://www.django-rest-framework.org/api-guide/schemas/#get_tags
     def get_tags(self, path, method):
         """
         This method returns custom tags passed into the __init__ method, or otherwise
@@ -1252,6 +1274,9 @@ class PcxAutoSchema(AutoSchema):
         the inference of path parameter description from the overridden method by utilizing
         property docstrings. If a custom path parameter description is specified using the
         custom_path_parameter_desc kwarg in __init__, that is used for the description.
+        Docstring of overridden method:
+
+        Return a list of parameters from templated path variables.
         """
 
         parameters = super().get_path_parameters(path, method)

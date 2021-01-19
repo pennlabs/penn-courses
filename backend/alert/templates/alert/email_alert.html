@@ -6,12 +6,9 @@
         <img src="https://penncoursealert.com/assets/pca/PCA_logo.png" alt="Penn Course Alert Logo" style="width: 40px" />
     </a>
     <div style="text-align: center;">
-        <h1 style="margin-bottom: 1.5em;">{{ course }} just <span style="color:green;">opened up</span>!</h1>
+        <h1 style="margin-bottom: 1.5em;">{{ course }} just {{ course_event | safe }}</h1>
         <p>
-            <a href="https://pennintouch.apps.upenn.edu/"
-               style="cursor: pointer; border-width: 0; text-decoration: none; padding: 10px 25px; font-size: 1.2em; margin-top: 20px; color: white; background-color: #3eaa6d; border-radius: 5px; font-weight: bold">
-                Register now on Penn InTouch
-            </a>
+            {{ email_body | safe }}
         </p>
 
         <p style="padding-top: 1em; font-size: 1.2em;">

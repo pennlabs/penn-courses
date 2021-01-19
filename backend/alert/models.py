@@ -348,8 +348,10 @@ class Registration(models.Model):
     @staticmethod
     def is_waiting_for_close_filter():
         """
-        Returns a tuple of filters MIRRORING (not defining) the behavior of the
-        is_waiting_for_close property. Used for database filtering of registrations (you cannot
+        Returns a tuple of defining the behavior of the is_waiting_for_close property
+        (defining whether the registration is waiting to send a close notification to the user
+        once the section closes).
+        Used for database filtering of registrations (you cannot
         filter by a property value); unpack the filters with a single star
         (NOT a double star like is_active_filter).
         Example:
@@ -406,7 +408,7 @@ class Registration(models.Model):
     @property
     def last_notification_sent_at(self):
         """
-        The last last time the user was sent an opening notification for this registration's
+        The last time the user was sent an opening notification for this registration's
         section. This property is None (or null in JSON) if no notification has been sent to the
         user for this registration's section.
         """
