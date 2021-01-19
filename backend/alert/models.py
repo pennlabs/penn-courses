@@ -415,7 +415,7 @@ class Registration(models.Model):
         This is used on the frontend to tell the user a last time an alert was sent for
         the SECTION of a certain registration in the manage alerts page. Since the idea of
         Registration objects and resubscribe chains is completely abstracted out of the User's
-        understanding, they expect alerts to work by section (so the "last notification sent"
+        understanding, they expect alerts to work by section (so the "LAST NOTIFIED"
         column should tell them the last time they were alerted about that section).
         """
         return (
