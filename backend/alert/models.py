@@ -492,53 +492,56 @@ class Registration(models.Model):
         Returns true iff an alert was successfully sent through at least one medium to the user.
         """
 
-        if forced or self.is_active or (close_notification and self.is_waiting_for_close):
-            push_notification = (
-                self.user and self.user.profile and self.user.profile.push_notifications
-            )  # specifies whether we should use a push notification instead of a text
-            text_result = False
-            if not push_notification and not close_notification:
-                # never send close notifications by text
-                text_result = Text(self).send_alert(close_notification=close_notification)
-                if text_result is None:
-                    logging.debug(
-                        "ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR " + self.__str__()
-                    )
-            email_result = Email(self).send_alert(close_notification=close_notification)
-            if email_result is None:
-                logging.debug(
-                    "ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " + self.__str__()
-                )
-            push_notif_result = False
-            if push_notification:
-                push_notif_result = PushNotification(self).send_alert(
-                    close_notification=close_notification
-                )
-                if push_notif_result is None:
-                    logging.debug(
-                        "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " + self.__str__()
-                    )
-            if not email_result and not text_result and not push_notif_result:
-                logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__())
+        if not forced:
+            if close_notification and not self.is_waiting_for_close:
                 return False
-            if not close_notification:
-                logging.debug("NOTIFICATION SENT FOR " + self.__str__())
-                self.notification_sent = True
-                self.notification_sent_at = timezone.now()
-                self.notification_sent_by = sent_by
-                self.save()
-                if self.auto_resubscribe:
-                    self.resubscribe()
-                return True
-            else:
-                logging.debug("CLOSE NOTIFICATION SENT FOR " + self.__str__())
-                self.close_notification_sent = True
-                self.close_notification_sent_at = timezone.now()
-                self.close_notification_sent_by = sent_by
-                self.save()
-                return True
-        else:
+            if not close_notification and not self.is_active:
+                return False
+
+        push_notification = (
+            self.user and self.user.profile and self.user.profile.push_notifications
+        )  # specifies whether we should use a push notification instead of a text
+        text_result = False
+        if not push_notification and not close_notification:
+            # never send close notifications by text
+            text_result = Text(self).send_alert(close_notification=close_notification)
+            if text_result is None:
+                logging.debug(
+                    "ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR " + self.__str__()
+                )
+        email_result = Email(self).send_alert(close_notification=close_notification)
+        if email_result is None:
+            logging.debug(
+                "ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " + self.__str__()
+            )
+        push_notif_result = False
+        if push_notification:
+            push_notif_result = PushNotification(self).send_alert(
+                close_notification=close_notification
+            )
+            if push_notif_result is None:
+                logging.debug(
+                    "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " + self.__str__()
+                )
+        if not email_result and not text_result and not push_notif_result:
+            logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__())
             return False
+        if not close_notification:
+            logging.debug("NOTIFICATION SENT FOR " + self.__str__())
+            self.notification_sent = True
+            self.notification_sent_at = timezone.now()
+            self.notification_sent_by = sent_by
+            self.save()
+            if self.auto_resubscribe:
+                self.resubscribe()
+            return True
+        else:
+            logging.debug("CLOSE NOTIFICATION SENT FOR " + self.__str__())
+            self.close_notification_sent = True
+            self.close_notification_sent_at = timezone.now()
+            self.close_notification_sent_by = sent_by
+            self.save()
+            return True
 
     def resubscribe(self):
         """

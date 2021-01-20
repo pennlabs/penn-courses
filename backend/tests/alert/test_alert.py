@@ -978,6 +978,21 @@ class AlertRegistrationTestCase(TestCase):
             def __init__(self, status_code):
                 self.status_code = status_code
 
+        active_registration_ids = [
+            reg.id
+            for reg in list(
+                Registration.objects.filter(section=section, **Registration.is_active_filter())
+            )
+        ]
+        waiting_for_close_registration_ids = [
+            reg.id
+            for reg in list(
+                Registration.objects.filter(
+                    section=section, *Registration.is_waiting_for_close_filter()
+                )
+            )
+        ]
+
         with patch("alert.alerts.send_email", return_value=True) as send_email_mock:
             with patch("alert.alerts.send_text", return_value=True) as send_text_mock:
                 with patch(
@@ -1068,19 +1083,33 @@ class AlertRegistrationTestCase(TestCase):
                             ),
                         )
                     if not close_notification:
-                        for r in Registration.objects.filter(section=section):
-                            if hasattr(r, "resubscribed_to"):
-                                self.assertEquals(should_send, r.notification_sent)
-                                if should_send:
-                                    self.assertIsNotNone(r.notification_sent_at)
-                                else:
-                                    self.assertNone(r.notification_sent_at)
+                        for r_id in active_registration_ids:
+                            r = Registration.objects.get(id=r_id)
+                            self.assertEquals(should_send, r.notification_sent)
+                            if should_send:
+                                self.assertIsNotNone(r.notification_sent_at)
+                            else:
+                                self.assertNone(r.notification_sent_at)
+                    else:
+                        for r_id in waiting_for_close_registration_ids:
+                            r = Registration.objects.get(id=r_id)
+                            self.assertEquals(should_send, r.close_notification_sent)
+                            if should_send:
+                                self.assertIsNotNone(r.close_notification_sent_at)
+                            else:
+                                self.assertNone(r.close_notification_sent_at)
                     if num_status_updates is not None:
                         self.assertEqual(num_status_updates, StatusUpdate.objects.count())
                     for u in StatusUpdate.objects.all():
                         self.assertTrue(u.alert_sent)
 
     def create_resubscribe_group(self):
+        """
+        Resubscribe chains created:
+        first -> third -> fourth (CIS-120-001)
+        second (CIS-160-001)
+        fifth (CIS-121-001)
+        """
         first_id = self.registration_cis120.id
         response = self.client.post(
             reverse("registrations-list"),
@@ -1704,6 +1733,56 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-detail", args=[ids["fifth_id"]]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(sixth_id, response.data["id"])
+
+    def test_cancel_send_alert(self):
+        # heree
+        ids = self.create_auto_resubscribe_group()
+        """
+        Resubscribe chains created:
+        first -> third -> fourth (CIS-120-001)
+        second (CIS-160-001)
+        fifth (CIS-121-001)
+        """
+        response = self.client.put(
+            reverse("registrations-detail", args=[ids["fourth_id"]]),
+            json.dumps({"cancelled": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(200, response.status_code)
+
+        self.simulate_alert(self.cis120, 3, should_send=False)
+
+        response = self.client.put(
+            reverse("registrations-detail", args=[ids["fourth_id"]]),
+            json.dumps({"resubscribe": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(200, response.status_code)
+        sixth_id = response.data.get("id")
+
+        response = self.client.put(
+            reverse("registrations-detail", args=[sixth_id]),
+            json.dumps({"cancelled": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(200, response.status_code)
+
+        response = self.client.put(
+            reverse("registrations-detail", args=[sixth_id]),
+            json.dumps({"resubscribe": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(200, response.status_code)
+        seventh_id = response.data.get("id")
+
+        response = self.client.put(
+            reverse("registrations-detail", args=[seventh_id]),
+            json.dumps({"cancelled": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(200, response.status_code)
+
+        self.simulate_alert(self.cis120, 4, should_send=False)
 
     def resub_after_new_registration_for_section(self, put):
         """
