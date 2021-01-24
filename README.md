@@ -1,5 +1,5 @@
 # Penn Courses
-[![CircleCI](https://circleci.com/gh/pennlabs/penn-courses.svg?style=shield)](https://circleci.com/gh/pennlabs/penn-courses)
+![Workflow](https://github.com/pennlabs/penn-courses/workflows/Workflow/badge.svg)
 [![Coverage Status](https://codecov.io/gh/pennlabs/penn-courses/branch/master/graph/badge.svg)](https://codecov.io/gh/pennlabs/penn-courses)
 
 This is the unified home of all [Penn Courses](https://penncourses.org) products.
