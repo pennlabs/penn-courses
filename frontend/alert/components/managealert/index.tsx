@@ -19,7 +19,7 @@ const processAlerts = (setAlerts) => {
         fetchAlerts().then((res) =>
             res.map((registration) => {
                 let datetime: string | null = null;
-                if (registration.notification_sent) {
+                if (registration.last_notification_sent_at != null) {
                     const date = Intl.DateTimeFormat("en-US").format(
                         new Date(registration.last_notification_sent_at)
                     );
