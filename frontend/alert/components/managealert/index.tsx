@@ -21,13 +21,13 @@ const processAlerts = (setAlerts) => {
                 let datetime: string | null = null;
                 if (registration.notification_sent) {
                     const date = Intl.DateTimeFormat("en-US").format(
-                        new Date(registration.notification_sent_at)
+                        new Date(registration.last_notification_sent_at)
                     );
                     const time = Intl.DateTimeFormat("en-US", {
                         hour: "numeric",
                         minute: "numeric",
                         hour12: true,
-                    }).format(new Date(registration.notification_sent_at));
+                    }).format(new Date(registration.last_notification_sent_at));
                     datetime = `${date} at ${time}`;
                 }
 

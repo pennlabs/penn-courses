@@ -82,12 +82,9 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             "meeting_times",
             "instructors",
             "course_title",
+            "semester",
         ]
         read_only_fields = fields
-
-    @staticmethod
-    def get_semester(obj):
-        return obj.course.semester
 
 
 course_quality_help = "The average course quality rating for this section, on a scale of 0-4."
@@ -105,15 +102,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             001 lecture section of CIS-120.
             """
         ),
-    )
-    semester = serializers.SerializerMethodField(
-        help_text=dedent(
-            """
-            The semester of the section (of the form YYYYx where x is A [for spring], B [summer],
-            or C [fall]), e.g. 2019C for fall 2019. We organize requirements by semester so that we
-            don't get huge related sets which don't give particularly good info.
-            """
-        )
     )
     meetings = MeetingSerializer(
         many=True,
@@ -154,10 +142,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
     work_required = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
     )
-
-    @staticmethod
-    def get_semester(obj):
-        return obj.course.semester
 
     class Meta:
         model = Section
@@ -287,7 +271,6 @@ class CourseDetailSerializer(CourseListSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
-            "semester",
         ] + ["crosslistings", "requirements", "sections",]
         read_only_fields = fields
 

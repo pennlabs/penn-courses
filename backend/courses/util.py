@@ -1,8 +1,11 @@
 import json
 import re
 
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
-from options.models import get_value
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from options.models import Option, get_value
 from rest_framework.exceptions import APIException
 
 from courses.models import (
@@ -21,7 +24,20 @@ from review.util import titleize
 
 
 def get_current_semester():
-    if get_value("SEMESTER", None) is None:
+    """
+    This function retrieves the string value of the current semester, either from
+    memory (if the value has been cached), or from the db (after which it will cache
+    the value for future use). If the value retrieved from the db is None, an error is thrown
+    indicating that the SEMESTER Option must be set for this API to work properly.
+    The cache has no timeout, but is invalidated whenever the SEMESTER Option is saved
+    (which will occur whenever it is updated), using a post_save hook.
+    See the invalidate_current_semester_cache function below to see how this works.
+    """
+    cached_val = cache.get("SEMESTER", None)
+    if cached_val is not None:
+        return cached_val
+    retrieved_val = get_value("SEMESTER", None)
+    if retrieved_val is None:
         raise APIException(
             "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
             "option by running the command "
@@ -29,7 +45,20 @@ def get_current_semester():
             "replacing 2020C with the current semester, in the backend directory (remember "
             "to run 'pipenv shell' before running this command, though)."
         )
-    return get_value("SEMESTER")
+    cache.set("SEMESTER", retrieved_val, timeout=None)  # cache only expires upon invalidation
+    return retrieved_val
+
+
+@receiver(post_save, sender=Option, dispatch_uid="update_stock_count")
+def invalidate_current_semester_cache(sender, instance, **kwargs):
+    """
+    This function invalidates the cached SEMESTER value when the SEMESTER option is updated.
+    Note that the timeout value on the cached SEMESTER value is set to None (meaning
+    the cache will not be invalidated by any amount of elapsed time; saving the SEMESTER Option
+    is the only way to invalidate this cached value).
+    """
+    if instance.key == "SEMESTER":
+        cache.delete("SEMESTER")
 
 
 def separate_course_code(course_code):

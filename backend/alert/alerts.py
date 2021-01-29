@@ -70,9 +70,7 @@ class Alert(ABC):
 
 class Email(Alert):
     def __init__(self, reg):
-        super().__init__(
-            "alert/email_alert.html", reg, close_template="alert/email_close_alert.html"
-        )
+        super().__init__("alert/email_alert.html", reg, "alert/email_alert_close.html")
 
     def send_alert(self, close_notification=False):
         """
@@ -87,15 +85,14 @@ class Email(Alert):
             return False
 
         try:
-            thread_subject = f"{self.registration.section.full_code} is now open!"
             if close_notification:
                 if not self.close_text:
                     # This should be unreachable
                     return None
-                alert_subject = f"RE: {thread_subject}"
+                alert_subject = f"{self.registration.section.full_code} has closed."
                 alert_text = self.close_text
             else:
-                alert_subject = thread_subject
+                alert_subject = f"{self.registration.section.full_code} is now open!"
                 alert_text = self.text
             return send_email(
                 from_="Penn Course Alert <team@penncoursealert.com>",

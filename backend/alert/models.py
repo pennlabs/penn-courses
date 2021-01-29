@@ -6,6 +6,7 @@ import phonenumbers  # library for parsing and formatting phone numbers.
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db.models import Max, Q
 from django.utils import timezone
 
 from alert.alerts import Email, PushNotification, Text
@@ -70,7 +71,7 @@ class Registration(models.Model):
     send a close notification when the section it is watching closes, we call it "waiting for
     close".  This rule is encoded in the is_waiting_for_close property.  You can also filter
     for such registrations by unpacking the static is_waiting_for_close_filter() method which
-    returns a dictionary (you cannot filter on a property).
+    returns a tuple of Q filters (you cannot filter on a property).
 
     After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a user field
     pointing to the user's Penn Labs Accounts User object.  In other words, we implemented a
@@ -322,6 +323,109 @@ class Registration(models.Model):
         ),
     )
 
+    @staticmethod
+    def is_active_filter():
+        """
+        Returns a dict of filters defining the behavior of the is_active property.
+        Also used in database filtering of registrations (you cannot filter by a property value);
+        unpack the filters with two stars (NOT a single star like is_waiting_for_close_filter).
+        Example:
+            Registration.objects.filter(**Registration.is_active_filter())
+        """
+        return {"notification_sent": False, "deleted": False, "cancelled": False}
+
+    @property
+    def is_active(self):
+        """
+        True if the registration would send an alert hen the watched section changes to open,
+        False otherwise. This is equivalent to not(notification_sent or deleted or cancelled).
+        """
+        for k, v in self.is_active_filter().items():
+            if getattr(self, k) != v:
+                return False
+        return True
+
+    @staticmethod
+    def is_waiting_for_close_filter():
+        """
+        Returns a tuple of defining the behavior of the is_waiting_for_close property
+        (defining whether the registration is waiting to send a close notification to the user
+        once the section closes).
+        Used for database filtering of registrations (you cannot
+        filter by a property value); unpack the filters with a single star
+        (NOT a double star like is_active_filter).
+        Example:
+            Registration.objects.filter(*Registration.is_waiting_for_close_filter())
+
+        As is the case with any Q filters, you must unpack these filters positionally before any
+        kwarg filters. If you are unfamiliar with Q queries, see the following docs:
+        https://docs.djangoproject.com/en/3.1/topics/db/queries/#complex-lookups-with-q-objects
+
+        All of these conditions are straightforward except for the last. The last condition
+        effectively guarantees the next registration in this registration's resubscribe chain
+        (if it exists) hasn't been deleted or cancelled. If the user has auto-resubscribe on and
+        then cancels the next registration, we don't want the previous registration to send
+        a close notification. Based on the way registrations are shown to the user in PCA,
+        they would expect cancelling or deleting the head of a resubscribe chain to halt all
+        notifications, close or otherwise, from that chain; this condition guarantees that.
+        Note that the only way for a registration 2 away from this one would be canceled is if
+        an alert was sent for the next registration, meaning a close notification for this
+        registration must have already been sent so close_notification_sent=True, or otherwise
+        the user cancelled and resubscribed multiple times, which would mean the next registration
+        would be cancelled. In all cases, is_waiting_for_close would correctly be False based
+        on these filters.
+        """
+        return (
+            Q(notification_sent=True),
+            Q(close_notification=True),
+            Q(deleted=False),
+            Q(cancelled=False),
+            Q(close_notification_sent=False),
+            (
+                Q(resubscribed_to__isnull=True)
+                | (
+                    Q(resubscribed_to__isnull=False)  # SQL short-circuit logic is not guaranteed
+                    & Q(resubscribed_to__cancelled=False)
+                    & Q(resubscribed_to__deleted=False)
+                )
+            ),
+        )
+
+    @property
+    def is_waiting_for_close(self):
+        """
+        True if the registration is waiting to send a close notification to the user
+        once the section closes.  False otherwise.
+        """
+
+        # WARNING: you should be frugal with your usage of this property, since it hits the DB
+        # each time it is called.
+
+        return Registration.objects.filter(
+            *Registration.is_waiting_for_close_filter(), id=self.id
+        ).exists()
+
+    @property
+    def last_notification_sent_at(self):
+        """
+        The last time the user was sent an opening notification for this registration's
+        section. This property is None (or null in JSON) if no notification has been sent to the
+        user for this registration's section.
+
+        This is used on the frontend to tell the user a last time an alert was sent for
+        the SECTION of a certain registration in the manage alerts page. Since the idea of
+        Registration objects and resubscribe chains is completely abstracted out of the User's
+        understanding, they expect alerts to work by section (so the "LAST NOTIFIED"
+        column should tell them the last time they were alerted about that section).
+        """
+        return (
+            Registration.objects.filter(
+                user=self.user, section=self.section, notification_sent_at__isnull=False
+            )
+            .aggregate(max_notification_sent_at=Max("notification_sent_at"))
+            .get("max_notification_sent_at", None)
+        )
+
     def __str__(self):
         return "%s: %s" % (
             (self.user.__str__() if self.user is not None else None) or self.email or self.phone,
@@ -383,102 +487,61 @@ class Registration(models.Model):
                 self.original_created_at = self.get_original_registration_rec().created_at
         super().save()
 
-    @staticmethod
-    def is_active_filter():
-        """
-        Returns a dict of filters defining the behavior of the is_active property.
-        Also used in database filtering of registrations (you cannot filter by a property value).
-        """
-        return {"notification_sent": False, "deleted": False, "cancelled": False}
-
-    @property
-    def is_active(self):
-        """
-        True if the registration would send an alert hen the watched section changes to open,
-        False otherwise. This is equivalent to not(notification_sent or deleted or cancelled).
-        """
-        for k, v in self.is_active_filter().items():
-            if getattr(self, k) != v:
-                return False
-        return True
-
-    @staticmethod
-    def is_waiting_for_close_filter():
-        """
-        Returns a dict of filters defining the behavior of the is_waiting_for_close property.
-        Also used in database filtering of registrations (you cannot filter by a property value).
-        """
-        return {
-            "notification_sent": True,
-            "close_notification": True,
-            "deleted": False,
-            "cancelled": False,
-            "close_notification_sent": False,
-        }
-
-    @property
-    def is_waiting_for_close(self):
-        """
-        Returns True iff the registration would send a close notification
-        when the watched section changes to closed
-        """
-        for k, v in self.is_waiting_for_close_filter().items():
-            if getattr(self, k) != v:
-                return False
-        return True
-
     def alert(self, forced=False, sent_by="", close_notification=False):
         """
         Returns true iff an alert was successfully sent through at least one medium to the user.
         """
 
-        if forced or self.is_active or (close_notification and self.is_waiting_for_close):
-            push_notification = (
-                self.user and self.user.profile and self.user.profile.push_notifications
-            )  # specifies whether we should use a push notification instead of a text
-            text_result = False
-            if not push_notification and not close_notification:
-                # never send close notifications by text
-                text_result = Text(self).send_alert(close_notification=close_notification)
-                if text_result is None:
-                    logging.debug(
-                        "ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR " + self.__str__()
-                    )
-            email_result = Email(self).send_alert(close_notification=close_notification)
-            if email_result is None:
-                logging.debug(
-                    "ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " + self.__str__()
-                )
-            push_notif_result = False
-            if push_notification:
-                push_notif_result = PushNotification(self).send_alert(
-                    close_notification=close_notification
-                )
-                if push_notif_result is None:
-                    logging.debug(
-                        "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " + self.__str__()
-                    )
-            if not email_result and not text_result and not push_notif_result:
-                logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__())
+        if not forced:
+            if close_notification and not self.is_waiting_for_close:
                 return False
-            if not close_notification:
-                logging.debug("NOTIFICATION SENT FOR " + self.__str__())
-                self.notification_sent = True
-                self.notification_sent_at = timezone.now()
-                self.notification_sent_by = sent_by
-                self.save()
-                if self.auto_resubscribe:
-                    self.resubscribe()
-                return True
-            else:
-                logging.debug("CLOSE NOTIFICATION SENT FOR " + self.__str__())
-                self.close_notification_sent = True
-                self.close_notification_sent_at = timezone.now()
-                self.close_notification_sent_by = sent_by
-                self.save()
-                return True
-        else:
+            if not close_notification and not self.is_active:
+                return False
+
+        push_notification = (
+            self.user and self.user.profile and self.user.profile.push_notifications
+        )  # specifies whether we should use a push notification instead of a text
+        text_result = False
+        if not push_notification and not close_notification:
+            # never send close notifications by text
+            text_result = Text(self).send_alert(close_notification=close_notification)
+            if text_result is None:
+                logging.debug(
+                    "ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR " + self.__str__()
+                )
+        email_result = Email(self).send_alert(close_notification=close_notification)
+        if email_result is None:
+            logging.debug(
+                "ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " + self.__str__()
+            )
+        push_notif_result = False
+        if push_notification:
+            push_notif_result = PushNotification(self).send_alert(
+                close_notification=close_notification
+            )
+            if push_notif_result is None:
+                logging.debug(
+                    "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " + self.__str__()
+                )
+        if not email_result and not text_result and not push_notif_result:
+            logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__())
             return False
+        if not close_notification:
+            logging.debug("NOTIFICATION SENT FOR " + self.__str__())
+            self.notification_sent = True
+            self.notification_sent_at = timezone.now()
+            self.notification_sent_by = sent_by
+            self.save()
+            if self.auto_resubscribe:
+                self.resubscribe()
+            return True
+        else:
+            logging.debug("CLOSE NOTIFICATION SENT FOR " + self.__str__())
+            self.close_notification_sent = True
+            self.close_notification_sent_at = timezone.now()
+            self.close_notification_sent_by = sent_by
+            self.save()
+            return True
 
     def resubscribe(self):
         """
