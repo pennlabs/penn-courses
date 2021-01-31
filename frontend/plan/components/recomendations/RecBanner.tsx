@@ -20,14 +20,15 @@ export default function RecBanner() {
                 display: "flex",
                 flexDirection: "row",
                 justifyContent: "space-between",
+                alignItems: "center"
             }}
         >
             {/* left side */}
             <span
                 style={{
                     display: "flex",
-                    /* justifyContent: "space-around",
-                    flexGrow: 2  */
+                    justifyContent: "space-around",
+                    /* flexGrow: 2, */
                     alignItems: "center"
                 }}
             >

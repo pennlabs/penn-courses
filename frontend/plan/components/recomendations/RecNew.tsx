@@ -7,10 +7,12 @@ const NewBtn = styled.p`
     border-radius: 14px;
     /* padding: 3px; */
     font-size: 10px;
-    width: 24px;
-    height: 12px;
+    /* width: 40px;
+    height: 22px; */
+    padding: 5px 8px;
+    margin: auto;
+    text-align: center;
 `
-
 export default function RecNew() {
     return(
         <NewBtn>NEW</NewBtn>

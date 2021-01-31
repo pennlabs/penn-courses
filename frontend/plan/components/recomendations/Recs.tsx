@@ -3,7 +3,12 @@ import RecBanner from "./RecBanner"
 
 export default function Recs() {
     return(
-        <div>
+        <div
+            style = {{
+                position: "relative",
+                bottom: 0
+            }}
+        >
             <RecBanner/>
         </div>
     );
