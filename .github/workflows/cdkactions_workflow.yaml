@@ -26,7 +26,7 @@ jobs:
         run: |-
           cd backend
           pipenv run black --check .
-      - name: Test
+      - name: Test (run in parallel)
         run: |-
           cd backend
           pipenv run coverage run --concurrency=multiprocessing manage.py test --settings=PennCourses.settings.ci --parallel
@@ -79,6 +79,10 @@ jobs:
         run: |-
           cd frontend
           yarn install --frozen-lockfile
+      - name: Lint
+        run: |-
+          cd frontend
+          yarn lint
       - name: Test
         run: |-
           cd frontend
@@ -121,6 +125,10 @@ jobs:
         run: |-
           cd frontend
           yarn install --frozen-lockfile
+      - name: Lint
+        run: |-
+          cd frontend
+          yarn lint
       - name: Test
         run: |-
           cd frontend
@@ -163,6 +171,10 @@ jobs:
         run: |-
           cd frontend
           yarn install --frozen-lockfile
+      - name: Lint
+        run: |-
+          cd frontend
+          yarn lint
       - name: Test
         run: |-
           cd frontend
