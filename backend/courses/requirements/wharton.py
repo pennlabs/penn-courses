@@ -27,7 +27,7 @@ def _parse_ccp(s):
         or unidecode.unidecode(splits[0].strip()) == "See Advisor"
     ):
         return None
-    elif unidecode.unidecode(splits[1].strip()) == "CDUS":
+    elif len(splits) > 1 and unidecode.unidecode(splits[1].strip()) == "CDUS":
         return ["CCP", "CDUS"]
     else:
         return ["CCP"]

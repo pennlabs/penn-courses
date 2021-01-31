@@ -39,7 +39,7 @@ def get_registrations_for_alerts(course_code, semester, course_status="O"):
         return list(section.registration_set.filter(**Registration.is_active_filter()))
     elif course_status == "C":
         # Use the is_waiting_for_close_filter dict statically defined in the Registration model
-        return list(section.registration_set.filter(**Registration.is_waiting_for_close_filter()))
+        return list(section.registration_set.filter(*Registration.is_waiting_for_close_filter()))
     else:
         return []
 
