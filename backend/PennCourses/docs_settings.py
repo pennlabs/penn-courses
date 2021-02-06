@@ -734,16 +734,15 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                     traceback=cumulative_examples[key]["traceback"],
                 )
             new_cumulative_examples[key()] = value
-        cumulative_examples = new_cumulative_examples
 
         # Add request/response examples to the documentation (instructions on how to customize a
         # route's examples can be found above).
-        for path in cumulative_examples.keys():
-            traceback = cumulative_examples[path]["traceback"]
-            for method in cumulative_examples[path].keys():
+        for path in new_cumulative_examples.keys():
+            traceback = new_cumulative_examples[path]["traceback"]
+            for method in new_cumulative_examples[path].keys():
                 if method == "traceback":
                     continue
-                ob = cumulative_examples[path][method]
+                ob = new_cumulative_examples[path][method]
                 if path not in data["paths"].keys():
                     fail(traceback, f"No such path exists in schema: '{path}'")
                 if method not in data["paths"][path].keys():
