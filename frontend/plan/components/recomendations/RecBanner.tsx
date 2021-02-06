@@ -30,6 +30,8 @@ export default function RecBanner() {
                         fontWeight: "bold",
                         padding: 0,
                         marginBottom: "0.5rem",
+                        paddingLeft: "10px",
+                        paddingRight: "10px"
                     }}
                 >
                     Recommended
