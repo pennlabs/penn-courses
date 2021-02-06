@@ -45,11 +45,7 @@ export default function RecBanner() {
                 <RecInfo/>
             </span>
             {/* Right side, hide */}
-            <span
-                style={{
-                    /* float: "right", */
-                }}
-            >
+            <span>
                 <RecHide/>
             </span>
         </span>

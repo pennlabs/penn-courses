@@ -288,7 +288,7 @@ function Index() {
                             
                             <Recs
                                 style ={{
-                                    // bottom: 0
+                                    bottom: 0
                                 }}
                             />
                         </div>
