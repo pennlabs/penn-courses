@@ -4,13 +4,6 @@ import RecHide from "./RecHide"
 import RecInfo from "./RecInfo"
 import RecNew from "./RecNew"
 
-const NewBtn = styled.p`
-    background: #EA5A48;
-    color: #FFF;
-    border-radius: 14px;
-    padding: 3px;
-    font-size: .5rem
-`
 
 export default function RecBanner() {
 
@@ -28,7 +21,6 @@ export default function RecBanner() {
                 style={{
                     display: "flex",
                     justifyContent: "space-around",
-                    /* flexGrow: 2, */
                     alignItems: "center"
                 }}
             >
@@ -44,7 +36,7 @@ export default function RecBanner() {
                 </h3>
                 <RecInfo/>
             </span>
-            {/* Right side, hide */}
+            {/* Right side*/}
             <span>
                 <RecHide/>
             </span>

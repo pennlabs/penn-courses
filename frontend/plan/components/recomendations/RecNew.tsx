@@ -5,10 +5,7 @@ const NewBtn = styled.p`
     background: #EA5A48;
     color: #FFF;
     border-radius: 14px;
-    /* padding: 3px; */
     font-size: 10px;
-    /* width: 40px;
-    height: 22px; */
     padding: 5px 8px;
     margin: auto;
     text-align: center;
