@@ -64,8 +64,11 @@ const Selector: FunctionComponent<SelectorProps> = ({
             style={{
                 fontSize: "0.8em",
                 textAlign: "center",
-                marginTop: "5vh",
+                // marginTop: "5vh",
                 maxWidth: "45vh",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-end",
             }}
         >
             <img src="/icons/empty-state-search.svg" alt="" />

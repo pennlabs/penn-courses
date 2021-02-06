@@ -282,6 +282,9 @@ function Index() {
                             style={{
                                 paddingLeft: 0,
                                 paddingRight: 0,
+                                // display: "flex",
+                                // flexDirection: "columnn",
+                                // justifyContent: "space-between"
                             }}
                         >
                             <Selector view={view} />
