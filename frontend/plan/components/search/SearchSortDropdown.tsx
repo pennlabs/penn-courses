@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { connect } from "react-redux";
 import { changeSortType } from "../../actions";
+import { Icon } from "../bulma_derived_components";
 
 interface DropDownButtonProps {
     isActive: boolean;
@@ -10,7 +11,7 @@ interface DropDownButtonProps {
     makeActive: () => void;
 }
 
-const DropdownButtonContainer = styled.div`
+const DropdownButtonContainer = styled.div<{ isActive: boolean }>`
     line-height: 1.5;
     position: relative;
     border-radius: 0 !important;
@@ -21,12 +22,10 @@ const DropdownButtonContainer = styled.div`
     flex-direction: row;
     justify-content: space-between;
 
-    background: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "#F5F6F8" : "#FFF"};
+    background: ${(props) => (props.isActive ? "#F5F6F8" : "#FFF")};
 
     &:hover {
-        background: ${({ isActive }: { isActive: boolean }) =>
-            isActive ? "#EBEDF1" : "#F5F6F8"};
+        background: ${(props) => (props.isActive ? "#EBEDF1" : "#F5F6F8")};
     }
 
     &,
@@ -60,16 +59,6 @@ const DropdownButton = ({
 
 type SortByType = "Name" | "Quality" | "Difficulty" | "Good & Easy";
 const contents: SortByType[] = ["Name", "Quality", "Difficulty", "Good & Easy"];
-
-// Bulma: icon is-small
-const Icon = styled.span`
-    pointer-events: none;
-    height: 1rem;
-    width: 1rem;
-    align-items: center;
-    display: inline-flex;
-    justify-content: center;
-`;
 
 const DropdownContainer = styled.div`
     border-radius: 0.5rem;

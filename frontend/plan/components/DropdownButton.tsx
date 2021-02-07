@@ -81,7 +81,7 @@ const DropdownFilterButton = styled.button`
 const DeleteButtonContainer = styled.div`
     padding-left: 0.5em;
     margin-right: -0.5em;
-    height: 1rem;
+    height: 16px;
 `;
 
 const DeleteButton = styled.button`

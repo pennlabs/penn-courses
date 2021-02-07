@@ -34,7 +34,7 @@ const MeterContainer = styled.div`
     grid-template-columns: 50% 50%;
 `;
 
-const CreditHoursContainer = styled.div`
+const TextStatsContainer = styled.div`
     display: grid;
     grid-template-columns: 55% 45%;
 `;
@@ -227,7 +227,7 @@ class Stats extends Component<StatsProps> {
                     <Meter value={avgs.difficulty} name="Course Difficulty" />
                     <Meter value={avgs.work_required} name="Work Required" />
                 </MeterContainer>
-                <CreditHoursContainer>
+                <TextStatsContainer>
                     <PurpleTimeContainer>
                         <PurpleTimeInnerBlock>
                             <PurpleTimeStats>{totalCUs}</PurpleTimeStats>
@@ -266,7 +266,7 @@ class Stats extends Component<StatsProps> {
                             <div>latest end time</div>
                         </div>
                     </StartEndTimeContainer>
-                </CreditHoursContainer>
+                </TextStatsContainer>
             </StatsContainer>
         );
     }

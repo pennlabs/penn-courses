@@ -8,10 +8,10 @@ interface TagListProps {
     onClick?: (id: string) => void;
 }
 
-const HiddenTagListContainer = styled.span`
+const HiddenTagListContainer = styled.span<{ expanded: boolean }>`
     overflow: hidden;
     display: inline-block;
-    height: ${({ expanded }: { expanded: boolean }) => (expanded ? "auto" : 0)};
+    height: ${(props) => (props.expanded ? "auto" : 0)};
     * {
         user-select: none;
     }

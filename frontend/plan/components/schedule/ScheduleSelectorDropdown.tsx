@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
+import { Icon } from "../bulma_derived_components";
 
 interface DropdownButton {
     isActive: boolean;
@@ -13,7 +14,7 @@ interface DropdownButton {
     };
 }
 
-const DropdownButtonContainer = styled.div`
+const DropdownButtonContainer = styled.div<{ isActive: boolean }>`
     line-height: 1.5;
     position: relative;
     border-radius: 0 !important;
@@ -23,12 +24,10 @@ const DropdownButtonContainer = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    background: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "#F5F6F8" : "#FFF"};
+    background: ${(props) => (props.isActive ? "#F5F6F8" : "#FFF")};
 
     &:hover {
-        background: ${({ isActive }: { isActive: boolean }) =>
-            isActive ? "#EBEDF1" : "#F5F6F8"};
+        background: ${(props) => (props.isActive ? "#EBEDF1" : "#F5F6F8")};
     }
 
     * {
@@ -60,16 +59,6 @@ const ScheduleOptionsContainer = styled.div`
     i:hover {
         color: #f5f6f8 !important;
     }
-`;
-
-// Bulma: icon is-small
-const Icon = styled.span`
-    pointer-events: none;
-    height: 1rem;
-    width: 1rem;
-    align-items: center;
-    display: inline-flex;
-    justify-content: center;
 `;
 
 const DropdownButton = ({

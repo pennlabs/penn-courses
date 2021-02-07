@@ -8,14 +8,13 @@ interface TimesProps {
     numRow: number;
 }
 
-const Time = styled.span`
+const Time = styled.span<{ startTime: number; i: number }>`
     position: absolute;
     top: -9px;
     color: #84878f;
     font-size: 0.8rem;
     font-weight: 500;
-    grid-row: ${({ startTime, i }: { startTime: number; i: number }) =>
-        (i - startTime) * 2 + 1};
+    grid-row: ${(props) => (props.i - props.startTime) * 2 + 1};
     grid-column: ${1};
 
     @media only screen and (max-width: 768px) {
@@ -26,17 +25,12 @@ const Time = styled.span`
     }
 `;
 
-const TimestampContainer = styled.div`
+const TimestampContainer = styled.div<{ numRow: number; offset: number }>`
     display: grid;
-    grid-template-rows: repeat(
-        ${({ numRow }: { numRow: number; offset: number }) => numRow - 1},
-        1fr
-    );
+    grid-template-rows: repeat(${(props) => props.numRow - 1}, 1fr);
     grid-column: ${1};
-    grid-row-start: ${({ offset }: { numRow: number; offset: number }) =>
-        1 + offset};
-    grid-row-end: ${({ numRow }: { numRow: number; offset: number }) =>
-        numRow + 1};
+    grid-row-start: ${(props) => 1 + props.offset};
+    grid-row-end: ${(props) => props.numRow + 1};
     position: relative;
 `;
 

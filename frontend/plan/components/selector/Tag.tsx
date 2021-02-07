@@ -6,7 +6,7 @@ interface TagProps {
     isAdder?: boolean;
 }
 
-const TagContainer = styled.span`
+const TagContainer = styled.span<{ isAdder: boolean }>`
     user-select: none;
     transition: 200ms ease background;
     margin-bottom: 0.35rem;
@@ -26,13 +26,11 @@ const TagContainer = styled.span`
     white-space: nowrap;
 
     &:hover {
-        background: ${({ isAdder }: { isAdder: boolean }) =>
-            isAdder ? "#9FA4A6" : ""};
+        background: ${(props) => (props.isAdder ? "#9FA4A6" : "")};
     }
 
     &:active {
-        background: ${({ isAdder }: { isAdder: boolean }) =>
-            isAdder ? "#777b7c" : ""};
+        background: ${(props) => (props.isAdder ? "#777b7c" : "")};
     }
 `;
 

@@ -29,8 +29,6 @@ import {
 } from "../../actions";
 import { login, logout } from "../../actions/login";
 
-import { Icon } from "../bulma_derived_components";
-
 // removed: <F, K extends keyof F, V extends keyof K>
 interface SearchBarProps {
     startSearch: (searchObj: FilterData) => void;

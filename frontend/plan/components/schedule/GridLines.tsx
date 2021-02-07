@@ -1,4 +1,4 @@
-import React, { CSSProperties } from "react";
+import React from "react";
 import styled from "styled-components";
 
 interface GridLinesProps {
@@ -6,41 +6,35 @@ interface GridLinesProps {
     numCol: number;
 }
 
-const HorizontalLine = styled.span`
+const HorizontalLine = styled.span<{ gridRow: number; numCol: number }>`
     border-top: 0.1rem solid #e5e8eb;
-    grid-row: ${({ gridRow }: { gridRow: number; numCol: number }) => gridRow};
+    grid-row: ${(props) => props.gridRow};
     grid-column-start: ${2};
-    grid-column-end: ${({ numCol }: { gridRow: number; numCol: number }) =>
-        numCol + 1};
+    grid-column-end: ${(props) => props.numCol + 1};
     position: relative;
 `;
 
-const LastHorizontalLine = styled.span`
+const LastHorizontalLine = styled.span<{ gridRow: number; numCol: number }>`
     border-bottom: 0.1rem solid #e5e8eb;
-    grid-row: ${({ gridRow }: { gridRow: number; numCol: number }) => gridRow};
+    grid-row: ${(props) => props.gridRow};
     grid-column-start: ${2};
-    grid-column-end: ${({ numCol }: { gridRow: number; numCol: number }) =>
-        numCol + 1};
+    grid-column-end: ${(props) => props.numCol + 1};
     position: relative;
 `;
 
-const VerticalLine = styled.span`
+const VerticalLine = styled.span<{ lastRow: number; gridColumn: number }>`
     border-left: 0.1rem solid #e5e8eb;
     grid-row-start: ${2};
-    grid-row-end: ${({ lastRow }: { lastRow: number; gridColumn: number }) =>
-        lastRow};
-    grid-column: ${({ gridColumn }: { lastRow: number; gridColumn: number }) =>
-        gridColumn};
+    grid-row-end: ${(props) => props.lastRow};
+    grid-column: ${(props) => props.gridColumn};
     position: relative;
 `;
 
-const LastVerticalLine = styled.span`
+const LastVerticalLine = styled.span<{ lastRow: number; gridColumn: number }>`
     border-right: 0.1rem solid #e5e8eb;
     grid-row-start: ${2};
-    grid-row-end: ${({ lastRow }: { lastRow: number; gridColumn: number }) =>
-        lastRow};
-    grid-column: ${({ gridColumn }: { lastRow: number; gridColumn: number }) =>
-        gridColumn};
+    grid-row-end: ${(props) => props.lastRow};
+    grid-column: ${(props) => props.gridColumn};
     position: relative;
 `;
 

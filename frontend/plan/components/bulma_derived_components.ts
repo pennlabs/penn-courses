@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import React from "react";
 
 export const Column = styled.div`
     display: block;
@@ -12,8 +13,8 @@ export const Icon = styled.span`
     align-items: center;
     display: inline-flex;
     justify-content: center;
-    height: 1.5rem;
-    width: 1.5rem;
+    height: 1rem;
+    width: 1rem;
     pointer-events: none;
 `;
 

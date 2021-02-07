@@ -312,7 +312,7 @@ class Schedule extends Component {
                         {notEmpty && blocks}
                         {!notEmpty && <EmptySchedule />}
                     </ScheduleContents>
-                    <Stats meetings={schedData.meetings} />
+                    {notEmpty && <Stats meetings={schedData.meetings} />}
                 </ScheduleBox>
             </ScheduleContainer>
         );
