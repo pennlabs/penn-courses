@@ -19,13 +19,11 @@ from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
     RegistrationCreateSerializer,
     RegistrationSerializer,
-    RegistrationUpdateSerializer, MiniSectionStatsSerializer, SectionDetailStatsSerializer,
+    RegistrationUpdateSerializer
 )
 from alert.tasks import send_course_alerts
-from courses.models import Section
 from courses.util import get_current_semester, record_update, update_course_from_record
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
-
 
 logger = logging.getLogger(__name__)
 
@@ -578,54 +576,3 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
         return Registration.objects.filter(
             user=self.request.user, section__course__semester=get_current_semester()
         ).prefetch_related("section")
-
-
-class SectionStatsList(generics.ListAPIView, BaseCourseMixin):
-    """
-    Retrieve a list of sections (less detailed than [PCA] Section, or SectionDetail in
-    alert/views.py on the backend).  The sections are filtered by the search term
-    (assumed to be a prefix of a section's full code, with each chunk either space-delimited,
-    dash-delimited, or not delimited). Also included are current_pca_registration_volume and
-    current_relative_pca_popularity fields.
-    """
-
-    schema = PcxAutoSchema(
-        examples=examples.SectionsStatisticsList_examples,
-        response_codes={
-            "/api/alert/courses/": {
-                "GET": {200: "[SCHEMA]Sections With Summary Statistics Listed Successfully."}
-            }
-        },
-    )
-
-    serializer_class = MiniSectionStatsSerializer
-    queryset = Section.objects.all()
-    filter_backends = [TypedSectionSearchBackend]
-    search_fields = ["^full_code"]
-
-    @staticmethod
-    def get_semester_field():
-        return "course__semester"
-
-
-class SectionStatsDetail(generics.RetrieveAPIView, BaseCourseMixin):
-    """
-    Retrieve a detailed look at a specific course section, including detailed statistics
-    about the section relevant to PCA.
-    """
-
-    schema = PcxAutoSchema(
-        examples=examples.SectionStatisticsDetail_examples,
-        response_codes={
-            "/api/alert/{semester}/sections/{full_code}/statistics/": {
-                "GET": {200: "[SCHEMA]Section detail with statistics retrieved successfully."}
-            }
-        },
-    )
-
-    serializer_class = SectionDetailStatsSerializer
-    queryset = Section.with_reviews.all()
-    lookup_field = "full_code"
-
-    def get_semester_field(self):
-        return "course__semester"

@@ -6,6 +6,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 import courses.examples as examples
+from alert.serializers import MiniSectionStatsSerializer, SectionDetailStatsSerializer
 from courses.filters import CourseSearchFilterBackend
 from courses.models import Course, Requirement, Section, StatusUpdate
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
@@ -74,6 +75,16 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
         return "course__semester"
 
 
+class SectionStatsList(SectionList):
+    """
+    Just like SectionList, except also includes stats in returned sections.
+    Additional fields like current_pca_registration_volume and current_relative_pca_popularity
+    are made available.
+    """
+
+    serializer_class = MiniSectionStatsSerializer
+
+
 class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     """
     Retrieve a detailed look at a specific course section.
@@ -94,6 +105,14 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     def get_semester_field(self):
         return "course__semester"
+
+
+class SectionStatsDetail(SectionDetail):
+    """
+    Just like SectionDetail, except also includes stats relevant to PCA in returned sections.
+    """
+
+    serializer_class = SectionDetailStatsSerializer
 
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
