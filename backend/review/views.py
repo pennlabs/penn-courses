@@ -205,6 +205,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
 
 
 @api_view(["GET"])
+@schema(PcxAutoSchema())
 def autocomplete(request):
     """
     Autocomplete entries for Courses, departments, instructors. All objects have title, description,
@@ -213,6 +214,7 @@ def autocomplete(request):
 
     courses = (
         Course.objects.filter(sections__review__isnull=False)
+        .order_by("-semester")
         .values("full_code", "title")
         .distinct()
     )

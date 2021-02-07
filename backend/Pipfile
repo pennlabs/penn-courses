@@ -18,12 +18,11 @@ black = "==19.10b0"
 
 [packages]
 django = "*"
-psycopg2 = "*"
+psycopg2 = {version = "*", sys_platform = "== 'linux'"}
 requests = "*"
 twilio = "*"
 phonenumbers = "*"
-django-extensions = "*"
-celery = "*"
+celery = "<5"
 redis = ">=3.4.1"
 sentry-sdk = "*"
 dj-database-url = "*"
@@ -40,7 +39,7 @@ django-cors-headers = "*"
 django-runtime-options = "*"
 pyyaml = "*"
 uritemplate = "*"
-uwsgi = "*"
+uwsgi = {version = "*", sys_platform = "== 'linux'"}
 ddt = "*"
 lark-parser = "*"
 tqdm = "*"
@@ -49,6 +48,8 @@ nose = "*"
 importlib-metadata = "*"
 django-redis = "*"
 jsonref = "*"
+tblib = "*"
+django-extensions = "*"
 pandas = "*"
 
 [requires]

@@ -17,14 +17,17 @@ registration_fields = [
     "updated_at",
     "section",
     "user",
+    "cancelled",
+    "cancelled_at",
     "deleted",
+    "deleted_at",
     "auto_resubscribe",
     "notification_sent",
     "notification_sent_at",
+    "last_notification_sent_at",
     "close_notification",
     "close_notification_sent",
     "close_notification_sent_at",
-    "deleted_at",
     "is_active",
     "is_waiting_for_close",
 ]
@@ -47,33 +50,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
         help_text="The current status of the watched section. Options and meanings: "
         + string_dict_to_html(dict(StatusUpdate.STATUS_CHOICES)),
     )
-    is_active = serializers.SerializerMethodField(
-        read_only=True,
-        help_text=dedent(
-            """
-        True if the registration would send an alert hen the watched section changes to open,
-        False otherwise. This is equivalent to not(notification_sent or deleted or cancelled).
-        """
-        ),
-    )
-    is_waiting_for_close = serializers.SerializerMethodField(
-        read_only=True,
-        help_text=dedent(
-            """
-        True if the registration is waiting to send a close notification to the user
-        once the section closes.  False otherwise.
-        """
-        ),
-    )
 
     def get_section_status(self, registration_object):
         return registration_object.section.status
-
-    def get_is_active(self, registration_object):
-        return registration_object.is_active
-
-    def get_is_waiting_for_close(self, registration_object):
-        return registration_object.is_waiting_for_close
 
     class Meta:
         model = Registration

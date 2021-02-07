@@ -3,7 +3,15 @@ from textwrap import dedent
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from courses.models import Course, Meeting, Requirement, Section, StatusUpdate, UserProfile
+from courses.models import (
+    Course,
+    Instructor,
+    Meeting,
+    Requirement,
+    Section,
+    StatusUpdate,
+    UserProfile,
+)
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -31,6 +39,12 @@ class SectionIdSerializer(serializers.ModelSerializer):
         ]
 
 
+class InstructorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Instructor
+        fields = ["id", "name"]
+
+
 class MiniSectionSerializer(serializers.ModelSerializer):
     section_id = serializers.CharField(
         source="full_code",
@@ -42,7 +56,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    instructors = serializers.StringRelatedField(
+    instructors = InstructorSerializer(
         many=True,
         read_only=True,
         help_text="A list of the names of the instructors teaching this section.",
@@ -68,7 +82,8 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             "activity",
             "meeting_times",
             "instructors",
-            "course_title"
+            "course_title",
+            "semester",
         ]
         read_only_fields = fields
 
@@ -89,15 +104,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    semester = serializers.SerializerMethodField(
-        help_text=dedent(
-            """
-            The semester of the section (of the form YYYYx where x is A [for spring], B [summer],
-            or C [fall]), e.g. 2019C for fall 2019. We organize requirements by semester so that we
-            don't get huge related sets which don't give particularly good info.
-            """
-        )
-    )
     meetings = MeetingSerializer(
         many=True,
         read_only=True,
@@ -108,7 +114,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    instructors = serializers.StringRelatedField(
+    instructors = InstructorSerializer(
         read_only=True,
         many=True,
         help_text="A list of the names of the instructors teaching this section.",
@@ -137,10 +143,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
     work_required = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
     )
-
-    @staticmethod
-    def get_semester(obj):
-        return obj.course.semester
 
     class Meta:
         model = Section
@@ -270,7 +272,6 @@ class CourseDetailSerializer(CourseListSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
-            "semester",
         ] + ["crosslistings", "requirements", "sections",]
         read_only_fields = fields
 
@@ -283,7 +284,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(
-        read_only=False, help_text="The user profile object, storing collected info about the user."
+        read_only=False,
+        help_text="The user profile object, storing collected info about the user.",
+        required=False,
     )
 
     def update(self, instance, validated_data):
