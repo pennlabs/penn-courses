@@ -871,15 +871,18 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                 path = path_func()
                 if path not in data["paths"].keys():
                     raise ValueError(
-                        f"Check the {parameter_name} input to PcxAutoSchema instantiation at "
-                        f"{traceback}; invalid path found: '{path}'"
+                        f"Check the {original_kwarg} input to PcxAutoSchema instantiation at "
+                        f"{traceback}; invalid path found: '{path}'."
+                        + ("If 'id' is in your args list, check if you set primary_key=True for "
+                           "some field in the relevant model, and if so change 'id' "
+                           "in your args list to the name of that field." if "id" in path else "")
                     )
                 for method in parameter_dict[path_func]:
                     if method == "traceback":
                         continue
                     if method.lower() not in data["paths"][path].keys():
                         raise ValueError(
-                            f"Check the {parameter_name} input to PcxAutoSchema instantiation at "
+                            f"Check the {original_kwarg} input to PcxAutoSchema instantiation at "
                             f"{traceback}; invalid method '{method}' for path '{path}'"
                         )
 
