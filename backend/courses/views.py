@@ -6,7 +6,6 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 import courses.examples as examples
-from alert.serializers import MiniSectionStatsSerializer, SectionDetailStatsSerializer
 from courses.filters import CourseSearchFilterBackend
 from courses.models import Course, Requirement, Section, StatusUpdate
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
@@ -18,6 +17,8 @@ from courses.serializers import (
     SectionDetailSerializer,
     StatusUpdateSerializer,
     UserSerializer,
+    MiniSectionStatsSerializer,
+    SectionDetailStatsSerializer
 )
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
@@ -82,6 +83,8 @@ class SectionStatsList(SectionList):
     are made available.
     """
 
+    # TODO: update PcxAutoSchema examples
+
     serializer_class = MiniSectionStatsSerializer
 
 
@@ -111,6 +114,8 @@ class SectionStatsDetail(SectionDetail):
     """
     Just like SectionDetail, except also includes stats relevant to PCA in returned sections.
     """
+
+    # TODO: update PcxAutoSchema examples
 
     serializer_class = SectionDetailStatsSerializer
 

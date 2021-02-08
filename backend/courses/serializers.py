@@ -87,6 +87,25 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+class MiniSectionStatsSerializer(MiniSectionSerializer):
+    """
+    A copy of MiniSectionSerializer, except includes the current_pca_registration_volume and
+    current_relative_pca_popularity statistics additionally.
+    """
+    class Meta:
+        model = Section
+        fields = [
+            "section_id",
+            "status",
+            "activity",
+            "meeting_times",
+            "instructors",
+            "course_title",
+            "current_pca_registration_volume",  # added
+            "current_relative_pca_popularity"  # added
+        ]
+        read_only_fields = fields
+
 
 course_quality_help = "The average course quality rating for this section, on a scale of 0-4."
 difficulty_help = "The average difficult rating for this section, on a scale of 0-4."
@@ -159,6 +178,32 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "difficulty",
             "work_required",
         ] + ["associated_sections",]
+        read_only_fields = fields
+
+
+class SectionDetailStatsSerializer(SectionDetailSerializer):
+    """
+    A copy of SectionDetailSerializer, except includes the current_pca_registration_volume and
+    current_relative_pca_popularity statistics additionally.
+    """
+    class Meta:
+        model = Section
+        fields = [
+            "id",
+            "status",
+            "activity",
+            "credits",
+            "semester",
+            "meetings",
+            "instructors",
+            "course_quality",
+            "instructor_quality",
+            "difficulty",
+            "work_required",
+            "associated_sections",
+            "current_pca_registration_volume",  # added
+            "current_relative_pca_popularity"  # added
+        ]
         read_only_fields = fields
 
 

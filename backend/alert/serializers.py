@@ -1,13 +1,9 @@
 from textwrap import dedent
 
-from django.core.cache import cache
-from django.db.models import Count, Max, Min
 from rest_framework import serializers
 
 from alert.models import Registration
 from courses.models import Section, StatusUpdate, string_dict_to_html
-from courses.serializers import MiniSectionSerializer, SectionDetailSerializer
-from courses.util import get_current_semester
 
 
 registration_fields = [
@@ -131,49 +127,3 @@ class RegistrationUpdateSerializer(serializers.ModelSerializer):
         model = Registration
         fields = registration_fields + ["cancelled", "deleted", "resubscribe"]
         read_only_fields = [f for f in registration_fields if f != "auto_resubscribe"]
-
-
-class MiniSectionStatsSerializer(MiniSectionSerializer):
-    """
-    A copy of MiniSectionSerializer, except includes the current_pca_registration_volume and
-    current_relative_pca_popularity statistics additionally.
-    """
-    class Meta:
-        model = Section
-        fields = [
-            "section_id",
-            "status",
-            "activity",
-            "meeting_times",
-            "instructors",
-            "course_title",
-            "current_pca_registration_volume",  # added
-            "current_relative_pca_popularity"  # added
-        ]
-        read_only_fields = fields
-
-
-class SectionDetailStatsSerializer(SectionDetailSerializer):
-    """
-    A copy of SectionDetailSerializer, except includes the current_pca_registration_volume and
-    current_relative_pca_popularity statistics additionally.
-    """
-    class Meta:
-        model = Section
-        fields = [
-            "id",
-            "status",
-            "activity",
-            "credits",
-            "semester",
-            "meetings",
-            "instructors",
-            "course_quality",
-            "instructor_quality",
-            "difficulty",
-            "work_required",
-            "associated_sections",
-            "current_pca_registration_volume",  # added
-            "current_relative_pca_popularity"  # added
-        ]
-        read_only_fields = fields
