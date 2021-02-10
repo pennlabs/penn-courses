@@ -291,15 +291,6 @@ class RequirementListTestCase(TestCase):
         self.assertEqual(1, len(response.data))
 
 
-class DocumentationTestCase(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-
-    def test_no_error(self):
-        response = self.client.get(reverse("openapi-schema"))
-        self.assertEqual(response.status_code, 200)
-
-
 class SectionListTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
@@ -872,3 +863,20 @@ class UserTestCase(TestCase):
         self.assertEqual(403, response.status_code)
         response = client2.get(reverse("user-view"))
         self.assertEqual(403, response.status_code)
+
+
+class DocumentationTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_no_error(self):
+        response = self.client.get(reverse("openapi-schema"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_no_error_multiple_times(self):
+        response = self.client.get(reverse("openapi-schema"))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse("openapi-schema"))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse("openapi-schema"))
+        self.assertEqual(response.status_code, 200)
