@@ -35,6 +35,23 @@ const Loading = styled.div`
     width: 100%;
     border: none;
     font-size: 3rem;
+    color: transparent !important;
+    pointer-events: none;
+    display: flex;
+
+    &:after {
+        animation: spinAround 0.5s infinite linear;
+        border: 2px solid #dbdbdb;
+        border-radius: 9999px;
+        border-right-color: transparent;
+        border-top-color: transparent;
+        content: "";
+        text-align: center;
+        display: block;
+        height: 1em;
+        width: 1em;
+        margin: auto;
+    }
 `;
 
 const EmptyResultsContainer = styled.div`
@@ -62,7 +79,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
     const isLoading =
         isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
-    const loadingIndicator = <Loading className="button is-loading" />;
+    const loadingIndicator = <Loading />;
 
     let element = (
         <EmptyResultsContainer>

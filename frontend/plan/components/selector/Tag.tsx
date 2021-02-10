@@ -3,6 +3,7 @@ import styled from "styled-components";
 
 interface TagProps {
     onClick?: () => void;
+    // Whether or not there are additional tags hidden
     isAdder?: boolean;
 }
 
