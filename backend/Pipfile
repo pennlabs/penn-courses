@@ -18,7 +18,7 @@ black = "==19.10b0"
 
 [packages]
 django = "*"
-psycopg2 = "*"
+psycopg2 = {version = "*", sys_platform = "== 'linux'"}
 requests = "*"
 twilio = "*"
 phonenumbers = "*"
@@ -39,7 +39,7 @@ django-cors-headers = "*"
 django-runtime-options = "*"
 pyyaml = "*"
 uritemplate = "*"
-uwsgi = "*"
+uwsgi = {version = "*", sys_platform = "== 'linux'"}
 ddt = "*"
 lark-parser = "*"
 tqdm = "*"
