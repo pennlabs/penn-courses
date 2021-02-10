@@ -79,8 +79,6 @@ const Selector: FunctionComponent<SelectorProps> = ({
     const isLoading =
         isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
-    const loadingIndicator = <Loading />;
-
     let element = (
         <EmptyResultsContainer>
             <img src="/icons/empty-state-search.svg" alt="" />
@@ -142,7 +140,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     style={{ height: "calc(100vh - 12.5em)" }}
                 >
                     {isLoadingCourseInfo ? (
-                        loadingIndicator
+                        <Loading />
                     ) : (
                         <CourseInfo
                             getCourse={getCourse}
@@ -161,7 +159,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
             />
         );
     }
-    return <>{isLoading ? loadingIndicator : element}</>;
+    return <>{isLoading ? <Loading /> : element}</>;
 };
 
 const mapStateToProps = ({
