@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import React from "react";
 
 export const Column = styled.div`
     display: block;
@@ -138,5 +137,29 @@ export const CheckboxLabel = styled.label`
 
         position: absolute;
         content: "";
+    }
+`;
+
+export const Loading = styled.div`
+    height: 100%;
+    width: 100%;
+    border: none;
+    font-size: 3rem;
+    color: transparent !important;
+    pointer-events: none;
+    display: flex;
+
+    &:after {
+        animation: spinAround 0.5s infinite linear;
+        border: 2px solid #dbdbdb;
+        border-radius: 9999px;
+        border-right-color: transparent;
+        border-top-color: transparent;
+        content: "";
+        text-align: center;
+        display: block;
+        height: 1em;
+        width: 1em;
+        margin: auto;
     }
 `;

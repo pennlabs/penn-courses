@@ -6,6 +6,8 @@ import { ThunkDispatch } from "redux-thunk";
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
 
+import { Loading } from "../bulma_derived_components";
+
 import {
     fetchCourseDetails,
     updateCourseInfo,
@@ -29,30 +31,6 @@ interface SelectorProps {
     setScrollPos: (scrollPos: number) => void;
     sortMode: SortMode;
 }
-
-const Loading = styled.div`
-    height: 100%;
-    width: 100%;
-    border: none;
-    font-size: 3rem;
-    color: transparent !important;
-    pointer-events: none;
-    display: flex;
-
-    &:after {
-        animation: spinAround 0.5s infinite linear;
-        border: 2px solid #dbdbdb;
-        border-radius: 9999px;
-        border-right-color: transparent;
-        border-top-color: transparent;
-        content: "";
-        text-align: center;
-        display: block;
-        height: 1em;
-        width: 1em;
-        margin: auto;
-    }
-`;
 
 const EmptyResultsContainer = styled.div`
     font-size: 0.8rem;
