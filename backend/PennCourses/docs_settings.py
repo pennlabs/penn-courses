@@ -1,0 +1,1435 @@
+import inspect
+import json
+import re
+from copy import deepcopy
+from inspect import getdoc
+from textwrap import dedent
+
+import jsonref
+from django.urls import reverse
+from rest_framework import serializers
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import JSONOpenAPIRenderer
+from rest_framework.schemas.openapi import AutoSchema
+from rest_framework.schemas.utils import is_list_view
+
+
+"""
+This file includes code and settings for our PCx autodocumentation
+(based on a Django-generated OpenAPI schema and Redoc, which formats that schema into a
+readable documentation web page). Some useful links:
+https://github.com/Redocly/redoc
+https://github.com/Redocly/redoc/blob/master/docs/redoc-vendor-extensions.md#tagGroupObject
+https://www.django-rest-framework.org/api-guide/schemas
+https://www.django-rest-framework.org/topics/documenting-your-api/
+A Redoc example from which many of the concepts in this file were taken from:
+https://redocly.github.io/redoc/
+https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
+
+
+MAINTENENCE:
+For the auto-documentation to work, you need to include the line:
+schema = PcxAutoSchema()
+in all views (this will allow for proper tag and operation_id generation; see below).
+Or, if you are using function-based views, include the following decorator above your views:
+@schema(PcxAutoSchema())
+and include the following import in your views.py file:
+from rest_framework.decorators import schema
+(This is instructed in the DRF docs:
+https://www.django-rest-framework.org/api-guide/views/#view-schema-decorator.)
+In all cases, you must include the following import for PcxAutoSchema:
+from PennCourses.docs_settings import PcxAutoSchema
+PcxAutoSchema (defined below) is a subclass of Django's AutoSchema, and it makes some improvements
+on that class for use with Redoc as well as some customizations specific to our use-cases.
+
+You should include docstrings in views (see
+https://www.django-rest-framework.org/coreapi/from-documenting-your-api/#documenting-your-views)
+explaining the function of the view (or of each method if there are multiple supported methods).
+If the meaning of a tag group created automatically by the docs
+(visible in the nav bar) is not clear, you should add a custom description.
+You can do that using the custom_tag_descriptions dictionary below.
+If any auto-generated names are unsatisfactory, you can also manually change any
+operation_id, tag, or tag group name (see below for more on what these are).
+You can update the introductory sections / readme by editing the markdown-formatted
+openapi_description text below.
+When writing any class-based views where you specify a queryset (such as ViewSets), even if you
+override get_queryset(), you should also specify the queryset field with something like
+queryset = ExampleModel.objects.none() (using .none() to prevent accidental data breach), or
+alternatively a sensible queryset default (e.g. queryset = Course.with_reviews.all() for the
+CourseDetail ViewSet). Basically, just make sure the queryset parameter is always pointing to the
+relevant model (if you are using queryset or get_queryset()). This will allow the
+auto-documentation to access the model underlying the queryset (it cannot call get_queryset()
+since it cannot generate a request object which the get_queryset() method might try to access).
+If the meaning of a model or serializer field is not clear, you should include the string help_text
+as a parameter when initializing the field, explaining what that field stores. This will show up
+in the documentation such that parameter descriptions are inferred from model or serializer field
+help text. For properties, the docstring will be used since there is no
+way to define help_text for a property; so even if a property's use is clear based on the code,
+keep in mind that describing it's purpose in the docstring will be helpful to frontend engineers
+who are unfamiliar with the backend code (also, don't include a :return: tag as you might normally
+do for functions; a property is to be treated as a dynamic field, not a method, so just state
+what the method returns as the only text in the docstring).
+Including help_text/docstring when a field/property's purpose is unclear will also
+make the model/serializer code more understandable for newbies. And furthermore, all help_text
+and descriptive docstrings will not only help future Labs developers but it will also show up in
+the backend documentation (accessible at /admin/doc/).
+
+There are a number of dictionaries you can use to customize these auto-docs; some are passed into
+PcxAutoSchema as initialization kwargs, and some are in this file. Often, these dictionaries
+will contain layers of nested dictionaries with a schema of path/method/...
+However, you will notice in example code snippets and in our codebase, these paths are not
+hardcoded but instead are indicated using reverse_func(...).
+Whenever you see a reverse_func(...) function in these docs or in the code,
+think of that as the url corresponding to the passed-in url name with path parameters
+replaced in order by the arguments in the args=[...] kwarg list. It works just like Django's
+reverse function:
+https://docs.djangoproject.com/en/3.1/ref/urlresolvers/#reverse
+To determine the name of a certain url, run `python manage.py show_urls` which will print
+a list of urls and their corresponding names.
+Your args list should always contain the string names of each of the
+path parameters of the url, in the order they appear in the url. For instance,
+reverse_func("courses-detail", args=["semester", "full_code"])
+would be used to reference /api/base/{semester}/courses/{full_code}/.
+We use reverse_func rather than hardcoding urls so that the only places with hardcoded
+urls are urls.py files (so urls can easily be changed).
+Unimportant implementation detail: in reality, reverse_func doesn't return a string but actually
+returns a function which returns a string (see the reverse_func docstring above if you are curious
+as to why this is necessary to avoid circular imports). You don't need to keep this in mind when
+documenting your code however, since it is handled under the hood by our autodocumentation code.
+Effectively you can think of reverse_func as Django's reverse function.
+
+By default, response codes will be assumed to be 204 (for delete) or 200 (in all other cases).
+To set custom response codes for a path/method (with a custom description), include a
+response_codes kwarg in your PcxAutoSchema instantiation.  You should input
+a dict mapping paths (indicated by reverse_func) to dicts, where each subdict maps string methods
+to dicts, and each further subdict maps int response codes to string descriptions.  An example:
+    response_codes={
+        reverse_func("schedules-list"): {
+           "GET": {
+               200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",
+               403: "Authentication credentials were not provided."
+           },
+           "POST": {
+               201: "Schedule successfully created.",
+               200: "Schedule successfully updated (a schedule with the "
+                    "specified id already existed).",
+               400: "Bad request (see description above).",
+               403: "Authentication credentials were not provided."
+           }
+        },
+        ...
+    }
+Note that if you include "[DESCRIBE_RESPONSE_SCHEMA]" in your string description, that will
+not show up in the description text (it will automatically be removed) but instead will indicate
+that that response should have a response body schema show up in the documentation (the schema will
+be automatically generated by default, but can be customized using the override_schema kwarg; see
+below).  You should generally enable a response schema for responses which will contain useful data
+for the frontend beyond the response code.  Note that in the example above, the only such response
+is the listing of schedules (the GET 200 response).
+
+You should add examples for an API route if the auto-generated examples are not to
+your liking (they are usually not as good as actual examples with realistic values).
+You can do this by including an examples kwarg in your PcxAutoSchema instantiation.  You should
+input a dict mapping paths (indicated by reverse_func) to dicts, where each subdict maps string
+methods to dicts, and each further subdict is of the following form:
+    {
+        "requests": [...],
+        "responses": [...]
+    }
+where requests and responses map to lists of dicts.  The dicts in these lists are examples objects,
+the format of which is governed by the OpenAPI specification
+(http://spec.openapis.org/oas/v3.0.3.html#fixed-fields-15) WITH ONE IMPORTANT ADDITION:
+you must include a "code":int key/value in any object in the responses list, specifying which
+response code that example corresponds to.  Here is a full example of the entire examples dict:
+    examples = {
+        reverse_func("registrations-list"): {
+            "POST": {
+                "requests": [
+                    {
+                        "summary": "Maximally Customized POST",
+                        "value": {
+                            "section": "CIS-120-001",
+                            "auto_resubscribe": True
+                        }
+                    }
+                ],
+                "responses": [
+                    {
+                        "code": 201,
+                        "summary": "Registration Created Successfully",
+                        "value": {
+                            "message": "Your registration for CIS-120-001 was successful!",
+                            "id": 1
+                        }
+                    }
+                ]
+            }
+        }
+        ...
+    }
+Since these examples can get quite long, it is good practice to move your examples dict to
+a separate examples.py file (and import the dict into your views.py file or wherever you are
+instantiating the PcxAutoSchema class).
+
+If you want to make manual changes to a response schema, include an override_schema kwarg in your
+PcxAutoSchema instantiation.  You should input a dict mapping paths (indicated by reverse_func) to
+dicts, where each subdict maps string methods to dicts, and each further subdict maps int response
+codes to the objects specifying the desired response schema.
+The format of these objects is governed by the OpenAPI specification
+(see the dicts mapped to by "schema" keys in the examples at the following link:
+http://spec.openapis.org/oas/v3.0.3.html#fixed-fields-14).  An example:
+    override_schema={
+        reverse_func("registrations-list"): {
+            "POST": {
+                201: {
+                    "properties": {
+                        "message": {
+                            "type": "string"
+                        },
+                        "id": {
+                            "type": "integer"
+                        }
+                    }
+                },
+            }
+        }
+    }
+
+If you want to manually set the description of a path parameter for a certain path/method,
+you can do so by including a custom_path_parameter_desc kwarg in your PcxAutoSchema instantiation,
+with keys of the form path > method > variable_name pointing to a string description.  Example:
+    custom_path_parameter_desc={
+        reverse_func("statusupdate", args=["full_code"]): {
+            "GET": {
+                "full_code": (
+                    "The code of the section which this status update applies to, in the "
+                    "form '{dept code}-{course code}-{section code}', e.g. 'CIS-120-001' for the "
+                    "001 section of CIS-120."
+                )
+            }
+        }
+    }
+
+Finally, if you still need to further customize your API schema, you can do this in the
+make_manual_schema_changes function below. This is applied to the final schema after all
+automatic changes / customizations are applied.  For more about the format of an OpenAPI
+schema (which you would need to know a bit about to make further customizations), see this
+documentation:
+http://spec.openapis.org/oas/v3.0.3.html
+"""
+
+
+def reverse_func(*pargs, args=None, **kwargs):
+    """
+    This function returns a function which, when called, will return the string url associated
+    with the given args and kwargs, just like the reverse function would:
+    https://docs.djangoproject.com/en/3.1/ref/urlresolvers/#reverse
+    Importantly, it allows for evaluation of the string to
+    occur later when the docs are generated, rather than during the creation of the views
+    (which causes an unavoidable circular import problem).
+    """
+    if args is None:
+        args = []
+
+    def get_url():
+        # replace args with unique pattern which won't be found in the rest of the url
+        # (DRF throws an error if we include curly braces in a string in args, so this hack
+        # allows us to identify each path parameter in the url and replace it).
+        if "hopefully_unique_str_path_parameter" in reverse(
+            *pargs, args=["0" for _ in args], **kwargs
+        ):
+            raise ValueError(
+                "Please remove the string 'hopefully_unique_str_path_parameter' from all urls. Wtf."
+            )
+        new_args = [f"hopefully_unique_str_path_parameter_{i}" for i in range(len(args))]
+        url = reverse(*pargs, args=new_args, **kwargs)
+        for i, pretend_param in enumerate(new_args):
+            # Surround given path parameters with curly braces (can't be used in the args
+            # list of reverse, but is required by the OpenAPI specification:
+            # https://swagger.io/docs/specification/describing-parameters/)
+            url = url.replace(pretend_param, "{" + args[i] + "}")
+        return url
+
+    return get_url
+
+
+# ============================= Begin Customizable Settings ========================================
+
+
+# The following is the description which shows up at the top of the documentation site
+openapi_description = """
+# Introduction
+Penn Courses ([GitHub](https://github.com/pennlabs/penn-courses)) is the umbrella
+categorization for [Penn Labs](https://pennlabs.org/)
+products designed to help students navigate the course registration process. It currently
+includes three products, each with their own API documented on this page:
+Penn Course Alert, Penn Course Plan, and Penn Course Review.
+
+See `Penn Labs Notion > Penn Courses` for more details on each of our (currently) three apps.
+
+For instructions on how to maintain this documentation while writing code,
+see the comments in `backend/PennCourses/docs_settings.py` (it is easy, and will be helpful
+for maintaining Labs knowledge in spite of our high member turnover rate).
+
+See our
+[GitHub](https://github.com/pennlabs/penn-courses) repo for instructions on
+installation, running in development, and loading in course data for development. Visit
+the `/admin/doc/` route ([link](/admin/doc/)) for the backend documentation (admin account required,
+which can be made by running `python manage.py createsuperuser` in terminal/CLI).
+
+# Unified Penn Courses
+By virtue of the fact that all Penn Courses products deal with, well, courses,
+it would make sense for all three products to share the same backend.
+
+We realized the necessity of a unified backend when attempting to design a new Django backend
+for Penn Course Plan. We like to live by the philosophy of keeping it
+[DRY](https://en.wikipedia.org/wiki/Don't_repeat_yourself), and
+PCA and PCP's data models both need to reference course and
+section information. We could have simply copied over code (a bad idea)
+or created a shared reusable Django app (a better idea) for course data,
+but each app would still need to download copies of the same data.
+Additionally, this will help us build integrations between our Courses products.
+
+See `Penn Labs Notion > Penn Courses > Unified Penn Courses` for more details on our
+codebase file structure, data models, and multi-site devops scheme.
+
+# Authentication
+Currently, PCx user authentication is taken care of by platform's Penn Labs Accounts system.
+See `Penn Labs Notion > Platform > The Accounts Engine` for extensive documentation and
+links to repositories for this system. When tags or routes are described as requiring user
+authentication, they are referring to this system. See the Django docs for more on Django's
+[User Authentication system](https://docs.djangoproject.com/en/3.0/topics/auth/) which
+underlies PLA.
+"""
+
+
+# Note that tags are groupings of routes by one name. For instance, all the routes
+# GET, POST /api/plan/schedules/ and GET, PUT, DELETE /api/plan/schedules/{id}
+# are organized under the shared tag "[PCP] Schedule".
+# You can click on a tag in the table of contents of our Redoc documenation, and the section will
+# expand to show all the underlying routes.
+
+# This dictionary takes app names (the string just after /api/ in the path or just after /
+# if /api/ does not come at the beginning of the path)
+# as values and abbreviated versions of those names as values.  It is used to
+# add an abbreviated app prefix designating app membership to each route's tag name.
+# For instance the Registration tag is prepended with [PCA] to get "[PCA] Registration" since
+# its routes start with /api/alert/, and "alert": "PCA" is a key/value pair in the following dict.
+subpath_abbreviations = {
+    "plan": "PCP",
+    "alert": "PCA",
+    "review": "PCR",
+    "base": "PCx",
+    "accounts": "Accounts",
+}
+assert all(
+    [isinstance(key, str) and isinstance(val, str) for key, val in subpath_abbreviations.items()]
+)
+
+
+# Tag groups organize tags into groups; they show up in the left sidebar and divide the categories
+# of routes into meta categories. We are using them to separate our tags by app.
+# This dictionary should map abbreviated app names (values from the dict above) to
+# longer form names which will show up as the tag group name in the documentation.
+tag_group_abbreviations = {
+    "PCP": "Penn Course Plan",
+    "PCA": "Penn Course Alert",
+    "PCR": "Penn Course Review",
+    "PCx": "Penn Courses (Base)",
+    "Accounts": "Penn Labs Accounts",
+    "": "Other"  # Catches all other tags (this should normally be an empty tag group and if so
+    # it will not show up in the documentation, but is left as a debugging safeguard).
+    # If routes are showing up in a "Misc" tag in this group, make sure you set the schema for
+    # those views to be PcxAutoSchema, as is instructed in the meta docs above.
+}
+assert all(
+    [isinstance(key, str) and isinstance(val, str) for key, val in tag_group_abbreviations.items()]
+)
+
+
+# "operation ids" are the unique titles of routes within a tag (if you click on a tag you see
+# a list of operation ids, each corresponding to a certain route).
+
+# name here refers to the name underlying the operation id of the view
+# this is NOT the name that you see on the API, it is the name underlying it,
+# and is used in construction of that name
+# For instance, for POST /api/plan/schedules/, the name is "Schedule" and the operation_id is
+# "Create Schedule" (see below get_name and _get_operation_id methods in PcxAutoSchema for
+# a more in-depth explanation of the difference).
+# IMPORTANT: The name also defines what the automatically-set tag name will be.
+# That's why this custom_name is provided separately from custom_operation_id below;
+# you can use it if you want to change the operation_id AND the tag name at once.
+custom_name = {  # keys are (path, method) tuples, values are custom names
+    # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
+    (reverse_func("registrationhistory-list"), "GET"): "Registration History",
+    (reverse_func("registrationhistory-detail", args=["id"]), "GET"): "Registration History",
+    (reverse_func("statusupdate", args=["full_code"]), "GET"): "Status Update",
+}
+assert all(
+    [isinstance(k, tuple) and len(k) == 2 and isinstance(k[1], str) for k in custom_name.keys()]
+)
+
+
+custom_operation_id = {  # keys are (path, method) tuples, values are custom names
+    # method is one of ("GET", "POST", "PUT", "PATCH", "DELETE")
+    (reverse_func("registrationhistory-list"), "GET"): "List Registration History",
+    (
+        reverse_func("registrationhistory-detail", args=["id"]),
+        "GET",
+    ): "Retrieve Historic Registration",
+    (reverse_func("statusupdate", args=["full_code"]), "GET"): "List Status Updates",
+    (reverse_func("courses-search", args=["semester"]), "GET"): "Course Search",
+    (reverse_func("section-search", args=["semester"]), "GET"): "Section Search",
+}
+assert all(
+    [
+        isinstance(k, tuple) and len(k) == 2 and isinstance(k[1], str)
+        for k in custom_operation_id.keys()
+    ]
+)
+
+
+# Use this dictionary to rename tags, if you wish to do so
+# keys are old tag names (seen on docs), values are new tag names
+custom_tag_names = {}
+assert all([isinstance(key, str) and isinstance(val, str) for key, val in custom_tag_names.items()])
+
+
+# Note that you can customize the tag for all routes from a certain view by passing in a
+# list containing only that tag into the tags kwarg of PcxAutoSchema instantiation
+# (inherited behavior from Django AutoSchema:
+# https://www.django-rest-framework.org/api-guide/schemas/#autoschema)
+
+# tag descriptions show up in the documentation body below the tag name
+custom_tag_descriptions = {
+    # keys are tag names (after any name changes from above dicts), vals are descriptions
+    "[PCP] Schedule": dedent(
+        """
+        These routes allow interfacing with the user's PCP Schedules for the current semester,
+        stored on the backend. Ever since we integrated Penn Labs Accounts into PCP so that users
+        can store their schedules across devices and browsers, we have stored users' schedules on
+        our backend (rather than local storage).
+        """
+    ),
+    "[PCP] Requirements": dedent(
+        """
+        These routes expose the academic requirements for the current semester which are stored on
+        our backend (hopefully comprehensive).
+        """
+    ),
+    "[PCP] Course": dedent(
+        """
+        These routes expose course information for PCP for the current semester.
+        """
+    ),
+    "[PCA] Registration History": dedent(
+        """
+        These routes expose a user's registration history (including
+        inactive and obsolete registrations) for the current semester.  Inactive registrations are
+        registrations which would not trigger a notification to be sent if their section opened,
+        and obsolete registrations are registrations which are not at the head of their resubscribe
+        chain.
+        """
+    ),
+    "[PCA] Registration": dedent(
+        """
+        As the main API endpoints for PCA, these routes allow interaction with the user's
+        PCA registrations.  An important concept which is referenced throughout the documentation
+        for these routes is that of the "resubscribe chain".  A resubscribe chain is a chain
+        of PCA registrations where the tail of the chain was an original registration created
+        through a POST request to `/api/alert/registrations/` specifying a new section (one that
+        the user wasn't already registered to receive alerts for).  Each next element in the chain
+        is a registration created by resubscribing to the previous registration (once that
+        registration had triggered an alert to be sent), either manually by the user or
+        automatically if auto_resubscribe was set to true.  Then, it follows that the head of the
+        resubscribe chain is the most relevant Registration for that user/section combo; if any
+        of the registrations in the chain are active, it would be the head.  And if the head
+        is active, none of the other registrations in the chain are active.
+
+        Note that a registration will send an alert when the section it is watching opens, if and
+        only if it hasn't sent one before, it isn't cancelled, and it isn't deleted.  If a
+        registration would send an alert when the section it is watching opens, we call it
+        "active".  See the Create Registration docs for an explanation of how to create a new
+        registration, and the Update Registration docs for an explanation of how you can modify
+        a registration after it is created.
+
+        In addition to sending alerts for when a class opens up, we have also implemented
+        an optionally user-enabled feature called "close notifications".
+        If a registration has close_notification enabled, it will act normally when the watched
+        section opens up for the first time (triggering an alert to be sent). However, once the
+        watched section closes, it will send another alert (the email alert will be in the same
+        chain as the original alert) to let the user know that the section has closed. Thus,
+        if a user sees a PCA notification on their phone during a class for instance, they won't
+        need to frantically open up their laptop and check PennInTouch to see if the class is still
+        open just to find that it is already closed.  To avoid spam and wasted money, we DO NOT
+        send any close notifications over text. So the user must have an email saved or use
+        push notifications in order to be able to enable close notifications on a registration.
+        Note that the close_notification setting carries over across resubscriptions, but can be
+        disabled at any time using Update Registration.
+
+        After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a `user` field
+        pointing to the user's Penn Labs Accounts User object.  In other words, we implemented a
+        user/accounts system for PCA which required that
+        people log in to use the website. Thus, the contact information used in PCA alerts
+        is taken from the user's User Profile.  You can edit this contact information using
+        Update User or Partial Update User.  If push_notifications is set to True, then
+        a push notification will be sent when the user is alerted, but no text notifications will
+        be sent (as that would be a redundant alert to the user's phone). Otherwise, an email
+        or a text alert is sent if and only if contact information for that medium exists in
+        the user's profile.
+        """
+    ),
+    "[PCA] User": dedent(
+        """
+        These routes expose a user's saved settings (from their Penn Labs Accounts user object).
+        For PCA, the profile object is of particular importance; it stores the email and
+        phone of the user (with a null value for either indicating the user doesn't want to be
+        notified using that medium).
+        """
+    ),
+    "[PCA] Sections": dedent(
+        """
+        This route is used by PCA to get data about sections.
+        """
+    ),
+    "[Accounts] User": dedent(
+        """
+        These routes allow interaction with the User object of a Penn Labs Accounts user.
+        """
+    ),
+    "Miscs": dedent(
+        """
+        <span style="color:red;">WARNING</span>: This tag should not be used, and its existence
+        indicates you may have forgotten to set a view's schema to PcxAutoSchema for the views
+        under this tag. See the meta documentation in backend/PennCourses/docs_settings.py of our
+        codebase for instructions on how to properly set a view's schema to PcxAutoSchema.
+        """
+    ),
+}
+assert all(
+    [isinstance(key, str) and isinstance(val, str) for key, val in custom_tag_descriptions.items()]
+)
+
+
+labs_logo_url = "https://i.imgur.com/tVsRNxJ.png"
+
+
+def make_manual_schema_changes(data):
+    """
+    Use this space to make manual modifications to the schema before it is
+    presented to the user. Only make manual changes as a last resort, and try
+    to use built-in functionality whenever possible.
+    These modifications were written by referencing the existing schema at /api/openapi
+    and also an example schema (written in YAML instead of JSON, but still
+    easily interpretable as JSON) from a Redoc example:
+    https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
+    """
+
+    data["info"]["x-logo"] = {"url": labs_logo_url, "altText": "Labs Logo"}
+    data["info"]["contact"] = {"email": "contact@pennlabs.org"}
+
+    # Remove ID from the documented PUT request body for /api/plan/schedules/
+    # (the id field in the request body is ignored in favor of the id path parameter)
+    for content_ob in data["paths"][reverse_func("schedules-detail", args=["id"])()]["put"][
+        "requestBody"
+    ]["content"].values():
+        content_ob["schema"]["properties"].pop("id", None)
+
+    # Make the id and semester fields show up in PCP schedule request body under sections
+    # (and make id required)
+    for path, path_ob in data["paths"].items():
+        if reverse_func("schedules-list")() not in path:
+            continue
+        for method_ob in path_ob.values():
+            if "requestBody" not in method_ob.keys():
+                continue
+            for content_ob in method_ob["requestBody"]["content"].values():
+                properties_ob = content_ob["schema"]["properties"]
+                if "sections" in properties_ob.keys():
+                    section_ob = properties_ob["sections"]
+                    if "required" not in section_ob["items"].keys():
+                        section_ob["items"]["required"] = []
+                    section_ob["items"]["required"].append("id")
+                    section_ob["items"]["required"].append("semester")
+                    for field, field_ob in section_ob["items"]["properties"].items():
+                        if field == "id" or field == "semester":
+                            field_ob["readOnly"] = False
+                        if field == "id":
+                            field_ob["readOnly"] = False
+
+    # Make application/json the only content type
+    def delete_other_content_types_dfs(dictionary):
+        if not isinstance(dictionary, dict):
+            return None
+        dictionary.pop("application/x-www-form-urlencoded", None)
+        dictionary.pop("multipart/form-data", None)
+        for value in dictionary.values():
+            delete_other_content_types_dfs(value)
+
+    delete_other_content_types_dfs(data)
+
+
+# ============================== End Customizable Settings =========================================
+
+
+def not_using_reverse_func(dictionary_name, key, PcxAutoSchema=False, traceback=None):
+    """
+    This function should be called when it is detected that a user did not use the reverse_func
+    function to generate a url (and instead hardcoded the url as a string or otherwise
+    messed up). It raises an error to let the user know about their mistake.
+    """
+    if not PcxAutoSchema:
+        # Error occurred in a dictionary in docs_settings.py, not in PcxAutoSchema initialization.
+        raise ValueError(
+            f"Check your {dictionary_name} dictionary in PennCourses/docs_settings.py "
+            f"for an invalid key: {str(key)}. You should be calling the reverse_func function "
+            "for all your keys. Reverse_func returns a function which returns a string."
+        )
+    else:
+        assert traceback is not None  # indicates autodoc code error, not user error
+        raise ValueError(
+            f"Check your {dictionary_name} dictionary in PcxAutoSchema initialization at "
+            f"{traceback} for an invalid key: {str(key)}. You should be calling the reverse_func "
+            "function for all your keys. Reverse_func returns a function which returns a string."
+        )
+
+
+def split_camel(w):
+    return re.sub("([a-z0-9])([A-Z])", lambda x: x.groups()[0] + " " + x.groups()[1], w)
+
+
+def pluralize_word(s):
+    return s + "s"  # naive solution because this is how it is done in DRF
+
+
+cumulative_examples = dict()  # populated by PcxAutoSchema __init__ method calls
+
+
+class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
+    def render(self, data_raw, media_type=None, renderer_context=None):
+        """
+        This overridden method modifies the JSON OpenAPI schema generated by Django
+        to add tag groups, and most of the other customization specified above.
+        It was written by referencing the existing schema at /api/openapi
+        and also an example schema (written in YAML instead of JSON, but still
+        easily interpretable as JSON) from a Redoc example:
+        https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
+        """
+
+        # The following resolves JSON refs which are not handled automatically in Python dicts
+        # https://swagger.io/docs/specification/using-ref/
+        data = jsonref.loads(json.dumps(data_raw))
+
+        # Determine existing tags and create a map from tag to a list of the corresponding dicts
+        # of nested schema objects at paths/{path}/{method} in the OpenAPI schema (for all
+        # the paths/methods which have that tag).
+        # If any routes do not have tags, add the 'Misc' tag to them, which will be put in
+        # the 'Other' tag group automatically, below.
+        tags = set()
+        tag_to_dicts = dict()
+        for x in data["paths"].values():
+            for v in x.values():
+                if "tags" in v.keys():
+                    tags.update(v["tags"])
+                    for t in v["tags"]:
+                        if t not in tag_to_dicts.keys():
+                            tag_to_dicts[t] = []
+                        tag_to_dicts[t].append(v)
+                else:
+                    v["tags"] = ["Misc"]
+                    tags.add("Misc")
+                    if "Misc" not in tag_to_dicts.keys():
+                        tag_to_dicts["Misc"] = []
+                    tag_to_dicts["Misc"].append(v)
+
+        # A function to change tag names (adds requested changes to a dict which will be
+        # cleared after the for tag in tags loop below finishes; it is done this way since
+        # the tags set cannot be modified while it is being iterated over).
+        changes = dict()
+
+        def update_tag(old_tag, new_tag):
+            for val in tag_to_dicts[old_tag]:
+                val["tags"] = [(t if t != old_tag else new_tag) for t in val["tags"]]
+            lst = tag_to_dicts.pop(old_tag)
+            tag_to_dicts[new_tag] = lst
+            changes[old_tag] = new_tag  # since tags cannot be updated while iterating through tags
+            return new_tag
+
+        # Pluralize tag name if all views in tag are lists, and apply custom tag names from
+        # custom_tag_names dict defined above.
+        for tag in tags:
+            tag = update_tag(tag, split_camel(tag))
+            all_list = all([("list" in v["operationId"].lower()) for v in tag_to_dicts[tag]])
+            if all_list:  # if all views in tag are lists, pluralize tag name
+                tag = update_tag(
+                    tag, " ".join(tag.split(" ")[:-1] + [pluralize_word(tag.split(" ")[-1])])
+                )
+            if tag in custom_tag_names.keys():  # rename custom tags
+                tag = update_tag(tag, custom_tag_names[tag])
+
+        # Remove 'required' flags from responses (it doesn't make sense for a response
+        # item to be 'required').
+        def delete_required_dfs(dictionary):
+            if not isinstance(dictionary, dict):
+                return None
+            dictionary.pop("required", None)
+            for value in dictionary.values():
+                delete_required_dfs(value)
+
+        for path_name, val in data["paths"].items():
+            for method_name, v in val.items():
+                delete_required_dfs(v["responses"])
+
+        # Since tags could not be updated while we were through tags above, we update them now.
+        for k, v in changes.items():
+            tags.remove(k)
+            tags.add(v)
+
+        # Add custom tag descriptions from the custom_tag_descriptions dict defined above
+        data["tags"] = [
+            {"name": tag, "description": custom_tag_descriptions.get(tag, "")} for tag in tags
+        ]
+
+        # Add tags to tag groups based on the tag group abbreviation in the name of the tag
+        # (these abbreviations are added as prefixes of the tag names automatically in the
+        # get_tags method of PcxAutoSchema).
+        tags_to_tag_groups = dict()
+        for t in tags:
+            for k in tag_group_abbreviations.keys():
+                # Assigning the tag groups like this prevents tag abbreviations being substrings
+                # of each other from being problematic; the longest matching abbreviation is
+                # used (so even if another tag group abbreviation is a substring, it won't be
+                # mistakenly used for the tag group).
+                if k in t and (
+                    t not in tags_to_tag_groups.keys() or len(k) > len(tags_to_tag_groups[t])
+                ):
+                    tags_to_tag_groups[t] = k
+        data["x-tagGroups"] = [
+            {"name": v, "tags": [t for t in tags if tags_to_tag_groups[t] == k]}
+            for k, v in tag_group_abbreviations.items()
+        ]
+        # Remove empty tag groups
+        data["x-tagGroups"] = [g for g in data["x-tagGroups"] if len(g["tags"]) != 0]
+
+        def fail(location, hint):
+            """
+            A function to generate an error message if validation of the examples dict fails
+            """
+            raise ValueError(
+                f"Invalid examples kwarg passed into PcxAutoSchema at {location}; please "
+                f"check the meta docs in PennCourses/docs_settings.py for an explanation of "
+                f"the proper format of this kwarg. Hint:\n{hint}"
+            )
+
+        # Convert cumulative_examples keys to strings (necessary since keys are paths indicated
+        # by reverse_func).
+        global cumulative_examples
+        new_cumulative_examples = dict()
+        for key, value in cumulative_examples.items():
+            if not callable(key) or not isinstance(key(), str):
+                not_using_reverse_func(
+                    "examples",
+                    key,
+                    PcxAutoSchema=True,
+                    traceback=cumulative_examples[key]["traceback"],
+                )
+            new_cumulative_examples[key()] = value
+
+        # Add request/response examples to the documentation (instructions on how to customize a
+        # route's examples can be found above).
+        for path in new_cumulative_examples.keys():
+            traceback = new_cumulative_examples[path]["traceback"]
+            for method in new_cumulative_examples[path].keys():
+                if method == "traceback":
+                    continue
+                ob = new_cumulative_examples[path][method]
+                if path not in data["paths"].keys():
+                    fail(traceback, f"No such path exists in schema: '{path}'")
+                if method not in data["paths"][path].keys():
+                    fail(traceback, f"No such method exists in schema: '{method}'")
+                if "responses" in ob.keys():
+                    for response in ob["responses"]:
+                        if "code" not in response.keys():
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                "An object in the responses list  does not contain a response code "
+                                "key/value pair.",
+                            )
+                        code = response["code"]
+                        if "responses" not in data["paths"][path][method].keys():
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                "The given path and method does not have a responses "
+                                "object in the schema, but an example response was given.",
+                            )
+                        if code not in data["paths"][path][method]["responses"].keys():
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example response with code {code} is invalid "
+                                "because that is not a response code in the schema "
+                                "for the given path/method.",
+                            )
+                        if "content" not in data["paths"][path][method]["responses"][code].keys():
+                            raise ValueError(
+                                f"Invalid inputs to PcxAutoSchema at {traceback}.\n"
+                                f"Check your response_codes dictionary for:\n"
+                                f"{method.upper()} {path}, response code {code}\n"
+                                f"If '[DESCRIBE_RESPONSE_SCHEMA]' is not in the description for "
+                                f"this path/method/code, no response schema content will be "
+                                "created for it and you will not be able to make an example "
+                                f"response for it. Alternatively, remove the {code} response from "
+                                f"the {method.upper()} {path} responses list in your examples dict."
+                            )
+                        if (
+                            "application/json"
+                            not in data["paths"][path][method]["responses"][code]["content"].keys()
+                        ):
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example response with code {code} is invalid "
+                                "because the response corresponding to the given "
+                                "path/method/code does not have data type application/json.",
+                            )
+                        final_ob = data["paths"][path][method]["responses"][code]["content"][
+                            "application/json"
+                        ]
+                        if "examples" not in final_ob.keys():
+                            final_ob["examples"] = {}
+                        if "summary" not in response.keys():
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example response with code {code} is invalid "
+                                "because it does not contain required field 'summary'.",
+                            )
+                        if "value" not in response.keys():
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example response with code {code} is invalid "
+                                "because it does not contain required field 'value'.",
+                            )
+                        final_ob["examples"][response["summary"]] = response
+                if "requests" in ob.keys():
+                    for request in ob["requests"]:
+                        if "requestBody" not in data["paths"][path][method].keys():
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                "The given path and method does not have a requestBody "
+                                "object in the schema, but an example request was given.",
+                            )
+                        if (
+                            "application/json"
+                            not in data["paths"][path][method]["requestBody"]["content"].keys()
+                        ):
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example request is invalid "
+                                "because the request corresponding to the given "
+                                "path/method/code does not have data type application/json.",
+                            )
+                        final_ob = data["paths"][path][method]["requestBody"]["content"][
+                            "application/json"
+                        ]
+                        if "examples" not in final_ob.keys():
+                            final_ob["examples"] = {}
+                        if "summary" not in request.keys():
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example request is invalid "
+                                "because it does not contain required field 'summary'.",
+                            )
+                        if "value" not in request.keys():
+                            fail(
+                                traceback,
+                                f"Check your examples dict for:\n{method} {path}\n"
+                                f"An example request is invalid "
+                                "because it does not contain required field 'value'.",
+                            )
+                        final_ob["examples"][request["summary"]] = request
+
+        # This code ensures that no path/methods in optional dictionary kwargs passed to
+        # PcxAutoSchema __init__ methods are invalid (indicating user error)
+        for original_kwarg, parameter_name, parameter_dict in [
+            ("response_codes", "cumulative_response_codes", cumulative_response_codes),
+            ("override_schema", "cumulative_override_schema", cumulative_override_schema),
+            ("custom_path_parameter_desc", "cumulative_cppd", cumulative_cppd),
+        ]:
+            for path_func in parameter_dict:
+                traceback = parameter_dict[path_func]["traceback"]
+                if not callable(path_func) or not isinstance(path_func(), str):
+                    not_using_reverse_func(
+                        original_kwarg, path_func, PcxAutoSchema=True, traceback=traceback
+                    )
+                path = path_func()
+                if path not in data["paths"].keys():
+                    raise ValueError(
+                        f"Check the {parameter_name} input to PcxAutoSchema instantiation at "
+                        f"{traceback}; invalid path found: '{path}'"
+                    )
+                for method in parameter_dict[path_func]:
+                    if method == "traceback":
+                        continue
+                    if method.lower() not in data["paths"][path].keys():
+                        raise ValueError(
+                            f"Check the {parameter_name} input to PcxAutoSchema instantiation at "
+                            f"{traceback}; invalid method '{method}' for path '{path}'"
+                        )
+
+        # Make any additional manual changes to the schema programmed by the user
+        make_manual_schema_changes(data)
+
+        return jsonref.dumps(data, indent=2).encode("utf-8")
+
+
+# A cumulative version of the response_codes parameter to PcxAutoSchema:
+cumulative_response_codes = dict()
+# A cumulative version of the override_schema parameter to PcxAutoSchema:
+cumulative_override_schema = dict()
+# A cumulative version of the custom_path_parameter_desc parameter to PcxAutoSchema:
+cumulative_cppd = dict()
+
+
+class PcxAutoSchema(AutoSchema):
+    """
+    This custom subclass serves to improve AutoSchema in terms of customizability, and
+    quality of inference in some non-customized cases.
+
+    https://www.django-rest-framework.org/api-guide/schemas/#autoschema
+    """
+
+    def __new__(
+        cls,
+        *args,
+        examples=None,
+        response_codes=None,
+        override_schema=None,
+        custom_path_parameter_desc=None,
+        **kwargs,
+    ):
+        """
+        An overridden __new__ method which adds a created_at property to each PcxAutoSchema
+        instance indicating the file/line from which it was instantiated (useful for debugging).
+        """
+        new_instance = super(PcxAutoSchema, cls).__new__(cls, *args, **kwargs)
+        stack_trace = inspect.stack()
+        created_at = "%s:%d" % (stack_trace[1][1], stack_trace[1][2])
+        new_instance.created_at = created_at
+        return new_instance
+
+    # Overrides, uses overridden method
+    # https://www.django-rest-framework.org/api-guide/schemas/#autoschema__init__-kwargs
+    def __init__(
+        self,
+        *args,
+        examples=None,
+        response_codes=None,
+        override_schema=None,
+        custom_path_parameter_desc=None,
+        **kwargs,
+    ):
+        """
+        This custom __init__ method deals with optional passed-in kwargs such as examples,
+        response_codes, override_schema, and custom_path_parameter_desc.
+        """
+
+        def fail(param, hint):
+            """
+            A function to generate an error message if validation of one of the passed-in
+            kwargs fails.
+            """
+            raise ValueError(
+                f"Invalid {param} kwarg passed into PcxAutoSchema at {self.created_at}; please "
+                f"check the meta docs in PennCourses/docs_settings.py for an explanation of "
+                f"the proper format of this kwarg. Hint:\n{hint}"
+            )
+
+        # Validate that each of the passed-in kwargs are nested dictionaries of the correct depth
+        for param_name, param_dict in [
+            ("examples", examples),
+            ("response_codes", response_codes),
+            ("override_schema", override_schema),
+            ("custom_path_parameter_desc", custom_path_parameter_desc),
+        ]:
+            if param_dict is not None:
+                if not isinstance(param_dict, dict):
+                    fail(param_name, f"The {param_name} kwarg must be a dict.")
+                for dictionary in param_dict.values():
+                    if not isinstance(dictionary, dict):
+                        fail(param_name, f"All values of the {param_name} dict must be dicts.")
+                    for nested_dictionary in dictionary.values():
+                        if not isinstance(nested_dictionary, dict):
+                            fail(
+                                param_name,
+                                f"All values of the dict values of {param_name} must be dicts.",
+                            )
+                        if param_name in ["examples", "override_schema"]:
+                            continue
+                        for value in nested_dictionary.values():
+                            if isinstance(value, dict):
+                                fail(
+                                    param_name,
+                                    f"Too deep nested dictionaries found in {param_name}.",
+                                )
+
+        # Handle passed-in examples
+        # Change all the response codes in examples to strings, and change the methods to lower case
+        global cumulative_examples
+        if examples is not None:
+            examples = deepcopy(examples)
+            for this_path in examples.keys():
+                examples[this_path] = {k.lower(): v for k, v in examples[this_path].items()}
+                for this_method in examples[this_path].keys():
+                    if "responses" in examples[this_path][this_method].keys():
+                        for res in examples[this_path][this_method]["responses"]:
+                            if "code" in res.keys() and isinstance(res["code"], int):
+                                res["code"] = str(res["code"])
+            for dictionary in examples.values():
+                dictionary["traceback"] = self.created_at
+            cumulative_examples.update(examples)
+
+        # Handle passed-in custom response codes
+        global cumulative_response_codes
+        if response_codes is None:
+            self.response_codes = dict()
+        else:
+            response_codes = deepcopy(response_codes)
+            for key, d in response_codes.items():
+                response_codes[key] = {k.upper(): v for k, v in d.items()}
+            self.response_codes = response_codes
+            for_cumulative_response_codes = deepcopy(response_codes)
+            for dictionary in for_cumulative_response_codes.values():
+                dictionary["traceback"] = self.created_at
+            cumulative_response_codes = {
+                **cumulative_response_codes,
+                **for_cumulative_response_codes,
+            }
+
+        # Handle passed-in customized schemas
+        global cumulative_override_schema
+        if override_schema is None:
+            self.override_schema = dict()
+        else:
+            override_schema = deepcopy(override_schema)
+            for key, d in override_schema.items():
+                override_schema[key] = {k.upper(): v for k, v in d.items()}
+            self.override_schema = override_schema
+            for_cumulative_override_schema = deepcopy(override_schema)
+            for dictionary in for_cumulative_override_schema.values():
+                dictionary["traceback"] = self.created_at
+            cumulative_override_schema = {
+                **cumulative_override_schema,
+                **for_cumulative_override_schema,
+            }
+
+        # Handle passed-in custom path parameter descriptions
+        global cumulative_cppd
+        if custom_path_parameter_desc is None:
+            self.custom_path_parameter_desc = dict()
+        else:
+            custom_path_parameter_desc = deepcopy(custom_path_parameter_desc)
+            for key, d in custom_path_parameter_desc.items():
+                custom_path_parameter_desc[key] = {k.upper(): v for k, v in d.items()}
+            self.custom_path_parameter_desc = custom_path_parameter_desc
+            for_cumulative_cppd = deepcopy(custom_path_parameter_desc)
+            for dictionary in for_cumulative_cppd.values():
+                dictionary["traceback"] = self.created_at
+            cumulative_cppd = {**cumulative_cppd, **for_cumulative_cppd}
+
+        super().__init__(*args, **kwargs)
+
+    # Overrides, uses overridden method
+    def get_description(self, path, method):
+        """
+        This overridden method adds the method and path to the top of each route description
+        and a note if authentication is required (in addition to calling/using the
+        super method). Docstring of overridden method:
+
+        Determine a path description.
+
+        This will be based on the method docstring if one exists,
+        or else the class docstring.
+        """
+
+        # Add the method and path to the description so it is more readable.
+        desc = f"({method.upper()} `{path}`)\n\n"
+        # Add the description from docstrings (default functionality).
+        desc += super().get_description(path, method)
+        view = self.view
+        # Add a note if the path/method requires user authentication.
+        if IsAuthenticated in view.permission_classes:
+            desc += '\n\n<span style="color:red;">User authentication required</span>.'
+        return desc
+
+    # Overrides, uses overridden method
+    # (https://www.django-rest-framework.org/api-guide/schemas/#map_serializer)
+    def map_serializer(self, serializer):
+        """
+        This method adds property docstrings as field descriptions when appropriate
+        (to request/response schemas in the API docs), in addition
+        to calling the overridden map_serializer function.
+        For instance, in the response schema of
+        [PCA] Registration, List Registration (GET /api/alert/registrations/)
+        the description of the is_active property is inferred from the property docstring
+        by this method (before it was blank).
+        """
+
+        result = super().map_serializer(serializer)
+        properties = result["properties"]
+        model = None
+        if hasattr(serializer, "Meta") and hasattr(serializer.Meta, "model"):
+            model = serializer.Meta.model
+
+        for field in serializer.fields.values():
+            if isinstance(field, serializers.HiddenField):
+                continue
+            schema = properties[field.field_name]
+            if (
+                "description" not in schema
+                and model is not None
+                and hasattr(model, field.field_name)
+                and isinstance(getattr(model, field.field_name), property)
+                and getattr(model, field.field_name).__doc__
+            ):
+                schema["description"] = dedent(getattr(model, field.field_name).__doc__)
+
+        return result
+
+    # Helper method
+    def get_action(self, path, method):
+        """
+        This method gets the action of the specified path/method (a more expressive name
+        for the method like "retrieve" or "list" for a GET method or "create" for a POST method).
+        The code is taken from the get_operation_id_base method in AutoSchema,
+        but is slightly modified to not use camelCase.
+        """
+        method_name = getattr(self.view, "action", method.lower())
+        if is_list_view(path, method, self.view):
+            action = "list"
+        elif method_name not in self.method_mapping:
+            action = method_name.lower()
+        else:
+            action = self.method_mapping[method.lower()]
+        return action
+
+    # Helper method
+    def get_name(self, path, method, action=None):
+        """
+        This method returns the name of the path/method. If the
+        user has specified a custom name using the custom_name parameter to __init__, that custom
+        name is used.
+        The code here is backported/modified from AutoSchema's get_operation_id_base method
+        due to how we generate tags (when "s" is added to the end of names for list actions in
+        get_operation_id_base, this makes it impossible to tag those list action routes together
+        with their non-list counterparts using their shared names as we like to do).
+        Besides not appending "s", this backported code is also modified to remove
+        the "viewset" suffix from the name if it exists.
+        All modified code is marked by a comment starting with "MODIFIED"
+        I am probably going to submit a PR to DRF to try to get them to improve their
+        default tag generation in this way (eventually).
+        If that ever gets merged and cut into a stable release, we will be able to
+        remove this method from our code.
+        Otherwise, keep an eye on DRF changes to see if the overridden get_operation_id_base
+        method is improved (and incorperate those changes here if possible).
+        """
+
+        # Return the custom name if specified by the user
+        # First convert the functions in the tuple keys of custom_name to strings
+        custom_name_str_paths = dict()
+        for (this_path, this_method), value in custom_name.items():
+            if not callable(this_path) or not isinstance(this_path(), str):
+                not_using_reverse_func("custom_name", this_path)
+            custom_name_str_paths[(this_path(), this_method)] = value
+        # Check if user has specified custom name
+        if (path, method) in custom_name_str_paths.keys():
+            return custom_name_str_paths[(path, method)]
+
+        # Get action if it is not passed in as a parameter
+        if action is None:
+            action = self.get_action(path, method)
+
+        # NOTE: All below code is taken/modified from AutoSchema's get_operation_id_base method
+
+        model = getattr(getattr(self.view, "queryset", None), "model", None)
+
+        if self.operation_id_base is not None:
+            name = self.operation_id_base
+
+        # Try to deduce the ID from the view's model
+        elif model is not None:
+            name = model.__name__
+
+        # Try with the serializer class name
+        elif self.get_serializer(path, method) is not None:
+            name = self.get_serializer(path, method).__class__.__name__
+            if name.endswith("Serializer"):
+                name = name[:-10]
+
+        # Fallback to the view name
+        else:
+            name = self.view.__class__.__name__
+            if name.endswith("APIView"):
+                name = name[:-7]
+            elif name.endswith("View"):
+                name = name[:-4]
+            elif name.lower().endswith("viewset"):
+                # MODIFIED from AutoSchema's get_operation_id_base: remove viewset suffix
+                name = name[:-7]
+
+            # Due to camel-casing of classes and `action` being lowercase, apply title in order to
+            # find if action truly comes at the end of the name
+            if name.endswith(action.title()):  # ListView, UpdateAPIView, ThingDelete ...
+                name = name[: -len(action)]
+
+        # MODIFIED from AutoSchema's get_operation_id_base: "s" is not appended
+        # even if action is list
+
+        return name
+
+    # Overrides, DOES NOT call overridden method
+    # https://www.django-rest-framework.org/api-guide/schemas/#get_operation_id_base
+    def get_operation_id_base(self, path, method, action):
+        """
+        This method returns the base operation id (i.e. the name) of the path/method. It
+        uses get_name as a helper but makes the last character "s" if the action is "list".
+        See the docstring for the get_name method of this class for an explanation as
+        to why we do this. Docstring of overridden method:
+
+        Compute the base part for operation ID from the model, serializer or view name.
+        """
+
+        name = self.get_name(path, method, action)
+
+        if action == "list" and not name.endswith("s"):  # listThings instead of listThing
+            name = pluralize_word(name)
+
+        return name
+
+    # Overrides, uses overridden method
+    # https://www.django-rest-framework.org/api-guide/schemas/#get_operation_id
+    def get_operation_id(self, path, method):
+        """
+        This method gets the operation id for the given path/method. It first checks if
+        the user has specified a custom operation id for this path/method using the
+        custom_operation_id dict at the top of docs_settings.py, and if not it returns the result
+        of the overridden method (which is modified from default by the overriden
+        get_operation_id_base method above). Docstring of overridden method:
+
+        Compute an operation ID from the view type and get_operation_id_base method.
+        """
+
+        # Return the custom operation id if specified by the user
+        # First convert the functions in the tuple keys of custom_operation_id to strings
+        custom_operation_id_str_paths = dict()
+        for (this_path, this_method), value in custom_operation_id.items():
+            if not callable(this_path) or not isinstance(this_path(), str):
+                not_using_reverse_func("custom_operation_id", this_path)
+            custom_operation_id_str_paths[(this_path(), this_method)] = value
+        # Check if user has specified custom operation id
+        if (path, method) in custom_operation_id_str_paths.keys():
+            return custom_operation_id_str_paths[(path, method)]
+
+        return split_camel(super().get_operation_id(path, method)).title()
+
+    # Overrides, DOES NOT call overridden method
+    # Keep an eye on DRF changes to see if the overridden get_tags method is improved
+    # https://www.django-rest-framework.org/api-guide/schemas/#get_tags
+    def get_tags(self, path, method):
+        """
+        This method returns custom tags passed into the __init__ method, or otherwise
+        (if the tags argument was not included) adds a tag
+        of the form '[APP] route_name' as the default behavior.
+        Note that the abbreviation of the app in these [APP] brackets is set in the
+        subpath_abbreviations dict above.
+        """
+
+        # If user has specified tags, use them.
+        if self._tags:
+            return self._tags
+
+        # Create the tag from the first part of the path (other than "api") and the name
+        name = self.get_name(path, method)
+        path_components = (path[1:] if path.startswith("/") else path).split("/")
+        subpath = path_components[1] if path_components[0] == "api" else path_components[0]
+        if subpath not in subpath_abbreviations.keys():
+            raise ValueError(
+                f"You must add the the '{subpath}' subpath to the "
+                "subpath_abbreviations dict in backend/PennCourses/docs_settings.py. "
+                f"This subpath was inferred from the path '{path}'."
+            )
+        return [f"[{subpath_abbreviations[subpath]}] {name}"]
+
+    # Overrides, uses overridden method
+    def get_path_parameters(self, path, method):
+        """
+        This method returns a list of parameters from templated path variables. It improves
+        the inference of path parameter description from the overridden method by utilizing
+        property docstrings. If a custom path parameter description is specified using the
+        custom_path_parameter_desc kwarg in __init__, that is used for the description.
+        Docstring of overridden method:
+
+        Return a list of parameters from templated path variables.
+        """
+
+        parameters = super().get_path_parameters(path, method)
+
+        model = getattr(getattr(self.view, "queryset", None), "model", None)
+        for parameter in parameters:
+            variable = parameter["name"]
+            description = parameter["description"]
+
+            # Use property docstrings when possible
+            if model is not None:
+                try:
+                    model_field = model._meta.get_field(variable)
+                except Exception:
+                    model_field = None
+                if (
+                    model_field is None
+                    and parameter["name"] in model.__dict__.keys()
+                    and isinstance(model.__dict__[variable], property)
+                ):
+                    doc = getdoc(model.__dict__[variable])
+                    description = "" if doc is None else doc
+
+            # Create a custom_path_parameter_desc dict which equals self.custom_path_parameter_desc
+            # except with the keys as strings (by calling each of the keys of
+            # self.custom_path_parameter_desc)
+            custom_path_parameter_desc = dict()
+            for key, value in self.custom_path_parameter_desc.items():
+                if not callable(key) or not isinstance(key(), str):
+                    not_using_reverse_func(
+                        "custom_path_parameter_desc",
+                        key,
+                        PcxAutoSchema=True,
+                        traceback=self.created_at,
+                    )
+                custom_path_parameter_desc[key()] = value
+
+            # Add custom path parameter description if relevant
+            if (
+                custom_path_parameter_desc
+                and path in custom_path_parameter_desc.keys()
+                and method.upper() in custom_path_parameter_desc[path].keys()
+                and variable in custom_path_parameter_desc[path][method].keys()
+                and custom_path_parameter_desc[path][method][variable]
+            ):
+                description = custom_path_parameter_desc[path][method][variable]
+
+            parameter["description"] = description
+
+        return parameters
+
+    # Overrides, uses overridden method
+    def get_responses(self, path, method):
+        """
+        This method describes the responses for this path/method. It makes certain
+        improvements over the overridden method in terms of adding useful information
+        (like 403 responses). It also enforces the user's choice as to whether to include
+        a response schema or alternatively just display the response (for path/method/status_code).
+        Custom response descriptions specified by the user in the response_codes
+        kwarg to the __init__ method are also added.
+        Finally, custom schemas specified by the user in the override_schema kwarg to the
+        __init__ method are added.
+        """
+
+        responses = super().get_responses(path, method)
+
+        # Automatically add 403 response if authentication is required
+        if IsAuthenticated in self.view.permission_classes and 403 not in responses:
+            responses = {
+                **responses,
+                403: {"description": "Authentication credentials were not provided."},
+            }
+
+        # Get "default" schema content from response
+        # This code is from an older version of the overridden method which
+        # did not use JSON refs (JSON refs are not appropriate for our use-case since
+        # we change certain response schemas in ways that we don't want to affect
+        # request schemas, etc).
+        item_schema = {}
+        serializer = self._get_serializer(path, method)
+        if isinstance(serializer, serializers.Serializer):
+            item_schema = self._map_serializer(serializer)
+            # No write_only fields for response.
+            for name, schema in item_schema["properties"].copy().items():
+                if "writeOnly" in schema:
+                    del item_schema["properties"][name]
+                    if "required" in item_schema:
+                        item_schema["required"] = [f for f in item_schema["required"] if f != name]
+        if is_list_view(path, method, self.view):
+            response_schema = {
+                "type": "array",
+                "items": item_schema,
+            }
+            paginator = self._get_paginator()
+            if paginator:
+                response_schema = paginator.get_paginated_response_schema(response_schema)
+        else:
+            response_schema = item_schema
+        default_schema_content = {
+            content_type: {"schema": deepcopy(response_schema)}
+            for content_type in self.response_media_types
+        }
+
+        # Create a response_codes dict which equals self.response_codes except with the keys
+        # as strings (by calling each of the keys of self.response_codes)
+        response_codes = dict()
+        for key, value in self.response_codes.items():
+            if not callable(key) or not isinstance(key(), str):
+                not_using_reverse_func(
+                    "response_codes", key, PcxAutoSchema=True, traceback=self.created_at
+                )
+            response_codes[key()] = value
+
+        # Add status codes and custom descriptions from custom response_codes dict
+        if path in response_codes and method in response_codes[path]:
+            for status_code in response_codes[path][method]:
+                custom_description = response_codes[path][method][status_code]
+                include_content = "[DESCRIBE_RESPONSE_SCHEMA]" in custom_description
+                custom_description = custom_description.replace("[DESCRIBE_RESPONSE_SCHEMA]", "")
+                if status_code in responses.keys():
+                    responses[status_code]["description"] = custom_description
+                    if not include_content and "content" in responses[status_code]:
+                        del responses[status_code]["content"]
+                else:
+                    responses[status_code] = {"description": custom_description}
+                    if include_content:
+                        responses[status_code]["content"] = deepcopy(default_schema_content)
+
+        # Create an override_schema dict which equals self.override_schema except with the keys
+        # as strings (by calling each of the keys of self.override_schema)
+        override_schema = dict()
+        for key, value in self.override_schema.items():
+            if not callable(key) or not isinstance(key(), str):
+                not_using_reverse_func(
+                    "override_schema", key, PcxAutoSchema=True, traceback=self.created_at
+                )
+            override_schema[key()] = value
+
+        if path in override_schema and method in override_schema[path]:
+            for status_code in override_schema[path][method]:
+                if status_code not in responses.keys():
+                    responses[status_code] = {
+                        "description": "",
+                        "content": deepcopy(default_schema_content),
+                    }
+            for status_code in responses.keys():
+                if status_code in override_schema[path][method]:
+                    custom_schema = override_schema[path][method][status_code]
+                    if "content" not in responses[status_code]:
+                        responses[status_code]["content"] = dict()
+                        for ct in self.request_media_types:
+                            responses[status_code]["content"][ct] = custom_schema
+                    else:
+                        for response_schema in responses[status_code]["content"].values():
+                            response_schema["schema"] = custom_schema
+
+        return responses

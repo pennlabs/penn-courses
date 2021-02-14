@@ -1,7 +1,12 @@
 import json
 import re
 
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from options.models import Option, get_value
+from rest_framework.exceptions import APIException
 
 from courses.models import (
     Building,
@@ -15,7 +20,45 @@ from courses.models import (
     Section,
     StatusUpdate,
 )
-from review.models import Review
+from review.util import titleize
+
+
+def get_current_semester():
+    """
+    This function retrieves the string value of the current semester, either from
+    memory (if the value has been cached), or from the db (after which it will cache
+    the value for future use). If the value retrieved from the db is None, an error is thrown
+    indicating that the SEMESTER Option must be set for this API to work properly.
+    The cache has no timeout, but is invalidated whenever the SEMESTER Option is saved
+    (which will occur whenever it is updated), using a post_save hook.
+    See the invalidate_current_semester_cache function below to see how this works.
+    """
+    cached_val = cache.get("SEMESTER", None)
+    if cached_val is not None:
+        return cached_val
+    retrieved_val = get_value("SEMESTER", None)
+    if retrieved_val is None:
+        raise APIException(
+            "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+            "option by running the command "
+            "'python manage.py setoption SEMESTER 2020C', "
+            "replacing 2020C with the current semester, in the backend directory (remember "
+            "to run 'pipenv shell' before running this command, though)."
+        )
+    cache.set("SEMESTER", retrieved_val, timeout=None)  # cache only expires upon invalidation
+    return retrieved_val
+
+
+@receiver(post_save, sender=Option, dispatch_uid="update_stock_count")
+def invalidate_current_semester_cache(sender, instance, **kwargs):
+    """
+    This function invalidates the cached SEMESTER value when the SEMESTER option is updated.
+    Note that the timeout value on the cached SEMESTER value is set to None (meaning
+    the cache will not be invalidated by any amount of elapsed time; saving the SEMESTER Option
+    is the only way to invalidate this cached value).
+    """
+    if instance.key == "SEMESTER":
+        cache.delete("SEMESTER")
 
 
 def separate_course_code(course_code):
@@ -36,10 +79,9 @@ def separate_course_code(course_code):
 
 def get_or_create_course(dept_code, course_id, semester):
     dept, _ = Department.objects.get_or_create(code=dept_code)
+    course, c = Course.objects.get_or_create(department=dept, code=course_id, semester=semester)
 
-    course, _ = Course.objects.get_or_create(department=dept, code=course_id, semester=semester)
-
-    return course
+    return course, c
 
 
 def get_or_create_course_and_section(course_code, semester, section_manager=None):
@@ -47,11 +89,10 @@ def get_or_create_course_and_section(course_code, semester, section_manager=None
         section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
 
-    course = get_or_create_course(dept_code, course_id, semester)
+    course, course_c = get_or_create_course(dept_code, course_id, semester)
+    section, section_c = section_manager.get_or_create(course=course, code=section_id)
 
-    section, _ = section_manager.get_or_create(course=course, code=section_id)
-
-    return course, section
+    return course, section, course_c, section_c
 
 
 def get_course_and_section(course_code, semester, section_manager=None):
@@ -65,7 +106,7 @@ def get_course_and_section(course_code, semester, section_manager=None):
 
 
 def record_update(section_id, semester, old_status, new_status, alerted, req):
-    _, section = get_or_create_course_and_section(section_id, semester)
+    _, section, _, _ = get_or_create_course_and_section(section_id, semester)
     u = StatusUpdate(
         section=section,
         old_status=old_status,
@@ -110,7 +151,7 @@ def add_associated_sections(section, info):
         sections = info.get(assoc, [])
         for sect in sections:
             section_code = f"{sect['subject']}-{sect['course_id']}-{sect['section_id']}"
-            _, associated = get_or_create_course_and_section(section_code, semester)
+            _, associated, _, _ = get_or_create_course_and_section(section_code, semester)
             section.associated_sections.add(associated)
 
 
@@ -118,7 +159,9 @@ def set_crosslistings(course, crosslist_primary):
     if len(crosslist_primary) == 0:
         course.primary_listing = course
     else:
-        primary_course, _ = get_or_create_course_and_section(crosslist_primary, course.semester)
+        primary_course, _, _, _ = get_or_create_course_and_section(
+            crosslist_primary, course.semester
+        )
         course.primary_listing = primary_course
 
 
@@ -167,7 +210,7 @@ def relocate_reqs_from_restrictions(rests, reqs, travellers):
 def upsert_course_from_opendata(info, semester):
     course_code = info["section_id_normalized"]
     try:
-        course, section = get_or_create_course_and_section(course_code, semester)
+        course, section, _, _ = get_or_create_course_and_section(course_code, semester)
     except ValueError:
         return  # if we can't parse the course code, skip this course.
 
@@ -195,7 +238,7 @@ def upsert_course_from_opendata(info, semester):
         ]
     )
 
-    set_instructors(section, [instructor["name"] for instructor in info["instructors"]])
+    set_instructors(section, [titleize(instructor["name"]) for instructor in info["instructors"]])
     set_meetings(section, info["meetings"])
     add_associated_sections(section, info)
     add_restrictions(section, info["requirements"])
@@ -220,55 +263,6 @@ def update_course_from_record(update):
     section.save()
 
 
-def create_mock_data(code, semester):
-    course, section = get_or_create_course_and_section(code, semester)
-    section.credits = 1
-    section.status = "O"
-    section.activity = "LEC"
-    section.save()
-    m = [
-        {
-            "building_code": "LLAB",
-            "building_name": "Leidy Laboratories of Biology",
-            "end_hour_24": 12,
-            "end_minutes": 0,
-            "end_time": "12:00 PM",
-            "end_time_24": 12.0,
-            "meeting_days": "MWF",
-            "room_number": "10",
-            "section_id": "CIS 120001",
-            "section_id_normalized": "CIS -120-001",
-            "start_hour_24": 11,
-            "start_minutes": 0,
-            "start_time": "11:00 AM",
-            "start_time_24": 11.0,
-            "term": "2019C",
-        }
-    ]
-    set_meetings(section, m)
-    return course, section
-
-
-def create_mock_data_with_reviews(code, semester, number_of_instructors):
-    course, section = create_mock_data(code, semester)
-    reviews = []
-    for i in range(1, number_of_instructors + 1):
-        instr, _ = Instructor.objects.get_or_create(name="Instructor" + str(i))
-        section.instructors.add(instr)
-        review = Review(section=section, instructor=instr)
-        review.save()
-        review.set_scores(
-            {
-                "course_quality": 4 / i,
-                "instructor_quality": 4 / (i + 1),
-                "difficulty": 4 / (i + 2),
-                "work_required": 4 / (i + 3),
-            }
-        )
-        reviews.append(review)
-    return course, section, reviews
-
-
 # averages review data for a given field, given a list of Review objects
 def get_average_reviews(reviews, field):
     count = 0
@@ -277,7 +271,7 @@ def get_average_reviews(reviews, field):
         try:
             rb = r.reviewbit_set.get(field=field)
             count += 1
-            total += rb.score
+            total += rb.average
         except ObjectDoesNotExist:
             pass
     if count == 0:

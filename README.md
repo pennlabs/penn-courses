@@ -1,71 +1,43 @@
 # Penn Courses
-[![CircleCI](https://circleci.com/gh/pennlabs/penn-courses.svg?style=shield)](https://circleci.com/gh/pennlabs/penn-courses)
+![Workflow](https://github.com/pennlabs/penn-courses/workflows/Workflow/badge.svg)
 [![Coverage Status](https://codecov.io/gh/pennlabs/penn-courses/branch/master/graph/badge.svg)](https://codecov.io/gh/pennlabs/penn-courses)
 
-This is the (eventual) unified home of all Penn Courses products.
-Currently, products contained in here include:
-- Penn Courses API
-- Penn Course Plan
-- Penn Course Alert
+This is the unified home of all [Penn Courses](https://penncourses.org) products.
+
+Check out the `README`s in the frontend and backend directories for setup instructions!
 
 ## Installation
-Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
+Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) and [`yarn`](https://classic.yarnpkg.com/en/)
+installed.
 
-### Setting up the Django Backend
-1. `git clone git@github.com:pennlabs/penn-courses.git`
-2. `pipenv install`
-    - You may run into some issues installing the mysql python driver on
-    macOS. The development environment will use sqlite3 as the database
-    by default, so this is not something to worry about.
-    - However, if you do want to run locally with the production database,
-    then run:
-        1. `brew install openssl`
-        2. `LDFLAGS=-L/usr/local/opt/openssl/lib pip install mysqlclient`
-3. `pipenv shell` to activate the virtual environment
-4. `python manage.py migrate`
-5. Make sure everything works by running `python manage.py test` and
-ensuring all tests pass.
+## API Documentation
+API Docs can be found at `/api/documentation` on the back-end server. Also check out the code for more explanations
+and documentation! We've tried to keep it up-to-date.
 
-### Setting up the Penn Course Plan Frontend
-Make sure you have `nodejs` installed, which will also install `npm`
-along with it.
-1. `cd frontend/plan`
-2. `npm install`
+## Runbook
+This section is to collect thoughts/learnings from the codebase that have been hard-won, so we don't lose a record of it
+if and when the information proves useful again
 
-## Run in development
-Make sure you're in the base directory of the project.
+### Derived fields
+Normally, derived fields on models are represented as `@property`-decorated functions. However, there are a few in
+the codebase that need to be accessed on the database layer without `JOIN`s. So that they can be indexed.
+Specifically, these are the `full_code` fields on `Course` and `Section` models, which are derived from fields on related
+models.
 
-To run the backend server, run
+These are updated every time the `save()` method is called. However, it's possible to get into a state 
+(such as with db migrations) where `full_code` isn't set properly.
 
-`pipenv run python manage.py runserver 8000`
+Open a shell in production, and run this small script:
+```python
+from tqdm import tqdm
+from courses.models import Section, Course
 
-To run a frontend development server (for example, Penn Course Plan),
-1. `cd frontend/plan`
-2. `npm start`
+for c in tqdm(Course.objects.all().select_related("department")):
+    c.save()
 
-The local version of the site should open in your default browser, and
-as long as the back-end is running on port 8000, requests will be
-proxied between the two development servers.
+for s in tqdm(Section.objects.all().select_related("course")):
+    s.save()
+```
 
-## Loading Course Data
-
-`python manage.py setoption SEMESTER <semester>`
-
-Where `<semester>` is something in the form of `2019C`, for Fall 2019.
-Spring, Summer and Fall are `A`, `B` and `C`, respectively.
-
-This project isn't too useful without Penn course data. To load in
-course data, set the environment variables `API_KEY` and `API_SECRET` to
-the `Bearer` and `Token` credentials, respectively, that you recieve
-from the Penn OpenData API when you register for an API key. After those
-have been set, run
-
-`python manage.py loadcourses --semester=<semester> --query=<query>`
-
-Let `semester` be the desired semester (for example, `2019C` represents
-Fall 2019), and let query be the prefix of all courses you would like to
-load in. If you're just interested in the CIS department, put `CIS`. If
-you'd like to load in **ALL** courses, omit the query parameter. Note
-that this will take a long time, as all sections in Penn's course catalog,
-along with rooms, buildings, and instructors will be loaded in.
-
+`tqdm` will give you a nice progress bar as the script completes. The `select_related` clause speeds up the query,
+avoiding what would be a pretty nasty N+1 scenario.

@@ -1,8 +1,29 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from tqdm import tqdm
 
-from courses.tasks import set_all_status
+from courses import registrar
+from courses.models import Course, Section
+from courses.util import get_course_and_section, get_current_semester
+
+
+def set_all_status(semester=None):
+    if semester is None:
+        semester = get_current_semester()
+    statuses = registrar.get_all_course_status(semester)
+    for status in tqdm(statuses):
+        if "section_id_normalized" not in status:
+            continue
+
+        try:
+            _, section = get_course_and_section(status["section_id_normalized"], semester)
+        except Section.DoesNotExist:
+            continue
+        except Course.DoesNotExist:
+            continue
+        section.status = status["status"]
+        section.save()
 
 
 class Command(BaseCommand):

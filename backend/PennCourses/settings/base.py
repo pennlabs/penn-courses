@@ -41,14 +41,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_celery_results",
-    "django_celery_beat",
     "rest_framework",
-    "debug_toolbar",
     "corsheaders",
     "shortener.apps.ShortenerConfig",
     "accounts.apps.AccountsConfig",
     "options.apps.OptionsConfig",
+    "django.contrib.admindocs",
+    "django_extensions",
     "alert",
     "courses",
     "plan",
@@ -57,7 +56,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -65,10 +63,10 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # 'accounts.middleware.OAuth2TokenMiddleware',
+    "accounts.middleware.OAuth2TokenMiddleware",
 ]
 
-ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls.api")
+ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls")
 
 TEMPLATES = [
     {
@@ -176,12 +174,10 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost")
 
 # Celery
 MESSAGE_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = "django-db"
 
 # Django REST Framework
 REST_FRAMEWORK = {
     "COERCE_DECIMAL_TO_STRING": False,
 }
 
-# Django Debug Toolbar
-INTERNAL_IPS = ["127.0.0.1"]
+STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
