@@ -200,8 +200,12 @@ function Timeline({courseCode, setTimeline}){
                         </div>
                         <Center>
                           {data.map((item, index) =>
-                                                      <>
-                                                        <Segment height={index===0 ? segLengths[index] - 5: segLengths[index]-23}
+                                <>
+                                    <Segment
+                                        height={
+                                            index === 0
+                                                ? segLengths[index] - 5
+                                                : segLengths[index] - 23
                                                                 type = {item[1]}  />
                                                         <MyCircle type = {item[1]}><i className="fas fa-dot-circle"></i></MyCircle>
                                                       </>
