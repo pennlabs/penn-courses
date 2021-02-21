@@ -8,6 +8,7 @@ import ManageAlertWrapper from "../components/managealert";
 import { maxWidth, PHONE } from "../constants";
 import Footer from "../components/Footer";
 import AlertForm from "../components/AlertForm";
+import Timeline from "../components/Timeline";
 
 import { Center, Container, Flex } from "../components/common/layout";
 import MessageList from "../components/MessageList";
@@ -121,13 +122,14 @@ const RecruitingBanner = styled.div`
 `;
 
 function App() {
-    const showRecruiting = true; // TODO: Use backend option
+    const showRecruiting = false; // TODO: Use backend option
     const [user, setUser] = useState<User | null>(null);
     const [page, setPage] = useState("home");
     const [messages, setMessages] = useState<
         { message: string; status: number; key: number }[]
     >([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const [timeline, setTimeline] = React.useState<string>("");
 
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
@@ -219,6 +221,13 @@ function App() {
                 ) : (
                     <ManageAlertWrapper />
                 )}
+
+                {/* testing */}
+                <button onClick={()=>setTimeline("CIS-120")}>Cis-120</button>
+                <button onClick={()=>setTimeline("MKTG-476")}>Mktg-476</button>
+                {/* setTimeline={setTimeline} */}
+                <Timeline courseCode={timeline}/>
+
                 <Footer />
             </Container>
         </>
