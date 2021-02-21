@@ -144,19 +144,6 @@ const SearchBarFilters = styled.div`
     }
 `;
 
-const ClearContainer = styled.div`
-    flex-basis: auto;
-    flex-grow: 0;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: flex-end;
-    display: none;
-
-    @media screen and (min-width: 769px) {
-        display: flex;
-    }
-`;
-
 const LevelItem = styled.div`
     align-items: center;
     display: flex;
@@ -165,6 +152,10 @@ const LevelItem = styled.div`
     flex-shrink: 0;
     justify-content: center;
     margin-right: 0.75rem;
+`;
+
+const SearchLevelItem = styled(LevelItem)`
+    padding-left: 2rem;
 `;
 
 const FilterLevelItem = styled.div`
@@ -178,9 +169,23 @@ const FilterLevelItem = styled.div`
     max-width: calc(100% - 17rem);
     display: flex;
     margin-right: 0.75rem;
+    padding-left: 1rem;
 
     > * {
         padding-right: 0.5rem;
+    }
+`;
+
+const LevelRight = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-basis: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
+
+    ${LevelItem} {
+        margin-right: 0 !important;
     }
 `;
 
@@ -225,11 +230,21 @@ const ClearButton = styled.button`
     border-color: transparent;
     margin-right: 1em;
     color: #7e7e7e;
+    font-size: 0.75rem !important;
 `;
 
 const PCPImage = styled.img`
     height: 2.5rem;
     padding-left: 1.5rem;
+`;
+
+const Icon = styled.span`
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    height: 1.5rem;
+    width: 1.5rem;
+    pointer-events: none;
 `;
 
 function SearchBar({
@@ -286,7 +301,6 @@ SearchBarProps) {
         property: V
     ) => () => {
         clearFilter(property);
-        // filterData["selectedReq"] = defaultReqs;
         if (property === "selectedReq") {
             conditionalStartSearch({
                 ...filterData,
@@ -423,76 +437,58 @@ SearchBarProps) {
     }
 
     return (
-        <div className="bar level is-mobile" style={{ height: "auto" }}>
-            <div className="level-left" style={{ maxWidth: "80vw" }}>
-                <div className="level-item">
-                    <img
-                        src="/icons/favicon.ico"
-                        alt=""
-                        style={{
-                            height: "2.5rem",
-                            paddingLeft: "1.5rem",
-                        }}
-                    />
-                </div>
-                <div className="level-item" id="searchdiv">
+        <SearchBarContainer>
+            <SearchBarFilters>
+                <LevelItem>
+                    <PCPImage src="/icons/favicon.ico" alt="" />
+                </LevelItem>
+                <SearchLevelItem>
                     <SearchField
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
                     />
-                </div>
-                <div
-                    className="level-item filterContainer"
+                </SearchLevelItem>
+                <LevelItem
+                    className="filterContainer"
                     style={{ marginLeft: ".5em" }}
                 >
-                    <a
+                    <PlanViewButton
                         role="button"
                         onClick={() => setView(0)}
-                        style={{
-                            backgroundColor: isExpanded ? "white" : "#f0f1f3",
-                            padding: ".5em",
-                            paddingBottom: "0",
-                        }}
+                        isExpanded={isExpanded}
+                        expandedButton={true}
                     >
                         <img
                             style={{ width: "1.5em" }}
                             src="/icons/toggle-norm.svg"
                             alt="logo"
                         />
-                    </a>
-                    <a
+                    </PlanViewButton>
+                    <PlanViewButton
                         role="button"
                         onClick={() => setView(1)}
-                        style={{
-                            backgroundColor: isExpanded ? "#f0f1f3" : "white",
-                            padding: ".5em",
-                            paddingBottom: "0",
-                        }}
+                        isExpanded={isExpanded}
+                        expandedButton={false}
                     >
                         <img
                             style={{ width: "1.5em" }}
                             src="/icons/toggle-expanded.svg"
                             alt="logo"
                         />
-                    </a>
-                </div>
-                <div className="level-item filterContainer" id="filterdiv">
-                    <span className="icon">
+                    </PlanViewButton>
+                </LevelItem>
+                <FilterLevelItem>
+                    <Icon>
                         <i className="fas fa-filter" />
-                    </span>
+                    </Icon>
                     <p> Filter by</p>
                     {dropDowns}
-                </div>
-            </div>
-            <div className="level-right is-hidden-mobile">
-                <div className="level-item">
-                    <button
-                        className="button is-white"
-                        style={{
-                            marginRight: "1em",
-                            color: "#7e7e7e",
-                        }}
+                </FilterLevelItem>
+            </SearchBarFilters>
+            <LevelRight className="is-hidden-mobile">
+                <LevelItem>
+                    <ClearButton
                         type="button"
                         onClick={() => {
                             clearSearchResults();
@@ -506,11 +502,11 @@ SearchBarProps) {
                         }}
                     >
                         Clear all
-                    </button>
-                </div>
-            </div>
-            <div className="level-right">
-                <div className="level-item">
+                    </ClearButton>
+                </LevelItem>
+            </LevelRight>
+            <LevelRight>
+                <LevelItem>
                     <AccountIndicator
                         user={user}
                         login={login}
@@ -523,9 +519,9 @@ SearchBarProps) {
                         onLeft={false}
                         pathname={router.pathname}
                     />
-                </div>
-            </div>
-        </div>
+                </LevelItem>
+            </LevelRight>
+        </SearchBarContainer>
     );
 }
 

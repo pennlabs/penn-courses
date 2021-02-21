@@ -8,7 +8,6 @@ import "rc-slider/assets/index.css";
 import "../styles/App.css";
 import "../styles/modal.css";
 import "../styles/course-cart.css";
-import "../styles/Search.css";
 import "../styles/selector.css";
 import * as Sentry from "@sentry/browser";
 
