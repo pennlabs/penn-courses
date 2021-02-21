@@ -18,7 +18,6 @@ black = "==19.10b0"
 
 [packages]
 django = "*"
-pickle="*"
 psycopg2 = {version = "*", sys_platform = "== 'linux'"}
 requests = "*"
 twilio = "*"
@@ -38,16 +37,6 @@ ipython = "*"
 django-auto-prefetching = "*"
 django-cors-headers = "*"
 django-runtime-options = "*"
-numpy = "*"
-scikit-learn = "*"
-
-[dev-packages]
-codecov = "*"
-unittest-xml-reporting = "*"
-coverage = "*"
-flake8 = "*"
-flake8-isort = "*"
-flake8-quotes = "*"
 pyyaml = "*"
 uritemplate = "*"
 uwsgi = {version = "*", sys_platform = "== 'linux'"}
@@ -61,6 +50,8 @@ django-redis = "*"
 jsonref = "*"
 tblib = "*"
 django-extensions = "*"
+numpy = "*"
+scikit-learn = "*"
 
 [requires]
 python_version = "3"
