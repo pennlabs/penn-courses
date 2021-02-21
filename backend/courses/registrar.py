@@ -59,6 +59,10 @@ def get_departments():
         result_data = r.json().get("result_data", [])
         if len(result_data) > 0:
             return result_data[0]["departments_map"]
+        else:
+            raise ValueError("OpenData API returned data with no populated result_data field.")
+    else:
+        raise ValueError(f"OpenData API responded with status code {r.status_code}.")
 
 
 def get_courses(query, semester):
