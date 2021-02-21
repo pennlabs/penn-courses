@@ -14,7 +14,7 @@ from review.import_utils.import_to_db import (
     import_instructor,
     import_summary_row,
 )
-from review.import_utils.parse_sql import parse_row
+from review.import_utils.parse_sql import entry_regex, parse_row
 from review.models import Review, ReviewBit
 
 
@@ -61,6 +61,22 @@ class SQLParseTestCase(TestCase):
         expected = {"a": 1, "b": "two", "c": "y'all"}
         actual = parse_row(query)
         self.assertDictEqual(expected, actual)
+
+    def test_regex_hyphen(self):
+        query = """
+        INSERT into DATABASE (a, b, c)
+        VaLues (1, 'Chris Callison-Burch', 'y''all');
+        """
+        self.assertEqual(1, (len(entry_regex.findall(query))))
+
+    def test_regex_hyphen_sequence(self):
+        query = """
+        INSERT into DATABASE (a, b, c)
+        VaLues (1, 'Chris Callison-Burch', 'y''all');
+        INSERT into DATABASE (a, b, c)
+        VaLues (1, 'Chris:!!!***++++ Callison-Burch', 'y''all');
+        """
+        self.assertEqual(2, (len(entry_regex.findall(query))))
 
     def test_parse_summary(self):
         # Just make sure we're not throwing parse errors.
@@ -218,6 +234,23 @@ class DescriptionImportTestCase(TestCase):
         c2 = Course.objects.get(semester="3008A")
         for c in [c1, c2]:
             self.assertEqual("Hello", c.description)
+
+    def test_section_with_existing_description(self):
+        get_or_create_course("CIS", "120", TEST_SEMESTER)
+        get_or_create_course("CIS", "120", "3008A")
+        c, _ = get_or_create_course("CIS", "120", "3005A")
+        c.description = "TILL 3005"
+        c.save()
+
+        rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
+        import_description_rows(rows, show_progress_bar=False)
+        self.assertEqual(3, Course.objects.count())
+        c1 = Course.objects.get(semester=TEST_SEMESTER)
+        c2 = Course.objects.get(semester="3008A")
+        for c in [c1, c2]:
+            self.assertEqual("Hello", c.description)
+        c3 = Course.objects.get(semester="3005A")
+        self.assertEqual("TILL 3005", c3.description)
 
     def test_two_courses(self):
         get_or_create_course("CIS", "120", TEST_SEMESTER)

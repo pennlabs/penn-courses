@@ -34,7 +34,7 @@ def course_reviews(request, course_code):
     """
     Get all reviews for a given course, aggregated by instructor.
     """
-    if not Course.objects.filter(full_code=course_code).exists():
+    if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
         raise Http404()
 
     reviews = (
@@ -69,12 +69,18 @@ def course_reviews(request, course_code):
             "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
             "num_sections": Section.objects.filter(
                 course__full_code=course_code, review__isnull=False
-            ).count(),
+            )
+            .values("full_code", "course__semester")
+            .distinct()
+            .count(),
             "num_sections_recent": Section.objects.filter(
                 course__full_code=course_code,
                 course__semester=course["recent_semester_calc"],
                 review__isnull=False,
-            ).count(),
+            )
+            .values("full_code", "course__semester")
+            .distinct()
+            .count(),
             "average_reviews": make_subdict("average_", course),
             "recent_reviews": make_subdict("recent_", course),
             "num_semesters": course["average_semester_count"],
@@ -97,7 +103,9 @@ def instructor_reviews(request, instructor_id):
     )
 
     courses = annotate_average_and_recent(
-        Course.objects.filter(sections__instructors__pk=instructor.pk).distinct(),
+        Course.objects.filter(
+            sections__review__isnull=False, sections__instructors__pk=instructor.pk
+        ).distinct(),
         match_on=Q(
             section__course__full_code=OuterRef(OuterRef("full_code")),
             instructor__pk=instructor.pk,
@@ -197,13 +205,19 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
 
 
 @api_view(["GET"])
+@schema(PcxAutoSchema())
 def autocomplete(request):
     """
     Autocomplete entries for Courses, departments, instructors. All objects have title, description,
     and url.
     """
 
-    courses = Course.objects.filter().values("full_code", "title")
+    courses = (
+        Course.objects.filter(sections__review__isnull=False)
+        .order_by("-semester")
+        .values("full_code", "title")
+        .distinct()
+    )
     course_set = [
         {
             "title": course["full_code"],
@@ -218,7 +232,9 @@ def autocomplete(request):
         for dept in departments
     ]
 
-    instructors = Instructor.objects.all().values("name", "id", "section__course__department__code")
+    instructors = Instructor.objects.filter(section__review__isnull=False).values(
+        "name", "id", "section__course__department__code"
+    )
     instructor_set = {}
     for inst in instructors:
         if inst["id"] not in instructor_set:

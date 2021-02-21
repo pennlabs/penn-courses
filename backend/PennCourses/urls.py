@@ -13,7 +13,7 @@ api_urlpatterns = [
     path("review/", include("review.urls")),
     path("plan/", include("plan.urls")),
     path("alert/", include("alert.urls")),
-    path("courses/", include("courses.urls")),
+    path("base/", include("courses.urls")),
     path("options/", include("options.urls", namespace="options")),
     path(
         "openapi/",
@@ -37,7 +37,7 @@ api_urlpatterns = [
 urlpatterns = [
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
-    path("accounts/me/", UserView.as_view()),
+    path("accounts/me/", UserView.as_view(), name="user-view"),
     path("accounts/", include("accounts.urls", namespace="accounts")),
     path("api/", include(api_urlpatterns)),
     path("webhook", accept_webhook, name="webhook"),

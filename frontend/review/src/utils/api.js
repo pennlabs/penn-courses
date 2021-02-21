@@ -19,11 +19,31 @@ export function getLogoutUrl() {
 }
 
 export function apiAutocomplete() {
-  return apiFetch(
-    `${API_DOMAIN}/api/review/autocomplete?token=${encodeURIComponent(
-      PUBLIC_API_TOKEN
-    )}`
-  );
+  // Cache the autocomplete JSON in local storage using the stale-while-revalidate
+  // strategy.
+  const key = "meta-pcr-autocomplete";
+  const cached_autocomplete = localStorage.getItem(key);
+  if (cached_autocomplete) {
+    // If a cached version exists, replace it in the cache asynchronously and return the old cache.
+    apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data => {
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch (e) {}
+    });
+    return new Promise((resolve, reject) =>
+      resolve(JSON.parse(cached_autocomplete))
+    );
+  } else {
+    // If no cached data exists, fetch, set the cache and return in the same promise.
+    return new Promise((resolve, reject) => {
+      apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data => {
+        try {
+          localStorage.setItem(key, JSON.stringify(data));
+        } catch (e) {}
+        resolve(data);
+      });
+    });
+  }
 }
 
 export async function apiCheckAuth() {
@@ -52,9 +72,7 @@ export function apiIsAuthenticated(func) {
 
 export function apiLive(code) {
   return apiFetch(
-    `${API_DOMAIN}/api/token/live/${encodeURIComponent(
-      code
-    )}?token=${encodeURIComponent(PUBLIC_API_TOKEN)}`
+    `${API_DOMAIN}/api/base/current/courses/${encodeURIComponent(code)}/`
   );
 }
 
