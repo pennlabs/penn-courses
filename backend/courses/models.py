@@ -435,6 +435,7 @@ class Section(models.Model):
         [the number of active PCA registrations for this section]/[the class capacity]
         mapped onto the range [0,1] where the lowest current popularity (across all sections)
         maps to 0 and the highest current popularity maps to 1.
+        Open sections will automatically have a current relative PCA popularity of 0.
         NOTE: sections with an invalid class capacity (0 or negative) are excluded from
         computation of this statistic, and if this section has a class capacity of 0, then
         this method will return None.
@@ -444,6 +445,9 @@ class Section(models.Model):
 
         if self.capacity <= 0:
             return None
+
+        if self.is_open:
+            return 0
 
         section_popularity_extrema = cache.get("section_popularity_extrema")
         if section_popularity_extrema is None:
