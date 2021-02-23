@@ -1,14 +1,16 @@
-import { string } from 'prop-types';
 import React, {useEffect} from 'react';
 import styled from "styled-components";
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimes, faCircle } from '@fortawesome/free-solid-svg-icons'
 
-const TimelineContainer = styled.div`
+
+const AlertHistoryContainer = styled.div`
   position: absolute;
   right: 0px;
   top: 0;
-  width: 18vw;
-  min-width: 263px;
+  width: 14vw;
+  min-width: 200px;
   height: 100vh;
   padding: 32px 32px;
   box-shadow: 0px 4px 18px rgba(0, 0, 0, 0.08);;
@@ -22,9 +24,10 @@ const CloseButton = styled.button`
   border: none;
   background: none;
   position: absolute;
-  right: 25px;
-  top: 29px;
-  font-size: 10px;
+  right: 23px;
+  top: 25px;
+  font-size: 20px;
+  color: rgba(157,157,157,1);
   i {
     color: #9d9d9d;
     transition: 0.2s;
@@ -33,26 +36,85 @@ const CloseButton = styled.button`
     }
   }
 `
+
+const CourseInfoContainer = styled.div`
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  flex-direction: row;
+  margin-top: 6px;
+  margin-bottom: 30px;
+`
+
 const AlertTitle = styled.h3`
   font-size: 22px;
   color: rgba(40,40,40,1);
   margin-bottom: 0px;
   padding-bottom: 0px;
   margin-top: 16px;
-`;
+`
 
 const CourseSubHeading = styled.h5`
   font-size: 15px;
   color: rgba(40,40,40,1);
-  margin-top: 6px;
+  margin-bottom: 0px;
+  margin-top: 0px;
+  margin-right: 10px;
   font-weight: normal;
-`;
+`
 
+const StatusLabel = styled.div`
+  height: 23px;
+  border-radius: 3px;
+  font-weight: 600;
+  color: #e8746a;
+  background: #f9dcda;
+  font-size: 12px;
+  text-align: center;
+  line-height: 24px;
+  padding: 0px 5px;
+`
 
-// const ScrollContainer = styled.div`
-//   overflow-y: scroll;
-//   height:calc(100vh - 200px);
-// `
+const TimelineContainer = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  overflow-y: scroll;
+  height: calc(100vh - 150px);
+  flex-direction: column;
+
+  &::-webkit-scrollbar { 
+    display: none; 
+  } 
+`
+
+type CircleProps = {
+  open: boolean;
+}
+
+const Circle = styled.div<CircleProps>`
+  height: 14px;
+  width: 14px;
+  border: 1px solid ${({open}) => open ? "#78D381" : "#cbd5dd"};
+  border-radius: 50%;
+  color: ${({open}) => open ? "#78D381" : "#cbd5dd"};
+  font-size: 10px;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 14px;
+`
+
+type SegmentProps = {
+  open: boolean
+  length: number;
+}
+
+const Segment = styled.div<SegmentProps>`
+  background-color: ${({open}) => open ? "#78D381" : "#cbd5dd"};
+  height: ${({length}) => length}px;
+  width: 3px;
+`
+
 
 // const Center = styled.div`
 //   display: flex;
@@ -60,18 +122,6 @@ const CourseSubHeading = styled.h5`
 //   flex-direction: column;
 // `
 
-// const ClosedBadge = styled.div`
-//   padding: 5px 10px;
-//   height: 20px;
-//   border-radius: 3px;
-//   font-weight: 600;
-//   color: #e8746a;
-//   background: #f9dcda;
-// `
-
-// const OpenBadge = styled(ClosedBadge)`
-//   color:
-// `
 
 // const Segment = styled.div`
 //   width: 2px;
@@ -203,13 +253,28 @@ const Timeline = ({
   
   return (
   
-    <TimelineContainer>
+    <AlertHistoryContainer>
 
             <AlertTitle>Alert History</AlertTitle>
             {/* onClick={()=>setTimeline(null)} */}
-            <CloseButton><i className="fas fa-times"></i></CloseButton>
+            <CloseButton><FontAwesomeIcon icon={faTimes}/></CloseButton>
 
-            <CourseSubHeading>PSYC-001-001</CourseSubHeading>
+            <CourseInfoContainer>
+              <CourseSubHeading>PSYC-001-001</CourseSubHeading>
+              <StatusLabel>Closed</StatusLabel>
+            </CourseInfoContainer>
+
+            <TimelineContainer>
+              <Segment open={true} length={30}/>
+              <Circle open={true}><FontAwesomeIcon icon={faCircle}/></Circle>
+              <Segment open={false} length={150}/>
+              <Circle open={false}><FontAwesomeIcon icon={faCircle}/></Circle>
+              <Segment open={true} length={50}/>
+              <Circle open={true}><FontAwesomeIcon icon={faCircle}/></Circle>
+            </TimelineContainer>
+
+
+
             {/* <MyButton onClick={()=>setTimeline(null)}><i className="fas fa-times"></i></MyButton>
             <AlertTitle>Alert History</AlertTitle>
             <LeftRight>
@@ -240,7 +305,7 @@ const Timeline = ({
               }
             </ScrollContainer> */}
 
-    </TimelineContainer>
+    </AlertHistoryContainer>
   );
 }
 
