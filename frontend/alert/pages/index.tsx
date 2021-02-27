@@ -129,7 +129,7 @@ function App() {
         { message: string; status: number; key: number }[]
     >([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
-    const [timeline, setTimeline] = React.useState<string>("");
+    const [timeline, setTimeline] = React.useState<string | null>(null);
 
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
@@ -224,9 +224,7 @@ function App() {
 
                 {/* testing */}
                 <button onClick={()=>setTimeline("CIS-120")}>Cis-120</button>
-                <button onClick={()=>setTimeline("MKTG-476")}>Mktg-476</button>
-                {/* setTimeline={setTimeline} */}
-                <Timeline courseCode={timeline}/>
+                <Timeline courseCode={timeline} setTimeline={setTimeline}/>
 
                 <Footer />
             </Container>

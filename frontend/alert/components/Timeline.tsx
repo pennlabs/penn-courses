@@ -1,22 +1,26 @@
-import React, {useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import styled from "styled-components";
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTimes, faCircle } from '@fortawesome/free-solid-svg-icons'
+import { resolveModuleNameFromCache } from 'typescript';
 
-
-const AlertHistoryContainer = styled.div`
-  position: absolute;
+type AlertHistoryProps = {
+  close: boolean;
+}
+const AlertHistoryContainer = styled.div<AlertHistoryProps>`
+  position: fixed;
   right: 0px;
   top: 0;
   width: 14vw;
   min-width: 200px;
-  height: 100vh;
+  height: calc(100vh - 64px);
   padding: 32px 32px;
   box-shadow: 0px 4px 18px rgba(0, 0, 0, 0.08);;
   background: white;
-  transition: 0.5s all;
   z-index: 100;
+  transform: translate3d(${({close}) => close ? "calc(14vw + 85px)" : "0"}, 0, 0);
+  transition: transform .3s cubic-bezier(0, .52, 0, 1);
 `
 
 const CloseButton = styled.button`
@@ -24,9 +28,10 @@ const CloseButton = styled.button`
   border: none;
   background: none;
   position: absolute;
-  right: 23px;
-  top: 25px;
+  right: 20px;
+  top: 20px;
   font-size: 20px;
+  font-weight: 500;
   color: rgba(157,157,157,1);
   i {
     color: #9d9d9d;
@@ -44,6 +49,7 @@ const CourseInfoContainer = styled.div`
   flex-direction: row;
   margin-top: 6px;
   margin-bottom: 30px;
+  margin-left: 8px;
 `
 
 const AlertTitle = styled.h3`
@@ -51,7 +57,8 @@ const AlertTitle = styled.h3`
   color: rgba(40,40,40,1);
   margin-bottom: 0px;
   padding-bottom: 0px;
-  margin-top: 16px;
+  margin-top: 20px;
+  margin-left: 8px;
 `
 
 const CourseSubHeading = styled.h5`
@@ -59,8 +66,8 @@ const CourseSubHeading = styled.h5`
   color: rgba(40,40,40,1);
   margin-bottom: 0px;
   margin-top: 0px;
-  margin-right: 10px;
-  font-weight: normal;
+  margin-right: 15px;
+  font-weight: 500;
 `
 
 const StatusLabel = styled.div`
@@ -72,20 +79,34 @@ const StatusLabel = styled.div`
   font-size: 12px;
   text-align: center;
   line-height: 24px;
-  padding: 0px 5px;
+  padding: 0px 8px;
 `
 
-const TimelineContainer = styled.div`
-  display: flex;
+const TimelineScrollContainer = styled.div`
   justify-content: flex-start;
   align-items: center;
   overflow-y: scroll;
-  height: calc(100vh - 150px);
+  height: calc(100vh - 200px);
   flex-direction: column;
 
   &::-webkit-scrollbar { 
     display: none; 
   } 
+`
+const FlexRow = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-direction: column;
+`
+
+const TimelineContainer = styled.div`
+  display: grid;
+  grid-gap: 0px 10px;
+  grid-template-columns: [start] 25% [date] 20% [time] 35% [end];
+  justify-items: center;
+  width: 100%;
+  align-items: start;
 `
 
 type CircleProps = {
@@ -115,60 +136,35 @@ const Segment = styled.div<SegmentProps>`
   width: 3px;
 `
 
+type InfoLabelProps = {
+  isTime?: boolean | false;
+}
+const InfoLabel = styled.div<InfoLabelProps>`
+  font-size: 15px;
+  color: rgba(40,40,40,1);
+  height: 14px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  ${({isTime}) => isTime &&  "justify-self: end;"}
+`
 
-// const Center = styled.div`
-//   display: flex;
-//   align-items: center;
-//   flex-direction: column;
-// `
-
-
-// const Segment = styled.div`
-//   width: 2px;
-//   height: ${props=>props.height + 5}px;
-//   background: ${props=>props.type=="opened" ? "#78d381" : "#cbd5dd"};
-// `
-// const MyCircle = styled.div`
-//   color: ${props=>props.type=="opened" ? "#78d381" : "#cbd5dd"};
-// `
-
-// const TimeStyle = styled.div`
-//   position: absolute;
-//   top: ${props => props.offset}px;
-//   right: 50px;
-// `
-
-// const DateStyle = styled.div`
-//   position: absolute;
-//   top: ${props => props.offset}px;
-//   left: 10px;
-// `
 
 // const CourseIndicator = ({time, type, offset}) => {
 //   let convertedTime = convertTime(time);
 //   return <TimeStyle offset={offset}>{convertedTime[1]}</TimeStyle>
 // }
 
-// const FlexRow = styled.div`
-//   display: flex;
-//   flex-direction: row;
-//   position: relative;
-// `
 
-// const LeftRight = styled.div`
-//   display: flex;
-//   flex-direction: row;
-//   justify-content: space-between;
-//   align-items: center;
-// `
-
-// function convertTime(timeString){
-//   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-//   let d = new Date(timeString);
-//   return [d.toLocaleDateString('en-US', {month:"numeric", day: "numeric"}), d.toLocaleTimeString('en-US', { hour12: true,
-//                                              hour: "numeric",
-//                                              minute: "numeric"}).toLowerCase()]
-// }
+const convertTime = (timeString) => {
+  let d = new Date(timeString);
+  
+  //format: ["MM:DD", "HR:MIN pm/am"]
+  return [
+    d.toLocaleDateString('en-US', {month:"numeric", day: "numeric"}), 
+    d.toLocaleTimeString('en-US', { hour12: true, hour: "numeric", minute: "numeric"}).toLowerCase()
+  ]
+}
 
 // function absoluteTime(timeString){
 //   let d = new Date(timeString);
@@ -188,18 +184,58 @@ const Segment = styled.div<SegmentProps>`
 // }
 
 interface TimelineProps {
-  courseCode: string;
+  courseCode: string | null;
+  setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 // setTimeline
 const Timeline = ({
-  courseCode}: TimelineProps) => {
+  courseCode,
+  setTimeline}: TimelineProps) => {
+  
+  const scrollTimeline = useRef(null)
+  const [courseStatusData, setCourseStatusData] = useState<[]>([]);
+  const [loaded, setLoaded] = useState<boolean>(false);
+  
+  //for testing, set hide to  false
+  const [hide, setHide] = useState<boolean>(false);
 
-  let [data, setData] = React.useState(null);
-  let [segLengths, setSegLengths] = React.useState(null);
-  let [yOffsets, setYOffsets] = React.useState(null);
-  let [loaded, setLoaded] = React.useState(false);
-  let [displayedCode, setDisplayedCode] = React.useState(null);
+  // let [data, setData] = React.useState(null);
+  // let [segLengths, setSegLengths] = React.useState(null);
+  // let [yOffsets, setYOffsets] = React.useState(null);
+  // let [loaded, setLoaded] = React.useState(false);
+  // let [displayedCode, setDisplayedCode] = React.useState(null);
+
+
+  useEffect( () => {
+      // if (courseCode == null) {
+      //   return;
+      // } 
+
+      //loading course status update data
+      setLoaded(false);
+
+      fetch(`/api/base/statusupdate/MGMT-101-205/`).then((res) =>
+      ///api/base/current/search/sections/?search=BEPP-250-001
+        (res.json()).then((courseResult) => {
+          console.log(courseResult);
+          courseResult.sort( (a,b) => (a.created_at > b.created_at) ? 1 : -1);
+          console.log(convertTime("2019-03-23T15:46:33.199389-04:00"));
+
+          setLoaded(true);
+        })
+      );
+
+      
+  }, [courseCode])
+
+  useEffect( () => {
+    if (scrollTimeline.current !== null) {
+      // @ts-ignore: Object is possibly 'null'.
+      scrollTimeline.current.scrollTop = scrollTimeline.current.clientHeight;
+    }
+  })
+
 
   // useEffect(()=>{
 
@@ -209,7 +245,7 @@ const Timeline = ({
 
   //     setLoaded(false);
 
-  //     fetch(`https://penncourseplan.com/api/alert/statusupdate/${courseCode}`).then(res=>res.json()).then(result=>{
+  // fetch(`https://penncourseplan.com/api/alert/statusupdate/${courseCode}`).then(res=>res.json()).then(result=>{
   //       console.log(result)
   //       result.sort((a,b)=>(a.created_at > b.created_at) ? 1 : -1);
   //       let simplifiedData = result.reduce((ans, item, index) => { // preprocessing hte data
@@ -253,26 +289,70 @@ const Timeline = ({
   
   return (
   
-    <AlertHistoryContainer>
+    <AlertHistoryContainer close={hide}>
 
             <AlertTitle>Alert History</AlertTitle>
-            {/* onClick={()=>setTimeline(null)} */}
-            <CloseButton><FontAwesomeIcon icon={faTimes}/></CloseButton>
+            <CloseButton onClick={()=> {
+              setTimeline(null);
+              setHide(true)}}><FontAwesomeIcon icon={faTimes}/></CloseButton>
 
+            {/* Only show if loaded */}
+            {loaded ?
+            <>
             <CourseInfoContainer>
               <CourseSubHeading>PSYC-001-001</CourseSubHeading>
               <StatusLabel>Closed</StatusLabel>
             </CourseInfoContainer>
 
-            <TimelineContainer>
-              <Segment open={true} length={30}/>
-              <Circle open={true}><FontAwesomeIcon icon={faCircle}/></Circle>
-              <Segment open={false} length={150}/>
-              <Circle open={false}><FontAwesomeIcon icon={faCircle}/></Circle>
-              <Segment open={true} length={50}/>
-              <Circle open={true}><FontAwesomeIcon icon={faCircle}/></Circle>
-            </TimelineContainer>
-
+            <TimelineScrollContainer ref={scrollTimeline}>
+              <FlexRow>
+                <TimelineContainer>
+                  <InfoLabel>1/14</InfoLabel>
+                  <Segment open={true} length={30}/>
+                  <InfoLabel isTime={true}>1:10 pm</InfoLabel>
+                  <InfoLabel>1/14</InfoLabel>
+                  <Circle open={true}><FontAwesomeIcon icon={faCircle}/></Circle>
+                  <InfoLabel isTime={true}>1:10 pm</InfoLabel>
+                  <div></div>
+                  <Segment open={false} length={150}/>
+                  <div></div>
+                  <InfoLabel>1/14</InfoLabel>
+                  <Circle open={false}><FontAwesomeIcon icon={faCircle}/></Circle>
+                  <InfoLabel isTime={true}>5:36 pm</InfoLabel>
+                  <div></div>
+                  <Segment open={true} length={150}/>
+                  <div></div>
+                  <InfoLabel>1/14</InfoLabel>
+                  <Circle open={true}><FontAwesomeIcon icon={faCircle}/></Circle>
+                  <InfoLabel isTime={true}>11:15 pm</InfoLabel>
+                  <div></div>
+                  <Segment open={false} length={150}/>
+                  <div></div>
+                  <InfoLabel>1/14</InfoLabel>
+                  <Circle open={false}><FontAwesomeIcon icon={faCircle}/></Circle>
+                  <InfoLabel isTime={true}>11:15 pm</InfoLabel>
+                  <div></div>
+                  <Segment open={false} length={150}/>
+                  <div></div>
+                  <InfoLabel>1/14</InfoLabel>
+                  <Circle open={false}><FontAwesomeIcon icon={faCircle}/></Circle>
+                  <InfoLabel isTime={true}>11:15 pm</InfoLabel>
+                  <div></div>
+                  <Segment open={true} length={150}/>
+                  <div></div>
+                  <InfoLabel>1/14</InfoLabel>
+                  <Circle open={true}><FontAwesomeIcon icon={faCircle}/></Circle>
+                  <InfoLabel isTime={true}>11:15 pm</InfoLabel>
+                  
+                  
+                </TimelineContainer>
+              </FlexRow>
+              
+            </TimelineScrollContainer>
+            </> : <CourseInfoContainer>
+                    <CourseSubHeading>Loading...</CourseSubHeading>
+                   </CourseInfoContainer>
+            }
 
 
             {/* <MyButton onClick={()=>setTimeline(null)}><i className="fas fa-times"></i></MyButton>
