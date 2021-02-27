@@ -14,4 +14,4 @@ def sem_to_key(sem):
     sem = sem.strip(" ").strip("\n")
     year, season = sem[:-1], sem[-1]
     season_to_int = {"A": 0, "B": 1, "C": 2}
-    return int(year) + season_to_int[season]/3
+    return int(year) + season_to_int[season] / 3
