@@ -1,4 +1,5 @@
-import React, { CSSProperties } from "react";
+import React from "react";
+import styled from "styled-components";
 
 interface TimesProps {
     startTime: number;
@@ -6,6 +7,32 @@ interface TimesProps {
     offset: number;
     numRow: number;
 }
+
+const Time = styled.span<{ startTime: number; i: number }>`
+    position: absolute;
+    top: -9px;
+    color: #84878f;
+    font-size: 0.8rem;
+    font-weight: 500;
+    grid-row: ${(props) => (props.i - props.startTime) * 2 + 1};
+    grid-column: ${1};
+
+    @media only screen and (max-width: 768px) {
+        position: absolute;
+        white-space: nowrap;
+        top: -9px;
+        left: -15px;
+    }
+`;
+
+const TimestampContainer = styled.div<{ numRow: number; offset: number }>`
+    display: grid;
+    grid-template-rows: repeat(${(props) => props.numRow - 1}, 1fr);
+    grid-column: ${1};
+    grid-row-start: ${(props) => 1 + props.offset};
+    grid-row-end: ${(props) => props.numRow + 1};
+    position: relative;
+`;
 
 export default function Times({
     startTime,
@@ -35,26 +62,15 @@ export default function Times({
 
     for (let i = startTime; i <= endTime; i += 1) {
         timestamps.push(
-            <span
-                className="time"
-                style={{
-                    gridRow: (i - startTime) * 2 + 1,
-                    gridColumn: 1,
-                }}
-                key={i}
-            >
+            <Time startTime={startTime} i={i} key={i}>
                 {intToTime(i)}
-            </span>
+            </Time>
         );
     }
 
-    const style: CSSProperties = {
-        display: "grid",
-        gridTemplateRows: `repeat(${numRow - 1}, 1fr)`,
-        gridColumn: 1,
-        gridRowStart: 1 + offset,
-        gridRowEnd: numRow + 1,
-        position: "relative",
-    };
-    return <div style={style}>{timestamps}</div>;
+    return (
+        <TimestampContainer numRow={numRow} offset={offset}>
+            {timestamps}
+        </TimestampContainer>
+    );
 }

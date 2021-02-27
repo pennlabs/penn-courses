@@ -109,18 +109,19 @@ const genId = (() => {
     return () => counter++;
 })();
 
-// const RecruitingBanner = styled.div`
-//     text-align: center;
-//     display: grid;
-//     padding: 20px;
-//     width: 100%;
-//     background-color: #fbcd4c;
-//     & > * {
-//         margin: auto;
-//     }
-// `;
+const RecruitingBanner = styled.div`
+    text-align: center;
+    display: grid;
+    padding: 20px;
+    width: 100%;
+    background-color: #fbcd4c;
+    & > * {
+        margin: auto;
+    }
+`;
 
 function App() {
+    const showRecruiting = true; // TODO: Use backend option
     const [user, setUser] = useState<User | null>(null);
     const [page, setPage] = useState("home");
     const [messages, setMessages] = useState<
@@ -174,6 +175,21 @@ function App() {
         <>
             <Container>
                 {showLoginModal && <LoginModal />}
+                {showRecruiting && (
+                    <RecruitingBanner>
+                        <p>
+                            <span role="img" aria-label="party">
+                                🎉
+                            </span>{" "}
+                            Want to build impactful products like Penn Course
+                            Alert? Join Penn Labs this spring!{" "}
+                            <a href="https://pennlabs.org/apply">Apply here!</a>{" "}
+                            <span role="img" aria-label="party">
+                                🎉
+                            </span>
+                        </p>
+                    </RecruitingBanner>
+                )}
                 <Nav
                     login={updateUser}
                     logout={logout}

@@ -1,10 +1,12 @@
 import React, { FunctionComponent } from "react";
-
+import styled from "styled-components";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
+
+import { Loading } from "../bulma_derived_components";
 
 import {
     fetchCourseDetails,
@@ -30,6 +32,14 @@ interface SelectorProps {
     sortMode: SortMode;
     mobileView: boolean;
 }
+
+const EmptyResultsContainer = styled.div`
+    font-size: 0.8rem;
+    text-align: center;
+    margin-top: 5vh;
+    max-width: 45vh;
+`;
+
 const Selector: FunctionComponent<SelectorProps> = ({
     courses,
     course,
@@ -48,27 +58,8 @@ const Selector: FunctionComponent<SelectorProps> = ({
     const isLoading =
         isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
-    const loadingIndicator = (
-        <div
-            className="button is-loading"
-            style={{
-                height: "100%",
-                width: "100%",
-                border: "none",
-                fontSize: "3rem",
-            }}
-        />
-    );
-
     let element = (
-        <div
-            style={{
-                fontSize: "0.8em",
-                textAlign: "center",
-                marginTop: "5vh",
-                maxWidth: "45vh",
-            }}
-        >
+        <EmptyResultsContainer>
             <img src="/icons/empty-state-search.svg" alt="" />
             <h3
                 style={{
@@ -80,7 +71,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
             </h3>
             Search for courses, departments, or instructors above. Looking for
             something specific? Try using the filters!
-        </div>
+        </EmptyResultsContainer>
     );
 
     const courseList = (
@@ -128,7 +119,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     style={{ height: "calc(100vh - 12.5em)" }}
                 >
                     {isLoadingCourseInfo ? (
-                        loadingIndicator
+                        <Loading />
                     ) : (
                         <CourseInfo
                             getCourse={getCourse}
@@ -147,7 +138,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
             />
         );
     }
-    return <>{isLoading ? loadingIndicator : element}</>;
+    return <>{isLoading ? <Loading /> : element}</>;
 };
 
 const mapStateToProps = ({

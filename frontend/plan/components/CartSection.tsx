@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 import { isMobile } from "react-device-detect";
 import { getTimeString } from "./meetUtil";
 
@@ -10,17 +11,17 @@ interface CourseDetailsProps {
     overlaps: boolean;
 }
 
+const CourseDetailsContainer = styled.div`
+    flex-grow: 0;
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
+    text-align: left;
+    align-items: left;
+`;
+
 const CourseDetails = ({ meetings, code, overlaps }: CourseDetailsProps) => (
-    <div
-        style={{
-            flexGrow: 0,
-            display: "flex",
-            flexDirection: "column",
-            maxWidth: "70%",
-            textAlign: "left",
-            alignItems: "left",
-        }}
-    >
+    <CourseDetailsContainer>
         <b>
             <span>{code.replace(/-/g, " ")}</span>
         </b>
@@ -38,7 +39,7 @@ const CourseDetails = ({ meetings, code, overlaps }: CourseDetailsProps) => (
             )}
             {getTimeString(meetings)}
         </div>
-    </div>
+    </CourseDetailsContainer>
 );
 
 interface CourseCheckboxProps {

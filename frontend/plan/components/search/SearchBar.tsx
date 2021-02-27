@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
+import styled from "styled-components";
 // TODO: Move shared components to typescript
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
@@ -80,6 +81,172 @@ function shouldSearch(filterData: FilterData) {
     return searchString || selectedReq;
 }
 
+const MobileSearchBarOuterContainer = styled.div`
+    margin-bottom: 0;
+`;
+
+const MobileSearchBarInnerContainer = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    background: white;
+    padding-top: 20px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+`;
+
+const MobileFilterContainer = styled.div`
+    padding: 0.5rem;
+`;
+
+const MobileFilterDropdowns = styled.div`
+    z-index: 100;
+    margin-top: -20px;
+    margin-bottom: 20px;
+    padding: 10px;
+    display: flex;
+    width: 100vw;
+    align-items: center;
+    flex-wrap: wrap;
+    background: white;
+    justify-content: flex-start;
+`;
+
+const SearchBarContainer = styled.div`
+    margin: 1rem 1.5rem;
+    padding: 0.25rem;
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px 0 lightgrey;
+    width: inherit;
+    align-items: center;
+    justify-content: space-between;
+    height: auto;
+    margin-bottom: 1.5rem;
+
+    @media screen and (min-width: 769px) {
+        display: flex;
+    }
+`;
+
+const SearchBarFilters = styled.div`
+    flex-basis: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: flex-start;
+    max-width: 80vw !important;
+
+    @media screen and (min-width: 769px) {
+        display: flex;
+    }
+`;
+
+const LevelItem = styled.div`
+    align-items: center;
+    display: flex;
+    flex-basis: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
+    justify-content: center;
+    margin-right: 0.75rem;
+`;
+
+const SearchLevelItem = styled(LevelItem)`
+    padding-left: 2rem;
+`;
+
+const FilterLevelItem = styled.div`
+    align-items: center;
+    flex-basis: auto;
+    flex-shrink: 0;
+    flex-grow: 1;
+    flex-wrap: wrap;
+    padding: 0.3em 0em;
+    justify-content: flex-start;
+    max-width: calc(100% - 17rem);
+    display: flex;
+    margin-right: 0.75rem;
+    padding-left: 1rem;
+
+    > * {
+        padding-right: 0.5rem;
+    }
+`;
+
+const LevelRight = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-basis: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
+
+    ${LevelItem} {
+        margin-right: 0 !important;
+    }
+`;
+
+const PlanViewButton = styled.a`
+    background-color: ${({
+        isExpanded,
+        expandedButton,
+    }: {
+        isExpanded: boolean;
+        expandedButton: boolean;
+    }) => (isExpanded === expandedButton ? "white" : "#f0f1f3")};
+    padding: 0.5em;
+    padding-bottom: 0;
+
+    img {
+        width: 1.5em;
+    }
+`;
+
+const ClearButton = styled.button`
+    user-select: none;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    box-shadow: none;
+    display: inline-flex;
+    font-size: 1rem;
+    height: 2.25em;
+    line-height: 1.5;
+    position: relative;
+    vertical-align: top;
+    border-width: 1px;
+    cursor: pointer;
+    justify-content: center;
+    padding-bottom: calc(0.375em - 1px);
+    padding-left: 0.75em;
+    padding-right: 0.75em;
+    padding-top: calc(0.375em - 1px);
+    text-align: center;
+    white-space: nowrap;
+    background-color: white;
+    border-color: transparent;
+    margin-right: 1em;
+    color: #7e7e7e;
+    font-size: 0.75rem !important;
+`;
+
+const PCPImage = styled.img`
+    height: 2.5rem;
+    padding-left: 1.5rem;
+`;
+
+const Icon = styled.span`
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    height: 1.5rem;
+    width: 1.5rem;
+    pointer-events: none;
+`;
+
 function SearchBar({
     /* eslint-disable no-shadow */
     startSearch, // from redux - dispatches fetch course search function (actions/index.js)
@@ -134,7 +301,6 @@ SearchBarProps) {
         property: V
     ) => () => {
         clearFilter(property);
-        // filterData["selectedReq"] = defaultReqs;
         if (property === "selectedReq") {
             conditionalStartSearch({
                 ...filterData,
@@ -241,20 +407,8 @@ SearchBarProps) {
     );
     if (mobileView) {
         return (
-            <div style={{ marginTop: "0px" }}>
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        background: "white",
-                        paddingTop: "20px",
-                        paddingBottom: "10px",
-                        marginBottom: "10px",
-                        borderRadius: "6px",
-                    }}
-                >
+            <MobileSearchBarOuterContainer>
+                <MobileSearchBarInnerContainer>
                     <AccountIndicator
                         user={user}
                         login={login}
@@ -268,107 +422,73 @@ SearchBarProps) {
                         filterData={filterData}
                         updateSearchText={updateSearchText}
                     />
-                    <div
-                        style={{ padding: "0.5rem" }}
+                    <MobileFilterContainer
                         role="button"
                         onClick={() => showHideReqs(!reqsShown)}
                     >
                         <i className="fas fa-filter" />
-                    </div>
-                </div>
+                    </MobileFilterContainer>
+                </MobileSearchBarInnerContainer>
                 {reqsShown && (
-                    <div
-                        style={{
-                            zIndex: 100,
-                            marginTop: "-20px",
-                            padding: "10px",
-                            marginBottom: "20px",
-                            display: "flex",
-                            width: "100vw",
-                            alignItems: "center",
-                            flexWrap: "wrap",
-                            background: "white",
-                            justifyContent: "flex-start",
-                        }}
-                    >
-                        {dropDowns}
-                    </div>
+                    <MobileFilterDropdowns>{dropDowns}</MobileFilterDropdowns>
                 )}
-            </div>
+            </MobileSearchBarOuterContainer>
         );
     }
 
     return (
-        <div className="bar level is-mobile" style={{ height: "auto" }}>
-            <div className="level-left" style={{ maxWidth: "80vw" }}>
-                <div className="level-item">
-                    <img
-                        src="/icons/favicon.ico"
-                        alt=""
-                        style={{
-                            height: "2.5rem",
-                            paddingLeft: "1.5rem",
-                        }}
-                    />
-                </div>
-                <div className="level-item" id="searchdiv">
+        <SearchBarContainer>
+            <SearchBarFilters>
+                <LevelItem>
+                    <PCPImage src="/icons/favicon.ico" alt="" />
+                </LevelItem>
+                <SearchLevelItem>
                     <SearchField
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
                         updateSearchText={updateSearchText}
                     />
-                </div>
-                <div
-                    className="level-item filterContainer"
+                </SearchLevelItem>
+                <LevelItem
+                    className="filterContainer"
                     style={{ marginLeft: ".5em" }}
                 >
-                    <a
+                    <PlanViewButton
                         role="button"
                         onClick={() => setView(0)}
-                        style={{
-                            backgroundColor: isExpanded ? "white" : "#f0f1f3",
-                            padding: ".5em",
-                            paddingBottom: "0",
-                        }}
+                        isExpanded={isExpanded}
+                        expandedButton={true}
                     >
                         <img
                             style={{ width: "1.5em" }}
                             src="/icons/toggle-norm.svg"
                             alt="logo"
                         />
-                    </a>
-                    <a
+                    </PlanViewButton>
+                    <PlanViewButton
                         role="button"
                         onClick={() => setView(1)}
-                        style={{
-                            backgroundColor: isExpanded ? "#f0f1f3" : "white",
-                            padding: ".5em",
-                            paddingBottom: "0",
-                        }}
+                        isExpanded={isExpanded}
+                        expandedButton={false}
                     >
                         <img
                             style={{ width: "1.5em" }}
                             src="/icons/toggle-expanded.svg"
                             alt="logo"
                         />
-                    </a>
-                </div>
-                <div className="level-item filterContainer" id="filterdiv">
-                    <span className="icon">
+                    </PlanViewButton>
+                </LevelItem>
+                <FilterLevelItem>
+                    <Icon>
                         <i className="fas fa-filter" />
-                    </span>
+                    </Icon>
                     <p> Filter by</p>
                     {dropDowns}
-                </div>
-            </div>
-            <div className="level-right is-hidden-mobile">
-                <div className="level-item">
-                    <button
-                        className="button is-white"
-                        style={{
-                            marginRight: "1em",
-                            color: "#7e7e7e",
-                        }}
+                </FilterLevelItem>
+            </SearchBarFilters>
+            <LevelRight className="is-hidden-mobile">
+                <LevelItem>
+                    <ClearButton
                         type="button"
                         onClick={() => {
                             clearSearchResults();
@@ -382,11 +502,11 @@ SearchBarProps) {
                         }}
                     >
                         Clear all
-                    </button>
-                </div>
-            </div>
-            <div className="level-right">
-                <div className="level-item">
+                    </ClearButton>
+                </LevelItem>
+            </LevelRight>
+            <LevelRight>
+                <LevelItem>
                     <AccountIndicator
                         user={user}
                         login={login}
@@ -399,9 +519,9 @@ SearchBarProps) {
                         onLeft={false}
                         pathname={router.pathname}
                     />
-                </div>
-            </div>
-        </div>
+                </LevelItem>
+            </LevelRight>
+        </SearchBarContainer>
     );
 }
 

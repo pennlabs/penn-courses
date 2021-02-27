@@ -1,11 +1,10 @@
-from django.test import RequestFactory, TestCase
+from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 from tests.courses.util import create_mock_data
 
 from courses.models import Instructor, Requirement
-from plan.search import TypedCourseSearchBackend
 from review.models import Review
 
 
@@ -14,68 +13,6 @@ TEST_SEMESTER = "2019C"
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
-
-
-class TypedSearchBackendTestCase(TestCase):
-    def setUp(self):
-        self.factory = RequestFactory()
-        self.search = TypedCourseSearchBackend()
-
-    def test_type_course(self):
-        req = self.factory.get("/", {"type": "course", "search": "ABC123"})
-        terms = self.search.get_search_fields(None, req)
-        self.assertEqual(["^full_code"], terms)
-
-    def test_type_keyword(self):
-        req = self.factory.get("/", {"type": "keyword", "search": "ABC123"})
-        terms = self.search.get_search_fields(None, req)
-        self.assertEqual(["title", "sections__instructors__name"], terms)
-
-    def test_auto_course(self):
-        courses = ["cis", "CIS", "cis120", "anch-027", "cis 121", "ling-140"]
-        for course in courses:
-            req = self.factory.get("/", {"type": "auto", "search": course})
-            terms = self.search.get_search_fields(None, req)
-            self.assertEqual(["^full_code"], terms, f"search:{course}")
-
-    def test_auto_keyword(self):
-        keywords = ["rajiv", "gandhi", "programming", "hello world"]
-        for kw in keywords:
-            req = self.factory.get("/", {"type": "auto", "search": kw})
-            terms = self.search.get_search_fields(None, req)
-            self.assertEqual(["title", "sections__instructors__name"], terms, f"search:{kw}")
-
-
-class CourseSearchTestCase(TestCase):
-    def setUp(self):
-        self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
-        self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
-        self.client = APIClient()
-        set_semester()
-
-    def test_search_by_dept(self):
-        response = self.client.get(
-            reverse("courses-current-list"), {"search": "math", "type": "auto"}
-        )
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(len(response.data), 1)
-        course_codes = [d["id"] for d in response.data]
-        self.assertTrue("CIS-120" not in course_codes and "MATH-114" in course_codes)
-
-    def test_search_by_instructor(self):
-        self.section.instructors.add(Instructor.objects.get_or_create(name="Tiffany Chang")[0])
-        self.math1.instructors.add(Instructor.objects.get_or_create(name="Josh Doman")[0])
-        searches = ["Tiffany", "Chang"]
-        for search in searches:
-            response = self.client.get(
-                reverse("courses-current-list"), {"search": search, "type": "auto"}
-            )
-            self.assertEqual(200, response.status_code)
-            self.assertEqual(len(response.data), 1)
-            course_codes = [d["id"] for d in response.data]
-            self.assertTrue(
-                "CIS-120" in course_codes and "MATH-114" not in course_codes, f"search:{search}"
-            )
 
 
 class CreditUnitFilterTestCase(TestCase):
@@ -90,17 +27,17 @@ class CreditUnitFilterTestCase(TestCase):
         set_semester()
 
     def test_include_course(self):
-        response = self.client.get(reverse("courses-current-list"), {"cu": "1.0"})
+        response = self.client.get(reverse("courses-search", args=["current"]), {"cu": "1.0"})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_include_multiple(self):
-        response = self.client.get(reverse("courses-current-list"), {"cu": "0.5,1.0"})
+        response = self.client.get(reverse("courses-search", args=["current"]), {"cu": "0.5,1.0"})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_exclude_course(self):
-        response = self.client.get(reverse("courses-current-list"), {"cu": ".5,1.5"})
+        response = self.client.get(reverse("courses-search", args=["current"]), {"cu": ".5,1.5"})
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
@@ -119,12 +56,14 @@ class RequirementFilterTestCase(TestCase):
         set_semester()
 
     def test_return_all_courses(self):
-        response = self.client.get(reverse("courses-current-list"))
+        response = self.client.get(reverse("courses-search", args=["current"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
 
     def test_filter_for_req(self):
-        response = self.client.get(reverse("courses-current-list"), {"requirements": "REQ@SAS"})
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"requirements": "REQ@SAS"}
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual("MATH-114", response.data[0]["id"])
@@ -135,7 +74,9 @@ class RequirementFilterTestCase(TestCase):
         )
         req2.save()
         req2.courses.add(self.different_math)
-        response = self.client.get(reverse("courses-current-list"), {"requirements": "REQ@SAS"})
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"requirements": "REQ@SAS"}
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual("MATH-114", response.data[0]["id"])
@@ -148,7 +89,7 @@ class RequirementFilterTestCase(TestCase):
         req2.courses.add(course3)
 
         response = self.client.get(
-            reverse("courses-current-list"), {"requirements": "REQ@SAS,REQ2@SEAS"}
+            reverse("courses-search", args=["current"]), {"requirements": "REQ@SAS,REQ2@SEAS"}
         )
         self.assertEqual(0, len(response.data))
 
@@ -157,7 +98,7 @@ class RequirementFilterTestCase(TestCase):
         req2.save()
         req2.courses.add(self.math)
         response = self.client.get(
-            reverse("courses-current-list"), {"requirements": "REQ@SAS,REQ2@SEAS"}
+            reverse("courses-search", args=["current"]), {"requirements": "REQ@SAS,REQ2@SEAS"}
         )
         self.assertEqual(1, len(response.data))
         self.assertEqual("MATH-114", response.data[0]["id"])
@@ -193,14 +134,14 @@ class CourseReviewAverageTestCase(TestCase):
         set_semester()
 
     def test_course_average(self):
-        response = self.client.get(reverse("courses-current-detail", args=["CIS-120"]))
+        response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, response.data["course_quality"])
         self.assertEqual(3, response.data["instructor_quality"])
         self.assertEqual(3, response.data["difficulty"])
 
     def test_section_reviews(self):
-        response = self.client.get(reverse("courses-current-detail", args=["CIS-120"]))
+        response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data["sections"]))
 
@@ -213,7 +154,7 @@ class CourseReviewAverageTestCase(TestCase):
             {"course_quality": 1, "instructor_quality": 1, "difficulty": 1,}
         )
         self.section2.instructors.add(instructor3)
-        response = self.client.get(reverse("courses-current-detail", args=["CIS-120"]))
+        response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data["sections"]))
         self.assertEqual(
@@ -221,11 +162,15 @@ class CourseReviewAverageTestCase(TestCase):
         )
 
     def test_filter_courses_by_review_included(self):
-        response = self.client.get(reverse("courses-current-list"), {"difficulty": "2.5-3.5"})
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"difficulty": "2.5-3.5"}
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_filter_courses_by_review_excluded(self):
-        response = self.client.get(reverse("courses-current-list"), {"difficulty": "0-2"})
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"difficulty": "0-2"}
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))

@@ -1,51 +1,53 @@
-.modal header, .modal footer{
+.modal header,
+.modal footer {
     background-color: white;
 }
 
-.modal-card{
-    border-radius:4px;
-    max-width: 400px!important;
-    max-height: 275px!important;
+.modal-card {
+    border-radius: 4px;
+    max-width: 400px !important;
+    max-height: 275px !important;
 }
 
-.modal-card.big{
-    max-width: 700px!important;
-    max-height: 400px!important;
+.modal-card.big {
+    max-width: 700px !important;
+    max-height: 400px !important;
 }
 
-.modal-card-body{
+.modal-card-body {
     padding-bottom: 1.5rem;
 }
 
-
-.modal-card-body .button, .modal-card-body input{
-    display:block;
+.modal-card-body .button,
+.modal-card-body input {
+    display: block;
     margin: 1.5rem auto auto;
 }
 
-.modal-background{
-    background-color:#707070;
-    opacity:0.75;
+.modal-background {
+    background-color: #707070;
+    opacity: 0.75;
 }
 
 .modal-card-head {
-    border-bottom: none!important;
-    background-color: white!important;
+    border-bottom: none !important;
+    background-color: white !important;
     font-weight: bold;
-    border-radius: 4px!important;
+    border-radius: 4px !important;
 }
 
-.modal-card-head, .modal-card-body {
+.modal-card-head,
+.modal-card-body {
     padding-left: 2rem;
     padding-right: 2rem;
 }
 
 .modal-card input {
-    border: 1px solid #D6D6D6 !important;
+    border: 1px solid #d6d6d6 !important;
     border-radius: 0.3rem;
     padding: 0.35rem;
     width: 100%;
-    margin-top:0;
+    margin-top: 0;
     border: none;
     outline: none;
     transition: 200ms ease;
@@ -56,7 +58,7 @@
 }
 
 .modal-card button.is-link {
-    background: #7876F3;
+    background: #7876f3;
     font-weight: 600;
 }
 
