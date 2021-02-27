@@ -8,29 +8,30 @@ import { resolveModuleNameFromCache } from 'typescript';
 type AlertHistoryProps = {
   close: boolean;
 }
+
 const AlertHistoryContainer = styled.div<AlertHistoryProps>`
   position: fixed;
-  right: 0px;
+  right: 0;
   top: 0;
   width: 14vw;
-  min-width: 200px;
-  height: calc(100vh - 64px);
-  padding: 32px 32px;
-  box-shadow: 0px 4px 18px rgba(0, 0, 0, 0.08);;
+  min-width: 12.5rem;
+  height: calc(100vh - 4rem);
+  padding: 2rem 2rem;
+  box-shadow: 0 0.25rem 1.125rem rgba(0, 0, 0, 0.08);;
   background: white;
   z-index: 100;
-  transform: translate3d(${({close}) => close ? "calc(14vw + 85px)" : "0"}, 0, 0);
-  transition: transform .3s cubic-bezier(0, .52, 0, 1);
-`
+  transform: translate3d(${({close}) => close ? "calc(14vw + 5.3125rem)" : "0"}, 0, 0);
+  transition: transform .7s cubic-bezier(0, .52, 0, 1);
+`;
 
 const CloseButton = styled.button`
   outline: none;
   border: none;
   background: none;
   position: absolute;
-  right: 20px;
-  top: 20px;
-  font-size: 20px;
+  right: 1.25rem;
+  top: 1.25rem;
+  font-size: 1.25rem;
   font-weight: 500;
   color: rgba(157,157,157,1);
   i {
@@ -40,90 +41,91 @@ const CloseButton = styled.button`
       color: #5a5a5a;
     }
   }
-`
+`;
 
 const CourseInfoContainer = styled.div`
   display: flex;
   justify-content: left;
   align-items: center;
   flex-direction: row;
-  margin-top: 6px;
-  margin-bottom: 30px;
-  margin-left: 8px;
-`
+  margin-top: 0.375rem;
+  margin-bottom: 1.875rem;
+  margin-left: 0.5rem;
+`;
 
 const AlertTitle = styled.h3`
-  font-size: 22px;
+  font-size: 1.375rem;
   color: rgba(40,40,40,1);
-  margin-bottom: 0px;
-  padding-bottom: 0px;
-  margin-top: 20px;
-  margin-left: 8px;
-`
+  margin-bottom: 0rem;
+  padding-bottom: 0rem;
+  margin-top: 1.25rem;
+  margin-left: 0.5rem;
+`;
 
 const CourseSubHeading = styled.h5`
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: rgba(40,40,40,1);
-  margin-bottom: 0px;
-  margin-top: 0px;
-  margin-right: 15px;
+  margin-bottom: 0rem;
+  margin-top: 0rem;
+  margin-right: 0.9375rem;
   font-weight: 500;
-`
+`;
 
 const StatusLabel = styled.div`
-  height: 23px;
-  border-radius: 3px;
+  height: 1.4375rem;
+  border-radius: 0.1875rem;
   font-weight: 600;
   color: #e8746a;
   background: #f9dcda;
-  font-size: 12px;
+  font-size: 0.75rem;
   text-align: center;
-  line-height: 24px;
-  padding: 0px 8px;
-`
+  line-height: 1.5rem;
+  padding: 0rem 0.5rem;
+`;
 
 const TimelineScrollContainer = styled.div`
   justify-content: flex-start;
   align-items: center;
   overflow-y: scroll;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 12.5rem);
   flex-direction: column;
 
   &::-webkit-scrollbar { 
     display: none; 
   } 
-`
+`;
+
 const FlexRow = styled.div`
   display: flex;
   justify-content: flex-start;
   align-items: center;
   flex-direction: column;
-`
+`;
 
 const TimelineContainer = styled.div`
   display: grid;
-  grid-gap: 0px 10px;
+  grid-gap: 0rem 0.625rem;
   grid-template-columns: [start] 25% [date] 20% [time] 35% [end];
   justify-items: center;
   width: 100%;
   align-items: start;
-`
+`;
 
 type CircleProps = {
   open: boolean;
 }
 
 const Circle = styled.div<CircleProps>`
-  height: 14px;
-  width: 14px;
-  border: 1px solid ${({open}) => open ? "#78D381" : "#cbd5dd"};
+  height: 0.875rem;
+  width: 0.875rem;
+  border: 0.0625rem solid ${({open}) => open ? "#78D381" : "#cbd5dd"};
   border-radius: 50%;
   color: ${({open}) => open ? "#78D381" : "#cbd5dd"};
-  font-size: 10px;
+  font-size: 0.625rem;
   text-align: center;
   vertical-align: middle;
-  line-height: 14px;
-`
+  line-height: 0.875rem;
+`;
 
 type SegmentProps = {
   open: boolean
@@ -133,21 +135,21 @@ type SegmentProps = {
 const Segment = styled.div<SegmentProps>`
   background-color: ${({open}) => open ? "#78D381" : "#cbd5dd"};
   height: ${({length}) => length}px;
-  width: 3px;
-`
+  width: 0.1875rem;
+`;
 
 type InfoLabelProps = {
   isTime?: boolean | false;
 }
 const InfoLabel = styled.div<InfoLabelProps>`
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: rgba(40,40,40,1);
-  height: 14px;
+  height: 0.875rem;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   ${({isTime}) => isTime &&  "justify-self: end;"}
-`
+`;
 
 
 // const CourseIndicator = ({time, type, offset}) => {
@@ -196,9 +198,6 @@ const Timeline = ({
   const scrollTimeline = useRef(null)
   const [courseStatusData, setCourseStatusData] = useState<[]>([]);
   const [loaded, setLoaded] = useState<boolean>(false);
-  
-  //for testing, set hide to  false
-  const [hide, setHide] = useState<boolean>(false);
 
   // let [data, setData] = React.useState(null);
   // let [segLengths, setSegLengths] = React.useState(null);
@@ -215,11 +214,12 @@ const Timeline = ({
       //loading course status update data
       setLoaded(false);
 
-      fetch(`/api/base/statusupdate/MGMT-101-205/`).then((res) =>
+      fetch(`/api/base/statusupdate/MATH-240-003/`).then((res) =>
       ///api/base/current/search/sections/?search=BEPP-250-001
         (res.json()).then((courseResult) => {
           console.log(courseResult);
           courseResult.sort( (a,b) => (a.created_at > b.created_at) ? 1 : -1);
+
           console.log(convertTime("2019-03-23T15:46:33.199389-04:00"));
 
           setLoaded(true);
@@ -286,21 +286,21 @@ const Timeline = ({
   // , [courseCode]);
 
   // offScreen={courseCode==null || loaded==false}
-  
+
   return (
   
-    <AlertHistoryContainer close={hide}>
+    <AlertHistoryContainer close={courseCode == null}>
 
             <AlertTitle>Alert History</AlertTitle>
             <CloseButton onClick={()=> {
               setTimeline(null);
-              setHide(true)}}><FontAwesomeIcon icon={faTimes}/></CloseButton>
+              courseCode = null;}}><FontAwesomeIcon icon={faTimes}/></CloseButton>
 
             {/* Only show if loaded */}
             {loaded ?
             <>
             <CourseInfoContainer>
-              <CourseSubHeading>PSYC-001-001</CourseSubHeading>
+              <CourseSubHeading>{courseCode}</CourseSubHeading>
               <StatusLabel>Closed</StatusLabel>
             </CourseInfoContainer>
 

@@ -129,7 +129,7 @@ function App() {
         { message: string; status: number; key: number }[]
     >([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
-    const [timeline, setTimeline] = React.useState<string | null>(null);
+    const [timeline, setTimeline] = useState<string | null>(null);
 
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
@@ -215,7 +215,7 @@ function App() {
                 {page === "home" ? (
                     <Flex col grow={1}>
                         {user ? (
-                            <AlertForm user={user} setResponse={setResponse} />
+                            <AlertForm user={user} setResponse={setResponse} setTimeline={setTimeline}/>
                         ) : null}
                     </Flex>
                 ) : (
@@ -223,7 +223,8 @@ function App() {
                 )}
 
                 {/* testing */}
-                <button onClick={()=>setTimeline("CIS-120")}>Cis-120</button>
+                <button onClick={()=>setTimeline("CIS-120-001")}>CIS-120</button>
+                <button onClick={()=>setTimeline("CIS-121-004")}>CIS-121</button>
                 <Timeline courseCode={timeline} setTimeline={setTimeline}/>
 
                 <Footer />
