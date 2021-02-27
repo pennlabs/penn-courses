@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 
+import boto3
 import dj_database_url
 
 
@@ -181,3 +182,10 @@ REST_FRAMEWORK = {
 }
 
 STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
+
+S3 = boto3.client(
+    "s3",
+    region_name="us-east-1",
+    aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+)

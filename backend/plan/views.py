@@ -1,17 +1,91 @@
+import os
+import pickle
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
+from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 import plan.examples as examples
+from courses.management.commands.recommendcourses import (
+    clean_course_input,
+    recommend_courses,
+    vectorize_user,
+    vectorize_user_by_courses,
+)
 from courses.models import Section
 from courses.util import get_course_and_section, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from PennCourses.settings.base import S3
 from plan.models import Schedule
 from plan.serializers import ScheduleSerializer
+
+
+def retrieve_course_clusters():
+    if not os.path.exists("./plan/temp_pickle/course-cluster-data.pkl"):
+        print("re-downloading...")
+
+        if "temp_pickle" not in os.listdir("./plan"):
+            os.mkdir("./plan/temp_pickle")
+
+        S3.download_file(
+            "penn.courses", "course-cluster-data.pkl", "./plan/temp_pickle/course-cluster-data.pkl"
+        )
+
+    return pickle.load(open("plan/temp_pickle/course-cluster-data.pkl", "rb"))
+
+
+@api_view(["POST"])
+@schema(PcxAutoSchema())
+@permission_classes([IsAuthenticated])
+def recommend_courses_view(request):
+    """
+    This method will optionally take in current and past courses. In order to
+    make recommendations solely on the user's past and current courses in plan, simply
+    pass an empty body to the request. Otherwise, in order to specify past and current courses,
+    the object should have a "curr-courses" and "past_courses" attribute that will each contain
+    an array of class codes of current and/or past courses.
+    """
+    user = request.user
+    curr_courses = request.data.get("curr_courses", [])
+    past_courses = request.data.get("past_courses", [])
+
+    try:
+        (
+            cluster_centroids,
+            clusters,
+            curr_course_vectors_dict,
+            past_course_vectors_dict,
+        ) = retrieve_course_clusters()
+    except Exception:
+        return Response("Model is not trained!", status=status.HTTP_400_BAD_REQUEST,)
+
+    if curr_courses or past_courses:
+        try:
+            user_vector, user_courses = vectorize_user_by_courses(
+                clean_course_input(curr_courses),
+                clean_course_input(past_courses),
+                curr_course_vectors_dict,
+                past_course_vectors_dict,
+            )
+        except Exception:
+            return Response(
+                "Current/Past Courses formatted incorrectly", status=status.HTTP_400_BAD_REQUEST,
+            )
+    else:
+        user_vector, user_courses = vectorize_user(
+            user, curr_course_vectors_dict, past_course_vectors_dict
+        )
+
+    return Response(
+        recommend_courses(
+            curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses
+        )
+    )
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):

@@ -1,16 +1,18 @@
 import math
+import os
 import pickle
-from typing import Iterable, Tuple, Dict, List
+from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
 from django.core.management.base import BaseCommand
 from sklearn.cluster import KMeans
-from sklearn.decomposition import TruncatedSVD, PCA
+from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 
 from courses.management.commands.recommendation_utils.utils import sections_to_courses, sem_to_key
 from courses.models import Course
+from PennCourses.settings.base import S3
 from plan.models import Schedule
 
 
@@ -32,7 +34,7 @@ def courses_data_from_db():
 
 
 def courses_data_from_csv():
-    for line in open("./course_data.csv", "r"):
+    for line in open("courses/management/commands/course_data.csv", "r"):
         yield tuple(line.split(","))
 
 
@@ -85,10 +87,12 @@ def group_courses(courses_data: Iterable[Tuple[int, str, str]]):
     return courses_by_semester_by_user
 
 
-def vectorize_by_copresence(courses_by_semester_by_user, as_past_class=False) -> Dict[str, np.ndarray]:
+def vectorize_by_copresence(
+    courses_by_semester_by_user, as_past_class=False
+) -> Dict[str, np.ndarray]:
     """
-    Vectorizes courses by whether they're in the user's schedule at the same time, as well as the number
-    of times they come after other courses.
+    Vectorizes courses by whether they're in the user's schedule at the same time,
+    as well as the number of times they come after other courses.
     :param courses_by_semester_by_user: Grouped courses data returned by group_courses
     :return:
     """
@@ -133,17 +137,20 @@ def vectorize_by_copresence(courses_by_semester_by_user, as_past_class=False) ->
                             later_index = course_to_index[course_later]
                             copresence_vectors_by_course[course_earlier][later_index] += cofreq
 
-    concatenated = {key: order_vectors_by_course[key] + copresence_vectors_by_course[key] for key in
-                    order_vectors_by_course}
+    concatenated = {
+        key: order_vectors_by_course[key] + copresence_vectors_by_course[key]
+        for key in order_vectors_by_course
+    }
 
     return concatenated
 
 
 def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]):
     """
-    @:param courses_by_user: A list of dicts in which each dict maps a course id to the number of times a user has it
-    in their schedules.
-    :return: A dict mapping course ids to a vector wherein each component contains how many times the corresponding user
+    @:param courses_by_user: A list of dicts in which each dict maps a course id to
+    the number of times a user has it in their schedules.
+    :return: A dict mapping course ids to a vector wherein each component
+    contains how many times the corresponding user
     has that course in their schedules.
     """
     num_users = len(courses_by_user)
@@ -170,7 +177,8 @@ def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]
 
 def get_unsequenced_courses_by_user(courses_by_semester_by_user):
     """
-    Takes in grouped courses data and returns a list of multisets, wherein each multiset is the multiset of courses
+    Takes in grouped courses data and returns a list of multisets,
+    wherein each multiset is the multiset of courses
     for a particular user
     :param courses_by_semester_by_user: Grouped courses data returned by group_courses
     :return:
@@ -188,7 +196,8 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
 
 def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     """
-    Generates a dict associating courses to vectors for those courses, as well as courses to vector representations
+    Generates a dict associating courses to vectors for those courses,
+    as well as courses to vector representations
     of having taken that class in the past.
     """
     courses_to_vectors_curr = {}
@@ -200,7 +209,8 @@ def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     courses_by_user = get_unsequenced_courses_by_user(grouped_courses)
 
     courses, courses_vectorized_by_schedule_presence = zip(
-        *vectorize_courses_by_schedule_presence(courses_by_user).items())
+        *vectorize_courses_by_schedule_presence(courses_by_user).items()
+    )
     courses_vectorized_by_description = vectorize_courses_by_description(courses)
     copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
     copresence_vectors_past = [copresence_vectors_by_course_past[course] for course in courses]
@@ -210,16 +220,28 @@ def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     copresence_vectors = dim_reduce.fit_transform(copresence_vectors)
     dim_reduce = TruncatedSVD(n_components=round(30 * math.log2(len(courses))))
     copresence_vectors_past = dim_reduce.fit_transform(copresence_vectors_past)
-    for course, schedule_vector, description_vector, copresence_vector, copresence_vector_past in zip(courses,
-                                                                                                      courses_vectorized_by_schedule_presence,
-                                                                                                      courses_vectorized_by_description,
-                                                                                                      copresence_vectors,
-                                                                                                      copresence_vectors_past):
+    for (
+        course,
+        schedule_vector,
+        description_vector,
+        copresence_vector,
+        copresence_vector_past,
+    ) in zip(
+        courses,
+        courses_vectorized_by_schedule_presence,
+        courses_vectorized_by_description,
+        copresence_vectors,
+        copresence_vectors_past,
+    ):
         if use_descriptions:
             if np.linalg.norm(description_vector) == 0:
                 continue
-            total_vector_curr = np.concatenate([schedule_vector, description_vector, copresence_vector * 2])
-            total_vector_past = np.concatenate([schedule_vector, description_vector, copresence_vector_past * 2])
+            total_vector_curr = np.concatenate(
+                [schedule_vector, description_vector, copresence_vector * 2]
+            )
+            total_vector_past = np.concatenate(
+                [schedule_vector, description_vector, copresence_vector_past * 2]
+            )
         else:
             total_vector_curr = np.concatenate([schedule_vector, copresence_vector * 2])
             total_vector_past = np.concatenate([schedule_vector, copresence_vector_past * 2])
@@ -247,8 +269,8 @@ def cosine_similarity(vec_a, vec_b):
 
 def generate_course_clusters(n_per_cluster=100):
     """
-    Clusters courses and also returns a vector representation of each class (one for having taken that class now,
-    and another for having taken it in the past)
+    Clusters courses and also returns a vector representation of each class
+    (one for having taken that class now, and another for having taken it in the past)
     """
     course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict()
     _courses, _course_vectors = zip(*course_vectors_dict_curr.items())
@@ -260,19 +282,31 @@ def generate_course_clusters(n_per_cluster=100):
     for course_index, cluster_index in enumerate(raw_cluster_result):
         clusters[cluster_index].append(courses[course_index])
 
-    cluster_centroids = [sum(course_vectors_dict_curr[course] for course in cluster) / len(cluster) for cluster in
-                         clusters]
+    cluster_centroids = [
+        sum(course_vectors_dict_curr[course] for course in cluster) / len(cluster)
+        for cluster in clusters
+    ]
     return cluster_centroids, clusters, course_vectors_dict_curr, course_vectors_dict_past
 
 
 def save_course_clusters(cluster_data):
-    return pickle.dump(cluster_data, open("./course-cluster-data.pkl", "wb"))
+    if "temp_pickle" not in os.listdir("plan"):
+        os.mkdir("plan/temp_pickle")
+
+    pickle.dump(cluster_data, open("./plan/temp_pickle/course-cluster-data.pkl", "wb"))
+
+    try:
+        S3.upload_file(
+            "./plan/temp_pickle/course-cluster-data.pkl", "penn.courses", "course-cluster-data.pkl"
+        )
+        print("success!")
+    except Exception:
+        print("there was a problem uploading the file / connecting to AWS!")
 
 
 class Command(BaseCommand):
-    help = 'Train recommendation model.'
+    help = "Train recommendation model."
 
     def handle(self, *args, **kwargs):
         print("Training...")
         save_course_clusters(generate_course_clusters())
-        print("Success!")
