@@ -150,3 +150,9 @@ img.small {
 *[role="button"]:hover .fa-times {
     color: rgba(0, 0, 0, 0.33);
 }
+
+.fa,
+.fas,
+.far .grey-text {
+    color: #c6c6c6;
+}

@@ -88,6 +88,28 @@ const AddRemoveButton = styled.div`
     width: 2.5em;
 `;
 
+const Bell = styled.a`
+    color: gray;
+    &:hover {
+        color: #669afb;
+    }
+`;
+
+const HoverSwitch = styled.div`
+    .fa-check {
+        color: #3daa6d;
+    }
+
+    &:hover .fa-check,
+    & .fa-times {
+        display: none;
+    }
+
+    &:hover .fa-times {
+        display: inline;
+    }
+`;
+
 export default function Section({ section, cart, inCart }: SectionProps) {
     const { instructors, meetings, status } = section;
     const cartAdd = () => {
@@ -165,8 +187,7 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                     </div>
                     {status === "C" ? (
                         <div className="popover is-popover-left">
-                            <a
-                                className="bell"
+                            <Bell
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={`https://penncoursealert.com/?course=${section.id}`}
@@ -175,7 +196,7 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                                     style={{ fontSize: "1rem" }}
                                     className="far fa-bell"
                                 />
-                            </a>
+                            </Bell>
 
                             <span className="popover-content">
                                 {" "}
@@ -191,10 +212,10 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                     onClick={inCart ? cart.remove : () => cartAdd()}
                 >
                     {inCart ? (
-                        <div className="hover-switch">
+                        <HoverSwitch>
                             <i className="fas fa-check" />
                             <i className="fas fa-times" />
-                        </div>
+                        </HoverSwitch>
                     ) : (
                         <i className="fas fa-plus" />
                     )}
