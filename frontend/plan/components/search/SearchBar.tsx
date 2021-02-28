@@ -99,6 +99,7 @@ const MobileSearchBarInnerContainer = styled.div`
 
 const MobileFilterContainer = styled.div`
     padding: 0.5rem;
+    color: #c6c6c6;
 `;
 
 const MobileFilterDropdowns = styled.div`
@@ -480,7 +481,10 @@ SearchBarProps) {
                 </LevelItem>
                 <FilterLevelItem>
                     <Icon>
-                        <i className="fas fa-filter" />
+                        <i
+                            className="fas fa-filter"
+                            style={{ color: "#c6c6c6" }}
+                        />
                     </Icon>
                     <p> Filter by</p>
                     {dropDowns}

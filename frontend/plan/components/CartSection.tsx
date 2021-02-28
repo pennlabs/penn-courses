@@ -29,7 +29,7 @@ const CourseDetails = ({ meetings, code, overlaps }: CourseDetailsProps) => (
             {overlaps && (
                 <div className="popover is-popover-right">
                     <i
-                        style={{ paddingRight: "5px" }}
+                        style={{ paddingRight: "5px", color: "#c6c6c6" }}
                         className="fas fa-calendar-times"
                     />
                     <span className="popover-content">
@@ -173,12 +173,12 @@ const CartSection = ({
         lastAdded={lastAdded}
         isMobile={isMobile}
         onClick={(e) => {
-            // ensure that it's not the trash can being clicked
+            // ensure that it's not the trash can or info button being clicked
             if (
                 // NOTE: explicit typecase and not null assertion operator used
                 (e.target as HTMLElement).parentElement!.getAttribute(
                     "class"
-                ) !== "cart-delete-course"
+                ) !== "CartSection__CartCourseButton-sc-1yc7t2z-1 iJfWAl"
             ) {
                 toggleCheck();
             }

@@ -23,6 +23,45 @@ import SearchSortDropdown from "../components/search/SearchSortDropdown";
 import { openModal } from "../actions";
 import { preventMultipleTabs } from "../components/syncutils";
 import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
+import styled, { createGlobalStyle } from "styled-components";
+
+const GlobalStyle = createGlobalStyle`
+  html {
+    font-size: calc(100vw / 95);
+    width: 100%;
+    background-color: #f1eff9;
+  }
+
+  .smooth-transition {
+    transition: all 0.5s ease-in-out;
+  }
+`;
+
+const CustomTabs = styled(Tabs)`
+    background: white;
+    margin-top: -20px;
+    margin-bottom: 10px;
+
+    .topTab {
+        text-transform: none !important;
+        background-color: black;
+    }
+`;
+
+const Box = styled.div`
+    height: calc(100vh - 9em - 3em);
+    border-radius: 4px;
+    box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.09);
+    background-color: white;
+    color: #4a4a4a;
+    display: block;
+    padding: 1.25rem;
+    @media (max-width: 800px) {
+        min-height: calc(100vh - 8em);
+        height: 100%;
+        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);
+    }
+`;
 
 let middlewares = [thunkMiddleware, analyticsMiddleware];
 if (process.env.NODE_ENV === "development") {
@@ -146,6 +185,7 @@ function Index() {
         <Provider store={store}>
             {initGA()}
             {headPreamble}
+            <GlobalStyle />
             {innerWidth < 800 ? (
                 <>
                     <SearchBar
@@ -156,7 +196,7 @@ function Index() {
                         storeLoaded={storeLoaded}
                         isExpanded={isExpanded}
                     />
-                    <Tabs value={tab} className="topTabs" centered>
+                    <CustomTabs value={tab} centered>
                         <Tab
                             className="topTab"
                             label="Search"
@@ -172,7 +212,7 @@ function Index() {
                             label="Schedule"
                             onClick={() => setTab(2)}
                         />
-                    </Tabs>
+                    </CustomTabs>
                     <SwipeableViews
                         index={tab}
                         // @ts-ignore
@@ -198,15 +238,14 @@ function Index() {
                                 >
                                     <SearchSortDropdown />
                                 </div>
-                                <div
-                                    className="box"
+                                <Box
                                     style={{
                                         paddingLeft: 0,
                                         paddingRight: 0,
                                     }}
                                 >
                                     <Selector mobileView={true} view={0} />
-                                </div>
+                                </Box>
                             </div>
                         </div>
                         <div style={{ padding: "10px" }}>
@@ -275,15 +314,14 @@ function Index() {
                                     <SearchSortDropdown />
                                 </div>
                             </span>
-                            <div
-                                className="box"
+                            <Box
                                 style={{
                                     paddingLeft: 0,
                                     paddingRight: 0,
                                 }}
                             >
                                 <Selector mobileView={false} view={view} />
-                            </div>
+                            </Box>
                         </div>
                         <div
                             className="column is-2"

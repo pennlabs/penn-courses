@@ -80,7 +80,10 @@ export default function CourseInfo({
                         onClick={back}
                     >
                         <span className="icon">
-                            <i className="fas fa-arrow-left" />
+                            <i
+                                className="fas fa-arrow-left"
+                                style={{ color: "#c6c6c6" }}
+                            />
                         </span>
                         &nbsp; Back
                     </BackButton>

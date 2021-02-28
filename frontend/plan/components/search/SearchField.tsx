@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { FilterData } from "../../../plan/types";
+import { Icon } from "../bulma_derived_components";
 
 interface SearchFieldProps {
     startSearch: (filterData: FilterData) => void;
@@ -58,9 +59,9 @@ export function SearchField({
                 placeholder="Search"
                 disabled={isDisabled}
             />
-            <span className="icon is-small is-left">
+            <Icon className="icon is-small is-left">
                 <i className="fas fa-search" />
-            </span>
+            </Icon>
         </SearchContainer>
     );
 }

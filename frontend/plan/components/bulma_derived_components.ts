@@ -15,6 +15,7 @@ export const Icon = styled.span`
     height: 1rem;
     width: 1rem;
     pointer-events: none;
+    color: #c6c6c6 !important;
 `;
 
 export const RadioInput = styled.input`

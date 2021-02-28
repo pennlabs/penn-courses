@@ -86,6 +86,19 @@ const BadgesContainer = styled.div`
 const AddRemoveButton = styled.div`
     padding: 1.8em 1.8em 1.8em 1em;
     width: 2.5em;
+
+    .fas {
+        cursor: pointer;
+    }
+
+    .fa-times {
+        color: rgba(0, 0, 0, 0.2);
+        transition: 200ms ease color;
+    }
+
+    &:hover .fa-times {
+        color: rgba(0, 0, 0, 0.33);
+    }
 `;
 
 const Bell = styled.a`
@@ -157,7 +170,10 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                         <div>
                             {meetings && meetings.length > 0 ? (
                                 <div>
-                                    <i className="fas fa-map-marker-alt grey-text" />
+                                    <i
+                                        className="fas fa-map-marker-alt grey-text"
+                                        style={{ color: "#c6c6c6" }}
+                                    />
                                     &nbsp;
                                     {((l) => {
                                         // formats location names
@@ -217,7 +233,10 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                             <i className="fas fa-times" />
                         </HoverSwitch>
                     ) : (
-                        <i className="fas fa-plus" />
+                        <i
+                            className="fas fa-plus"
+                            style={{ color: "#c6c6c6" }}
+                        />
                     )}
                 </AddRemoveButton>
             </SectionInfoContainer>
