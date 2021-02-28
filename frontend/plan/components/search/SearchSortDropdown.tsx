@@ -74,7 +74,7 @@ const DropdownContainer = styled.div`
     }
 `;
 
-const DropdownTrigger = styled.div`
+const DropdownTrigger = styled.div<{ isActive: boolean }>`
     margin-left: 0.75rem;
     height: 1.5rem;
     width: 1.5rem;
@@ -84,8 +84,8 @@ const DropdownTrigger = styled.div`
     background: transparent;
 
     div {
-        background: ${({ isActive }: { isActive: boolean }) =>
-            isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
+        background: ${(props) =>
+            props.isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
     }
 
     div:hover {
@@ -93,10 +93,9 @@ const DropdownTrigger = styled.div`
     }
 `;
 
-const DropdownMenu = styled.div`
+const DropdownMenu = styled.div<{ isActive: boolean }>`
     margin-top: 0.1rem !important;
-    display: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "block" : "none"};
+    display: ${(props) => (props.isActive ? "block" : "none")};
     left: 0;
     min-width: 12rem;
     padding-top: 4px;
