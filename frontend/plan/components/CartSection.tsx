@@ -76,14 +76,34 @@ const CourseCheckbox = ({ checked }: CourseCheckboxProps) => {
     );
 };
 
+const CartCourseButton = styled.div`
+    flex-grow: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+
+    i {
+        width: 1rem;
+        height: 1rem;
+        transition: 250ms ease all;
+        border: none;
+        color: #d3d3d800;
+    }
+
+    i:hover {
+        color: #67676a !important;
+    }
+`;
+
 interface CourseInfoButtonProps {
     courseInfo: () => void;
 }
 
 const CourseInfoButton = ({ courseInfo }: CourseInfoButtonProps) => (
-    <div role="button" onClick={courseInfo} className="cart-delete-course">
+    <CartCourseButton role="button" onClick={courseInfo}>
         <i className="fa fa-info-circle" />
-    </div>
+    </CartCourseButton>
 );
 
 interface CourseTrashCanProps {
@@ -91,9 +111,9 @@ interface CourseTrashCanProps {
 }
 
 const CourseTrashCan = ({ remove }: CourseTrashCanProps) => (
-    <div role="button" onClick={remove} className="cart-delete-course">
+    <CartCourseButton role="button" onClick={remove}>
         <i className="fas fa-trash" />
-    </div>
+    </CartCourseButton>
 );
 
 interface CartSectionProps {
@@ -107,6 +127,35 @@ interface CartSectionProps {
     lastAdded: boolean;
 }
 
+const CourseCartItem = styled.div<{ lastAdded: boolean; isMobile: boolean }>`
+    background: ${(props) => (props.lastAdded ? "#e1e3f7" : "white")};
+    transition: 250ms ease background;
+    cursor: pointer;
+    user-select: none;
+
+    display: ${(props) => (props.isMobile ? "grid" : "flex")};
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0.8rem;
+    border-bottom: 1px solid #e5e8eb;
+    grid-template-columns: ${(props) =>
+        props.isMobile ? "20% 50% 15% 15%" : ""};
+
+    * {
+        user-select: none;
+    }
+    &:hover {
+        background: #f5f5ff;
+    }
+    &:active {
+        background: #efeffe;
+    }
+
+    &:hover i {
+        color: #d3d3d8;
+    }
+`;
+
 const CartSection = ({
     toggleCheck,
     checked,
@@ -117,29 +166,12 @@ const CartSection = ({
     overlaps,
     lastAdded,
 }: CartSectionProps) => (
-    <div
+    <CourseCartItem
         role="switch"
         id={code}
         aria-checked="false"
-        className={
-            lastAdded ? "course-cart-item highlighted" : "course-cart-item"
-        }
-        style={
-            !isMobile
-                ? {
-                      display: "flex",
-                      flexDirection: "row",
-                      justifyContent: "space-around",
-                      padding: "0.8rem",
-                      borderBottom: "1px solid #E5E8EB",
-                  }
-                : {
-                      display: "grid",
-                      gridTemplateColumns: "20% 50% 15% 15%",
-                      padding: "0.8rem",
-                      borderBottom: "1px solid #E5E8EB",
-                  }
-        }
+        lastAdded={lastAdded}
+        isMobile={isMobile}
         onClick={(e) => {
             // ensure that it's not the trash can being clicked
             if (
@@ -156,7 +188,7 @@ const CartSection = ({
         <CourseDetails meetings={meetings} code={code} overlaps={overlaps} />
         <CourseInfoButton courseInfo={courseInfo} />
         <CourseTrashCan remove={remove} />
-    </div>
+    </CourseCartItem>
 );
 
 export default CartSection;

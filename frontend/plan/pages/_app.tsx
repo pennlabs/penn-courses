@@ -6,7 +6,6 @@ import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
 import "react-circular-progressbar/dist/styles.css";
 import "rc-slider/assets/index.css";
 import "../styles/App.css";
-import "../styles/course-cart.css";
 import "../styles/selector.css";
 import * as Sentry from "@sentry/browser";
 import type { AppProps } from "next/app";
