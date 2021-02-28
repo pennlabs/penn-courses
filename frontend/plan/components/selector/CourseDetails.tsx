@@ -65,7 +65,7 @@ const PCRButtonLink = styled.a`
     color: #8f8f8f !important;
     text-align: center;
     border: 2px solid #eeeeee;
-    border-radius: 2px;
+    border-radius: 30px;
 
     background-color: #fff;
     cursor: pointer;
@@ -75,7 +75,6 @@ const PCRButtonLink = styled.a`
 
     &:hover {
         border: 2px solid #cbcbcb;
-        border-radius: 4px;
     }
 `;
 

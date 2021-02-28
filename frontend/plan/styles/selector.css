@@ -17,18 +17,18 @@
 .bell:hover {
     color: #669afb;
 }
-
+/* 
 .course_section {
     transition: 250ms;
-}
+} */
 
-.course_section:hover {
+/* .course_section:hover {
     background-color: rgba(105, 117, 244, 0.05);
-}
+} */
 
-.results ul:first-child {
+/* .results ul:first-child {
     border-top: 1px solid rgb(230, 230, 230);
-}
+} */
 
 .header {
     color: #a0a0a0;
