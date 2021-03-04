@@ -4,9 +4,10 @@ from textwrap import dedent
 
 import phonenumbers  # library for parsing and formatting phone numbers.
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
-from django.db.models import Max, Q
+from django.db.models import Max, Q, FloatField
+from django.db.models.functions import Cast
 from django.utils import timezone
 
 from alert.alerts import Email, PushNotification, Text
@@ -192,6 +193,7 @@ class Registration(models.Model):
     section = models.ForeignKey(
         Section,
         on_delete=models.CASCADE,
+        related_name="registration_set",
         help_text="The section that the user registered to be notified about.",
     )
     cancelled = models.BooleanField(
@@ -693,6 +695,47 @@ class Registration(models.Model):
             return self
 
 
+class PcaPopularityExtrema(models.Model):
+    """
+    This model tracks changes in the extrema of PCA popularity, i.e. the highest and lowest
+    (PCA registration volume)/(section capacity) ratios across all currently offered sections.
+    """
+
+    created_at = models.DateTimeField(
+        auto_now_add=True, help_text="The datetime at which the extrema were updated."
+    )
+
+    def validate_positive(value):
+        if value <= 0:
+            raise ValidationError(f"Value {value} is not positive.")
+
+    highest_ratio_registration_volume = models.IntegerField(
+        help_text="The registration volume of the most popular section."
+    )
+    highest_ratio_section_capacity = models.IntegerField(
+        help_text="The capacity of the most popular section. NOTE: must be strictly positive.",
+        validators=[validate_positive]
+    )
+
+    @property
+    def highest_popularity_ratio(self):
+        return (Cast(self.highest_ratio_registration_volume, FloatField())
+                / Cast(self.highest_ratio_section_capacity, FloatField()))
+
+    lowest_ratio_registration_volume = models.IntegerField(
+        help_text="The registration volume of the least popular section."
+    )
+    lowest_ratio_section_capacity = models.IntegerField(
+        help_text="The capacity of the least popular section. NOTE: must be strictly positive.",
+        validators=[validate_positive]
+    )
+
+    @property
+    def lowest_popularity_ratio(self):
+        return (Cast(self.lowest_ratio_registration_volume, FloatField())
+                / Cast(self.lowest_ratio_section_capacity, FloatField()))
+
+
 def register_for_course(
     course_code,
     email_address=None,
@@ -752,4 +795,5 @@ def register_for_course(
 
     registration.api_key = api_key
     registration.save()
+
     return RegStatus.SUCCESS, section.full_code, registration

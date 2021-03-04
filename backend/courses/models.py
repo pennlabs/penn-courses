@@ -429,6 +429,27 @@ class Section(models.Model):
         ).count()
 
     @property
+    def computed_current_pca_popularity(self):
+        """
+        Returns the computed (rather than cached/stored) current PCA popularity of the section,
+        which is defined as:
+        [the number of active PCA registrations for this section]/[the class capacity].
+        Open sections will automatically have a current PCA popularity of 0.
+        NOTE: sections with an invalid class capacity (0 or negative) are excluded from
+        computation of this statistic, and if this section has a class capacity of 0, then
+        this method will return None.
+        """
+        from alert.models import Registration  # imported here to avoid circular imports
+
+        if self.capacity <= 0:
+            return None
+        if self.is_open:
+            return 0
+        return self.registrations.filter(
+            **Registration.is_active_filter()
+        ).count() / self.capacity
+
+    @property
     def current_relative_pca_popularity(self):
         """
         The current relative PCA popularity of the section, which is defined as:

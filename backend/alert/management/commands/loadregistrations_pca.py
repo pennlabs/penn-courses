@@ -1,5 +1,4 @@
 import logging
-import mmap
 import os
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -7,21 +6,10 @@ from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware
 from tqdm import tqdm
+from PennCourses.command_utils import get_num_lines
 
 from alert.models import Registration, Section
 from courses.models import Course, Department
-
-
-def get_num_lines(file_path):
-    """
-    Returns the number of lines in the file at the given path.
-    """
-    fp = open(file_path, "r+")
-    buf = mmap.mmap(fp.fileno(), 0)
-    lines = 0
-    while buf.readline():
-        lines += 1
-    return lines
 
 
 def load_pca_registrations(file_path, dummy_missing_sections=False):

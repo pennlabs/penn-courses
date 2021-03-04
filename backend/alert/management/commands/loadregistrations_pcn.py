@@ -8,25 +8,14 @@ from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware
 from tqdm import tqdm
+from PennCourses.command_utils import get_num_lines
 
 from alert.models import Registration, Section
 from courses.models import Course, Department
-from courses.util import get_current_semester
+from courses.util import get_current_semester, get_semester
 
 
 tqdm.pandas()  # enables progress bars for pandas operations
-
-
-def get_num_lines(file_path):
-    """
-    Returns the number of lines in the file at the given path.
-    """
-    fp = open(file_path, "r+")
-    buf = mmap.mmap(fp.fileno(), 0)
-    lines = 0
-    while buf.readline():
-        lines += 1
-    return lines
 
 
 def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_sections=False):
@@ -80,15 +69,9 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
         print(error_message)
         return False
 
-    def get_semester(created, created_at):
+    def get_semester_with_error(created, created_at):
         nonlocal error_message
-        if 3 <= created_at.month and created_at.month <= 9:
-            sem = str(created_at.year) + "C"
-        else:
-            if created_at.month < 3:
-                sem = str(created_at.year) + "A"
-            else:
-                sem = str(created_at.year + 1) + "A"
+        sem = get_semester(created_at)
         if sem >= get_current_semester():
             error_message = (
                 "PCN registrations from the current semester or later cannot be imported. "
@@ -104,7 +87,7 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
         dept_code = row["course_y"].strip().split("-")[0].upper()
         course_code = row["course_y"].strip().split("-")[1]
         section_code = row["course_y"].strip().split("-")[2]
-        semester = get_semester(row["created"], row["created_at"])
+        semester = get_semester_with_error(row["created"], row["created_at"])
         full_code = f"{dept_code}-{course_code}-{section_code}"
         try:
             if f"{full_code} {semester}" in searched_for_sections:
@@ -166,7 +149,7 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
             dept_code = row["course_y"].strip().split("-")[0].upper()
             course_code = row["course_y"].strip().split("-")[1]
             section_code = row["course_y"].strip().split("-")[2]
-            semester = get_semester("", row["created_at"])
+            semester = get_semester_with_error("", row["created_at"])
             full_code = f"{dept_code}-{course_code}-{section_code}"
             if f"{full_code} {semester}" in created_sections:
                 section = created_sections[f"{full_code} {semester}"]

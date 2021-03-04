@@ -214,7 +214,7 @@ def autocomplete(request):
 
     courses = (
         Course.objects.filter(sections__review__isnull=False)
-        .order_by("-semester")
+        .order_by("semester")
         .values("full_code", "title")
         .distinct()
     )

@@ -49,6 +49,17 @@ def get_current_semester():
     return retrieved_val
 
 
+def get_semester(datetime):
+    if 3 <= datetime.month and datetime.month <= 9:
+        sem = str(datetime.year) + "C"
+    else:
+        if datetime.month < 3:
+            sem = str(datetime.year) + "A"
+        else:
+            sem = str(datetime.year + 1) + "A"
+    return sem
+
+
 @receiver(post_save, sender=Option, dispatch_uid="update_stock_count")
 def invalidate_current_semester_cache(sender, instance, **kwargs):
     """
