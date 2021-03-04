@@ -7,7 +7,10 @@ from courses.models import StatusUpdate
 
 
 class Command(BaseCommand):
-    help = "Export Status Updates by semester."
+    help = (
+        "Export Status Updates by semester with the 5 columns:\n"
+        "full_code, semester, created_at, old_status, new_status"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(

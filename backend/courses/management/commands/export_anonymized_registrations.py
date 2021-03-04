@@ -7,7 +7,11 @@ from alert.models import Registration
 
 
 class Command(BaseCommand):
-    help = "Export anonymized PCA Registrations by semester."
+    help = (
+        "Export anonymized PCA Registrations by semester with the 9 columns:\n"
+        "dept code, course code, section code, semester, created_at, id, resubscribed_from_id, "
+        "notification_sent, notification_sent_at"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -42,8 +46,9 @@ class Command(BaseCommand):
                 )
                 rows += 1
                 output_file.write(
-                    f"{registration.section.full_code},{registration.section.semester},"
-                    f"{registration.created_at},{notification_sent_at},"
-                    f"{registration.id},{resubscribed_from_id}\n"
+                    f"{registration.section.course.department},{registration.section.course.code},"
+                    f"{registration.section.code},{registration.section.semester},"
+                    f"{registration.created_at},{registration.id},{resubscribed_from_id},"
+                    f"{registration.notification_sent},{notification_sent_at}\n"
                 )
         print(f"Generated {file_path} with {rows} rows...")
