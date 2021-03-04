@@ -111,7 +111,7 @@ const TimelineContainer = styled.div`
   width: 100%;
   align-items: start;
   justify-content: center;
-  margin-right: 16px;
+  margin-right: 1rem;
 `;
 
 const Circle = styled.div<{open: boolean}>`
