@@ -222,9 +222,6 @@ function App() {
                     <ManageAlertWrapper />
                 )}
 
-                {/* testing */}
-                <button onClick={()=>setTimeline("CIS-120-001")}>CIS-120</button>
-                <button onClick={()=>setTimeline("CIS-121-004")}>CIS-121</button>
                 <Timeline courseCode={timeline} setTimeline={setTimeline}/>
 
                 <Footer />
