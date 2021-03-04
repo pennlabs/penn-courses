@@ -21,7 +21,7 @@ const AlertHistoryContainer = styled.div<{close: boolean}>`
   padding: 2rem 2rem;
   box-shadow: 0 0.25rem 1.125rem rgba(0, 0, 0, 0.08);;
   background: white;
-  z-index: 100;
+  z-index: 5001;
   transform: translate3d(${({close}) => close ? "16.5625rem" : "0"}, 0, 0);
   transition: transform .7s cubic-bezier(0, .52, 0, 1);
 `;
@@ -106,11 +106,12 @@ const FlexRow = styled.div`
 
 const TimelineContainer = styled.div`
   display: grid;
-  grid-gap: 0rem 0.625rem;
-  grid-template-columns: [start] 25% [date] 20% [time] 35% [end];
+  grid-template-columns: [start] 22% [date] 20% [time] 35% [end];
   justify-items: center;
   width: 100%;
   align-items: start;
+  justify-content: center;
+  margin-right: 16px;
 `;
 
 const Circle = styled.div<{open: boolean}>`
