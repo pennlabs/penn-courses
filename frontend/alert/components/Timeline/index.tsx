@@ -133,12 +133,10 @@ const formatData = (courseData) => {
                 getMonthDay(courseData[index - 1]["created_at"]);
 
         if (item["old_status"] == "C" && item["new_status"] == "O") {
-            ans.push([item, "opened", sameDate]);
+            return ans.concat([[item, "opened", sameDate]]);
         } else {
-            ans.push([item, "closed", sameDate]);
+            return ans.concat([[item, "closed", sameDate]]);
         }
-
-        return ans;
     }, []);
 
     return formattedData;

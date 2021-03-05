@@ -70,6 +70,17 @@ const timeInHours = (timeString) => {
     return d.getHours();
 };
 
+const calcSegmentLength = (prevTime, currTime) => {
+    return Math.min(
+        Math.round(
+            MIN_SEGMENT_LENGTH +
+                Math.abs(timeInHours(prevTime) - timeInHours(currTime)) *
+                    MULTIPLIER
+        ),
+        MAX_SEGMENT_LENGTH
+    );
+};
+
 interface TimelineEleProps {
     courseStatusData: any;
     index: number;
@@ -78,14 +89,7 @@ interface TimelineEleProps {
 const TimelineEle = ({ courseStatusData, index }: TimelineEleProps) => {
     const prevTime = courseStatusData[index - 1][0]["created_at"];
     const currTime = courseStatusData[index][0]["created_at"];
-    const segLength = Math.min(
-        Math.round(
-            MIN_SEGMENT_LENGTH +
-                Math.abs(timeInHours(prevTime) - timeInHours(currTime)) *
-                    MULTIPLIER
-        ),
-        MAX_SEGMENT_LENGTH
-    );
+    const segLength = calcSegmentLength(prevTime, currTime);
 
     return (
         <>
