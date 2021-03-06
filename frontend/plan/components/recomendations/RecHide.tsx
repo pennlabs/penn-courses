@@ -1,21 +1,41 @@
 import React, { useEffect, useRef } from "react";
+import styled from "styled-components";
 
-export default function RecHide() {
-    return(
+const CollapseLabel = styled.span`
+    color: #8a8e95;
+    font-size: 13px;
+    line-height: 13px;
+    font-weight: 500;
+`;
+
+const ChevronDown = styled.span`
+    color: #8a8e95;
+    font-size: 10px;
+    font-weight: 300px;
+    margin-left: 5px;
+`;
+
+interface RecHideProps {
+    show: boolean;
+    setShow: (_: boolean) => void;
+}
+
+const RecHide = ({ show, setShow }: RecHideProps) => {
+    return (
         <div
-            className={`classic dropdown`}
+            style={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+            }}
+            onClick={() => setShow(!show)}
         >
-            <span className="selected_name">Hide</span>
-            <div
-                className="classic-dropdown-trigger"
-                role="button"
-            >
-                <div aria-haspopup={true} aria-controls="dropdown-menu">
-                    <span className="icon is-small">
-                        <i className="fa fa-chevron-down" aria-hidden="true" />
-                    </span>
-                </div>
-            </div>
+            <CollapseLabel> {show ? "Hide" : "Show"}</CollapseLabel>
+            <ChevronDown
+                className={show ? "fa fa-chevron-down" : "fa fa-chevron-up"}
+            />
         </div>
     );
-}
+};
+
+export default RecHide;

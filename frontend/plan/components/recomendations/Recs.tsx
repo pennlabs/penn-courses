@@ -1,15 +1,25 @@
-import React, { useEffect, useRef } from "react";
-import RecBanner from "./RecBanner"
+import React, { useState } from "react";
+import RecBanner from "./RecBanner";
+import RecContent from "./RecContent";
+import styled from "styled-components";
 
-export default function Recs() {
-    return(
-        <div
-            style = {{
-                position: "relative",
-                bottom: 0
-            }}
-        >
-            <RecBanner/>
-        </div>
+const RecContainer = styled.div`
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0 15px;
+`;
+
+const Recs = () => {
+    const [show, setShow] = useState(true);
+
+    return (
+        <RecContainer>
+            {console.log(show)}
+            <RecBanner show={show} setShow={setShow} />
+            <RecContent show={show} />
+        </RecContainer>
     );
-}
+};
+
+export default Recs;

@@ -1,48 +1,55 @@
 import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
-import RecHide from "./RecHide"
-import RecInfo from "./RecInfo"
-import RecNew from "./RecNew"
+import RecHide from "./RecHide";
+import RecInfo from "./RecInfo";
+import RecNew from "./RecNew";
 
+const BannerContainer = styled.div<{ collapse: boolean }>`
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: ${({ collapse }) => (collapse ? "25px" : "40px")};
+    margin-bottom: ${({ collapse }) => (collapse ? "0px" : "10px")};
+    transition: all 0.7s;
+`;
 
-export default function RecBanner() {
+interface RecBannerProps {
+    show: boolean;
+    setShow: (_: boolean) => void;
+}
 
-    return(
-        <span
-            style={{
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center"
-            }}
-        >
+const RecBanner = ({ show, setShow }: RecBannerProps) => {
+    return (
+        <BannerContainer collapse={!show}>
             {/* left side */}
             <span
                 style={{
                     display: "flex",
                     justifyContent: "space-around",
-                    alignItems: "center"
+                    alignItems: "center",
                 }}
             >
-                <RecNew/>
+                <RecNew />
                 <h3
-                    style = {{
+                    style={{
                         fontWeight: "bold",
                         padding: 0,
-                        marginBottom: "0.5rem",
-                        paddingLeft: "10px",
-                        paddingRight: "10px"
+                        paddingLeft: "8px",
+                        paddingRight: "8px",
                     }}
                 >
                     Recommended
                 </h3>
-                <RecInfo/>
+                <RecInfo />
             </span>
+
             {/* Right side*/}
             <span>
-                <RecHide/>
+                <RecHide show={show} setShow={setShow} />
             </span>
-        </span>
-
+        </BannerContainer>
     );
-}
+};
+
+export default RecBanner;

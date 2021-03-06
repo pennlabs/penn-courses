@@ -282,18 +282,13 @@ function Index() {
                             style={{
                                 paddingLeft: 0,
                                 paddingRight: 0,
-                                // display: "flex",
-                                // flexDirection: "columnn",
-                                // justifyContent: "space-between"
+                                display: "flex",
+                                flexDirection: "column",
+                                flex: 1,
                             }}
                         >
                             <Selector view={view} />
-                            
-                            <Recs
-                                style ={{
-                                    bottom: 0
-                                }}
-                            />
+                            <Recs />
                         </div>
                     </div>
                     <div
