@@ -26,6 +26,12 @@ applications:
     extraEnv:
       - name: DJANGO_SETTINGS_MODULE
         value: PennCourses.settings.production
+  - name: landing
+    image: pennlabs/pcx-landing
+    ingress:
+      hosts:
+        - host: penncourses.org
+          paths: ["/"]
   - name: plan
     image: pennlabs/pcp-frontend
     ingress:
