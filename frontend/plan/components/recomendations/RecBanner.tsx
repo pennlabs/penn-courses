@@ -9,8 +9,8 @@ const BannerContainer = styled.div<{ collapse: boolean }>`
     align-items: center;
     flex-direction: row;
     justify-content: space-between;
-    margin-top: ${({ collapse }) => (collapse ? "25px" : "40px")};
-    margin-bottom: ${({ collapse }) => (collapse ? "0px" : "10px")};
+    margin-top: ${({ collapse }) => (collapse ? "1.5625rem" : "2.5rem")};
+    margin-bottom: ${({ collapse }) => (collapse ? "0px" : "0.625rem")};
     transition: all 0.7s;
 `;
 
@@ -35,8 +35,8 @@ const RecBanner = ({ show, setShow }: RecBannerProps) => {
                     style={{
                         fontWeight: "bold",
                         padding: 0,
-                        paddingLeft: "8px",
-                        paddingRight: "8px",
+                        paddingLeft: "0.5rem",
+                        paddingRight: "0.5rem",
                     }}
                 >
                     Recommended

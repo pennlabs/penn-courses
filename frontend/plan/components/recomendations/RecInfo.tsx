@@ -5,13 +5,13 @@ import { createTrue } from "typescript";
 const InfoBtn = styled.span`
     border-radius: 50%;
     font-size: 0.5rem;
-    width: 13px;
-    height: 13px;
-    border: 1.5px solid #bfbfbf;
+    width: 0.8125rem;
+    height: 0.8125rem;
+    border: 0.0938rem solid #bfbfbf;
     text-align: center;
     font-weight: bold;
     color: #bfbfbf;
-    line-height: 9px;
+    line-height: 0.8125rem;
 `;
 
 const InfoPopup = styled.div<{ show: boolean }>`
@@ -22,13 +22,13 @@ const InfoPopup = styled.div<{ show: boolean }>`
     z-index: 20;
     background-color: white;
     border-radius: 4px;
-    padding: 5px;
+    padding: 0.3125rem;
     color: #333333;
     font-size: 0.75rem;
-    width: 200px;
-    max-width: 400px;
-    max-height: 200px;
-    bottom: 15px;
+    width: 12.5rem;
+    max-width: 25rem;
+    max-height: 12.5rem;
+    bottom: 0.9375rem;
     left: 0;
     box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 `;

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
 
 const RecContentContainer = styled.div<{ collapse: boolean }>`
-    height: 200px;
+    height: 12.5rem;
     background-color: red;
     margin-top: ${({ collapse }) => (collapse ? "-100%" : "0px")};
     transition: all 1s;

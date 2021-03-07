@@ -3,16 +3,16 @@ import styled from "styled-components";
 
 const CollapseLabel = styled.span`
     color: #8a8e95;
-    font-size: 13px;
-    line-height: 13px;
+    font-size: 0.8125rem;
+    line-height: 0.8125rem;
     font-weight: 500;
 `;
 
 const ChevronDown = styled.span`
     color: #8a8e95;
-    font-size: 10px;
-    font-weight: 300px;
-    margin-left: 5px;
+    font-size: 0.625rem;
+    font-weight: 300;
+    margin-left: 0.3125rem;
 `;
 
 interface RecHideProps {

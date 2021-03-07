@@ -7,7 +7,7 @@ const RecContainer = styled.div`
     margin-top: auto;
     display: flex;
     flex-direction: column;
-    padding: 0 15px;
+    padding: 0 0.9375rem;
 `;
 
 const Recs = () => {
