@@ -69,9 +69,20 @@ const Selector: FunctionComponent<SelectorProps> = ({
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "flex-end",
+                alignSelf: "center",
+                alignItems: "center",
+                overflow: "hidden",
             }}
         >
-            <img src="/icons/empty-state-search.svg" alt="" />
+            <img
+                src="/icons/empty-state-search.svg"
+                alt=""
+                style={{
+                    height: "auto",
+                    maxWidth: "80%",
+                    maxHeight: "18.75rem",
+                }}
+            />
             <h3
                 style={{
                     fontWeight: "bold",

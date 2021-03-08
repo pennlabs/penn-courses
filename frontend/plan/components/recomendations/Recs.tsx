@@ -15,7 +15,6 @@ const Recs = () => {
 
     return (
         <RecContainer>
-            {console.log(show)}
             <RecBanner show={show} setShow={setShow} />
             <RecContent show={show} />
         </RecContainer>

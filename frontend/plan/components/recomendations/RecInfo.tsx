@@ -7,11 +7,12 @@ const InfoBtn = styled.span`
     font-size: 0.5rem;
     width: 0.8125rem;
     height: 0.8125rem;
-    border: 0.0938rem solid #bfbfbf;
+    border: 0.0969rem solid #bfbfbf;
     text-align: center;
     font-weight: bold;
     color: #bfbfbf;
     line-height: 0.8125rem;
+    margin-top: 0.125rem;
 `;
 
 const InfoPopup = styled.div<{ show: boolean }>`
@@ -22,7 +23,7 @@ const InfoPopup = styled.div<{ show: boolean }>`
     z-index: 20;
     background-color: white;
     border-radius: 4px;
-    padding: 0.3125rem;
+    padding: 0.5rem;
     color: #333333;
     font-size: 0.75rem;
     width: 12.5rem;
