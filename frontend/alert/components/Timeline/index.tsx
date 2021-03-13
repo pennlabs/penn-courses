@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 
 import TimelineEle from "./TimelineEle";
 
@@ -87,7 +88,7 @@ const StatusLabel = styled.div<{ open: boolean }>`
     padding: 0rem 0.5rem;
 `;
 
-const TimelineScrollContainer = styled.div`
+const TimelineScrollContainer = styled.div<{ scroll: boolean }>`
     justify-content: flex-start;
     align-items: center;
     overflow-y: scroll;
@@ -95,8 +96,27 @@ const TimelineScrollContainer = styled.div`
     flex-direction: column;
 
     &::-webkit-scrollbar {
-        display: none;
+        ${({ scroll }) =>
+            scroll
+                ? `width: 6px !important;
+         background-color: transparent;`
+                : "display: none;"}
     }
+
+    ${({ scroll }) =>
+        scroll &&
+        `scrollbar-width: thin;
+        -ms-overflow-style: none;
+
+        &::-webkit-scrollbar-track {
+            -webkit-box-shadow: none !important;
+            background-color: transparent !important;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: #acacac;
+            border-radius: 10px;
+        }`};
 `;
 
 const FlexRow = styled.div`
@@ -149,7 +169,30 @@ interface TimelineProps {
 
 const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
     const [courseStatusData, setCourseStatusData] = useState([]);
-    const [loaded, setLoaded] = useState<boolean>(false);
+    const [loaded, setLoaded] = useState(false);
+    const [scrollTimeline, setScrollTimeline] = useState(false);
+
+    const show = !courseCode;
+
+    //hook that detects when a user is scrolling a component & when they stop scrolling
+    const useScroll = (ref) => {
+        useEffect(() => {
+            var timer;
+            const handleScroll = (e) => {
+                if (!scrollTimeline) {
+                    setScrollTimeline(true);
+                    clearTimeout(timer);
+                    timer = setTimeout(function () {
+                        setScrollTimeline(false);
+                    }, 1000);
+                }
+            };
+
+            ref.current.addEventListener("scroll", handleScroll, true);
+        }, [ref]);
+
+        return ref;
+    };
 
     useEffect(() => {
         if (!courseCode) {
@@ -174,7 +217,19 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
     }, [courseCode]);
 
     return (
-        <AlertHistoryContainer close={!courseCode}>
+        <AlertHistoryContainer
+            close={show}
+            ref={useScroll(
+                useOnClickOutside(
+                    () => {
+                        setTimeline(null);
+                        courseCode = null;
+                    },
+                    !show,
+                    "historyIcon"
+                )
+            )}
+        >
             <AlertTitle>Alert History</AlertTitle>
             <CloseButton
                 onClick={() => {
@@ -197,7 +252,7 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
                         )}
                     </CourseInfoContainer>
 
-                    <TimelineScrollContainer>
+                    <TimelineScrollContainer scroll={scrollTimeline}>
                         <FlexRow>
                             <TimelineContainer>
                                 {courseStatusData.map(

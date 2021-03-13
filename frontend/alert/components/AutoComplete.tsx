@@ -143,7 +143,14 @@ const Container = styled.div<{ inputHeight: string }>`
     height: ${(props) => props.inputHeight};
 `;
 
-const Suggestion = ({ onClick, onChangeTimeline, courseCode, title, instructor, selected }) => {
+const Suggestion = ({
+    onClick,
+    onChangeTimeline,
+    courseCode,
+    title,
+    instructor,
+    selected,
+}) => {
     const ref = useRef<HTMLDivElement>(null);
     // If the suggestion becomes selected, make sure that it is
     // not fully or partially scrolled out of view
@@ -170,7 +177,7 @@ const Suggestion = ({ onClick, onChangeTimeline, courseCode, title, instructor, 
                 <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
             </DropdownItemLeftCol>
             <IconContainer onClick={onChangeTimeline}>
-                <HistoryIcon icon={faHistory}/>
+                <HistoryIcon icon={faHistory} className="historyIcon" />
             </IconContainer>
         </DropdownItemBox>
     );
@@ -357,7 +364,6 @@ const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
                                     setActive(false);
                                     setValue(suggestion.section_id);
                                 }}
-
                                 onChangeTimeline={() => {
                                     setTimeline(suggestion.section_id);
                                 }}
