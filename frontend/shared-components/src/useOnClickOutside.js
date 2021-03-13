@@ -10,22 +10,19 @@ import { useEffect, useRef } from "react";
  * @return {Object} A ref to be passed as a ref props to the component that uses useOnClickOutside
  */
 
-export function useOnClickOutside(onClickOutside, disabled, ignoreEle) {
+export function useOnClickOutside(onClickOutside, disabled, ignoreEle = "") {
     const ref = useRef();
+
     // eslint-disable-next-line consistent-return
     useEffect(() => {
         const checkClickOutside = (e) => {
             if (ref.current) {
                 // if ignoreEle param is added
-                if (ignoreEle) {
-                    if (
-                        !e.target.classList.contains(ignoreEle) &&
-                        !e.target.parentElement.classList.contains(ignoreEle) &&
-                        !ref.current.contains(e.target)
-                    ) {
-                        onClickOutside();
-                    }
-                } else if (!ref.current.contains(e.target)) {
+                if (
+                    !e.target.classList.contains(ignoreEle) &&
+                    !e.target.parentElement.classList.contains(ignoreEle) &&
+                    !ref.current.contains(e.target)
+                ) {
                     onClickOutside();
                 }
             }
