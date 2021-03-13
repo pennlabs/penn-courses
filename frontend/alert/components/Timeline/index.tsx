@@ -172,7 +172,7 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
     const [loaded, setLoaded] = useState(false);
     const [scrollTimeline, setScrollTimeline] = useState(false);
 
-    const show = !courseCode;
+    const close = !courseCode;
 
     //hook that detects when a user is scrolling a component & when they stop scrolling
     const useScroll = (ref) => {
@@ -218,14 +218,14 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
 
     return (
         <AlertHistoryContainer
-            close={show}
+            close={close}
             ref={useScroll(
                 useOnClickOutside(
                     () => {
                         setTimeline(null);
                         courseCode = null;
                     },
-                    !show,
+                    close,
                     "historyIcon"
                 )
             )}

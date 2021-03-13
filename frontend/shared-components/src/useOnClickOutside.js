@@ -16,18 +16,17 @@ export function useOnClickOutside(onClickOutside, disabled, ignoreEle) {
     useEffect(() => {
         const checkClickOutside = (e) => {
             if (ref.current) {
-                //if ignoreEle param is added
+                // if ignoreEle param is added
                 if (ignoreEle) {
+                    console.log("click outside");
                     if (!e.target.classList.contains(ignoreEle) &&
                         !e.target.parentElement.classList.contains(ignoreEle) &&
                         !ref.current.contains(e.target)
                     ) {
                         onClickOutside();
                     }
-                } else {
-                    if (!ref.current.contains(e.target)) {
-                        onClickOutside();
-                    }
+                } else if (!ref.current.contains(e.target)) {
+                    onClickOutside();
                 }
             }
         };
