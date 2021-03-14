@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 
-import TimelineEle from "./TimelineEle";
+import TimelineEle from "./TimelineElement";
 
 const AlertHistoryContainer = styled.div<{ close: boolean }>`
     position: fixed;
@@ -174,8 +174,12 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
 
     const close = !courseCode;
 
+    //There is data if its loaded & courseStatusData is not null & not empty
+    const isDataNotEmpty =
+        loaded && courseStatusData && courseStatusData.length > 0;
+
     //hook that detects when a user is scrolling a component & when they stop scrolling
-    const useScroll = (ref) => {
+    const useOnScroll = (ref) => {
         useEffect(() => {
             var timer;
             const handleScroll = (e) => {
@@ -193,6 +197,18 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
 
         return ref;
     };
+
+    //hook that detects if user click outside, but not history icon, of the alert pane
+    const onClickOutside = useOnClickOutside(
+        () => {
+            setTimeline(null);
+            courseCode = null;
+        },
+        close,
+        "historyIcon"
+    );
+
+    const onScroll = useOnScroll;
 
     useEffect(() => {
         if (!courseCode) {
@@ -217,19 +233,7 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
     }, [courseCode]);
 
     return (
-        <AlertHistoryContainer
-            close={close}
-            ref={useScroll(
-                useOnClickOutside(
-                    () => {
-                        setTimeline(null);
-                        courseCode = null;
-                    },
-                    close,
-                    "historyIcon"
-                )
-            )}
-        >
+        <AlertHistoryContainer close={close} ref={onScroll(onClickOutside)}>
             <AlertTitle>Alert History</AlertTitle>
             <CloseButton
                 onClick={() => {
@@ -241,7 +245,7 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
             </CloseButton>
 
             {/* Only show if loaded */}
-            {loaded && courseStatusData && courseStatusData.length > 0 ? (
+            {isDataNotEmpty ? (
                 <>
                     <CourseInfoContainer>
                         <CourseSubHeading>{courseCode}</CourseSubHeading>

@@ -6,11 +6,15 @@ import { useEffect, useRef } from "react";
  *
  * @param {function} onClickOutside The function called when an outside click is detected
  * @param {boolean} disabled Whether the hook should still listen for outside click
- * @param {string} ignoreClassName  The className to ignore if it is clicked
+ * @param {string} ignoreElement  The className to ignore if it is clicked
  * @return {Object} A ref to be passed as a ref props to the component that uses useOnClickOutside
  */
 
-export function useOnClickOutside(onClickOutside, disabled, ignoreEle = "") {
+export function useOnClickOutside(
+    onClickOutside,
+    disabled,
+    ignoreElement = ""
+) {
     const ref = useRef();
 
     // eslint-disable-next-line consistent-return
@@ -18,8 +22,8 @@ export function useOnClickOutside(onClickOutside, disabled, ignoreEle = "") {
         const checkClickOutside = (e) => {
             if (ref.current) {
                 if (
-                    !e.target.classList.contains(ignoreEle) &&
-                    !e.target.parentElement.classList.contains(ignoreEle) &&
+                    !e.target.classList.contains(ignoreElement) &&
+                    !e.target.parentElement.classList.contains(ignoreElement) &&
                     !ref.current.contains(e.target)
                 ) {
                     onClickOutside();
@@ -33,7 +37,7 @@ export function useOnClickOutside(onClickOutside, disabled, ignoreEle = "") {
                 window.removeEventListener("click", checkClickOutside);
             };
         }
-    }, [disabled, onClickOutside, ignoreEle]);
+    }, [disabled, onClickOutside, ignoreElement]);
 
     return ref;
 }

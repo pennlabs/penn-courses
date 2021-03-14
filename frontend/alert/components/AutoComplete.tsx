@@ -143,6 +143,15 @@ const Container = styled.div<{ inputHeight: string }>`
     height: ${(props) => props.inputHeight};
 `;
 
+interface SuggestionProps {
+    onClick: () => void;
+    onChangeTimeline: () => void;
+    courseCode: string;
+    title: string;
+    instructor: string;
+    selected: boolean;
+}
+
 const Suggestion = ({
     onClick,
     onChangeTimeline,
@@ -150,7 +159,7 @@ const Suggestion = ({
     title,
     instructor,
     selected,
-}) => {
+}: SuggestionProps) => {
     const ref = useRef<HTMLDivElement>(null);
     // If the suggestion becomes selected, make sure that it is
     // not fully or partially scrolled out of view

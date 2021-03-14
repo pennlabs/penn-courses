@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import styled from "styled-components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -91,9 +91,12 @@ const TimelineEle = ({ courseStatusData, index }: TimelineEleProps) => {
     const currTime = courseStatusData[index][0]["created_at"];
     const segLength = calcSegmentLength(prevTime, currTime);
 
+    // second index is formatted differently (time info on circle layer) than rest
+    const secondIndex = index == 1;
+
     return (
         <>
-            {index - 1 == 0 ? (
+            {secondIndex ? (
                 <>
                     <InfoLabel>{convertTime(prevTime)[0]}</InfoLabel>
                     <Segment
