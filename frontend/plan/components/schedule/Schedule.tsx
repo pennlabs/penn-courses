@@ -56,23 +56,9 @@ const hashString = (s: string) => {
     return hash;
 };
 
-const transformTime = (t: number, roundUp: boolean) => {
+const transformTime = (t: number) => {
     const frac = t % 1;
-    const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 100) / 100; // add 2 decimal places to account for :15/:45
-    // if (roundUp) {
-    //     console.log("ROUNDING UP");
-    //     console.log(t);
-    //     console.log(timeDec);
-    //     console.log(Math.ceil(timeDec * 2) / 2);
-    //     return Math.ceil(timeDec * 2) / 2;
-    // }
-
-    // console.log("ROUNDING DOWN");
-    // console.log(t);
-    // console.log(timeDec);
-    // console.log(Math.floor(timeDec * 2) / 2);
-    // return Math.floor(timeDec * 2) / 2;
-
+    const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 100) / 100;
     return timeDec;
 };
 
@@ -155,8 +141,8 @@ class Schedule extends Component {
                 meetings.push(
                     ...s.meetings.map((m) => ({
                         day: m.day as Day,
-                        start: transformTime(m.start, false),
-                        end: transformTime(m.end, true),
+                        start: transformTime(m.start),
+                        end: transformTime(m.end),
                         course: {
                             color,
                             id: s.id,
