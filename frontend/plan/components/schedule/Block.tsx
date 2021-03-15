@@ -95,8 +95,8 @@ export default function Block(props: BlockProps) {
     const { day, start, end } = meeting;
     const { id, color, coreqFulfilled } = course;
     const pos = {
-        gridRowStart: (start - offsets.time) * 2 + offsets.row + 1,
-        gridRowEnd: (end - offsets.time) * 2 + offsets.col + 1,
+        gridRowStart: (start - offsets.time) * 4 + offsets.row + 1,
+        gridRowEnd: (end - offsets.time) * 4 + offsets.col + 1,
         gridColumn: days.indexOf(day) + 1 + offsets.col,
     };
     return (

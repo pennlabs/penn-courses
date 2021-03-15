@@ -58,12 +58,22 @@ const hashString = (s: string) => {
 
 const transformTime = (t: number, roundUp: boolean) => {
     const frac = t % 1;
-    const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 10) / 10;
-    if (roundUp) {
-        return Math.ceil(timeDec * 2) / 2;
-    }
+    const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 100) / 100; // add 2 decimal places to account for :15/:45
+    // if (roundUp) {
+    //     console.log("ROUNDING UP");
+    //     console.log(t);
+    //     console.log(timeDec);
+    //     console.log(Math.ceil(timeDec * 2) / 2);
+    //     return Math.ceil(timeDec * 2) / 2;
+    // }
 
-    return Math.floor(timeDec * 2) / 2;
+    // console.log("ROUNDING DOWN");
+    // console.log(t);
+    // console.log(timeDec);
+    // console.log(Math.floor(timeDec * 2) / 2);
+    // return Math.floor(timeDec * 2) / 2;
+
+    return timeDec;
 };
 
 class Schedule extends Component {
@@ -101,7 +111,8 @@ class Schedule extends Component {
         const rowOffset = 1;
         const colOffset = 1;
 
-        const getNumRows = () => (endHour - startHour + 1) * 2 + rowOffset;
+        // 15 minute time intervals
+        const getNumRows = () => (endHour - startHour + 1) * 4 + rowOffset;
         const getNumCol = () => 5 + colOffset + (showWeekend ? 2 : 0);
 
         // step 2 in the CIS121 review: hashing with linear probing.
