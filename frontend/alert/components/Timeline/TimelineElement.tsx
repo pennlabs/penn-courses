@@ -81,12 +81,12 @@ const calcSegmentLength = (prevTime, currTime) => {
     );
 };
 
-interface TimelineEleProps {
+interface TimelineElementProps {
     courseStatusData: any;
     index: number;
 }
 
-const TimelineEle = ({ courseStatusData, index }: TimelineEleProps) => {
+const TimelineElement = ({ courseStatusData, index }: TimelineElementProps) => {
     const prevTime = courseStatusData[index - 1][0]["created_at"];
     const currTime = courseStatusData[index][0]["created_at"];
     const segLength = calcSegmentLength(prevTime, currTime);
@@ -129,4 +129,4 @@ const TimelineEle = ({ courseStatusData, index }: TimelineEleProps) => {
     );
 };
 
-export default TimelineEle;
+export default TimelineElement;

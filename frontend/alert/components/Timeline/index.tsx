@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 
-import TimelineEle from "./TimelineElement";
+import TimelineElement from "./TimelineElement";
 
 const AlertHistoryContainer = styled.div<{ close: boolean }>`
     position: fixed;
@@ -208,7 +208,7 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
         "historyIcon"
     );
 
-    const onScroll = useOnScroll;
+    const scrollRef = useOnScroll(onClickOutside);
 
     useEffect(() => {
         if (!courseCode) {
@@ -233,7 +233,7 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
     }, [courseCode]);
 
     return (
-        <AlertHistoryContainer close={close} ref={onScroll(onClickOutside)}>
+        <AlertHistoryContainer close={close} ref={scrollRef}>
             <AlertTitle>Alert History</AlertTitle>
             <CloseButton
                 onClick={() => {
@@ -262,7 +262,7 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
                                 {courseStatusData.map(
                                     (item, index) =>
                                         index != 0 && (
-                                            <TimelineEle
+                                            <TimelineElement
                                                 courseStatusData={
                                                     courseStatusData
                                                 }
