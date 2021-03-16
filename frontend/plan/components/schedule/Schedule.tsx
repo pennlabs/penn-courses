@@ -56,14 +56,10 @@ const hashString = (s: string) => {
     return hash;
 };
 
-const transformTime = (t: number, roundUp: boolean) => {
+const transformTime = (t: number) => {
     const frac = t % 1;
-    const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 10) / 10;
-    if (roundUp) {
-        return Math.ceil(timeDec * 2) / 2;
-    }
-
-    return Math.floor(timeDec * 2) / 2;
+    const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 100) / 100;
+    return timeDec;
 };
 
 class Schedule extends Component {
@@ -101,7 +97,8 @@ class Schedule extends Component {
         const rowOffset = 1;
         const colOffset = 1;
 
-        const getNumRows = () => (endHour - startHour + 1) * 2 + rowOffset;
+        // 15 minute time intervals
+        const getNumRows = () => (endHour - startHour + 1) * 4 + rowOffset;
         const getNumCol = () => 5 + colOffset + (showWeekend ? 2 : 0);
 
         // step 2 in the CIS121 review: hashing with linear probing.
@@ -144,8 +141,8 @@ class Schedule extends Component {
                 meetings.push(
                     ...s.meetings.map((m) => ({
                         day: m.day as Day,
-                        start: transformTime(m.start, false),
-                        end: transformTime(m.end, true),
+                        start: transformTime(m.start),
+                        end: transformTime(m.end),
                         course: {
                             color,
                             id: s.id,

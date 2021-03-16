@@ -38,7 +38,7 @@ export default function Times({
             <span
                 className="time"
                 style={{
-                    gridRow: (i - startTime) * 2 + 1,
+                    gridRow: (i - startTime) * 4 + 1,
                     gridColumn: 1,
                 }}
                 key={i}
