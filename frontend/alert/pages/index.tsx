@@ -132,7 +132,7 @@ function App() {
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
         ReactGA.pageview(window.location.pathname + window.location.search);
-        fetch("/api/options/")
+        fetch("https://platform.pennlabs.org/options/")
             .then((response) => response.json())
             .then((options) => setShowRecruiting(options.RECRUITING));
     }, []);
