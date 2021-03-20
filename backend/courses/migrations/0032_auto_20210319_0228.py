@@ -27,11 +27,12 @@ class Migration(migrations.Migration):
                 blank=True,
                 help_text="The number of active PCA registrations watching this section.",
             ),
+            preserve_default=False,
         ),
         migrations.RunPython(
             calculate_registration_volumes, reverse_code=migrations.RunPython.noop
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name="section",
             name="registration_volume",
             field=models.IntegerField(
