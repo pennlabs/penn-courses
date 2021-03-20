@@ -17,10 +17,13 @@ from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_cours
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
 from courses.util import get_or_create_course_and_section
+from PennCourses.celery import app as celeryapp
 from tests.courses.util import create_mock_data
 
 
 TEST_SEMESTER = "2019A"
+
+celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)  # run asynchronous tasks synchronously
 
 
 def contains_all(l1, l2):
@@ -71,12 +74,13 @@ def override_delay(modules_names, before_func, before_kwargs):
                 override_delay(modules_names[:-1], before_func, before_kwargs)
 
 
-@patch('celery.CELERY_ALWAYS_EAGER', True, create=True)
 @patch("alert.models.PushNotification.send_alert")
 @patch("alert.models.Text.send_alert")
 @patch("alert.models.Email.send_alert")
 class SendAlertTestCase(TestCase):
     def setUp(self):
+        # registration_update.delay = registration_update.__wrapped__
+        celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)
         set_semester()
         course, section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
         self.r_legacy = Registration(email="yo@example.com", phone="+15555555555", section=section)
@@ -369,7 +373,6 @@ class SendAlertTestCase(TestCase):
         )
 
 
-@patch('celery.CELERY_ALWAYS_EAGER', True, create=True)
 class RegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -480,7 +483,6 @@ class RegisterTestCase(TestCase):
         self.assertEqual(0, len(Registration.objects.all()))
 
 
-@patch('celery.CELERY_ALWAYS_EAGER', True, create=True)
 class ResubscribeTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -561,7 +563,6 @@ class ResubscribeTestCase(TestCase):
         self.assertEqual(result, reg3)
 
 
-@patch('celery.CELERY_ALWAYS_EAGER', True, create=True)
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -615,7 +616,6 @@ class WebhookTriggeredAlertTestCase(TestCase):
             self.assertTrue(id_ in expected_ids)
 
 
-@patch('celery.CELERY_ALWAYS_EAGER', True, create=True)
 @patch("alert.views.alert_for_course")
 class WebhookViewTestCase(TestCase):
     def setUp(self):
@@ -818,7 +818,6 @@ class WebhookViewTestCase(TestCase):
         self.assertEqual(0, StatusUpdate.objects.count())
 
 
-@patch('celery.CELERY_ALWAYS_EAGER', True, create=True)
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -861,7 +860,6 @@ class CourseStatusUpdateTestCase(TestCase):
         self.assertEqual(0, len(response.data))
 
 
-@patch('celery.CELERY_ALWAYS_EAGER', True, create=True)
 @ddt
 class AlertRegistrationTestCase(TestCase):
     def setUp(self):
