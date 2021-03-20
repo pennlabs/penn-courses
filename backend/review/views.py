@@ -85,6 +85,7 @@ def course_reviews(request, course_code):
             "recent_reviews": make_subdict("recent_", course),
             "num_semesters": course["average_semester_count"],
             "instructors": instructors,
+            # TODO: add visualizations data
         }
     )
 

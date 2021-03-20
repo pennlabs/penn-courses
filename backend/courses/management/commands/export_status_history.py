@@ -1,3 +1,4 @@
+import logging
 import operator
 
 from django.core.management.base import BaseCommand
@@ -18,6 +19,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
+        root_logger = logging.getLogger("")
+        root_logger.setLevel(logging.DEBUG)
+
         file_path = kwargs["file_path"]
         semester = kwargs["semester"]
         assert file_path.endswith(".csv")

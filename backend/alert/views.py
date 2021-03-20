@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from options.models import get_bool
-from rest_framework import generics, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -19,11 +19,12 @@ from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
     RegistrationCreateSerializer,
     RegistrationSerializer,
-    RegistrationUpdateSerializer
+    RegistrationUpdateSerializer,
 )
 from alert.tasks import send_course_alerts
 from courses.util import get_current_semester, record_update, update_course_from_record
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+
 
 logger = logging.getLogger(__name__)
 
@@ -391,10 +392,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                if Registration.objects.filter(
-                    user=registration.user,
-                    section=registration.section,
-                    **Registration.is_active_filter()
+                if registration.section.registrations.filter(
+                    user=registration.user, **Registration.is_active_filter()
                 ).exists():
                     # An active registration for this section already exists
                     return Response(

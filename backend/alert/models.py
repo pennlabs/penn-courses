@@ -1,14 +1,19 @@
 import logging
+from contextlib import nullcontext
+from datetime import datetime
 from enum import Enum, auto
 from textwrap import dedent
 
 import phonenumbers  # library for parsing and formatting phone numbers.
+import pytz
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db import models
-from django.db.models import Max, Q, FloatField
+from django.db import models, transaction
+from django.db.models import Max, Q
 from django.db.models.functions import Cast
 from django.utils import timezone
+from django.utils.timezone import make_aware
 
 from alert.alerts import Email, PushNotification, Text
 from courses.models import Course, Section, UserProfile, string_dict_to_html
@@ -127,7 +132,7 @@ class Registration(models.Model):
         ("PCR", "Penn Course Review"),
         ("PM", "Penn Mobile"),
         ("SCRIPT_PCN", "The loadregistrations_pcn shell command"),
-        ("SCRIPT_PCA", "The loadregistrations_pca shell command")
+        ("SCRIPT_PCA", "The loadregistrations_pca shell command"),
     )
 
     source = models.CharField(
@@ -193,7 +198,7 @@ class Registration(models.Model):
     section = models.ForeignKey(
         Section,
         on_delete=models.CASCADE,
-        related_name="registration_set",
+        related_name="registrations",
         help_text="The section that the user registered to be notified about.",
     )
     cancelled = models.BooleanField(
@@ -423,9 +428,7 @@ class Registration(models.Model):
         column should tell them the last time they were alerted about that section).
         """
         return (
-            Registration.objects.filter(
-                user=self.user, section=self.section, notification_sent_at__isnull=False
-            )
+            self.section.registrations.filter(user=self.user, notification_sent_at__isnull=False)
             .aggregate(max_notification_sent_at=Max("notification_sent_at"))
             .get("max_notification_sent_at", None)
         )
@@ -451,7 +454,7 @@ class Registration(models.Model):
             # if the phone number is unparseable, don't include it.
             self.phone = None
 
-    def save(self, *args, **kwargs):
+    def save(self, load_script=False, *args, **kwargs):
         """
         This save method converts the phone field to E164 format, or sets it to
         None if it is unparseable. Then, if the user field is not None, but either of the phone
@@ -466,7 +469,20 @@ class Registration(models.Model):
         case in which the chain is traversed to find the proper value for original_created_at is
         only for redundancy.
         It finally calls the normal save method with args and kwargs.
+        Asynchronously after the save completes successfully, if load_script is set to False,
+        it updates the PcaDemandExtrema models and current_demand_extrema cache to reflect
+        the demand change if this registration was just created or deactivated.
         """
+        from alert.tasks import registration_update
+
+        update_registration_volume = (
+            not load_script
+        ) and self.section.semester == get_current_semester()
+        if update_registration_volume:
+            try:
+                was_active = Registration.objects.get(id=self.id).is_active
+            except Registration.DoesNotExist:
+                was_active = False
         self.validate_phone()
         if self.user is not None:
             if self.email is not None:
@@ -490,6 +506,9 @@ class Registration(models.Model):
             else:
                 self.original_created_at = self.get_original_registration_rec().created_at
         super().save()
+        if update_registration_volume:
+            is_now_active = self.is_active
+            registration_update.delay(self.section.id, was_active, is_now_active, self.updated_at)
 
     def alert(self, forced=False, sent_by="", close_notification=False):
         """
@@ -549,10 +568,10 @@ class Registration(models.Model):
 
     def resubscribe(self):
         """
-        Resubscribe for notifications. If the registration this is called on has had its
-        notification sent, a new registration is made. If it hasn't (or it is cancelled or
-        deleted), return the most recent registration in the resubscription chain which hasn't
-        been used yet.
+        Resubscribe for notifications. If the head of this registration's resubscribe chain
+        is active, just return that registration (don't create a new active registration
+        for no reason). Otherwise, add a new active registration as the new head of the
+        resubscribe chain.
 
         Resubscription is idempotent. No matter how many times you call it (without
         alert() being called on the registration), only one Registration model will
@@ -561,12 +580,7 @@ class Registration(models.Model):
         """
         most_recent_reg = self.get_most_current_rec()
 
-        if (
-            not most_recent_reg.notification_sent
-            and not most_recent_reg.cancelled
-            and not most_recent_reg.deleted
-        ):  # if a notification hasn't been sent on this recent one
-            # (and it hasn't been cancelled or deleted),
+        if most_recent_reg.is_active:  # if the head of this resub chain is active
             return most_recent_reg  # don't create duplicate registrations for no reason.
 
         new_registration = Registration(
@@ -632,6 +646,7 @@ class Registration(models.Model):
                 FROM
                     cte_resubscribes_backward;""",
             (self.id, self.id),  # do not add variables here that could cause vulnerabilities
+            # id is an integer (checked above), and therefore cannot be used for SQL injection
         )
 
     def get_most_current_sql(self):
@@ -695,47 +710,6 @@ class Registration(models.Model):
             return self
 
 
-class PcaPopularityExtrema(models.Model):
-    """
-    This model tracks changes in the extrema of PCA popularity, i.e. the highest and lowest
-    (PCA registration volume)/(section capacity) ratios across all currently offered sections.
-    """
-
-    created_at = models.DateTimeField(
-        auto_now_add=True, help_text="The datetime at which the extrema were updated."
-    )
-
-    def validate_positive(value):
-        if value <= 0:
-            raise ValidationError(f"Value {value} is not positive.")
-
-    highest_ratio_registration_volume = models.IntegerField(
-        help_text="The registration volume of the most popular section."
-    )
-    highest_ratio_section_capacity = models.IntegerField(
-        help_text="The capacity of the most popular section. NOTE: must be strictly positive.",
-        validators=[validate_positive]
-    )
-
-    @property
-    def highest_popularity_ratio(self):
-        return (Cast(self.highest_ratio_registration_volume, FloatField())
-                / Cast(self.highest_ratio_section_capacity, FloatField()))
-
-    lowest_ratio_registration_volume = models.IntegerField(
-        help_text="The registration volume of the least popular section."
-    )
-    lowest_ratio_section_capacity = models.IntegerField(
-        help_text="The capacity of the least popular section. NOTE: must be strictly positive.",
-        validators=[validate_positive]
-    )
-
-    @property
-    def lowest_popularity_ratio(self):
-        return (Cast(self.lowest_ratio_registration_volume, FloatField())
-                / Cast(self.lowest_ratio_section_capacity, FloatField()))
-
-
 def register_for_course(
     course_code,
     email_address=None,
@@ -775,17 +749,12 @@ def register_for_course(
             section=section, email=email_address, phone=phone, source=source
         )
         registration.validate_phone()
-        if Registration.objects.filter(
-            section=section,
-            email=email_address,
-            phone=registration.phone,
-            **Registration.is_active_filter()
+        if section.registrations.filter(
+            email=email_address, phone=registration.phone, **Registration.is_active_filter()
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
     else:
-        if Registration.objects.filter(
-            section=section, user=user, **Registration.is_active_filter()
-        ).exists():
+        if section.registrations.filter(user=user, **Registration.is_active_filter()).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
         if close_notification and not user.profile.email and not user.profile.push_notifications:
             return RegStatus.TEXT_CLOSE_NOTIFICATION, section.full_code, None
@@ -797,3 +766,226 @@ def register_for_course(
     registration.save()
 
     return RegStatus.SUCCESS, section.full_code, registration
+
+
+class PcaDemandExtrema(models.Model):
+    """
+    This model tracks changes in the extrema (i.e. highest and lowest values) of
+    raw PCA demand ratios across all sections in a given semester.
+    Raw PCA demand (as opposed to "Relative PCA demand",
+    which maps demand values between extrema to a fixed range of [0,4]) is defined
+    for any given section as (PCA registration volume)/(section capacity).
+    Note that capacity is not stored as a field, while volume is. We do not track capacity changes,
+    and for this reason, the recompute_demand_extrema script should be run after each
+    run of the registrarimport script, in case capacity changes affect historical extrema.
+    """
+
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        db_index=True,
+        help_text="The datetime at which the extrema were updated.",
+    )
+
+    semester = models.CharField(
+        max_length=5,
+        db_index=True,
+        help_text=dedent(
+            """
+        The semester of this demand extrema (of the form YYYYx where x is
+        A [for spring], B [summer], or C [fall]), e.g. 2019C for fall 2019.
+        """
+        ),
+    )
+
+    most_popular_section = models.ForeignKey(
+        Section,
+        related_name="most_popular_extrema_occurences",
+        on_delete=models.CASCADE,
+        help_text="A most popular section.",
+    )
+
+    most_popular_volume = models.IntegerField(
+        help_text="The registration volume of the most popular section at this time."
+    )
+
+    least_popular_section = models.ForeignKey(
+        Section,
+        related_name="least_popular_extrema_occurences",
+        on_delete=models.CASCADE,
+        help_text="A least popular section.",
+    )
+
+    least_popular_volume = models.IntegerField(
+        help_text="The registration volume of the least popular section at this time."
+    )
+
+    def __str__(self):
+        return f"PcaDemandExtrema {self.semester} @ {self.created_at}"
+
+    @property
+    def percentage_through_add_drop_period(self):
+        """
+        The percentage of the add/drop period elapsed at this extrema's created_at datetime.
+        """
+        return AddDropPeriod.get(semester=self.semester).get_percentage_through(self.created_at)
+
+    @property
+    def highest_raw_demand(self):
+        if self.most_popular_section.capacity is None or self.most_popular_section.capacity <= 0:
+            return None
+        return Cast(self.most_popular_volume, models.DecimalField()) / Cast(
+            self.most_popular_section.capacity, models.DecimalField()
+        )
+
+    @property
+    def lowest_raw_demand(self):
+        if self.least_popular_section.capacity is None or self.least_popular_section.capacity <= 0:
+            return None
+        return Cast(self.least_popular_volume, models.DecimalField()) / Cast(
+            self.least_popular_section.capacity, models.DecimalField()
+        )
+
+    @staticmethod
+    def get_current_demand_extrema(semester):
+        """
+        Returns the latest PcaDemandExtrema object for the specified semester,
+        or None if no valid extrema exist for the specified semester (this won't be the case as
+        long as at least 1 section for the given semester has a non-null and positive capacity).
+        Semester defaults to the current semester.
+
+        See the above model docstring for an explanation of PCA demand.
+        """
+        current_sem = get_current_semester()
+        if semester is None:
+            semester = current_sem
+        is_current_sem = semester == current_sem
+        cache_context = (
+            cache.lock("current_demand_extrema")
+            if (is_current_sem and hasattr(cache, "lock"))
+            else nullcontext()
+        )
+        with transaction.atomic(), cache_context:
+            sentinel = object()
+            current_demand_extrema = sentinel
+            if is_current_sem:
+                current_demand_extrema = cache.get("current_demand_extrema", sentinel)
+            if current_demand_extrema == sentinel or current_demand_extrema["semester"] != semester:
+                try:
+                    latest_extrema_ob = (
+                        PcaDemandExtrema.objects.filter(semester=semester)
+                        .select_for_update()
+                        .latest("created_at")
+                    )
+                    current_demand_extrema = latest_extrema_ob
+                except PcaDemandExtrema.DoesNotExist:
+                    current_demand_extrema = None
+                if is_current_sem:
+                    cache.set("current_demand_extrema", current_demand_extrema, timeout=None)
+        return current_demand_extrema
+
+
+def validate_add_drop_semester(semester):
+    """
+    Validate the passed-in string as a fall or spring semester, such as 2020A or 2021C.
+    """
+    if len(semester) != 5:
+        raise ValidationError(
+            f"Semester {semester} is invalid; valid semesters contain 5 characters."
+        )
+    if semester[4] not in ["A", "C"]:
+        raise ValidationError(f"Semester {semester} is invalid; valid semesters end in 'A' or 'C'.")
+    if not semester[:4].isnumeric():
+        raise ValidationError(
+            f"Semester {semester} is invalid; the 4-letter prefix of a valid semester is numeric."
+        )
+
+
+class AddDropPeriod(models.Model):
+    """
+    This model tracks the start and end date of the add drop period corresponding to
+    a semester (only fall or spring semesters are supported).
+    """
+
+    semester = models.CharField(
+        max_length=5,
+        db_index=True,
+        unique=True,
+        validators=[validate_add_drop_semester],
+        help_text=dedent(
+            """
+        The semester of this add drop period (of the form YYYYx where x is
+        A [for spring], or C [fall]), e.g. 2019C for fall 2019.
+        """
+        ),
+    )
+    start = models.DateTimeField(
+        null=True, blank=True, help_text="The datetime at which the add drop period started."
+    )
+    end = models.DateTimeField(
+        null=True, blank=True, help_text="The datetime at which the add drop period ended."
+    )
+
+    def get_percentage_through(self, dt):
+        """
+        Returns the percentage of datetime dt through this add/drop period.
+        """
+        start = self.estimated_start
+        end = self.estimated_end
+        return min(max((dt - start) / (end - start), 0), 1)
+
+    @property
+    def estimated_start(self):
+        """
+        The start of the add/drop period for this semester, if it is explicitly set, otherwise
+        the most recent non-null start to an add/drop period, otherwise (if none exist),
+        estimate as April 5 @ 7:00am ET of the same year (for a fall semester),
+        or November 16 @ 7:00am ET of the previous year (for a spring semester).
+        """
+        if self.start is None:
+            last_start = AddDropPeriod.filter(start_isnull=False).order_by("-semester").first()
+            if last_start is None:
+                if self.semester[4] == "C":  # fall semester
+                    s_year = int(self.semester[:4])
+                    s_month = 4
+                    s_day = 5
+                else:  # spring semester
+                    s_year = int(self.semester[:4]) - 1
+                    s_month = 11
+                    s_day = 16
+                tz = pytz.timezone("US/Eastern")
+                return make_aware(
+                    datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M"),
+                    timezone=tz,
+                )
+            return last_start
+        return self.start
+
+    @property
+    def estimated_end(self):
+        """
+        The start of the add/drop period for this semester, if it is explicitly set, otherwise
+        the most recent non-null start to an add/drop period, otherwise (if none exist),
+        estimate as October 12 @ 11:59pm ET (for a fall semester),
+        or February 22 @ 11:59pm ET (for a spring semester),
+        of the same year.
+        """
+        if self.end is None:
+            last_end = AddDropPeriod.filter(end_isnull=False).order_by("-semester").first()
+            if last_end is None:
+                e_year = int(self.semester[:4])
+                if self.semester[4] == "C":  # fall semester
+                    e_month = 10
+                    e_day = 12
+                else:  # spring semester
+                    e_month = 2
+                    e_day = 22
+                tz = pytz.timezone("US/Eastern")
+                return make_aware(
+                    datetime.strptime(f"{e_year}-{e_month}-{e_day} 23:59", "%Y-%m-%d %H:%M"),
+                    timezone=tz,
+                )
+            return last_end
+        return self.end
+
+    def __str__(self):
+        return f"AddDropPeriod {self.semester}"

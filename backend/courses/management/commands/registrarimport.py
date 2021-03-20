@@ -3,7 +3,9 @@ import logging
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
+from alert.management.commands.recompute_demand_extrema import recompute_demand_extrema
 from courses import registrar
+from courses.management.commands.load_add_drop_dates import load_add_drop_dates
 from courses.management.commands.loadrequirements import load_requirements
 from courses.management.commands.loadstatus import set_all_status
 from courses.models import Department
@@ -20,6 +22,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
+
         semester = kwargs.get("semester")
         query = kwargs.get("query")
 
@@ -45,3 +48,7 @@ class Command(BaseCommand):
         load_requirements(school="WH", semester=semester)
         print("loading course statuses from registrar...")
         set_all_status(semester=semester)
+        print("loading add drop dates...")
+        load_add_drop_dates(verbose=True)
+        print(f"recomputing demand extrema for semester {semester}")
+        recompute_demand_extrema(semesters=semester, verbose=True)

@@ -25,7 +25,14 @@ the DB), be *much* slower, and require cacheing.
 """
 
 
-def review_averages(queryset, subfilters, fields=None, prefix="", semester_aggregations=False):
+def review_averages(
+    queryset,
+    subfilters,
+    fields=None,
+    prefix="",
+    semester_aggregations=False,
+    include_pca_stats=True,
+):
     """
     Annotate the queryset with the average of all ReviewBits matching the given subfilters.
     :param queryset: Queryset to annotate with averages.
@@ -38,6 +45,8 @@ def review_averages(queryset, subfilters, fields=None, prefix="", semester_aggre
     :param semester_aggregations: option to annotate additional semester aggregations for the
     semester returned by the subfilters (only useful if subfilters filter down to one semester),
     as well as the count of the number of semesters included in the queryset's annotations.
+    :param include_pca_stats: whether to aggregate
+    TODO: finish
     """
     if fields is None:
         fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]

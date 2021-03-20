@@ -13,12 +13,12 @@ from courses.serializers import (
     CourseDetailSerializer,
     CourseListSerializer,
     MiniSectionSerializer,
+    MiniSectionStatsSerializer,
     RequirementListSerializer,
     SectionDetailSerializer,
+    SectionDetailStatsSerializer,
     StatusUpdateSerializer,
     UserSerializer,
-    MiniSectionStatsSerializer,
-    SectionDetailStatsSerializer
 )
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
@@ -79,7 +79,7 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
 class SectionStatsList(SectionList):
     """
     Just like SectionList, except also includes stats in returned sections.
-    Additional fields like current_pca_registration_volume and current_relative_pca_popularity
+    Additional fields like current_pca_registration_volume and current_relative_pca_demand
     are made available.
     """
 

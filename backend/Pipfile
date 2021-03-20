@@ -17,7 +17,7 @@ django-debug-toolbar = "*"
 black = "==19.10b0"
 
 [packages]
-django = "*"
+django = "==3.2b1"
 psycopg2 = {version = "*", sys_platform = "== 'linux'"}
 requests = "*"
 twilio = "*"
@@ -54,3 +54,6 @@ pandas = "*"
 
 [requires]
 python_version = "3"
+
+[pipenv]
+allow_prereleases = true

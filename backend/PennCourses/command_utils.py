@@ -1,5 +1,6 @@
 import mmap
 
+
 def get_num_lines(file_path):
     """
     Returns the number of lines in the file at the given path.

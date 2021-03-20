@@ -1,5 +1,4 @@
 from django.urls import include, path
-from django.views.decorators.cache import cache_page
 from rest_framework import routers
 
 from alert import views

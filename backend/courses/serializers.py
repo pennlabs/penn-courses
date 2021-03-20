@@ -87,11 +87,13 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+
 class MiniSectionStatsSerializer(MiniSectionSerializer):
     """
-    A copy of MiniSectionSerializer, except includes the current_pca_registration_volume and
-    current_relative_pca_popularity statistics additionally.
+    A copy of MiniSectionSerializer, except includes the registration_volume and
+    current_relative_pca_demand statistics additionally.
     """
+
     class Meta:
         model = Section
         fields = [
@@ -101,8 +103,8 @@ class MiniSectionStatsSerializer(MiniSectionSerializer):
             "meeting_times",
             "instructors",
             "course_title",
-            "current_pca_registration_volume",  # added
-            "current_relative_pca_popularity"  # added
+            "registration_volume",  # added
+            "current_relative_pca_demand",  # added
         ]
         read_only_fields = fields
 
@@ -183,9 +185,10 @@ class SectionDetailSerializer(serializers.ModelSerializer):
 
 class SectionDetailStatsSerializer(SectionDetailSerializer):
     """
-    A copy of SectionDetailSerializer, except includes the current_pca_registration_volume and
-    current_relative_pca_popularity statistics additionally.
+    A copy of SectionDetailSerializer, except includes the registration_volume and
+    current_relative_pca_demand statistics additionally.
     """
+
     class Meta:
         model = Section
         fields = [
@@ -201,8 +204,8 @@ class SectionDetailStatsSerializer(SectionDetailSerializer):
             "difficulty",
             "work_required",
             "associated_sections",
-            "current_pca_registration_volume",  # added
-            "current_relative_pca_popularity"  # added
+            "registration_volume",  # added
+            "current_relative_pca_demand",  # added
         ]
         read_only_fields = fields
 

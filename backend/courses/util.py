@@ -60,7 +60,7 @@ def get_semester(datetime):
     return sem
 
 
-@receiver(post_save, sender=Option, dispatch_uid="update_stock_count")
+@receiver(post_save, sender=Option, dispatch_uid="invalidate_current_semester_cache")
 def invalidate_current_semester_cache(sender, instance, **kwargs):
     """
     This function invalidates the cached SEMESTER value when the SEMESTER option is updated.

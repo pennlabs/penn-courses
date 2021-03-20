@@ -6,15 +6,13 @@ import phonenumbers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import Case, Index, OuterRef, Q, Subquery, When
+from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
 from review.annotations import review_averages
-
-from django.core.cache import cache
-from django.db.models import Count, Max, Min
 
 
 User = get_user_model()
@@ -305,6 +303,22 @@ class Section(models.Model):
 
     class Meta:
         unique_together = (("code", "course"),)
+        indexes = [
+            Index(
+                Case(
+                    When(
+                        Q(capacity__isnull=False) & Q(capacity__gt=0),
+                        then=(
+                            Cast("registration_volume", models.DecimalField())
+                            / Cast("capacity", models.DecimalField())
+                        ),
+                    ),
+                    default=None,
+                    output_field=models.DecimalField(),
+                ),
+                name="raw_demand",
+            ),
+        ]
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -399,6 +413,10 @@ class Section(models.Model):
         help_text="The number of credits this section is worth.",
     )
 
+    registration_volume = models.IntegerField(
+        default=0, help_text="The number of active PCA registrations watching this section."
+    )  # For the set of PCA registrations for this section, use the related field `registrations`.
+
     def __str__(self):
         return "%s %s" % (self.full_code, self.course.semester)
 
@@ -418,96 +436,84 @@ class Section(models.Model):
         return self.status == "O"
 
     @property
-    def current_pca_registration_volume(self):
+    def raw_demand(self):
         """
-        The number of currently active registrations watching this section on PCA.
-        """
-        from alert.models import Registration  # imported here to avoid circular imports
-        return Registration.objects.filter(
-            section=self, **Registration.is_active_filter()
-            # section=self also encodes the proper semester
-        ).count()
-
-    @property
-    def computed_current_pca_popularity(self):
-        """
-        Returns the computed (rather than cached/stored) current PCA popularity of the section,
-        which is defined as:
-        [the number of active PCA registrations for this section]/[the class capacity].
-        Open sections will automatically have a current PCA popularity of 0.
-        NOTE: sections with an invalid class capacity (0 or negative) are excluded from
-        computation of this statistic, and if this section has a class capacity of 0, then
-        this method will return None.
-        """
-        from alert.models import Registration  # imported here to avoid circular imports
-
-        if self.capacity <= 0:
-            return None
-        if self.is_open:
-            return 0
-        return self.registrations.filter(
-            **Registration.is_active_filter()
-        ).count() / self.capacity
-
-    @property
-    def current_relative_pca_popularity(self):
-        """
-        The current relative PCA popularity of the section, which is defined as:
+        The current raw PCA demand of the section, which is defined as:
         [the number of active PCA registrations for this section]/[the class capacity]
-        mapped onto the range [0,1] where the lowest current popularity (across all sections)
-        maps to 0 and the highest current popularity maps to 1.
-        Open sections will automatically have a current relative PCA popularity of 0.
-        NOTE: sections with an invalid class capacity (0 or negative) are excluded from
-        computation of this statistic, and if this section has a class capacity of 0, then
-        this method will return None.
+        NOTE: if this section has a null or non-positive capacity, then this property will be None.
         """
-        from alert.models import Registration  # imported here to avoid circular imports
-        from courses.util import get_current_semester
-
-        if self.capacity <= 0:
+        # Note for backend developers: this is a property, not a field. However,
+        # in the Meta class for this model, we define the raw_property index identically to
+        # this property's computation. Thus, you can access this value (as an indexed column)
+        # in database queries using the same name. This is useful for computing demand extrema.
+        if self.capacity is None or self.capacity <= 0:
             return None
+        else:
+            return Cast(self.registration_volume, models.DecimalField()) / Cast(
+                self.capacity, models.DecimalField()
+            )
 
+    @property
+    def current_relative_pca_demand(self):
+        """
+        The current relative PCA demand of the section, which is defined as:
+        [the number of active PCA registrations for this section]/[the class capacity]
+        mapped onto the range [0,4] where the lowest current demand (across all sections)
+        maps to 0 and the highest current demand maps to 4.
+        Open sections will automatically have a current relative PCA demand of 0.
+        NOTE: sections with an invalid class capacity (null or non-positive) are excluded from
+        computation of this statistic, and if this section has a null or non-positive capacity,
+        then this property will be None.
+        """
+        from alert.models import PcaDemandExtrema  # imported here to avoid circular imports
+
+        if self.capacity is None or self.capacity <= 0:
+            return None
         if self.is_open:
             return 0
 
-        section_popularity_extrema = cache.get("section_popularity_extrema")
-        if section_popularity_extrema is None:
-            section_popularity_extrema = (
-                Registration.objects.filter(
-                    section__course__semester=get_current_semester(), section__capacity__gt=0,
-                    **Registration.is_active_filter()
-                )
-                .values("section", "section__capacity")
-                .annotate(score=Count("section") / Max("section__capacity"))
-                .aggregate(min=Min("score"), max=Max("score"))
+        current_demand_extrema = PcaDemandExtrema.get_current_demand_extrema(semester=self.semester)
+        if current_demand_extrema is None:
+            # Should be unreachable code
+            raise ValueError(
+                "current_demand_extrema should not be None if a section exists "
+                "with a positive non-null capacity."
             )
-            cache.set("section_popularity_extrema", section_popularity_extrema, timeout=(60 * 60))
+        min = current_demand_extrema.min
+        max = current_demand_extrema.max
+        if min == max:
+            return 2.0  # middle of range [0,4]
 
-        if section_popularity_extrema.min == section_popularity_extrema.max:
-            return 0.5
-        this_score = self.get_current_registration_volume / float(self.capacity)
+        # we map the range [min_raw_demand, max_raw_demand] to [0,4] and
+        # return the position of self.raw_demand on this new range
+        return 4.0 * float(self.raw_demand - min) / float(max - min)
 
-        def normalize(value, min, max):
-            """
-            This function normalizes the given value to a 0-1 scale based on the given min and max.
-            Raises ValueError if min >= max.
-            """
-            if min >= max:
-                raise ValueError(f"normalize called with min >= max ({min} >= {max})")
-            return float(value - min) / float(max - min)
+    @property
+    def estimated_num_alerts_remaining(self):
+        return 1
+        # TODO: finish
 
-        # we map the range [aggregate_scores.min, aggregate_scores.max] to [0,1] and
-        # return the position of this_score on this new range
-        return normalize(this_score, section_popularity_extrema.min, section_popularity_extrema.max)
+    @property
+    def prob_pca_success(self):
+        return 1
+        # TODO: finish
+        # return 1 - reduce(mul, [() for i in range(min(self.registration_volume,
+        # self.estimated_num_alerts_remaining))], 1)
 
     def save(self, *args, **kwargs):
+        from alert.models import Registration
+
+        if not self.registration_volume:
+            self.registration_volume = self.registrations.filter(
+                **Registration.is_active_filter()
+            ).count()
         self.full_code = f"{self.course.full_code}-{self.code}"
         super().save(*args, **kwargs)
 
 
 class StatusUpdate(models.Model):
     """
-    A registration status update for a specific section (e.g. CIS-120 went from open to close)
+    A registration status update for a specific section (e.g. CIS-120-001 went from open to close)
     """
 
     STATUS_CHOICES = (("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted"))

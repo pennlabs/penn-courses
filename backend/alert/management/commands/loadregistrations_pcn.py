@@ -1,15 +1,15 @@
 import logging
-import mmap
 import os
 
 import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware
 from tqdm import tqdm
-from PennCourses.command_utils import get_num_lines
 
+from alert.management.commands.recompute_demand_extrema import recompute_demand_extrema
 from alert.models import Registration, Section
 from courses.models import Course, Department
 from courses.util import get_current_semester, get_semester
@@ -25,169 +25,193 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
     :param dummy_missing_sections: Set to True to fill in missing sections with dummy info
         (only containing dept_code, course_code, section_code, and semester).
     """
-    print("Checking given CSVs (nothing will be added to the database until indicated later)...")
+    print(
+        "This script is an atomic transaction, so the database will not be modified "
+        "unless the entire script succeeds."
+    )
+    with transaction.atomic():
+        print("Checking given CSVs...")
 
-    courserequest = pd.read_csv(courserequest_path)
-    courseinfo = pd.read_csv(courseinfo_path)
+        courserequest = pd.read_csv(courserequest_path)
+        courseinfo = pd.read_csv(courseinfo_path)
 
-    table = courserequest.merge(courseinfo, how="inner", left_on="course", right_on="key")
-    table["notification_sent"] = table["status"] == "complete"
-    error_message = ""
+        table = courserequest.merge(courseinfo, how="inner", left_on="course", right_on="key")
+        table["notification_sent"] = table["status"] == "complete"
+        error_message = ""
 
-    def get_date(date, column):
-        nonlocal error_message
-        cantidate_error_message = (
-            f"String '{date}' in the '{column}' column in {courserequest_path} "
-            "could not be parsed to a datetime object."
-        )
-        dt = None
-        try:
-            dt = parse_datetime(date)
-        except ValueError:
-            error_message = cantidate_error_message
-        if dt is None:
-            error_message = cantidate_error_message
-        if error_message != "":
-            raise ValueError
-        return make_aware(dt)
-
-    print("Parsing created dates...")
-    try:
-        table["created_at"] = table["created"].progress_map(lambda x: get_date(x, "created"))
-    except ValueError:
-        print("\n\n")
-        print(error_message)
-        return False
-    print("Parsing updated dates...")
-    try:
-        table["notification_sent_at"] = table.progress_apply(
-            (lambda row: get_date(row["updated"], "updated") if row["notification_sent"] else None),
-            axis=1,
-        )
-    except ValueError:
-        print("\n\n")
-        print(error_message)
-        return False
-
-    def get_semester_with_error(created, created_at):
-        nonlocal error_message
-        sem = get_semester(created_at)
-        if sem >= get_current_semester():
-            error_message = (
-                "PCN registrations from the current semester or later cannot be imported. "
-                f"Datetime '{created}' in column 'created' is from the current semester."
+        def get_date(date, column):
+            nonlocal error_message
+            cantidate_error_message = (
+                f"String '{date}' in the '{column}' column in {courserequest_path} "
+                "could not be parsed to a datetime object."
             )
-            raise ValueError
-        return sem
+            dt = None
+            try:
+                dt = parse_datetime(date)
+            except ValueError:
+                error_message = cantidate_error_message
+            if dt is None:
+                error_message = cantidate_error_message
+            if error_message != "":
+                raise ValueError
+            return make_aware(dt)
 
-    searched_for_sections = dict()
-
-    def find_section(row):
-        nonlocal error_message
-        dept_code = row["course_y"].strip().split("-")[0].upper()
-        course_code = row["course_y"].strip().split("-")[1]
-        section_code = row["course_y"].strip().split("-")[2]
-        semester = get_semester_with_error(row["created"], row["created_at"])
-        full_code = f"{dept_code}-{course_code}-{section_code}"
+        print("Parsing created dates...")
         try:
-            if f"{full_code} {semester}" in searched_for_sections:
-                found_section = searched_for_sections[f"{full_code} {semester}"]
-            else:
-                found_section = Section.objects.get(
-                    course__department__code=dept_code,
-                    course__code=course_code,
-                    code=section_code,
-                    course__semester=semester,
-                )
-                searched_for_sections[f"{full_code} {semester}"] = found_section
-        except ObjectDoesNotExist:
-            found_section = None
-            searched_for_sections[f"{full_code} {semester}"] = None
-        if found_section is None:
-            if not dummy_missing_sections:
+            table["created_at"] = table["created"].progress_map(lambda x: get_date(x, "created"))
+        except ValueError:
+            print("\n\n")
+            print(error_message)
+            return False
+        print("Parsing updated dates...")
+        try:
+            table["notification_sent_at"] = table.progress_apply(
+                (
+                    lambda row: get_date(row["updated"], "updated")
+                    if row["notification_sent"]
+                    else None
+                ),
+                axis=1,
+            )
+        except ValueError:
+            print("\n\n")
+            print(error_message)
+            return False
+
+        def get_semester_with_error(created, created_at):
+            nonlocal error_message
+            sem = get_semester(created_at)
+            if sem >= get_current_semester():
                 error_message = (
-                    f"Section {dept_code}-{course_code}-{section_code} {semester} "
-                    f"('{row['course_y']}' in column 'course' of courseinfo.csv) does not exist in "
-                    "database and dummy_missing_sections is not flagged"
+                    "PCN registrations from the current semester or later cannot be imported. "
+                    f"Datetime '{created}' in column 'created' is from the current semester."
                 )
                 raise ValueError
-            return None
-        if Registration.objects.filter(section=found_section,
-                                       created_at=row["created_at"],
-                                       notification_sent=row["notification_sent"],
-                                       notification_sent_at=row["notification_sent_at"]).exists():
-            error_message = (
-                f"A registration with section {dept_code}-{course_code}-{section_code} {semester}, "
-                f"'created'='{row['created']}' and 'updated'='{row['updated']}' already exists in "
-                "database. Did you accidentally run this script twice?"
-            )
-            raise ValueError
-        return found_section.id
+            return sem
 
-    print("Checking if specified sections exist in database...")
-    try:
-        table["found_section_id"] = table.progress_apply(lambda row: find_section(row), axis=1)
-    except ValueError:
-        print("\n\n")
-        print(error_message)
-        return False
+        searched_for_sections = dict()
 
-    table = table[
-        ["notification_sent", "notification_sent_at", "created_at", "found_section_id", "course_y"]
-    ]
-
-    table.to_csv("test_csv.csv")
-
-    print("Verification succeeded! Proceeding to load registrations (adding to database)...")
-
-    num_dummy_sections = 0
-
-    created_sections = dict()
-
-    for index, row in tqdm(table.iterrows(), total=table.shape[0]):
-        if pd.isna(row["found_section_id"]):
+        def find_section(row):
+            nonlocal error_message
             dept_code = row["course_y"].strip().split("-")[0].upper()
             course_code = row["course_y"].strip().split("-")[1]
             section_code = row["course_y"].strip().split("-")[2]
-            semester = get_semester_with_error("", row["created_at"])
+            semester = get_semester_with_error(row["created"], row["created_at"])
             full_code = f"{dept_code}-{course_code}-{section_code}"
-            if f"{full_code} {semester}" in created_sections:
-                section = created_sections[f"{full_code} {semester}"]
-            else:
-                num_dummy_sections += 1
-                dept, _ = Department.objects.get_or_create(code=dept_code)
-                course, _ = Course.objects.get_or_create(
-                    department=dept, code=course_code, semester=semester
-                )
-                section = Section(
-                    course=course,
-                    code=section_code,
-                    full_code=f"{dept_code}-{course_code}-{section_code}",
-                )
-                section.save()
-                created_sections[f"{full_code} {semester}"] = section
-        else:
-            section = Section.objects.get(id=row["found_section_id"])
-        if row["notification_sent"]:
-            registration = Registration(
-                section=section,
+            try:
+                if f"{full_code} {semester}" in searched_for_sections:
+                    found_section = searched_for_sections[f"{full_code} {semester}"]
+                else:
+                    found_section = Section.objects.get(
+                        course__department__code=dept_code,
+                        course__code=course_code,
+                        code=section_code,
+                        course__semester=semester,
+                    )
+                    searched_for_sections[f"{full_code} {semester}"] = found_section
+            except ObjectDoesNotExist:
+                found_section = None
+                searched_for_sections[f"{full_code} {semester}"] = None
+            if found_section is None:
+                if not dummy_missing_sections:
+                    error_message = (
+                        f"Section {dept_code}-{course_code}-{section_code} {semester} "
+                        f"('{row['course_y']}' in column 'course' of courseinfo.csv) does not "
+                        "exist in database and dummy_missing_sections is not flagged"
+                    )
+                    raise ValueError
+                return None
+            if Registration.objects.filter(
+                section=found_section,
+                created_at=row["created_at"],
                 notification_sent=row["notification_sent"],
                 notification_sent_at=row["notification_sent_at"],
-                source="SCRIPT_PCN"
-            )
-        else:
-            registration = Registration(section=section,
-                                        notification_sent=row["notification_sent"],
-                                        source="SCRIPT_PCN")
-        registration.save()
-        registration.created_at = row["created_at"]
-        registration.original_created_at = None
-        registration.save()
+            ).exists():
+                error_message = (
+                    f"A registration with section {dept_code}-{course_code}-{section_code} "
+                    f"{semester}, 'created'='{row['created']}' and 'updated'='{row['updated']}' "
+                    "already exists in database. Did you accidentally run this script twice?"
+                )
+                raise ValueError
+            return found_section.id
 
-    print(
-        f"Done! {table.shape[0]} registrations and {num_dummy_sections} dummy sections "
-        "added to database."
-    )
+        print("Checking if specified sections exist in database...")
+        try:
+            table["found_section_id"] = table.progress_apply(lambda row: find_section(row), axis=1)
+        except ValueError:
+            print("\n\n")
+            print(error_message)
+            return False
+
+        table = table[
+            [
+                "notification_sent",
+                "notification_sent_at",
+                "created_at",
+                "found_section_id",
+                "course_y",
+            ]
+        ]
+
+        table.to_csv("test_csv.csv")
+
+        print("Verification succeeded! Proceeding to load registrations...")
+
+        num_dummy_sections = 0
+
+        created_sections = dict()
+
+        semesters = set()
+        for index, row in tqdm(table.iterrows(), total=table.shape[0]):
+            if pd.isna(row["found_section_id"]):
+                dept_code = row["course_y"].strip().split("-")[0].upper()
+                course_code = row["course_y"].strip().split("-")[1]
+                section_code = row["course_y"].strip().split("-")[2]
+                semester = get_semester_with_error("", row["created_at"])
+                semesters.add(semester)
+                full_code = f"{dept_code}-{course_code}-{section_code}"
+                if f"{full_code} {semester}" in created_sections:
+                    section = created_sections[f"{full_code} {semester}"]
+                else:
+                    num_dummy_sections += 1
+                    dept, _ = Department.objects.get_or_create(code=dept_code)
+                    course, _ = Course.objects.get_or_create(
+                        department=dept, code=course_code, semester=semester
+                    )
+                    section = Section(
+                        course=course,
+                        code=section_code,
+                        full_code=f"{dept_code}-{course_code}-{section_code}",
+                    )
+                    section.save()
+                    created_sections[f"{full_code} {semester}"] = section
+            else:
+                section = Section.objects.get(id=row["found_section_id"])
+                semesters.add(section.semester)
+            if row["notification_sent"]:
+                registration = Registration(
+                    section=section,
+                    notification_sent=row["notification_sent"],
+                    notification_sent_at=row["notification_sent_at"],
+                    source="SCRIPT_PCN",
+                )
+            else:
+                registration = Registration(
+                    section=section, notification_sent=row["notification_sent"], source="SCRIPT_PCN"
+                )
+            registration.save(load_script=True)
+            registration.created_at = row["created_at"]
+            registration.original_created_at = None
+            registration.save(load_script=True)
+
+        print(f"Recomputing PCA Demand Extrema for {len(semesters)} semesters...")
+        for semester in semesters:
+            recompute_demand_extrema(semester=semester, verbose=True)
+
+        print(
+            f"Done! {table.shape[0]} registrations and {num_dummy_sections} dummy sections "
+            "added to database."
+        )
 
 
 class Command(BaseCommand):

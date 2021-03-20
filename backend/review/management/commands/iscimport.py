@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 import zipfile
 
@@ -137,6 +138,9 @@ class Command(BaseCommand):
         print(s, file=self.stdout)
 
     def handle(self, *args, **kwargs):
+        root_logger = logging.getLogger("")
+        root_logger.setLevel(logging.DEBUG)
+
         src = kwargs["src"]
         semesters = kwargs["semester"]
         import_all = kwargs["import_all"]

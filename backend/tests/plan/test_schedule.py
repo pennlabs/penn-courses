@@ -4,10 +4,10 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
-from tests.courses.util import create_mock_data_with_reviews
 
 from courses.util import get_average_reviews
 from plan.models import Schedule
+from tests.courses.util import create_mock_data_with_reviews
 
 
 TEST_SEMESTER = "2019C"
