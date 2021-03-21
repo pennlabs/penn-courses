@@ -9,40 +9,130 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0032_auto_20210320_1715'),
-        ('alert', '0011_auto_20201108_1535'),
+        ("courses", "0032_auto_20210320_1715"),
+        ("alert", "0011_auto_20201108_1535"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AddDropPeriod',
+            name="AddDropPeriod",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('semester', models.CharField(db_index=True, help_text='\nThe semester of this add drop period (of the form YYYYx where x is\nA [for spring], or C [fall]), e.g. 2019C for fall 2019.\n', max_length=5, unique=True, validators=[alert.models.validate_add_drop_semester])),
-                ('start', models.DateTimeField(blank=True, help_text='The datetime at which the add drop period started.', null=True)),
-                ('end', models.DateTimeField(blank=True, help_text='The datetime at which the add drop period ended.', null=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "semester",
+                    models.CharField(
+                        db_index=True,
+                        help_text="\nThe semester of this add drop period (of the form YYYYx where x is\nA [for spring], or C [fall]), e.g. 2019C for fall 2019.\n",
+                        max_length=5,
+                        unique=True,
+                        validators=[alert.models.validate_add_drop_semester],
+                    ),
+                ),
+                (
+                    "start",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="The datetime at which the add drop period started.",
+                        null=True,
+                    ),
+                ),
+                (
+                    "end",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="The datetime at which the add drop period ended.",
+                        null=True,
+                    ),
+                ),
             ],
         ),
         migrations.AlterField(
-            model_name='registration',
-            name='section',
-            field=models.ForeignKey(help_text='The section that the user registered to be notified about.', on_delete=django.db.models.deletion.CASCADE, related_name='registrations', to='courses.section'),
+            model_name="registration",
+            name="section",
+            field=models.ForeignKey(
+                help_text="The section that the user registered to be notified about.",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="registrations",
+                to="courses.section",
+            ),
         ),
         migrations.AlterField(
-            model_name='registration',
-            name='source',
-            field=models.CharField(choices=[('PCA', 'Penn Course Alert'), ('API', '3rd Party Integration'), ('PCP', 'Penn Course Plan'), ('PCR', 'Penn Course Review'), ('PM', 'Penn Mobile'), ('SCRIPT_PCN', 'The loadregistrations_pcn shell command'), ('SCRIPT_PCA', 'The loadregistrations_pca shell command')], help_text='Where did the registration come from? Options and meanings: <table width=100%><tr><td>"PCA"</td><td>"Penn Course Alert"</td></tr><tr><td>"API"</td><td>"3rd Party Integration"</td></tr><tr><td>"PCP"</td><td>"Penn Course Plan"</td></tr><tr><td>"PCR"</td><td>"Penn Course Review"</td></tr><tr><td>"PM"</td><td>"Penn Mobile"</td></tr><tr><td>"SCRIPT_PCN"</td><td>"The loadregistrations_pcn shell command"</td></tr><tr><td>"SCRIPT_PCA"</td><td>"The loadregistrations_pca shell command"</td></tr></table>', max_length=16),
+            model_name="registration",
+            name="source",
+            field=models.CharField(
+                choices=[
+                    ("PCA", "Penn Course Alert"),
+                    ("API", "3rd Party Integration"),
+                    ("PCP", "Penn Course Plan"),
+                    ("PCR", "Penn Course Review"),
+                    ("PM", "Penn Mobile"),
+                    ("SCRIPT_PCN", "The loadregistrations_pcn shell command"),
+                    ("SCRIPT_PCA", "The loadregistrations_pca shell command"),
+                ],
+                help_text='Where did the registration come from? Options and meanings: <table width=100%><tr><td>"PCA"</td><td>"Penn Course Alert"</td></tr><tr><td>"API"</td><td>"3rd Party Integration"</td></tr><tr><td>"PCP"</td><td>"Penn Course Plan"</td></tr><tr><td>"PCR"</td><td>"Penn Course Review"</td></tr><tr><td>"PM"</td><td>"Penn Mobile"</td></tr><tr><td>"SCRIPT_PCN"</td><td>"The loadregistrations_pcn shell command"</td></tr><tr><td>"SCRIPT_PCA"</td><td>"The loadregistrations_pca shell command"</td></tr></table>',
+                max_length=16,
+            ),
         ),
         migrations.CreateModel(
-            name='PcaDemandExtrema',
+            name="PcaDemandExtrema",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now, help_text='The datetime at which the extrema were updated.')),
-                ('semester', models.CharField(db_index=True, help_text='\nThe semester of this demand extrema (of the form YYYYx where x is\nA [for spring], B [summer], or C [fall]), e.g. 2019C for fall 2019.\n', max_length=5)),
-                ('most_popular_volume', models.IntegerField(help_text='The registration volume of the most popular section at this time.')),
-                ('least_popular_volume', models.IntegerField(help_text='The registration volume of the least popular section at this time.')),
-                ('least_popular_section', models.ForeignKey(help_text='A least popular section.', on_delete=django.db.models.deletion.CASCADE, related_name='least_popular_extrema_occurences', to='courses.section')),
-                ('most_popular_section', models.ForeignKey(help_text='A most popular section.', on_delete=django.db.models.deletion.CASCADE, related_name='most_popular_extrema_occurences', to='courses.section')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        db_index=True,
+                        default=django.utils.timezone.now,
+                        help_text="The datetime at which the extrema were updated.",
+                    ),
+                ),
+                (
+                    "semester",
+                    models.CharField(
+                        db_index=True,
+                        help_text="\nThe semester of this demand extrema (of the form YYYYx where x is\nA [for spring], B [summer], or C [fall]), e.g. 2019C for fall 2019.\n",
+                        max_length=5,
+                    ),
+                ),
+                (
+                    "most_popular_volume",
+                    models.IntegerField(
+                        help_text="The registration volume of the most popular section at this time."
+                    ),
+                ),
+                (
+                    "least_popular_volume",
+                    models.IntegerField(
+                        help_text="The registration volume of the least popular section at this time."
+                    ),
+                ),
+                (
+                    "least_popular_section",
+                    models.ForeignKey(
+                        help_text="A least popular section.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="least_popular_extrema_occurences",
+                        to="courses.section",
+                    ),
+                ),
+                (
+                    "most_popular_section",
+                    models.ForeignKey(
+                        help_text="A most popular section.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="most_popular_extrema_occurences",
+                        to="courses.section",
+                    ),
+                ),
             ],
         ),
     ]
