@@ -309,12 +309,17 @@ class Section(models.Model):
                     When(
                         Q(capacity__isnull=False) & Q(capacity__gt=0),
                         then=(
-                            Cast("registration_volume", models.DecimalField())
-                            / Cast("capacity", models.DecimalField())
+                            Cast(
+                                "registration_volume",
+                                models.DecimalField(max_digits=11, decimal_places=4),
+                            )
+                            / Cast("capacity", models.DecimalField(max_digits=11, decimal_places=4))
                         ),
                     ),
                     default=None,
-                    output_field=models.DecimalField(),
+                    output_field=models.DecimalField(
+                        max_digits=11, decimal_places=4, null=True, blank=True
+                    ),
                 ),
                 name="raw_demand",
             ),
@@ -413,7 +418,7 @@ class Section(models.Model):
         help_text="The number of credits this section is worth.",
     )
 
-    registration_volume = models.IntegerField(
+    registration_volume = models.PositiveIntegerField(
         default=0, help_text="The number of active PCA registrations watching this section."
     )  # For the set of PCA registrations for this section, use the related field `registrations`.
 
