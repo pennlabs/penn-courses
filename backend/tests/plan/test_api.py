@@ -118,7 +118,7 @@ class CourseReviewAverageTestCase(TestCase):
         )
         self.rev1.save()
         self.rev1.set_averages(
-            {"course_quality": 4, "instructor_quality": 4, "difficulty": 4, }
+            {"course_quality": 4, "instructor_quality": 4, "difficulty": 4,}
         )
         self.instructor2 = Instructor(name="Person2")
         self.instructor2.save()
@@ -128,7 +128,7 @@ class CourseReviewAverageTestCase(TestCase):
         self.rev2.instructor = self.instructor2
         self.rev2.save()
         self.rev2.set_averages(
-            {"course_quality": 2, "instructor_quality": 2, "difficulty": 2, }
+            {"course_quality": 2, "instructor_quality": 2, "difficulty": 2,}
         )
 
         self.section.instructors.add(self.instructor)
@@ -154,7 +154,7 @@ class CourseReviewAverageTestCase(TestCase):
         rev3 = Review(section=self.rev2.section, instructor=instructor3)
         rev3.save()
         rev3.set_averages(
-            {"course_quality": 1, "instructor_quality": 1, "difficulty": 1, }
+            {"course_quality": 1, "instructor_quality": 1, "difficulty": 1,}
         )
         self.section2.instructors.add(instructor3)
         response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
@@ -201,7 +201,7 @@ class CourseRecommendationsTestCase(TestCase):
         response = self.client.post(
             reverse("recommend-courses"),
             json.dumps({"curr_courses": ["CIS1233"]}),
-            content_type="application/json"
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
 
@@ -209,7 +209,7 @@ class CourseRecommendationsTestCase(TestCase):
         response = self.client.post(
             reverse("recommend-courses"),
             json.dumps({"past_courses": ["CIS1233"]}),
-            content_type="application/json"
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
 
@@ -217,7 +217,7 @@ class CourseRecommendationsTestCase(TestCase):
         response = self.client.post(
             reverse("recommend-courses"),
             json.dumps({"past_courses": ["CIS1233"], "curr_courses": ["CIS123123"]}),
-            content_type="application/json"
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
 
@@ -225,7 +225,7 @@ class CourseRecommendationsTestCase(TestCase):
         response = self.client.post(
             reverse("recommend-courses"),
             json.dumps({"past_courses": ["CIS-121"]}),
-            content_type="application/json"
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 5)
@@ -234,7 +234,7 @@ class CourseRecommendationsTestCase(TestCase):
         response = self.client.post(
             reverse("recommend-courses"),
             json.dumps({"curr_courses": ["CIS-121"]}),
-            content_type="application/json"
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 5)
@@ -242,9 +242,8 @@ class CourseRecommendationsTestCase(TestCase):
     def test_past_and_current(self):
         response = self.client.post(
             reverse("recommend-courses"),
-            json.dumps({"curr_courses": ["CIS-121"],
-                        "past_courses": ["CIS-262"]}),
-            content_type="application/json"
+            json.dumps({"curr_courses": ["CIS-121"], "past_courses": ["CIS-262"]}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 5)

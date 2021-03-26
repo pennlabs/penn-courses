@@ -40,17 +40,19 @@ def retrieve_course_clusters():
 
 
 @api_view(["POST"])
-@schema(PcxAutoSchema(
-    response_codes={
-        reverse_func("recommend-courses"): {
-            "POST": {
-                200: "Response returned successfully",
-                400: "Current or Past courses formatted incorrectly",
-                500: "The model has not been trained"
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    200: "Response returned successfully",
+                    400: "Current or Past courses formatted incorrectly",
+                    500: "The model has not been trained",
+                }
             }
         }
-    }
-))
+    )
+)
 @permission_classes([IsAuthenticated])
 def recommend_courses_view(request):
     """
@@ -95,7 +97,8 @@ def recommend_courses_view(request):
     return Response(
         recommend_courses(
             curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses
-        ), status=status.HTTP_200_OK
+        ),
+        status=status.HTTP_200_OK,
     )
 
 
