@@ -40,7 +40,17 @@ def retrieve_course_clusters():
 
 
 @api_view(["POST"])
-@schema(PcxAutoSchema())
+@schema(PcxAutoSchema(
+    response_codes={
+        reverse_func("recommend-courses"): {
+            "POST": {
+                200: "Response returned successfully",
+                400: "Current or Past courses formatted incorrectly",
+                500: "The model has not been trained"
+            }
+        }
+    }
+))
 @permission_classes([IsAuthenticated])
 def recommend_courses_view(request):
     """
@@ -50,6 +60,7 @@ def recommend_courses_view(request):
     the object should have a "curr-courses" and "past_courses" attribute that will each contain
     an array of class codes of current and/or past courses.
     """
+
     user = request.user
     curr_courses = request.data.get("curr_courses", [])
     past_courses = request.data.get("past_courses", [])
@@ -62,7 +73,7 @@ def recommend_courses_view(request):
             past_course_vectors_dict,
         ) = retrieve_course_clusters()
     except Exception:
-        return Response("Model is not trained!", status=status.HTTP_400_BAD_REQUEST,)
+        return Response("Model is not trained!", status=status.HTTP_500_INTERNAL_SERVER_ERROR,)
 
     if curr_courses or past_courses:
         try:
@@ -84,7 +95,7 @@ def recommend_courses_view(request):
     return Response(
         recommend_courses(
             curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses
-        )
+        ), status=status.HTTP_200_OK
     )
 
 
