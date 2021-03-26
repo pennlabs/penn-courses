@@ -18,6 +18,7 @@ from django.utils.timezone import make_aware
 from alert.alerts import Email, PushNotification, Text
 from courses.models import Course, Section, UserProfile, string_dict_to_html
 from courses.util import get_course_and_section, get_current_semester
+import functools
 
 
 class RegStatus(Enum):
@@ -70,14 +71,15 @@ class Registration(models.Model):
     registration would send an alert when the section it is watching opens, we call it
     "active".  This rule is encoded in the is_active property.  You can also filter
     for active registrations by unpacking the static is_active_filter() method which returns a
-    dictionary (you cannot filter on a property). A Registration will send a close notification
+    dictionary that you can unpack into the kwargs of the filter method
+    (you cannot filter on a property). A Registration will send a close notification
     when the section it is watching closes, if and only if it has already sent an open alert,
     the user has enabled close notifications for that section, the Registration hasn't sent a
     close_notification before, is not cancelled, and it is not deleted.  If a registration would
     send a close notification when the section it is watching closes, we call it "waiting for
     close".  This rule is encoded in the is_waiting_for_close property.  You can also filter
-    for such registrations by unpacking the static is_waiting_for_close_filter() method which
-    returns a tuple of Q filters (you cannot filter on a property).
+    for such registrations by unpacking (with single *) the static is_waiting_for_close_filter()
+    method which returns a tuple of Q filters (you cannot filter on a property).
 
     After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a user field
     pointing to the user's Penn Labs Accounts User object.  In other words, we implemented a
@@ -341,18 +343,47 @@ class Registration(models.Model):
         Example:
             Registration.objects.filter(**Registration.is_active_filter())
         """
-        return {"notification_sent": False, "deleted": False, "cancelled": False}
+        return {
+            "notification_sent": False,
+            "deleted": False,
+            "cancelled": False,
+            "section__course__semester": get_current_semester(),
+        }
 
     @property
     def is_active(self):
         """
-        True if the registration would send an alert hen the watched section changes to open,
-        False otherwise. This is equivalent to not(notification_sent or deleted or cancelled).
+        True if the registration would send an alert when the watched section changes to open,
+        False otherwise. This is equivalent to
+        [not(notification_sent or deleted or cancelled) and semester is current].
         """
-        for k, v in self.is_active_filter().items():
-            if getattr(self, k) != v:
+        for field, active_value in self.is_active_filter().items():
+            assert field != ""  # this should never fail
+            actual_value = functools.reduce(getattr, [self] + field.split("__"))
+            if actual_value != active_value:
                 return False
         return True
+
+    @property
+    def deactivated_at(self):
+        """
+        The datetime at which this registration was deactivated, if it is not active,
+        otherwise None. This checks all fields in the is_active definition which have a
+        corresponding field+"_at" datetime field, such as notification_sent_at,
+        deleted_at, or cancelled_at, and takes the minimum non-null datetime from these (or
+        returns null if they are all null).
+        """
+        if self.is_active:
+            return None
+        deactivated_dt = None
+        for field, active_value in self.is_active_filter().items():
+            if active_value and hasattr(self, field + "_at"):
+                field_changed_at = getattr(self, field + "_at")
+                if deactivated_dt is None or (
+                    field_changed_at is not None and field_changed_at < deactivated_dt
+                ):
+                    deactivated_dt = field_changed_at
+        return deactivated_dt
 
     @staticmethod
     def is_waiting_for_close_filter():
@@ -469,7 +500,8 @@ class Registration(models.Model):
         case in which the chain is traversed to find the proper value for original_created_at is
         only for redundancy.
         It finally calls the normal save method with args and kwargs.
-        Asynchronously after the save completes successfully, if load_script is set to False,
+        Asynchronously after the save completes successfully, if load_script is set to False
+        and the registration's semester is the current semester,
         it updates the PcaDemandExtrema models and current_demand_extrema cache to reflect
         the demand change if this registration was just created or deactivated.
         """
@@ -776,8 +808,9 @@ class PcaDemandExtrema(models.Model):
     which maps demand values between extrema to a fixed range of [0,4]) is defined
     for any given section as (PCA registration volume)/(section capacity).
     Note that capacity is not stored as a field, while volume is. We do not track capacity changes,
-    and for this reason, the recompute_demand_extrema script should be run after each
-    run of the registrarimport script, in case capacity changes affect historical extrema.
+    and for this reason, the recompute_demand_extrema function (in the recomputestats
+    management command script) should be run after each run of the registrarimport script,
+    in case capacity changes affect historical extrema.
     """
 
     created_at = models.DateTimeField(

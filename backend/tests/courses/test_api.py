@@ -21,10 +21,10 @@ def set_semester():
 
 class CourseListTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
         self.client = APIClient()
-        set_semester()
 
     def test_get_courses(self):
         response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))
@@ -67,13 +67,13 @@ class CourseListTestCase(TestCase):
 
 class CourseDetailTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         i = Instructor(name="Test Instructor")
         i.save()
         self.section.instructors.add(i)
         self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
         self.client = APIClient()
-        set_semester()
 
     def test_get_course(self):
         course, section = create_mock_data("CIS-120-201", TEST_SEMESTER)
@@ -127,6 +127,7 @@ class CourseDetailTestCase(TestCase):
 
 class TypedSearchBackendTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.factory = RequestFactory()
         self.search = TypedCourseSearchBackend()
 
@@ -157,10 +158,10 @@ class TypedSearchBackendTestCase(TestCase):
 
 class CourseSearchTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
         self.client = APIClient()
-        set_semester()
 
     def test_search_by_dept(self):
         response = self.client.get(
@@ -189,6 +190,7 @@ class CourseSearchTestCase(TestCase):
 
 class SectionSearchTestCase(TestCase):
     def setUp(self):
+        set_semester()
         create_mock_data("CIS-120-001", TEST_SEMESTER)
         create_mock_data("CIS-160-001", TEST_SEMESTER)
         create_mock_data("CIS-120-201", TEST_SEMESTER)
@@ -293,10 +295,10 @@ class RequirementListTestCase(TestCase):
 
 class SectionListTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
         self.client = APIClient()
-        set_semester()
 
     def test_sections_appear(self):
         response = self.client.get(
@@ -318,6 +320,7 @@ class SectionListTestCase(TestCase):
 
 class UserTestCase(TestCase):
     def setUp(self):
+        set_semester()
         User.objects.create_user(username="jacob", password="top_secret")
         self.client = APIClient()
         self.client.login(username="jacob", password="top_secret")
@@ -867,6 +870,7 @@ class UserTestCase(TestCase):
 
 class DocumentationTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.client = APIClient()
 
     def test_no_error(self):

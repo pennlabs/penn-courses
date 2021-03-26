@@ -9,7 +9,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware
 from tqdm import tqdm
 
-from alert.management.commands.recompute_demand_extrema import recompute_demand_extrema
+from alert.management.commands.recomputestats import recompute_demand_extrema
 from alert.models import Registration, Section
 from courses.models import Course, Department
 from courses.util import get_current_semester, get_semester
@@ -206,7 +206,7 @@ def load_pcn_registrations(courserequest_path, courseinfo_path, dummy_missing_se
 
         print(f"Recomputing PCA Demand Extrema for {len(semesters)} semesters...")
         for semester in semesters:
-            recompute_demand_extrema(semester=semester, verbose=True)
+            recompute_demand_extrema(semesters=semester, verbose=True)
 
         print(
             f"Done! {table.shape[0]} registrations and {num_dummy_sections} dummy sections "

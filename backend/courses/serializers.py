@@ -105,6 +105,7 @@ class MiniSectionStatsSerializer(MiniSectionSerializer):
             "course_title",
             "registration_volume",  # added
             "current_relative_pca_demand",  # added
+            "current_percent_open",  # added
         ]
         read_only_fields = fields
 
@@ -186,8 +187,8 @@ class SectionDetailSerializer(serializers.ModelSerializer):
 
 class SectionDetailStatsSerializer(SectionDetailSerializer):
     """
-    A copy of SectionDetailSerializer, except includes the registration_volume and
-    current_relative_pca_demand statistics additionally.
+    A copy of SectionDetailSerializer, except includes the registration_volume,
+    current_relative_pca_demand, and current_percent_open statistics additionally.
     """
 
     class Meta:
@@ -207,6 +208,7 @@ class SectionDetailStatsSerializer(SectionDetailSerializer):
             "associated_sections",
             "registration_volume",  # added
             "current_relative_pca_demand",  # added
+            "current_percent_open",  # added
         ]
         read_only_fields = fields
 

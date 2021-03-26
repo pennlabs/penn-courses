@@ -119,8 +119,8 @@ def accept_webhook(request):
             alert_for_course_called,
             request.body,
         )
-
         update_course_from_record(u)
+
     except ValueError as e:
         logger.error(e)
         return HttpResponse("We got an error but webhook should ignore it", status=200)

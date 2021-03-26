@@ -10,9 +10,12 @@ from django.db.models import Case, Index, OuterRef, Q, Subquery, When
 from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils import timezone
 
+from courses.util import get_current_semester
 from review.annotations import review_averages
+from django.utils import timezone
+from django.core.validators import MaxValueValidator, MinValueValidator
+from decimal import Decimal
 
 
 User = get_user_model()
@@ -440,6 +443,66 @@ class Section(models.Model):
         """
         return self.status == "O"
 
+    percent_open = models.DecimalField(
+        default=0,
+        max_digits=5,
+        decimal_places=4,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text=dedent(
+            """
+        If this section is from the current semester, this is the percentage (expressed as a 
+        decimal number between 0 and 1) of the period between the beginning of its 
+        add/drop period and its last status update that this section was open 
+        (or 0 if it has had no status updates strictly within its add/drop period).
+        If this section is from a previous semester, this is the percentage of its 
+        whole add/drop period that it was open.
+        """
+        ),
+    )
+
+    @property
+    def current_percent_open(self):
+        """
+        The percentage (exressed as a decimal number between 0 and 1) of the period between
+        the beginning of its add/drop period and min[the current time, the end of its
+        registration period] that this section was open. If this section's registration
+        period hasn't started yet, this property is null (None in Python).
+        """
+        from alert.models import AddDropPeriod  # imported here to avoid circular imports
+
+        if self.semester == get_current_semester():
+            add_drop = AddDropPeriod.objects.get(semester=self.semester)
+            add_drop_start = add_drop.estimated_start
+            add_drop_end = add_drop.estimated_end
+            current_time = timezone.now()
+            if current_time <= add_drop_start:
+                return None
+            try:
+                last_status_update = StatusUpdate.objects.filter(
+                    section=self, created_at__gt=add_drop_start, created_at__lt=add_drop_end
+                ).latest("created_at")
+            except StatusUpdate.DoesNotExist:
+                last_status_update = None
+            last_update_dt = last_status_update.created_at if last_status_update else add_drop_start
+            period_seconds = Decimal(
+                (min(current_time, add_drop_end) - add_drop_start).total_seconds()
+            )
+            percent_after_update = (
+                Decimal(int(self.is_open))
+                * Decimal((current_time - last_update_dt).total_seconds())
+                / period_seconds
+            )
+            if last_status_update is None:
+                return percent_after_update
+            percent_before_update = (
+                Decimal(self.percent_open)
+                * Decimal((last_update_dt - add_drop_start).total_seconds())
+                / period_seconds
+            )
+            return percent_before_update + percent_after_update
+        else:
+            return self.percent_open
+
     @property
     def raw_demand(self):
         """
@@ -506,12 +569,6 @@ class Section(models.Model):
         # self.estimated_num_alerts_remaining))], 1)
 
     def save(self, *args, **kwargs):
-        from alert.models import Registration
-
-        if not self.registration_volume:
-            self.registration_volume = self.registrations.filter(
-                **Registration.is_active_filter()
-            ).count()
         self.full_code = f"{self.course.full_code}-{self.code}"
         super().save(*args, **kwargs)
 

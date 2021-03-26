@@ -8,6 +8,7 @@ from django.dispatch import receiver
 from options.models import Option, get_value
 from rest_framework.exceptions import APIException
 
+from alert.models import AddDropPeriod
 from courses.models import (
     Building,
     Course,
@@ -21,6 +22,10 @@ from courses.models import (
     StatusUpdate,
 )
 from review.util import titleize
+from decimal import Decimal
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_current_semester():
@@ -116,8 +121,47 @@ def get_course_and_section(course_code, semester, section_manager=None):
     return course, section
 
 
+def update_percent_open(section, last_status_update, new_status_update):
+    """
+    This function updates a section's percent_open field when a new status update is processed.
+    It should be called from the record_update function.
+    The last_status_update argument should be given
+    this section's previous status update, or None if this section has not previously had
+    a status update.
+    """
+    add_drop = AddDropPeriod.objects.get(semester=section.semester)
+    add_drop_start = add_drop.estimated_start
+    add_drop_end = add_drop.estimated_end
+    if new_status_update.created_at < add_drop_start:
+        return
+    if last_status_update is not None:
+        if last_status_update.created_at >= add_drop_end:
+            return
+        last_status = last_status_update.new_status
+        if last_status != new_status_update.old_status:
+            logger.error(f"Status update received changing section {section} from "
+                         f"{new_status_update.old_status} to {new_status_update.new_status}, "
+                         f"after previous status update from {last_status_update.old_status} "
+                         f"to {last_status_update.new_status} (erroneous).")
+        before_seconds = Decimal(max((last_status_update.created_at - add_drop_start).total_seconds(), 0))
+        after_seconds = Decimal(max((min(new_status_update.created_at, add_drop_end) - last_status_update.created_at).total_seconds(), 0))
+        section.percent_open = (Decimal(section.percent_open)*before_seconds + int(last_status == "O")*after_seconds)/(before_seconds+after_seconds)
+    else:
+        if new_status_update.created_at >= add_drop_end:
+            return
+        section.percent_open = Decimal(int(new_status_update.old_status == "O"))
+    section.save()
+
+
 def record_update(section_id, semester, old_status, new_status, alerted, req):
     _, section, _, _ = get_or_create_course_and_section(section_id, semester)
+
+    # Get previous status update
+    try:
+        last_status_update = StatusUpdate.objects.filter(section=section).latest("created_at")
+    except StatusUpdate.DoesNotExist:
+        last_status_update = None
+
     u = StatusUpdate(
         section=section,
         old_status=old_status,
@@ -126,6 +170,9 @@ def record_update(section_id, semester, old_status, new_status, alerted, req):
         request_body=req,
     )
     u.save()
+
+    update_percent_open(section, last_status_update, u)  # update the section's percent_open field
+
     return u
 
 
