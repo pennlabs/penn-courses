@@ -1,10 +1,12 @@
 import json
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
+from courses.management.commands.trainrecommender import generate_course_clusters
 from courses.models import Instructor, Requirement, User
 from plan.models import Schedule
 from review.models import Review
@@ -193,6 +195,13 @@ class CourseRecommendationsTestCase(TestCase):
         self.client.login(username="jacob", password="top_secret")
         self.course, self.section = create_mock_data("CIS-121-001", TEST_SEMESTER)
         self.course, self.section = create_mock_data("CIS-262-001", TEST_SEMESTER)
+        self.patcher = patch(
+            "plan.views.retrieve_course_clusters", return_value=generate_course_clusters()
+        )
+        self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
 
     def test_with_user(self):
         response = self.client.post(reverse("recommend-courses"))
