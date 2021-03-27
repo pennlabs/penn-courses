@@ -4,6 +4,7 @@ import pickle
 from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
+from botocore.exceptions import ClientError
 from django.core.management.base import BaseCommand
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA, TruncatedSVD
@@ -18,8 +19,8 @@ from plan.models import Schedule
 
 def lookup_course(course):
     try:
-        return Course.objects.filter(full_code=course)[0]
-    except Exception:
+        return Course.objects.get(full_code=course)
+    except Course.DoesNotExist:
         return None
 
 
@@ -300,8 +301,9 @@ def save_course_clusters(cluster_data):
             "./plan/temp_pickle/course-cluster-data.pkl", "penn.courses", "course-cluster-data.pkl"
         )
         print("success!")
-    except Exception:
-        print("there was a problem uploading the file / connecting to AWS!")
+    except ClientError as e:
+        print(e)
+        print("There was a problem uploading the file / connecting to AWS -- training failed.")
 
 
 class Command(BaseCommand):
