@@ -15,6 +15,13 @@ def vectorize_user_by_courses(
     curr_courses, past_courses, curr_course_vectors_dict, past_course_vectors_dict
 ):
     n = len(next(iter(curr_course_vectors_dict.values())))
+
+    for course in curr_courses:
+        if course not in curr_course_vectors_dict:
+            raise ValueError(f"String {course} in the given curr_courses list is invalid.")
+    for course in past_courses:
+        if course not in past_course_vectors_dict:
+            raise ValueError(f"String {course} in the given past_courses list is invalid.")
     curr_courses_vector = (
         np.zeros(n)
         if len(curr_courses) == 0
@@ -25,6 +32,7 @@ def vectorize_user_by_courses(
         if len(past_courses) == 0
         else sum(past_course_vectors_dict[course] for course in past_courses)
     )
+
     vector = curr_courses_vector + past_courses_vector
     vector = vector / np.linalg.norm(vector)
     all_courses = set(curr_courses) | set(past_courses)

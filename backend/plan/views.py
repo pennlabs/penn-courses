@@ -139,10 +139,8 @@ def recommend_courses_view(request):
                 curr_course_vectors_dict,
                 past_course_vectors_dict,
             )
-        except Exception:
-            return Response(
-                "Current/Past Courses formatted incorrectly", status=status.HTTP_400_BAD_REQUEST,
-            )
+        except ValueError as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST,)
     else:
         user_vector, user_courses = vectorize_user(
             user, curr_course_vectors_dict, past_course_vectors_dict
