@@ -17,7 +17,8 @@ from courses.management.commands.recommendcourses import (
     vectorize_user,
     vectorize_user_by_courses,
 )
-from courses.models import Section
+from courses.models import Section, Course
+from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from PennCourses.settings.base import S3
@@ -44,9 +45,59 @@ def retrieve_course_clusters():
     response_codes={
         reverse_func("recommend-courses"): {
             "POST": {
-                200: "Response returned successfully",
-                400: "Current or Past courses formatted incorrectly",
-                500: "The model has not been trained"
+                200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
+                201: "[REMOVE THIS RESPONSE CODE FROM DOCS]",
+                400: "Current or past courses formatted incorrectly.",
+                500: "The model has not been trained."
+            }
+        }
+    },
+    override_request_schema={
+        reverse_func("recommend-courses"): {
+            "POST": {
+                "type": "object",
+                "properties": {
+                    "curr_courses": {
+                        "type": "array",
+                        "description": (
+                            "An array of courses the user is currently planning to "
+                            "take, each specified by its string full code, of the form DEPT-XXX, "
+                            "e.g. CIS-120."
+                        ),
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "past_courses": {
+                        "type": "array",
+                        "description": (
+                            "An array of courses the user has previously taken, each "
+                            "specified by its string full code, of the form DEPT-XXX, "
+                            "e.g. CIS-120."
+                        ),
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "n_recommendations": {
+                        "type": "integer",
+                        "description": (
+                            "The number of course recommendations you want returned. Defaults to 5."
+                        )
+                    }
+                }
+            }
+        }
+    },
+    override_response_schema={
+        reverse_func("recommend-courses"): {
+            "POST": {
+                200: {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/components/schemas/CourseList"
+                    }
+                }
             }
         }
     }
@@ -54,16 +105,21 @@ def retrieve_course_clusters():
 @permission_classes([IsAuthenticated])
 def recommend_courses_view(request):
     """
-    This method will optionally take in current and past courses. In order to
+    This route will optionally take in current and past courses. In order to
     make recommendations solely on the user's past and current courses in plan, simply
     pass an empty body to the request. Otherwise, in order to specify past and current courses,
-    the object should have a "curr-courses" and "past_courses" attribute that will each contain
-    an array of class codes of current and/or past courses.
+    include a "curr-courses" and/or "past_courses" attribute in the request that should each contain
+    an array of string course full codes of the form DEPT-XXX (e.g. CIS-120).
+    If successful, this route will return a list of recommended courses, with the same schema
+    as the List Courses route. The number of recommended courses returned can be specified
+    using the n_recommendations attribute in the request body, but if this attribute is
+    omitted, the default will be 5.
     """
 
     user = request.user
     curr_courses = request.data.get("curr_courses", [])
     past_courses = request.data.get("past_courses", [])
+    n_recommendations = request.data.get("n_recommendations", 5)
 
     try:
         (
@@ -92,10 +148,19 @@ def recommend_courses_view(request):
             user, curr_course_vectors_dict, past_course_vectors_dict
         )
 
+    recommended_course_codes = recommend_courses(
+        curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses,
+        n_recommendations
+    )
+    serializer = CourseListSerializer(data=Course.objects.filter(
+        semester=get_current_semester(),
+        full_code__in=recommended_course_codes
+    )
+    )
+    assert serializer.is_valid()
+
     return Response(
-        recommend_courses(
-            curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses
-        ), status=status.HTTP_200_OK
+        serializer.validated_data, status=status.HTTP_200_OK
     )
 
 

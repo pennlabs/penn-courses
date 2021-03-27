@@ -191,6 +191,8 @@ class CourseRecommendationsTestCase(TestCase):
         )
         self.client = APIClient()
         self.client.login(username="jacob", password="top_secret")
+        self.course, self.section = create_mock_data("CIS-121-001", TEST_SEMESTER)
+        self.course, self.section = create_mock_data("CIS-262-001", TEST_SEMESTER)
 
     def test_with_user(self):
         response = self.client.post(reverse("recommend-courses"))

@@ -75,6 +75,8 @@ def best_recommendations(
             np.linalg.norm(course_vector) * np.linalg.norm(user_vector)
         )
         recs.append((course, similarity))
+    if n_recommendations > len(recs):
+        n_recommendations = len(recs)
     return [course for course, _ in heapq.nlargest(n_recommendations, recs, lambda x: x[1])]
 
 
