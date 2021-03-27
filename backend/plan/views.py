@@ -100,8 +100,8 @@ def retrieve_course_clusters():
                 }
             }
         }
-    }
-))
+    )
+)
 @permission_classes([IsAuthenticated])
 def recommend_courses_view(request):
     """
