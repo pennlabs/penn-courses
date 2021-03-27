@@ -3,9 +3,8 @@ import logging
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
-from alert.management.commands.recomputestats import recompute_demand_extrema, recompute_stats
+from alert.management.commands.recomputestats import recompute_stats
 from courses import registrar
-from courses.management.commands.load_add_drop_dates import load_add_drop_dates
 from courses.management.commands.loadrequirements import load_requirements
 from courses.management.commands.loadstatus import set_all_status
 from courses.models import Department

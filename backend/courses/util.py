@@ -1,5 +1,7 @@
 import json
+import logging
 import re
+from decimal import Decimal
 
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
@@ -22,7 +24,6 @@ from courses.models import (
     StatusUpdate,
 )
 from review.util import titleize
-from decimal import Decimal
 
 
 logger = logging.getLogger(__name__)
@@ -139,13 +140,26 @@ def update_percent_open(section, last_status_update, new_status_update):
             return
         last_status = last_status_update.new_status
         if last_status != new_status_update.old_status:
-            logger.error(f"Status update received changing section {section} from "
-                         f"{new_status_update.old_status} to {new_status_update.new_status}, "
-                         f"after previous status update from {last_status_update.old_status} "
-                         f"to {last_status_update.new_status} (erroneous).")
-        before_seconds = Decimal(max((last_status_update.created_at - add_drop_start).total_seconds(), 0))
-        after_seconds = Decimal(max((min(new_status_update.created_at, add_drop_end) - last_status_update.created_at).total_seconds(), 0))
-        section.percent_open = (Decimal(section.percent_open)*before_seconds + int(last_status == "O")*after_seconds)/(before_seconds+after_seconds)
+            logger.error(
+                f"Status update received changing section {section} from "
+                f"{new_status_update.old_status} to {new_status_update.new_status}, "
+                f"after previous status update from {last_status_update.old_status} "
+                f"to {last_status_update.new_status} (erroneous)."
+            )
+        before_seconds = Decimal(
+            max((last_status_update.created_at - add_drop_start).total_seconds(), 0)
+        )
+        after_seconds = Decimal(
+            max(
+                (
+                    min(new_status_update.created_at, add_drop_end) - last_status_update.created_at
+                ).total_seconds(),
+                0,
+            )
+        )
+        section.percent_open = (
+            Decimal(section.percent_open) * before_seconds + int(last_status == "O") * after_seconds
+        ) / (before_seconds + after_seconds)
     else:
         if new_status_update.created_at >= add_drop_end:
             return

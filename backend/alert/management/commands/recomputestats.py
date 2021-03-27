@@ -1,6 +1,8 @@
 import logging
 import operator
 from contextlib import nullcontext
+from decimal import Decimal
+from textwrap import dedent
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
@@ -9,12 +11,10 @@ from django.db.models import Count, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce
 from tqdm import tqdm
 
-from alert.models import PcaDemandExtrema, Registration, Section, AddDropPeriod
+from alert.models import AddDropPeriod, PcaDemandExtrema, Registration, Section
 from courses.management.commands.load_add_drop_dates import load_add_drop_dates
 from courses.models import Course, StatusUpdate
 from courses.util import get_current_semester
-from textwrap import dedent
-from decimal import Decimal
 
 
 def get_semesters(semesters=None, verbose=False):
@@ -76,8 +76,10 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
         semesters if semesters_precomputed else get_semesters(semesters=semesters, verbose=verbose)
     )
 
-    print("Recomputing demand extrema and section registration_volume fields "
-          f"for semesters {str(semesters)}...")
+    print(
+        "Recomputing demand extrema and section registration_volume fields "
+        f"for semesters {str(semesters)}..."
+    )
 
     for semester_num, semester in enumerate(semesters):
         set_cache = semester == current_semester
@@ -242,9 +244,10 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                 else:
                     cache.set("current_demand_extrema", None, timeout=None)
 
-    print("Finished recomputing demand extrema and section registration_volume fields "
-          f"for semesters {str(semesters)}.")
-
+    print(
+        "Finished recomputing demand extrema and section registration_volume fields "
+        f"for semesters {str(semesters)}."
+    )
 
 
 def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=False):
@@ -361,9 +364,9 @@ class Command(BaseCommand):
                 """
                 The semesters argument should be a comma-separated list of semesters
             corresponding to the semesters for which you want to recompute stats,
-            i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020. If this argument 
-            is omitted, stats are only recomputed for the current semester. 
-            If you pass "all" to this argument, this script will recompute stats for 
+            i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020. If this argument
+            is omitted, stats are only recomputed for the current semester.
+            If you pass "all" to this argument, this script will recompute stats for
             all semesters found in Courses in the db.
                 """
             ),

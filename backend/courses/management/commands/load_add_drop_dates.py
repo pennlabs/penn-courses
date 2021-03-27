@@ -10,6 +10,7 @@ from django.utils.timezone import make_aware
 
 from alert.models import AddDropPeriod, validate_add_drop_semester
 from courses.util import get_current_semester
+from PennCourses.settings.base import TIME_ZONE
 
 
 def load_add_drop_dates(verbose=False):
@@ -39,7 +40,7 @@ def load_add_drop_dates(verbose=False):
                 "This script currently only supports fall or spring semesters; "
                 f"{semester} is invalid"
             )
-        tz = pytz.timezone("US/Eastern")
+        tz = pytz.timezone(TIME_ZONE)
 
         s_year, s_month, s_day, e_year, e_month, e_day = (None,) * 6
         start_mode = 0  # 0 if start semester hasn't been found, 1 if it has, 2 if finished sem

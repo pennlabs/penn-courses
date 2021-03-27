@@ -13,9 +13,11 @@ from courses.util import get_current_semester
 
 
 class Command(BaseCommand):
-    help = ("Get statistics on PCA, and optionally send to Slack (for analytics use only; do "
-            "not confuse this script with the recomputestats command, which actually updates "
-            "cached statistics).")
+    help = (
+        "Get statistics on PCA, and optionally send to Slack (for analytics use only; do "
+        "not confuse this script with the recomputestats command, which actually updates "
+        "cached statistics)."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument("days", help="number of days to aggregate.", default=1, type=int)

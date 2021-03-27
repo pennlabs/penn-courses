@@ -1,21 +1,21 @@
 import math
 import uuid
+from decimal import Decimal
 from textwrap import dedent
 
 import phonenumbers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Case, Index, OuterRef, Q, Subquery, When
 from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 from courses.util import get_current_semester
 from review.annotations import review_averages
-from django.utils import timezone
-from django.core.validators import MaxValueValidator, MinValueValidator
-from decimal import Decimal
 
 
 User = get_user_model()
@@ -450,11 +450,11 @@ class Section(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(1)],
         help_text=dedent(
             """
-        If this section is from the current semester, this is the percentage (expressed as a 
-        decimal number between 0 and 1) of the period between the beginning of its 
-        add/drop period and its last status update that this section was open 
+        If this section is from the current semester, this is the percentage (expressed as a
+        decimal number between 0 and 1) of the period between the beginning of its
+        add/drop period and its last status update that this section was open
         (or 0 if it has had no status updates strictly within its add/drop period).
-        If this section is from a previous semester, this is the percentage of its 
+        If this section is from a previous semester, this is the percentage of its
         whole add/drop period that it was open.
         """
         ),

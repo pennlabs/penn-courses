@@ -1,3 +1,4 @@
+import functools
 import logging
 from contextlib import nullcontext
 from datetime import datetime
@@ -18,7 +19,7 @@ from django.utils.timezone import make_aware
 from alert.alerts import Email, PushNotification, Text
 from courses.models import Course, Section, UserProfile, string_dict_to_html
 from courses.util import get_course_and_section, get_current_semester
-import functools
+from PennCourses.settings.base import TIME_ZONE
 
 
 class RegStatus(Enum):
@@ -985,7 +986,7 @@ class AddDropPeriod(models.Model):
                     s_year = int(self.semester[:4]) - 1
                     s_month = 11
                     s_day = 16
-                tz = pytz.timezone("US/Eastern")
+                tz = pytz.timezone(TIME_ZONE)
                 return make_aware(
                     datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M"),
                     timezone=tz,
@@ -1012,7 +1013,7 @@ class AddDropPeriod(models.Model):
                 else:  # spring semester
                     e_month = 2
                     e_day = 22
-                tz = pytz.timezone("US/Eastern")
+                tz = pytz.timezone(TIME_ZONE)
                 return make_aware(
                     datetime.strptime(f"{e_year}-{e_month}-{e_day} 23:59", "%Y-%m-%d %H:%M"),
                     timezone=tz,
