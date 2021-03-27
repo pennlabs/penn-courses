@@ -17,7 +17,7 @@ from courses.management.commands.recommendcourses import (
     vectorize_user,
     vectorize_user_by_courses,
 )
-from courses.models import Section, Course
+from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
@@ -41,65 +41,59 @@ def retrieve_course_clusters():
 
 
 @api_view(["POST"])
-@schema(PcxAutoSchema(
-    response_codes={
-        reverse_func("recommend-courses"): {
-            "POST": {
-                200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
-                201: "[REMOVE THIS RESPONSE CODE FROM DOCS]",
-                400: "Current or past courses formatted incorrectly.",
-                500: "The model has not been trained."
-            }
-        }
-    },
-    override_request_schema={
-        reverse_func("recommend-courses"): {
-            "POST": {
-                "type": "object",
-                "properties": {
-                    "curr_courses": {
-                        "type": "array",
-                        "description": (
-                            "An array of courses the user is currently planning to "
-                            "take, each specified by its string full code, of the form DEPT-XXX, "
-                            "e.g. CIS-120."
-                        ),
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "past_courses": {
-                        "type": "array",
-                        "description": (
-                            "An array of courses the user has previously taken, each "
-                            "specified by its string full code, of the form DEPT-XXX, "
-                            "e.g. CIS-120."
-                        ),
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "n_recommendations": {
-                        "type": "integer",
-                        "description": (
-                            "The number of course recommendations you want returned. Defaults to 5."
-                        )
-                    }
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
+                    201: "[REMOVE THIS RESPONSE CODE FROM DOCS]",
+                    400: "Current or past courses formatted incorrectly.",
+                    500: "The model has not been trained.",
                 }
             }
-        }
-    },
-    override_response_schema={
-        reverse_func("recommend-courses"): {
-            "POST": {
-                200: {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/components/schemas/CourseList"
-                    }
+        },
+        override_request_schema={
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    "type": "object",
+                    "properties": {
+                        "curr_courses": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user is currently planning to "
+                                "take, each specified by its string full code, of the form "
+                                "DEPT-XXX, e.g. CIS-120."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "past_courses": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user has previously taken, each "
+                                "specified by its string full code, of the form DEPT-XXX, "
+                                "e.g. CIS-120."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "n_recommendations": {
+                            "type": "integer",
+                            "description": (
+                                "The number of course recommendations you want returned. "
+                                "Defaults to 5."
+                            ),
+                        },
+                    },
                 }
             }
-        }
+        },
+        override_response_schema={
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    200: {"type": "array", "items": {"$ref": "#/components/schemas/CourseList"}}
+                }
+            }
+        },
     )
 )
 @permission_classes([IsAuthenticated])
@@ -149,19 +143,21 @@ def recommend_courses_view(request):
         )
 
     recommended_course_codes = recommend_courses(
-        curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses,
-        n_recommendations
+        curr_course_vectors_dict,
+        cluster_centroids,
+        clusters,
+        user_vector,
+        user_courses,
+        n_recommendations,
     )
-    serializer = CourseListSerializer(data=Course.objects.filter(
-        semester=get_current_semester(),
-        full_code__in=recommended_course_codes
-    )
+    serializer = CourseListSerializer(
+        data=Course.objects.filter(
+            semester=get_current_semester(), full_code__in=recommended_course_codes
+        )
     )
     assert serializer.is_valid()
 
-    return Response(
-        serializer.validated_data, status=status.HTTP_200_OK
-    )
+    return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
