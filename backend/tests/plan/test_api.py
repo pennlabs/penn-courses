@@ -315,6 +315,44 @@ class CourseRecommendationsTestCase(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.data), 20)
 
+    def test_invalid_num_recommendations(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-121"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
+                    "n_recommendations": 0,
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-121"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
+                    "n_recommendations": -1,
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-121"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
+                    "n_recommendations": "test",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
     def test_non_current_course_in_curr_courses(self):
         response = self.client.post(
             reverse("recommend-courses"),

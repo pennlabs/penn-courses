@@ -31,7 +31,7 @@ from plan.serializers import ScheduleSerializer
                 "POST": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
                     201: "[REMOVE THIS RESPONSE CODE FROM DOCS]",
-                    400: "Current or past courses formatted incorrectly.",
+                    400: "Invalid current or past courses.",
                 }
             }
         },
@@ -90,12 +90,30 @@ def recommend_courses_view(request):
     as the List Courses route. The number of recommended courses returned can be specified
     using the n_recommendations attribute in the request body, but if this attribute is
     omitted, the default will be 5.
+    If n_recommendations is not an integer, or is <=0, a 400 will be returned.
+    If curr_courses contains repeated courses or invalid courses or non-current courses, a
+    400 will be returned.
+    If past_courses contains repeated courses or invalid courses, a 400 will be returned.
+    If curr_courses and past_courses contain overlapping courses, a 400 will be returned.
     """
 
     user = request.user
     curr_courses = request.data.get("curr_courses", [])
     past_courses = request.data.get("past_courses", [])
     n_recommendations = request.data.get("n_recommendations", 5)
+
+    # input validation
+    try:
+        n_recommendations = int(n_recommendations)
+    except ValueError:
+        return Response(
+            f"n_recommendations: {n_recommendations} is not int",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if n_recommendations <= 0:
+        return Response(
+            f"n_recommendations: {n_recommendations} <= 0", status=status.HTTP_400_BAD_REQUEST,
+        )
 
     course_clusters = retrieve_course_clusters()
 
