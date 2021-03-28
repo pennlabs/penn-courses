@@ -46,11 +46,3 @@ class Command(BaseCommand):
         load_requirements(school="WH", semester=semester)
         print("Loading course statuses from registrar...")
         set_all_status(semester=semester)
-
-        # Note that the course recommendation model should be retrained after
-        # every registrarimport, because an error will be caused if a new course is introduced
-        # to the database in that import that wasn't represented in the recommendation model,
-        # and that course is in a user's curr_courses or prev_courses list.
-        print("Retraining course recommendation model...")
-        train_recommender(train_from_s3=True, upload_to_s3=True, verbose=True)
-        print("Done!")
