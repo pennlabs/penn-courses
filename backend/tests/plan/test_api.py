@@ -17,6 +17,7 @@ from tests.courses.util import create_mock_data
 
 
 TEST_SEMESTER = "2021C"
+assert TEST_SEMESTER >= "2021C", "Some tests assume TEST_SEMESTER >= 2021C"
 
 
 def set_semester():
@@ -210,7 +211,7 @@ class CourseRecommendationsTestCase(TestCase):
             course.description = test_descriptions[course_code]
             course.save()
         for course_code, semester in courses:
-            if semester not in ["2017A", "2020A"]:
+            if semester not in ["2017A", "2020A"] and course_code not in ["HIST-650"]:
                 course, _ = create_mock_data(course_code + "-001", TEST_SEMESTER)
                 course.description = test_descriptions[course_code]
                 course.save()
@@ -291,7 +292,7 @@ class CourseRecommendationsTestCase(TestCase):
             json.dumps(
                 {
                     "curr_courses": ["AFRC-437", "GRMN-180", "CIS-262"],
-                    "past_courses": ["ARTH-775", "EDUC-715", "EDUC-715"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
                 }
             ),
             content_type="application/json",
@@ -305,7 +306,7 @@ class CourseRecommendationsTestCase(TestCase):
             json.dumps(
                 {
                     "curr_courses": ["AFRC-437", "GRMN-180", "CIS-121"],
-                    "past_courses": ["ARTH-775", "EDUC-715", "EDUC-715", "CIS-120"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
                     "n_recommendations": 20,
                 }
             ),
@@ -313,3 +314,53 @@ class CourseRecommendationsTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.data), 20)
+
+    def test_non_current_course_in_curr_courses(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "HIST-650"],
+                    "past_courses": ["ARTH-775", "CIS-262"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_repeated_courses(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "AFRC-437"],
+                    "past_courses": ["ARTH-775", "CIS-262"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180"],
+                    "past_courses": ["ARTH-775", "CIS-262", "CIS-262"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_overlapping_courses(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-262"],
+                    "past_courses": ["ARTH-775", "CIS-262"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)

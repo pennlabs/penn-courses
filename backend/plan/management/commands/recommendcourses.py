@@ -7,10 +7,10 @@ from accounts.middleware import User
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
 
-from courses.management.commands.recommendation_utils.utils import sections_to_courses, sem_to_key
 from courses.models import Course
 from courses.util import get_current_semester
 from PennCourses.settings.production import S3_client
+from plan.management.commands.utils import sections_to_courses, sem_to_key
 from plan.models import Schedule
 
 
@@ -19,12 +19,33 @@ def vectorize_user_by_courses(
 ):
     n = len(next(iter(curr_course_vectors_dict.values())))
 
-    for course in curr_courses:
-        if course not in curr_course_vectors_dict:
-            raise ValueError(f"String {course} in the given curr_courses list is invalid.")
-    for course in past_courses:
-        if course not in past_course_vectors_dict:
-            raise ValueError(f"String {course} in the given past_courses list is invalid.")
+    # Input validation
+    all_courses = set(curr_courses) | set(past_courses)
+    if len(all_courses) != len(curr_courses) + len(past_courses):
+        raise ValueError(
+            "Repeated courses given in curr_courses and/or past_courses. "
+            f"curr_courses: {str(curr_courses)}. past_courses: {str(past_courses)}"
+        )
+    invalid_curr_courses = set(curr_courses) - {
+        c.full_code
+        for c in Course.objects.filter(semester=get_current_semester(), full_code__in=curr_courses)
+    }
+    if len(invalid_curr_courses) > 0:
+        raise ValueError(
+            "The following courses in curr_courses are invalid or not offered this semester:"
+            f"{str(invalid_curr_courses)}"
+        )
+    invalid_past_courses = set(past_courses) - {
+        c.full_code for c in Course.objects.filter(full_code__in=past_courses)
+    }
+    if len(invalid_past_courses) > 0:
+        raise ValueError(
+            "The following courses in past_courses are invalid:" f"{str(invalid_past_courses)}"
+        )
+
+    # Eliminate courses not in the model
+    curr_courses = [c for c in curr_courses if c in curr_course_vectors_dict]
+    past_courses = [c for c in past_courses if c in past_course_vectors_dict]
     curr_courses_vector = (
         np.zeros(n)
         if len(curr_courses) == 0
@@ -37,8 +58,8 @@ def vectorize_user_by_courses(
     )
 
     vector = curr_courses_vector + past_courses_vector
-    vector = vector / np.linalg.norm(vector)
-    all_courses = set(curr_courses) | set(past_courses)
+    norm = np.linalg.norm(vector)
+    vector = vector / norm if norm > 0 else vector
     return vector, all_courses
 
 

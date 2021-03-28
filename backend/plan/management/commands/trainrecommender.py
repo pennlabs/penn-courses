@@ -13,9 +13,9 @@ from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 
-from courses.management.commands.recommendation_utils.utils import sections_to_courses, sem_to_key
 from courses.models import Course
 from PennCourses.settings.production import S3_client, S3_resource
+from plan.management.commands.utils import sections_to_courses, sem_to_key
 from plan.models import Schedule
 
 
