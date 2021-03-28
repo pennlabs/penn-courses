@@ -8,7 +8,7 @@ const RecContainer = styled.div`
     margin-top: auto;
     display: flex;
     flex-direction: column;
-    max-width: 45vh;
+    max-width: 48vh;
 `;
 
 interface RecsProps {

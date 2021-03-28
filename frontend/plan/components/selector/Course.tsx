@@ -63,7 +63,7 @@ export default function Course({
                     <div
                         style={{
                             overflow: "hidden",
-                            width: "60%",
+                            width: isRecCourse ? "58.5%" : "60%",
                         }}
                     >
                         <h3 className="title is-6" style={{ marginBottom: 0 }}>
@@ -75,10 +75,15 @@ export default function Course({
                             {course.title}
                         </span>
                     </div>
-                    <div style={{ marginRight: "2px", width: "20%" }}>
+                    <div
+                        style={{
+                            marginRight: "2px",
+                            width: isRecCourse ? "20.75%" : "20%",
+                        }}
+                    >
                         <Badge value={course.course_quality} />
                     </div>
-                    <div style={{ width: "20%" }}>
+                    <div style={{ width: isRecCourse ? "20.75%" : "20%" }}>
                         <Badge value={course.difficulty} />
                     </div>
                 </div>
