@@ -125,17 +125,14 @@ def recommend_courses(
 
 
 def retrieve_course_clusters():
-    cached_course_cluster_data = cache.get("course-cluster-data", None)
-    if cached_course_cluster_data is None:
-        course_cluster_data = pickle.loads(
-            S3_client.get_object(Bucket="penn.courses", Key="course-cluster-data.pkl")[
-                "Body"
-            ].read()
-        )
-        cache.set("course-cluster-data", cached_course_cluster_data, timeout=90000)
-    else:
-        course_cluster_data = cached_course_cluster_data
-
+    cached_data = cache.get("course-cluster-data", None)
+    if cached_data is not None:
+        return cached_data
+    # Need to redownload
+    course_cluster_data = pickle.loads(
+        S3_client.get_object(Bucket="penn.courses", Key="course-cluster-data.pkl")["Body"].read()
+    )
+    cache.set("course-cluster-data", course_cluster_data, timeout=90000)
     return course_cluster_data
 
 
