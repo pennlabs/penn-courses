@@ -4,10 +4,13 @@ from typing import Optional, Set
 
 import numpy as np
 from accounts.middleware import User
+from django.core.cache import cache
 from django.core.management.base import BaseCommand
 
 from courses.management.commands.recommendation_utils.utils import sections_to_courses, sem_to_key
+from courses.models import Course
 from courses.util import get_current_semester
+from PennCourses.settings.production import S3_client
 from plan.models import Schedule
 
 
@@ -83,8 +86,16 @@ def best_recommendations(
             np.linalg.norm(course_vector) * np.linalg.norm(user_vector)
         )
         recs.append((course, similarity))
+    rec_course_to_score = {course: score for course, score in recs}
+    recs = [
+        (c.full_code, rec_course_to_score[c.full_code])
+        for c in Course.objects.filter(
+            semester=get_current_semester(), full_code__in=list(rec_course_to_score.keys())
+        )
+    ]  # only recommend currently offered courses
     if n_recommendations > len(recs):
         n_recommendations = len(recs)
+
     return [course for course, _ in heapq.nlargest(n_recommendations, recs, lambda x: x[1])]
 
 
@@ -114,7 +125,18 @@ def recommend_courses(
 
 
 def retrieve_course_clusters():
-    return pickle.load(open("./course-cluster-data.pkl", "rb"))
+    cached_course_cluster_data = cache.get("course-cluster-data", None)
+    if cached_course_cluster_data is None:
+        course_cluster_data = pickle.loads(
+            S3_client.get_object(Bucket="penn.courses", Key="course-cluster-data.pkl")[
+                "Body"
+            ].read()
+        )
+        cache.set("course-cluster-data", cached_course_cluster_data, timeout=90000)
+    else:
+        course_cluster_data = cached_course_cluster_data
+
+    return course_cluster_data
 
 
 def clean_course_input(course_input):

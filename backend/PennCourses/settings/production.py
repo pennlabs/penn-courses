@@ -1,5 +1,6 @@
 import os
 
+import boto3
 import sentry_sdk
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -37,3 +38,6 @@ CACHES = {
 }
 
 MOBILE_NOTIFICATION_SECRET = os.environ.get("MOBILE_NOTIFICATION_SECRET", "")
+
+S3_client = boto3.client("s3")
+S3_resource = boto3.resource("s3")

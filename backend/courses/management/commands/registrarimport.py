@@ -8,6 +8,7 @@ from courses.management.commands.loadrequirements import load_requirements
 from courses.management.commands.loadstatus import set_all_status
 from courses.models import Department
 from courses.util import get_current_semester, upsert_course_from_opendata
+from plan.management.commands.trainrecommender import train_recommender
 
 
 class Command(BaseCommand):
@@ -26,7 +27,7 @@ class Command(BaseCommand):
         if semester is None:
             semester = get_current_semester()
 
-        print("loading in courses with prefix %s from %s..." % (query, semester))
+        print("Loading in courses with prefix %s from %s..." % (query, semester))
         results = registrar.get_courses(query, semester)
 
         for course in tqdm(results):
@@ -39,9 +40,17 @@ class Command(BaseCommand):
             dept.name = dept_name
             dept.save()
 
-        print("loading requirements from SEAS...")
+        print("Loading requirements from SEAS...")
         load_requirements(school="SEAS", semester=semester)
-        print("loading requirements from Wharton...")
+        print("Loading requirements from Wharton...")
         load_requirements(school="WH", semester=semester)
-        print("loading course statuses from registrar...")
+        print("Loading course statuses from registrar...")
         set_all_status(semester=semester)
+
+        # Note that the course recommendation model should be retrained after
+        # every registrarimport, because an error will be caused if a new course is introduced
+        # to the database in that import that wasn't represented in the recommendation model,
+        # and that course is in a user's curr_courses or prev_courses list.
+        print("Retraining course recommendation model...")
+        train_recommender(train_from_s3=True, upload_to_s3=True, verbose=True)
+        print("Done!")

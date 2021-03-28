@@ -1,19 +1,22 @@
+import csv
 import json
+import os
 from unittest.mock import patch
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
-from courses.management.commands.trainrecommender import generate_course_clusters
 from courses.models import Instructor, Requirement, User
+from plan.management.commands.trainrecommender import train_recommender
 from plan.models import Schedule
 from review.models import Review
 from tests.courses.util import create_mock_data
 
 
-TEST_SEMESTER = "2019C"
+TEST_SEMESTER = "2021C"
 
 
 def set_semester():
@@ -182,6 +185,43 @@ class CourseReviewAverageTestCase(TestCase):
 
 
 class CourseRecommendationsTestCase(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(CourseRecommendationsTestCase, cls).setUpClass()
+        course_data_path = (
+            settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_data_test.csv"
+        )
+
+        # Setting up test courses in the db
+        test_descriptions = dict()
+        with open(
+            settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_descriptions_test.csv"
+        ) as course_desc_file:
+            desc_reader = csv.reader(course_desc_file)
+            for course, description in desc_reader:
+                test_descriptions[course] = description
+        courses = set()
+        with open(course_data_path) as course_data_file:
+            course_data_reader = csv.reader(course_data_file)
+            for _, course_code, semester in course_data_reader:
+                courses.add((course_code, semester))
+        for course_code, semester in courses:
+            course, _ = create_mock_data(course_code + "-001", semester)
+            course.description = test_descriptions[course_code]
+            course.save()
+        for course_code, semester in courses:
+            if semester not in ["2017A", "2020A"]:
+                course, _ = create_mock_data(course_code + "-001", TEST_SEMESTER)
+                course.description = test_descriptions[course_code]
+                course.save()
+        for extra_course_code in ["CIS-121", "CIS-262"]:
+            course, _ = create_mock_data(extra_course_code + "-001", TEST_SEMESTER)
+            course.description = test_descriptions[course_code]
+
+        cls.course_clusters = train_recommender(
+            course_data_path=course_data_path, output_path=os.devnull
+        )
+
     def setUp(self):
         set_semester()
         self.s = Schedule(
@@ -193,19 +233,14 @@ class CourseRecommendationsTestCase(TestCase):
         )
         self.client = APIClient()
         self.client.login(username="jacob", password="top_secret")
-        self.course, self.section = create_mock_data("CIS-121-001", TEST_SEMESTER)
-        self.course, self.section = create_mock_data("CIS-262-001", TEST_SEMESTER)
-        self.patcher = patch(
-            "plan.views.retrieve_course_clusters", return_value=generate_course_clusters()
-        )
-        self.patcher.start()
 
-    def tearDown(self):
-        self.patcher.stop()
+        patcher = patch("plan.views.retrieve_course_clusters", return_value=self.course_clusters)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def test_with_user(self):
         response = self.client.post(reverse("recommend-courses"))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.data), 5)
 
     def test_bad_data_courses(self):
@@ -214,7 +249,7 @@ class CourseRecommendationsTestCase(TestCase):
             json.dumps({"curr_courses": ["CIS1233"]}),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
     def test_bad_data_past(self):
         response = self.client.post(
@@ -222,7 +257,7 @@ class CourseRecommendationsTestCase(TestCase):
             json.dumps({"past_courses": ["CIS1233"]}),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
     def test_bad_data_past_current(self):
         response = self.client.post(
@@ -230,31 +265,51 @@ class CourseRecommendationsTestCase(TestCase):
             json.dumps({"past_courses": ["CIS1233"], "curr_courses": ["CIS123123"]}),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
     def test_only_past_courses(self):
         response = self.client.post(
             reverse("recommend-courses"),
-            json.dumps({"past_courses": ["CIS-121"]}),
+            json.dumps({"past_courses": ["BEPP-263", "GRMN-180"]}),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.data), 5)
 
     def test_only_current(self):
         response = self.client.post(
             reverse("recommend-courses"),
-            json.dumps({"curr_courses": ["CIS-121"]}),
+            json.dumps({"curr_courses": ["AFRC-437", "GRMN-180"]}),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.data), 5)
 
     def test_past_and_current(self):
         response = self.client.post(
             reverse("recommend-courses"),
-            json.dumps({"curr_courses": ["CIS-121"], "past_courses": ["CIS-262"]}),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-262"],
+                    "past_courses": ["ARTH-775", "EDUC-715", "EDUC-715"],
+                }
+            ),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.data), 5)
+
+    def test_custom_num_recommendations(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-121"],
+                    "past_courses": ["ARTH-775", "EDUC-715", "EDUC-715", "CIS-120"],
+                    "n_recommendations": 20,
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(len(response.data), 20)

@@ -1,10 +1,12 @@
+import codecs
+import csv
 import math
 import os
 import pickle
 from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
-from botocore.exceptions import ClientError
+from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA, TruncatedSVD
@@ -13,13 +15,13 @@ from sklearn.preprocessing import normalize
 
 from courses.management.commands.recommendation_utils.utils import sections_to_courses, sem_to_key
 from courses.models import Course
-from PennCourses.settings.base import S3
+from PennCourses.settings.production import S3_client, S3_resource
 from plan.models import Schedule
 
 
 def lookup_course(course):
     try:
-        return Course.objects.get(full_code=course)
+        return Course.objects.filter(full_code=course).latest("semester")
     except Course.DoesNotExist:
         return None
 
@@ -34,14 +36,25 @@ def courses_data_from_db():
             yield person_id, course, schedule.semester
 
 
-def courses_data_from_csv():
-    for line in open("courses/management/commands/course_data.csv", "r"):
-        yield tuple(line.split(","))
+def courses_data_from_csv(course_data_path):
+    with open(course_data_path) as course_data_file:
+        data_reader = csv.reader(course_data_file)
+        for row in data_reader:
+            yield tuple(row)
+
+
+def courses_data_from_s3():
+    for row in csv.reader(
+        codecs.getreader("utf-8")(
+            S3_client.get_object(Bucket="penn.courses", Key="course_data.csv")["Body"]
+        )
+    ):
+        yield tuple(row)
 
 
 def get_description(course):
     course_obj = lookup_course(course)
-    if course_obj is None:
+    if course_obj is None or not course_obj.description:
         return ""
     return course_obj.description
 
@@ -195,7 +208,7 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
     return list(unsequenced_courses_by_user.values())
 
 
-def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
+def generate_course_vectors_dict(courses_data, use_descriptions=True):
     """
     Generates a dict associating courses to vectors for those courses,
     as well as courses to vector representations
@@ -203,7 +216,6 @@ def generate_course_vectors_dict(from_csv=True, use_descriptions=True):
     """
     courses_to_vectors_curr = {}
     courses_to_vectors_past = {}
-    courses_data = courses_data_from_csv() if from_csv else courses_data_from_db()
     grouped_courses = group_courses(courses_data)
     copresence_vectors_by_course = vectorize_by_copresence(grouped_courses)
     copresence_vectors_by_course_past = vectorize_by_copresence(grouped_courses, as_past_class=True)
@@ -258,9 +270,7 @@ def normalize_class_name(class_name):
     course_obj: Course = lookup_course(class_name)
     if course_obj is None:
         return class_name
-    class_name = str(course_obj.primary_listing)
-    if " " in class_name:
-        class_name = class_name.split(" ")[0]
+    class_name = course_obj.primary_listing.full_code
     return class_name
 
 
@@ -268,12 +278,12 @@ def cosine_similarity(vec_a, vec_b):
     np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
 
 
-def generate_course_clusters(n_per_cluster=100):
+def generate_course_clusters(courses_data, n_per_cluster=100):
     """
     Clusters courses and also returns a vector representation of each class
     (one for having taken that class now, and another for having taken it in the past)
     """
-    course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict()
+    course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict(courses_data)
     _courses, _course_vectors = zip(*course_vectors_dict_curr.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = round(len(courses) / n_per_cluster)
@@ -290,25 +300,139 @@ def generate_course_clusters(n_per_cluster=100):
     return cluster_centroids, clusters, course_vectors_dict_curr, course_vectors_dict_past
 
 
-def save_course_clusters(cluster_data):
-    if "temp_pickle" not in os.listdir("plan"):
-        os.mkdir("plan/temp_pickle")
-
-    pickle.dump(cluster_data, open("./plan/temp_pickle/course-cluster-data.pkl", "wb"))
-
-    try:
-        S3.upload_file(
-            "./plan/temp_pickle/course-cluster-data.pkl", "penn.courses", "course-cluster-data.pkl"
+def train_recommender(
+    course_data_path=None,
+    train_from_s3=False,
+    output_path=None,
+    upload_to_s3=False,
+    n_per_cluster=100,
+    verbose=False,
+):
+    # input validation
+    if train_from_s3:
+        assert (
+            course_data_path is None
+        ), "If you are training on data from S3, there's no need to supply a local data path"
+    if course_data_path is not None:
+        assert course_data_path.endswith(".csv"), "Local data path must be .csv"
+    if output_path is None:
+        assert upload_to_s3, "You must either specify an output path, or upload to S3"
+    if upload_to_s3:
+        assert output_path is None, (
+            "If you are uploading the trained model to S3, there's no need to specify an "
+            "output path."
         )
-        print("success!")
-    except ClientError as e:
-        print(e)
-        print("There was a problem uploading the file / connecting to AWS -- training failed.")
+    else:
+        assert output_path is not None, "You must either specify an output path, or upload to S3"
+        assert (
+            output_path.endswith(".pkl") or output_path == os.devnull
+        ), "Output file must have a .pkl extension"
+
+    if not upload_to_s3 and not output_path.endswith("course-cluster-data.pkl") and verbose:
+        print(
+            "Warning: The name of the course recommendation model used in prod (stored in S3)"
+            "must be course-cluster-data.pkl."
+        )
+    if verbose:
+        print("Training...")
+
+    if train_from_s3:
+        courses_data = courses_data_from_s3()
+    else:
+        courses_data = (
+            courses_data_from_csv(course_data_path)
+            if course_data_path is not None
+            else courses_data_from_db()
+        )
+    course_clusters = generate_course_clusters(courses_data, n_per_cluster)
+
+    if upload_to_s3:
+        S3_resource.Object("penn.courses", "course-cluster-data.pkl").put(
+            Body=pickle.dumps(course_clusters)
+        )
+        cache.set("course-cluster-data", course_clusters, timeout=90000)
+    else:
+        pickle.dump(
+            course_clusters, open(output_path, "wb"),
+        )
+
+    if verbose:
+        print("Done!")
+
+    return course_clusters
 
 
 class Command(BaseCommand):
-    help = "Train recommendation model."
+    help = (
+        "Use this script to train a PCP course recommendation model on given training data "
+        "(specified via a local path), and output the trained model (as a .pkl file) to a "
+        "specified local filepath.\n"
+        "If you overwrite the course-cluster-data.pkl object in the penn.courses S3 bucket, "
+        "the course recommendation model actually used in prod will be updated within 25 hours, "
+        "or when , whichever comes first."
+    )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--course_data_path",
+            type=str,
+            default=None,
+            help=(
+                "The local path to the training data csv. If this argument is omitted, the model "
+                "will be trained on Schedule data from the db (this only makes sense in prod).\n"
+                "The csv pointed to by this path should have 3 columns:\n"
+                "person_id, course, semester"
+                "\nThe person_id column should contain a user hash, the course column should "
+                "contain the course code (in the format DEPT-XXX, e.g. CIS-120), and "
+                "the semester column should contain  the semester in which the course was taken "
+                "by that user."
+            ),
+        )
+        parser.add_argument(
+            "--train_from_s3",
+            default=False,
+            action="store_true",
+            help=(
+                "Enable this argument to train this model using data stored in S3. If this "
+                "argument is flagged, the course_data_path argument must be omitted."
+            ),
+        )
+        parser.add_argument(
+            "--output_path",
+            default=None,
+            type=str,
+            help="The local path where the model pkl should be saved.",
+        )
+        parser.add_argument(
+            "--upload_to_s3",
+            default=False,
+            action="store_true",
+            help=(
+                "Enable this argument to upload this model to S3, replacing the "
+                "course-cluster-data.pkl key in the penn.courses bucket. "
+                "If this argument is flagged, the output_path argument must be omitted."
+            ),
+        )
+        parser.add_argument(
+            "--n_per_cluster",
+            type=int,
+            default=100,
+            help="The number of courses to include in each cluster (a hyperparameter). "
+            "Defaults to 100.",
+        )
 
     def handle(self, *args, **kwargs):
-        print("Training...")
-        save_course_clusters(generate_course_clusters())
+        course_data_path = kwargs["course_data_path"]
+        train_from_s3 = kwargs["train_from_s3"]
+        output_path = kwargs["output_path"]
+        upload_to_s3 = kwargs["upload_to_s3"]
+        n_per_cluster = kwargs["n_per_cluster"]
+
+        train_recommender(
+            course_data_path=course_data_path,
+            train_from_s3=train_from_s3,
+            output_path=output_path,
+            upload_to_s3=upload_to_s3,
+            n_per_cluster=n_per_cluster,
+            verbose=True,
+        )

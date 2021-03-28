@@ -80,6 +80,9 @@ def separate_course_code(course_code):
 def get_or_create_course(dept_code, course_id, semester):
     dept, _ = Department.objects.get_or_create(code=dept_code)
     course, c = Course.objects.get_or_create(department=dept, code=course_id, semester=semester)
+    if c:
+        course.full_code = f"{dept}-{course_id}"
+        course.save()
 
     return course, c
 

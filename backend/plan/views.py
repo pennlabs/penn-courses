@@ -1,7 +1,3 @@
-import os
-import pickle
-
-from botocore.exceptions import ClientError
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch
@@ -12,37 +8,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 import plan.examples as examples
-from courses.management.commands.recommendcourses import (
-    clean_course_input,
-    recommend_courses,
-    vectorize_user,
-    vectorize_user_by_courses,
-)
 from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
-from PennCourses.settings.base import S3
+from plan.management.commands.recommendcourses import (
+    clean_course_input,
+    recommend_courses,
+    retrieve_course_clusters,
+    vectorize_user,
+    vectorize_user_by_courses,
+)
 from plan.models import Schedule
 from plan.serializers import ScheduleSerializer
-
-
-def retrieve_course_clusters():
-    if not os.path.exists("./plan/temp_pickle/course-cluster-data.pkl"):
-        print("re-downloading...")
-
-        if "temp_pickle" not in os.listdir("./plan"):
-            os.mkdir("./plan/temp_pickle")
-
-        try:
-            S3.download_file(
-                "penn.courses",
-                "course-cluster-data.pkl",
-                "./plan/temp_pickle/course-cluster-data.pkl",
-            )
-        except ClientError:
-            return None
-    return pickle.load(open("plan/temp_pickle/course-cluster-data.pkl", "rb"))
 
 
 @api_view(["POST"])
@@ -54,7 +32,6 @@ def retrieve_course_clusters():
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
                     201: "[REMOVE THIS RESPONSE CODE FROM DOCS]",
                     400: "Current or past courses formatted incorrectly.",
-                    500: "The model has not been trained.",
                 }
             }
         },
@@ -121,8 +98,6 @@ def recommend_courses_view(request):
     n_recommendations = request.data.get("n_recommendations", 5)
 
     course_clusters = retrieve_course_clusters()
-    if course_clusters is None:
-        return Response("Model is not trained!", status=status.HTTP_500_INTERNAL_SERVER_ERROR,)
 
     (
         cluster_centroids,
@@ -154,14 +129,16 @@ def recommend_courses_view(request):
         user_courses,
         n_recommendations,
     )
-    serializer = CourseListSerializer(
-        data=Course.objects.filter(
-            semester=get_current_semester(), full_code__in=recommended_course_codes
-        )
-    )
-    assert serializer.is_valid()
 
-    return Response(serializer.validated_data, status=status.HTTP_200_OK)
+    return Response(
+        CourseListSerializer(
+            Course.objects.filter(
+                semester=get_current_semester(), full_code__in=recommended_course_codes
+            ),
+            many=True,
+        ).data,
+        status=status.HTTP_200_OK,
+    )
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
