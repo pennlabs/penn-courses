@@ -330,7 +330,7 @@ def train_recommender(
 
     if not upload_to_s3 and not output_path.endswith("course-cluster-data.pkl") and verbose:
         print(
-            "Warning: The name of the course recommendation model used in prod (stored in S3)"
+            "Warning: The name of the course recommendation model used in prod (stored in S3) "
             "must be course-cluster-data.pkl."
         )
     if verbose:
@@ -338,6 +338,7 @@ def train_recommender(
 
     if train_from_s3:
         courses_data = courses_data_from_s3()
+        print(list(courses_data_from_s3()))
     else:
         courses_data = (
             courses_data_from_csv(course_data_path)
@@ -369,7 +370,7 @@ class Command(BaseCommand):
         "to a specified local filepath (or to S3).\n"
         "If you overwrite the course-cluster-data.pkl object in the penn.courses S3 bucket, "
         "the course recommendation model actually used in prod will be updated within 25 hours, "
-        "or after the registrarimport management command is next run (done regularly by a "
+        "or after the registrarimport management command is next run (done daily by a "
         "cron job), or when the redownloadmodel management command is run to manually trigger a "
         "redownload, whichever comes first."
     )
