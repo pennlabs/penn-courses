@@ -1,6 +1,13 @@
 import React, { useState } from "react";
-import PropTypes from "prop-types";
+import styled from "styled-components";
 import { FilterData, School, Requirement } from "../../types";
+import {
+    Column,
+    RadioInput,
+    RadioLabel,
+    CheckboxInput,
+    CheckboxLabel,
+} from "../bulma_derived_components";
 
 interface SchoolReqProps {
     startSearch: (searchObj: FilterData) => void;
@@ -9,6 +16,53 @@ interface SchoolReqProps {
     addSchoolReq: (s: string) => void;
     remSchoolReq: (s: string) => void;
 }
+
+const SchoolReqContainer = styled.div`
+    margin: -0.75rem;
+    padding-top: 0.2rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    min-width: 27rem;
+    display: flex;
+
+    p {
+        font-size: 0.7rem;
+        text-align: left;
+    }
+
+    @media all and (max-width: 480px) {
+        font-size: 1rem;
+        min-width: 25rem !important;
+        p {
+            font-size: 0.8rem;
+        }
+    }
+`;
+
+const SchoolColumn = styled.div`
+    display: block;
+    padding: 0.75rem;
+    flex: none;
+    width: 33.3333%;
+
+    @media screen and (min-width: 769px) {
+        flex: none;
+        width: 25%;
+    }
+`;
+
+const ReqBorder = styled.div`
+    border-right: 1px solid #c1c1c1;
+    display: block;
+    padding: 0.75rem;
+    flex: none;
+    width: 8.33333%;
+`;
+
+const ReqColumn = styled.div`
+    display: block;
+    padding: 0.75rem;
+`;
 
 type SchoolDisplay = "College" | "Engineering" | "Nursing" | "Wharton";
 
@@ -41,17 +95,15 @@ export function SchoolReq({
     };
 
     return (
-        <div className="columns is-mobile contained" id="schoolreq">
-            <div className="column is-one-quarter is-one-third-mobile">
+        <SchoolReqContainer>
+            <SchoolColumn>
                 <p>
                     <strong>School</strong>
                 </p>
                 <ul className="field" style={{ marginTop: "0.5rem" }}>
                     {schools.map((school) => (
                         <li key={school} style={{ display: "table-row" }}>
-                            <input
-                                style={{ display: "table-cell" }}
-                                className="is-checkradio is-small"
+                            <RadioInput
                                 id={school}
                                 type="radio"
                                 value={school}
@@ -59,18 +111,13 @@ export function SchoolReq({
                                 onChange={schoolHandleChange}
                             />
                             {/* eslint-disable-next-line jsx-a11y/label-has-for */}
-                            <label
-                                style={{ display: "table-cell" }}
-                                htmlFor={school}
-                            >
-                                {school}
-                            </label>
+                            <RadioLabel htmlFor={school}>{school}</RadioLabel>
                         </li>
                     ))}
                 </ul>
-            </div>
-            <div className="column is-1 reqBorder" />
-            <div className="column">
+            </SchoolColumn>
+            <ReqBorder />
+            <Column>
                 <p>
                     <strong>{`${selSchool} Requirements`}</strong>
                 </p>
@@ -80,8 +127,7 @@ export function SchoolReq({
                     )}
                     {schoolReq[schoolCode[selSchool]].map((req) => (
                         <li key={req.id}>
-                            <input
-                                className="is-checkradio is-small"
+                            <CheckboxInput
                                 id={req.id}
                                 type="checkbox"
                                 value={req.id}
@@ -105,25 +151,13 @@ export function SchoolReq({
                                 }}
                             />
                             {/* eslint-disable-next-line jsx-a11y/label-has-for */}
-                            <label htmlFor={req.id}>{req.name}</label>
+                            <CheckboxLabel htmlFor={req.id}>
+                                {req.name}
+                            </CheckboxLabel>
                         </li>
                     ))}
                 </ul>
-            </div>
-        </div>
+            </Column>
+        </SchoolReqContainer>
     );
 }
-
-SchoolReq.propTypes = {
-    schoolReq: PropTypes.objectOf(PropTypes.array),
-    addSchoolReq: PropTypes.func,
-    remSchoolReq: PropTypes.func,
-    startSearch: PropTypes.func,
-    filterData: PropTypes.objectOf(
-        PropTypes.oneOfType([
-            PropTypes.arrayOf(PropTypes.number),
-            PropTypes.objectOf(PropTypes.number),
-            PropTypes.string,
-        ])
-    ),
-};

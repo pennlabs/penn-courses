@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import PropTypes from "prop-types";
+import styled from "styled-components";
 import { FilterData } from "../../../plan/types";
+import { Icon } from "../bulma_derived_components";
 
 interface SearchFieldProps {
     startSearch: (filterData: FilterData) => void;
@@ -10,6 +11,19 @@ interface SearchFieldProps {
     setTab?: (tabNum: number) => void;
     mobileView?: boolean;
 }
+
+const SearchContainer = styled.div`
+    label {
+        font-size: 0.75rem;
+    }
+
+    & input {
+        min-width: 17rem;
+        background-color: #f4f4f4;
+        padding-left: 2.25em;
+    }
+`;
+
 export function SearchField({
     startSearch,
     updateSearchText,
@@ -31,13 +45,12 @@ export function SearchField({
     };
 
     return (
-        <div
+        <SearchContainer
             role="button"
             onClick={() => (mobileView && setTab ? setTab(0) : null)}
             className="control has-icons-left"
         >
             <input
-                id="searchbar"
                 type="text"
                 value={searchValue}
                 onChange={handleChangeVal}
@@ -46,19 +59,9 @@ export function SearchField({
                 placeholder="Search"
                 disabled={isDisabled}
             />
-            <span className="icon is-small is-left">
+            <Icon className="icon is-small is-left">
                 <i className="fas fa-search" />
-            </span>
-        </div>
+            </Icon>
+        </SearchContainer>
     );
 }
-
-SearchField.propTypes = {
-    startSearch: PropTypes.func,
-    updateSearchText: PropTypes.func,
-    // eslint-disable-next-line react/forbid-prop-types
-    filterData: PropTypes.object,
-    isDisabled: PropTypes.bool,
-    setTab: PropTypes.func,
-    mobileView: PropTypes.bool,
-};

@@ -1,9 +1,16 @@
 import React, { CSSProperties } from "react";
+import styled from "styled-components";
 
 interface DaysProps {
     offset: number;
     weekend: boolean;
 }
+
+const Day = styled.span`
+    font-weight: 500;
+    font-size: 1em;
+    color: #84878f;
+`;
 
 export default function Days(props: DaysProps) {
     const { offset, weekend } = props;
@@ -21,9 +28,7 @@ export default function Days(props: DaysProps) {
     return (
         <div style={style}>
             {days.map((e) => (
-                <span className="day" key={e}>
-                    {e}
-                </span>
+                <Day key={e}>{e}</Day>
             ))}
         </div>
     );
