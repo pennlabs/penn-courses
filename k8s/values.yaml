@@ -23,6 +23,8 @@ applications:
           paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"]
         - host: review.penncourses.org
           paths: ["/api", "/admin", "/accounts", "/assets"]
+      annotations:
+        ingress.kubernetes.io/content-security-policy: frame-ancestors 'none';
     extraEnv:
       - name: DJANGO_SETTINGS_MODULE
         value: PennCourses.settings.production
