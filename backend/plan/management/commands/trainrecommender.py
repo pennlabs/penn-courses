@@ -365,11 +365,13 @@ def train_recommender(
 class Command(BaseCommand):
     help = (
         "Use this script to train a PCP course recommendation model on given training data "
-        "(specified via a local path), and output the trained model (as a .pkl file) to a "
-        "specified local filepath.\n"
+        "(specified via a local path, or from S3), and output the trained model (as a .pkl file) "
+        "to a specified local filepath (or to S3).\n"
         "If you overwrite the course-cluster-data.pkl object in the penn.courses S3 bucket, "
         "the course recommendation model actually used in prod will be updated within 25 hours, "
-        "or when , whichever comes first."
+        "or after the registrarimport management command is next run (done regularly by a "
+        "cron job), or when the redownloadmodel management command is run to manually trigger a "
+        "redownload, whichever comes first."
     )
 
     def add_arguments(self, parser):
