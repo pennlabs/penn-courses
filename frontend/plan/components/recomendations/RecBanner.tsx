@@ -12,6 +12,7 @@ const BannerContainer = styled.div<{ collapse: boolean }>`
     margin-top: ${({ collapse }) => (collapse ? "1.5625rem" : "2.5rem")};
     margin-bottom: ${({ collapse }) => (collapse ? "0px" : "0.625rem")};
     transition: all 0.7s;
+    padding: 0 0.9375rem;
 `;
 
 interface RecBannerProps {

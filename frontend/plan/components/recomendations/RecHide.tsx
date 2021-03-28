@@ -4,11 +4,11 @@ import styled from "styled-components";
 const CollapseLabel = styled.span`
     color: #8a8e95;
     font-size: 0.8125rem;
-    line-height: 0.8125rem;
+    line-height: 1rem;
     font-weight: 500;
 `;
 
-const ChevronDown = styled.span`
+const Chevron = styled.span`
     color: #8a8e95;
     font-size: 0.625rem;
     font-weight: 300;
@@ -31,9 +31,11 @@ const RecHide = ({ show, setShow }: RecHideProps) => {
             onClick={() => setShow(!show)}
         >
             <CollapseLabel> {show ? "Hide" : "Show"}</CollapseLabel>
-            <ChevronDown
-                className={show ? "fa fa-chevron-down" : "fa fa-chevron-up"}
-            />
+            <Chevron>
+                <i
+                    className={show ? "fa fa-chevron-down" : "fa fa-chevron-up"}
+                ></i>
+            </Chevron>
         </div>
     );
 };

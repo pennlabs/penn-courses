@@ -2,21 +2,39 @@ import React, { useState } from "react";
 import RecBanner from "./RecBanner";
 import RecContent from "./RecContent";
 import styled from "styled-components";
+import { Course as CourseType } from "../../types";
 
 const RecContainer = styled.div`
     margin-top: auto;
     display: flex;
     flex-direction: column;
-    padding: 0 0.9375rem;
+    max-width: 45vh;
 `;
 
-const Recs = () => {
-    const [show, setShow] = useState(true);
+interface RecsProps {
+    showRecs: boolean;
+    setShowRecs: React.Dispatch<React.SetStateAction<boolean>>;
+    recCourses: CourseType[];
+    getCourse: (id: string) => void;
+    onClickDelete: () => void;
+}
 
+const Recs = ({
+    showRecs,
+    setShowRecs,
+    recCourses,
+    getCourse,
+    onClickDelete,
+}: RecsProps) => {
     return (
         <RecContainer>
-            <RecBanner show={show} setShow={setShow} />
-            <RecContent show={show} />
+            <RecBanner show={showRecs} setShow={setShowRecs} />
+            <RecContent
+                show={showRecs}
+                recCourses={recCourses}
+                getCourse={getCourse}
+                onClickDelete={onClickDelete}
+            />
         </RecContainer>
     );
 };

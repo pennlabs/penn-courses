@@ -7,7 +7,7 @@ const InfoBtn = styled.span`
     font-size: 0.5rem;
     width: 0.8125rem;
     height: 0.8125rem;
-    border: 0.0969rem solid #bfbfbf;
+    border: 0.0869rem solid #bfbfbf;
     text-align: center;
     font-weight: bold;
     color: #bfbfbf;

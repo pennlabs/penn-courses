@@ -1,10 +1,12 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useState } from "react";
 
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
+import Recs from "../recomendations/Recs";
+import { Course as CourseType } from "../../types";
 
 import {
     fetchCourseDetails,
@@ -59,41 +61,62 @@ const Selector: FunctionComponent<SelectorProps> = ({
         />
     );
 
+    const [showRecs, setShowRecs] = useState(true);
+
+    //recommended courses - currently using search result
+    var recCourses = courses;
+
+    //delete func - does nothing for now
+    const onClickDelete = () => {};
+
+    let recPanel = (
+        <Recs
+            showRecs={showRecs}
+            setShowRecs={setShowRecs}
+            recCourses={recCourses}
+            getCourse={getCourse}
+            onClickDelete={onClickDelete}
+        />
+    );
+
     let element = (
-        <div
-            style={{
-                fontSize: "0.8em",
-                textAlign: "center",
-                // marginTop: "5vh",
-                maxWidth: "45vh",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-end",
-                alignSelf: "center",
-                alignItems: "center",
-                overflow: "hidden",
-            }}
-        >
-            <img
-                src="/icons/empty-state-search.svg"
-                alt=""
+        <>
+            <div
                 style={{
-                    height: "auto",
-                    maxWidth: "80%",
-                    maxHeight: "18.75rem",
-                }}
-            />
-            <h3
-                style={{
-                    fontWeight: "bold",
-                    marginBottom: "0.5rem",
+                    fontSize: "0.8em",
+                    textAlign: "center",
+                    // marginTop: "5vh",
+                    maxWidth: "45vh",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    overflow: "hidden",
                 }}
             >
-                No results found
-            </h3>
-            Search for courses, departments, or instructors above. Looking for
-            something specific? Try using the filters!
-        </div>
+                <img
+                    src="/icons/empty-state-search.svg"
+                    alt=""
+                    style={{
+                        height: "auto",
+                        maxWidth: "80%",
+                        maxHeight: "18.75rem",
+                    }}
+                />
+                <h3
+                    style={{
+                        fontWeight: "bold",
+                        marginBottom: "0.5rem",
+                    }}
+                >
+                    No results found
+                </h3>
+                Search for courses, departments, or instructors above. Looking
+                for something specific? Try using the filters!
+            </div>
+
+            {recPanel}
+        </>
     );
 
     const courseList = (
@@ -114,13 +137,19 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     style={{
                         height: "calc(100vh - 12.5em)",
                         borderRight: "1px solid #dddddd",
+                        display: "flex",
+                        flexDirection: "column",
                     }}
                 >
                     {courseList}
+                    {recPanel}
                 </div>
             </div>
         ) : (
-            courseList
+            <>
+                {courseList}
+                {recPanel}
+            </>
         );
     }
 
@@ -132,9 +161,12 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     style={{
                         height: "calc(100vh - 12.5em)",
                         borderRight: "1px solid #dddddd",
+                        display: "flex",
+                        flexDirection: "column",
                     }}
                 >
                     {courseList}
+                    {recPanel}
                 </div>
                 <div
                     className="column is-two-thirds"
@@ -152,12 +184,15 @@ const Selector: FunctionComponent<SelectorProps> = ({
                 </div>
             </div>
         ) : (
-            <CourseInfo
-                getCourse={getCourse}
-                course={course}
-                back={clearCourse}
-                view={view}
-            />
+            <>
+                <CourseInfo
+                    getCourse={getCourse}
+                    course={course}
+                    back={clearCourse}
+                    view={view}
+                />
+                {recPanel}
+            </>
         );
     }
     return <>{isLoading ? loadingIndicator : element}</>;

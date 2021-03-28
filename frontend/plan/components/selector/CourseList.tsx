@@ -60,7 +60,12 @@ const CourseList = ({
     }, [scrollPos, setScrollPos]);
 
     return (
-        <div className="scroll-container">
+        <div
+            className="scroll-container"
+            style={{
+                minHeight: "0",
+            }}
+        >
             <div
                 style={{
                     display: "flex",
