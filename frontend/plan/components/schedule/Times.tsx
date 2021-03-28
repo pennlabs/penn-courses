@@ -14,7 +14,7 @@ const Time = styled.span<{ startTime: number; i: number }>`
     color: #84878f;
     font-size: 0.8rem;
     font-weight: 500;
-    grid-row: ${(props) => (props.i - props.startTime) * 2 + 1};
+    grid-row: ${(props) => (props.i - props.startTime) * 4 + 1};
     grid-column: ${1};
 
     @media only screen and (max-width: 768px) {
