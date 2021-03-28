@@ -103,9 +103,8 @@ def best_recommendations(
         if exclude is not None and course in exclude:
             continue
         course_vector = curr_course_vectors_dict[course]
-        similarity = np.dot(course_vector, user_vector) / (
-            np.linalg.norm(course_vector) * np.linalg.norm(user_vector)
-        )
+        norm_prod = np.linalg.norm(course_vector) * np.linalg.norm(user_vector)
+        similarity = np.dot(course_vector, user_vector) / norm_prod if norm_prod > 0 else 0
         recs.append((course, similarity))
     rec_course_to_score = {course: score for course, score in recs}
     recs = [

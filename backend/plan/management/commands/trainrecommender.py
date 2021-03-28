@@ -328,10 +328,17 @@ def train_recommender(
             output_path.endswith(".pkl") or output_path == os.devnull
         ), "Output file must have a .pkl extension"
 
-    if not upload_to_s3 and not output_path.endswith("course-cluster-data.pkl") and verbose:
+    if verbose and not upload_to_s3 and not output_path.endswith("course-cluster-data.pkl"):
         print(
             "Warning: The name of the course recommendation model used in prod (stored in S3) "
             "must be course-cluster-data.pkl."
+        )
+    if verbose and "production" not in os.environ.get("DJANGO_SETTINGS_MODULE", ""):
+        print(
+            "Warning: Make sure you have all the courses in your data source "
+            "(especially their descriptions) loaded into to your local/dev database, otherwise "
+            "this training may fail (causing an error like ValueError: empty vocabulary) "
+            "or produce a low quality model."
         )
     if verbose:
         print("Training...")
