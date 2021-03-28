@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
 import { validateScheduleName } from "../schedule/schedule_name_validation";
+
+interface NameScheduleModalInteriorProps {
+    usedScheduleNames: string[];
+    namingFunction: (_: string) => void;
+    close: () => void;
+    buttonName: string;
+    defaultValue: string;
+    overwriteDefault: boolean;
+}
 
 const NameScheduleModalInterior = ({
     usedScheduleNames,
@@ -9,16 +17,20 @@ const NameScheduleModalInterior = ({
     buttonName,
     defaultValue,
     overwriteDefault = false,
-}) => {
-    const [inputRef, setInputRef] = useState(null);
+}: NameScheduleModalInteriorProps) => {
+    const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
     const [userInput, setUserInput] = useState(defaultValue);
     const { error, message: errorMessage } = validateScheduleName(
         userInput,
         usedScheduleNames
     );
     useEffect(() => {
-        const listener = (event) => {
-            if (!userInput && inputRef && !inputRef.contains(event.target)) {
+        const listener = (event: MouseEvent) => {
+            if (
+                !userInput &&
+                inputRef &&
+                !inputRef.contains(event.target as Node)
+            ) {
                 setUserInput(defaultValue);
             }
         };
@@ -28,6 +40,9 @@ const NameScheduleModalInterior = ({
         };
     });
     const submit = () => {
+        if (!inputRef) {
+            return;
+        }
         const scheduleName = inputRef.value;
         if (!error) {
             namingFunction(scheduleName);
@@ -41,7 +56,7 @@ const NameScheduleModalInterior = ({
                 type="text"
                 ref={(ref) => setInputRef(ref)}
                 style={{ backgroundColor: error ? "#f9dcda" : "#f1f1f1" }}
-                onChange={() => setUserInput(inputRef.value)}
+                onChange={() => setUserInput(inputRef?.value || "")}
                 onClick={() => {
                     if (overwriteDefault && userInput === defaultValue) {
                         setUserInput("");
@@ -65,15 +80,6 @@ const NameScheduleModalInterior = ({
             </button>
         </div>
     );
-};
-
-NameScheduleModalInterior.propTypes = {
-    usedScheduleNames: PropTypes.arrayOf(PropTypes.string).isRequired,
-    namingFunction: PropTypes.func,
-    close: PropTypes.func,
-    buttonName: PropTypes.string,
-    defaultValue: PropTypes.string,
-    overwriteDefault: PropTypes.bool,
 };
 
 export default NameScheduleModalInterior;
