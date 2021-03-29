@@ -1,9 +1,15 @@
 import React from "react";
-import { CSSProperties } from "styled-components";
+import styled, { CSSProperties } from "styled-components";
 
 interface NavBarProps {
     style: CSSProperties;
 }
+
+const NavbarBrand = styled.div`
+    .navbar-item {
+        margin-left: 35%;
+    }
+`;
 
 export default function NavBar({ style }: NavBarProps) {
     return (
@@ -13,12 +19,12 @@ export default function NavBar({ style }: NavBarProps) {
             aria-label="main navigation"
             style={style}
         >
-            <div className="navbar-brand">
+            <NavbarBrand>
                 <a className="navbar-item" href="https://bulma.io">
                     <img src="/icons/favicon.ico" alt="logo" />{" "}
                     <span>Penn Course Plan</span>
                 </a>
-            </div>
+            </NavbarBrand>
         </nav>
     );
 }

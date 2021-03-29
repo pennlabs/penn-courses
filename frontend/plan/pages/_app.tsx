@@ -6,21 +6,15 @@ import "bulma-extensions/bulma-checkradio/dist/css/bulma-checkradio.min.css";
 import "react-circular-progressbar/dist/styles.css";
 import "rc-slider/assets/index.css";
 import "../styles/App.css";
-import "../styles/modal.css";
-import "../styles/slider.css";
-import "../styles/dropdown.css";
-import "../styles/course-cart.css";
-import "../styles/schedule.css";
-import "../styles/Search.css";
-import "../styles/selector.css";
 import * as Sentry from "@sentry/browser";
+import type { AppProps } from "next/app";
 
 Sentry.init({
     dsn: "https://b476d74f4a224b5ea5bd44449cfc5d67@sentry.pennlabs.org/17",
 });
 
 // eslint-disable-next-line
-function App({ Component, pageProps }) {
+function App({ Component, pageProps }: AppProps) {
     return <Component {...pageProps} />;
 }
 

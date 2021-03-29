@@ -23,7 +23,7 @@ SENTRY_URL = os.environ.get("SENTRY_URL", "")
 sentry_sdk.init(dsn=SENTRY_URL, integrations=[CeleryIntegration(), DjangoIntegration()])
 
 # DLA settings
-PLATFORM_ACCOUNTS = {"ADMIN_PERMISSION": "courses_admin"}
+PLATFORM_ACCOUNTS = {"ADMIN_PERMISSION": "penn_courses_admin"}
 
 # TODO: This is a BAD HACK. We shouldn't hardcode the base URL into the shortener
 PCA_URL = "https://penncoursealert.com"
