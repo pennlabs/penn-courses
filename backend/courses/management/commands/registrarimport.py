@@ -8,7 +8,6 @@ from courses.management.commands.loadrequirements import load_requirements
 from courses.management.commands.loadstatus import set_all_status
 from courses.models import Department
 from courses.util import get_current_semester, upsert_course_from_opendata
-from plan.management.commands.trainrecommender import train_recommender
 
 
 class Command(BaseCommand):

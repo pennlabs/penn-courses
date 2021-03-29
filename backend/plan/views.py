@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -148,15 +148,21 @@ def recommend_courses_view(request):
         n_recommendations,
     )
 
-    return Response(
-        CourseListSerializer(
-            Course.objects.filter(
-                semester=get_current_semester(), full_code__in=recommended_course_codes
-            ),
-            many=True,
-        ).data,
-        status=status.HTTP_200_OK,
+    queryset = Course.with_reviews.filter(
+        semester=get_current_semester(), full_code__in=recommended_course_codes
     )
+    queryset = queryset.prefetch_related(
+        Prefetch(
+            "sections",
+            Section.with_reviews.all()
+            .filter(credits__isnull=False)
+            .filter(Q(status="O") | Q(status="C"))
+            .distinct()
+            .prefetch_related("course", "meetings__room"),
+        )
+    )
+
+    return Response(CourseListSerializer(queryset, many=True,).data, status=status.HTTP_200_OK,)
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):

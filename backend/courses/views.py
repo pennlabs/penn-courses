@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from options.models import get_value
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
@@ -18,6 +17,7 @@ from courses.serializers import (
     StatusUpdateSerializer,
     UserSerializer,
 )
+from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 
@@ -31,7 +31,8 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
     def get_semester(self):
         semester = self.kwargs.get("semester", "current")
         if semester == "current":
-            semester = get_value("SEMESTER", "all")
+            semester = get_current_semester(allow_not_found=True)
+            semester = semester if semester is not None else "all"
 
         return semester
 
