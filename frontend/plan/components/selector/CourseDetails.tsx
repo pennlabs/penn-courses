@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 import TagList from "./TagList";
 import Badge from "../Badge";
 import ShowMore from "../ShowMore";
@@ -52,6 +53,46 @@ interface CourseDetailsProps {
     getCourse: (course: string) => void;
     view: number;
 }
+
+const CourseDetailsContainer = styled.ul`
+    font-size: 0.8em;
+    margin-top: 1em;
+`;
+
+const PCRButtonLink = styled.a`
+    font-weight: 700;
+    font-size: 0.8 em;
+    color: #8f8f8f !important;
+    text-align: center;
+    border: 2px solid #eeeeee;
+    border-radius: 30px;
+
+    background-color: #fff;
+    cursor: pointer;
+    justify-content: center;
+    padding: calc(0.375em - 1px) 0.75em;
+    white-space: nowrap;
+
+    &:hover {
+        border: 2px solid #cbcbcb;
+    }
+`;
+
+const ShowMoreContainer = styled.li`
+    margin-top: 2em;
+    margin-bottom: 2em !important;
+`;
+
+// Bulma: icon is-small
+const Icon = styled.span`
+    pointer-events: none;
+    height: 1rem;
+    width: 1rem;
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+`;
+
 export default function CourseDetails({
     course: {
         requirements = [],
@@ -68,11 +109,11 @@ export default function CourseDetails({
     const prerequisites = annotatePrerequisites(prereqText, getCourse);
     const isExpandedView = view === 1;
     return (
-        <ul style={{ fontSize: ".8em", marginTop: "1em" }}>
+        <CourseDetailsContainer>
             <li>
-                <span className="icon is-small">
+                <Icon>
                     <i className="far fa-chart-bar" />
-                </span>
+                </Icon>
                 &nbsp; Quality: &nbsp;
                 <Badge value={courseQuality} />
                 &nbsp; Difficulty: &nbsp;
@@ -80,9 +121,9 @@ export default function CourseDetails({
             </li>
             {requirements.length > 0 ? (
                 <li>
-                    <span className="icon is-small">
+                    <Icon>
                         <i className="far fa-check-circle" />
-                    </span>
+                    </Icon>
                     &nbsp; Fulfills: &nbsp;
                     <TagList
                         elements={requirements.map(({ school, name }) =>
@@ -94,9 +135,9 @@ export default function CourseDetails({
             ) : null}
             {crosslistings.length > 0 ? (
                 <li>
-                    <span className="icon is-small">
+                    <Icon>
                         <i className="fas fa-random" />
-                    </span>
+                    </Icon>
                     &nbsp; Crosslisted as: &nbsp;
                     <TagList
                         elements={crosslistings.map((e) =>
@@ -107,28 +148,16 @@ export default function CourseDetails({
                     />
                 </li>
             ) : null}
-            <a
+            <PCRButtonLink
                 target="_blank"
                 rel="noopener noreferrer"
-                className="button is-small pcr-svg"
                 type="button"
                 href={`https://penncoursereview.com/course/${id}`}
-                style={{
-                    fontWeight: 700,
-                    fontSize: "0.8 em",
-                    color: "#8F8F8F",
-                    textAlign: "center",
-                }}
             >
                 View on Penn Course Review
-            </a>
+            </PCRButtonLink>
             {prerequisites && (
-                <li
-                    style={{
-                        marginTop: "2em",
-                        marginBottom: "2em",
-                    }}
-                >
+                <ShowMoreContainer>
                     <ShowMore
                         disabled={isExpandedView}
                         lines={2}
@@ -137,15 +166,10 @@ export default function CourseDetails({
                     >
                         {prerequisites}
                     </ShowMore>
-                </li>
+                </ShowMoreContainer>
             )}
             {
-                <li
-                    style={{
-                        marginTop: "2em",
-                        marginBottom: "2em",
-                    }}
-                >
+                <ShowMoreContainer>
                     <ShowMore
                         disabled={isExpandedView}
                         lines={2}
@@ -154,8 +178,8 @@ export default function CourseDetails({
                     >
                         {description}
                     </ShowMore>
-                </li>
+                </ShowMoreContainer>
             }
-        </ul>
+        </CourseDetailsContainer>
     );
 }

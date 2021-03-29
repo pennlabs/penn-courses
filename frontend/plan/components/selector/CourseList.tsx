@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import styled from "styled-components";
 import Course from "./Course";
 import { Course as CourseType, SortMode } from "../../types";
 
@@ -42,6 +43,42 @@ export interface CourseListProps {
     scrollPos: number;
     setScrollPos: (pos: number) => void;
 }
+
+const CourseListContainer = styled.div`
+    box-sizing: border-box;
+    border-radius: 0.375em;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+`;
+
+const HeaderContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    padding-bottom: 1em;
+    padding-left: 2em;
+`;
+
+const Header = styled.div`
+    width: ${({ width }: { width: string }) => width};
+    color: #a0a0a0;
+    padding-left: 0;
+    font-weight: bold;
+    overflow: hidden;
+`;
+
+const CoursesContainer = styled.ul`
+    height: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    font-size: 0.7em;
+
+    &::-webkit-scrollbar {
+        width: 0 !important;
+    }
+`;
+
 const CourseList = ({
     courses,
     getCourse,
@@ -60,37 +97,13 @@ const CourseList = ({
     }, [scrollPos, setScrollPos]);
 
     return (
-        <div
-            className="scroll-container"
-            style={{
-                minHeight: "0",
-            }}
-        >
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    paddingBottom: "1em",
-                    paddingLeft: "2em",
-                }}
-            >
-                <div
-                    className="header"
-                    style={{
-                        overflow: "hidden",
-                        width: "60%",
-                    }}
-                >
-                    COURSE
-                </div>
-                <div className="header" style={{ width: "20%" }}>
-                    QUAL
-                </div>
-                <div className="header" style={{ width: "20%" }}>
-                    DIFF
-                </div>
-            </div>
-            <ul className="scrollable course-list" ref={listRef}>
+        <CourseListContainer>
+            <HeaderContainer>
+                <Header width="60%">COURSE</Header>
+                <Header width="20%">QUAL</Header>
+                <Header width="20%">DIFF</Header>
+            </HeaderContainer>
+            <CoursesContainer ref={listRef}>
                 {courseSort(courses, sortMode).map((course) => (
                     <Course
                         key={course.id}
@@ -98,8 +111,8 @@ const CourseList = ({
                         onClick={() => getCourse(course.id)}
                     />
                 ))}
-            </ul>
-        </div>
+            </CoursesContainer>
+        </CourseListContainer>
     );
 };
 

@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { isMobileOnly } from "react-device-detect";
-
+import styled from "styled-components";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 
@@ -40,7 +40,7 @@ interface ScheduleProps {
         rename: (oldName: string) => void;
     };
     activeScheduleName: string;
-    setTab: (_: number) => void;
+    setTab?: (_: number) => void;
 }
 
 // Used for box coloring, from StackOverflow:
@@ -56,15 +56,76 @@ const hashString = (s: string) => {
     return hash;
 };
 
-const transformTime = (t: number, roundUp: boolean) => {
+const transformTime = (t: number) => {
     const frac = t % 1;
-    const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 10) / 10;
-    if (roundUp) {
-        return Math.ceil(timeDec * 2) / 2;
+    const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 100) / 100;
+    return timeDec;
+};
+
+const ScheduleContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    flex-basis: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding: 0;
+`;
+
+const ScheduleDropdownHeader = styled.h3`
+    display: flex;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #333;
+`;
+
+const ScheduleBox = styled.div`
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.09);
+    color: #4a4a4a;
+    display: block;
+    padding: 1.25rem;
+    height: calc(100vh - 12em);
+`;
+
+const ScheduleContents = styled.div`
+    display: grid;
+    height: calc(100% - 10em);
+    margin-bottom: 5px;
+    margin-right: 20px;
+    column-gap: 0;
+    position: relative;
+
+    background-color: white;
+    font-family: "Inter";
+    padding: ${({ notEmpty, dims }: { notEmpty: boolean; dims: any }) =>
+        notEmpty ? dims.padding : "1rem"};
+    grid-template-columns: ${({
+        notEmpty,
+        dims,
+    }: {
+        notEmpty: boolean;
+        dims: any;
+    }) => (notEmpty ? dims.gridTemplateColumns : "none")};
+    grid-template-rows: ${({
+        notEmpty,
+        dims,
+    }: {
+        notEmpty: boolean;
+        dims: any;
+    }) => (notEmpty ? dims.gridTemplateRows : "none")};
+
+    @media only screen and (max-width: 480px) {
+        height: 100%;
+        max-height: 500px;
+        font-size: 12px;
+        margin-right: 0px;
     }
 
-    return Math.floor(timeDec * 2) / 2;
-};
+    @media only screen and (min-width: 480px) and (max-height: 600px) {
+        height: 100%;
+    }
+`;
 
 class Schedule extends Component {
     render() {
@@ -101,7 +162,8 @@ class Schedule extends Component {
         const rowOffset = 1;
         const colOffset = 1;
 
-        const getNumRows = () => (endHour - startHour + 1) * 2 + rowOffset;
+        // 15 minute time intervals
+        const getNumRows = () => (endHour - startHour + 1) * 4 + rowOffset;
         const getNumCol = () => 5 + colOffset + (showWeekend ? 2 : 0);
 
         // step 2 in the CIS121 review: hashing with linear probing.
@@ -144,8 +206,8 @@ class Schedule extends Component {
                 meetings.push(
                     ...s.meetings.map((m) => ({
                         day: m.day as Day,
-                        start: transformTime(m.start, false),
-                        end: transformTime(m.end, true),
+                        start: transformTime(m.start),
+                        end: transformTime(m.end),
                         course: {
                             color,
                             id: s.id,
@@ -198,7 +260,7 @@ class Schedule extends Component {
                 key={`${meeting.course.id}-${meeting.day}`}
                 remove={() => removeSection(meeting.course.id)}
                 focusSection={() => {
-                    if (isMobileOnly) {
+                    if (isMobileOnly && setTab) {
                         setTab(0);
                     }
                     const split = meeting.course.id.split("-");
@@ -214,8 +276,8 @@ class Schedule extends Component {
         };
 
         return (
-            <div className="column vertical-section">
-                <h3 className="section-header">
+            <ScheduleContainer>
+                <ScheduleDropdownHeader>
                     <ScheduleSelectorDropdown
                         activeName={activeScheduleName}
                         contents={scheduleNames.map((scheduleName) => ({
@@ -224,12 +286,9 @@ class Schedule extends Component {
                         }))}
                         mutators={schedulesMutator}
                     />
-                </h3>
-                <div className="box">
-                    <div
-                        className="schedule vertical-section-contents"
-                        style={notEmpty ? dims : { padding: "1rem" }}
-                    >
+                </ScheduleDropdownHeader>
+                <ScheduleBox>
+                    <ScheduleContents dims={dims} notEmpty={notEmpty}>
                         {notEmpty && (
                             <Days offset={colOffset} weekend={showWeekend} />
                         )}
@@ -249,10 +308,10 @@ class Schedule extends Component {
                         )}
                         {notEmpty && blocks}
                         {!notEmpty && <EmptySchedule />}
-                    </div>
-                    <Stats meetings={schedData.meetings} />
-                </div>
-            </div>
+                    </ScheduleContents>
+                    {notEmpty && <Stats meetings={schedData.meetings} />}
+                </ScheduleBox>
+            </ScheduleContainer>
         );
     }
 }
@@ -292,26 +351,28 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     },
 });
 
+const EmptyScheduleContainer = styled.div`
+    font-size: 0.8em;
+    text-align: center;
+    margin-top: 5vh;
+`;
+
+const NoCoursesImage = styled.img`
+    width: 65%;
+`;
+
+const NoCoursesAdded = styled.h3`
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+`;
+
 const EmptySchedule = () => (
-    <div
-        style={{
-            fontSize: "0.8em",
-            textAlign: "center",
-            marginTop: "5vh",
-        }}
-    >
-        <img style={{ width: "65%" }} src="/icons/empty-state-cal.svg" alt="" />
-        <h3
-            style={{
-                fontWeight: "bold",
-                marginBottom: "0.5rem",
-            }}
-        >
-            No courses added
-        </h3>
+    <EmptyScheduleContainer>
+        <NoCoursesImage src="/icons/empty-state-cal.svg" alt="" />
+        <NoCoursesAdded>No courses added</NoCoursesAdded>
         Select courses from the cart to add them to the calendar
         <br />
-    </div>
+    </EmptyScheduleContainer>
 );
 
 export default connect(mapStateToProps, mapDispatchToProps)(Schedule);

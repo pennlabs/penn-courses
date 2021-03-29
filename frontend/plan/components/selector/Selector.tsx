@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useState } from "react";
-
+import styled from "styled-components";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 
@@ -7,6 +7,8 @@ import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
 import Recs from "../recomendations/Recs";
 import { Course as CourseType } from "../../types";
+
+import { Loading } from "../bulma_derived_components";
 
 import {
     fetchCourseDetails,
@@ -30,7 +32,21 @@ interface SelectorProps {
     scrollPos: number;
     setScrollPos: (scrollPos: number) => void;
     sortMode: SortMode;
+    mobileView: boolean;
 }
+
+const EmptyResultsContainer = styled.div`
+    font-size: 0.8rem;
+    text-align: center;
+    margin-top: 5vh;
+    max-width: 45vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    overflow: hidden;
+`;
+
 const Selector: FunctionComponent<SelectorProps> = ({
     courses,
     course,
@@ -48,18 +64,6 @@ const Selector: FunctionComponent<SelectorProps> = ({
     const isExpanded = view === 1;
     const isLoading =
         isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
-
-    const loadingIndicator = (
-        <div
-            className="button is-loading"
-            style={{
-                height: "100%",
-                width: "100%",
-                border: "none",
-                fontSize: "3rem",
-            }}
-        />
-    );
 
     const [showRecs, setShowRecs] = useState(true);
 
@@ -81,25 +85,13 @@ const Selector: FunctionComponent<SelectorProps> = ({
 
     let element = (
         <>
-            <div
-                style={{
-                    fontSize: "0.8em",
-                    textAlign: "center",
-                    // marginTop: "5vh",
-                    maxWidth: "45vh",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
-                    alignItems: "center",
-                    overflow: "hidden",
-                }}
-            >
+            <EmptyResultsContainer>
                 <img
                     src="/icons/empty-state-search.svg"
                     alt=""
                     style={{
                         height: "auto",
-                        maxWidth: "80%",
+                        maxWidth: "70%",
                         maxHeight: "18.75rem",
                     }}
                 />
@@ -109,11 +101,11 @@ const Selector: FunctionComponent<SelectorProps> = ({
                         marginBottom: "0.5rem",
                     }}
                 >
-                    No results found
+                    No result found
                 </h3>
                 Search for courses, departments, or instructors above. Looking
                 for something specific? Try using the filters!
-            </div>
+            </EmptyResultsContainer>
 
             {recPanel}
         </>
@@ -173,7 +165,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     style={{ height: "calc(100vh - 12.5em)" }}
                 >
                     {isLoadingCourseInfo ? (
-                        loadingIndicator
+                        <Loading />
                     ) : (
                         <CourseInfo
                             getCourse={getCourse}
@@ -191,11 +183,10 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     back={clearCourse}
                     view={view}
                 />
-                {recPanel}
             </>
         );
     }
-    return <>{isLoading ? loadingIndicator : element}</>;
+    return <>{isLoading ? <Loading /> : element}</>;
 };
 
 const mapStateToProps = ({

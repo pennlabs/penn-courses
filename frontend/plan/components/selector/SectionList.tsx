@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from "react";
-import PropTypes from "prop-types";
+import styled from "styled-components";
 import { connect } from "react-redux";
 
 import Section from "./Section";
@@ -10,6 +10,13 @@ interface SectionListProps {
     sections: SectionType[];
     view: number;
 }
+
+const ResultsContainer = styled.div`
+    ul:first-child {
+        border-top: 1px solid rgb(230, 230, 230);
+    }
+`;
+
 function SectionList({
     sections,
     cartSections,
@@ -23,7 +30,7 @@ function SectionList({
 }) {
     const isInCart = ({ id }: SectionType) => cartSections.indexOf(id) !== -1;
     return (
-        <div className="results">
+        <ResultsContainer>
             <ul>
                 {sections.map((s) => (
                     <Section
@@ -34,16 +41,9 @@ function SectionList({
                     />
                 ))}
             </ul>
-        </div>
+        </ResultsContainer>
     );
 }
-
-SectionList.propTypes = {
-    sections: PropTypes.arrayOf(PropTypes.object).isRequired,
-    cartSections: PropTypes.arrayOf(PropTypes.string).isRequired,
-    manageCart: PropTypes.func,
-    view: PropTypes.number,
-};
 
 const mapStateToProps = (state: any, ownProps: SectionListProps) => ({
     ...ownProps,

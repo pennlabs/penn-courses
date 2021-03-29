@@ -36,6 +36,17 @@ const RecContentContainer = styled.div<{
     }
 `;
 
+const CoursesContainer = styled.ul`
+    height: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    font-size: 0.7em;
+
+    &::-webkit-scrollbar {
+        width: 0 !important;
+    }
+`;
+
 const EmptyContainer = styled.div`
     font-size: 0.8rem;
     margin: 0 0.9375rem;
@@ -63,7 +74,7 @@ const RecContent = ({
             <RecContentContainer collapse={!show}>
                 {/* Only create list if there is recommended course(s) */}
                 {recCourses && recCourses.length > 0 ? (
-                    <ul className="course-list">
+                    <CoursesContainer>
                         {recCourses.map((recCourse) => (
                             <Course
                                 key={recCourse.id}
@@ -73,7 +84,7 @@ const RecContent = ({
                                 onClickDelete={onClickDelete}
                             />
                         ))}
-                    </ul>
+                    </CoursesContainer>
                 ) : (
                     // Show if no there is no recommended courses
                     <EmptyContainer>
