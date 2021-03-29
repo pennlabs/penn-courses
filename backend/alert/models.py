@@ -826,7 +826,7 @@ class PcaDemandExtrema(models.Model):
         help_text=dedent(
             """
         The semester of this demand extrema (of the form YYYYx where x is
-        A [for spring], B [summer], or C [fall]), e.g. 2019C for fall 2019.
+        A [for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019.
         """
         ),
     )
@@ -948,7 +948,7 @@ class AddDropPeriod(models.Model):
         help_text=dedent(
             """
         The semester of this add drop period (of the form YYYYx where x is
-        A [for spring], or C [fall]), e.g. 2019C for fall 2019.
+        A [for spring], or C [fall]), e.g. `2019C` for fall 2019.
         """
         ),
     )

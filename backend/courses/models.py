@@ -75,7 +75,7 @@ class Department(models.Model):
         max_length=8,
         unique=True,
         db_index=True,
-        help_text="The department code, e.g. 'CIS' for the CIS department.",
+        help_text="The department code, e.g. `CIS` for the CIS department.",
     )
     name = models.CharField(
         max_length=255,
@@ -135,7 +135,7 @@ class Course(models.Model):
         ),
     )
     code = models.CharField(
-        max_length=8, db_index=True, help_text="The course code, e.g. '120' for CIS-120."
+        max_length=8, db_index=True, help_text="The course code, e.g. `120` for CIS-120."
     )
     semester = models.CharField(
         max_length=5,
@@ -143,7 +143,7 @@ class Course(models.Model):
         help_text=dedent(
             """
         The semester of the course (of the form YYYYx where x is A [for spring],
-        B [summer], or C [fall]), e.g. 2019C for fall 2019.
+        B [summer], or C [fall]), e.g. `2019C` for fall 2019.
         """
         ),
     )
@@ -169,7 +169,7 @@ class Course(models.Model):
         max_length=16,
         blank=True,
         db_index=True,
-        help_text="The dash-joined department and code of the course, e.g. 'CIS-120' for CIS-120.",
+        help_text="The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",
     )
 
     prerequisites = models.TextField(
@@ -333,7 +333,7 @@ class Section(models.Model):
     code = models.CharField(
         max_length=16,
         db_index=True,
-        help_text="The section code, e.g. '001' for the section CIS-120-001.",
+        help_text="The section code, e.g. `001` for the section CIS-120-001.",
     )
     course = models.ForeignKey(
         Course,
@@ -353,7 +353,7 @@ class Section(models.Model):
         help_text=dedent(
             """
         The full code of the section, in the form '{dept code}-{course code}-{section code}',
-        e.g. 'CIS-120-001' for the 001 section of CIS-120.
+        e.g. `CIS-120-001` for the 001 section of CIS-120.
         """
         ),
     )
@@ -369,13 +369,13 @@ class Section(models.Model):
     capacity = models.IntegerField(
         default=0,
         help_text="The number of allowed registrations for this section, "
-        "e.g. 220 for CIS-120-001 (2020A).",
+        "e.g. `220` for CIS-120-001 (2020A).",
     )
     activity = models.CharField(
         max_length=50,
         choices=ACTIVITY_CHOICES,
         db_index=True,
-        help_text="The section activity, e.g. 'LEC' for CIS-120-001 (2020A). Options and meanings: "
+        help_text="The section activity, e.g. `LEC` for CIS-120-001 (2020A). Options and meanings: "
         + string_dict_to_html(dict(ACTIVITY_CHOICES)),
     )
     meeting_times = models.TextField(
@@ -383,8 +383,8 @@ class Section(models.Model):
         help_text=dedent(
             """
         A JSON-stringified list of meeting times of the form
-        '{days code} {start time} - {end time}', e.g.
-        '["MWF 09:00 AM - 10:00 AM","F 11:00 AM - 12:00 PM","T 05:00 PM - 06:00 PM"]' for
+        `{days code} {start time} - {end time}`, e.g.
+        `["MWF 09:00 AM - 10:00 AM","F 11:00 AM - 12:00 PM","T 05:00 PM - 06:00 PM"]` for
         PHYS-151-001 (2020A). Each letter of the days code is of the form M, T, W, R, F for each
         day of the work week, respectively (and multiple days are combined with concatenation).
         To access the Meeting objects for this section, the related field `meetings` can be used.
@@ -651,7 +651,7 @@ class Building(models.Model):
         help_text=dedent(
             """
         The latitude of the building, in the signed decimal degrees format (global range of
-        [-90.0, 90.0]), e.g. 39.961380 for the Towne Building.
+        [-90.0, 90.0]), e.g. `39.961380` for the Towne Building.
         """
         ),
     )
@@ -661,7 +661,7 @@ class Building(models.Model):
         help_text=dedent(
             """
         The longitude of the building, in the signed decimal degrees format (global range of
-        [-180.0, 180.0]), e.g. -75.176773 for the Towne Building.
+        [-180.0, 180.0]), e.g. `-75.176773` for the Towne Building.
         """
         ),
     )
@@ -684,7 +684,7 @@ class Room(models.Model):
         ),
     )
     number = models.CharField(
-        max_length=5, help_text="The room number, e.g. 101 for Wu and Chen Auditorium in Levine."
+        max_length=5, help_text="The room number, e.g. `101` for Wu and Chen Auditorium in Levine."
     )
     name = models.CharField(
         max_length=80,
@@ -781,7 +781,7 @@ class Requirement(models.Model):
         help_text=dedent(
             """
         The semester of the requirement (of the form YYYYx where x is A [for spring], B [summer],
-        or C [fall]), e.g. 2019C for fall 2019. We organize requirements by semester so that we
+        or C [fall]), e.g. `2019C` for fall 2019. We organize requirements by semester so that we
         don't get huge related sets which don't give particularly good info.
         """
         ),
@@ -792,7 +792,7 @@ class Requirement(models.Model):
         db_index=True,
         help_text=dedent(
             """
-        What school this requirement belongs to, e.g. 'SAS' for the SAS 'Formal Reasoning Course'
+        What school this requirement belongs to, e.g. `SAS` for the SAS 'Formal Reasoning Course'
         requirement satisfied by CIS-120. Options and meanings:
         """
             + string_dict_to_html(dict(SCHOOL_CHOICES))
@@ -803,7 +803,7 @@ class Requirement(models.Model):
         db_index=True,
         help_text=dedent(
             """
-        The code identifying this requirement, e.g. 'MFR' for 'Formal Reasoning Course',
+        The code identifying this requirement, e.g. `MFR` for 'Formal Reasoning Course',
         an SAS requirement satisfied by CIS-120.
         """
         ),

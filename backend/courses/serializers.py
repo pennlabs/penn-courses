@@ -51,7 +51,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         read_only=True,
         help_text=dedent(
             """
-            The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
+            The dash-separated dept, full-code, and section-code, e.g. `CIS-120-001` for the
             001 lecture section of CIS-120.
             """
         ),
@@ -99,7 +99,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
         source="full_code",
         help_text=dedent(
             """
-            The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
+            The dash-separated dept, full-code, and section-code, e.g. `CIS-120-001` for the
             001 lecture section of CIS-120.
             """
         ),
@@ -185,7 +185,7 @@ class CourseListSerializer(serializers.ModelSerializer):
         help_text=dedent(
             """
         The full code of the course, in the form '{dept code}-{course code}'
-        dash-joined department and code of the course, e.g. 'CIS-120' for CIS-120."""
+        dash-joined department and code of the course, e.g. `CIS-120` for CIS-120."""
         ),
     )
 
@@ -318,7 +318,7 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
         help_text=dedent(
             """
             The code of the section which this status update applies to, in the form
-            '{dept code}-{course code}-{section code}', e.g. 'CIS-120-001' for the
+            '{dept code}-{course code}-{section code}', e.g. `CIS-120-001` for the
             001 section of CIS-120.
             """
         ),

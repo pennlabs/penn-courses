@@ -245,7 +245,7 @@ class StatusUpdateView(generics.ListAPIView):
                 "GET": {
                     "full_code": (
                         "The code of the section which this status update applies to, in the "
-                        "form '{dept code}-{course code}-{section code}', e.g. 'CIS-120-001' for "
+                        "form '{dept code}-{course code}-{section code}', e.g. `CIS-120-001` for "
                         "the 001 section of CIS-120."
                     )
                 }

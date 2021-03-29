@@ -107,14 +107,12 @@ to dicts, and each further subdict maps int response codes to string description
         reverse_func("schedules-list"): {
            "GET": {
                200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",
-               403: "Authentication credentials were not provided."
            },
            "POST": {
                201: "Schedule successfully created.",
                200: "Schedule successfully updated (a schedule with the "
                     "specified id already existed).",
                400: "Bad request (see description above).",
-               403: "Authentication credentials were not provided."
            }
         },
         ...
@@ -364,6 +362,7 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
     (reverse_func("registrationhistory-list"), "GET"): "Registration History",
     (reverse_func("registrationhistory-detail", args=["id"]), "GET"): "Registration History",
     (reverse_func("statusupdate", args=["full_code"]), "GET"): "Status Update",
+    (reverse_func("course-reviews", args=["course_code"]), "GET"): "Course Reviews"
 }
 assert all(
     [isinstance(k, tuple) and len(k) == 2 and isinstance(k[1], str) for k in custom_name.keys()]

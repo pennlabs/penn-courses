@@ -7,11 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Course, Department, Instructor, Section, StatusUpdate
-from PennCourses.docs_settings import PcxAutoSchema
+from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from review.annotations import annotate_average_and_recent, review_averages
-from review.models import ALL_FIELD_SLUGS, Review
-from review.util import aggregate_reviews, make_subdict
-
+from review.models import ALL_FIELD_SLUGS, Review, REVIEW_BIT_LABEL
+from review.util import aggregate_reviews, make_subdict, to_r_camel
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
@@ -29,7 +28,89 @@ it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
 
 
 @api_view(["GET"])
-@schema(PcxAutoSchema())
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("course-reviews", args=["course_code"]): {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
+                    404: "Course with given course_code not found.",
+                },
+            },
+        },
+        custom_path_parameter_desc={
+            reverse_func("course-reviews", args=["course_code"]): {
+                "GET": {
+                    "course_code": (
+                        "The dash-joined department and code of the course you are requesting review for, e.g. `CIS-120` for CIS-120."
+                    )
+                }
+            },
+        },
+        override_schema={
+            reverse_func("course-reviews", args=["course_code"]): {
+                "GET": {
+                    200: {
+                        "properties": {
+                            "code": {
+                                "type": "string",
+                                "description": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                            },
+                            "name": {
+                                "type": "string",
+                                "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501
+                            },
+                            "description": {
+                                "type": "string",
+                                "description": "The description of the course, e.g. 'A fast-paced introduction to the fundamental concepts of programming... [etc.]' for CIS-120.",  # noqa E501
+                            },
+                            "aliases": {
+                                "type": "array",
+                                "description": "A list of courses that are crosslisted with this course.",  # noqa E501
+                                "items": {
+                                    "type": "string",
+                                    "description": "The dash-joined department and code of a crosslisting.",  # noqa E501
+                                },
+                            },
+                            "num_sections": {
+                                "type": "integer",
+                                "description": "The number of sections belonging to this course across all semesters.",  # noqa E501
+                            },
+                            "num_sections_recent": {
+                                "type": "integer",
+                                "description": "The number of sections belonging to this course in its most recent semester.",  # noqa E501
+                            },
+                            "average_reviews": {
+                                "type": "object",
+                                "description": "This course's average reviews across all of its sections from all semesters.",  # noqa E501
+                                "properties": {
+                                    to_r_camel(bit_label[2]): {
+                                        "type": "number",
+                                        "description": f"Average {bit_label[1]}"
+                                    }
+                                    for bit_label in REVIEW_BIT_LABEL
+                                }
+                            },
+                            "recent_reviews": {
+                                "type": "object",
+                                "description": "This course's average reviews across all of its sections from the most recent semester.",  # noqa E501
+                                "properties": {
+                                    to_r_camel(bit_label[2]): {
+                                        "type": "number",
+                                        "description": f"Average {bit_label[1]}"
+                                    }
+                                    for bit_label in REVIEW_BIT_LABEL
+                                }
+                            },
+                            "num_semesters": {"type": "integer", "description": "The number of semesters from which this course has reviews."},
+                            # "instructors": {"type": "", "description": ""},
+                        }
+                    },
+                }
+            },
+        },
+    )
+)
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code):
     """
