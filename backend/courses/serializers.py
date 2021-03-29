@@ -88,28 +88,6 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class MiniSectionStatsSerializer(MiniSectionSerializer):
-    """
-    A copy of MiniSectionSerializer, except includes the registration_volume and
-    current_relative_pca_demand statistics additionally.
-    """
-
-    class Meta:
-        model = Section
-        fields = [
-            "section_id",
-            "status",
-            "activity",
-            "meeting_times",
-            "instructors",
-            "course_title",
-            "registration_volume",  # added
-            "current_relative_pca_demand",  # added
-            "current_percent_open",  # added
-        ]
-        read_only_fields = fields
-
-
 course_quality_help = "The average course quality rating for this section, on a scale of 0-4."
 difficulty_help = "The average difficult rating for this section, on a scale of 0-4."
 instructor_quality_help = "The average instructor quality for this section, on a scale of 0-4."
@@ -182,34 +160,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "difficulty",
             "work_required",
         ] + ["associated_sections",]
-        read_only_fields = fields
-
-
-class SectionDetailStatsSerializer(SectionDetailSerializer):
-    """
-    A copy of SectionDetailSerializer, except includes the registration_volume,
-    current_relative_pca_demand, and current_percent_open statistics additionally.
-    """
-
-    class Meta:
-        model = Section
-        fields = [
-            "id",
-            "status",
-            "activity",
-            "credits",
-            "semester",
-            "meetings",
-            "instructors",
-            "course_quality",
-            "instructor_quality",
-            "difficulty",
-            "work_required",
-            "associated_sections",
-            "registration_volume",  # added
-            "current_relative_pca_demand",  # added
-            "current_percent_open",  # added
-        ]
         read_only_fields = fields
 
 
