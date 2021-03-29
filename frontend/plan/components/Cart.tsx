@@ -6,6 +6,38 @@ import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
 
 import { ThunkDispatch } from "redux-thunk";
 import { Section, CartCourse } from "../types";
+import styled from "styled-components";
+
+const Box = styled.section<{ length: number }>`
+    height: calc(100vh - 9em - 3em);
+    border-radius: 4px;
+    box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.09);
+    background-color: white;
+    color: #4a4a4a;
+    overflow: ${(props) => (props.length === 0 ? "hidden" : "auto")};
+    flex-direction: column;
+    padding: 0;
+    display: flex;
+    @media (max-width: 800px) {
+        min-height: calc(100vh - 8em);
+        height: 100%;
+        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    &::-webkit-scrollbar {
+        width: 0.5em;
+        height: 0.5em;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: white;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #95a5a6;
+        border-radius: 1px;
+    }
+`;
 
 interface CartProps {
     courses: CartCourse[];
@@ -13,7 +45,7 @@ interface CartProps {
     removeItem: (sectionId: string) => void;
     courseInfo: (id: string) => void;
     courseInfoLoading: boolean;
-    setTab: (_: number) => void;
+    setTab?: (_: number) => void;
     lastAdded: { id: string; code: string };
     mobileView: boolean;
 }
@@ -54,16 +86,7 @@ const Cart = ({
     lastAdded,
     mobileView,
 }: CartProps) => (
-    <section
-        style={{
-            display: "flex",
-            overflow: courses.length === 0 ? "hidden" : "auto",
-            flexDirection: "column",
-            padding: 0,
-        }}
-        id="cart"
-        className="box"
-    >
+    <Box length={courses.length} id="cart">
         {courses.length === 0 ? (
             <CartEmpty />
         ) : (
@@ -87,7 +110,7 @@ const Cart = ({
                                     courseInfo(
                                         `${codeParts[0]}-${codeParts[1]}`
                                     );
-                                    if (mobileView) {
+                                    if (mobileView && setTab) {
                                         setTab(0);
                                     }
                                 }
@@ -96,7 +119,7 @@ const Cart = ({
                     );
                 })
         )}
-    </section>
+    </Box>
 );
 
 const mapStateToProps = ({
