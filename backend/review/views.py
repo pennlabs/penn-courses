@@ -1,11 +1,13 @@
-from django.db.models import F, OuterRef, Q
+from django.db.models import F, OuterRef, Q, Subquery, Count, Value
+from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course, Department, Instructor, Section
+from alert.models import AddDropPeriod
+from courses.models import Course, Department, Instructor, Section, StatusUpdate
 from PennCourses.docs_settings import PcxAutoSchema
 from review.annotations import annotate_average_and_recent, review_averages
 from review.models import ALL_FIELD_SLUGS, Review
@@ -183,7 +185,22 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         prefix="bit_",
     )
     reviews = reviews.annotate(
-        course_title=F("section__course__title"), semester=F("section__course__semester")
+        course_title=F("section__course__title"), semester=F("section__course__semester"),
+        section_capacity=F("section__capacity"),
+        percentage_open=F("section__percentage_open"),
+        num_openings=Coalesce(
+            Subquery(
+                StatusUpdate.objects.filter(
+                    section__pk=OuterRef("section__pk"),
+                    created_at__gte=AddDropPeriod.estimated_start,
+                    created_at__lte=AddDropPeriod.estimated_end
+                )
+                .values("pk")
+                .annotate(count=Count("pk"))
+                .values("count")
+            ),
+            Value(0),
+        )
     )
 
     return Response(
@@ -198,6 +215,14 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
                     "forms_produced": review["enrollment"],
                     "ratings": make_subdict("bit_", review),
                     "comments": review["comments"],
+                    # Below are new metrics
+                    "final_enrollment_percentage": (
+                        review["enrollment"] / review["section_capacity"] if
+                        review["enrollment"] is not None and review["section_capacity"] is not None
+                        and review["section_capacity"] > 0 else None
+                    ),
+                    "percentage_open": review["percentage_open"],
+                    "num_openings": review["num_openings"]
                 }
                 for review in reviews.values()
             ],

@@ -107,10 +107,10 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                 registration_volume=Coalesce(
                     Subquery(
                         Registration.objects.filter(
-                            section__id=OuterRef("id"), **Registration.is_active_filter()
+                            section__pk=OuterRef("pk"), **Registration.is_active_filter()
                         )
-                        .values("id")
-                        .annotate(count=Count("id"))
+                        .values("pk")
+                        .annotate(count=Count("pk"))
                         .values("count")
                     ),
                     Value(0),

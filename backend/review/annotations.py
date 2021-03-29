@@ -31,7 +31,6 @@ def review_averages(
     fields=None,
     prefix="",
     semester_aggregations=False,
-    include_pca_stats=True,
 ):
     """
     Annotate the queryset with the average of all ReviewBits matching the given subfilters.
@@ -45,8 +44,6 @@ def review_averages(
     :param semester_aggregations: option to annotate additional semester aggregations for the
     semester returned by the subfilters (only useful if subfilters filter down to one semester),
     as well as the count of the number of semesters included in the queryset's annotations.
-    :param include_pca_stats: whether to aggregate
-    TODO: finish
     """
     if fields is None:
         fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
