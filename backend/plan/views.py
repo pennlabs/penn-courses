@@ -1,17 +1,168 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
+from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 import plan.examples as examples
-from courses.models import Section
+from courses.models import Course, Section
+from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from plan.management.commands.recommendcourses import (
+    clean_course_input,
+    recommend_courses,
+    retrieve_course_clusters,
+    vectorize_user,
+    vectorize_user_by_courses,
+)
 from plan.models import Schedule
 from plan.serializers import ScheduleSerializer
+
+
+@api_view(["POST"])
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
+                    201: "[REMOVE THIS RESPONSE CODE FROM DOCS]",
+                    400: "Invalid curr_courses, past_courses, or n_recommendations (see response).",
+                }
+            }
+        },
+        override_request_schema={
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    "type": "object",
+                    "properties": {
+                        "curr_courses": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user is currently planning to "
+                                "take, each specified by its string full code, of the form "
+                                "DEPT-XXX, e.g. CIS-120."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "past_courses": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user has previously taken, each "
+                                "specified by its string full code, of the form DEPT-XXX, "
+                                "e.g. CIS-120."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "n_recommendations": {
+                            "type": "integer",
+                            "description": (
+                                "The number of course recommendations you want returned. "
+                                "Defaults to 5."
+                            ),
+                        },
+                    },
+                }
+            }
+        },
+        override_response_schema={
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    200: {"type": "array", "items": {"$ref": "#/components/schemas/CourseList"}}
+                }
+            }
+        },
+    )
+)
+@permission_classes([IsAuthenticated])
+def recommend_courses_view(request):
+    """
+    This route will optionally take in current and past courses. In order to
+    make recommendations solely on the user's past and current courses in plan, simply
+    pass an empty body to the request. Otherwise, in order to specify past and current courses,
+    include a "curr-courses" and/or "past_courses" attribute in the request that should each contain
+    an array of string course full codes of the form DEPT-XXX (e.g. CIS-120).
+    If successful, this route will return a list of recommended courses, with the same schema
+    as the List Courses route. The number of recommended courses returned can be specified
+    using the n_recommendations attribute in the request body, but if this attribute is
+    omitted, the default will be 5.
+    If n_recommendations is not an integer, or is <=0, a 400 will be returned.
+    If curr_courses contains repeated courses or invalid courses or non-current courses, a
+    400 will be returned.
+    If past_courses contains repeated courses or invalid courses, a 400 will be returned.
+    If curr_courses and past_courses contain overlapping courses, a 400 will be returned.
+    """
+
+    user = request.user
+    curr_courses = request.data.get("curr_courses", [])
+    past_courses = request.data.get("past_courses", [])
+    n_recommendations = request.data.get("n_recommendations", 5)
+
+    # input validation
+    try:
+        n_recommendations = int(n_recommendations)
+    except ValueError:
+        return Response(
+            f"n_recommendations: {n_recommendations} is not int",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if n_recommendations <= 0:
+        return Response(
+            f"n_recommendations: {n_recommendations} <= 0", status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    course_clusters = retrieve_course_clusters()
+
+    (
+        cluster_centroids,
+        clusters,
+        curr_course_vectors_dict,
+        past_course_vectors_dict,
+    ) = course_clusters
+
+    if curr_courses or past_courses:
+        try:
+            user_vector, user_courses = vectorize_user_by_courses(
+                clean_course_input(curr_courses),
+                clean_course_input(past_courses),
+                curr_course_vectors_dict,
+                past_course_vectors_dict,
+            )
+        except ValueError as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST,)
+    else:
+        user_vector, user_courses = vectorize_user(
+            user, curr_course_vectors_dict, past_course_vectors_dict
+        )
+
+    recommended_course_codes = recommend_courses(
+        curr_course_vectors_dict,
+        cluster_centroids,
+        clusters,
+        user_vector,
+        user_courses,
+        n_recommendations,
+    )
+
+    queryset = Course.with_reviews.filter(
+        semester=get_current_semester(), full_code__in=recommended_course_codes
+    )
+    queryset = queryset.prefetch_related(
+        Prefetch(
+            "sections",
+            Section.with_reviews.all()
+            .filter(credits__isnull=False)
+            .filter(Q(status="O") | Q(status="C"))
+            .distinct()
+            .prefetch_related("course", "meetings__room"),
+        )
+    )
+
+    return Response(CourseListSerializer(queryset, many=True,).data, status=status.HTTP_200_OK,)
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):

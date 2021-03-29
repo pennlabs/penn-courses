@@ -1,14 +1,24 @@
+import csv
+import json
+import os
+from unittest.mock import patch
+
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
+from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APIClient
-from tests.courses.util import create_mock_data
 
-from courses.models import Instructor, Requirement
+from courses.models import Instructor, Requirement, User
+from plan.management.commands.trainrecommender import train_recommender
+from plan.models import Schedule
 from review.models import Review
+from tests.courses.util import create_mock_data, create_mock_data_with_reviews
 
 
-TEST_SEMESTER = "2019C"
+TEST_SEMESTER = "2021C"
+assert TEST_SEMESTER >= "2021C", "Some tests assume TEST_SEMESTER >= 2021C"
 
 
 def set_semester():
@@ -174,3 +184,252 @@ class CourseReviewAverageTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+
+class CourseRecommendationsTestCase(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(CourseRecommendationsTestCase, cls).setUpClass()
+        course_data_path = (
+            settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_data_test.csv"
+        )
+
+        # Setting up test courses in the db
+        test_descriptions = dict()
+        with open(
+            settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_descriptions_test.csv"
+        ) as course_desc_file:
+            desc_reader = csv.reader(course_desc_file)
+            for course, description in desc_reader:
+                test_descriptions[course] = description
+        courses = set()
+        with open(course_data_path) as course_data_file:
+            course_data_reader = csv.reader(course_data_file)
+            for _, course_code, semester in course_data_reader:
+                courses.add((course_code, semester))
+        for course_code, semester in courses:
+            assert semester != TEST_SEMESTER
+            course, _, _ = create_mock_data_with_reviews(course_code + "-001", semester, 2)
+            course.description = test_descriptions[course_code]
+            course.save()
+        curr_courses = set()
+        for course_code, semester in courses:
+            curr_courses.add(course_code)
+        for course_code, semester in courses:
+            if semester in ["2017A", "2020A"] or course_code in ["HIST-650"]:
+                curr_courses.remove(course_code)
+        for course_code in curr_courses:
+            course, _, _ = create_mock_data_with_reviews(course_code + "-001", TEST_SEMESTER, 2)
+            course.description = test_descriptions[course_code]
+            course.save()
+        for extra_course_code in ["CIS-121", "CIS-262"]:
+            course, _, _ = create_mock_data_with_reviews(
+                extra_course_code + "-001", TEST_SEMESTER, 2
+            )
+            course.description = test_descriptions[course_code]
+
+        cls.course_clusters = train_recommender(
+            course_data_path=course_data_path, output_path=os.devnull
+        )
+
+    def setUp(self):
+        set_semester()
+        self.s = Schedule(
+            person=User.objects.create_user(
+                username="jacob", email="jacob@example.com", password="top_secret"
+            ),
+            semester=TEST_SEMESTER,
+            name="My Test Schedule",
+        )
+        self.client = APIClient()
+        self.client.login(username="jacob", password="top_secret")
+
+        response = self.client.get(reverse("courses-list", args=[TEST_SEMESTER]))
+        self.assertEqual(response.status_code, 200, response.content)
+        self.course_objects = dict()
+        for course_ob in response.data:
+            self.course_objects[course_ob["id"]] = course_ob
+
+        patcher = patch("plan.views.retrieve_course_clusters", return_value=self.course_clusters)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_with_user(self):
+        response = self.client.post(reverse("recommend-courses"))
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(len(response.data), 5)
+
+    def test_bad_data_courses(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps({"curr_courses": ["CIS1233"]}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_bad_data_past(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps({"past_courses": ["CIS1233"]}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_bad_data_past_current(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps({"past_courses": ["CIS1233"], "curr_courses": ["CIS123123"]}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def check_response_data(self, data):
+        for course_ob in data:
+            should_be = self.course_objects[course_ob["id"]]
+            should_be_str = (
+                JSONRenderer().render(should_be, renderer_context={"indent": 4}).decode("UTF-8")
+            )
+            course_ob_str = (
+                JSONRenderer().render(course_ob, renderer_context={"indent": 4}).decode("UTF-8")
+            )
+            error_msg = "\n\nresponse=" + course_ob_str + "\n\nshould be=" + should_be_str + "\n\n"
+            self.assertEqual(should_be, course_ob, error_msg)
+
+    def test_only_past_courses(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps({"past_courses": ["BEPP-263", "GRMN-180"]}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.check_response_data(response.data)
+        self.assertEqual(len(response.data), 5)
+
+    def test_only_current(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps({"curr_courses": ["AFRC-437", "GRMN-180"]}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.check_response_data(response.data)
+        self.assertEqual(len(response.data), 5)
+
+    def test_past_and_current(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-262"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.check_response_data(response.data)
+        self.assertEqual(len(response.data), 5)
+
+    def test_custom_num_recommendations(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-121"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
+                    "n_recommendations": 20,
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.check_response_data(response.data)
+        self.assertEqual(len(response.data), 20)
+
+    def test_invalid_num_recommendations(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-121"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
+                    "n_recommendations": 0,
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-121"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
+                    "n_recommendations": -1,
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-121"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
+                    "n_recommendations": "test",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_non_current_course_in_curr_courses(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "HIST-650"],
+                    "past_courses": ["ARTH-775", "CIS-262"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_repeated_courses(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "AFRC-437"],
+                    "past_courses": ["ARTH-775", "CIS-262"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180"],
+                    "past_courses": ["ARTH-775", "CIS-262", "CIS-262"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_overlapping_courses(self):
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-262"],
+                    "past_courses": ["ARTH-775", "CIS-262"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)

@@ -2,7 +2,6 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
-from tests.courses.util import create_mock_data
 
 from courses.models import Course, Department, Requirement, Section, UserProfile
 from courses.util import (
@@ -13,6 +12,7 @@ from courses.util import (
     set_crosslistings,
     update_course_from_record,
 )
+from tests.courses.util import create_mock_data
 
 
 TEST_SEMESTER = "2019A"
