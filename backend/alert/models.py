@@ -11,13 +11,13 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
-from django.db.models import Max, Q
+from django.db.models import Case, Max, Q, Value, When
 from django.db.models.functions import Cast
 from django.utils import timezone
 from django.utils.timezone import make_aware
 
 from alert.alerts import Email, PushNotification, Text
-from courses.models import Course, Section, UserProfile, string_dict_to_html
+from courses.models import Course, Section, StatusUpdate, UserProfile, string_dict_to_html
 from courses.util import get_course_and_section, get_current_semester
 from PennCourses.settings.base import TIME_ZONE
 
@@ -959,6 +959,40 @@ class AddDropPeriod(models.Model):
         null=True, blank=True, help_text="The datetime at which the add drop period ended."
     )
 
+    # estimated_start and estimated_end are filled in automatically in the overridden save method,
+    # so there is no need to maintain them (they are derivative fields of start and end).
+    # The only reason why they aren't properties is we sometimes need to use them in database
+    # filters / aggregations.
+    estimated_start = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            This field estimates the start of the add/drop period based on the semester
+            and historical data, even if the start field hasn't been filled in yet.
+            It equals the start of the add/drop period for this semester if it is explicitly set,
+            otherwise the most recent non-null start to an add/drop period, otherwise
+            (if none exist), estimate as April 5 @ 7:00am ET of the same year (for a fall semester),
+            or November 16 @ 7:00am ET of the previous year (for a spring semester).
+            """
+        ),
+    )
+    estimated_end = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            This field estimates the end of the add/drop period based on the semester
+            and historical data, even if the end field hasn't been filled in yet.
+            The end of the add/drop period for this semester, if it is explicitly set, otherwise
+        the most recent non-null end to an add/drop period, otherwise (if none exist),
+        estimate as October 12 @ 11:59pm ET (for a fall semester),
+        or February 22 @ 11:59pm ET (for a spring semester),
+        of the same year.
+            """
+        ),
+    )
+
     def get_percentage_through(self, dt):
         """
         Returns the percentage of datetime dt through this add/drop period.
@@ -967,8 +1001,22 @@ class AddDropPeriod(models.Model):
         end = self.estimated_end
         return min(max((dt - start) / (end - start), 0), 1)
 
-    @property
-    def estimated_start(self):
+    def save(self, *args, **kwargs):
+        self.estimated_start = self.estimate_start()
+        self.estimated_end = self.estimate_end()
+        StatusUpdate.objects.filter(section__course__semester=self.semester).update(
+            in_add_drop_period=Case(
+                When(
+                    Q(created_at__gte=self.estimated_start) & Q(created_at__lte=self.estimated_end),
+                    then=Value(True),
+                ),
+                default=Value(False),
+                output_field=models.BooleanField(),
+            )
+        )
+        super().save(*args, **kwargs)
+
+    def estimate_start(self):
         """
         The start of the add/drop period for this semester, if it is explicitly set, otherwise
         the most recent non-null start to an add/drop period, otherwise (if none exist),
@@ -976,14 +1024,16 @@ class AddDropPeriod(models.Model):
         or November 16 @ 7:00am ET of the previous year (for a spring semester).
         """
         if self.start is None:
-            last_start = AddDropPeriod.filter(start_isnull=False).order_by("-semester").first()
+            last_start = (
+                AddDropPeriod.objects.filter(start__isnull=False).order_by("-semester").first()
+            )
             if last_start is None:
-                if self.semester[4] == "C":  # fall semester
-                    s_year = int(self.semester[:4])
+                if str(self.semester)[4] == "C":  # fall semester
+                    s_year = int(str(self.semester)[:4])
                     s_month = 4
                     s_day = 5
                 else:  # spring semester
-                    s_year = int(self.semester[:4]) - 1
+                    s_year = int(str(self.semester)[:4]) - 1
                     s_month = 11
                     s_day = 16
                 tz = pytz.timezone(TIME_ZONE)
@@ -994,20 +1044,19 @@ class AddDropPeriod(models.Model):
             return last_start
         return self.start
 
-    @property
-    def estimated_end(self):
+    def estimate_end(self):
         """
-        The start of the add/drop period for this semester, if it is explicitly set, otherwise
-        the most recent non-null start to an add/drop period, otherwise (if none exist),
+        The end of the add/drop period for this semester, if it is explicitly set, otherwise
+        the most recent non-null end to an add/drop period, otherwise (if none exist),
         estimate as October 12 @ 11:59pm ET (for a fall semester),
         or February 22 @ 11:59pm ET (for a spring semester),
         of the same year.
         """
         if self.end is None:
-            last_end = AddDropPeriod.filter(end_isnull=False).order_by("-semester").first()
+            last_end = AddDropPeriod.objects.filter(end__isnull=False).order_by("-semester").first()
             if last_end is None:
-                e_year = int(self.semester[:4])
-                if self.semester[4] == "C":  # fall semester
+                e_year = int(str(self.semester)[:4])
+                if str(self.semester)[4] == "C":  # fall semester
                     e_month = 10
                     e_day = 12
                 else:  # spring semester

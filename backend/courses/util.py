@@ -4,13 +4,12 @@ import re
 from decimal import Decimal
 
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from options.models import Option, get_value
 from rest_framework.exceptions import APIException
 
-from alert.models import AddDropPeriod
 from courses.models import (
     Building,
     Course,
@@ -130,7 +129,9 @@ def update_percent_open(section, last_status_update, new_status_update):
     this section's previous status update, or None if this section has not previously had
     a status update.
     """
-    add_drop = AddDropPeriod.objects.get(semester=section.semester)
+    from alert.models import AddDropPeriod
+
+    add_drop, _ = AddDropPeriod.objects.get_or_create(semester=section.semester)
     add_drop_start = add_drop.estimated_start
     add_drop_end = add_drop.estimated_end
     if new_status_update.created_at < add_drop_start:
@@ -168,6 +169,8 @@ def update_percent_open(section, last_status_update, new_status_update):
 
 
 def record_update(section_id, semester, old_status, new_status, alerted, req):
+    from alert.models import validate_add_drop_semester  # avoid circular imports
+
     _, section, _, _ = get_or_create_course_and_section(section_id, semester)
 
     # Get previous status update
@@ -184,8 +187,13 @@ def record_update(section_id, semester, old_status, new_status, alerted, req):
         request_body=req,
     )
     u.save()
-
-    update_percent_open(section, last_status_update, u)  # update the section's percent_open field
+    try:
+        # only update percent open if the given semester is valid
+        validate_add_drop_semester(semester)
+        update_percent_open(section, last_status_update, u)
+        # update the section's percent_open field
+    except ValidationError:
+        pass
 
     return u
 

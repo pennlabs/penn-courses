@@ -26,11 +26,7 @@ the DB), be *much* slower, and require cacheing.
 
 
 def review_averages(
-    queryset,
-    subfilters,
-    fields=None,
-    prefix="",
-    semester_aggregations=False,
+    queryset, subfilters, fields=None, prefix="", semester_aggregations=False,
 ):
     """
     Annotate the queryset with the average of all ReviewBits matching the given subfilters.

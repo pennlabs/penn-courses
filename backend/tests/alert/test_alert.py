@@ -723,7 +723,7 @@ class WebhookViewTestCase(TestCase):
         )
 
         self.assertEqual(200, res.status_code)
-        self.assertFalse("sent" in json.loads(res.content)["message"])
+        self.assertFalse("sent" in json.loads(res.content)["message"],)
         self.assertFalse(mock_alert.called)
         self.assertEqual(1, StatusUpdate.objects.count())
         u = StatusUpdate.objects.get()

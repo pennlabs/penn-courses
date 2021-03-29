@@ -11,6 +11,33 @@ from courses.models import Department
 from courses.util import get_current_semester, upsert_course_from_opendata
 
 
+def registrar_import(semester=None, query=""):
+    if semester is None:
+        semester = get_current_semester()
+
+    print("loading in courses with prefix %s from %s..." % (query, semester))
+    results = registrar.get_courses(query, semester)
+
+    for course in tqdm(results):
+        upsert_course_from_opendata(course, semester)
+
+    print("Updating department names...")
+    departments = registrar.get_departments()
+    for dept_code, dept_name in tqdm(departments.items()):
+        dept, _ = Department.objects.get_or_create(code=dept_code)
+        dept.name = dept_name
+        dept.save()
+
+    print("loading requirements from SEAS...")
+    load_requirements(school="SEAS", semester=semester)
+    print("loading requirements from Wharton...")
+    load_requirements(school="WH", semester=semester)
+    print("loading course statuses from registrar...")
+    set_all_status(semester=semester)
+
+    recompute_stats(semesters=semester, verbose=True)
+
+
 class Command(BaseCommand):
     help = "Load in courses, sections and associated models from the Penn registrar and requirements data sources."  # noqa: E501
 
@@ -25,27 +52,4 @@ class Command(BaseCommand):
         semester = kwargs.get("semester")
         query = kwargs.get("query")
 
-        if semester is None:
-            semester = get_current_semester()
-
-        print("loading in courses with prefix %s from %s..." % (query, semester))
-        results = registrar.get_courses(query, semester)
-
-        for course in tqdm(results):
-            upsert_course_from_opendata(course, semester)
-
-        print("Updating department names...")
-        departments = registrar.get_departments()
-        for dept_code, dept_name in tqdm(departments.items()):
-            dept, _ = Department.objects.get_or_create(code=dept_code)
-            dept.name = dept_name
-            dept.save()
-
-        print("loading requirements from SEAS...")
-        load_requirements(school="SEAS", semester=semester)
-        print("loading requirements from Wharton...")
-        load_requirements(school="WH", semester=semester)
-        print("loading course statuses from registrar...")
-        set_all_status(semester=semester)
-
-        recompute_stats(semesters=semester, verbose=True)
+        registrar_import(semester, query)

@@ -14,7 +14,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from courses.util import get_current_semester
 from review.annotations import review_averages
 
 
@@ -469,6 +468,7 @@ class Section(models.Model):
         period hasn't started yet, this property is null (None in Python).
         """
         from alert.models import AddDropPeriod  # imported here to avoid circular imports
+        from courses.util import get_current_semester
 
         if self.semester == get_current_semester():
             add_drop = AddDropPeriod.objects.get(semester=self.semester)
@@ -604,6 +604,10 @@ class StatusUpdate(models.Model):
     # equivalently, iff SEND_FROM_WEBHOOK == True and SEMESTER == course_term, and the request
     # is not otherwise invalid
     request_body = models.TextField()
+
+    in_add_drop_period = models.BooleanField(
+        default=False, help_text="Was this status update created during the add/drop period?"
+    )  # This field is maintained in the save() method of alerts.models.AddDropPeriod
 
     def __str__(self):
         d = dict(self.STATUS_CHOICES)
