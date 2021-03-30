@@ -47,6 +47,7 @@
     "redux-thunk": "^2.3.0",
     "scroll-into-view-if-needed": "^2.2.22",
     "styled-components": "^5.1.0",
+    "swr": "^0.5.4",
     "typescript": "^3.9.3"
   },
   "devDependencies": {
