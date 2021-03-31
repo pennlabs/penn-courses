@@ -50,6 +50,8 @@ django-redis = "*"
 jsonref = "*"
 tblib = "*"
 django-extensions = "*"
+numpy = "*"
+scikit-learn = "*"
 pandas = "*"
 
 [requires]

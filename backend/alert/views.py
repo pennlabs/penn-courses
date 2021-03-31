@@ -258,7 +258,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 },
             },
         },
-        override_schema={
+        override_response_schema={
             reverse_func("registrations-list"): {
                 "POST": {
                     201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},
