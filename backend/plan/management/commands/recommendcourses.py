@@ -3,14 +3,13 @@ import pickle
 from typing import Optional, Set
 
 import numpy as np
-from accounts.middleware import User
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
 
 from courses.models import Course
 from courses.util import get_current_semester
-from PennCourses.settings.production import S3_client
-from plan.management.commands.utils import sections_to_courses, sem_to_key
+from PennCourses.settings.base import S3_client
 from plan.models import Schedule
 
 
@@ -46,6 +45,7 @@ def vectorize_user_by_courses(
     # Eliminate courses not in the model
     curr_courses = [c for c in curr_courses if c in curr_course_vectors_dict]
     past_courses = [c for c in past_courses if c in past_course_vectors_dict]
+
     curr_courses_vector = (
         np.zeros(n)
         if len(curr_courses) == 0
@@ -66,26 +66,22 @@ def vectorize_user_by_courses(
 def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict):
     """
     Aggregates a vector over all the courses in the user's schedule
-    :param user:
-    :param course_vectors:
-    :return:
     """
-
-    user_pk = User.objects.filter(username=user)[0].pk
     curr_semester = get_current_semester()
-    curr_sem_key = sem_to_key(curr_semester)
-    curr_courses = [
-        course
-        for schedule in Schedule.objects.filter(person=user_pk)
-        for course in sections_to_courses(schedule.sections.all())
-        if schedule.semester == curr_semester
-    ]
-    past_courses = [
-        course
-        for schedule in Schedule.objects.filter(person=user_pk)
-        if sem_to_key(schedule.semester) < curr_sem_key
-        for course in sections_to_courses(schedule.sections.all())
-    ]
+    curr_courses = list(
+        set(
+            Schedule.objects.filter(person=user, semester=curr_semester).values_list(
+                "sections__course__full_code", flat=True
+            )
+        )
+    )
+    past_courses = list(
+        set(
+            Schedule.objects.filter(person=user, semester__lt=curr_semester).values_list(
+                "sections__course__full_code", flat=True
+            )
+        )
+    )
     return vectorize_user_by_courses(
         curr_courses, past_courses, curr_course_vectors_dict, past_course_vectors_dict
     )
@@ -161,14 +157,45 @@ def clean_course_input(course_input):
 
 
 class Command(BaseCommand):
-    help = "Recommend courses for a user."
+    help = (
+        "Use this script to recommend courses. If a username is specified, the script will "
+        "predict based on that user's PCP schedules. Otherwise, the script will "
+        "predict based on the provided curr_courses and past_courses lists."
+    )
 
     def add_arguments(self, parser):
-        parser.add_argument("--user", nargs="?", type=str)
-        parser.add_argument("--curr_courses", nargs="?", type=str)
-        parser.add_argument("--past_courses", nargs="?", type=str)
+        parser.add_argument(
+            "--username",
+            default=None,
+            type=str,
+            help=(
+                "The username of a user you would like to predict on. If this argument is "
+                "omitted, you should provide the curr_courses and/or past_courses arguments."
+            ),
+        )
+        parser.add_argument(
+            "--curr_courses",
+            default="",
+            type=str,
+            help=(
+                "A comma-separated list of courses the user is currently planning to take "
+                "(each course represented by its string full code, e.g. `CIS-120` for CIS-120)."
+            ),
+        )
+        parser.add_argument(
+            "--past_courses",
+            default="",
+            type=str,
+            help=(
+                "A comma-separated list of courses the user has previously taken (each course "
+                "represented by its string full code, e.g. `CIS-120` for CIS-120)."
+            ),
+        )
 
     def handle(self, *args, **kwargs):
+        curr_courses = kwargs["curr_courses"].split(",")
+        past_courses = kwargs["past_courses"].split(",")
+        username = kwargs["username"]
 
         (
             cluster_centroids,
@@ -176,14 +203,15 @@ class Command(BaseCommand):
             curr_course_vectors_dict,
             past_course_vectors_dict,
         ) = retrieve_course_clusters()
-        if "user" in kwargs and kwargs["user"] is not None:
+        if username is not None:
+            user = get_user_model().objects.get(username=username)
             user_vector, user_courses = vectorize_user(
-                kwargs["user"], curr_course_vectors_dict, past_course_vectors_dict
+                user, curr_course_vectors_dict, past_course_vectors_dict
             )
         else:
             user_vector, user_courses = vectorize_user_by_courses(
-                clean_course_input(kwargs["curr_courses"].split(",")),
-                clean_course_input(kwargs["past_courses"].split(",")),
+                clean_course_input(curr_courses),
+                clean_course_input(past_courses),
                 curr_course_vectors_dict,
                 past_course_vectors_dict,
             )

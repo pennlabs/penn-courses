@@ -40,7 +40,7 @@ def course_reviews(request, course_code):
     reviews = (
         review_averages(
             Review.objects.filter(section__course__full_code=course_code),
-            {"review__pk": OuterRef("pk")},
+            {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
         )
@@ -99,16 +99,15 @@ def instructor_reviews(request, instructor_id):
     instructor = get_object_or_404(Instructor, pk=instructor_id)
     instructor_qs = annotate_average_and_recent(
         Instructor.objects.filter(pk=instructor.pk),
-        match_on=Q(instructor__pk=OuterRef(OuterRef("pk"))),
+        match_on=Q(instructor_id=OuterRef(OuterRef("id"))),
     )
 
     courses = annotate_average_and_recent(
         Course.objects.filter(
-            sections__review__isnull=False, sections__instructors__pk=instructor.pk
+            sections__review__isnull=False, sections__instructors__id=instructor.id
         ).distinct(),
         match_on=Q(
-            section__course__full_code=OuterRef(OuterRef("full_code")),
-            instructor__pk=instructor.pk,
+            section__course__full_code=OuterRef(OuterRef("full_code")), instructor_id=instructor.id,
         ),
     )
 
@@ -151,7 +150,7 @@ def department_reviews(request, department_code):
     reviews = (
         review_averages(
             Review.objects.filter(section__course__department=department),
-            {"review__pk": OuterRef("pk")},
+            {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
         )
@@ -177,7 +176,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     instructor = get_object_or_404(Instructor, pk=instructor_id)
     reviews = review_averages(
         Review.objects.filter(section__course__full_code=course_code, instructor=instructor),
-        {"review__pk": OuterRef("pk")},
+        {"review_id": OuterRef("id")},
         fields=ALL_FIELD_SLUGS,
         prefix="bit_",
     )
