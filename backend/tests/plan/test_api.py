@@ -277,9 +277,13 @@ class CourseRecommendationsTestCase(TestCase):
             elif i == 2:
                 Section.objects.bulk_create(sections_to_save)
 
+        cls.curr_courses = curr_courses
+
         section_obs = dict()
         for section in Section.objects.all():
             section_obs[section.full_code, section.course.semester] = section.id
+
+        cls.section_obs = section_obs
 
         schedules = dict()
         with open(course_data_path) as course_data_file:
@@ -302,6 +306,15 @@ class CourseRecommendationsTestCase(TestCase):
                     is_active=True,
                 )
                 for person_id in schedules.keys()
+            ]
+            + [
+                User(
+                    username=username,
+                    email=username + "@example.com",
+                    password=make_password(username + "_password"),
+                    is_active=True,
+                )
+                for username in ["gapsem", "freshman", "awol", "empty_current"]
             ]
         )
 
@@ -445,6 +458,101 @@ class CourseRecommendationsTestCase(TestCase):
     def test_only_past_courses_from_schedules(self, mock):
         mock.return_value = self.course_clusters_with_schedules
         self.subtest_only_past_courses()
+
+    def subtest_only_past_schedules(self):
+        schedule = Schedule(
+            person=get_user_model().objects.get(username="gapsem"),
+            semester="2020A",
+            name="My Test Schedule",
+        )
+        schedule.save()
+        for course_code in ["PPE-402", "LGST-101", "GPRD-929"]:
+            schedule.sections.add(self.section_obs[course_code + "-001", "2020A"])
+        gapsem_client = APIClient()
+        gapsem_client.login(username="gapsem", password="gapsem_password")
+        response = gapsem_client.post(
+            reverse("recommend-courses"), json.dumps({}), content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.check_response_data(response.data)
+        self.assertEqual(len(response.data), 5)
+
+    def test_only_past_schedules(self, mock):
+        mock.return_value = self.course_clusters
+        self.subtest_only_past_schedules()
+
+    def test_only_past_schedules_from_schedules(self, mock):
+        mock.return_value = self.course_clusters_with_schedules
+        self.subtest_only_past_schedules()
+
+    def subtest_only_current_schedules(self):
+        schedule = Schedule(
+            person=get_user_model().objects.get(username="freshman"),
+            semester=TEST_SEMESTER,
+            name="My Test Schedule",
+        )
+        schedule.save()
+        curr_courses_list = list(self.curr_courses)
+        for course_code in [curr_courses_list[0], curr_courses_list[1], curr_courses_list[-1]]:
+            schedule.sections.add(self.section_obs[course_code + "-001", TEST_SEMESTER])
+        freshman_client = APIClient()
+        freshman_client.login(username="freshman", password="freshman_password")
+        response = freshman_client.post(
+            reverse("recommend-courses"), json.dumps({}), content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.check_response_data(response.data)
+        self.assertEqual(len(response.data), 5)
+
+    def test_only_current_schedules(self, mock):
+        mock.return_value = self.course_clusters
+        self.subtest_only_current_schedules()
+
+    def test_only_current_schedules_from_schedules(self, mock):
+        mock.return_value = self.course_clusters_with_schedules
+        self.subtest_only_current_schedules()
+
+    def subtest_no_schedules(self):
+        awol_client = APIClient()
+        awol_client.login(username="awol", password="awol_password")
+        response = awol_client.post(
+            reverse("recommend-courses"), json.dumps({}), content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.check_response_data(response.data)
+        self.assertEqual(len(response.data), 5)
+
+    def test_no_schedules(self, mock):
+        mock.return_value = self.course_clusters
+        self.subtest_no_schedules()
+
+    def test_no_schedules_from_schedules(self, mock):
+        mock.return_value = self.course_clusters_with_schedules
+        self.subtest_no_schedules()
+
+    def subtest_empty_current_schedule(self):
+        empty_client = APIClient()
+        empty_client.login(username="empty_current", password="empty_current_password")
+        schedule = Schedule(
+            person=get_user_model().objects.get(username="empty_current"),
+            semester=TEST_SEMESTER,
+            name="My Test Schedule",
+        )
+        schedule.save()
+        response = empty_client.post(
+            reverse("recommend-courses"), json.dumps({}), content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.check_response_data(response.data)
+        self.assertEqual(len(response.data), 5)
+
+    def test_empty_current_schedule(self, mock):
+        mock.return_value = self.course_clusters
+        self.subtest_empty_current_schedule()
+
+    def test_empty_current_schedule_from_schedules(self, mock):
+        mock.return_value = self.course_clusters_with_schedules
+        self.subtest_empty_current_schedule()
 
     def subtest_only_current(self):
         response = self.client.post(

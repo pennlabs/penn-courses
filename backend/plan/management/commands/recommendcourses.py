@@ -34,7 +34,7 @@ def vectorize_user_by_courses(
     }
     if len(invalid_curr_courses) > 0:
         raise ValueError(
-            "The following courses in curr_courses are invalid or not offered this semester:"
+            "The following courses in curr_courses are invalid or not offered this semester: "
             f"{str(invalid_curr_courses)}"
         )
     invalid_past_courses = set(past_courses) - {
@@ -42,7 +42,7 @@ def vectorize_user_by_courses(
     }
     if len(invalid_past_courses) > 0:
         raise ValueError(
-            "The following courses in past_courses are invalid:" f"{str(invalid_past_courses)}"
+            f"The following courses in past_courses are invalid: {str(invalid_past_courses)}"
         )
 
     # Eliminate courses not in the model
@@ -73,16 +73,24 @@ def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict):
     curr_semester = get_current_semester()
     curr_courses = list(
         set(
-            Schedule.objects.filter(person=user, semester=curr_semester).values_list(
-                "sections__course__full_code", flat=True
-            )
+            [
+                s
+                for s in Schedule.objects.filter(person=user, semester=curr_semester).values_list(
+                    "sections__course__full_code", flat=True
+                )
+                if s is not None
+            ]
         )
     )
     past_courses = list(
         set(
-            Schedule.objects.filter(person=user, semester__lt=curr_semester).values_list(
-                "sections__course__full_code", flat=True
-            )
+            [
+                s
+                for s in Schedule.objects.filter(
+                    person=user, semester__lt=curr_semester
+                ).values_list("sections__course__full_code", flat=True)
+                if s is not None
+            ]
         )
     )
     return vectorize_user_by_courses(
