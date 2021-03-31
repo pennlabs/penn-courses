@@ -4,7 +4,7 @@ import zipfile
 
 from django.core.management.base import BaseCommand, CommandError
 
-from PennCourses.settings.production import S3_client
+from PennCourses.settings.base import S3_client
 from review.import_utils.import_to_db import (
     import_description_rows,
     import_ratings_rows,

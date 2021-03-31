@@ -14,8 +14,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 
 from courses.models import Course
-from PennCourses.settings.production import S3_client, S3_resource
-from plan.management.commands.utils import sections_to_courses, sem_to_key
+from PennCourses.settings.base import S3_client, S3_resource
 from plan.models import Schedule
 
 
@@ -30,10 +29,20 @@ def courses_data_from_db():
     """
     Fetches data from the courses db and yields tuples of the form person_id, course, semester
     """
-    for schedule in Schedule.objects.all():
-        for course in sections_to_courses(schedule.sections.all()):
-            person_id = schedule.person.pk
-            yield person_id, course, schedule.semester
+    user_to_semester_to_courses = dict()
+    for schedule in Schedule.objects.prefetch_related("sections").all():
+        if schedule.person_id not in user_to_semester_to_courses:
+            user_to_semester_to_courses[schedule.person_id] = dict()
+        if schedule.semester not in user_to_semester_to_courses[schedule.person_id]:
+            user_to_semester_to_courses[schedule.person_id][schedule.semester] = set()
+        for section in schedule.sections.all():
+            user_to_semester_to_courses[schedule.person_id][schedule.semester].add(
+                section.course.full_code
+            )
+    for person_id in user_to_semester_to_courses:
+        for semester in user_to_semester_to_courses[person_id]:
+            for course_code in user_to_semester_to_courses[person_id][semester]:
+                yield person_id, course_code, semester
 
 
 def courses_data_from_csv(course_data_path):
@@ -62,7 +71,9 @@ def get_description(course):
 def vectorize_courses_by_description(courses):
     descriptions = [get_description(course) for course in courses]
     vectorizer = TfidfVectorizer()
-    has_nonempty_descriptions = sum(1 for description in descriptions if description and len(description) > 0) > 0
+    has_nonempty_descriptions = (
+        sum(1 for description in descriptions if description and len(description) > 0) > 0
+    )
     if has_nonempty_descriptions:
         vectors = vectorizer.fit_transform(descriptions)
     else:
@@ -77,24 +88,24 @@ def vectorize_courses_by_description(courses):
 
 def group_courses(courses_data: Iterable[Tuple[int, str, str]]):
     """
-    :param courses_data: An iterable of person id, course string, semester string
-    :return:
+    courses_data should be an iterable of person id, course string, semester string
     """
     # The dict below stores a person_id in association with a dict that associates
     # a semester with a multiset of the courses taken during that semester. The reason this is a
     # multiset is to take into account users with multiple mock schedules.
     # This is an intermediate data form that is used to construct the two dicts returned.
-    courses_by_semester_by_user: Dict[int, Dict[str, Dict[str, int]]] = {}
+    courses_by_semester_by_user: Dict[int, Dict[str, Dict[str, int]]] = dict()
     for person_id, course, semester in courses_data:
+        course = normalize_class_name(course)
         # maps a course to a list of semesters
         if person_id not in courses_by_semester_by_user:
-            user_dict = {}
+            user_dict = dict()
             courses_by_semester_by_user[person_id] = user_dict
         else:
             user_dict = courses_by_semester_by_user[person_id]
 
         if semester not in user_dict:
-            semester_courses_multiset = {}
+            semester_courses_multiset = dict()
             user_dict[semester] = semester_courses_multiset
         else:
             semester_courses_multiset = user_dict[semester]
@@ -140,7 +151,7 @@ def vectorize_by_copresence(
                         relevant_vector_a[index_b] += co_frequency
                 # make sure that every course appears with itself
                 relevant_vector_a[index_a] += frequency_a
-        ordered_sems = sorted(courses_by_semester, key=sem_to_key)
+        ordered_sems = sorted(courses_by_semester.keys())
         for i, sem in enumerate(ordered_sems):
             courses_first_sem = courses_by_semester[sem]
             # if this class is being encoded as a past class, it happens after itself
@@ -284,7 +295,9 @@ def normalize_class_name(class_name):
     course_obj: Course = lookup_course(class_name)
     if course_obj is None:
         return class_name
-    class_name = course_obj.primary_listing.full_code
+    class_name = (
+        class_name if course_obj.primary_listing is None else course_obj.primary_listing.full_code
+    )
     return class_name
 
 
@@ -355,7 +368,6 @@ def train_recommender(
 
     if train_from_s3:
         courses_data = courses_data_from_s3()
-        print(list(courses_data_from_s3()))
     else:
         courses_data = (
             courses_data_from_csv(course_data_path)

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 
+import boto3
 import dj_database_url
 
 
@@ -181,3 +182,6 @@ REST_FRAMEWORK = {
 }
 
 STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
+
+S3_client = boto3.client("s3")
+S3_resource = boto3.resource("s3")

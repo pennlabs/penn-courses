@@ -82,8 +82,9 @@ from plan.serializers import ScheduleSerializer
 def recommend_courses_view(request):
     """
     This route will optionally take in current and past courses. In order to
-    make recommendations solely on the user's past and current courses in plan, simply
-    pass an empty body to the request. Otherwise, in order to specify past and current courses,
+    make recommendations solely on the user's courses in past and current PCP schedules, simply
+    omit both the curr_courses and past_courses fields in your request.
+    Otherwise, in order to specify past and current courses,
     include a "curr-courses" and/or "past_courses" attribute in the request that should each contain
     an array of string course full codes of the form DEPT-XXX (e.g. CIS-120).
     If successful, this route will return a list of recommended courses, with the same schema
@@ -98,8 +99,10 @@ def recommend_courses_view(request):
     """
 
     user = request.user
-    curr_courses = request.data.get("curr_courses", [])
-    past_courses = request.data.get("past_courses", [])
+    curr_courses = request.data.get("curr_courses", None)
+    curr_courses = curr_courses if curr_courses is not None else []
+    past_courses = request.data.get("past_courses", None)
+    past_courses = past_courses if past_courses is not None else []
     n_recommendations = request.data.get("n_recommendations", 5)
 
     # input validation
@@ -288,8 +291,6 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     {"detail": "Semester uniformity invariant violated."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        if "semester" not in data:
-            data["semester"] = get_current_semester()
 
     def update(self, request, pk=None):
         try:
@@ -305,13 +306,13 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        semester_res = self.check_semester(request.data, sections)
-        if semester_res is not None:
-            return semester_res
+        semester_check_response = self.check_semester(request.data, sections)
+        if semester_check_response is not None:
+            return semester_check_response
 
         try:
             schedule.person = request.user
-            schedule.semester = request.data.get("semester")
+            schedule.semester = request.data.get("semester", get_current_semester())
             schedule.name = request.data.get("name")
             schedule.save()
             schedule.sections.set(sections)
@@ -337,9 +338,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        semester_res = self.check_semester(request.data, sections)
-        if semester_res is not None:
-            return semester_res
+        semester_check_response = self.check_semester(request.data, sections)
+        if semester_check_response is not None:
+            return semester_check_response
 
         try:
             if (
@@ -347,14 +348,14 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             ):  # Also from above we know that this id does not conflict with existing schedules.
                 schedule = self.get_queryset().create(
                     person=request.user,
-                    semester=request.data.get("semester"),
+                    semester=request.data.get("semester", get_current_semester()),
                     name=request.data.get("name"),
                     id=request.data.get("id"),
                 )
             else:
                 schedule = self.get_queryset().create(
                     person=request.user,
-                    semester=request.data.get("semester"),
+                    semester=request.data.get("semester", get_current_semester()),
                     name=request.data.get("name"),
                 )
             schedule.sections.set(sections)
