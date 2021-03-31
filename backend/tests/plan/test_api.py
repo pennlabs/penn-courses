@@ -11,11 +11,11 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APIClient
 
 from courses.models import Instructor, Requirement, User
-from plan.management.commands.trainrecommender import train_recommender
+from plan.management.commands.trainrecommender import train_recommender, generate_course_vectors_dict
 from plan.models import Schedule
 from review.models import Review
 from tests.courses.util import create_mock_data, create_mock_data_with_reviews
-
+import numpy as np
 
 TEST_SEMESTER = "2021C"
 assert TEST_SEMESTER >= "2021C", "Some tests assume TEST_SEMESTER >= 2021C"
@@ -125,7 +125,7 @@ class CourseReviewAverageTestCase(TestCase):
         )
         self.rev1.save()
         self.rev1.set_averages(
-            {"course_quality": 4, "instructor_quality": 4, "difficulty": 4,}
+            {"course_quality": 4, "instructor_quality": 4, "difficulty": 4, }
         )
         self.instructor2 = Instructor(name="Person2")
         self.instructor2.save()
@@ -135,7 +135,7 @@ class CourseReviewAverageTestCase(TestCase):
         self.rev2.instructor = self.instructor2
         self.rev2.save()
         self.rev2.set_averages(
-            {"course_quality": 2, "instructor_quality": 2, "difficulty": 2,}
+            {"course_quality": 2, "instructor_quality": 2, "difficulty": 2, }
         )
 
         self.section.instructors.add(self.instructor)
@@ -161,7 +161,7 @@ class CourseReviewAverageTestCase(TestCase):
         rev3 = Review(section=self.rev2.section, instructor=instructor3)
         rev3.save()
         rev3.set_averages(
-            {"course_quality": 1, "instructor_quality": 1, "difficulty": 1,}
+            {"course_quality": 1, "instructor_quality": 1, "difficulty": 1, }
         )
         self.section2.instructors.add(instructor3)
         response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
@@ -191,13 +191,13 @@ class CourseRecommendationsTestCase(TestCase):
     def setUpClass(cls):
         super(CourseRecommendationsTestCase, cls).setUpClass()
         course_data_path = (
-            settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_data_test.csv"
+                settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_data_test.csv"
         )
 
         # Setting up test courses in the db
         test_descriptions = dict()
         with open(
-            settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_descriptions_test.csv"
+                settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_descriptions_test.csv"
         ) as course_desc_file:
             desc_reader = csv.reader(course_desc_file)
             for course, description in desc_reader:
@@ -433,3 +433,11 @@ class CourseRecommendationsTestCase(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 400, response.content)
+
+    def test_generate_course_vectors_dict_one_class_one_user_no_desc(self):
+        expected = {'CIS-120': np.array([0.4472136, 0.89442719])}, {'CIS-120': np.array([0.4472136, 0.89442719])}
+        actual = generate_course_vectors_dict([(0, "CIS-120", "2020A")], False)
+        # self.assertEqual does not work with np arrays
+        self.assertTrue(actual is not None and isinstance(actual[0], dict) and "CIS-120" in actual[0])
+        self.assertTrue(np.linalg.norm(actual[0]["CIS-120"] - expected[0]["CIS-120"]) < 1E-8)
+        self.assertTrue(np.linalg.norm(actual[1]["CIS-120"] - expected[1]["CIS-120"]) < 1E-8)

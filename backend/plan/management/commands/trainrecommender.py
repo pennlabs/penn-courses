@@ -62,9 +62,15 @@ def get_description(course):
 def vectorize_courses_by_description(courses):
     descriptions = [get_description(course) for course in courses]
     vectorizer = TfidfVectorizer()
-    vectors = vectorizer.fit_transform(descriptions)
-    dim_reducer = TruncatedSVD(n_components=500)
-    vectors = dim_reducer.fit_transform(vectors)
+    has_nonempty_descriptions = sum(1 for description in descriptions if description and len(description) > 0) > 0
+    if has_nonempty_descriptions:
+        vectors = vectorizer.fit_transform(descriptions)
+    else:
+        vectors = np.array([[0] for _ in descriptions])
+    _, dim = vectors.shape
+    if dim >= 500:
+        dim_reducer = TruncatedSVD(n_components=500)
+        vectors = dim_reducer.fit_transform(vectors)
     # divide the vectors by their norms
     return normalize(vectors)
 
@@ -182,8 +188,13 @@ def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]
     courses, vectors = zip(*course_vectors_dict.items())
     # reduce dimensionality to the log of the number of users
     vectors = np.array(vectors)
-    dim_reducer = PCA(n_components=round(math.log2(num_users + 2)))
-    dim_reduced = dim_reducer.fit_transform(vectors)
+    _, dims = vectors.shape
+    dim_reduced_components = round(math.log2(num_users + 2))
+    if min(dims, dim_reduced_components) > 5:
+        dim_reducer = PCA(n_components=dim_reduced_components)
+        dim_reduced = dim_reducer.fit_transform(vectors)
+    else:
+        dim_reduced = np.array(vectors)
     # divide the vectors by the average norm
     scaled = normalize(dim_reduced)
     return {course: scaled for course, scaled in zip(courses, scaled)}
@@ -229,10 +240,13 @@ def generate_course_vectors_dict(courses_data, use_descriptions=True):
     copresence_vectors_past = [copresence_vectors_by_course_past[course] for course in courses]
     copresence_vectors = normalize(copresence_vectors)
     copresence_vectors_past = normalize(copresence_vectors_past)
-    dim_reduce = TruncatedSVD(n_components=round(30 * math.log2(len(courses))))
-    copresence_vectors = dim_reduce.fit_transform(copresence_vectors)
-    dim_reduce = TruncatedSVD(n_components=round(30 * math.log2(len(courses))))
-    copresence_vectors_past = dim_reduce.fit_transform(copresence_vectors_past)
+    _, dims = copresence_vectors_past.shape
+    dim_reduced_components = round(30 * math.log2(len(courses)))
+    if min(dims, dim_reduced_components) > 5:
+        dim_reduce = TruncatedSVD(n_components=dim_reduced_components)
+        copresence_vectors = dim_reduce.fit_transform(copresence_vectors)
+        dim_reduce = TruncatedSVD(n_components=dim_reduced_components)
+        copresence_vectors_past = dim_reduce.fit_transform(copresence_vectors_past)
     for (
         course,
         schedule_vector,
@@ -272,10 +286,6 @@ def normalize_class_name(class_name):
         return class_name
     class_name = course_obj.primary_listing.full_code
     return class_name
-
-
-def cosine_similarity(vec_a, vec_b):
-    np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
 
 
 def generate_course_clusters(courses_data, n_per_cluster=100):
