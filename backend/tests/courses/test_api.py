@@ -5,11 +5,11 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
-from tests.courses.util import create_mock_data
 
 from courses.models import Department, Instructor, Requirement
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course
+from tests.courses.util import create_mock_data
 
 
 TEST_SEMESTER = "2019A"

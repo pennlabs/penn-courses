@@ -23,12 +23,14 @@ from courses.models import (
 from review.util import titleize
 
 
-def get_current_semester():
+def get_current_semester(allow_not_found=False):
     """
     This function retrieves the string value of the current semester, either from
     memory (if the value has been cached), or from the db (after which it will cache
     the value for future use). If the value retrieved from the db is None, an error is thrown
     indicating that the SEMESTER Option must be set for this API to work properly.
+    You can prevent an error from being thrown (and cause the function to just return None
+    in this case) by setting allow_not_found=True.
     The cache has no timeout, but is invalidated whenever the SEMESTER Option is saved
     (which will occur whenever it is updated), using a post_save hook.
     See the invalidate_current_semester_cache function below to see how this works.
@@ -37,14 +39,15 @@ def get_current_semester():
     if cached_val is not None:
         return cached_val
     retrieved_val = get_value("SEMESTER", None)
-    if retrieved_val is None:
-        raise APIException(
-            "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
-            "option by running the command "
-            "'python manage.py setoption SEMESTER 2020C', "
-            "replacing 2020C with the current semester, in the backend directory (remember "
-            "to run 'pipenv shell' before running this command, though)."
-        )
+    if not allow_not_found:
+        if retrieved_val is None:
+            raise APIException(
+                "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+                "option by running the command "
+                "'python manage.py setoption SEMESTER 2020C', "
+                "replacing 2020C with the current semester, in the backend directory (remember "
+                "to run 'pipenv shell' before running this command, though)."
+            )
     cache.set("SEMESTER", retrieved_val, timeout=None)  # cache only expires upon invalidation
     return retrieved_val
 
@@ -80,6 +83,9 @@ def separate_course_code(course_code):
 def get_or_create_course(dept_code, course_id, semester):
     dept, _ = Department.objects.get_or_create(code=dept_code)
     course, c = Course.objects.get_or_create(department=dept, code=course_id, semester=semester)
+    if c:
+        course.full_code = f"{dept}-{course_id}"
+        course.save()
 
     return course, c
 
