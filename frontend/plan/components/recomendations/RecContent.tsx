@@ -19,6 +19,7 @@ const RecContentContainer = styled.div<{
 }>`
     height: 100%;
     max-height: 8.125rem;
+    min-height: 8.125rem;
     margin-top: ${({ collapse }) => (collapse ? "-100%" : "0px")};
     transition: all 1s;
     overflow-y: scroll;
@@ -32,6 +33,7 @@ const RecContentContainer = styled.div<{
     @media not all and (min-resolution: 0.001dpcm) {
         @media {
             max-height: 14.375rem;
+            min-height: 14.375rem;
         }
     }
 `;

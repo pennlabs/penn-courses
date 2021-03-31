@@ -1,7 +1,8 @@
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useState, useEffect } from "react";
 import styled from "styled-components";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
+import getCsrf from "../csrf";
 
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
@@ -66,12 +67,41 @@ const Selector: FunctionComponent<SelectorProps> = ({
         isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
     const [showRecs, setShowRecs] = useState(true);
-
-    //recommended courses - currently using search result
-    var recCourses = courses;
+    const [recCourses, setRecCourses] = useState([]);
+    const [recLoaded, setRecLoaded] = useState(false);
+    const [removeRec, setRemoveRec] = useState(true);
 
     //delete func - does nothing for now
     const onClickDelete = () => {};
+
+    useEffect(() => {
+        setRecLoaded(false);
+
+        console.log(recLoaded);
+
+        const requestOptions = {
+            method: "POST",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
+            body: JSON.stringify({}),
+        };
+
+        //@ts-ignore Not sure why this is not typechecking
+        fetch(`/api/plan/recommendations/`, requestOptions).then((res) =>
+            res.json().then((recCoursesResult) => {
+                console.log(recCoursesResult);
+                setRecCourses(recCoursesResult);
+
+                setRecLoaded(true);
+                console.log(recLoaded);
+            })
+        );
+    }, [removeRec]);
 
     let recPanel = (
         <Recs
