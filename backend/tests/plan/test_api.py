@@ -11,7 +11,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APIClient
 
 from courses.models import Instructor, Requirement, User
-from plan.management.commands.trainrecommender import train_recommender, generate_course_vectors_dict
+from plan.management.commands.trainrecommender import train_recommender, generate_course_vectors_dict, group_courses
 from plan.models import Schedule
 from review.models import Review
 from tests.courses.util import create_mock_data, create_mock_data_with_reviews
@@ -441,3 +441,8 @@ class CourseRecommendationsTestCase(TestCase):
         self.assertTrue(actual is not None and isinstance(actual[0], dict) and "CIS-120" in actual[0])
         self.assertTrue(np.linalg.norm(actual[0]["CIS-120"] - expected[0]["CIS-120"]) < 1E-8)
         self.assertTrue(np.linalg.norm(actual[1]["CIS-120"] - expected[1]["CIS-120"]) < 1E-8)
+
+    def test_group_courses_course_multiple_times_one_semester(self):
+        actual = group_courses([(0, "CIS-120", "2020A"), (0, "CIS-120", "2020A")])
+        expected = {0: {'2020A': {'CIS-120': 2}}}
+        self.assertEqual(expected, actual)
