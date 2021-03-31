@@ -652,12 +652,16 @@ class CourseRecommendationsTestCase(TestCase):
     def subtest_recommend_courses_command_user(self):
         call_command("recommendcourses", username="hash1", stdout=os.devnull)
 
-    def test_recommend_courses_command_user(self, mock):
-        mock.return_value = self.course_clusters
+    @patch("plan.management.commands.recommendcourses.retrieve_course_clusters")
+    def test_recommend_courses_command_user(self, mock1, mock2):
+        mock1.return_value = self.course_clusters
+        mock2.return_value = self.course_clusters
         self.subtest_recommend_courses_command_user()
 
-    def test_recommend_courses_command_user_from_schedules(self, mock):
-        mock.return_value = self.course_clusters_with_schedules
+    @patch("plan.management.commands.recommendcourses.retrieve_course_clusters")
+    def test_recommend_courses_command_user_from_schedules(self, mock1, mock2):
+        mock1.return_value = self.course_clusters_with_schedules
+        mock2.return_value = self.course_clusters_with_schedules
         self.subtest_recommend_courses_command_user()
 
     def subtest_recommend_courses_command_lists(self):
@@ -667,3 +671,15 @@ class CourseRecommendationsTestCase(TestCase):
             past_courses="ARTH-775,EDUC-715",
             stdout=os.devnull,
         )
+
+    @patch("plan.management.commands.recommendcourses.retrieve_course_clusters")
+    def test_recommend_courses_command_lists(self, mock1, mock2):
+        mock1.return_value = self.course_clusters
+        mock2.return_value = self.course_clusters
+        self.subtest_recommend_courses_command_lists()
+
+    @patch("plan.management.commands.recommendcourses.retrieve_course_clusters")
+    def test_recommend_courses_command_lists_from_schedules(self, mock1, mock2):
+        mock1.return_value = self.course_clusters_with_schedules
+        mock2.return_value = self.course_clusters_with_schedules
+        self.subtest_recommend_courses_command_lists()
