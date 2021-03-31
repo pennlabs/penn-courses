@@ -1,8 +1,10 @@
 import heapq
+import os
 import pickle
 from typing import Optional, Set
 
 import numpy as np
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
@@ -10,6 +12,7 @@ from django.core.management.base import BaseCommand
 from courses.models import Course
 from courses.util import get_current_semester
 from PennCourses.settings.base import S3_client
+from plan.management.commands.trainrecommender import train_recommender
 from plan.models import Schedule
 
 
@@ -140,7 +143,21 @@ def recommend_courses(
     )
 
 
+dev_course_clusters = None  # a global variable used to "cache" the course clusters in dev
+
+
 def retrieve_course_clusters():
+    global dev_course_clusters
+    if "PennCourses.settings.development" in os.environ.get("DJANGO_SETTINGS_MODULE", ""):
+        if dev_course_clusters is None:
+            print("TRAINING DEVELOPMENT MODEL... PLEASE WAIT")
+            dev_course_clusters = train_recommender(
+                course_data_path=settings.BASE_DIR
+                + "/tests/plan/course_recs_test_data/course_data_test.csv",
+                output_path=os.devnull,
+            )
+            print("Done training development model.")
+        return dev_course_clusters
     cached_data = cache.get("course-cluster-data", None)
     if cached_data is not None:
         return cached_data
