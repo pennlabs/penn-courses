@@ -9,8 +9,16 @@ from rest_framework.response import Response
 from courses.models import Course, Department, Instructor, Section, StatusUpdate
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from review.annotations import annotate_average_and_recent, review_averages
-from review.models import ALL_FIELD_SLUGS, Review, REVIEW_BIT_LABEL
-from review.util import aggregate_reviews, make_subdict, to_r_camel
+from review.documentation import (
+    autocomplete_response_schema,
+    course_reviews_response_schema,
+    department_reviews_response_schema,
+    instructor_for_course_reviews_response_schema,
+    instructor_reviews_response_schema,
+)
+from review.models import ALL_FIELD_SLUGS, Review
+from review.util import aggregate_reviews, make_subdict
+
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
@@ -42,79 +50,20 @@ it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
             reverse_func("course-reviews", args=["course_code"]): {
                 "GET": {
                     "course_code": (
-                        "The dash-joined department and code of the course you are requesting review for, e.g. `CIS-120` for CIS-120."
+                        "The dash-joined department and code of the course you want reviews for, e.g. `CIS-120` for CIS-120."  # noqa E501
                     )
                 }
             },
         },
-        override_schema={
-            reverse_func("course-reviews", args=["course_code"]): {
-                "GET": {
-                    200: {
-                        "properties": {
-                            "code": {
-                                "type": "string",
-                                "description": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
-                            },
-                            "name": {
-                                "type": "string",
-                                "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501
-                            },
-                            "description": {
-                                "type": "string",
-                                "description": "The description of the course, e.g. 'A fast-paced introduction to the fundamental concepts of programming... [etc.]' for CIS-120.",  # noqa E501
-                            },
-                            "aliases": {
-                                "type": "array",
-                                "description": "A list of courses that are crosslisted with this course.",  # noqa E501
-                                "items": {
-                                    "type": "string",
-                                    "description": "The dash-joined department and code of a crosslisting.",  # noqa E501
-                                },
-                            },
-                            "num_sections": {
-                                "type": "integer",
-                                "description": "The number of sections belonging to this course across all semesters.",  # noqa E501
-                            },
-                            "num_sections_recent": {
-                                "type": "integer",
-                                "description": "The number of sections belonging to this course in its most recent semester.",  # noqa E501
-                            },
-                            "average_reviews": {
-                                "type": "object",
-                                "description": "This course's average reviews across all of its sections from all semesters.",  # noqa E501
-                                "properties": {
-                                    to_r_camel(bit_label[2]): {
-                                        "type": "number",
-                                        "description": f"Average {bit_label[1]}"
-                                    }
-                                    for bit_label in REVIEW_BIT_LABEL
-                                }
-                            },
-                            "recent_reviews": {
-                                "type": "object",
-                                "description": "This course's average reviews across all of its sections from the most recent semester.",  # noqa E501
-                                "properties": {
-                                    to_r_camel(bit_label[2]): {
-                                        "type": "number",
-                                        "description": f"Average {bit_label[1]}"
-                                    }
-                                    for bit_label in REVIEW_BIT_LABEL
-                                }
-                            },
-                            "num_semesters": {"type": "integer", "description": "The number of semesters from which this course has reviews."},
-                            # "instructors": {"type": "", "description": ""},
-                        }
-                    },
-                }
-            },
-        },
+        override_response_schema=course_reviews_response_schema,
     )
 )
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code):
     """
-    Get all reviews for a given course, aggregated by instructor.
+    Get all reviews for a given course and other relevant information.
+    Different aggregation views are provided, such as reviews spanning all semesters,
+    only the most recent semester, and instructor-specific views.
     """
     if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
         raise Http404()
@@ -173,7 +122,28 @@ def course_reviews(request, course_code):
 
 
 @api_view(["GET"])
-@schema(PcxAutoSchema())
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("instructor-reviews", args=["instructor_id"]): {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
+                    404: "Instructor with given instructor_id not found.",
+                },
+            },
+        },
+        custom_path_parameter_desc={
+            reverse_func("instructor-reviews", args=["instructor_id"]): {
+                "GET": {
+                    "instructor_id": (
+                        "The integer id of the instructor you want reviews for. Note that you can get the relative path for any instructor including this id by using the `url` field of objects in the `instructors` list returned by Retrieve Autocomplete Data."  # noqa E501
+                    )
+                }
+            },
+        },
+        override_response_schema=instructor_reviews_response_schema,
+    )
+)
 @permission_classes([IsAuthenticated])
 def instructor_reviews(request, instructor_id):
     """
@@ -223,7 +193,28 @@ def instructor_reviews(request, instructor_id):
 
 
 @api_view(["GET"])
-@schema(PcxAutoSchema())
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("department-reviews", args=["department_code"]): {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
+                    404: "Department with the given department_code not found.",
+                }
+            }
+        },
+        custom_path_parameter_desc={
+            reverse_func("department-reviews", args=["department_code"]): {
+                "GET": {
+                    "department_code": (
+                        "The department code you want reviews for, e.g. `CIS` for the CIS department."  # noqa E501
+                    )
+                }
+            },
+        },
+        override_response_schema=department_reviews_response_schema,
+    )
+)
 @permission_classes([IsAuthenticated])
 def department_reviews(request, department_code):
     """
@@ -250,7 +241,29 @@ def department_reviews(request, department_code):
 
 
 @api_view(["GET"])
-@schema(PcxAutoSchema())
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("course-history", args=["course_code", "instructor_id"]): {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
+                    404: "Invalid course_code or instructor_id.",
+                }
+            }
+        },
+        custom_path_parameter_desc={
+            reverse_func("course-history", args=["course_code", "instructor_id"]): {
+                "GET": {
+                    "course_code": (
+                        "The dash-joined department and code of the course you want reviews for, e.g. `CIS-120` for CIS-120."  # noqa E501
+                    ),
+                    "instructor_id": ("The integer id of the instructor you want reviews for."),
+                }
+            },
+        },
+        override_response_schema=instructor_for_course_reviews_response_schema,
+    )
+)
 @permission_classes([IsAuthenticated])
 def instructor_for_course_reviews(request, course_code, instructor_id):
     """
@@ -293,16 +306,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
                     "forms_produced": review["enrollment"],
                     "ratings": make_subdict("bit_", review),
                     "comments": review["comments"],
-                    # Below are new metrics
-                    "final_enrollment_percentage": (
-                        review["enrollment"] / review["section_capacity"]
-                        if review["enrollment"] is not None
-                        and review["section_capacity"] is not None
-                        and review["section_capacity"] > 0
-                        else None
-                    ),
-                    "percent_open": review["percent_open"],
-                    "num_openings": review["num_openings"],
                 }
                 for review in reviews.values()
             ],
@@ -310,12 +313,26 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     )
 
 
+# reverse_func("review-autocomplete")
+
+
 @api_view(["GET"])
-@schema(PcxAutoSchema())
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("review-autocomplete"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Autocomplete dump retrieved successfully."},
+            },
+        },
+        override_response_schema=autocomplete_response_schema,
+    )
+)
 def autocomplete(request):
     """
     Autocomplete entries for Courses, departments, instructors. All objects have title, description,
-    and url.
+    and url. This route does not have any path parameters or query parameters, it just dumps
+    all the information necessary for frontend-based autocomplete. It is also cached
+    to improve performance.
     """
 
     courses = (

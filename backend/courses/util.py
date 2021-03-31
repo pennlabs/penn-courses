@@ -24,7 +24,9 @@ from courses.models import (
 )
 from review.util import titleize
 
+
 logger = logging.getLogger(__name__)
+
 
 def get_current_semester(allow_not_found=False):
     """
