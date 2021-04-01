@@ -88,9 +88,9 @@ def recommend_courses_view(request):
     include a "curr-courses" and/or "past_courses" attribute in the request that should each contain
     an array of string course full codes of the form DEPT-XXX (e.g. CIS-120).
     If successful, this route will return a list of recommended courses, with the same schema
-    as the List Courses route. The number of recommended courses returned can be specified
-    using the n_recommendations attribute in the request body, but if this attribute is
-    omitted, the default will be 5.
+    as the List Courses route, starting with the most relevant course. The number of
+    recommended courses returned can be specified using the n_recommendations attribute in the
+    request body, but if this attribute is omitted, the default will be 5.
     If n_recommendations is not an integer, or is <=0, a 400 will be returned.
     If curr_courses contains repeated courses or invalid courses or non-current courses, a
     400 will be returned.
