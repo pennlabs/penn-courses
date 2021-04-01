@@ -15,6 +15,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APIClient
 
 from courses.models import Course, Department, Section
+from plan.management.commands.recommendcourses import retrieve_course_clusters
 from plan.management.commands.trainrecommender import (
     generate_course_vectors_dict,
     group_courses,
@@ -520,3 +521,24 @@ class CourseRecommendationsTestCase(TestCase):
         mock1.return_value = self.course_clusters_with_schedules
         mock2.return_value = self.course_clusters_with_schedules
         self.subtest_recommend_courses_command_lists()
+
+    def test_retrieve_course_clusters_dev(self, mock):
+        with patch.dict(
+            "plan.management.commands.recommendcourses.os.environ",
+            {"DJANGO_SETTINGS_MODULE": "PennCourses.settings.development"},
+        ):
+            clusters = retrieve_course_clusters()
+        mock.return_value = clusters
+        response = self.client.post(
+            reverse("recommend-courses"),
+            json.dumps(
+                {
+                    "curr_courses": ["AFRC-437", "GRMN-180", "CIS-262"],
+                    "past_courses": ["ARTH-775", "EDUC-715"],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.check_response_data(response.data)
+        self.assertEqual(len(response.data), 5)
