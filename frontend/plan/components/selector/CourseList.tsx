@@ -42,6 +42,7 @@ export interface CourseListProps {
     sortMode: SortMode;
     scrollPos: number;
     setScrollPos: (pos: number) => void;
+    recCoursesId: string[];
 }
 
 const CourseListContainer = styled.div`
@@ -85,6 +86,7 @@ const CourseList = ({
     sortMode,
     scrollPos,
     setScrollPos,
+    recCoursesId,
 }: CourseListProps) => {
     const listRef = useRef<HTMLUListElement>(null);
     useEffect(() => {
@@ -109,6 +111,9 @@ const CourseList = ({
                         key={course.id}
                         course={course}
                         onClick={() => getCourse(course.id)}
+                        isStar={
+                            recCoursesId && recCoursesId.includes(course.id)
+                        }
                     />
                 ))}
             </CoursesContainer>

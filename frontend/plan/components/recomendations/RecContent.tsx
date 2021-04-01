@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import styled from "styled-components";
 import Course from "../selector/Course";
 import { Course as CourseType } from "../../types";
+import { Loading } from "../bulma_derived_components";
 
 const RecWrapper = styled.div`
     overflow-y: scroll;
@@ -38,6 +39,10 @@ const RecContentContainer = styled.div<{
     }
 `;
 
+const RecLoading = styled(Loading)`
+    margin-top: 50px;
+`;
+
 const CoursesContainer = styled.ul`
     height: 100%;
     overflow-y: scroll;
@@ -58,32 +63,58 @@ const EmptyContainer = styled.div`
     background-color: rgb(241, 241, 241);
 `;
 
+const getStatusHeadingText = (status: number) => {
+    switch (status) {
+        case 1:
+            return "No recommended course";
+        case 2:
+            return "Error";
+        case 3:
+            return "Log in";
+        default:
+            return "No recommended course";
+    }
+};
+
+const getStatusDescText = (status: number) => {
+    switch (status) {
+        case 1:
+            return "Sorry, we couldn't find any course to recommend you.";
+        case 2:
+            return "Sorry, there was an error loading the recommendations.";
+        case 3:
+            return "Please log in to view your recommendations.";
+        default:
+            return "Sorry, we couldn't find any course to recommend you.";
+    }
+};
+
 interface RecContentProps {
     show: boolean;
     recCourses: CourseType[];
     getCourse: (id: string) => void;
-    onClickDelete: () => void;
+    fetchStatus: number;
 }
 
 const RecContent = ({
     show,
     recCourses,
     getCourse,
-    onClickDelete,
+    fetchStatus,
 }: RecContentProps) => {
     return (
         <RecWrapper>
             <RecContentContainer collapse={!show}>
                 {/* Only create list if there is recommended course(s) */}
-                {recCourses && recCourses.length > 0 ? (
+                {fetchStatus == 0 ? (
+                    <RecLoading></RecLoading>
+                ) : recCourses && recCourses.length > 0 ? (
                     <CoursesContainer>
                         {recCourses.map((recCourse) => (
                             <Course
                                 key={recCourse.id}
                                 course={recCourse}
                                 onClick={() => getCourse(recCourse.id)}
-                                isRecCourse={true}
-                                onClickDelete={onClickDelete}
                             />
                         ))}
                     </CoursesContainer>
@@ -96,9 +127,9 @@ const RecContent = ({
                                 marginBottom: "0.5rem",
                             }}
                         >
-                            No recommended course
+                            {getStatusHeadingText(fetchStatus)}
                         </h3>
-                        Sorry, we could not find any course to recommend you.
+                        {getStatusDescText(fetchStatus)}
                     </EmptyContainer>
                 )}
             </RecContentContainer>

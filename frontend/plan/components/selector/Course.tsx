@@ -62,6 +62,12 @@ const CourseID = styled.h3`
     margin-bottom: 0;
 `;
 
+const CourseIDContainer = styled.div`
+    display: flex;
+    align-content: center;
+    flex-direction: row;
+`;
+
 const CourseTitle = styled.span`
     fontweight: normal;
     color: #888888;
@@ -76,11 +82,18 @@ const CourseDifficultyContainer = styled.div<{ isRecCourse: boolean }>`
     width: ${({ isRecCourse }) => (isRecCourse ? "20.75%" : "20%")};
 `;
 
+const StarIcon = styled(Icon)`
+    margin-left: 5px;
+    color: #ffc400 !important;
+    font-size: 0.6875rem;
+`;
+
 interface CourseProps {
     course: CourseType;
     onClick: () => void;
     isRecCourse?: boolean;
     onClickDelete?: () => void;
+    isStar?: boolean;
 }
 
 export default function Course({
@@ -88,6 +101,7 @@ export default function Course({
     onClick,
     isRecCourse,
     onClickDelete,
+    isStar,
 }: CourseProps) {
     const existIsRecCourse = isRecCourse ?? false;
 
@@ -115,7 +129,18 @@ export default function Course({
                     role="button"
                 >
                     <CourseIdentityContainer isRecCourse={existIsRecCourse}>
-                        <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
+                        <CourseIDContainer>
+                            <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
+                            {/* Check with isRecCourse after delete function is implemented */}
+                            {isStar && (
+                                <StarIcon>
+                                    <i
+                                        className="fa fa-star fa-1x"
+                                        aria-hidden="true"
+                                    />
+                                </StarIcon>
+                            )}
+                        </CourseIDContainer>
                         <CourseTitle>{course.title}</CourseTitle>
                     </CourseIdentityContainer>
                     <CourseQualityContainer isRecCourse={existIsRecCourse}>

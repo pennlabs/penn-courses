@@ -16,7 +16,8 @@ interface RecsProps {
     setShowRecs: React.Dispatch<React.SetStateAction<boolean>>;
     recCourses: CourseType[];
     getCourse: (id: string) => void;
-    onClickDelete: () => void;
+    fetchStatus: number;
+    setRefresh: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const Recs = ({
@@ -24,16 +25,21 @@ const Recs = ({
     setShowRecs,
     recCourses,
     getCourse,
-    onClickDelete,
+    fetchStatus,
+    setRefresh,
 }: RecsProps) => {
     return (
         <RecContainer>
-            <RecBanner show={showRecs} setShow={setShowRecs} />
+            <RecBanner
+                show={showRecs}
+                setShow={setShowRecs}
+                setRefresh={setRefresh}
+            />
             <RecContent
                 show={showRecs}
                 recCourses={recCourses}
                 getCourse={getCourse}
-                onClickDelete={onClickDelete}
+                fetchStatus={fetchStatus}
             />
         </RecContainer>
     );

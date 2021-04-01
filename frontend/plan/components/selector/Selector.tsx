@@ -3,13 +3,14 @@ import styled from "styled-components";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import getCsrf from "../csrf";
+import { doAPIRequest } from "../../actions/index";
 
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
 import Recs from "../recomendations/Recs";
-import { Course as CourseType } from "../../types";
 
 import { Loading } from "../bulma_derived_components";
+import { Course as CourseType } from "../../types";
 
 import {
     fetchCourseDetails,
@@ -67,17 +68,16 @@ const Selector: FunctionComponent<SelectorProps> = ({
         isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
     const [showRecs, setShowRecs] = useState(true);
-    const [recCourses, setRecCourses] = useState([]);
-    const [recLoaded, setRecLoaded] = useState(false);
-    const [removeRec, setRemoveRec] = useState(true);
+    const [recCourses, setRecCourses] = useState<CourseType[]>([]);
+    //0 - not loaded, 1 - loaded, 2 - error, 3 - no auth
+    const [fetchStatus, setFetchStatus] = useState(0);
+    const [refresh, setRefresh] = useState(false);
 
     //delete func - does nothing for now
     const onClickDelete = () => {};
 
     useEffect(() => {
-        setRecLoaded(false);
-
-        console.log(recLoaded);
+        setFetchStatus(0);
 
         const requestOptions = {
             method: "POST",
@@ -91,17 +91,20 @@ const Selector: FunctionComponent<SelectorProps> = ({
             body: JSON.stringify({}),
         };
 
-        //@ts-ignore Not sure why this is not typechecking
-        fetch(`/api/plan/recommendations/`, requestOptions).then((res) =>
-            res.json().then((recCoursesResult) => {
-                console.log(recCoursesResult);
-                setRecCourses(recCoursesResult);
-
-                setRecLoaded(true);
-                console.log(recLoaded);
-            })
-        );
-    }, [removeRec]);
+        doAPIRequest(`/plan/recommendations/`, requestOptions).then((res) => {
+            setRefresh(false);
+            if (res.ok) {
+                res.json().then((recCoursesResult) => {
+                    setRecCourses(recCoursesResult);
+                    setFetchStatus(1);
+                });
+            } else if (res.status === 400) {
+                return setFetchStatus(2);
+            } else if (res.status === 403) {
+                return setFetchStatus(3);
+            }
+        });
+    }, [refresh, setRecCourses, setFetchStatus]);
 
     let recPanel = (
         <Recs
@@ -109,7 +112,8 @@ const Selector: FunctionComponent<SelectorProps> = ({
             setShowRecs={setShowRecs}
             recCourses={recCourses}
             getCourse={getCourse}
-            onClickDelete={onClickDelete}
+            fetchStatus={fetchStatus}
+            setRefresh={setRefresh}
         />
     );
 
@@ -148,6 +152,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
             getCourse={getCourse}
             scrollPos={scrollPos}
             setScrollPos={setScrollPos}
+            recCoursesId={recCourses.map((a) => a.id)}
         />
     );
 

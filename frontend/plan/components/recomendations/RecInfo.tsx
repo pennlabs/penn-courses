@@ -1,18 +1,10 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { createTrue } from "typescript";
+import { Icon } from "../bulma_derived_components";
 
-const InfoBtn = styled.span`
-    border-radius: 50%;
-    font-size: 0.5rem;
-    width: 0.8125rem;
-    height: 0.8125rem;
-    border: 0.0869rem solid #bfbfbf;
-    text-align: center;
-    font-weight: bold;
-    color: #bfbfbf;
-    line-height: 0.8125rem;
+const InfoIcon = styled(Icon)`
     margin-top: 0.125rem;
+    font-size: 13px;
 `;
 
 const InfoPopup = styled.div<{ show: boolean }>`
@@ -50,12 +42,21 @@ const RecInfo = () => {
                     aliqua. Ut enim ad minim veniam
                 </InfoPopup>
             </div>
-            <InfoBtn
+            <span
                 onMouseEnter={() => setShowInfo(true)}
                 onMouseLeave={() => setShowInfo(false)}
+                style={{
+                    lineHeight: "12px",
+                    cursor: "pointer",
+                }}
             >
-                i
-            </InfoBtn>
+                <InfoIcon>
+                    <i
+                        className="fa fa-question-circle fa-1x"
+                        aria-hidden="true"
+                    />
+                </InfoIcon>
+            </span>
         </>
     );
 };

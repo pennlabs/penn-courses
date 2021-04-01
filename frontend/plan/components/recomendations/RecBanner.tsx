@@ -1,8 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import RecHide from "./RecHide";
 import RecInfo from "./RecInfo";
 import RecNew from "./RecNew";
+import { Icon } from "../bulma_derived_components";
+
+const TIME_OUT_DURATION = 2000;
 
 const BannerContainer = styled.div<{ collapse: boolean }>`
     display: flex;
@@ -15,35 +18,65 @@ const BannerContainer = styled.div<{ collapse: boolean }>`
     padding: 0 0.9375rem;
 `;
 
+const BannerLeft = styled.span`
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+`;
+
+const Title = styled.h3`
+    font-weight: bold;
+    padding: 0 0.5rem;
+`;
+
+const RefreshIcon = styled(Icon)`
+    margin-left: 0.5rem;
+    font-size: 12px;
+    margin-top: 0.125rem;
+`;
+
+const RefreshIconContainer = styled.span`
+    line-height: 12px;
+    cursor: pointer;
+
+    &:hover {
+        ${RefreshIcon} {
+            color: #4a4a4a !important;
+        }
+    }
+`;
+
 interface RecBannerProps {
     show: boolean;
     setShow: (_: boolean) => void;
+    setRefresh: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const RecBanner = ({ show, setShow }: RecBannerProps) => {
+const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
+    const [disabled, setDisabled] = useState(false);
+
+    //Cooldown on 2s after clicking refresh to prevent spamming
+    const onRefresh = () => {
+        setDisabled(true);
+        setRefresh(true);
+
+        setTimeout(function () {
+            setDisabled(false);
+        }, TIME_OUT_DURATION);
+    };
     return (
         <BannerContainer collapse={!show}>
             {/* left side */}
-            <span
-                style={{
-                    display: "flex",
-                    justifyContent: "space-around",
-                    alignItems: "center",
-                }}
-            >
+            <BannerLeft>
                 <RecNew />
-                <h3
-                    style={{
-                        fontWeight: "bold",
-                        padding: 0,
-                        paddingLeft: "0.5rem",
-                        paddingRight: "0.5rem",
-                    }}
-                >
-                    Recommended
-                </h3>
+                <Title>Recommended</Title>
                 <RecInfo />
-            </span>
+                <RefreshIconContainer onClick={() => !disabled && onRefresh()}>
+                    <RefreshIcon>
+                        <i className="fa fa-sync fa-1x" aria-hidden="true" />
+                    </RefreshIcon>
+                </RefreshIconContainer>
+            </BannerLeft>
 
             {/* Right side*/}
             <span>
