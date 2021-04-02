@@ -53,15 +53,15 @@ interface RecBannerProps {
 }
 
 const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
-    const [disabled, setDisabled] = useState(false);
+    const [refreshDisabled, setRefreshDisabled] = useState(false);
 
-    //Cooldown on 2s after clicking refresh to prevent spamming
+    //Cooldown of 2s after clicking refresh to prevent spamming
     const onRefresh = () => {
-        setDisabled(true);
+        setRefreshDisabled(true);
         setRefresh(true);
 
         setTimeout(function () {
-            setDisabled(false);
+            setRefreshDisabled(false);
         }, TIME_OUT_DURATION);
     };
     return (
@@ -71,7 +71,9 @@ const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
                 <RecNew />
                 <Title>Recommended</Title>
                 <RecInfo />
-                <RefreshIconContainer onClick={() => !disabled && onRefresh()}>
+                <RefreshIconContainer
+                    onClick={() => !refreshDisabled && onRefresh()}
+                >
                     <RefreshIcon>
                         <i className="fa fa-sync fa-1x" aria-hidden="true" />
                     </RefreshIcon>

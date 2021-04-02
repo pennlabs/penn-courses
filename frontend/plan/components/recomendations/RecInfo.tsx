@@ -20,7 +20,7 @@ const InfoPopup = styled.div<{ show: boolean }>`
     font-size: 0.75rem;
     width: 15.625rem;
     max-width: 25rem;
-    max-height: 12.5rem;
+    max-height: 13.5rem;
     bottom: 0.9375rem;
     overflow: hidden;
     left: 0;
@@ -44,7 +44,8 @@ const RecInfo = () => {
                     recommendations by users of Penn Mobile). Refreshing the
                     page or pressing the refresh button above the
                     recommendations section will take into account any changes
-                    you have made to your PCP schedules since the last refresh.
+                    you have made to your Penn Course Plan schedules since the
+                    last refresh.
                 </InfoPopup>
             </div>
             <span
