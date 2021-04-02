@@ -104,9 +104,9 @@ const InfoPopup = styled.div<{ show: boolean }>`
     width: 8.5rem;
     max-width: 25rem;
     max-height: 12.5rem;
-    bottom: -5px;
+    bottom: -0.33rem;
     overflow: hidden;
-    left: 55px;
+    left: 3.4375rem;
     box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 `;
 
