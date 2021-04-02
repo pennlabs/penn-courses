@@ -55,7 +55,7 @@ interface RecBannerProps {
 const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
     const [disabled, setDisabled] = useState(false);
 
-    //Cooldown on 2s after clicking refresh to prevent spamming
+    //Cooldown of 2s after clicking refresh to prevent spamming
     const onRefresh = () => {
         setDisabled(true);
         setRefresh(true);

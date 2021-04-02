@@ -18,10 +18,11 @@ const InfoPopup = styled.div<{ show: boolean }>`
     padding: 0.5rem;
     color: #333333;
     font-size: 0.75rem;
-    width: 12.5rem;
+    width: 15.625rem;
     max-width: 25rem;
     max-height: 12.5rem;
     bottom: 0.9375rem;
+    overflow: hidden;
     left: 0;
     box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 `;
@@ -37,9 +38,13 @@ const RecInfo = () => {
                 }}
             >
                 <InfoPopup show={showInfo}>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                    do eiusmod tempor incididunt ut labore et dolore magna
-                    aliqua. Ut enim ad minim veniam
+                    Recommendations are generated based on course descriptions
+                    and courses taken by users with similar mock schedules
+                    (voluntarily sent to Penn Labs for use in course
+                    recommendations by users of Penn Mobile). Refreshing the
+                    page or pressing the refresh button above the
+                    recommendations section will take into account any changes
+                    you have made to your PCP schedules since the last refresh.
                 </InfoPopup>
             </div>
             <span

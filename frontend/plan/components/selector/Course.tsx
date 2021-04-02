@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 
 import Badge from "../Badge";
@@ -66,6 +66,8 @@ const CourseIDContainer = styled.div`
     display: flex;
     align-content: center;
     flex-direction: row;
+    z-index: 20;
+    overflow: none;
 `;
 
 const CourseTitle = styled.span`
@@ -88,6 +90,26 @@ const StarIcon = styled(Icon)`
     font-size: 0.6875rem;
 `;
 
+const InfoPopup = styled.div<{ show: boolean }>`
+    position: absolute;
+    display: ${({ show }) => (show ? "flex" : "none")};
+    visibility: ${({ show }) => (show ? "visible" : "hidden")};
+    text-align: center;
+    z-index: 20;
+    background-color: white;
+    border-radius: 4px;
+    padding: 0.5rem;
+    color: #333333;
+    font-size: 0.6875rem;
+    width: 8.5rem;
+    max-width: 25rem;
+    max-height: 12.5rem;
+    bottom: -5px;
+    overflow: hidden;
+    left: 55px;
+    box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
+`;
+
 interface CourseProps {
     course: CourseType;
     onClick: () => void;
@@ -104,10 +126,18 @@ export default function Course({
     isStar,
 }: CourseProps) {
     const existIsRecCourse = isRecCourse ?? false;
+    const [showInfo, setShowInfo] = useState(false);
 
     return (
         // eslint-disable-next-line
         <RowSelectors>
+            <div
+                style={{
+                    position: "relative",
+                }}
+            >
+                <InfoPopup show={showInfo}>Recommended Course</InfoPopup>
+            </div>
             <CourseContainer isRecCourse={existIsRecCourse}>
                 {isRecCourse && (
                     <DeleteContainer
@@ -133,14 +163,26 @@ export default function Course({
                             <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
                             {/* Check with isRecCourse after delete function is implemented */}
                             {isStar && (
-                                <StarIcon>
-                                    <i
-                                        className="fa fa-star fa-1x"
-                                        aria-hidden="true"
-                                    />
-                                </StarIcon>
+                                <>
+                                    <span
+                                        onMouseEnter={() => setShowInfo(true)}
+                                        onMouseLeave={() => setShowInfo(false)}
+                                        style={{
+                                            lineHeight: "0.6875rem",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        <StarIcon>
+                                            <i
+                                                className="fa fa-star fa-1x"
+                                                aria-hidden="true"
+                                            />
+                                        </StarIcon>
+                                    </span>
+                                </>
                             )}
                         </CourseIDContainer>
+
                         <CourseTitle>{course.title}</CourseTitle>
                     </CourseIdentityContainer>
                     <CourseQualityContainer isRecCourse={existIsRecCourse}>
