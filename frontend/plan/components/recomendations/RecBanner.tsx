@@ -31,12 +31,12 @@ const Title = styled.h3`
 
 const RefreshIcon = styled(Icon)`
     margin-left: 0.5rem;
-    font-size: 12px;
+    font-size: 0.75rem;
     margin-top: 0.125rem;
 `;
 
 const RefreshIconContainer = styled.span`
-    line-height: 12px;
+    line-height: 0.75rem;
     cursor: pointer;
 
     &:hover {
@@ -55,7 +55,7 @@ interface RecBannerProps {
 const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
     const [disabled, setDisabled] = useState(false);
 
-    //Cooldown of 2s after clicking refresh to prevent spamming
+    //Cooldown on 2s after clicking refresh to prevent spamming
     const onRefresh = () => {
         setDisabled(true);
         setRefresh(true);

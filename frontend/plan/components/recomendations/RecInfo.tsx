@@ -4,7 +4,7 @@ import { Icon } from "../bulma_derived_components";
 
 const InfoIcon = styled(Icon)`
     margin-top: 0.125rem;
-    font-size: 13px;
+    font-size: 0.8125rem;
 `;
 
 const InfoPopup = styled.div<{ show: boolean }>`
@@ -51,7 +51,7 @@ const RecInfo = () => {
                 onMouseEnter={() => setShowInfo(true)}
                 onMouseLeave={() => setShowInfo(false)}
                 style={{
-                    lineHeight: "12px",
+                    lineHeight: "0.75rem",
                     cursor: "pointer",
                 }}
             >
