@@ -107,13 +107,12 @@ const CourseList = ({
             </HeaderContainer>
             <CoursesContainer ref={listRef}>
                 {courseSort(courses, sortMode).map((course) => (
+                    // Star feature: recCoursesId && recCoursesId.includes(course.id)
                     <Course
                         key={course.id}
                         course={course}
                         onClick={() => getCourse(course.id)}
-                        isStar={
-                            recCoursesId && recCoursesId.includes(course.id)
-                        }
+                        isStar={false}
                     />
                 ))}
             </CoursesContainer>

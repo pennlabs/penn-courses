@@ -131,13 +131,15 @@ export default function Course({
     return (
         // eslint-disable-next-line
         <RowSelectors>
-            <div
-                style={{
-                    position: "relative",
-                }}
-            >
-                <InfoPopup show={showInfo}>Recommended Course</InfoPopup>
-            </div>
+            {isStar && (
+                <div
+                    style={{
+                        position: "relative",
+                    }}
+                >
+                    <InfoPopup show={showInfo}>Recommended Course</InfoPopup>
+                </div>
+            )}
             <CourseContainer isRecCourse={existIsRecCourse}>
                 {isRecCourse && (
                     <DeleteContainer
@@ -161,7 +163,6 @@ export default function Course({
                     <CourseIdentityContainer isRecCourse={existIsRecCourse}>
                         <CourseIDContainer>
                             <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
-                            {/* Check with isRecCourse after delete function is implemented */}
                             {isStar && (
                                 <>
                                     <span
