@@ -32,6 +32,9 @@ def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
 
 
+User = get_user_model()
+
+
 @patch("plan.views.retrieve_course_clusters")
 class CourseRecommendationsTestCase(TestCase):
     @classmethod
@@ -118,6 +121,7 @@ class CourseRecommendationsTestCase(TestCase):
         section_obs = dict()
         for section in Section.objects.all():
             section_obs[section.full_code, section.course.semester] = section.id
+        cls.section_obs = section_obs
 
         schedules = dict()
         with open(course_data_path) as course_data_file:
@@ -129,8 +133,6 @@ class CourseRecommendationsTestCase(TestCase):
                     schedules[person_id][semester] = set()
                 schedules[person_id][semester].add(course_code)
 
-        User = get_user_model()
-
         User.objects.bulk_create(
             [
                 User(
@@ -140,6 +142,15 @@ class CourseRecommendationsTestCase(TestCase):
                     is_active=True,
                 )
                 for person_id in schedules.keys()
+            ]
+            + [
+                User(
+                    username=person_id,
+                    email=person_id + "@example.com",
+                    password=make_password(person_id + "_password"),
+                    is_active=True,
+                )
+                for person_id in ["freshman", "gapsem", "noshow", "repeat"]
             ]
         )
 
@@ -205,6 +216,67 @@ class CourseRecommendationsTestCase(TestCase):
     def test_with_user_from_schedules(self, mock):
         mock.return_value = self.course_clusters_with_schedules
         self.subtest_with_user()
+
+    def subtest_with_edge_case_users(self):
+        freshman = User.objects.get(username="freshman")
+        freshman_client = APIClient()
+        freshman_client.login(username="freshman", password="freshman_password")
+        freshman_schedule = Schedule(
+            person=freshman, semester=TEST_SEMESTER, name="Current schedule",
+        )
+        freshman_schedule.save()
+        for course_code in ["GRMN-502", "GEOL-545", "MUSC-275"]:
+            freshman_schedule.sections.add(self.section_obs[course_code + "-001", TEST_SEMESTER])
+        response = freshman_client.post(reverse("recommend-courses"))
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(len(response.data), 5)
+
+        gapsem = User.objects.get(username="gapsem")
+        gapsem_client = APIClient()
+        gapsem_client.login(username="gapsem", password="gapsem_password")
+        gapsem_schedule = Schedule(person=gapsem, semester="2017A", name="Previous schedule",)
+        gapsem_schedule.save()
+        for course_code in ["LGIC-320", "ANTH-395", "NELC-337"]:
+            gapsem_schedule.sections.add(self.section_obs[course_code + "-001", "2017A"])
+        response = gapsem_client.post(reverse("recommend-courses"))
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(len(response.data), 5)
+
+        noshow = User.objects.get(username="noshow")
+        noshow_client = APIClient()
+        noshow_client.login(username="noshow", password="noshow_password")
+        noshow_schedule = Schedule(person=noshow, semester=TEST_SEMESTER, name="Empty schedule",)
+        noshow_schedule.save()
+        noshow_previous_schedule = Schedule(
+            person=noshow, semester="2017C", name="Empty previous schedule",
+        )
+        noshow_previous_schedule.save()
+        response = noshow_client.post(reverse("recommend-courses"))
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(len(response.data), 5)
+
+        repeat = User.objects.get(username="repeat")
+        repeat_client = APIClient()
+        repeat_client.login(username="repeat", password="repeat_password")
+        repeat_schedule_old = Schedule(person=repeat, semester="2016C", name="Old schedule",)
+        repeat_schedule_old.save()
+        for course_code in ["MUSC-275"]:
+            repeat_schedule_old.sections.add(self.section_obs[course_code + "-001", "2016C"])
+        repeat_schedule = Schedule(person=repeat, semester=TEST_SEMESTER, name="New schedule",)
+        repeat_schedule.save()
+        for course_code in ["GRMN-502", "GEOL-545", "MUSC-275"]:
+            repeat_schedule.sections.add(self.section_obs[course_code + "-001", TEST_SEMESTER])
+        response = repeat_client.post(reverse("recommend-courses"))
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(len(response.data), 5)
+
+    def test_with_edge_case_users(self, mock):
+        mock.return_value = self.course_clusters
+        self.subtest_with_edge_case_users()
+
+    def test_with_edge_case_users_from_schedules(self, mock):
+        mock.return_value = self.course_clusters_with_schedules
+        self.subtest_with_edge_case_users()
 
     def subtest_bad_data_courses(self):
         response = self.client.post(

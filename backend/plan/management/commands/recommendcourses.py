@@ -71,30 +71,27 @@ def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict):
     Aggregates a vector over all the courses in the user's schedule
     """
     curr_semester = get_current_semester()
-    curr_courses = list(
-        set(
-            [
-                s
-                for s in Schedule.objects.filter(person=user, semester=curr_semester).values_list(
-                    "sections__course__full_code", flat=True
-                )
-                if s is not None
-            ]
-        )
+    curr_courses = set(
+        [
+            s
+            for s in Schedule.objects.filter(person=user, semester=curr_semester).values_list(
+                "sections__course__full_code", flat=True
+            )
+            if s is not None
+        ]
     )
-    past_courses = list(
-        set(
-            [
-                s
-                for s in Schedule.objects.filter(
-                    person=user, semester__lt=curr_semester
-                ).values_list("sections__course__full_code", flat=True)
-                if s is not None
-            ]
-        )
+    past_courses = set(
+        [
+            s
+            for s in Schedule.objects.filter(person=user, semester__lt=curr_semester).values_list(
+                "sections__course__full_code", flat=True
+            )
+            if s is not None
+        ]
     )
+    past_courses = past_courses - curr_courses
     return vectorize_user_by_courses(
-        curr_courses, past_courses, curr_course_vectors_dict, past_course_vectors_dict
+        list(curr_courses), list(past_courses), curr_course_vectors_dict, past_course_vectors_dict
     )
 
 
