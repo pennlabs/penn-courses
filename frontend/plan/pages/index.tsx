@@ -318,6 +318,9 @@ function Index() {
                                 style={{
                                     paddingLeft: 0,
                                     paddingRight: 0,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    flex: 1,
                                 }}
                             >
                                 <Selector mobileView={false} view={view} />
