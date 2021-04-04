@@ -2,9 +2,9 @@ import io
 import os
 import zipfile
 
-import boto3
 from django.core.management.base import BaseCommand, CommandError
 
+from PennCourses.settings.base import S3_client
 from review.import_utils.import_to_db import (
     import_description_rows,
     import_ratings_rows,
@@ -161,7 +161,7 @@ class Command(BaseCommand):
             # Make sure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
             # are loaded in as environment variables.
             self.display(f"downloading zip from s3 bucket: {src}")
-            boto3.client("s3").download_file(kwargs["s3_bucket"], src, fp)
+            S3_client.download_file(kwargs["s3_bucket"], src, fp)
             src = fp
 
         # TODO: When we import details and crosslistings, get their data here too.

@@ -1,4 +1,6 @@
 import React from "react";
+import styled from "styled-components";
+import { CheckboxInput, CheckboxLabel } from "../bulma_derived_components";
 
 type CheckboxFilterData<D> = {
     [K in keyof D]: boolean;
@@ -18,6 +20,37 @@ interface SearchFieldProps<
     checkboxProperty: K;
 }
 
+// Bulma: columns contained
+const ColumnsContainer = styled.div`
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    margin-top: -0.75rem;
+
+    padding-top: 0.2rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+
+    &:last-child {
+        margin-bottom: -0.75rem;
+    }
+
+    @media screen and (min-width: 769px) {
+        display: flex;
+    }
+`;
+
+const FilterColumn = styled.div`
+    display: block;
+    flex-basis: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding: 0.75rem;
+`;
+
+const FilterField = styled.div`
+    display: table-row;
+`;
+
 // mapped types
 
 export function CheckboxFilter<
@@ -32,7 +65,7 @@ export function CheckboxFilter<
     checkboxProperty,
 }: SearchFieldProps<F, K, V>) {
     return (
-        <div className="columns contained">
+        <ColumnsContainer>
             {Object.keys(filterData[checkboxProperty]) //
                 .sort()
                 .map((key) => {
@@ -40,13 +73,9 @@ export function CheckboxFilter<
                     // return keyof Object
                     const filterProperty = key as V;
                     return (
-                        <div key={filterProperty} className="column">
-                            <div
-                                className="field"
-                                style={{ display: "table-row" }}
-                            >
-                                <input
-                                    className="is-checkradio is-small"
+                        <FilterColumn key={filterProperty}>
+                            <FilterField>
+                                <CheckboxInput
                                     type="checkbox"
                                     id={filterProperty}
                                     checked={
@@ -74,16 +103,13 @@ export function CheckboxFilter<
                                     }}
                                 />
                                 {/* eslint-disable-next-line jsx-a11y/label-has-for */}
-                                <label
-                                    htmlFor={filterProperty}
-                                    style={{ display: "table-cell" }}
-                                >
+                                <CheckboxLabel htmlFor={filterProperty}>
                                     {filterProperty}
-                                </label>
-                            </div>
-                        </div>
+                                </CheckboxLabel>
+                            </FilterField>
+                        </FilterColumn>
                     );
                 })}
-        </div>
+        </ColumnsContainer>
     );
 }

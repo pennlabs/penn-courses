@@ -26,7 +26,7 @@ class Command(BaseCommand):
         if semester is None:
             semester = get_current_semester()
 
-        print("loading in courses with prefix %s from %s..." % (query, semester))
+        print("Loading in courses with prefix %s from %s..." % (query, semester))
         results = registrar.get_courses(query, semester)
 
         for course in tqdm(results):
@@ -39,9 +39,9 @@ class Command(BaseCommand):
             dept.name = dept_name
             dept.save()
 
-        print("loading requirements from SEAS...")
+        print("Loading requirements from SEAS...")
         load_requirements(school="SEAS", semester=semester)
-        print("loading requirements from Wharton...")
+        print("Loading requirements from Wharton...")
         load_requirements(school="WH", semester=semester)
-        print("loading course statuses from registrar...")
+        print("Loading course statuses from registrar...")
         set_all_status(semester=semester)
