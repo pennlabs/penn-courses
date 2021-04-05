@@ -13,17 +13,7 @@ from review.models import Review, ReviewBit
 
 test_data_fields = {
     "departments": ["id", "code", "name"],
-    "courses_null_primary_listing": [
-        "id",
-        "semester",
-        "department_id",
-        "code",
-        "title",
-        "description",
-        "full_code",
-        "prerequisites",
-    ],
-    "courses_non_null_primary_listing": [
+    "courses": [
         "id",
         "semester",
         "department_id",
@@ -46,8 +36,20 @@ test_data_fields = {
         "credits",
     ],
     "instructors": ["id", "name"],
-    "sections_instructors_m2mfield": ["sections", "instructors", "instructors"],
-    "sections_associated_sections_m2mfield": ["sections", "associated_sections", "sections"],
+    "sections_instructors_m2mfield": [
+        "sections",
+        "id",
+        "instructors",
+        "instructor_id",
+        "instructors",
+    ],  # _m2mfield schema: from model, from id, through field, to id, to model
+    "sections_associated_sections_m2mfield": [
+        "sections",
+        "id",
+        "associated_sections",
+        "associated_section_id",
+        "sections",
+    ],
     "reviews": [
         "id",
         "section_id",
@@ -73,15 +75,40 @@ test_data_fields = {
 }  # define fields to export from each data type
 
 related_id_fields = {
-    "courses_null_primary_listing": {"department_id": "departments",},
-    "courses_non_null_primary_listing": {
-        "department_id": "departments",
-        "primary_listing_id": "courses_null_primary_listing",
-    },
+    "courses": {"department_id": "departments",},
     "reviews": {"section_id": "sections", "instructor_id": "instructors",},
     "review_bits": {"review_id": "reviews",},
-}  # specify fields which represent foreign key relationships (id on other model),
-# and the model of the foreign key
+}  # specify fields which represent foreign key relationships to a strictly other model,
+# and the pointed-to model
+
+self_related_id_fields = {
+    "courses": ["primary_listing_id"]
+}  # specify fields which represent foreign key relationships to the same model
+
+models = {
+    "departments": Department,
+    "courses": Course,
+    "sections": Section,
+    "instructors": Instructor,
+    "reviews": Review,
+    "review_bits": ReviewBit,
+}  # maps data type to corresponding model (if the data type represents a model)
+
+unique_identifying_fields = {
+    "departments": ["code"],
+    "courses": ["full_code", "semester"],
+    "sections": ["course_id", "code"],
+    "instructors": ["name"],
+    "reviews": ["section_id", "instructor_id"],
+    "review_bits": ["review_id", "field"],
+}  # maps data type to its identifying fields other than id (if the data type represents a model)
+
+semester_filter = {
+    "courses": "semester",
+    "sections": "course__semester",
+    "reviews": "section__course__semester",
+    "review_bits": "review__section__course__semester",
+}  # maps data type to the query for its semester
 
 
 class Command(BaseCommand):
@@ -152,39 +179,28 @@ class Command(BaseCommand):
 
                 if data_type.endswith("_m2mfield"):
                     for object in tqdm(querysets[fields[data_type][0]]):
-                        for related_object in getattr(object, fields[data_type][1]).all():
+                        for related_object in getattr(object, fields[data_type][2]).all():
                             rows += 1
+                            # _m2mfield schema: from model, from id, through field, to id, to model
                             csv_writer.writerow(
                                 [data_type]
                                 + [
                                     fields[data_type][0],
                                     object.id,
-                                    fields[data_type][1],
-                                    str(related_object.id),
                                     fields[data_type][2],
+                                    str(related_object.id),
+                                    fields[data_type][4],
                                 ]
                             )
                     continue
 
                 if data_type == "departments":
                     queryset = Department.objects.all()
-                elif data_type == "courses_null_primary_listing":
+                elif data_type == "courses":
                     queryset = Course.objects.filter(
-                        semester__in=semesters,
-                        full_code__startswith=kwargs["courses_query"],
-                        primary_listing__isnull=True,
+                        semester__in=semesters, full_code__startswith=kwargs["courses_query"],
                     )
-                    querysets["courses_null_primary_listing"] = queryset
-                elif data_type == "courses_non_null_primary_listing":
-                    queryset = Course.objects.filter(
-                        semester__in=semesters,
-                        full_code__startswith=kwargs["courses_query"],
-                        primary_listing__isnull=False,
-                    )
-                    querysets["courses_non_null_primary_listing"] = queryset
-                    querysets["courses"] = list(querysets["courses_null_primary_listing"]) + list(
-                        querysets["courses_non_null_primary_listing"]
-                    )
+                    querysets["courses"] = queryset
                 elif data_type == "sections":
                     queryset = Section.objects.filter(
                         course__in=querysets["courses"]

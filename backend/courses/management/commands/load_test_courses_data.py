@@ -5,9 +5,14 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
-from courses.management.commands.export_test_courses_data import related_id_fields, test_data_fields
-from courses.models import Course, Department, Instructor, Section
-from review.models import Review, ReviewBit
+from courses.management.commands.export_test_courses_data import (
+    models,
+    related_id_fields,
+    self_related_id_fields,
+    semester_filter,
+    test_data_fields,
+    unique_identifying_fields,
+)
 
 
 class Command(BaseCommand):
@@ -47,50 +52,30 @@ class Command(BaseCommand):
             data_reader = csv.reader(data_file, delimiter=",", quotechar='"')
             for row in data_reader:
                 data_type = row[0]
-                if data_type in [
-                    "courses_null_primary_listing",
-                    "courses_non_null_primary_listing",
-                ]:
-                    semesters.add(row[1])
+                if data_type in "courses":
+                    semesters.add(row[2])
                 assert data_type in data_types, (
                     f"Datatype {data_type} in the given csv is not valid for this version "
                     f"of the import script. Valid datatypes: {data_types}"
                 )
-                assert len(row) == 1 + len(fields[data_type]), (
+                should_be = 6 if data_type.endswith("_m2mfield") else (1 + len(fields[data_type]))
+                assert len(row) == should_be, (
                     f"The row {row} in the given csv is not valid for this version of the import "
                     f"script. Contains {len(row)} columns, while valid "
-                    f"is {1 + len(fields[data_type])}."
+                    f"is {should_be}."
                 )
                 rows_map[data_type].append(row)
                 row_count += 1
         objects = dict()  # maps datatype to object id to object
-        models = dict(
-            {
-                "departments": Department,
-                "courses_null_primary_listing": Course,
-                "courses_non_null_primary_listing": Course,
-                "sections": Section,
-                "instructors": Instructor,
-                "reviews": Review,
-                "review_bits": ReviewBit,
-            }
-        )
         to_save = {data_type: [] for data_type in data_types}
         # to_save: maps datatype to list of objects to save
 
-        unique_identifying_fields = {
-            "departments": ["code"],
-            "courses_null_primary_listing": ["full_code", "semester"],
-            "courses_non_null_primary_listing": ["full_code", "semester"],
-            "sections": ["course_id", "code"],
-            "instructors": ["name"],
-            "reviews": ["section_id", "instructor_id"],
-            "review_bits": ["review_id", "field"],
-        }
         identify_id_map = {data_type: dict() for data_type in data_types}
         # identify_id_map: maps datatype to unique identification str to old id
         id_change_map = {data_type: dict() for data_type in data_types}
         # id_change_map: maps datatype to old id to new id
+        self_related_ids = {data_type: dict() for data_type in data_types}
+        # self_related_ids: maps datatype to field to object id to self-related object id
 
         def generate_unique_id_str_from_row(data_type, row):
             """
@@ -117,14 +102,6 @@ class Command(BaseCommand):
                 id_components.append(field_value)
             return tuple(id_components)
 
-        semester_filter = {
-            "courses_null_primary_listing": "semester",
-            "courses_non_null_primary_listing": "semester",
-            "sections": "course__semester",
-            "reviews": "section__course__semester",
-            "review_bits": "review__section__course__semester",
-        }
-
         print(
             "This script is atomic, meaning either all the test data from the given "
             "CSV will be loaded into the database, or otherwise if an error is encountered, "
@@ -149,27 +126,33 @@ class Command(BaseCommand):
                         related_dtype = row[5]
                         getattr(object, row[3]).add(id_change_map[related_dtype][row[4]])
                         continue
-                    identify_id_map[generate_unique_id_str_from_row(data_type, row)] = row[0]
-                    foreign_key_fields_to_model = dict()
-                    if data_type in related_id_fields:
-                        foreign_key_fields_to_model = related_id_fields[data_type]
+                    identify_id_map[data_type][
+                        generate_unique_id_str_from_row(data_type, row)
+                    ] = row[1]
                     field_to_index = {field: (1 + i) for i, field in enumerate(fields[data_type])}
-                    to_save[data_type].append(
-                        models[data_type](
-                            **{
-                                field: row[field_to_index[field]]
-                                if field not in foreign_key_fields_to_model
-                                else id_change_map[foreign_key_fields_to_model[field]][
-                                    row[field_to_index[field]]
-                                ]
-                                for field in fields[data_type]
-                            }
-                        )
-                    )
+                    to_save_dict = dict()  # this will be unpacked into the model initialization
+                    for field in fields[data_type]:
+                        if field == "id":
+                            continue
+                        if data_type in related_id_fields and field in related_id_fields[data_type]:
+                            to_save_dict[field] = id_change_map[row[field_to_index[field]]]
+                        elif (
+                            data_type in self_related_id_fields
+                            and field in self_related_id_fields[data_type]
+                        ):
+                            to_save_dict[field] = None
+                            if field not in self_related_ids[data_type]:
+                                self_related_ids[data_type][field] = dict()
+                            self_related_ids[data_type][field][row[field_to_index["id"]]] = row[
+                                field_to_index[field]
+                            ]
+                        else:
+                            to_save_dict[field] = row[field_to_index[field]]
+
+                    to_save[data_type].append(models[data_type](**to_save_dict))
 
                 for data_type in data_types:
-
-                    if data_type not in semester_filter.keys():
+                    if data_type not in semester_filter.keys() and data_type in models:
                         existing_objects = set(
                             generate_unique_id_str_from_object(data_type, m)
                             for m in models[data_type].objects.all()
@@ -191,18 +174,21 @@ class Command(BaseCommand):
                             **{semester_filter[data_type] + "__in": list(semesters)}
                         )
                     for object in queryset:
+                        if (
+                            generate_unique_id_str_from_object(data_type, object)
+                            not in identify_id_map[data_type]
+                        ):
+                            continue
                         objects[data_type][object.id] = object
                         id_change_map[data_type][
-                            identify_id_map[generate_unique_id_str_from_object(data_type, object)]
+                            identify_id_map[data_type][
+                                generate_unique_id_str_from_object(data_type, object)
+                            ]
                         ] = object.id
-                    if data_type == "courses_non_null_primary_listing":
-                        objects["courses"] = {
-                            **objects["courses_null_primary_listing"],
-                            **objects["courses_non_null_primary_listing"],
-                        }
-                        id_change_map["courses"] = {
-                            **id_change_map["courses_null_primary_listing"],
-                            **id_change_map["courses_non_null_primary_listing"],
-                        }
+                    for data_type, field in self_related_ids.items():
+                        for self_id, other_id in self_related_ids[data_type][field].items():
+                            self_new_id = id_change_map[data_type][self_id]
+                            self_other_id = id_change_map[data_type][other_id]
+                            setattr(objects[data_type][self_new_id], field, self_other_id)
 
         print(f"Finished loading test data {src}... processed {row_count} rows. ")
