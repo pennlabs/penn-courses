@@ -557,18 +557,6 @@ class Section(models.Model):
         # return the position of self.raw_demand on this new range
         return 4.0 * float(self.raw_demand - min) / float(max - min)
 
-    @property
-    def estimated_num_alerts_remaining(self):
-        return 1
-        # TODO: finish
-
-    @property
-    def prob_pca_success(self):
-        return 1
-        # TODO: finish
-        # return 1 - reduce(mul, [() for i in range(min(self.registration_volume,
-        # self.estimated_num_alerts_remaining))], 1)
-
     def save(self, *args, **kwargs):
         self.full_code = f"{self.course.full_code}-{self.code}"
         super().save(*args, **kwargs)

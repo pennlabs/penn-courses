@@ -180,11 +180,3 @@ RegistrationViewSet_examples = {
         }
     },
 }
-
-SectionsStatisticsList_examples = {
-    # TODO: add examples
-}
-
-SectionStatisticsDetail_examples = {
-    # TODO: add examples
-}
