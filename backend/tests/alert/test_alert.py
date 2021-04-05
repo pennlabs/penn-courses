@@ -1,10 +1,12 @@
 import base64
 import importlib
 import json
+import os
 from unittest.mock import patch
 
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -858,6 +860,11 @@ class CourseStatusUpdateTestCase(TestCase):
         response = self.client.get(reverse("statusupdate", args=["CIS-121"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+    def test_export_status_updates(self):
+        call_command(
+            "export_status_history", file_path=os.devnull, semesters=TEST_SEMESTER,
+        )
 
 
 @ddt
@@ -1826,6 +1833,36 @@ class AlertRegistrationTestCase(TestCase):
     def test_resub_after_new_registration_for_section_post(self):
         self.resub_after_new_registration_for_section(put=False)
 
+    def resub_when_registration_is_closed(self, put):
+        """
+        This function tests that you cannot resubscribe if registration is closed.
+        """
+
+        Option.objects.update_or_create(key="REGISTRATION_OPEN", value_type="BOOL", value="FALSE")
+
+        first_id = self.registration_cis120.id
+        self.simulate_alert(self.cis120, 1, should_send=True)
+
+        if put:
+            response = self.client.put(
+                reverse("registrations-detail", args=[first_id]),
+                json.dumps({"resubscribe": True}),
+                content_type="application/json",
+            )
+        else:
+            response = self.client.post(
+                reverse("registrations-list"),
+                json.dumps({"id": first_id, "resubscribe": True}),
+                content_type="application/json",
+            )
+        self.assertEqual(503, response.status_code)
+
+    def test_resub_when_registration_is_closed_put(self):
+        self.resub_when_registration_is_closed(put=True)
+
+    def test_resub_when_registration_is_closed_post(self):
+        self.resub_when_registration_is_closed(put=False)
+
     def test_registration_list_multiple_candidates_same_section(self):
         """
         This function tests that registrations-list does not return multiple registrations
@@ -2580,3 +2617,9 @@ class AlertRegistrationTestCase(TestCase):
                 reverse("registrations-detail", args=[ids[specific_ids + "_id"]])
             )
             self.assertIsNone(response.data.get("last_notification_sent_at"))
+
+    def test_export_registrations(self):
+        self.create_auto_resubscribe_group()
+        call_command(
+            "export_anon_registrations", file_path=os.devnull, semesters=TEST_SEMESTER,
+        )
