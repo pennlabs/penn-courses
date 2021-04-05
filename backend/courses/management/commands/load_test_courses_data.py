@@ -13,7 +13,6 @@ from courses.management.commands.export_test_courses_data import (
     test_data_fields,
     unique_identifying_fields,
 )
-from courses.models import Section, Course
 
 
 class Command(BaseCommand):
@@ -84,7 +83,7 @@ class Command(BaseCommand):
             """
             components = []
             for field in unique_identifying_fields[data_type]:
-                field_value = row[1+fields[data_type].index(field)]
+                field_value = row[1 + fields[data_type].index(field)]
                 if data_type in related_id_fields and field in related_id_fields[data_type]:
                     field_value = id_change_map[related_id_fields[data_type][field]][field_value]
                 components.append(field_value)
@@ -130,7 +129,10 @@ class Command(BaseCommand):
                     field_to_index = {field: (1 + i) for i, field in enumerate(fields[data_type])}
                     to_save_dict = dict()  # this will be unpacked into the model initialization
                     for field in fields[data_type]:
-                        if row[field_to_index[field]] is None or row[field_to_index[field]] == "None":
+                        if (
+                            row[field_to_index[field]] is None
+                            or row[field_to_index[field]] == "None"
+                        ):
                             to_save_dict[field] = None
                             continue
                         if field == "id":

@@ -88,7 +88,7 @@ class Command(BaseCommand):
                             old_status=old_status,
                             new_status=new_status,
                             created_at=created_at,
-                            alert_sent=False
+                            alert_sent=False,
                         )
                         to_save.append(status_update)
                 StatusUpdate.objects.bulk_create(to_save)
