@@ -1,8 +1,10 @@
 import heapq
+import os
 import pickle
 from typing import Optional, Set
 
 import numpy as np
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
@@ -10,6 +12,7 @@ from django.core.management.base import BaseCommand
 from courses.models import Course
 from courses.util import get_current_semester
 from PennCourses.settings.base import S3_client
+from plan.management.commands.trainrecommender import train_recommender
 from plan.models import Schedule
 
 
@@ -31,7 +34,7 @@ def vectorize_user_by_courses(
     }
     if len(invalid_curr_courses) > 0:
         raise ValueError(
-            "The following courses in curr_courses are invalid or not offered this semester:"
+            "The following courses in curr_courses are invalid or not offered this semester: "
             f"{str(invalid_curr_courses)}"
         )
     invalid_past_courses = set(past_courses) - {
@@ -39,7 +42,7 @@ def vectorize_user_by_courses(
     }
     if len(invalid_past_courses) > 0:
         raise ValueError(
-            "The following courses in past_courses are invalid:" f"{str(invalid_past_courses)}"
+            f"The following courses in past_courses are invalid: {str(invalid_past_courses)}"
         )
 
     # Eliminate courses not in the model
@@ -68,22 +71,27 @@ def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict):
     Aggregates a vector over all the courses in the user's schedule
     """
     curr_semester = get_current_semester()
-    curr_courses = list(
-        set(
-            Schedule.objects.filter(person=user, semester=curr_semester).values_list(
+    curr_courses = set(
+        [
+            s
+            for s in Schedule.objects.filter(person=user, semester=curr_semester).values_list(
                 "sections__course__full_code", flat=True
             )
-        )
+            if s is not None
+        ]
     )
-    past_courses = list(
-        set(
-            Schedule.objects.filter(person=user, semester__lt=curr_semester).values_list(
+    past_courses = set(
+        [
+            s
+            for s in Schedule.objects.filter(person=user, semester__lt=curr_semester).values_list(
                 "sections__course__full_code", flat=True
             )
-        )
+            if s is not None
+        ]
     )
+    past_courses = past_courses - curr_courses
     return vectorize_user_by_courses(
-        curr_courses, past_courses, curr_course_vectors_dict, past_course_vectors_dict
+        list(curr_courses), list(past_courses), curr_course_vectors_dict, past_course_vectors_dict
     )
 
 
@@ -140,7 +148,21 @@ def recommend_courses(
     )
 
 
+dev_course_clusters = None  # a global variable used to "cache" the course clusters in dev
+
+
 def retrieve_course_clusters():
+    global dev_course_clusters
+    if "PennCourses.settings.development" in os.environ.get("DJANGO_SETTINGS_MODULE", ""):
+        if dev_course_clusters is None:
+            print("TRAINING DEVELOPMENT MODEL... PLEASE WAIT")
+            dev_course_clusters = train_recommender(
+                course_data_path=settings.BASE_DIR
+                + "/tests/plan/course_recs_test_data/course_data_test.csv",
+                output_path=os.devnull,
+            )
+            print("Done training development model.")
+        return dev_course_clusters
     cached_data = cache.get("course-cluster-data", None)
     if cached_data is not None:
         return cached_data

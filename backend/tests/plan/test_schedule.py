@@ -1,6 +1,6 @@
 import json
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
@@ -9,6 +9,8 @@ from courses.util import get_average_reviews
 from plan.models import Schedule
 from tests.courses.util import create_mock_data_with_reviews
 
+
+User = get_user_model()
 
 TEST_SEMESTER = "2019C"
 

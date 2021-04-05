@@ -42,6 +42,7 @@ export interface CourseListProps {
     sortMode: SortMode;
     scrollPos: number;
     setScrollPos: (pos: number) => void;
+    recCoursesId: string[];
 }
 
 const CourseListContainer = styled.div`
@@ -50,6 +51,7 @@ const CourseListContainer = styled.div`
     height: 100%;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 `;
 
 const HeaderContainer = styled.div`
@@ -84,6 +86,7 @@ const CourseList = ({
     sortMode,
     scrollPos,
     setScrollPos,
+    recCoursesId,
 }: CourseListProps) => {
     const listRef = useRef<HTMLUListElement>(null);
     useEffect(() => {
@@ -104,10 +107,12 @@ const CourseList = ({
             </HeaderContainer>
             <CoursesContainer ref={listRef}>
                 {courseSort(courses, sortMode).map((course) => (
+                    // Star feature: recCoursesId && recCoursesId.includes(course.id)
                     <Course
                         key={course.id}
                         course={course}
                         onClick={() => getCourse(course.id)}
+                        isStar={false}
                     />
                 ))}
             </CoursesContainer>
