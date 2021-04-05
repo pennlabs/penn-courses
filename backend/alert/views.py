@@ -188,7 +188,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     in their profile (thus making it impossible for them to receive alerts), and a 409 if the
     user is already currently registered to receive alerts for the given section.  If the request
     is redirected to update (when the passed in id is already associated with a registration),
-    other response codes may be returned (see the Update Registration docs for more info).
+    other response codes may be returned (see the Update Registration docs for more info). If
+    registration is not currently open on PCA, a 503 is returned.
 
     update: Use this route to update existing PCA Registrations.  Note that the provided id does
     not always strictly specify which Registration gets modified.  In fact, the actual Registration
@@ -230,7 +231,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     triggered registration, trying to make changes to a deleted registration, or otherwise
     breaking rules.  Look in the detail field of the response object for more detail on what
     exactly went wrong if you encounter a 400.  If no registration with the given id is found,
-    a 404 is returned.
+    a 404 is returned. If registration is not currently open on PCA, a 503 is returned.
     """
 
     schema = PcxAutoSchema(
@@ -243,6 +244,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     404: "Given section not found in database.",
                     406: "No contact information (phone or email) set for user.",
                     409: "Registration for given section already exists.",
+                    503: "Registration not currently open.",
                 },
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registrations successfully listed."},
             },
@@ -251,6 +253,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     200: "Registration successfully updated (or no changes necessary).",
                     400: "Bad request (see route description).",
                     404: "Registration not found with given id.",
+                    503: "Registration not currently open.",
                 },
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Registration detail successfully retrieved.",
@@ -379,6 +382,11 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
         try:
             if request.data.get("resubscribe", False):
+                if not get_bool("REGISTRATION_OPEN", True):
+                    return Response(
+                        {"message": "Registration is not open."},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    )
                 if registration.deleted:
                     return Response(
                         {"detail": "You cannot resubscribe to a deleted registration."},
