@@ -87,7 +87,9 @@ class Command(BaseCommand):
                 fields[data_type].index(field) for field in id_fields if field.endswith("_id")
             )
             return tuple(
-                row[index] if index not in id_field_indices else id_change_map[row[index]]
+                row[index]
+                if index not in id_field_indices
+                else id_change_map[data_type][row[index]]
                 for index in indices
             )
 
@@ -135,11 +137,21 @@ class Command(BaseCommand):
                         if field == "id":
                             continue
                         if data_type in related_id_fields and field in related_id_fields[data_type]:
-                            to_save_dict[field] = id_change_map[row[field_to_index[field]]]
+                            to_save_dict[field] = id_change_map[
+                                related_id_fields[data_type][field]
+                            ][row[field_to_index[field]]]
                         elif (
                             data_type in self_related_id_fields
                             and field in self_related_id_fields[data_type]
                         ):
+                            if row[field_to_index["id"]] == "109251":
+                                print(row)
+                                print(
+                                    identify_id_map[data_type][
+                                        generate_unique_id_str_from_row(data_type, row)
+                                    ]
+                                )
+                                print(generate_unique_id_str_from_row(data_type, row))
                             to_save_dict[field] = None
                             if field not in self_related_ids[data_type]:
                                 self_related_ids[data_type][field] = dict()
@@ -151,44 +163,46 @@ class Command(BaseCommand):
 
                     to_save[data_type].append(models[data_type](**to_save_dict))
 
-                for data_type in data_types:
-                    if data_type not in semester_filter.keys() and data_type in models:
-                        existing_objects = set(
-                            generate_unique_id_str_from_object(data_type, m)
-                            for m in models[data_type].objects.all()
-                        )
-                        to_save[data_type] = [
-                            ob
-                            for ob in to_save[data_type]
-                            if generate_unique_id_str_from_object(data_type, ob)
-                            not in existing_objects
-                        ]
-                    if data_type.endswith("_m2mfield"):
+                if data_type not in semester_filter.keys() and data_type in models:
+                    existing_objects = set(
+                        generate_unique_id_str_from_object(data_type, m)
+                        for m in models[data_type].objects.all()
+                    )
+                    to_save[data_type] = [
+                        ob
+                        for ob in to_save[data_type]
+                        if generate_unique_id_str_from_object(data_type, ob) not in existing_objects
+                    ]
+                if data_type.endswith("_m2mfield"):
+                    continue
+                models[data_type].objects.bulk_create(to_save[data_type])
+                objects[data_type] = dict()
+                if data_type not in semester_filter.keys():
+                    queryset = models[data_type].objects.all()
+                else:
+                    queryset = models[data_type].objects.filter(
+                        **{semester_filter[data_type] + "__in": list(semesters)}
+                    )
+                for object in queryset:
+                    if (
+                        generate_unique_id_str_from_object(data_type, object)
+                        not in identify_id_map[data_type]
+                    ):
                         continue
-                    models[data_type].objects.bulk_create(to_save[data_type])
-                    objects[data_type] = dict()
-                    if data_type not in semester_filter.keys():
-                        queryset = models[data_type].objects.all()
-                    else:
-                        queryset = models[data_type].objects.filter(
-                            **{semester_filter[data_type] + "__in": list(semesters)}
-                        )
-                    for object in queryset:
-                        if (
+                    objects[data_type][object.id] = object
+                    if data_type == "courses" and object.full_code == "OIDD-901":
+                        print(generate_unique_id_str_from_object(data_type, object))
+                    id_change_map[data_type][
+                        identify_id_map[data_type][
                             generate_unique_id_str_from_object(data_type, object)
-                            not in identify_id_map[data_type]
-                        ):
-                            continue
-                        objects[data_type][object.id] = object
-                        id_change_map[data_type][
-                            identify_id_map[data_type][
-                                generate_unique_id_str_from_object(data_type, object)
-                            ]
-                        ] = object.id
-                    for data_type, field in self_related_ids.items():
+                        ]
+                    ] = object.id
+                if data_type in self_related_ids.keys():
+                    for field in self_related_ids[data_type].keys():
                         for self_id, other_id in self_related_ids[data_type][field].items():
                             self_new_id = id_change_map[data_type][self_id]
-                            self_other_id = id_change_map[data_type][other_id]
-                            setattr(objects[data_type][self_new_id], field, self_other_id)
+                            if other_id is not None and other_id != "None":
+                                self_other_id = id_change_map[data_type][other_id]
+                                setattr(objects[data_type][self_new_id], field, self_other_id)
 
         print(f"Finished loading test data {src}... processed {row_count} rows. ")
