@@ -25,9 +25,9 @@ test_data_fields = {
     ],
     "courses_non_null_primary_listing": [
         "id",
+        "semester",
         "department_id",
         "code",
-        "semester",
         "title",
         "description",
         "full_code",
