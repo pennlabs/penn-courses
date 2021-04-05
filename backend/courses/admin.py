@@ -3,6 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
+from import_export.admin import ImportExportModelAdmin
 
 from courses.models import (
     APIKey,
@@ -38,15 +39,15 @@ class CustomUserAdmin(UserAdmin):
         return super(CustomUserAdmin, self).get_inline_instances(request, obj)
 
 
-class DepartmentAdmin(admin.ModelAdmin):
+class DepartmentAdmin(ImportExportModelAdmin):
     search_fields = ("code",)
 
 
-class InstructorAdmin(admin.ModelAdmin):
+class InstructorAdmin(ImportExportModelAdmin):
     search_fields = ("name",)
 
 
-class CourseAdmin(admin.ModelAdmin):
+class CourseAdmin(ImportExportModelAdmin):
     search_fields = ("full_code", "department__code", "code", "semester")
     autocomplete_fields = ("department", "primary_listing")
     readonly_fields = ("crosslistings",)
@@ -65,7 +66,7 @@ class CourseAdmin(admin.ModelAdmin):
         )
 
 
-class SectionAdmin(admin.ModelAdmin):
+class SectionAdmin(ImportExportModelAdmin):
     search_fields = (
         "full_code",
         "course__department__code",
@@ -89,7 +90,7 @@ class SectionAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', link, instance.course.__str__())
 
 
-class MeetingAdmin(admin.ModelAdmin):
+class MeetingAdmin(ImportExportModelAdmin):
     list_select_related = (
         "section",
         "room",
@@ -99,11 +100,11 @@ class MeetingAdmin(admin.ModelAdmin):
     )
 
 
-class RequirementAdmin(admin.ModelAdmin):
+class RequirementAdmin(ImportExportModelAdmin):
     autocomplete_fields = ("departments", "courses", "overrides")
 
 
-class StatusUpdateAdmin(admin.ModelAdmin):
+class StatusUpdateAdmin(ImportExportModelAdmin):
     autocomplete_fields = ("section",)
     readonly_fields = ("created_at",)
     list_select_related = ["section", "section__course", "section__course__department"]

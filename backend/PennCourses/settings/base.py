@@ -49,11 +49,14 @@ INSTALLED_APPS = [
     "options.apps.OptionsConfig",
     "django.contrib.admindocs",
     "django_extensions",
+    "import_export",
     "alert",
     "courses",
     "plan",
     "review",
 ]
+
+IMPORT_EXPORT_USE_TRANSACTIONS = True  # Tell import/export to use database transactions
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

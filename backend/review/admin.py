@@ -1,9 +1,10 @@
 from django.contrib import admin
+from import_export.admin import ImportExportModelAdmin
 
-from review.models import Review
+from review.models import Review, ReviewBit
 
 
-class ReviewAdmin(admin.ModelAdmin):
+class ReviewAdmin(ImportExportModelAdmin):
     search_fields = ["section__full_code"]
 
     autocomplete_fields = ["section", "instructor"]
@@ -15,7 +16,17 @@ class ReviewAdmin(admin.ModelAdmin):
     ]
 
 
-admin.site.register(Review, ReviewAdmin)
+class ReviewBitAdmin(ImportExportModelAdmin):
+    search_fields = ["review__section__full_code"]
+
+    autocomplete_fields = ["review"]
+
+    list_select_related = [
+        "review",
+    ]
 
 
 # Register your models here.
+
+admin.site.register(Review, ReviewAdmin)
+admin.site.register(ReviewBit, ReviewBitAdmin)

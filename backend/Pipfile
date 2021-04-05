@@ -52,6 +52,7 @@ tblib = "*"
 django-extensions = "*"
 numpy = "*"
 scikit-learn = "*"
+django-import-export = "*"
 
 [requires]
 python_version = "3"
