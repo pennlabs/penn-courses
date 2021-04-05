@@ -18,7 +18,13 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser):
-        parser.add_argument("--src", type=str, default="")
+        parser.add_argument(
+            "--src",
+            type=str,
+            default="",
+            help_text="The file path of the .csv file containing the status update "
+            "data you want to import",
+        )
 
     def handle(self, *args, **kwargs):
         src = os.path.abspath(kwargs["src"])

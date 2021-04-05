@@ -106,6 +106,7 @@ class RequirementAdmin(admin.ModelAdmin):
 class StatusUpdateAdmin(admin.ModelAdmin):
     autocomplete_fields = ("section",)
     readonly_fields = ("created_at",)
+    list_filter = ("section__course__semester",)
     list_select_related = ["section", "section__course", "section__course__department"]
 
 

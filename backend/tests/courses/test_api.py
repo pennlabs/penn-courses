@@ -1,6 +1,8 @@
 import json
+import os
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from options.models import Option
@@ -10,7 +12,7 @@ from alert.models import AddDropPeriod
 from courses.models import Department, Instructor, Requirement
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course
-from tests.courses.util import create_mock_data
+from tests.courses.util import create_mock_data, create_mock_data_with_reviews
 
 
 TEST_SEMESTER = "2019A"
@@ -886,3 +888,20 @@ class DocumentationTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(reverse("openapi-schema"))
         self.assertEqual(response.status_code, 200)
+
+
+class ExportTestCoursesDataTestCase(TestCase):
+    def setUp(self):
+        set_semester()
+        create_mock_data_with_reviews("CIS-121-001", TEST_SEMESTER, 2)
+        create_mock_data_with_reviews("COGS-001-001", TEST_SEMESTER, 2)
+        create_mock_data_with_reviews("STAT-430-001", TEST_SEMESTER, 3)
+
+    def test_export_script(self):
+        call_command(
+            "export_test_courses_data",
+            courses_query="C",
+            path=os.devnull,
+            upload_to_s3=False,
+            semesters=TEST_SEMESTER,
+        )
