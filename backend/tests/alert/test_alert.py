@@ -1,10 +1,12 @@
 import base64
 import importlib
 import json
+import os
 from unittest.mock import patch
 
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -853,6 +855,11 @@ class CourseStatusUpdateTestCase(TestCase):
         response = self.client.get(reverse("statusupdate", args=["CIS-121"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+    def test_export_status_updates(self):
+        call_command(
+            "export_status_history", file_path=os.devnull, semesters=TEST_SEMESTER,
+        )
 
 
 @ddt
@@ -2575,3 +2582,9 @@ class AlertRegistrationTestCase(TestCase):
                 reverse("registrations-detail", args=[ids[specific_ids + "_id"]])
             )
             self.assertIsNone(response.data.get("last_notification_sent_at"))
+
+    def test_export_registrations(self):
+        self.create_auto_resubscribe_group()
+        call_command(
+            "export_anon_registrations", file_path=os.devnull, semesters=TEST_SEMESTER,
+        )
