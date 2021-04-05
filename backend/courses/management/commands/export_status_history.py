@@ -54,7 +54,7 @@ class Command(BaseCommand):
         script_print_path = ("s3://penn.courses/" if upload_to_s3 else "") + path
         print(f"Generating {script_print_path} with status updates from semesters {semesters}...")
         rows = 0
-        output_file_path = "/tmp/export_status_history_output.csv" if upload_to_s3 else path
+        output_file_path = "/app/export_status_history_output.csv" if upload_to_s3 else path
         with open(output_file_path, "w") as output_file:
             for update in tqdm(
                 StatusUpdate.objects.filter(section__course__semester__in=semesters)
@@ -64,11 +64,12 @@ class Command(BaseCommand):
                 rows += 1
                 output_file.write(
                     f"{update.section.full_code},{update.section.semester},"
-                    f"{update.created_at.date().strftime('%Y-%m-%d %H:%M:%S.%f %Z')},"
+                    f"{update.created_at.strftime('%Y-%m-%d %H:%M:%S.%f %Z')},"
                     f"{update.old_status},{update.new_status}\n"
                 )
         if upload_to_s3:
             S3_resource.meta.client.upload_file(
-                "/tmp/export_status_history_output.csv", "penn.courses", path
+                "/app/export_status_history_output.csv", "penn.courses", path
             )
+            os.remove("/app/export_status_history_output.csv")
         print(f"Generated {script_print_path} with {rows} rows...")

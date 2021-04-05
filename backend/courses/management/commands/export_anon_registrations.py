@@ -77,7 +77,7 @@ class Command(BaseCommand):
             f"semesters {semesters}..."
         )
         rows = 0
-        output_file_path = "/tmp/export_anon_registrations.csv" if upload_to_s3 else path
+        output_file_path = "/app/export_anon_registrations.csv" if upload_to_s3 else path
         with open(output_file_path, "w") as output_file:
             for registration in tqdm(
                 Registration.objects.filter(section__course__semester__in=semesters)
@@ -106,6 +106,7 @@ class Command(BaseCommand):
                 )
         if upload_to_s3:
             S3_resource.meta.client.upload_file(
-                "/tmp/export_anon_registrations.csv", "penn.courses", path
+                "/app/export_anon_registrations.csv", "penn.courses", path
             )
+            os.remove("/app/export_anon_registrations.csv")
         print(f"Generated {script_print_path} with {rows} rows...")
