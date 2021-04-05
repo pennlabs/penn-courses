@@ -17,8 +17,8 @@ from review.documentation import (
     instructor_reviews_response_schema,
 )
 from review.models import ALL_FIELD_SLUGS, Review
-from review.util import aggregate_reviews, make_subdict
-
+from review.util import aggregate_reviews, make_subdict, avg_and_recent_demand_plots, \
+    avg_and_recent_percent_open_plots
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
@@ -74,6 +74,7 @@ def course_reviews(request, course_code):
             {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
+            extra_metrics=True
         )
         .annotate(
             course_title=F("section__course__title"),
@@ -88,9 +89,20 @@ def course_reviews(request, course_code):
     course_qs = annotate_average_and_recent(
         Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
         match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
+        extra_metrics=True
     )
 
     course = dict(course_qs[:1].values()[0])
+
+    # Compute plots
+    sections = Section.objects.filter(course__full_code=course_code).annotate(semester=F("course__semester"))
+    section_map = dict()  # a dict mapping semester to section id to section object
+    for section in sections:
+        if section.semester not in section_map:
+            section_map[section.semester] = dict()
+        section_map[section.semester][section.id] = section
+    avg_demand_plot, recent_demand_plot = avg_and_recent_demand_plots(section_map)
+    avg_percent_open_plot, recent_percent_open_plot = avg_and_recent_percent_open_plots(section_map)
 
     return Response(
         {
@@ -112,11 +124,18 @@ def course_reviews(request, course_code):
             .values("full_code", "course__semester")
             .distinct()
             .count(),
-            "average_reviews": make_subdict("average_", course),
-            "recent_reviews": make_subdict("recent_", course),
+            "average_reviews": {
+                **make_subdict("average_", course),
+                "pca_demand_plot": avg_demand_plot,
+                "percent_open_plot": avg_percent_open_plot
+            },
+            "recent_reviews": {
+                **make_subdict("recent_", course),
+                "pca_demand_plot": recent_demand_plot,
+                "percent_open_plot": recent_percent_open_plot
+            },
             "num_semesters": course["average_semester_count"],
             "instructors": instructors,
-            # TODO: add visualizations data
         }
     )
 
@@ -153,6 +172,7 @@ def instructor_reviews(request, instructor_id):
     instructor_qs = annotate_average_and_recent(
         Instructor.objects.filter(pk=instructor.pk),
         match_on=Q(instructor_id=OuterRef(OuterRef("id"))),
+        extra_metrics=True
     )
 
     courses = annotate_average_and_recent(
@@ -162,6 +182,7 @@ def instructor_reviews(request, instructor_id):
         match_on=Q(
             section__course__full_code=OuterRef(OuterRef("full_code")), instructor_id=instructor.id,
         ),
+        extra_metrics=True
     )
 
     inst = instructor_qs.values()[0]
@@ -227,6 +248,7 @@ def department_reviews(request, department_code):
             {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
+            extra_metrics=True
         )
         .annotate(
             course_title=F("section__course__title"),
@@ -275,6 +297,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         {"review_id": OuterRef("id")},
         fields=ALL_FIELD_SLUGS,
         prefix="bit_",
+        extra_metrics=True
     )
     reviews = reviews.annotate(
         course_title=F("section__course__title"),

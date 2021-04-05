@@ -93,6 +93,8 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
             # be modified unless the entire update for a semester succeeds.
             # If set_cache is True, we will set the current_demand_extrema variable in cache
 
+            add_drop_period = AddDropPeriod.get(semester=semester)
+
             if verbose:
                 print(f"Processing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.\n")
                 print(
@@ -118,7 +120,7 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
             )
 
             iterator = (
-                Registration.objects.filter(section__course__semester=semester)
+                Registration.objects.filter(section__course__semester=semester).select_related("section")
                 .select_for_update()
                 .order_by("created_at")
             )
@@ -168,7 +170,7 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
 
             latest_pcape = None
             registration_volumes = dict()
-            popularities = dict()
+            demands = dict()
 
             for change in all_changes:
                 full_code = change["full_code"]
@@ -184,23 +186,23 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                         least_popular_section=sections[full_code],
                         least_popular_volume=volume_change,
                     )
-                    new_extrema.save()
+                    new_extrema.save(add_drop_period=add_drop_period)
                     latest_pcape = new_extrema
                 else:
                     if full_code not in registration_volumes:
                         registration_volumes[full_code] = 0
                     registration_volumes[full_code] += volume_change
-                    popularities[full_code] = (
+                    demands[full_code] = (
                         registration_volumes[full_code] / capacities[full_code]
                     )
                     new_most_popular = None
                     if full_code != latest_pcape.most_popular_section.full_code:
-                        if popularities[full_code] > latest_pcape.highest_raw_demand:
+                        if demands[full_code] > latest_pcape.highest_raw_demand:
                             new_most_popular = full_code
                     else:
                         if volume_change < 0:
                             max_code, max_val = max(
-                                popularities.items(), key=operator.itemgetter(1)
+                                demands.items(), key=operator.itemgetter(1)
                             )
                             if max_val > latest_pcape.highest_raw_demand:
                                 new_most_popular = max_code
@@ -213,16 +215,16 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                             least_popular_section=latest_pcape.least_popular_section,
                             least_popular_volume=latest_pcape.least_popular_volume,
                         )
-                        new_extrema.save()
+                        new_extrema.save(add_drop_period=add_drop_period)
                         latest_pcape = new_extrema
                     new_least_popular = None
                     if full_code != latest_pcape.least_popular_section.full_code:
-                        if popularities[full_code] < latest_pcape.lowest_raw_demand:
+                        if demands[full_code] < latest_pcape.lowest_raw_demand:
                             new_least_popular = full_code
                     else:
                         if volume_change < 0:
                             max_code, max_val = max(
-                                popularities.items(), key=operator.itemgetter(1)
+                                demands.items(), key=operator.itemgetter(1)
                             )
                             if max_val > latest_pcape.highest_raw_demand:
                                 new_least_popular = max_code
@@ -235,7 +237,7 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                             least_popular_section=registration_volumes[new_least_popular],
                             least_popular_volume=sections[new_least_popular],
                         )
-                        new_extrema.save()
+                        new_extrema.save(add_drop_period=add_drop_period)
                         latest_pcape = new_extrema
 
             if set_cache:
@@ -285,9 +287,9 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
             if verbose:
                 print(f"Processing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.\n")
 
-            StatusUpdate.objects.filter(semester=semester).select_for_update()
+            StatusUpdate.objects.filter(section__course__semester=semester).select_for_update()
 
-            sections = Section.objects.filter(semester=semester)
+            sections = Section.objects.filter(section__course__semester=semester)
             num_erroneous_updates = 0
             num_total_updates = 0
             for section in sections:

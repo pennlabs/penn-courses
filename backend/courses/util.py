@@ -159,7 +159,7 @@ def update_percent_open(section, last_status_update, new_status_update):
         after_seconds = Decimal(
             max(
                 (
-                    min(new_status_update.created_at, add_drop_end) - last_status_update.created_at
+                    min(new_status_update.created_at, add_drop_end) - max(last_status_update.created_at, add_drop_start)
                 ).total_seconds(),
                 0,
             )
@@ -174,7 +174,7 @@ def update_percent_open(section, last_status_update, new_status_update):
     section.save()
 
 
-def record_update(section_id, semester, old_status, new_status, alerted, req):
+def record_update(section_id, semester, old_status, new_status, alerted, req, created_at=None):
     from alert.models import validate_add_drop_semester  # avoid circular imports
 
     _, section, _, _ = get_or_create_course_and_section(section_id, semester)
@@ -192,9 +192,11 @@ def record_update(section_id, semester, old_status, new_status, alerted, req):
         alert_sent=alerted,
         request_body=req,
     )
+    if created_at is not None:
+        u.created_at = created_at
     u.save()
     try:
-        # only update percent open if the given semester is valid
+        # only update percent open if the given semester is valid and fall or spring
         validate_add_drop_semester(semester)
         update_percent_open(section, last_status_update, u)
         # update the section's percent_open field

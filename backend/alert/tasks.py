@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 
-from alert.models import PcaDemandExtrema, Registration
+from alert.models import PcaDemandExtrema, Registration, AddDropPeriod
 from courses.models import Section, StatusUpdate
 from courses.util import get_course_and_section, get_current_semester, update_course_from_record
 
@@ -65,6 +65,7 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
     """
     section = Section.objects.get(id=section_id)
     semester = section.semester
+    add_drop_period = AddDropPeriod.objects.get(semester=semester)
     assert semester == get_current_semester()
     if was_active == is_now_active:
         return
@@ -109,7 +110,7 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
                     least_popular_section=section,
                     least_popular_volume=section.registration_volume,
                 )
-                pca_demand_extrema.save()
+                pca_demand_extrema.save(add_drop_period=add_drop_period)
             return
 
         new_max = section.raw_demand > current_demand_extrema.highest_raw_demand

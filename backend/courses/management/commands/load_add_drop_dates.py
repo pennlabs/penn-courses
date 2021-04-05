@@ -16,6 +16,7 @@ from PennCourses.settings.base import TIME_ZONE
 def load_add_drop_dates(verbose=False):
     semester = get_current_semester()
     validate_add_drop_semester(semester)
+
     if verbose:
         print(f"Loading add/drop period dates for semester {semester} from the Almanac")
     with transaction.atomic():

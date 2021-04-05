@@ -1,61 +1,62 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
+from django.db.models import Avg, Subquery, IntegerField, OuterRef, Count, Value
 from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
+from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import AddDropPeriod
-from courses.models import Instructor
-from courses.util import get_or_create_course_and_section
+from courses.models import Instructor, StatusUpdate, Section
+from courses.util import get_or_create_course_and_section, record_update
 from review.import_utils.import_to_db import import_review
-
+from review.models import Review, ReviewBit
+from tests.review.test_api import PCRTestMixin, create_review
 
 TEST_SEMESTER = "2017C"
-
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
 
 
-def create_review(section_code, semester, instructor_name, bits):
-    course, section, _, _ = get_or_create_course_and_section(section_code, semester)
-    instructor, _ = Instructor.objects.get_or_create(name=instructor_name)
-    section.instructors.add(instructor)
-    import_review(section, instructor, None, None, None, bits, lambda x, y: None)
-
-
-class PCRTestMixin(object):
+class PCRTestMixinExtra(PCRTestMixin):
     """
     This mixin class contains a utility function for quickly writing new tests.
     """
 
-    def assertDictContains(self, entire, subdict, path=list()):
+    def assertDictAlmostEquals(self, dict1, dict2, path=None):
+        """
+        Assert that one dictionary almost equals another (allowing small deviations for floats)
+        """
+        path = path if path is not None else []
+        if isinstance(dict1, dict) and isinstance(dict2, dict):
+            self.assertEquals(dict1.keys(), dict2.keys(), "/".join(path))
+            for key in dict1:
+                self.assertDictAlmostEquals(dict1[key], dict2[key], path + [str(key)])
+        try:
+            float1 = float(dict1)
+            float2 = float(dict2)
+            self.assertAlmostEquals(float1, float2, msg="/".join(path))
+        except ValueError as e:
+            self.assertEquals(dict1, dict2, "/".join(path))
+
+    def assertDictContains(self, entire, subdict, path=None):
         """
         Assert that one dictionary is the subset of another.
         """
+        path = path if path is not None else []
         if isinstance(entire, dict) and isinstance(subdict, dict):
             sublist = subdict.items()
         elif isinstance(entire, list) and isinstance(subdict, list):
             sublist = enumerate(subdict)
         else:
-            return self.assertEqual(entire, subdict, "/".join(path))
+            return self.assertDictAlmostEquals(entire, subdict, path)
 
         for k, v in sublist:
             self.assertDictContains(entire[k], subdict[k], path + [str(k)])
 
-    def assertRequestContains(self, url, args, expected):
-        """
-        Do the equivalent of a "subset" check on the response from an API endpoint.
-        :param url: `name` of django view
-        :param args: single or multiple arguments for view.
-        :param expected: expected values from view.
-        """
-        if not isinstance(args, list):
-            args = [args]
-        res = self.client.get(reverse(url, args=args))
-        self.assertEqual(200, res.status_code)
-        self.assertDictContains(res.data, expected)
-        return res.data
 
 
 """
@@ -64,61 +65,90 @@ a bit easier to do. All of the tests use instructor_quality as the reviewbit to 
 these helper functions cut down on a lot of the repeated characters in the responses.
 """
 
-
-def ratings_dict(label, n):
+def ratings_dict(label, rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
     return {label: {
-        "rInstructorQuality": n
+        "rInstructorQuality": rInstructorQuality,
+        "rFinalEnrollmentPercentage": rFinalEnrollmentPercentage,
+        "rPercentOpen": rPercentOpen,
+        "rNumOpenings": rNumOpenings
     }}
 
-def average(n):
-    return ratings_dict("average_reviews", n)
+def average(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
+    return ratings_dict("average_reviews", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings)
 
-def recent(n):
-    return ratings_dict("recent_reviews", n)
+def recent(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
+    return ratings_dict("recent_reviews", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings)
 
-def rating(n):
-    return ratings_dict("ratings", n)
-
-def average_and_recent(a, r):
-    return {**average(a), **recent(r)}
+def rating(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
+    return ratings_dict("ratings", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings)
 
 
-class OneReviewTestCase(TestCase, PCRTestMixin):
+class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
+    @classmethod
+    def setUpTestData(cls):
+        set_semester()
+        cls.instructor_name = "Instructor One"
+        create_review("CIS-120-001", TEST_SEMESTER, cls.instructor_name, {"instructor_quality": 3.5})
+        cls.instructor_quality = 3.5
+        cls.adp = AddDropPeriod(semester=TEST_SEMESTER)
+        cls.adp.save()
+        start = cls.adp.estimated_start
+        end = cls.adp.estimated_end
+        duration = (end-start)
+        old_status = "O"
+        new_status = "C"
+        for date in [start+i*duration/7 for i in range(1, 7)]:  # OCOCOC
+            record_update("CIS-120-001", TEST_SEMESTER, old_status, new_status, False, dict(), created_at=date)
+            old_status, new_status = new_status, old_status
+        recompute_percent_open(semesters=TEST_SEMESTER)
+        cls.percent_open = (duration/2).total_seconds() / duration.total_seconds()
+        cls.num_updates = 3
+        section = Section.objects.get()
+        review = Review.objects.get()
+        review.enrollment = 80
+        section.capacity = 100
+        review.save()
+        section.save()
+        cls.enrollment_pct = 80/100
+
     def setUp(self):
-        self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
 
     def test_course(self):
+        subdict = {**average(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates),
+                   **recent(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates)}
         self.assertRequestContains(
             "course-reviews",
             "CIS-120",
             {
-                **average_and_recent(4, 4),
-                "instructors": {Instructor.objects.get().pk: {**average_and_recent(4, 4)}},
-            },
+                **subdict,
+                "instructors": {Instructor.objects.get().pk: subdict}
+            }
         )
 
     def test_instructor(self):
+        subdict = {**average(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates),
+                   **recent(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates)}
         self.assertRequestContains(
             "instructor-reviews",
             Instructor.objects.get().pk,
-            {**average_and_recent(4, 4), "courses": {"CIS-120": {**average_and_recent(4, 4)}}},
+            {**subdict, "courses": {"CIS-120": subdict}},
         )
 
     def test_department(self):
+        subdict = {**average(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates),
+                   **recent(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates)}
         self.assertRequestContains(
-            "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(4, 4)}}
+            "department-reviews", "CIS", {"courses": {"CIS-120": subdict}}
         )
 
     def test_history(self):
         self.assertRequestContains(
-            "course-history", ["CIS-120", Instructor.objects.get().pk], {"sections": [rating(4)]}
+            "course-history", ["CIS-120", Instructor.objects.get().pk], {"sections": [rating(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates)]}
         )
 
     def test_autocomplete(self):
-        set_semester()
         self.assertRequestContains(
             "review-autocomplete",
             [],
@@ -136,7 +166,8 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         )
 
 
-class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
+# TODO: below
+class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixinExtra):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
@@ -180,7 +211,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         )
 
 
-class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
+class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixinExtra):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
@@ -213,7 +244,7 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
         )
 
 
-class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
+class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixinExtra):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
@@ -252,7 +283,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         )
 
 
-class TwoSectionTestCase(TestCase, PCRTestMixin):
+class TwoSectionTestCase(TestCase, PCRTestMixinExtra):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
@@ -289,7 +320,7 @@ class TwoSectionTestCase(TestCase, PCRTestMixin):
         )
 
 
-class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
+class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixinExtra):
     def setUp(self):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
@@ -341,7 +372,7 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
         )
 
 
-class TwoDepartmentTestCase(TestCase, PCRTestMixin):
+class TwoDepartmentTestCase(TestCase, PCRTestMixinExtra):
     def setUp(self):
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
         create_review("MATH-114-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
@@ -396,7 +427,7 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
         )
 
 
-class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
+class NoReviewForSectionTestCase(TestCase, PCRTestMixinExtra):
     def setUp(self):
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
         _, recitation, _, _ = get_or_create_course_and_section("CIS-120-201", TEST_SEMESTER)

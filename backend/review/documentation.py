@@ -7,9 +7,15 @@ from review.util import to_r_camel
 # documentation at localhost:8000/api/documentation/ in the PCR section, rather than
 # reading through this file
 
+EXPANDED_REVIEW_BIT_LABEL = tuple(list(REVIEW_BIT_LABEL)+[
+    ("RFINALENROLLMENTPERCENTAGE", "Final Enrollment Percentage (enrollment/capacity)", "final_enrollment_percentage"),
+    ("RPERCENTOPEN", "Percent of Add/Drop Open", "percent_open"),
+    ("RNUMOPENINGS", "Number of Openings During Add/Drop", "num_openings")
+])
+
 course_review_aggregation_schema_no_extras = {
     to_r_camel(bit_label[2]): {"type": "number", "description": f"Average {bit_label[1]}"}
-    for bit_label in REVIEW_BIT_LABEL
+    for bit_label in EXPANDED_REVIEW_BIT_LABEL
 }
 course_review_aggregation_schema = {
     # This dict contains the schema of the "_reviews" fields returned in course review views
@@ -25,12 +31,43 @@ course_review_aggregation_schema = {
     },
     **course_review_aggregation_schema_no_extras,
 }
+course_review_aggregation_schema_with_plots = {
+    "pca_demand_plot": {
+        "type": "array",
+        "description": (
+            "The plot of average relative pca demand for sections of this course over time "
+            "during historical add/drop periods. This plot is an array of pairs (2-length arrays), "
+            "with each pair of the form `[percent_through, relative_pca_demand]`. The "
+            "`percent_through` value is a float in the range [0,1], and represents percentage "
+            "through the add/drop period. The `relative_pca_demand` value is a float in the "
+            "range [0,4], and represents the average of the relative pca demands of all sections "
+            "of this course, at that point in time. Note that the first item of each pair should "
+            "be plotted on the 'x-axis' and the second item should be plotted on the 'y-axis'. "
+            "This field will not be missing."
+        )
+    },
+    "percent_open_plot": {
+        "type": "array",
+        "description": (
+            "The plot of percentage of sections of this course that were open at each point in "
+            "time during historical add/drop periods. This plot is an array of pairs "
+            "(2-length arrays), with each pair of the form `[percent_through, "
+            "percent_open]`. The `percent_through` value is a float in the range [0,1], "
+            "and represents percentage through the add/drop period. The `percent_open` value "
+            "is a float in the range [0,1], and represents the percent of sections of this course "
+            "that were open, at that point in time. Note that the first item of each pair should "
+            "be plotted on the 'x-axis' and the second item should be plotted on the 'y-axis'. "
+            "This field will not be missing."
+        )
+    },
+    **course_review_aggregation_schema,
+}
 instructor_review_aggregation_schema = {
     # This dict contains the schema of the "_reviews" fields returned in the
     # course-specific instructor review aggregation object within the response returned by
     # course review views
     to_r_camel(bit_label[2]): {"type": "number", "description": f"Average {bit_label[1]}"}
-    for bit_label in REVIEW_BIT_LABEL
+    for bit_label in EXPANDED_REVIEW_BIT_LABEL
 }
 
 course_reviews_response_schema = {
@@ -66,12 +103,12 @@ course_reviews_response_schema = {
                     "average_reviews": {
                         "type": "object",
                         "description": "This course's average reviews across all of its sections from all semesters. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
-                        "properties": course_review_aggregation_schema,
+                        "properties": course_review_aggregation_schema_with_plots,
                     },
                     "recent_reviews": {
                         "type": "object",
                         "description": "This course's average reviews across all of its sections from the most recent semester. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
-                        "properties": course_review_aggregation_schema,
+                        "properties": course_review_aggregation_schema_with_plots,
                     },
                     "num_semesters": {
                         "type": "integer",

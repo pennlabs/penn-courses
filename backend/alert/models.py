@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
-from django.db.models import Case, Max, Q, Value, When
+from django.db.models import Case, Max, Q, Value, When, F
 from django.db.models.functions import Cast
 from django.utils import timezone
 from django.utils.timezone import make_aware
@@ -379,7 +379,7 @@ class Registration(models.Model):
         deactivated_dt = None
         for field, active_value in self.is_active_filter().items():
             if active_value and hasattr(self, field + "_at"):
-                field_changed_at = getattr(self, field + "_at")
+                field_changed_at = getattr(self, field + "_at").date()
                 if deactivated_dt is None or (
                     field_changed_at is not None and field_changed_at < deactivated_dt
                 ):
@@ -853,15 +853,20 @@ class PcaDemandExtrema(models.Model):
         help_text="The registration volume of the least popular section at this time."
     )
 
+    percent_through_add_drop_period = models.DecimalField(
+        decimal_places=4, max_digits=6,
+        help_text="The percentage through the add/drop period at which this demand extrema change "
+                  "occurred. This percentage is constrained within the range [0,1]."
+    )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
+    # and the save() method of PcaDemandExtrema
+
+    in_add_drop_period = models.BooleanField(
+        default=False, help_text="Was this status update created during the add/drop period?"
+    )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
+    # and the save() method of PcaDemandExtrema
+
     def __str__(self):
         return f"PcaDemandExtrema {self.semester} @ {self.created_at}"
-
-    @property
-    def percentage_through_add_drop_period(self):
-        """
-        The percentage of the add/drop period elapsed at this extrema's created_at datetime.
-        """
-        return AddDropPeriod.get(semester=self.semester).get_percentage_through(self.created_at)
 
     @property
     def highest_raw_demand(self):
@@ -916,6 +921,26 @@ class PcaDemandExtrema(models.Model):
                 if is_current_sem:
                     cache.set("current_demand_extrema", current_demand_extrema, timeout=None)
         return current_demand_extrema
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        created_at = self.created_at.date()
+        if "add_drop_period" in kwargs:
+            add_drop_period = kwargs["add_drop_period"]
+        else:
+            add_drop_period = AddDropPeriod.objects.get(semester=self.semester)
+        start = add_drop_period.start
+        end = add_drop_period.end
+        if created_at < start:
+            self.in_add_drop_period = False
+            self.percent_through_add_drop_period = 0
+        elif created_at > end:
+            self.in_add_drop_period = False
+            self.percent_through_add_drop_period = 1
+        else:
+            self.in_add_drop_period = True
+            self.percent_through_add_drop_period = (created_at - start)/(end-start)
+        super().save()
 
 
 def validate_add_drop_semester(semester):
@@ -993,27 +1018,48 @@ class AddDropPeriod(models.Model):
         ),
     )
 
-    def get_percentage_through(self, dt):
+    def get_percent_through_add_drop(self, dt):
         """
-        Returns the percentage of datetime dt through this add/drop period.
+        The percentage through this add/drop period at which this dt occured.
+        This percentage is constrained within the range [0,1]."
         """
         start = self.estimated_start
         end = self.estimated_end
-        return min(max((dt - start) / (end - start), 0), 1)
+        if dt < start:
+            return 0
+        if dt > end:
+            return 1
+        else:
+            return (dt - start) / (end - start)
 
     def save(self, *args, **kwargs):
         self.estimated_start = self.estimate_start()
         self.estimated_end = self.estimate_end()
-        StatusUpdate.objects.filter(section__course__semester=self.semester).update(
-            in_add_drop_period=Case(
-                When(
-                    Q(created_at__gte=self.estimated_start) & Q(created_at__lte=self.estimated_end),
-                    then=Value(True),
+        period = self.estimated_end - self.estimated_start
+        for model, sem_filter_key in [(StatusUpdate, "section__course__semester"), (PcaDemandExtrema, "semester")]:
+            sem_filter = {sem_filter_key: self.semester}
+            model.objects.filter(**sem_filter).update(
+                in_add_drop_period=Case(
+                    When(
+                        Q(created_at__gte=self.estimated_start) & Q(created_at__lte=self.estimated_end),
+                        then=Value(True),
+                    ),
+                    default=Value(False),
+                    output_field=models.BooleanField(),
                 ),
-                default=Value(False),
-                output_field=models.BooleanField(),
+                percent_through_add_drop_period=Case(
+                    When(
+                        Q(created_at__lte=self.estimated_start),
+                        then=Value(0),
+                    ),
+                    When(
+                        Q(created_at__gte=self.estimated_end),
+                        then=Value(1)
+                    ),
+                    default=(F("created_at")-Value(self.estimated_start)) / Value(period),
+                    output_field=models.DecimalField(decimal_places=4, max_digits=6),
+                ),
             )
-        )
         super().save(*args, **kwargs)
 
     def estimate_start(self):
