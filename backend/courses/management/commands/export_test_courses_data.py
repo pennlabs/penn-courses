@@ -38,14 +38,14 @@ test_data_fields = {
     "instructors": ["id", "name"],
     "sections_instructors_m2mfield": [
         "sections",
-        "section_id",
+        "id",
         "instructors",
         "instructor_id",
         "instructors",
-    ],
+    ],  # _m2mfield schema: from model, from id, through field, to id, to model
     "sections_associated_sections_m2mfield": [
         "sections",
-        "section_id",
+        "id",
         "associated_sections",
         "associated_section_id",
         "sections",
@@ -84,6 +84,31 @@ related_id_fields = {
 self_related_id_fields = {
     "courses": ["primary_listing_id"]
 }  # specify fields which represent foreign key relationships to the same model
+
+models = {
+    "departments": Department,
+    "courses": Course,
+    "sections": Section,
+    "instructors": Instructor,
+    "reviews": Review,
+    "review_bits": ReviewBit,
+}  # maps data type to corresponding model (if the data type represents a model)
+
+unique_identifying_fields = {
+    "departments": ["code"],
+    "courses": ["full_code", "semester"],
+    "sections": ["course_id", "code"],
+    "instructors": ["name"],
+    "reviews": ["section_id", "instructor_id"],
+    "review_bits": ["review_id", "field"],
+}  # maps data type to its identifying fields other than id (if the data type represents a model)
+
+semester_filter = {
+    "courses": "semester",
+    "sections": "course__semester",
+    "reviews": "section__course__semester",
+    "review_bits": "review__section__course__semester",
+}  # maps data type to the query for its semester
 
 
 class Command(BaseCommand):
@@ -154,16 +179,17 @@ class Command(BaseCommand):
 
                 if data_type.endswith("_m2mfield"):
                     for object in tqdm(querysets[fields[data_type][0]]):
-                        for related_object in getattr(object, fields[data_type][1]).all():
+                        for related_object in getattr(object, fields[data_type][2]).all():
                             rows += 1
+                            # _m2mfield schema: from model, from id, through field, to id, to model
                             csv_writer.writerow(
                                 [data_type]
                                 + [
                                     fields[data_type][0],
                                     object.id,
-                                    fields[data_type][1],
-                                    str(related_object.id),
                                     fields[data_type][2],
+                                    str(related_object.id),
+                                    fields[data_type][4],
                                 ]
                             )
                     continue

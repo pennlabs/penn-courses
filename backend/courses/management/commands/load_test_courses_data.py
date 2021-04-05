@@ -5,14 +5,14 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
-from alert.models import AddDropPeriod
 from courses.management.commands.export_test_courses_data import (
+    models,
     related_id_fields,
-    test_data_fields,
     self_related_id_fields,
+    semester_filter,
+    test_data_fields,
+    unique_identifying_fields,
 )
-from courses.models import Course, Department, Instructor, Section
-from review.models import Review, ReviewBit
 
 
 class Command(BaseCommand):
@@ -52,10 +52,7 @@ class Command(BaseCommand):
             data_reader = csv.reader(data_file, delimiter=",", quotechar='"')
             for row in data_reader:
                 data_type = row[0]
-                if data_type in [
-                    "courses_null_primary_listing",
-                    "courses_non_null_primary_listing",
-                ]:
+                if data_type in "courses":
                     semesters.add(row[2])
                 assert data_type in data_types, (
                     f"Datatype {data_type} in the given csv is not valid for this version "
@@ -70,29 +67,9 @@ class Command(BaseCommand):
                 rows_map[data_type].append(row)
                 row_count += 1
         objects = dict()  # maps datatype to object id to object
-        models = dict(
-            {
-                "departments": Department,
-                "courses_null_primary_listing": Course,
-                "courses_non_null_primary_listing": Course,
-                "sections": Section,
-                "instructors": Instructor,
-                "reviews": Review,
-                "review_bits": ReviewBit,
-            }
-        )
         to_save = {data_type: [] for data_type in data_types}
         # to_save: maps datatype to list of objects to save
 
-        unique_identifying_fields = {
-            "departments": ["code"],
-            "courses_null_primary_listing": ["full_code", "semester"],
-            "courses_non_null_primary_listing": ["full_code", "semester"],
-            "sections": ["course_id", "code"],
-            "instructors": ["name"],
-            "reviews": ["section_id", "instructor_id"],
-            "review_bits": ["review_id", "field"],
-        }
         identify_id_map = {data_type: dict() for data_type in data_types}
         # identify_id_map: maps datatype to unique identification str to old id
         id_change_map = {data_type: dict() for data_type in data_types}
@@ -124,14 +101,6 @@ class Command(BaseCommand):
                 field_value = getattr(object, field)
                 id_components.append(field_value)
             return tuple(id_components)
-
-        semester_filter = {
-            "courses_null_primary_listing": "semester",
-            "courses_non_null_primary_listing": "semester",
-            "sections": "course__semester",
-            "reviews": "section__course__semester",
-            "review_bits": "review__section__course__semester",
-        }
 
         print(
             "This script is atomic, meaning either all the test data from the given "
