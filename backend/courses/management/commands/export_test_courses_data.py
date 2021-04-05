@@ -3,6 +3,7 @@ import os
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
+from django.db.models import Q, Subquery
 from tqdm import tqdm
 
 from courses.management.commands.export_anon_registrations import get_semesters
@@ -198,7 +199,16 @@ class Command(BaseCommand):
                     queryset = Department.objects.all()
                 elif data_type == "courses":
                     queryset = Course.objects.filter(
-                        semester__in=semesters, full_code__startswith=kwargs["courses_query"],
+                        Q(full_code__startswith=kwargs["courses_query"])
+                        | Q(
+                            id__in=Subquery(
+                                Course.objects.filter(
+                                    full_code__startswith=kwargs["courses_query"],
+                                    semester__in=semesters,
+                                ).values_list("primary_listing_id", flat=True)
+                            )
+                        ),
+                        semester__in=semesters,
                     )
                     querysets["courses"] = queryset
                 elif data_type == "sections":
