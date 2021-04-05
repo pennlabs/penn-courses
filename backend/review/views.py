@@ -101,13 +101,13 @@ def course_reviews(request, course_code):
 
     # Compute plots
     sections = Section.objects.filter(course__full_code=course_code).annotate(
-        semester=F("course__semester")
+        efficient_semester=F("course__semester")
     )
     section_map = dict()  # a dict mapping semester to section id to section object
     for section in sections:
-        if section.semester not in section_map:
-            section_map[section.semester] = dict()
-        section_map[section.semester][section.id] = section
+        if section.efficient_semester not in section_map:
+            section_map[section.efficient_semester] = dict()
+        section_map[section.efficient_semester][section.id] = section
     avg_demand_plot, recent_demand_plot = avg_and_recent_demand_plots(section_map)
     avg_percent_open_plot, recent_percent_open_plot = avg_and_recent_percent_open_plots(section_map)
 

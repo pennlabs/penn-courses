@@ -1,6 +1,8 @@
 import re
 from typing import Dict, List
 
+from django.db.models import F
+
 
 def titleize(name):
     """
@@ -193,12 +195,13 @@ def avg_and_recent_demand_plots(section_map):
     registrations_map = dict()
     # registrations_map: maps semester to section id to a list of registrations from that section
     for semester in section_map.keys():
+        registrations_map[semester] = dict()
         for section_id in section_map[semester].keys():
             registrations_map[semester][section_id] = []
     section_id_to_semester = {
-        section.id: section.semester
+        section.id: section.efficient_semester
         for semester in section_map.keys()
-        for section in section_map[semester]
+        for section in section_map[semester].values()
     }
     registrations = Registration.objects.filter(section_id__in=section_id_to_semester.keys())
     for registration in registrations:
@@ -212,7 +215,7 @@ def avg_and_recent_demand_plots(section_map):
     # our semesters and compute demand plots for each section
     for semester in section_map.keys():
         demand_plots_map[semester] = dict()
-        add_drop_period = add_drop_periods[semester]
+        add_drop_period = add_drop_periods_map[semester]
         demand_extrema_changes = [
             {
                 "percent_through": ext.percent_through_add_drop_period,
@@ -235,7 +238,7 @@ def avg_and_recent_demand_plots(section_map):
                 volume_changes.append(
                     {
                         "percent_through": add_drop_period.get_percent_through_add_drop(
-                            registration.created_at.date()
+                            registration.created_at
                         ),
                         "volume_change": 1,
                     }
@@ -297,16 +300,17 @@ def avg_and_recent_percent_open_plots(section_map):
     from courses.models import StatusUpdate  # imported here to avoid circular imports
 
     section_id_to_semester = {
-        section.id: section.semester
+        section.id: section.efficient_semester
         for semester in section_map.keys()
-        for section in section_map[semester]
+        for section in section_map[semester].values()
     }
     status_updates = StatusUpdate.objects.filter(
         section_id__in=section_id_to_semester.keys(), in_add_drop_period=True
-    )
+    ).annotate(semester=F("section__course__semester"))
     status_updates_map = dict()
     # status_updates_map: maps semester to section id to the status updates for that section
     for semester in section_map.keys():
+        status_updates_map[semester] = dict()
         for section_id in section_map[semester].keys():
             status_updates_map[semester][section_id] = []
     for status_update in status_updates:
@@ -340,7 +344,7 @@ def avg_and_recent_percent_open_plots(section_map):
                 open_plot.append(
                     (update.percent_through_add_drop_period, int(update.new_status == "O"))
                 )
-            open_plot.append((1, open_plots[-1][1]))
+            open_plot.append((1, open_plot[-1][1]))
             # extend demand from last update to end of add/drop period
             open_plots[semester][section_id] = open_plot
 

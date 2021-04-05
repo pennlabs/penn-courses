@@ -3,6 +3,7 @@ from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
+from alert.models import AddDropPeriod
 from courses.models import Course, Department, Requirement, Section, UserProfile
 from courses.util import (
     get_or_create_course,
@@ -20,6 +21,7 @@ TEST_SEMESTER = "2019A"
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 class SepCourseCodeTest(TestCase):
@@ -90,6 +92,7 @@ class GetCourseSectionTest(TestCase):
 
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
 
     def test_update_status(self):

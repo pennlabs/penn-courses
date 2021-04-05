@@ -14,6 +14,7 @@ from options.models import Option
 from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APIClient
 
+from alert.models import AddDropPeriod
 from courses.models import Course, Department, Section
 from plan.management.commands.recommendcourses import retrieve_course_clusters
 from plan.management.commands.trainrecommender import (
@@ -30,6 +31,7 @@ assert TEST_SEMESTER >= "2021C", "Some tests assume TEST_SEMESTER >= 2021C"
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 User = get_user_model()

@@ -15,7 +15,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert import tasks
-from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course
+from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course, AddDropPeriod
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
 from courses.util import get_or_create_course_and_section
@@ -34,6 +34,7 @@ def contains_all(l1, l2):
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 def override_delay(modules_names, before_func, before_kwargs):
@@ -637,9 +638,6 @@ class WebhookViewTestCase(TestCase):
         Option.objects.update_or_create(
             key="SEND_FROM_WEBHOOK", value_type="BOOL", defaults={"value": "TRUE"}
         )
-        Option.objects.update_or_create(
-            key="SEMESTER", value_type="TXT", defaults={"value": TEST_SEMESTER}
-        )
 
     def test_alert_called_and_sent_intl(self, mock_alert):
         res = self.client.post(
@@ -823,12 +821,48 @@ class WebhookViewTestCase(TestCase):
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
         set_semester()
+        adp = AddDropPeriod.objects.get(semester=TEST_SEMESTER)
+        start = adp.estimated_start
+        end = adp.estimated_end
+        duration = end - start
         _, cis120_section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         _, cis160_section = create_mock_data("CIS-160-001", TEST_SEMESTER)
         self.statusUpdates = [
-            StatusUpdate(section=cis120_section, old_status="O", new_status="C", alert_sent=False),
-            StatusUpdate(section=cis120_section, old_status="C", new_status="O", alert_sent=True),
-            StatusUpdate(section=cis160_section, old_status="C", new_status="O", alert_sent=True),
+            StatusUpdate(
+                created_at=start - duration / 4,
+                section=cis120_section,
+                old_status="C",
+                new_status="O",
+                alert_sent=False,
+            ),
+            StatusUpdate(
+                created_at=start + duration / 4,
+                section=cis120_section,
+                old_status="O",
+                new_status="C",
+                alert_sent=False,
+            ),
+            StatusUpdate(
+                created_at=start + duration / 2,
+                section=cis120_section,
+                old_status="C",
+                new_status="O",
+                alert_sent=True,
+            ),
+            StatusUpdate(
+                created_at=start + 3 * duration / 4,
+                section=cis160_section,
+                old_status="C",
+                new_status="O",
+                alert_sent=True,
+            ),
+            StatusUpdate(
+                created_at=end + duration / 4,
+                section=cis160_section,
+                old_status="O",
+                new_status="C",
+                alert_sent=False,
+            ),
         ]
         for s in self.statusUpdates:
             s.save()

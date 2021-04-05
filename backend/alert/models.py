@@ -379,7 +379,7 @@ class Registration(models.Model):
         deactivated_dt = None
         for field, active_value in self.is_active_filter().items():
             if active_value and hasattr(self, field + "_at"):
-                field_changed_at = getattr(self, field + "_at").date()
+                field_changed_at = getattr(self, field + "_at")
                 if deactivated_dt is None or (
                     field_changed_at is not None and field_changed_at < deactivated_dt
                 ):
@@ -856,6 +856,7 @@ class PcaDemandExtrema(models.Model):
     percent_through_add_drop_period = models.DecimalField(
         decimal_places=4,
         max_digits=6,
+        default=0,
         help_text="The percentage through the add/drop period at which this demand extrema change "
         "occurred. This percentage is constrained within the range [0,1].",
     )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
@@ -925,13 +926,13 @@ class PcaDemandExtrema(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        created_at = self.created_at.date()
+        created_at = self.created_at
         if "add_drop_period" in kwargs:
             add_drop_period = kwargs["add_drop_period"]
         else:
             add_drop_period = AddDropPeriod.objects.get(semester=self.semester)
-        start = add_drop_period.start
-        end = add_drop_period.end
+        start = add_drop_period.estimated_start
+        end = add_drop_period.estimated_end
         if created_at < start:
             self.in_add_drop_period = False
             self.percent_through_add_drop_period = 0

@@ -3,6 +3,7 @@ from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
+from alert.models import AddDropPeriod
 from courses.models import Instructor, Requirement
 from review.models import Review
 from tests.courses.util import create_mock_data
@@ -14,6 +15,7 @@ assert TEST_SEMESTER >= "2021C", "Some tests assume TEST_SEMESTER >= 2021C"
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 class CreditUnitFilterTestCase(TestCase):

@@ -5,6 +5,7 @@ from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
+from alert.models import AddDropPeriod
 from courses.models import Course, Instructor, Meeting, Section
 from courses.util import relocate_reqs_from_restrictions, upsert_course_from_opendata
 
@@ -14,6 +15,7 @@ TEST_SEMESTER = "2019A"
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 class RelocateReqsRestsTest(TestCase):

@@ -15,6 +15,7 @@ TEST_SEMESTER = "2017C"
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 def create_review(section_code, semester, instructor_name, bits):
@@ -87,6 +88,7 @@ def average_and_recent(a, r):
 
 class OneReviewTestCase(TestCase, PCRTestMixin):
     def setUp(self):
+        set_semester()
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
@@ -120,7 +122,6 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         )
 
     def test_autocomplete(self):
-        set_semester()
         self.assertRequestContains(
             "review-autocomplete",
             [],
@@ -140,6 +141,8 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
 
 class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
     def setUp(self):
+        set_semester()
+        AddDropPeriod(semester="2012A").save()
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
@@ -184,6 +187,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
 
 class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
     def setUp(self):
+        set_semester()
+        AddDropPeriod(semester="2012A").save()
+        AddDropPeriod(semester="3008C").save()
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
@@ -217,6 +223,7 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
 
 class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
     def setUp(self):
+        set_semester()
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
@@ -256,6 +263,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
 
 class TwoSectionTestCase(TestCase, PCRTestMixin):
     def setUp(self):
+        set_semester()
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
@@ -293,6 +301,10 @@ class TwoSectionTestCase(TestCase, PCRTestMixin):
 
 class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
     def setUp(self):
+        set_semester()
+        AddDropPeriod(semester="2017A").save()
+        AddDropPeriod(semester="2012A").save()
+        AddDropPeriod(semester="2012C").save()
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
@@ -345,6 +357,7 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
 
 class TwoDepartmentTestCase(TestCase, PCRTestMixin):
     def setUp(self):
+        set_semester()
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
         create_review("MATH-114-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         create_review("ENM-211-003", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 3})
@@ -377,7 +390,6 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
         )
 
     def test_autocomplete(self):
-        set_semester()
         self.assertRequestContains(
             "review-autocomplete",
             [],
@@ -400,6 +412,7 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
 
 class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
     def setUp(self):
+        set_semester()
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
         _, recitation, _, _ = get_or_create_course_and_section("CIS-120-201", TEST_SEMESTER)
         recitation.instructors.add(Instructor.objects.create(name="Instructor Two"))

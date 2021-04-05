@@ -599,6 +599,8 @@ class StatusUpdate(models.Model):
     percent_through_add_drop_period = models.DecimalField(
         decimal_places=4,
         max_digits=6,
+        null=True,
+        blank=True,
         help_text="The percentage through the add/drop period at which this status update occurred."
         "This percentage is constrained within the range [0,1].",
     )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
@@ -614,16 +616,23 @@ class StatusUpdate(models.Model):
         return f"{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}"
 
     def save(self, *args, **kwargs):
-        from alert.models import AddDropPeriod  # imported here to avoid circular imports
+        from alert.models import AddDropPeriod, validate_add_drop_semester
 
+        # ^ imported here to avoid circular imports
         super().save(*args, **kwargs)
-        created_at = self.created_at.date()
+
+        # If this is a valid add/drop semester, set the percent_through_add_drop_period field
+        try:
+            validate_add_drop_semester(self.section.semester)
+        except ValidationError:
+            return
+        created_at = self.created_at
         if "add_drop_period" in kwargs:
             add_drop_period = kwargs["add_drop_period"]
         else:
             add_drop_period = AddDropPeriod.objects.get(semester=self.section.semester)
-        start = add_drop_period.start
-        end = add_drop_period.end
+        start = add_drop_period.estimated_start
+        end = add_drop_period.estimated_end
         if created_at < start:
             self.in_add_drop_period = False
             self.percent_through_add_drop_period = 0

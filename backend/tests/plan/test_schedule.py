@@ -5,6 +5,7 @@ from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
+from alert.models import AddDropPeriod
 from courses.util import get_average_reviews
 from plan.models import Schedule
 from tests.courses.util import create_mock_data_with_reviews
@@ -17,6 +18,7 @@ TEST_SEMESTER = "2019C"
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 class ScheduleTest(TestCase):
