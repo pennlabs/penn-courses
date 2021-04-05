@@ -32,18 +32,6 @@ const GridBlock = styled.div``;
 interface VisibleBlockProps {
     color: Color;
 }
-const VisibleBlock = styled.div<VisibleBlockProps>`
-    border-top-color: ${({ color }: VisibleBlockProps) => color};
-    color: ${({ color }: VisibleBlockProps) => color};
-    border-width: 3px 0 0 0;
-    background-color: white;
-    border-style: solid;
-    position: relative;
-    height: 100%;
-    & > div {
-        background-color: ${({ color }: VisibleBlockProps) => rgba(color, 0.2)};
-    }
-`;
 
 const RemoveButton = styled.i.attrs((props) => ({
     role: "button",
@@ -55,6 +43,25 @@ const RemoveButton = styled.i.attrs((props) => ({
     opacity: 0;
     cursor: pointer;
     transition: opacity 0.25s ease-in-out;
+    color: rgba(0, 0, 0, 0.2);
+    transition: 200ms ease color;
+`;
+
+const VisibleBlock = styled.div<VisibleBlockProps>`
+    border-top-color: ${({ color }: VisibleBlockProps) => color};
+    color: ${({ color }: VisibleBlockProps) => color};
+    border-width: 3px 0 0 0;
+    background-color: white;
+    border-style: solid;
+    position: relative;
+    height: 100%;
+    & > div {
+        background-color: ${({ color }: VisibleBlockProps) => rgba(color, 0.2)};
+    }
+
+    &:hover ${RemoveButton} {
+        color: rgba(0, 0, 0, 0.33);
+    }
 `;
 
 const WarningIcon = styled.i.attrs((props) => ({
@@ -95,8 +102,8 @@ export default function Block(props: BlockProps) {
     const { day, start, end } = meeting;
     const { id, color, coreqFulfilled } = course;
     const pos = {
-        gridRowStart: (start - offsets.time) * 2 + offsets.row + 1,
-        gridRowEnd: (end - offsets.time) * 2 + offsets.col + 1,
+        gridRowStart: (start - offsets.time) * 4 + offsets.row + 1,
+        gridRowEnd: (end - offsets.time) * 4 + offsets.col + 1,
         gridColumn: days.indexOf(day) + 1 + offsets.col,
     };
     return (

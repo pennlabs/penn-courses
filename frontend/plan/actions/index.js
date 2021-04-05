@@ -73,7 +73,8 @@ export const markCartSynced = () => ({
     type: MARK_CART_SYNCED,
 });
 
-const doAPIRequest = (path, options = {}) => fetch(`/api${path}`, options);
+export const doAPIRequest = (path, options = {}) =>
+    fetch(`/api${path}`, options);
 
 export const duplicateSchedule = (scheduleName) => ({
     type: DUPLICATE_SCHEDULE,

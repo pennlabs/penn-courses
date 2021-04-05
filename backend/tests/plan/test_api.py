@@ -2,13 +2,14 @@ from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
-from tests.courses.util import create_mock_data
 
 from courses.models import Instructor, Requirement
 from review.models import Review
+from tests.courses.util import create_mock_data
 
 
-TEST_SEMESTER = "2019C"
+TEST_SEMESTER = "2021C"
+assert TEST_SEMESTER >= "2021C", "Some tests assume TEST_SEMESTER >= 2021C"
 
 
 def set_semester():
