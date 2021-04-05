@@ -94,7 +94,7 @@ class Command(BaseCommand):
             type=str,
             help=(
                 "A prefix of the course full_code (e.g. CIS-120) to filter exported courses by. "
-                "Omit this argument to export all courses."
+                "Omit this argument to export all courses from the given semesters."
             ),
         )
         parser.add_argument(
