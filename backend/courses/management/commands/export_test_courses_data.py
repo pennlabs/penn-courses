@@ -77,6 +77,7 @@ test_data_fields = {
 
 related_id_fields = {
     "courses": {"department_id": "departments",},
+    "sections": {"course_id": "courses"},
     "reviews": {"section_id": "sections", "instructor_id": "instructors",},
     "review_bits": {"review_id": "reviews",},
 }  # specify fields which represent foreign key relationships to a strictly other model,

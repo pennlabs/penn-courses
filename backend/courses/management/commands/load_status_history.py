@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import F
 from django.utils.timezone import make_aware
+from tqdm import tqdm
 
 from courses.models import Section, StatusUpdate
 
@@ -22,7 +23,7 @@ class Command(BaseCommand):
             "--src",
             type=str,
             default="",
-            help_text="The file path of the .csv file containing the status update "
+            help="The file path of the .csv file containing the status update "
             "data you want to import",
         )
 
@@ -34,19 +35,20 @@ class Command(BaseCommand):
         if file_extension != ".csv":
             return "File is not a csv."
         sections_map = dict()  # maps (full_code, semester) to section id
+        row_count = 0
         with open(src) as history_file:
             history_reader = csv.reader(history_file)
             sections_to_fetch = set()
             for row in history_reader:
                 sections_to_fetch.add((row[0], row[1]))
+                row_count += 1
             full_codes = [sec[0] for sec in sections_to_fetch]
             semesters = [sec[1] for sec in sections_to_fetch]
             section_obs = Section.objects.filter(
                 full_code__in=full_codes, course__semester__in=semesters
-            ).annotate(semester=F("course__semester"))
+            ).annotate(efficient_semester=F("course__semester"))
             for section_ob in section_obs:
-                sections_map[section_ob.full_code, section_ob.semester] = section_ob.id
-            row_count = sum(1 for _ in history_reader)
+                sections_map[section_ob.full_code, section_ob.efficient_semester] = section_ob.id
         print(
             "This script is atomic, meaning either all the status updates from the given "
             "CSV will be loaded into the database, or otherwise if an error is encountered, "
@@ -57,13 +59,9 @@ class Command(BaseCommand):
             with open(src) as history_file:
                 print(f"Beginning to load status history from {src}")
                 history_reader = csv.reader(history_file)
-                i = 0
                 added_num = 0
                 to_save = []
-                for row in history_reader:
-                    i += 1
-                    if i % 100 == 1:
-                        print(f"Loading status history... ({i} / {row_count})")
+                for row in tqdm(history_reader, total=row_count):
                     full_code = row[0]
                     semester = row[1]
                     created_at = datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S.%f %Z")
@@ -90,6 +88,7 @@ class Command(BaseCommand):
                             old_status=old_status,
                             new_status=new_status,
                             created_at=created_at,
+                            alert_sent=False,
                         )
                         to_save.append(status_update)
                 StatusUpdate.objects.bulk_create(to_save)

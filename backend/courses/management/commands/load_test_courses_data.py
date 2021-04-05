@@ -81,28 +81,23 @@ class Command(BaseCommand):
             """
             Given a datatype and a row, generates a unique identification str
             """
-            id_fields = unique_identifying_fields[data_type]
-            indices = [1 + fields[data_type].index(field) for field in id_fields]
-            id_field_indices = set(
-                fields[data_type].index(field) for field in id_fields if field.endswith("_id")
-            )
-            return tuple(
-                row[index]
-                if index not in id_field_indices
-                else id_change_map[data_type][row[index]]
-                for index in indices
-            )
+            components = []
+            for field in unique_identifying_fields[data_type]:
+                field_value = row[1 + fields[data_type].index(field)]
+                if data_type in related_id_fields and field in related_id_fields[data_type]:
+                    field_value = id_change_map[related_id_fields[data_type][field]][field_value]
+                components.append(field_value)
+            return tuple(components)
 
         def generate_unique_id_str_from_object(data_type, object):
             """
             Given a datatype and an object, generates a unique identification str
             """
-            id_fields = unique_identifying_fields[data_type]
-            id_components = []
-            for field in id_fields:
+            components = []
+            for field in unique_identifying_fields[data_type]:
                 field_value = getattr(object, field)
-                id_components.append(field_value)
-            return tuple(id_components)
+                components.append(field_value)
+            return tuple(components)
 
         print(
             "This script is atomic, meaning either all the test data from the given "
@@ -134,6 +129,12 @@ class Command(BaseCommand):
                     field_to_index = {field: (1 + i) for i, field in enumerate(fields[data_type])}
                     to_save_dict = dict()  # this will be unpacked into the model initialization
                     for field in fields[data_type]:
+                        if (
+                            row[field_to_index[field]] is None
+                            or row[field_to_index[field]] == "None"
+                        ):
+                            to_save_dict[field] = None
+                            continue
                         if field == "id":
                             continue
                         if data_type in related_id_fields and field in related_id_fields[data_type]:
@@ -144,14 +145,6 @@ class Command(BaseCommand):
                             data_type in self_related_id_fields
                             and field in self_related_id_fields[data_type]
                         ):
-                            if row[field_to_index["id"]] == "109251":
-                                print(row)
-                                print(
-                                    identify_id_map[data_type][
-                                        generate_unique_id_str_from_row(data_type, row)
-                                    ]
-                                )
-                                print(generate_unique_id_str_from_row(data_type, row))
                             to_save_dict[field] = None
                             if field not in self_related_ids[data_type]:
                                 self_related_ids[data_type][field] = dict()
@@ -160,7 +153,6 @@ class Command(BaseCommand):
                             ]
                         else:
                             to_save_dict[field] = row[field_to_index[field]]
-
                     to_save[data_type].append(models[data_type](**to_save_dict))
 
                 if data_type not in semester_filter.keys() and data_type in models:
@@ -190,8 +182,6 @@ class Command(BaseCommand):
                     ):
                         continue
                     objects[data_type][object.id] = object
-                    if data_type == "courses" and object.full_code == "OIDD-901":
-                        print(generate_unique_id_str_from_object(data_type, object))
                     id_change_map[data_type][
                         identify_id_map[data_type][
                             generate_unique_id_str_from_object(data_type, object)
@@ -201,8 +191,7 @@ class Command(BaseCommand):
                     for field in self_related_ids[data_type].keys():
                         for self_id, other_id in self_related_ids[data_type][field].items():
                             self_new_id = id_change_map[data_type][self_id]
-                            if other_id is not None and other_id != "None":
-                                self_other_id = id_change_map[data_type][other_id]
-                                setattr(objects[data_type][self_new_id], field, self_other_id)
+                            self_other_id = id_change_map[data_type][other_id]
+                            setattr(objects[data_type][self_new_id], field, self_other_id)
 
         print(f"Finished loading test data {src}... processed {row_count} rows. ")
