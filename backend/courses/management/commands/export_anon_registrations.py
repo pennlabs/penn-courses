@@ -1,3 +1,4 @@
+import csv
 import os
 from textwrap import dedent
 
@@ -79,10 +80,13 @@ class Command(BaseCommand):
         rows = 0
         output_file_path = "/app/export_anon_registrations.csv" if upload_to_s3 else path
         with open(output_file_path, "w") as output_file:
+            csv_writer = csv.writer(
+                output_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
+            )
             for registration in tqdm(
-                Registration.objects.filter(section__course__semester__in=semesters)
-                .select_related("section", "section__course", "section__course__department")
-                .order_by("created_at")
+                Registration.objects.filter(section__course__semester__in=semesters).select_related(
+                    "section", "section__course", "section__course__department"
+                )
             ):
                 resubscribed_from_id = (
                     str(registration.resubscribed_from_id)
@@ -95,14 +99,26 @@ class Command(BaseCommand):
                     else ""
                 )
                 rows += 1
-                output_file.write(
-                    f"{registration.section.course.department.code},"
-                    f"{registration.section.course.code},{registration.section.code},"
-                    f"{registration.section.semester},{registration.created_at},"
-                    f"{registration.original_created_at},{registration.id},{resubscribed_from_id},"
-                    f"{registration.notification_sent},{notification_sent_at},"
-                    f"{registration.cancelled},{registration.cancelled_at},{registration.deleted},"
-                    f"{registration.deleted_at}\n"
+                csv_writer.writerow(
+                    [
+                        str(field)
+                        for field in [
+                            registration.section.course.department.code,
+                            registration.section.course.code,
+                            registration.section.code,
+                            registration.section.semester,
+                            registration.created_at,
+                            registration.original_created_at,
+                            registration.id,
+                            resubscribed_from_id,
+                            registration.notification_sent,
+                            notification_sent_at,
+                            registration.cancelled,
+                            registration.cancelled_at,
+                            registration.deleted,
+                            registration.deleted_at,
+                        ]
+                    ]
                 )
         if upload_to_s3:
             S3_resource.meta.client.upload_file(

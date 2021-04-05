@@ -1,3 +1,4 @@
+import csv
 import os
 from textwrap import dedent
 
@@ -56,16 +57,26 @@ class Command(BaseCommand):
         rows = 0
         output_file_path = "/app/export_status_history_output.csv" if upload_to_s3 else path
         with open(output_file_path, "w") as output_file:
+            csv_writer = csv.writer(
+                output_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
+            )
             for update in tqdm(
-                StatusUpdate.objects.filter(section__course__semester__in=semesters)
-                .select_related("section")
-                .order_by("created_at")
+                StatusUpdate.objects.filter(section__course__semester__in=semesters).select_related(
+                    "section"
+                )
             ):
                 rows += 1
-                output_file.write(
-                    f"{update.section.full_code},{update.section.semester},"
-                    f"{update.created_at.strftime('%Y-%m-%d %H:%M:%S.%f %Z')},"
-                    f"{update.old_status},{update.new_status}\n"
+                csv_writer.writerow(
+                    [
+                        str(field)
+                        for field in [
+                            update.section.full_code,
+                            update.section.semester,
+                            update.created_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z"),
+                            update.old_status,
+                            update.new_status,
+                        ]
+                    ]
                 )
         if upload_to_s3:
             S3_resource.meta.client.upload_file(
