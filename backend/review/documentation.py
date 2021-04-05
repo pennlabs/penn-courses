@@ -7,11 +7,18 @@ from review.util import to_r_camel
 # documentation at localhost:8000/api/documentation/ in the PCR section, rather than
 # reading through this file
 
-EXPANDED_REVIEW_BIT_LABEL = tuple(list(REVIEW_BIT_LABEL)+[
-    ("RFINALENROLLMENTPERCENTAGE", "Final Enrollment Percentage (enrollment/capacity)", "final_enrollment_percentage"),
-    ("RPERCENTOPEN", "Percent of Add/Drop Open", "percent_open"),
-    ("RNUMOPENINGS", "Number of Openings During Add/Drop", "num_openings")
-])
+EXPANDED_REVIEW_BIT_LABEL = tuple(
+    list(REVIEW_BIT_LABEL)
+    + [
+        (
+            "RFINALENROLLMENTPERCENTAGE",
+            "Final Enrollment Percentage (enrollment/capacity)",
+            "final_enrollment_percentage",
+        ),
+        ("RPERCENTOPEN", "Percent of Add/Drop Open", "percent_open"),
+        ("RNUMOPENINGS", "Number of Openings During Add/Drop", "num_openings"),
+    ]
+)
 
 course_review_aggregation_schema_no_extras = {
     to_r_camel(bit_label[2]): {"type": "number", "description": f"Average {bit_label[1]}"}
@@ -44,7 +51,7 @@ course_review_aggregation_schema_with_plots = {
             "of this course, at that point in time. Note that the first item of each pair should "
             "be plotted on the 'x-axis' and the second item should be plotted on the 'y-axis'. "
             "This field will not be missing."
-        )
+        ),
     },
     "percent_open_plot": {
         "type": "array",
@@ -58,7 +65,7 @@ course_review_aggregation_schema_with_plots = {
             "that were open, at that point in time. Note that the first item of each pair should "
             "be plotted on the 'x-axis' and the second item should be plotted on the 'y-axis'. "
             "This field will not be missing."
-        )
+        ),
     },
     **course_review_aggregation_schema,
 }

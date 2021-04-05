@@ -100,12 +100,14 @@ def sections_with_reviews(queryset):
                 Instructor.objects.filter(section=OuterRef(OuterRef("pk"))).values("pk").order_by()
             ),
         },
-        extra_metrics=False
+        extra_metrics=False,
     ).order_by("code")
 
 
 def course_reviews(queryset):
-    return review_averages(queryset, {"review__section__course__full_code": OuterRef("full_code")}, extra_metrics=False)
+    return review_averages(
+        queryset, {"review__section__course__full_code": OuterRef("full_code")}, extra_metrics=False
+    )
 
 
 class CourseManager(models.Manager):
@@ -595,10 +597,11 @@ class StatusUpdate(models.Model):
     request_body = models.TextField()
 
     percent_through_add_drop_period = models.DecimalField(
-        decimal_places=4, max_digits=6,
+        decimal_places=4,
+        max_digits=6,
         help_text="The percentage through the add/drop period at which this status update occurred."
-                  "This percentage is constrained within the range [0,1]."
-    )# This field is maintained in the save() method of alerts.models.AddDropPeriod,
+        "This percentage is constrained within the range [0,1].",
+    )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
     # and the save() method of StatusUpdate
 
     in_add_drop_period = models.BooleanField(
@@ -612,6 +615,7 @@ class StatusUpdate(models.Model):
 
     def save(self, *args, **kwargs):
         from alert.models import AddDropPeriod  # imported here to avoid circular imports
+
         super().save(*args, **kwargs)
         created_at = self.created_at.date()
         if "add_drop_period" in kwargs:
@@ -628,7 +632,7 @@ class StatusUpdate(models.Model):
             self.percent_through_add_drop_period = 1
         else:
             self.in_add_drop_period = True
-            self.percent_through_add_drop_period = (created_at - start)/(end-start)
+            self.percent_through_add_drop_period = (created_at - start) / (end - start)
         super().save()
 
 

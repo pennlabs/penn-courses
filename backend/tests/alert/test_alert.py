@@ -863,7 +863,7 @@ class CourseStatusUpdateTestCase(TestCase):
 
     def test_export_status_updates(self):
         call_command(
-            "export_status_history", file_path=os.devnull, semesters=TEST_SEMESTER,
+            "export_status_history", path=os.devnull, upload_to_s3=False, semesters=TEST_SEMESTER,
         )
 
 
@@ -2621,5 +2621,8 @@ class AlertRegistrationTestCase(TestCase):
     def test_export_registrations(self):
         self.create_auto_resubscribe_group()
         call_command(
-            "export_anon_registrations", file_path=os.devnull, semesters=TEST_SEMESTER,
+            "export_anon_registrations",
+            path=os.devnull,
+            upload_to_s3=False,
+            semesters=TEST_SEMESTER,
         )

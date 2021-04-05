@@ -66,18 +66,20 @@ these helper functions cut down on a lot of the repeated characters in the respo
 
 
 def ratings_dict(label, n):
-    return {label: {
-        "rInstructorQuality": n
-    }}
+    return {label: {"rInstructorQuality": n}}
+
 
 def average(n):
     return ratings_dict("average_reviews", n)
 
+
 def recent(n):
     return ratings_dict("recent_reviews", n)
 
+
 def rating(n):
     return ratings_dict("ratings", n)
+
 
 def average_and_recent(a, r):
     return {**average(a), **recent(r)}

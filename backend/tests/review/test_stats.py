@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.db.models import Avg, Subquery, IntegerField, OuterRef, Count, Value
+from django.db.models import Avg, Count, IntegerField, OuterRef, Subquery, Value
 from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
@@ -9,13 +9,15 @@ from rest_framework.test import APIClient
 
 from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import AddDropPeriod
-from courses.models import Instructor, StatusUpdate, Section
+from courses.models import Instructor, Section, StatusUpdate
 from courses.util import get_or_create_course_and_section, record_update
 from review.import_utils.import_to_db import import_review
 from review.models import Review, ReviewBit
 from tests.review.test_api import PCRTestMixin, create_review
 
+
 TEST_SEMESTER = "2017C"
+
 
 def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
@@ -58,29 +60,44 @@ class PCRTestMixinExtra(PCRTestMixin):
             self.assertDictContains(entire[k], subdict[k], path + [str(k)])
 
 
-
 """
 Below are some utility functions that make writing out the response.data dictionaries
 a bit easier to do. All of the tests use instructor_quality as the reviewbit to test.
 these helper functions cut down on a lot of the repeated characters in the responses.
 """
 
+
 def ratings_dict(label, rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
-    return {label: {
-        "rInstructorQuality": rInstructorQuality,
-        "rFinalEnrollmentPercentage": rFinalEnrollmentPercentage,
-        "rPercentOpen": rPercentOpen,
-        "rNumOpenings": rNumOpenings
-    }}
+    return {
+        label: {
+            "rInstructorQuality": rInstructorQuality,
+            "rFinalEnrollmentPercentage": rFinalEnrollmentPercentage,
+            "rPercentOpen": rPercentOpen,
+            "rNumOpenings": rNumOpenings,
+        }
+    }
+
 
 def average(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
-    return ratings_dict("average_reviews", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings)
+    return ratings_dict(
+        "average_reviews",
+        rInstructorQuality,
+        rFinalEnrollmentPercentage,
+        rPercentOpen,
+        rNumOpenings,
+    )
+
 
 def recent(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
-    return ratings_dict("recent_reviews", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings)
+    return ratings_dict(
+        "recent_reviews", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings
+    )
+
 
 def rating(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
-    return ratings_dict("ratings", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings)
+    return ratings_dict(
+        "ratings", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings
+    )
 
 
 class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
@@ -88,20 +105,24 @@ class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
     def setUpTestData(cls):
         set_semester()
         cls.instructor_name = "Instructor One"
-        create_review("CIS-120-001", TEST_SEMESTER, cls.instructor_name, {"instructor_quality": 3.5})
+        create_review(
+            "CIS-120-001", TEST_SEMESTER, cls.instructor_name, {"instructor_quality": 3.5}
+        )
         cls.instructor_quality = 3.5
         cls.adp = AddDropPeriod(semester=TEST_SEMESTER)
         cls.adp.save()
         start = cls.adp.estimated_start
         end = cls.adp.estimated_end
-        duration = (end-start)
+        duration = end - start
         old_status = "O"
         new_status = "C"
-        for date in [start+i*duration/7 for i in range(1, 7)]:  # OCOCOC
-            record_update("CIS-120-001", TEST_SEMESTER, old_status, new_status, False, dict(), created_at=date)
+        for date in [start + i * duration / 7 for i in range(1, 7)]:  # OCOCOC
+            record_update(
+                "CIS-120-001", TEST_SEMESTER, old_status, new_status, False, dict(), created_at=date
+            )
             old_status, new_status = new_status, old_status
         recompute_percent_open(semesters=TEST_SEMESTER)
-        cls.percent_open = (duration/2).total_seconds() / duration.total_seconds()
+        cls.percent_open = (duration / 2).total_seconds() / duration.total_seconds()
         cls.num_updates = 3
         section = Section.objects.get()
         review = Review.objects.get()
@@ -109,27 +130,36 @@ class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
         section.capacity = 100
         review.save()
         section.save()
-        cls.enrollment_pct = 80/100
+        cls.enrollment_pct = 80 / 100
 
     def setUp(self):
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
 
     def test_course(self):
-        subdict = {**average(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates),
-                   **recent(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates)}
+        subdict = {
+            **average(
+                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+            ),
+            **recent(
+                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+            ),
+        }
         self.assertRequestContains(
             "course-reviews",
             "CIS-120",
-            {
-                **subdict,
-                "instructors": {Instructor.objects.get().pk: subdict}
-            }
+            {**subdict, "instructors": {Instructor.objects.get().pk: subdict}},
         )
 
     def test_instructor(self):
-        subdict = {**average(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates),
-                   **recent(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates)}
+        subdict = {
+            **average(
+                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+            ),
+            **recent(
+                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+            ),
+        }
         self.assertRequestContains(
             "instructor-reviews",
             Instructor.objects.get().pk,
@@ -137,15 +167,30 @@ class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
         )
 
     def test_department(self):
-        subdict = {**average(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates),
-                   **recent(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates)}
-        self.assertRequestContains(
-            "department-reviews", "CIS", {"courses": {"CIS-120": subdict}}
-        )
+        subdict = {
+            **average(
+                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+            ),
+            **recent(
+                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+            ),
+        }
+        self.assertRequestContains("department-reviews", "CIS", {"courses": {"CIS-120": subdict}})
 
     def test_history(self):
         self.assertRequestContains(
-            "course-history", ["CIS-120", Instructor.objects.get().pk], {"sections": [rating(self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates)]}
+            "course-history",
+            ["CIS-120", Instructor.objects.get().pk],
+            {
+                "sections": [
+                    rating(
+                        self.instructor_quality,
+                        self.enrollment_pct,
+                        self.percent_open,
+                        self.num_updates,
+                    )
+                ]
+            },
         )
 
     def test_autocomplete(self):

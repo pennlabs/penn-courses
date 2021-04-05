@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
-from django.db.models import Case, Max, Q, Value, When, F
+from django.db.models import Case, F, Max, Q, Value, When
 from django.db.models.functions import Cast
 from django.utils import timezone
 from django.utils.timezone import make_aware
@@ -854,9 +854,10 @@ class PcaDemandExtrema(models.Model):
     )
 
     percent_through_add_drop_period = models.DecimalField(
-        decimal_places=4, max_digits=6,
+        decimal_places=4,
+        max_digits=6,
         help_text="The percentage through the add/drop period at which this demand extrema change "
-                  "occurred. This percentage is constrained within the range [0,1]."
+        "occurred. This percentage is constrained within the range [0,1].",
     )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
     # and the save() method of PcaDemandExtrema
 
@@ -939,7 +940,7 @@ class PcaDemandExtrema(models.Model):
             self.percent_through_add_drop_period = 1
         else:
             self.in_add_drop_period = True
-            self.percent_through_add_drop_period = (created_at - start)/(end-start)
+            self.percent_through_add_drop_period = (created_at - start) / (end - start)
         super().save()
 
 
@@ -1036,27 +1037,25 @@ class AddDropPeriod(models.Model):
         self.estimated_start = self.estimate_start()
         self.estimated_end = self.estimate_end()
         period = self.estimated_end - self.estimated_start
-        for model, sem_filter_key in [(StatusUpdate, "section__course__semester"), (PcaDemandExtrema, "semester")]:
+        for model, sem_filter_key in [
+            (StatusUpdate, "section__course__semester"),
+            (PcaDemandExtrema, "semester"),
+        ]:
             sem_filter = {sem_filter_key: self.semester}
             model.objects.filter(**sem_filter).update(
                 in_add_drop_period=Case(
                     When(
-                        Q(created_at__gte=self.estimated_start) & Q(created_at__lte=self.estimated_end),
+                        Q(created_at__gte=self.estimated_start)
+                        & Q(created_at__lte=self.estimated_end),
                         then=Value(True),
                     ),
                     default=Value(False),
                     output_field=models.BooleanField(),
                 ),
                 percent_through_add_drop_period=Case(
-                    When(
-                        Q(created_at__lte=self.estimated_start),
-                        then=Value(0),
-                    ),
-                    When(
-                        Q(created_at__gte=self.estimated_end),
-                        then=Value(1)
-                    ),
-                    default=(F("created_at")-Value(self.estimated_start)) / Value(period),
+                    When(Q(created_at__lte=self.estimated_start), then=Value(0),),
+                    When(Q(created_at__gte=self.estimated_end), then=Value(1)),
+                    default=(F("created_at") - Value(self.estimated_start)) / Value(period),
                     output_field=models.DecimalField(decimal_places=4, max_digits=6),
                 ),
             )

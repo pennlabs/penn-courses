@@ -159,7 +159,8 @@ def update_percent_open(section, last_status_update, new_status_update):
         after_seconds = Decimal(
             max(
                 (
-                    min(new_status_update.created_at, add_drop_end) - max(last_status_update.created_at, add_drop_start)
+                    min(new_status_update.created_at, add_drop_end)
+                    - max(last_status_update.created_at, add_drop_start)
                 ).total_seconds(),
                 0,
             )

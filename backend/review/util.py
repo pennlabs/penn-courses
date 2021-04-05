@@ -118,12 +118,14 @@ def average_given_plots(plots_dict):
     """
     # Extract plots from dict
     plots = []  # A list of all plots in the dict
+
     def explore(to_explore):
         if isinstance(to_explore, dict):
             for value in to_explore.values():
                 explore(value)
         elif isinstance(to_explore, list):
             plots.append(to_explore)
+
     explore(plots_dict)
 
     if len(plots) == 0:
@@ -133,21 +135,28 @@ def average_given_plots(plots_dict):
     demand_frontier = [plots[i][0] for i in range(len(plots))]
     # demand_frontier: A list mapping plots index to the most recently considered demand update
     # from that plot in the averaged plot
-    assert all(el[0] == 0 for el in demand_frontier), (
-        f"Some plots in the given plots_dict dict do not start at 0: \n{plots}"
-    )
+    assert all(
+        el[0] == 0 for el in demand_frontier
+    ), f"Some plots in the given plots_dict dict do not start at 0: \n{plots}"
     frontier_candidate_indices = [1 for _ in range(len(plots))]
     # frontier_candidate_indices: A list of the indices of the next candidate elements to add to
     # the frontier
     def get_average():
         sum([tup[1] for tup in demand_frontier]) / len(demand_frontier)
+
     averaged_plot = [(0, get_average())]
     # averaged_plot: This will be our final averaged plot (which we will return)
     while any(plot_idx < len(plots[i]) for i, plot_idx in enumerate(frontier_candidate_indices)):
-        min_percent_through = min(plots[i][frontier_candidate_indices[i]][0] for i in range(len(plots)) if frontier_candidate_indices[i] < len(plots[i]))
+        min_percent_through = min(
+            plots[i][frontier_candidate_indices[i]][0]
+            for i in range(len(plots))
+            if frontier_candidate_indices[i] < len(plots[i])
+        )
         for i in range(len(plots)):
-            if (frontier_candidate_indices[i] < len(plots[i])
-                    and abs(plots[i][frontier_candidate_indices[i]][0] - min_percent_through) < 0.001):
+            if (
+                frontier_candidate_indices[i] < len(plots[i])
+                and abs(plots[i][frontier_candidate_indices[i]][0] - min_percent_through) < 0.001
+            ):
                 demand_frontier[i] = plots[i][frontier_candidate_indices[i]]
                 frontier_candidate_indices[i] += 1
         averaged_plot.append((min_percent_through, get_average()))
@@ -165,13 +174,16 @@ def avg_and_recent_demand_plots(section_map):
     Returns (avg_demand_plot, recent_demand_plot)
     """
     from alert.models import AddDropPeriod, PcaDemandExtrema, Registration
+
     # ^ imported here to avoid circular imports
     add_drop_periods = AddDropPeriod.objects.filter(semester__in=section_map.keys())
     add_drop_periods_map = dict()
     # add_drop_periods_map: maps semester to that semester's add drop period object
     for adp in add_drop_periods:
         add_drop_periods_map[adp.semester] = adp
-    demand_extrema = PcaDemandExtrema.objects.filter(semester__in=section_map.keys(), in_add_drop_period=True).select_related("most_popular_section", "least_popular_section")
+    demand_extrema = PcaDemandExtrema.objects.filter(
+        semester__in=section_map.keys(), in_add_drop_period=True
+    ).select_related("most_popular_section", "least_popular_section")
     demand_extrema_map = dict()
     # demand_extrema_map: maps semester to a list of the demand extrema from that semester
     for ext in demand_extrema:
@@ -184,7 +196,9 @@ def avg_and_recent_demand_plots(section_map):
         for section_id in section_map[semester].keys():
             registrations_map[semester][section_id] = []
     section_id_to_semester = {
-        section.id: section.semester for semester in section_map.keys() for section in section_map[semester]
+        section.id: section.semester
+        for semester in section_map.keys()
+        for section in section_map[semester]
     }
     registrations = Registration.objects.filter(section_id__in=section_id_to_semester.keys())
     for registration in registrations:
@@ -199,7 +213,15 @@ def avg_and_recent_demand_plots(section_map):
     for semester in section_map.keys():
         demand_plots_map[semester] = dict()
         add_drop_period = add_drop_periods[semester]
-        demand_extrema_changes = [{"percent_through": ext.percent_through_add_drop_period, "type": "extrema_change", "lowest": ext.lowest_raw_demand, "highest": ext.highest_raw_demand} for ext in demand_extrema]
+        demand_extrema_changes = [
+            {
+                "percent_through": ext.percent_through_add_drop_period,
+                "type": "extrema_change",
+                "lowest": ext.lowest_raw_demand,
+                "highest": ext.highest_raw_demand,
+            }
+            for ext in demand_extrema
+        ]
         if len(demand_extrema_changes) == 0:
             continue
         for section in section_map[semester].values():
@@ -211,27 +233,40 @@ def avg_and_recent_demand_plots(section_map):
             # volume_changes: a list containing registration volume changes over time
             for registration in registrations_map[semester][section_id]:
                 volume_changes.append(
-                    {"percent_through": add_drop_period.get_percent_through_add_drop(registration.created_at.date()),
-                     "volume_change": 1}
+                    {
+                        "percent_through": add_drop_period.get_percent_through_add_drop(
+                            registration.created_at.date()
+                        ),
+                        "volume_change": 1,
+                    }
                 )
                 deactivated_at = registration.deactivated_at
                 if deactivated_at is not None:
                     volume_changes.append(
-                        {"percent_through": add_drop_period.get_percent_through_add_drop(deactivated_at),
-                         "volume_change": -1, "type": "volume_change"}
+                        {
+                            "percent_through": add_drop_period.get_percent_through_add_drop(
+                                deactivated_at
+                            ),
+                            "volume_change": -1,
+                            "type": "volume_change",
+                        }
                     )
             demand_plot = [(0, 0)]
             # demand_plot: the demand plot for this section, containing elements of the form
             # (percent_through, relative_demand)
-            changes = sorted(volume_changes + demand_extrema_changes, key=lambda x: x["percent_through"])
+            changes = sorted(
+                volume_changes + demand_extrema_changes, key=lambda x: x["percent_through"]
+            )
             registration_volume = 0
             latest_raw_demand_extrema = None
+
             def current_relative_demand():
                 min = latest_raw_demand_extrema["lowest"]
                 max = latest_raw_demand_extrema["highest"]
                 if min == max:
                     return 2.0
-                return 4.0 * float(registration_volume/capacity - min) / float(max - min)
+                return 4.0 * float(registration_volume / capacity - min) / float(max - min)
+
             for change in changes:
                 if change["type"] == "extrema_change":
                     latest_raw_demand_extrema = change
@@ -248,6 +283,7 @@ def avg_and_recent_demand_plots(section_map):
     avg_demand_plot = average_given_plots(demand_plots_map)
     return avg_demand_plot, recent_demand_plot
 
+
 def avg_and_recent_percent_open_plots(section_map):
     """
     Aggregate plots of the percentage of sections that were open at each point in time (during
@@ -259,11 +295,15 @@ def avg_and_recent_percent_open_plots(section_map):
     Returns (avg_percent_open_plot, recent_percent_open_plot)
     """
     from courses.models import StatusUpdate  # imported here to avoid circular imports
+
     section_id_to_semester = {
-        section.id: section.semester for semester in section_map.keys()
+        section.id: section.semester
+        for semester in section_map.keys()
         for section in section_map[semester]
     }
-    status_updates = StatusUpdate.objects.filter(section_id__in=section_id_to_semester.keys(), in_add_drop_period=True)
+    status_updates = StatusUpdate.objects.filter(
+        section_id__in=section_id_to_semester.keys(), in_add_drop_period=True
+    )
     status_updates_map = dict()
     # status_updates_map: maps semester to section id to the status updates for that section
     for semester in section_map.keys():
@@ -282,7 +322,10 @@ def avg_and_recent_percent_open_plots(section_map):
         open_plots[semester] = dict()
         for section in section_map[semester].values():
             section_id = section.id
-            updates = sorted(status_updates_map[semester][section_id], key=lambda x: x.percent_through_add_drop_period)
+            updates = sorted(
+                status_updates_map[semester][section_id],
+                key=lambda x: x.percent_through_add_drop_period,
+            )
             if len(updates) == 0:
                 estimate_open = int(section.percent_open > 0.5)
                 open_plots[semester][section_id] = [(0, estimate_open), (1, estimate_open)]
@@ -294,7 +337,9 @@ def avg_and_recent_percent_open_plots(section_map):
                 if int(update.old_status == "O") != open_plot[-1][1]:
                     # Ignore invalid status updates
                     continue
-                open_plot.append((update.percent_through_add_drop_period, int(update.new_status == "O")))
+                open_plot.append(
+                    (update.percent_through_add_drop_period, int(update.new_status == "O"))
+                )
             open_plot.append((1, open_plots[-1][1]))
             # extend demand from last update to end of add/drop period
             open_plots[semester][section_id] = open_plot

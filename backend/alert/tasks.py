@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 
-from alert.models import PcaDemandExtrema, Registration, AddDropPeriod
+from alert.models import AddDropPeriod, PcaDemandExtrema, Registration
 from courses.models import Section, StatusUpdate
 from courses.util import get_course_and_section, get_current_semester, update_course_from_record
 

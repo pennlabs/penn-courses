@@ -120,7 +120,8 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
             )
 
             iterator = (
-                Registration.objects.filter(section__course__semester=semester).select_related("section")
+                Registration.objects.filter(section__course__semester=semester)
+                .select_related("section")
                 .select_for_update()
                 .order_by("created_at")
             )
@@ -192,18 +193,14 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                     if full_code not in registration_volumes:
                         registration_volumes[full_code] = 0
                     registration_volumes[full_code] += volume_change
-                    demands[full_code] = (
-                        registration_volumes[full_code] / capacities[full_code]
-                    )
+                    demands[full_code] = registration_volumes[full_code] / capacities[full_code]
                     new_most_popular = None
                     if full_code != latest_pcape.most_popular_section.full_code:
                         if demands[full_code] > latest_pcape.highest_raw_demand:
                             new_most_popular = full_code
                     else:
                         if volume_change < 0:
-                            max_code, max_val = max(
-                                demands.items(), key=operator.itemgetter(1)
-                            )
+                            max_code, max_val = max(demands.items(), key=operator.itemgetter(1))
                             if max_val > latest_pcape.highest_raw_demand:
                                 new_most_popular = max_code
                     if new_most_popular is not None:
@@ -223,9 +220,7 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                             new_least_popular = full_code
                     else:
                         if volume_change < 0:
-                            max_code, max_val = max(
-                                demands.items(), key=operator.itemgetter(1)
-                            )
+                            max_code, max_val = max(demands.items(), key=operator.itemgetter(1))
                             if max_val > latest_pcape.highest_raw_demand:
                                 new_least_popular = max_code
                     if new_least_popular is not None:
