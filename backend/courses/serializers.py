@@ -150,6 +150,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "status",
             "activity",
             "credits",
+            "capacity",
             "semester",
             "meetings",
             "instructors",

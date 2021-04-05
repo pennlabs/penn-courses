@@ -1,23 +1,25 @@
 import base64
 import importlib
 import json
+import os
 from unittest.mock import patch
 
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from options.models import Option
 from rest_framework.test import APIClient
-from tests.courses.util import create_mock_data
 
 from alert import tasks
 from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
 from courses.util import get_or_create_course_and_section
+from tests.courses.util import create_mock_data
 
 
 TEST_SEMESTER = "2019A"
@@ -853,6 +855,11 @@ class CourseStatusUpdateTestCase(TestCase):
         response = self.client.get(reverse("statusupdate", args=["CIS-121"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+    def test_export_status_updates(self):
+        call_command(
+            "export_status_history", file_path=os.devnull, semesters=TEST_SEMESTER,
+        )
 
 
 @ddt
@@ -2605,3 +2612,9 @@ class AlertRegistrationTestCase(TestCase):
                 reverse("registrations-detail", args=[ids[specific_ids + "_id"]])
             )
             self.assertIsNone(response.data.get("last_notification_sent_at"))
+
+    def test_export_registrations(self):
+        self.create_auto_resubscribe_group()
+        call_command(
+            "export_anon_registrations", file_path=os.devnull, semesters=TEST_SEMESTER,
+        )

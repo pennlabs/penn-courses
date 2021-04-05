@@ -90,7 +90,7 @@ def annotate_with_matching_reviews(qs, match_on, most_recent=False, fields=None,
         fields = ALL_FIELD_SLUGS
 
     matching_reviews = Review.objects.filter(match_on)
-    filters = {"review__pk__in": Subquery(matching_reviews.values("pk"))}
+    filters = {"review_id__in": Subquery(matching_reviews.values("id"))}
     if most_recent:
         # Filter the queryset to include only rows from the most recent semester.
         filters["review__section__course__semester"] = Subquery(
