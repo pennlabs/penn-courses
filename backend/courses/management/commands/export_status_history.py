@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 from courses.management.commands.export_anon_registrations import get_semesters
 from courses.models import StatusUpdate
+from PennCourses.settings.base import S3_resource
 
 
 class Command(BaseCommand):
@@ -16,7 +17,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--file_path", type=str, help="The path to the csv you want to export to."
+            "--path",
+            type=str,
+            help="The path (local or in S3) you want to export to (must be a .csv file).",
+        )
+        parser.add_argument(
+            "--upload_to_s3",
+            default=False,
+            action="store_true",
+            help=(
+                "Enable this argument to upload the output of this script to the penn.courses "
+                "S3 bucket, at the path specified by the path argument. "
+            ),
         )
         parser.add_argument(
             "--semesters",
@@ -33,14 +45,17 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        file_path = kwargs["file_path"]
+        path = kwargs["path"]
+        upload_to_s3 = kwargs["upload_to_s3"]
         semesters = get_semesters(kwargs["semesters"], verbose=True)
         if len(semesters) == 0:
             raise ValueError("No semesters provided for status update export.")
-        assert file_path.endswith(".csv") or file_path == os.devnull
-        print(f"Generating {file_path} with status updates from semesters {semesters}...")
+        assert path.endswith(".csv") or path == os.devnull
+        script_print_path = ("s3://penn.courses/" if upload_to_s3 else "") + path
+        print(f"Generating {script_print_path} with status updates from semesters {semesters}...")
         rows = 0
-        with open(file_path, "w") as output_file:
+        output_file_path = "/tmp/export_status_history_output.csv" if upload_to_s3 else path
+        with open(output_file_path, "w") as output_file:
             for update in tqdm(
                 StatusUpdate.objects.filter(section__course__semester__in=semesters)
                 .select_related("section")
@@ -52,4 +67,8 @@ class Command(BaseCommand):
                     f"{update.created_at.date().strftime('%Y-%m-%d %H:%M:%S.%f %Z')},"
                     f"{update.old_status},{update.new_status}\n"
                 )
-        print(f"Generated {file_path} with {rows} rows...")
+        if upload_to_s3:
+            S3_resource.meta.client.upload_file(
+                "/tmp/export_status_history_output.csv", "penn.courses", path
+            )
+        print(f"Generated {script_print_path} with {rows} rows...")

@@ -19,10 +19,13 @@ from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_cours
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
 from courses.util import get_or_create_course_and_section
+from PennCourses.celery import app as celeryapp
 from tests.courses.util import create_mock_data
 
 
 TEST_SEMESTER = "2019A"
+
+celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)  # run asynchronous tasks synchronously
 
 
 def contains_all(l1, l2):
@@ -78,6 +81,8 @@ def override_delay(modules_names, before_func, before_kwargs):
 @patch("alert.models.Email.send_alert")
 class SendAlertTestCase(TestCase):
     def setUp(self):
+        # registration_update.delay = registration_update.__wrapped__
+        celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)
         set_semester()
         course, section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
         self.r_legacy = Registration(email="yo@example.com", phone="+15555555555", section=section)
@@ -720,7 +725,7 @@ class WebhookViewTestCase(TestCase):
         )
 
         self.assertEqual(200, res.status_code)
-        self.assertFalse("sent" in json.loads(res.content)["message"])
+        self.assertFalse("sent" in json.loads(res.content)["message"],)
         self.assertFalse(mock_alert.called)
         self.assertEqual(1, StatusUpdate.objects.count())
         u = StatusUpdate.objects.get()
@@ -858,7 +863,7 @@ class CourseStatusUpdateTestCase(TestCase):
 
     def test_export_status_updates(self):
         call_command(
-            "export_status_history", file_path=os.devnull, semesters=TEST_SEMESTER,
+            "export_status_history", path=os.devnull, upload_to_s3=False, semesters=TEST_SEMESTER,
         )
 
 
@@ -2616,5 +2621,8 @@ class AlertRegistrationTestCase(TestCase):
     def test_export_registrations(self):
         self.create_auto_resubscribe_group()
         call_command(
-            "export_anon_registrations", file_path=os.devnull, semesters=TEST_SEMESTER,
+            "export_anon_registrations",
+            path=os.devnull,
+            upload_to_s3=False,
+            semesters=TEST_SEMESTER,
         )

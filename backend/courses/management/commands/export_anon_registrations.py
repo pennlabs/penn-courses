@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 from alert.models import Registration
 from courses.models import Course
+from PennCourses.settings.base import S3_resource
 
 
 def get_semesters(semesters, verbose=False):
@@ -36,7 +37,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--file_path", type=str, help="The path to the csv you want to export to."
+            "--path",
+            type=str,
+            help="The path (local or in S3) you want to export to (must be a .csv file).",
+        )
+        parser.add_argument(
+            "--upload_to_s3",
+            default=False,
+            action="store_true",
+            help=(
+                "Enable this argument to upload the output of this script to the penn.courses "
+                "S3 bucket, at the path specified by the path argument. "
+            ),
         )
         parser.add_argument(
             "--semesters",
@@ -53,14 +65,20 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        file_path = kwargs["file_path"]
+        path = kwargs["path"]
+        upload_to_s3 = kwargs["upload_to_s3"]
         semesters = get_semesters(kwargs["semesters"], verbose=True)
         if len(semesters) == 0:
             raise ValueError("No semesters provided for registration export.")
-        assert file_path.endswith(".csv") or file_path == os.devnull
-        print(f"Generating {file_path} with registration data from semesters {semesters}...")
+        assert path.endswith(".csv") or path == os.devnull
+        script_print_path = ("s3://penn.courses/" if upload_to_s3 else "") + path
+        print(
+            f"Generating {script_print_path} with registration data from "
+            f"semesters {semesters}..."
+        )
         rows = 0
-        with open(file_path, "w") as output_file:
+        output_file_path = "/tmp/export_anon_registrations.csv" if upload_to_s3 else path
+        with open(output_file_path, "w") as output_file:
             for registration in tqdm(
                 Registration.objects.filter(section__course__semester__in=semesters)
                 .select_related("section", "section__course", "section__course__department")
@@ -86,4 +104,8 @@ class Command(BaseCommand):
                     f"{registration.cancelled},{registration.cancelled_at},{registration.deleted},"
                     f"{registration.deleted_at}\n"
                 )
-        print(f"Generated {file_path} with {rows} rows...")
+        if upload_to_s3:
+            S3_resource.meta.client.upload_file(
+                "/tmp/export_anon_registrations.csv", "penn.courses", path
+            )
+        print(f"Generated {script_print_path} with {rows} rows...")
