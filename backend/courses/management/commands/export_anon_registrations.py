@@ -71,6 +71,7 @@ class Command(BaseCommand):
         if len(semesters) == 0:
             raise ValueError("No semesters provided for registration export.")
         assert path.endswith(".csv") or path == os.devnull
+
         script_print_path = ("s3://penn.courses/" if upload_to_s3 else "") + path
         print(
             f"Generating {script_print_path} with registration data from "
