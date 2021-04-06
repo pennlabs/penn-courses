@@ -52,6 +52,15 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
+            "--courses_query",
+            default="",
+            type=str,
+            help=(
+                "A prefix of the course full_code (e.g. CIS-120) to filter exported registrations "
+                "by. Omit this argument to export all registrations from the given semesters."
+            ),
+        )
+        parser.add_argument(
             "--semesters",
             type=str,
             help=dedent(
@@ -84,9 +93,10 @@ class Command(BaseCommand):
                 output_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
             )
             for registration in tqdm(
-                Registration.objects.filter(section__course__semester__in=semesters).select_related(
-                    "section", "section__course", "section__course__department"
-                )
+                Registration.objects.filter(
+                    section__course__semester__in=semesters,
+                    section__course__full_code__startswith=kwargs["courses_query"],
+                ).select_related("section", "section__course", "section__course__department")
             ):
                 resubscribed_from_id = (
                     str(registration.resubscribed_from_id)
