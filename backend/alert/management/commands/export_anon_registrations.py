@@ -3,6 +3,7 @@ import os
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
+from django.db.models import F
 from tqdm import tqdm
 
 from alert.models import Registration
@@ -29,11 +30,13 @@ def get_semesters(semesters, verbose=False):
 class Command(BaseCommand):
     help = (
         "Export anonymized PCA Registrations by semester with the 14 columns:\n"
-        "registration.section.course.department.code, registration.section.course.code,"
-        "registration.section.code, registration.section.semester, registration.created_at, "
-        "registration.original_created_at, registration.id, resubscribed_from_id, "
-        "registration.notification_sent, notification_sent_at, registration.cancelled, "
-        "registration.cancelled_at, registration.deleted, registration.deleted_at"
+        "registration.section.full_code, registration.section.semester, "
+        "registration.created_at (%Y-%m-%d %H:%M:%S.%f %Z), "
+        "registration.original_created_at (%Y-%m-%d %H:%M:%S.%f %Z), "
+        "registration.id, resubscribed_from_id, "
+        "registration.notification_sent, notification_sent_at (%Y-%m-%d %H:%M:%S.%f %Z), "
+        "registration.cancelled, registration.cancelled_at (%Y-%m-%d %H:%M:%S.%f %Z), "
+        "registration.deleted, registration.deleted_at (%Y-%m-%d %H:%M:%S.%f %Z)"
     )
 
     def add_arguments(self, parser):
@@ -96,7 +99,9 @@ class Command(BaseCommand):
                 Registration.objects.filter(
                     section__course__semester__in=semesters,
                     section__course__full_code__startswith=kwargs["courses_query"],
-                ).select_related("section", "section__course", "section__course__department")
+                )
+                .annotate(efficient_semester=F("section__course__semester"))
+                .select_related("section")
             ):
                 resubscribed_from_id = (
                     str(registration.resubscribed_from_id)
@@ -104,8 +109,18 @@ class Command(BaseCommand):
                     else ""
                 )
                 notification_sent_at = (
-                    str(registration.notification_sent_at)
+                    registration.notification_sent_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
                     if registration.notification_sent_at is not None
+                    else ""
+                )
+                cancelled_at = (
+                    registration.cancelled_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
+                    if registration.cancelled_at is not None
+                    else ""
+                )
+                deleted_at = (
+                    registration.deleted_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
+                    if registration.deleted_at is not None
                     else ""
                 )
                 rows += 1
@@ -113,20 +128,18 @@ class Command(BaseCommand):
                     [
                         str(field)
                         for field in [
-                            registration.section.course.department.code,
-                            registration.section.course.code,
-                            registration.section.code,
-                            registration.section.semester,
-                            registration.created_at,
-                            registration.original_created_at,
+                            registration.section.full_code,
+                            registration.efficient_semester,
+                            registration.created_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z"),
+                            registration.original_created_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z"),
                             registration.id,
                             resubscribed_from_id,
                             registration.notification_sent,
                             notification_sent_at,
                             registration.cancelled,
-                            registration.cancelled_at,
+                            cancelled_at,
                             registration.deleted,
-                            registration.deleted_at,
+                            deleted_at,
                         ]
                     ]
                 )
