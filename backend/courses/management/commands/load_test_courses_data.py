@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
+from alert.models import AddDropPeriod
 from courses.management.commands.export_test_courses_data import (
     models,
     related_id_fields,
@@ -196,5 +197,10 @@ class Command(BaseCommand):
                             self_new_id = id_change_map[data_type][self_id]
                             self_other_id = id_change_map[data_type][other_id]
                             setattr(objects[data_type][self_new_id], field, self_other_id)
+
+            adp_to_save = []
+            for semester in semesters:
+                adp_to_save.append(AddDropPeriod(semester=semester))
+            AddDropPeriod.objects.bulk_create(adp_to_save)
 
         print(f"Finished loading test data {src}... processed {row_count} rows. ")

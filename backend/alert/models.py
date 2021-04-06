@@ -863,7 +863,7 @@ class PcaDemandExtrema(models.Model):
     # and the save() method of PcaDemandExtrema
 
     in_add_drop_period = models.BooleanField(
-        default=False, help_text="Was this status update created during the add/drop period?"
+        default=False, help_text="Was this demand extrema created during the add/drop period?"
     )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
     # and the save() method of PcaDemandExtrema
 
@@ -874,16 +874,16 @@ class PcaDemandExtrema(models.Model):
     def highest_raw_demand(self):
         if self.most_popular_section.capacity is None or self.most_popular_section.capacity <= 0:
             return None
-        return Cast(self.most_popular_volume, models.DecimalField()) / Cast(
-            self.most_popular_section.capacity, models.DecimalField()
+        return float(self.most_popular_volume) / float(
+            self.most_popular_section.capacity
         )
 
     @property
     def lowest_raw_demand(self):
         if self.least_popular_section.capacity is None or self.least_popular_section.capacity <= 0:
             return None
-        return Cast(self.least_popular_volume, models.DecimalField()) / Cast(
-            self.least_popular_section.capacity, models.DecimalField()
+        return float(self.least_popular_volume) / float(
+            self.least_popular_section.capacity
         )
 
     @staticmethod
@@ -925,12 +925,13 @@ class PcaDemandExtrema(models.Model):
         return current_demand_extrema
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        created_at = self.created_at
         if "add_drop_period" in kwargs:
             add_drop_period = kwargs["add_drop_period"]
+            del kwargs["add_drop_period"]
         else:
             add_drop_period = AddDropPeriod.objects.get(semester=self.semester)
+        super().save(*args, **kwargs)
+        created_at = self.created_at
         start = add_drop_period.estimated_start
         end = add_drop_period.estimated_end
         if created_at < start:
@@ -1071,23 +1072,23 @@ class AddDropPeriod(models.Model):
         """
         if self.start is None:
             last_start = (
-                AddDropPeriod.objects.filter(start__isnull=False).order_by("-semester").first()
+                AddDropPeriod.objects.filter(start__isnull=False, semester__endswith=str(self.semester)[4]).order_by("-semester").first()
             )
+            if str(self.semester)[4] == "C":  # fall semester
+                s_year = int(str(self.semester)[:4])
+                s_month = 4
+                s_day = 5
+            else:  # spring semester
+                s_year = int(str(self.semester)[:4]) - 1
+                s_month = 11
+                s_day = 16
             if last_start is None:
-                if str(self.semester)[4] == "C":  # fall semester
-                    s_year = int(str(self.semester)[:4])
-                    s_month = 4
-                    s_day = 5
-                else:  # spring semester
-                    s_year = int(str(self.semester)[:4]) - 1
-                    s_month = 11
-                    s_day = 16
                 tz = pytz.timezone(TIME_ZONE)
                 return make_aware(
                     datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M"),
                     timezone=tz,
                 )
-            return last_start
+            return last_start.start.replace(year=s_year)
         return self.start
 
     def estimate_end(self):
@@ -1099,9 +1100,9 @@ class AddDropPeriod(models.Model):
         of the same year.
         """
         if self.end is None:
-            last_end = AddDropPeriod.objects.filter(end__isnull=False).order_by("-semester").first()
+            last_end = AddDropPeriod.objects.filter(end__isnull=False, semester__endswith=str(self.semester)[4]).order_by("-semester").first()
+            e_year = int(str(self.semester)[:4])
             if last_end is None:
-                e_year = int(str(self.semester)[:4])
                 if str(self.semester)[4] == "C":  # fall semester
                     e_month = 10
                     e_day = 12
@@ -1113,7 +1114,7 @@ class AddDropPeriod(models.Model):
                     datetime.strptime(f"{e_year}-{e_month}-{e_day} 23:59", "%Y-%m-%d %H:%M"),
                     timezone=tz,
                 )
-            return last_end
+            return last_end.end.replace(year=e_year)
         return self.end
 
     def __str__(self):

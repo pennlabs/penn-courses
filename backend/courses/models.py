@@ -617,8 +617,14 @@ class StatusUpdate(models.Model):
 
     def save(self, *args, **kwargs):
         from alert.models import AddDropPeriod, validate_add_drop_semester
-
         # ^ imported here to avoid circular imports
+
+        if "add_drop_period" in kwargs:
+            add_drop_period = kwargs["add_drop_period"]
+            del kwargs["add_drop_period"]
+        else:
+            add_drop_period = AddDropPeriod.objects.get(semester=self.section.semester)
+
         super().save(*args, **kwargs)
 
         # If this is a valid add/drop semester, set the percent_through_add_drop_period field
@@ -627,10 +633,6 @@ class StatusUpdate(models.Model):
         except ValidationError:
             return
         created_at = self.created_at
-        if "add_drop_period" in kwargs:
-            add_drop_period = kwargs["add_drop_period"]
-        else:
-            add_drop_period = AddDropPeriod.objects.get(semester=self.section.semester)
         start = add_drop_period.estimated_start
         end = add_drop_period.estimated_end
         if created_at < start:

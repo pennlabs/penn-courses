@@ -241,6 +241,7 @@ def avg_and_recent_demand_plots(section_map):
                             registration.created_at
                         ),
                         "volume_change": 1,
+                        "type": "volume_change",
                     }
                 )
                 deactivated_at = registration.deactivated_at
@@ -264,8 +265,8 @@ def avg_and_recent_demand_plots(section_map):
             latest_raw_demand_extrema = None
 
             def current_relative_demand():
-                min = latest_raw_demand_extrema["lowest"]
-                max = latest_raw_demand_extrema["highest"]
+                min = float(latest_raw_demand_extrema["lowest"])
+                max = float(latest_raw_demand_extrema["highest"])
                 if min == max:
                     return 2.0
                 return 4.0 * float(registration_volume / capacity - min) / float(max - min)

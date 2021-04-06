@@ -10,6 +10,7 @@ from django.db.models import F
 from django.utils.timezone import make_aware
 from tqdm import tqdm
 
+from alert.management.commands.recomputestats import recompute_demand_extrema
 from alert.models import Registration, Section
 from PennCourses.settings.base import TIME_ZONE
 
@@ -132,6 +133,8 @@ class Command(BaseCommand):
 
                     registration = Registration(**registration_dict)
                     registration.save(load_script=True)
+                    registration.created_at = registration_dict["created_at"]
+                    registration.save()
                     id_corrections[original_id] = registration.id
                     registrations.append((registration, original_id, resubscribed_from_id))
 
@@ -145,3 +148,6 @@ class Command(BaseCommand):
             Registration.objects.bulk_update(to_save, ["resubscribed_from_id"])
 
             print(f"Done! {len(registrations)} registrations added to database.")
+
+            print(f"Recomputing PCA Demand Extrema for {len(semesters)} semesters...")
+            recompute_demand_extrema(semesters=",".join(semesters), verbose=True)
