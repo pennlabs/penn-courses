@@ -1,18 +1,13 @@
-from unittest.mock import patch
-
 from django.contrib.auth.models import User
-from django.db.models import Avg, Count, IntegerField, OuterRef, Subquery, Value
 from django.test import TestCase
-from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import AddDropPeriod
-from courses.models import Instructor, Section, StatusUpdate
-from courses.util import get_or_create_course_and_section, record_update
-from review.import_utils.import_to_db import import_review
-from review.models import Review, ReviewBit
+from courses.models import Instructor, Section
+from courses.util import record_update
+from review.models import Review
 from tests.review.test_api import PCRTestMixin, create_review
 
 
@@ -42,7 +37,7 @@ class PCRTestMixinExtra(PCRTestMixin):
             float1 = float(dict1)
             float2 = float(dict2)
             self.assertAlmostEquals(float1, float2, msg="/".join(path))
-        except ValueError as e:
+        except ValueError:
             self.assertEquals(dict1, dict2, "/".join(path))
 
     def assertDictContains(self, entire, subdict, path=None):

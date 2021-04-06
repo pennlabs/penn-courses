@@ -106,7 +106,7 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
     return aggregated
 
 
-def average_given_plots(plots_dict):
+def average_given_plots(plots_dict, bin_size):
     """
     Given plots (i.e. demands plots or section status plots), which should be a dict with
     plot lists as leaves at some depth, aggregate all these plots and return a single average plot.
@@ -115,6 +115,8 @@ def average_given_plots(plots_dict):
     If a dict mapping section ids to section status plot lists is given,
     this function will return a plot of the average percentage of the given sections that
     were open at each point in time.
+    The resolution argument should be a small positive float indicating the size of the
+    x-axis bins in which to average points.
     Returns None if no valid plots are found in the given plots_dict dict.
     Note that demand plots are lists of tuples of the form (percent_through, value).
     """
@@ -143,11 +145,15 @@ def average_given_plots(plots_dict):
     frontier_candidate_indices = [1 for _ in range(len(plots))]
     # frontier_candidate_indices: A list of the indices of the next candidate elements to add to
     # the frontier
+
     def get_average():
-        sum([tup[1] for tup in demand_frontier]) / len(demand_frontier)
+        return sum([tup[1] for tup in demand_frontier]) / len(demand_frontier)
 
     averaged_plot = [(0, get_average())]
     # averaged_plot: This will be our final averaged plot (which we will return)
+    percentage_through_target = bin_size
+    total_value_in_bin = 0
+    num_in_bin = 0
     while any(plot_idx < len(plots[i]) for i, plot_idx in enumerate(frontier_candidate_indices)):
         min_percent_through = min(
             plots[i][frontier_candidate_indices[i]][0]
@@ -161,11 +167,17 @@ def average_given_plots(plots_dict):
             ):
                 demand_frontier[i] = plots[i][frontier_candidate_indices[i]]
                 frontier_candidate_indices[i] += 1
-        averaged_plot.append((min_percent_through, get_average()))
+        total_value_in_bin += get_average()
+        num_in_bin += 1
+        if min_percent_through >= percentage_through_target or min_percent_through >= 1:
+            percentage_through_target += bin_size
+            averaged_plot.append((min_percent_through, total_value_in_bin / num_in_bin))
+            total_value_in_bin = 0
+            num_in_bin = 0
     return averaged_plot
 
 
-def avg_and_recent_demand_plots(section_map):
+def avg_and_recent_demand_plots(section_map, bin_size=0.01):
     """
     Aggregate demand plots over time (during historical add/drop periods) for the given
     sections (specified by section_map).
@@ -199,9 +211,9 @@ def avg_and_recent_demand_plots(section_map):
         for section_id in section_map[semester].keys():
             registrations_map[semester][section_id] = []
     section_id_to_semester = {
-        section.id: section.efficient_semester
+        section_id: semester
         for semester in section_map.keys()
-        for section in section_map[semester].values()
+        for section_id in section_map[semester].keys()
     }
     registrations = Registration.objects.filter(section_id__in=section_id_to_semester.keys())
     for registration in registrations:
@@ -216,6 +228,8 @@ def avg_and_recent_demand_plots(section_map):
     for semester in section_map.keys():
         demand_plots_map[semester] = dict()
         add_drop_period = add_drop_periods_map[semester]
+        if semester not in demand_extrema_map:
+            continue
         demand_extrema_changes = [
             {
                 "percent_through": ext.percent_through_add_drop_period,
@@ -223,15 +237,15 @@ def avg_and_recent_demand_plots(section_map):
                 "lowest": ext.lowest_raw_demand,
                 "highest": ext.highest_raw_demand,
             }
-            for ext in demand_extrema
+            for ext in demand_extrema_map[semester]
         ]
         if len(demand_extrema_changes) == 0:
             continue
-        for section in section_map[semester].values():
+        for i, section in enumerate(section_map[semester].values()):
             section_id = section.id
-            if section.capacity is None or section.capacity <= 0:
-                continue
             capacity = section.capacity
+            if capacity is None or capacity <= 0:
+                continue
             volume_changes = []
             # volume_changes: a list containing registration volume changes over time
             for registration in registrations_map[semester][section_id]:
@@ -264,31 +278,46 @@ def avg_and_recent_demand_plots(section_map):
             registration_volume = 0
             latest_raw_demand_extrema = None
 
-            def current_relative_demand():
-                min = float(latest_raw_demand_extrema["lowest"])
-                max = float(latest_raw_demand_extrema["highest"])
-                if min == max:
-                    return 2.0
-                return 4.0 * float(registration_volume / capacity - min) / float(max - min)
-
-            for change in changes:
+            percentage_through_target = bin_size
+            total_value_in_bin = 0
+            num_in_bin = 0
+            for i, change in enumerate(changes):
                 if change["type"] == "extrema_change":
                     latest_raw_demand_extrema = change
                 else:
                     if latest_raw_demand_extrema is None:
                         continue
                     registration_volume += change["volume_change"]
-                demand_plot.append((change["percent_through"], current_relative_demand()))
-            demand_plot.append((1, demand_plot[-1][1]))
+                min_val = float(latest_raw_demand_extrema["lowest"])
+                max_val = float(latest_raw_demand_extrema["highest"])
+                if min_val == max_val:
+                    rel_demand = 2.0
+                else:
+                    rel_demand = (
+                        4.0
+                        * float(registration_volume / capacity - min_val)
+                        / float(max_val - min_val)
+                    )
+                total_value_in_bin += rel_demand
+                num_in_bin += 1
+                if change["percent_through"] >= percentage_through_target:
+                    percentage_through_target += bin_size
+                    demand_plot.append((change["percent_through"], total_value_in_bin / num_in_bin))
+                    total_value_in_bin = 0
+                    num_in_bin = 0
+
+            demand_plot.append(
+                (1, total_value_in_bin / num_in_bin if num_in_bin > 0 else demand_plot[-1][1])
+            )
             # extend demand from last update to end of add/drop period
             demand_plots_map[semester][section_id] = demand_plot
 
-    recent_demand_plot = average_given_plots(demand_plots_map[max(section_map.keys())])
-    avg_demand_plot = average_given_plots(demand_plots_map)
+    recent_demand_plot = average_given_plots(demand_plots_map[max(section_map.keys())], bin_size)
+    avg_demand_plot = average_given_plots(demand_plots_map, bin_size)
     return avg_demand_plot, recent_demand_plot
 
 
-def avg_and_recent_percent_open_plots(section_map):
+def avg_and_recent_percent_open_plots(section_map, bin_size=0):
     """
     Aggregate plots of the percentage of sections that were open at each point in time (during
     historical add/drop periods) for the given sections (specified by section_map).
@@ -349,6 +378,6 @@ def avg_and_recent_percent_open_plots(section_map):
             # extend demand from last update to end of add/drop period
             open_plots[semester][section_id] = open_plot
 
-    recent_percent_open_plot = average_given_plots(open_plots[max(section_map.keys())])
-    avg_percent_open_plot = average_given_plots(open_plots)
+    recent_percent_open_plot = average_given_plots(open_plots[max(section_map.keys())], bin_size)
+    avg_percent_open_plot = average_given_plots(open_plots, bin_size)
     return avg_percent_open_plot, recent_percent_open_plot

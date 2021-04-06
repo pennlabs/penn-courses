@@ -1,4 +1,3 @@
-import functools
 import logging
 from contextlib import nullcontext
 from datetime import datetime
@@ -12,7 +11,6 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.db.models import Case, F, Max, Q, Value, When
-from django.db.models.functions import Cast
 from django.utils import timezone
 from django.utils.timezone import make_aware
 
@@ -348,7 +346,6 @@ class Registration(models.Model):
             "notification_sent": False,
             "deleted": False,
             "cancelled": False,
-            "section__course__semester": get_current_semester(),
         }
 
     @property
@@ -360,7 +357,7 @@ class Registration(models.Model):
         """
         for field, active_value in self.is_active_filter().items():
             assert field != ""  # this should never fail
-            actual_value = functools.reduce(getattr, [self] + field.split("__"))
+            actual_value = getattr(self, field)
             if actual_value != active_value:
                 return False
         return True
@@ -377,8 +374,8 @@ class Registration(models.Model):
         if self.is_active:
             return None
         deactivated_dt = None
-        for field, active_value in self.is_active_filter().items():
-            if active_value and hasattr(self, field + "_at"):
+        for field in self.is_active_filter().keys():
+            if hasattr(self, field + "_at"):
                 field_changed_at = getattr(self, field + "_at")
                 if deactivated_dt is None or (
                     field_changed_at is not None and field_changed_at < deactivated_dt
@@ -466,9 +463,10 @@ class Registration(models.Model):
         )
 
     def __str__(self):
-        return "%s: %s" % (
-            (self.user.__str__() if self.user is not None else None) or self.email or self.phone,
-            self.section.__str__(),
+        return "%s: %s @ %s" % (
+            (str(self.user) if self.user is not None else None) or self.email or self.phone,
+            str(self.section),
+            str(self.created_at),
         )
 
     def validate_phone(self):
@@ -853,9 +851,7 @@ class PcaDemandExtrema(models.Model):
         help_text="The registration volume of the least popular section at this time."
     )
 
-    percent_through_add_drop_period = models.DecimalField(
-        decimal_places=4,
-        max_digits=6,
+    percent_through_add_drop_period = models.FloatField(
         default=0,
         help_text="The percentage through the add/drop period at which this demand extrema change "
         "occurred. This percentage is constrained within the range [0,1].",
@@ -874,17 +870,13 @@ class PcaDemandExtrema(models.Model):
     def highest_raw_demand(self):
         if self.most_popular_section.capacity is None or self.most_popular_section.capacity <= 0:
             return None
-        return float(self.most_popular_volume) / float(
-            self.most_popular_section.capacity
-        )
+        return float(self.most_popular_volume) / float(self.most_popular_section.capacity)
 
     @property
     def lowest_raw_demand(self):
         if self.least_popular_section.capacity is None or self.least_popular_section.capacity <= 0:
             return None
-        return float(self.least_popular_volume) / float(
-            self.least_popular_section.capacity
-        )
+        return float(self.least_popular_volume) / float(self.least_popular_section.capacity)
 
     @staticmethod
     def get_current_demand_extrema(semester):
@@ -1033,7 +1025,7 @@ class AddDropPeriod(models.Model):
         if dt > end:
             return 1
         else:
-            return (dt - start) / (end - start)
+            return float((dt - start) / (end - start))
 
     def save(self, *args, **kwargs):
         self.estimated_start = self.estimate_start()
@@ -1058,7 +1050,7 @@ class AddDropPeriod(models.Model):
                     When(Q(created_at__lte=self.estimated_start), then=Value(0),),
                     When(Q(created_at__gte=self.estimated_end), then=Value(1)),
                     default=(F("created_at") - Value(self.estimated_start)) / Value(period),
-                    output_field=models.DecimalField(decimal_places=4, max_digits=6),
+                    output_field=models.FloatField(),
                 ),
             )
         super().save(*args, **kwargs)
@@ -1072,7 +1064,11 @@ class AddDropPeriod(models.Model):
         """
         if self.start is None:
             last_start = (
-                AddDropPeriod.objects.filter(start__isnull=False, semester__endswith=str(self.semester)[4]).order_by("-semester").first()
+                AddDropPeriod.objects.filter(
+                    start__isnull=False, semester__endswith=str(self.semester)[4]
+                )
+                .order_by("-semester")
+                .first()
             )
             if str(self.semester)[4] == "C":  # fall semester
                 s_year = int(str(self.semester)[:4])
@@ -1100,7 +1096,13 @@ class AddDropPeriod(models.Model):
         of the same year.
         """
         if self.end is None:
-            last_end = AddDropPeriod.objects.filter(end__isnull=False, semester__endswith=str(self.semester)[4]).order_by("-semester").first()
+            last_end = (
+                AddDropPeriod.objects.filter(
+                    end__isnull=False, semester__endswith=str(self.semester)[4]
+                )
+                .order_by("-semester")
+                .first()
+            )
             e_year = int(str(self.semester)[:4])
             if last_end is None:
                 if str(self.semester)[4] == "C":  # fall semester

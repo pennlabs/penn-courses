@@ -108,6 +108,7 @@ class StatusUpdateAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
     list_filter = ("section__course__semester",)
     list_select_related = ["section", "section__course", "section__course__department"]
+    search_fields = ("section__full_code",)
 
 
 admin.site.register(APIKey)

@@ -5,7 +5,6 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 import courses.examples as examples
-from alert.models import AddDropPeriod
 from courses.filters import CourseSearchFilterBackend
 from courses.models import Course, Requirement, Section, StatusUpdate
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend

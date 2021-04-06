@@ -1,6 +1,5 @@
 import math
 import uuid
-from decimal import Decimal
 from textwrap import dedent
 
 import phonenumbers
@@ -314,17 +313,12 @@ class Section(models.Model):
                     When(
                         Q(capacity__isnull=False) & Q(capacity__gt=0),
                         then=(
-                            Cast(
-                                "registration_volume",
-                                models.DecimalField(max_digits=11, decimal_places=4),
-                            )
-                            / Cast("capacity", models.DecimalField(max_digits=11, decimal_places=4))
+                            Cast("registration_volume", models.FloatField(),)
+                            / Cast("capacity", models.FloatField())
                         ),
                     ),
                     default=None,
-                    output_field=models.DecimalField(
-                        max_digits=11, decimal_places=4, null=True, blank=True
-                    ),
+                    output_field=models.FloatField(null=True, blank=True),
                 ),
                 name="raw_demand",
             ),
@@ -445,10 +439,8 @@ class Section(models.Model):
         """
         return self.status == "O"
 
-    percent_open = models.DecimalField(
+    percent_open = models.FloatField(
         default=0,
-        max_digits=5,
-        decimal_places=4,
         validators=[MinValueValidator(0), MaxValueValidator(1)],
         help_text=dedent(
             """
@@ -487,19 +479,19 @@ class Section(models.Model):
             except StatusUpdate.DoesNotExist:
                 last_status_update = None
             last_update_dt = last_status_update.created_at if last_status_update else add_drop_start
-            period_seconds = Decimal(
+            period_seconds = float(
                 (min(current_time, add_drop_end) - add_drop_start).total_seconds()
             )
             percent_after_update = (
-                Decimal(int(self.is_open))
-                * Decimal((current_time - last_update_dt).total_seconds())
+                float(self.is_open)
+                * float((current_time - last_update_dt).total_seconds())
                 / period_seconds
             )
             if last_status_update is None:
                 return percent_after_update
             percent_before_update = (
-                Decimal(self.percent_open)
-                * Decimal((last_update_dt - add_drop_start).total_seconds())
+                float(self.percent_open)
+                * float((last_update_dt - add_drop_start).total_seconds())
                 / period_seconds
             )
             return percent_before_update + percent_after_update
@@ -520,9 +512,7 @@ class Section(models.Model):
         if self.capacity is None or self.capacity <= 0:
             return None
         else:
-            return Cast(self.registration_volume, models.DecimalField()) / Cast(
-                self.capacity, models.DecimalField()
-            )
+            return float(self.registration_volume) / float(self.capacity)
 
     @property
     def current_relative_pca_demand(self):
@@ -596,9 +586,7 @@ class StatusUpdate(models.Model):
     # is not otherwise invalid
     request_body = models.TextField()
 
-    percent_through_add_drop_period = models.DecimalField(
-        decimal_places=4,
-        max_digits=6,
+    percent_through_add_drop_period = models.FloatField(
         null=True,
         blank=True,
         help_text="The percentage through the add/drop period at which this status update occurred."
@@ -613,17 +601,20 @@ class StatusUpdate(models.Model):
 
     def __str__(self):
         d = dict(self.STATUS_CHOICES)
-        return f"{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}"
+        return (
+            f"{str(self.section)} - {d[self.old_status]} to {d[self.new_status]} "
+            f"@ {str(self.created_at)}"
+        )
 
     def save(self, *args, **kwargs):
         from alert.models import AddDropPeriod, validate_add_drop_semester
+
         # ^ imported here to avoid circular imports
 
+        add_drop_period = None
         if "add_drop_period" in kwargs:
             add_drop_period = kwargs["add_drop_period"]
             del kwargs["add_drop_period"]
-        else:
-            add_drop_period = AddDropPeriod.objects.get(semester=self.section.semester)
 
         super().save(*args, **kwargs)
 
@@ -632,6 +623,10 @@ class StatusUpdate(models.Model):
             validate_add_drop_semester(self.section.semester)
         except ValidationError:
             return
+
+        if add_drop_period is None:
+            add_drop_period = AddDropPeriod.objects.get(semester=self.section.semester)
+
         created_at = self.created_at
         start = add_drop_period.estimated_start
         end = add_drop_period.estimated_end

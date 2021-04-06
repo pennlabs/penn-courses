@@ -1,12 +1,11 @@
 import logging
-import operator
 from contextlib import nullcontext
 from textwrap import dedent
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Count, OuterRef, Subquery, Value
+from django.db.models import Count, F, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce
 from tqdm import tqdm
 
@@ -108,17 +107,17 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                 registration_volume=Coalesce(
                     Subquery(
                         Registration.objects.filter(
-                            section__pk=OuterRef("pk"), **Registration.is_active_filter()
+                            section__id=OuterRef("id"), **Registration.is_active_filter()
                         )
-                        .values("pk")
-                        .annotate(count=Count("pk"))
+                        .values("id")
+                        .annotate(count=Count("id"))
                         .values("count")
                     ),
                     Value(0),
                 )
             )
 
-            iterator = (
+            registrations = (
                 Registration.objects.filter(section__course__semester=semester)
                 .select_related("section")
                 .select_for_update()
@@ -126,18 +125,20 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
             )
             if verbose:
                 print("Computing registration volume changes over time for each section...")
-                iterator = tqdm(iterator, total=iterator.count())
+                registrations = tqdm(registrations, total=registrations.count())
 
-            volume_changes_map = dict()
+            volume_changes_map = dict()  # maps full_code to list of volume changes
             sections = dict()  # maps full_code to section object (for this semester)
-            for registration in iterator:
+            for section in Section.objects.filter(
+                course__semester=semester, capacity__isnull=False, capacity__gt=0
+            ).annotate(efficient_semester=F("course__semester")):
+                sections[section.full_code] = section
+                volume_changes_map[section.full_code] = []
+            for registration in registrations:
                 if registration.section.capacity is None or registration.section.capacity <= 0:
                     # Ignore sections with invalid capacities
                     continue
                 full_code = registration.section.full_code
-                sections[full_code] = registration.section
-                if full_code not in volume_changes_map:
-                    volume_changes_map[full_code] = []
                 volume_changes_map[full_code].append(
                     {"date": registration.created_at, "volume_change": 1}
                 )
@@ -147,34 +148,32 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                         {"date": deactivated_at, "volume_change": -1}
                     )
 
-            iterator = volume_changes_map.items()
             if verbose:
                 print("Joining updates for each section and sorting...")
-                iterator = tqdm(iterator, total=len(iterator))
             all_changes = sorted(
                 [
                     {"full_code": full_code, **data}
-                    for full_code, changes_list in iterator
+                    for full_code, changes_list in volume_changes_map.items()
                     for data in changes_list
                 ],
                 key=lambda x: x["date"],
             )
 
-            iterator = all_changes
             if verbose:
                 print(f"Creating PcaDemandExtrema objects for semester {semester}...")
-                iterator = tqdm(iterator, total=len(iterator))
+                all_changes = tqdm(all_changes, total=len(all_changes))
 
-            latest_pcape = None
-            registration_volumes = dict()
-            demands = dict()
+            latest_pcade = None
+            registration_volumes = {full_code: 0 for full_code in sections.keys()}
+            demands = {full_code: 0 for full_code in sections.keys()}
 
-            for change in iterator:
+            for change in all_changes:
                 full_code = change["full_code"]
                 date = change["date"]
                 volume_change = change["volume_change"]
-                if latest_pcape is None and volume_change > 0:
-                    registration_volumes[full_code] = volume_change
+                registration_volumes[full_code] += volume_change
+                demands[full_code] = registration_volumes[full_code] / sections[full_code].capacity
+                if latest_pcade is None:
                     new_extrema = PcaDemandExtrema(
                         created_at=date,
                         semester=semester,
@@ -186,60 +185,32 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
                     new_extrema.save(add_drop_period=add_drop_period)
                     new_extrema.created_at = date
                     new_extrema.save()
-                    latest_pcape = new_extrema
+                    latest_pcade = new_extrema
                 else:
-                    if full_code not in registration_volumes:
-                        registration_volumes[full_code] = 0
-                    registration_volumes[full_code] += volume_change
-                    demands[full_code] = registration_volumes[full_code] / sections[full_code].capacity
-                    new_most_popular = None
-                    if full_code != latest_pcape.most_popular_section.full_code:
-                        if demands[full_code] > latest_pcape.highest_raw_demand:
-                            new_most_popular = full_code
-                    else:
-                        if volume_change < 0:
-                            max_code, max_val = max(demands.items(), key=operator.itemgetter(1))
-                            if max_val > latest_pcape.highest_raw_demand:
-                                new_most_popular = max_code
-                    if new_most_popular is not None:
+                    max_code = max(demands.keys(), key=lambda x: demands[x])
+                    min_code = min(demands.keys(), key=lambda x: demands[x])
+                    if (
+                        full_code == latest_pcade.most_popular_section.full_code
+                        or full_code == latest_pcade.least_popular_section.full_code
+                        or latest_pcade.most_popular_section.full_code != max_code
+                        or latest_pcade.least_popular_section.full_code != min_code
+                    ):
                         new_extrema = PcaDemandExtrema(
                             created_at=date,
                             semester=semester,
-                            most_popular_section=sections[new_most_popular],
-                            most_popular_volume=registration_volumes[new_most_popular],
-                            least_popular_section=latest_pcape.least_popular_section,
-                            least_popular_volume=latest_pcape.least_popular_volume,
+                            most_popular_section=sections[max_code],
+                            most_popular_volume=registration_volumes[max_code],
+                            least_popular_section=sections[min_code],
+                            least_popular_volume=registration_volumes[min_code],
                         )
                         new_extrema.save(add_drop_period=add_drop_period)
                         new_extrema.created_at = date
                         new_extrema.save()
-                        latest_pcape = new_extrema
-                    new_least_popular = None
-                    if full_code != latest_pcape.least_popular_section.full_code:
-                        if demands[full_code] < latest_pcape.lowest_raw_demand:
-                            new_least_popular = full_code
-                    else:
-                        if volume_change < 0:
-                            max_code, max_val = max(demands.items(), key=operator.itemgetter(1))
-                            if max_val > latest_pcape.highest_raw_demand:
-                                new_least_popular = max_code
-                    if new_least_popular is not None:
-                        new_extrema = PcaDemandExtrema(
-                            created_at=date,
-                            semester=semester,
-                            most_popular_section=latest_pcape.most_popular_section,
-                            most_popular_volume=latest_pcape.most_popular_volume,
-                            least_popular_section=sections[new_least_popular],
-                            least_popular_volume=registration_volumes[new_least_popular],
-                        )
-                        new_extrema.save(add_drop_period=add_drop_period)
-                        new_extrema.created_at = date
-                        new_extrema.save()
-                        latest_pcape = new_extrema
+                        latest_pcade = new_extrema
 
             if set_cache:
-                if latest_pcape is not None:
-                    cache.set("current_demand_extrema", latest_pcape, timeout=None)
+                if latest_pcade is not None:
+                    cache.set("current_demand_extrema", latest_pcade, timeout=None)
                 else:
                     cache.set("current_demand_extrema", None, timeout=None)
 
@@ -286,7 +257,7 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
 
             StatusUpdate.objects.filter(section__course__semester=semester).select_for_update()
 
-            sections = Section.objects.filter(section__course__semester=semester)
+            sections = Section.objects.filter(course__semester=semester)
             num_erroneous_updates = 0
             num_total_updates = 0
             for section in sections:
@@ -300,11 +271,8 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
                 num_total_updates += len(status_updates)
                 total_open_seconds = 0
                 if not status_updates.exists():
-                    section.percent_open = 0
-                else:
-                    last_dt = add_drop_start
                     try:
-                        last_status = (
+                        guess_status = (
                             StatusUpdate.objects.filter(
                                 section=section, created_at__lte=add_drop_start
                             )
@@ -312,7 +280,11 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
                             .new_status
                         )
                     except StatusUpdate.DoesNotExist:
-                        last_status = "O"
+                        guess_status = "C"
+                    section.percent_open = float(guess_status == "O")
+                else:
+                    last_dt = add_drop_start
+                    last_status = status_updates.first().old_status
                     for update in status_updates:
                         if last_status != update.old_status:
                             num_erroneous_updates += 1

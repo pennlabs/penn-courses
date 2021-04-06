@@ -1,15 +1,4 @@
-from django.db.models import (
-    Avg,
-    Count,
-    DecimalField,
-    FloatField,
-    IntegerField,
-    Max,
-    OuterRef,
-    Subquery,
-    Sum,
-    Value,
-)
+from django.db.models import Avg, Count, FloatField, IntegerField, Max, OuterRef, Subquery, Value
 from django.db.models.functions import Cast
 
 from review.models import ALL_FIELD_SLUGS, Review, ReviewBit

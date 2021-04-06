@@ -9,6 +9,7 @@ from django.db.models import F
 from django.utils.timezone import make_aware
 from tqdm import tqdm
 
+from alert.models import AddDropPeriod
 from courses.models import Section, StatusUpdate
 from PennCourses.settings.base import TIME_ZONE
 
@@ -51,6 +52,9 @@ class Command(BaseCommand):
             ).annotate(efficient_semester=F("course__semester"))
             for section_ob in section_obs:
                 sections_map[section_ob.full_code, section_ob.efficient_semester] = section_ob.id
+        add_drop_periods = dict()  # maps semester to AddDropPeriod object
+        for adp in AddDropPeriod.objects.filter(semester__in=semesters):
+            add_drop_periods[adp.semester] = adp
         print(
             "This script is atomic, meaning either all the status updates from the given "
             "CSV will be loaded into the database, or otherwise if an error is encountered, "
@@ -86,6 +90,6 @@ class Command(BaseCommand):
                         created_at=created_at,
                         alert_sent=alert_sent,
                     )
-                    to_save.append(status_update)
+                    status_update.save(add_drop_period=add_drop_periods[semester])
                 StatusUpdate.objects.bulk_create(to_save)
         print(f"Finished loading status history from {src}... processed {row_count} rows. ")

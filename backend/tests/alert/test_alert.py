@@ -15,7 +15,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert import tasks
-from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course, AddDropPeriod
+from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
 from courses.util import get_or_create_course_and_section

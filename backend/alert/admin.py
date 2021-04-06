@@ -15,6 +15,8 @@ class RegistrationAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ("section",)
 
+    ordering = ("-created_at",)
+
     list_filter = ["notification_sent", "section__course__semester"]
 
     list_select_related = (
