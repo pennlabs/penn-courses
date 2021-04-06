@@ -23,7 +23,8 @@ class Command(BaseCommand):
         "if the import is successful:"
         f"\n{str([f for f in test_data_fields.keys() if f != 'instructors'])}."
         "\nIf an error is encountered at any point, you will be alerted and the database will "
-        "remain as it was before this script was run."
+        "remain as it was before this script was run.\n"
+        "This script cannot be run in production."
     )
 
     def add_arguments(self, parser):
@@ -34,6 +35,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
+        if "PennCourses.settings.development" not in os.environ["DJANGO_SETTINGS_MODULE"]:
+            raise ValueError("This script cannot be run in a non-development environment.")
         src = os.path.abspath(kwargs["src"])
         _, file_extension = os.path.splitext(kwargs["src"])
         if not os.path.exists(src):

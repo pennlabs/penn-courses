@@ -12,8 +12,9 @@ from PennCourses.settings.base import S3_resource
 
 class Command(BaseCommand):
     help = (
-        "Export Status Updates by semester with the 5 columns:\n"
-        "full_code, semester, created_at (%Y-%m-%d %H:%M:%S.%f %Z), old_status, new_status"
+        "Export Status Updates by semester with the 6 columns:\n"
+        "full_code, semester, created_at (%Y-%m-%d %H:%M:%S.%f %Z), old_status, new_status, "
+        "alert_sent"
     )
 
     def add_arguments(self, parser):
@@ -85,6 +86,7 @@ class Command(BaseCommand):
                             update.created_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z"),
                             update.old_status,
                             update.new_status,
+                            update.alert_sent,
                         ]
                     ]
                 )

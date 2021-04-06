@@ -29,7 +29,7 @@ def get_semesters(semesters, verbose=False):
 
 class Command(BaseCommand):
     help = (
-        "Export anonymized PCA Registrations by semester with the 14 columns:\n"
+        "Export anonymized PCA Registrations by semester with the 12 columns:\n"
         "registration.section.full_code, registration.section.semester, "
         "registration.created_at (%Y-%m-%d %H:%M:%S.%f %Z), "
         "registration.original_created_at (%Y-%m-%d %H:%M:%S.%f %Z), "
@@ -108,6 +108,11 @@ class Command(BaseCommand):
                     if registration.resubscribed_from is not None
                     else ""
                 )
+                original_created_at = (
+                    registration.original_created_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
+                    if registration.original_created_at is not None
+                    else ""
+                )
                 notification_sent_at = (
                     registration.notification_sent_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
                     if registration.notification_sent_at is not None
@@ -131,7 +136,7 @@ class Command(BaseCommand):
                             registration.section.full_code,
                             registration.efficient_semester,
                             registration.created_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z"),
-                            registration.original_created_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z"),
+                            original_created_at,
                             registration.id,
                             resubscribed_from_id,
                             registration.notification_sent,

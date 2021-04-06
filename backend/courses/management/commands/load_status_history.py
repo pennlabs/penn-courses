@@ -1,6 +1,6 @@
 import csv
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pytz
 from django.core.management.base import BaseCommand
@@ -10,12 +10,14 @@ from django.utils.timezone import make_aware
 from tqdm import tqdm
 
 from courses.models import Section, StatusUpdate
+from PennCourses.settings.base import TIME_ZONE
 
 
 class Command(BaseCommand):
     help = (
-        "Load course status history into the database from a CSV file with the 5 columns:\n"
-        "full_code, semester, created_at (%Y-%m-%d %H:%M:%S.%f %Z), old_status, new_status. "
+        "Load course status history into the database from a CSV file with the 6 columns:\n"
+        "full_code, semester, created_at (%Y-%m-%d %H:%M:%S.%f %Z), old_status, new_status, "
+        "alert_sent. "
     )
 
     def add_arguments(self, parser):
@@ -59,15 +61,17 @@ class Command(BaseCommand):
             with open(src) as history_file:
                 print(f"Beginning to load status history from {src}")
                 history_reader = csv.reader(history_file)
-                added_num = 0
                 to_save = []
                 for row in tqdm(history_reader, total=row_count):
                     full_code = row[0]
                     semester = row[1]
                     created_at = datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S.%f %Z")
-                    created_at = make_aware(created_at, timezone=pytz.utc, is_dst=None)
+                    created_at = make_aware(
+                        created_at, timezone=pytz.timezone(TIME_ZONE), is_dst=None
+                    )
                     old_status = row[3]
                     new_status = row[4]
+                    alert_sent = row[5]
                     if old_status != "O" and old_status != "C" and old_status != "X":
                         old_status = ""
                     if new_status != "O" and new_status != "C" and new_status != "X":
@@ -75,24 +79,13 @@ class Command(BaseCommand):
                     if (full_code, semester) not in sections_map.keys():
                         raise ValueError(f"Section {full_code} {semester} not found in db.")
                     section_id = sections_map[full_code, semester]
-                    if not StatusUpdate.objects.filter(
+                    status_update = StatusUpdate(
                         section_id=section_id,
                         old_status=old_status,
                         new_status=new_status,
-                        created_at__gte=created_at - timedelta(seconds=0.1),
-                        created_at__lte=created_at + timedelta(seconds=0.1),
-                    ).exists():
-                        added_num += 1
-                        status_update = StatusUpdate(
-                            section_id=section_id,
-                            old_status=old_status,
-                            new_status=new_status,
-                            created_at=created_at,
-                            alert_sent=False,
-                        )
-                        to_save.append(status_update)
+                        created_at=created_at,
+                        alert_sent=alert_sent,
+                    )
+                    to_save.append(status_update)
                 StatusUpdate.objects.bulk_create(to_save)
-        print(
-            f"Finished loading status history from {src}... processed {row_count} rows. "
-            f"Added {added_num} status updates to the database."
-        )
+        print(f"Finished loading status history from {src}... processed {row_count} rows. ")
