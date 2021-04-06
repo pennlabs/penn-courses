@@ -49,7 +49,6 @@ class Command(BaseCommand):
             "This script is an atomic transaction, so the database will not be modified "
             "unless the entire script succeeds."
         )
-        print(f"Verifying {src} is a valid CSV for loading PCA registrations...")
 
         sections_map = dict()  # maps (full_code, semester) to section id
         registrations_map = dict()  # maps (full_code, semester) to list of registrations
@@ -120,8 +119,8 @@ class Command(BaseCommand):
                         return make_aware(dt, timezone=pytz.timezone(TIME_ZONE), is_dst=None)
 
                     registration_dict = dict()  # fields to unpack into Registration initialization
-                    registration_dict["section_id"] = (sections_map[full_code, semester],)
-                    registration_dict["source"] = ("SCRIPT_PCA",)
+                    registration_dict["section_id"] = sections_map[full_code, semester]
+                    registration_dict["source"] = "SCRIPT_PCA"
                     registration_dict["created_at"] = extract_date(row[2])
                     registration_dict["original_created_at"] = extract_date(row[3])
                     registration_dict["notification_sent"] = bool(row[6])
@@ -142,8 +141,7 @@ class Command(BaseCommand):
             for registration, original_id, resubscribed_from_id in registrations:
                 if resubscribed_from_id is not None:
                     registration.resubscribed_from_id = id_corrections[resubscribed_from_id]
-                    registration.append(to_save)
-            Registration.objects.bulk_update(to_save)
+                    to_save.append(registration)
+            Registration.objects.bulk_update(to_save, ["resubscribed_from_id"])
 
             print(f"Done! {len(registrations)} registrations added to database.")
-            return True
