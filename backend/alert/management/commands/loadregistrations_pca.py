@@ -132,6 +132,8 @@ class Command(BaseCommand):
 
                     registration = Registration(**registration_dict)
                     registration.save(load_script=True)
+                    registration.created_at = registration_dict["created_at"]
+                    registration.save()
                     id_corrections[original_id] = registration.id
                     registrations.append((registration, original_id, resubscribed_from_id))
 
