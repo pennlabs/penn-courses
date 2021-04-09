@@ -388,33 +388,36 @@ instructor_for_course_reviews_response_schema = {
                         "description": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                     },
                     "sections": {
-                        "type": "object",
+                        "type": "array",
                         "description": "The sections of this course taught by this instructor.",
-                        "properties": {
-                            "course_name": {
-                                "type": "string",
-                                "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501
-                            },
-                            "semester": {
-                                "type": "string",
-                                "description": "The semester this section was taught (of the form YYYYx where x is A [for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019.",  # noqa E501
-                            },
-                            "forms_returned": {
-                                "type": "integer",
-                                "description": "The number of review responses collected for this section.",  # noqa E501
-                            },
-                            "forms_produced": {
-                                "type": "integer",
-                                "description": "The final enrollment of this section.",
-                            },
-                            "ratings": {
-                                "type": "object",
-                                "description": "The reviews for this section.",
-                                "properties": course_review_aggregation_schema_no_extras,
-                            },
-                            "comments": {
-                                "type": "string",
-                                "description": "A textual description of the section, as well as common sentiment about it from reviews.",  # noqa E501
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "course_name": {
+                                    "type": "string",
+                                    "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501
+                                },
+                                "semester": {
+                                    "type": "string",
+                                    "description": "The semester this section was taught (of the form YYYYx where x is A [for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019.",  # noqa E501
+                                },
+                                "forms_returned": {
+                                    "type": "integer",
+                                    "description": "The number of review responses collected for this section.",  # noqa E501
+                                },
+                                "forms_produced": {
+                                    "type": "integer",
+                                    "description": "The final enrollment of this section.",
+                                },
+                                "ratings": {
+                                    "type": "object",
+                                    "description": "The reviews for this section.",
+                                    "properties": course_review_aggregation_schema_no_extras,
+                                },
+                                "comments": {
+                                    "type": "string",
+                                    "description": "A textual description of the section, as well as common sentiment about it from reviews.",  # noqa E501
+                                },
                             },
                         },
                     },
