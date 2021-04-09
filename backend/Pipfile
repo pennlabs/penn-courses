@@ -17,7 +17,7 @@ django-debug-toolbar = "*"
 black = "==19.10b0"
 
 [packages]
-django = "==3.2b1"
+django = ">=3.2"
 psycopg2 = {version = "*", sys_platform = "== 'linux'"}
 requests = "*"
 twilio = "*"
