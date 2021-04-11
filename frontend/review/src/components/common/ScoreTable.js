@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import ReactTable from "react-table";
 
-export const ScoreTable = props => {
+export const ScoreTable = (props) => {
   const {
     alternating = false,
     noun,
     multi,
     data = [],
     onSelect = () => {},
-    isAverage = null
+    isAverage = null,
+    isCourseEval = null,
   } = props;
   const [selected, setSelected] = useState(multi ? {} : null);
   const [sorted, setSorted] = useState(props.sorted);
@@ -16,7 +17,7 @@ export const ScoreTable = props => {
   // Force rerender of table content when isAverage changes
   // TODO: Move isAverage into localstorage or redux store
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => setSorted([...sorted]), [isAverage]);
+  useEffect(() => setSorted([...sorted]), [isAverage, isCourseEval]);
   useEffect(() => {
     const selected = multi ? {} : null;
     setSelected(selected);
@@ -48,7 +49,7 @@ export const ScoreTable = props => {
             onSelect(selected);
             setSelected({ ...selected });
           },
-          className: noRow ? "selected" : ""
+          className: noRow ? "selected" : "",
         }
       : {};
   };

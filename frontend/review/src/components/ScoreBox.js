@@ -8,13 +8,13 @@ import {
   getColumnName,
   orderColumns,
   convertSemesterToInt,
-  toNormalizedSemester
+  toNormalizedSemester,
 } from "../utils/helpers";
 import {
   ColumnSelector,
   CourseDetails,
   PopoverTitle,
-  ScoreTable
+  ScoreTable,
 } from "./common";
 
 import "react-table/react-table.css";
@@ -38,7 +38,7 @@ class ScoreBox extends Component {
       currentInstructors: {},
       currentCourses: {},
       filterAll: "",
-      selected: null
+      selected: null,
     };
 
     this.updateLiveData = this.updateLiveData.bind(this);
@@ -55,7 +55,7 @@ class ScoreBox extends Component {
     const instructorTaught = {};
     const { data, liveData, type } = this.props;
     if (type === "course") {
-      Object.values(data.instructors).forEach(inst => {
+      Object.values(data.instructors).forEach((inst) => {
         instructorTaught[
           convertInstructorName(inst.name)
         ] = convertSemesterToInt(inst.latest_semester);
@@ -67,12 +67,12 @@ class ScoreBox extends Component {
         const instructors = liveData.sections.flatMap(
           ({ instructors }) => instructors
         );
-        instructors.forEach(inst => {
+        instructors.forEach((inst) => {
           const key = convertInstructorName(inst.name);
           const data = {
             open: 0,
             all: 0,
-            sections: []
+            sections: [],
           };
           const coursesByInstructor = liveData.sections.filter(
             ({ instructors }) =>
@@ -83,11 +83,11 @@ class ScoreBox extends Component {
           console.log(inst.name, coursesByInstructor);
           // .filter((section) => !a.is_cancelled);
           data.open += coursesByInstructor.filter(
-            section => section.status === "O"
+            (section) => section.status === "O"
           ).length;
           data.all += coursesByInstructor.length;
           data.sections = data.sections.concat(
-            coursesByInstructor.map(section => section)
+            coursesByInstructor.map((section) => section)
           );
           instructorsThisSemester[key] = data;
           instructorTaught[key] = Infinity;
@@ -95,15 +95,15 @@ class ScoreBox extends Component {
         console.log("state", this.state);
         this.setState(({ data }) => ({
           currentInstructors: instructorTaught,
-          data: data.map(rev => ({
+          data: data.map((rev) => ({
             ...rev,
-            star: instructorsThisSemester[convertInstructorName(rev.name)]
-          }))
+            star: instructorsThisSemester[convertInstructorName(rev.name)],
+          })),
         }));
       } else {
         this.setState(({ data }) => ({
           currentInstructors: instructorTaught,
-          data: data.map(a => ({ ...a, star: null }))
+          data: data.map((a) => ({ ...a, star: null })),
         }));
       }
     }
@@ -135,22 +135,39 @@ class ScoreBox extends Component {
 
     const EXTRA_KEYS = ["latest_semester", "num_semesters"];
     const SEM_SORT_KEY = "latest_semester";
+    const COURSE_EVAL_COLS = [
+      "rFinalEnrollmentPercentage",
+      "rPercentOpen",
+      "rNumOpenings",
+    ];
 
-    const data = Object.keys(infoMap).map(key => {
+    const data = Object.keys(infoMap).map((key) => {
       const val = isCourse ? results.instructors[key] : results.courses[key];
       const output = {};
-      Object.keys(val.average_reviews).forEach(col => {
+      Object.keys(val.average_reviews).forEach((col) => {
         if (col === "rSemesterCalc" || col === "rSemesterCount") {
+          return;
+        }
+
+        //Only show course statistics if toggled
+        //if one of the columnss and not courseEval then return
+
+        if (COURSE_EVAL_COLS.includes(col)) {
+          if (!this.props.isCourseEval) {
+            return;
+          }
+        } else if (this.props.isCourseEval) {
           return;
         }
         output[col] = {
           average: val.average_reviews[col]?.toFixed(2),
-          recent: val.recent_reviews[col]?.toFixed(2)
+          recent: val.recent_reviews[col]?.toFixed(2),
         };
+
         columns[col] = true;
       });
       if (isInstructor) {
-        EXTRA_KEYS.forEach(col => {
+        EXTRA_KEYS.forEach((col) => {
           if (col === "latest_semester") {
             output[col] = val[col] && toNormalizedSemester(val[col]);
           } else {
@@ -168,7 +185,7 @@ class ScoreBox extends Component {
 
     const cols = [];
     if (isInstructor) {
-      EXTRA_KEYS.forEach(colName =>
+      EXTRA_KEYS.forEach((colName) =>
         cols.push({
           id: colName,
           Header: capitalize(colName.replace("_", " ")),
@@ -194,7 +211,7 @@ class ScoreBox extends Component {
             );
           },
           width: 140,
-          show: true
+          show: true,
         })
       );
     }
@@ -202,8 +219,8 @@ class ScoreBox extends Component {
     orderColumns(Object.keys(columns))
       // Remove columns that don't start with r, as they are not RatingBit values and
       // shouldn't be generated by this logic
-      .filter(key => key && key.charAt(0) === "r")
-      .forEach(key => {
+      .filter((key) => key && key.charAt(0) === "r")
+      .forEach((key) => {
         const header = getColumnName(key);
         cols.push({
           id: key,
@@ -261,7 +278,7 @@ class ScoreBox extends Component {
             );
           },
           width: 140,
-          show: true
+          show: true,
         });
       });
 
@@ -297,7 +314,7 @@ class ScoreBox extends Component {
                   <ul>
                     {star.sections
                       .sort((x, y) => x.id.localeCompare(y.id))
-                      .map(data => (
+                      .map((data) => (
                         <CourseDetails key={data.id} data={data} />
                       ))}
                   </ul>
@@ -315,7 +332,7 @@ class ScoreBox extends Component {
                   <b>{code.replace("-", " ")}</b> in{" "}
                   <b>{this.state.currentCourses[code][0].term_normalized}</b>.
                   <ul>
-                    {this.state.currentCourses[code].map(data => (
+                    {this.state.currentCourses[code].map((data) => (
                       <CourseDetails
                         key={data.section_id_normalized}
                         data={data}
@@ -328,7 +345,7 @@ class ScoreBox extends Component {
               <i
                 className={`ml-1 fa-star ${
                   this.state.currentCourses[code].filter(
-                    a => !a.is_closed && !a.is_cancelled
+                    (a) => !a.is_closed && !a.is_cancelled
                   ).length
                     ? "fa"
                     : "far"
@@ -365,7 +382,7 @@ class ScoreBox extends Component {
         return rows[filter.id]
           .toLowerCase()
           .includes(filter.value.toLowerCase());
-      }
+      },
     });
     if (!isCourse) {
       cols.unshift({
@@ -381,7 +398,7 @@ class ScoreBox extends Component {
               {value}
             </Link>
           </center>
-        )
+        ),
       });
     }
     this.setState({ data, columns: cols });
@@ -392,8 +409,12 @@ class ScoreBox extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { data, liveData } = this.props;
-    if (prevProps.data !== data || prevProps.liveData !== liveData) {
+    const { data, liveData, isCourseEval } = this.props;
+    if (
+      prevProps.data !== data ||
+      prevProps.liveData !== liveData ||
+      prevProps.isCourseEval !== isCourseEval
+    ) {
       this.generateColumns();
     }
   }
@@ -404,7 +425,7 @@ class ScoreBox extends Component {
 
   render() {
     const { data, columns, filterAll, filtered } = this.state;
-    const { type, isAverage, setIsAverage } = this.props;
+    const { type, isAverage, setIsAverage, isCourseEval } = this.props;
     const isCourse = type === "course";
 
     if (!data) {
@@ -436,16 +457,16 @@ class ScoreBox extends Component {
             name="score"
             type={type}
             columns={columns}
-            onSelect={columns => this.setState({ columns })}
+            onSelect={(columns) => this.setState({ columns })}
           />
           <div className="float-right">
             <label className="table-search">
               <input
                 value={filterAll}
-                onChange={val =>
+                onChange={(val) =>
                   this.setState({
                     filtered: [{ id: "name", value: val.target.value }],
-                    filterAll: val.target.value
+                    filterAll: val.target.value,
                   })
                 }
                 type="search"
@@ -463,6 +484,7 @@ class ScoreBox extends Component {
           onSelect={this.handleSelect}
           noun={isCourse ? "instructor" : "course"}
           isAverage={isAverage}
+          isCourseEval={isCourseEval}
         />
       </div>
     );
