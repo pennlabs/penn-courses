@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import Cookies from "universal-cookie";
 import InfoBox from "../components/InfoBox";
 import ScoreBox from "../components/ScoreBox";
-import GraphBox from "../components/GraphBox.tsx";
+import GraphBox from "../components/GraphBox";
 import Navbar from "../components/Navbar";
 import DetailsBox from "../components/DetailsBox";
 import SearchBar from "../components/SearchBar";
@@ -277,7 +277,7 @@ export class ReviewPage extends Component {
                 />
               )}
 
-              {isCourseEval && <GraphBox />}
+              {isCourseEval && <GraphBox courseCode={code} />}
               {type === "instructor" && (
                 <DetailsBox
                   type={type}
