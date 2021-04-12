@@ -152,8 +152,6 @@ const GraphBox = ({ courseCode, courseData }) => {
       setPercentSectionsChartData(generateChartData(percentSectionsPlot));
     }
 
-    console.log(percentSectionsPlot);
-
     setLoaded(true);
   }, [courseCode]);
 
