@@ -34,7 +34,7 @@ const sumOfSubArray = (start, end, data) => {
 
 const generateChartData = (data) => {
   return {
-    labels: data.map((point) => Math.round(point[0] * 100) + "%"),
+    labels: data.map((point) => Math.round(point[0] * 100)),
     datasets: [
       {
         type: "line",
@@ -47,8 +47,7 @@ const generateChartData = (data) => {
           } else {
             average = sumOfSubArray(index - 5, index, data) / 5;
           }
-
-          return Math.round((average / 4) * 100);
+          return Math.round(average * 100) / 100;
         }),
         borderColor: "#1866D2",
         borderWidth: 3,
@@ -57,7 +56,7 @@ const generateChartData = (data) => {
       {
         type: "bar",
         label: "Demand",
-        data: data.map((point) => Math.round((point[1] / 4) * 100)),
+        data: data.map((point) => Math.round(point[1] * 100) / 100),
         backgroundColor: "#AECBFA",
       },
     ],
@@ -82,12 +81,15 @@ const chartOptions = {
         display: true,
         ticks: {
           autoSkip: true,
+          beginAtZero: true,
           maxTicksLimit: 10,
           maxRotation: 0,
           minRotation: 0,
-          min: 0,
           max: 100,
           stepSize: 10,
+          callback: function(value) {
+            return value + "%";
+          },
         },
 
         scaleLabel: {
@@ -105,7 +107,7 @@ const chartOptions = {
           maxRotation: 0,
           minRotation: 0,
           min: 0,
-          max: 100,
+          max: 1,
         },
       },
     ],
@@ -149,6 +151,8 @@ const GraphBox = ({ courseCode, courseData }) => {
     if (percentSectionsPlot) {
       setPercentSectionsChartData(generateChartData(percentSectionsPlot));
     }
+
+    console.log(percentSectionsPlot);
 
     setLoaded(true);
   }, [courseCode]);
