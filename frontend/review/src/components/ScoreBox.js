@@ -150,7 +150,7 @@ class ScoreBox extends Component {
         }
 
         //Only show course statistics if toggled
-        //if one of the columnss and not courseEval then return
+        //if one of the columns and not courseEval then return
 
         if (COURSE_EVAL_COLS.includes(col)) {
           if (!this.props.isCourseEval) {

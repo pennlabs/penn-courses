@@ -277,7 +277,6 @@ export class ReviewPage extends Component {
                 />
               )}
 
-              {isCourseEval && <GraphBox courseCode={code} />}
               {type === "instructor" && (
                 <DetailsBox
                   type={type}
@@ -287,7 +286,9 @@ export class ReviewPage extends Component {
                   ref={this.tableRef}
                 />
               )}
+              {/* {isCourseEval && <GraphBox courseData={data} courseCode={code} />} */}
             </div>
+            {isCourseEval && <GraphBox courseData={data} courseCode={code} />}
           </div>
         ) : (
           <div style={{ textAlign: "center", padding: 45 }}>

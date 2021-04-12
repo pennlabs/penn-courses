@@ -19,6 +19,7 @@ const NewLabel = styled.div`
   text-align: center;
   align-self: flex-start;
   margin-right: 10px;
+  margin-top: 5px;
 `;
 
 const ButtonContainer = styled.div`
@@ -31,6 +32,7 @@ const StatsToggleContainer = styled.div`
   justify-content: start;
   margin: 20px 0px;
   flex-direction: row;
+  align-items: center;
 `;
 
 /**
