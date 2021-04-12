@@ -804,7 +804,7 @@ class PcaDemandExtrema(models.Model):
     This model tracks changes in the extrema (i.e. highest and lowest values) of
     raw PCA demand ratios across all sections in a given semester.
     Raw PCA demand (as opposed to "Relative PCA demand",
-    which maps demand values between extrema to a fixed range of [0,4]) is defined
+    which maps demand values between extrema to a fixed range of [0,1]) is defined
     for any given section as (PCA registration volume)/(section capacity).
     Note that capacity is not stored as a field, while volume is. We do not track capacity changes,
     and for this reason, the recompute_demand_extrema function (in the recomputestats

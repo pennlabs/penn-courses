@@ -291,12 +291,10 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
                 min_val = float(latest_raw_demand_extrema["lowest"])
                 max_val = float(latest_raw_demand_extrema["highest"])
                 if min_val == max_val:
-                    rel_demand = 2.0
+                    rel_demand = 0.5
                 else:
-                    rel_demand = (
-                        4.0
-                        * float(registration_volume / capacity - min_val)
-                        / float(max_val - min_val)
+                    rel_demand = float(registration_volume / capacity - min_val) / float(
+                        max_val - min_val
                     )
                 total_value_in_bin += rel_demand
                 num_in_bin += 1

@@ -47,7 +47,7 @@ course_review_aggregation_schema_with_plots = {
             "with each pair of the form `[percent_through, relative_pca_demand]`. The "
             "`percent_through` value is a float in the range [0,1], and represents percentage "
             "through the add/drop period. The `relative_pca_demand` value is a float in the "
-            "range [0,4], and represents the average of the relative pca demands of all sections "
+            "range [0,1], and represents the average of the relative pca demands of all sections "
             "of this course, at that point in time. Note that the first item of each pair should "
             "be plotted on the 'x-axis' and the second item should be plotted on the 'y-axis'. "
             "This field will not be missing."

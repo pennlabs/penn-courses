@@ -519,8 +519,8 @@ class Section(models.Model):
         """
         The current relative PCA demand of the section, which is defined as:
         [the number of active PCA registrations for this section]/[the class capacity]
-        mapped onto the range [0,4] where the lowest current demand (across all sections)
-        maps to 0 and the highest current demand maps to 4.
+        mapped onto the range [0,1] where the lowest current demand (across all sections)
+        maps to 0 and the highest current demand maps to 1.
         Open sections will automatically have a current relative PCA demand of 0.
         NOTE: sections with an invalid class capacity (null or non-positive) are excluded from
         computation of this statistic, and if this section has a null or non-positive capacity,
@@ -543,11 +543,11 @@ class Section(models.Model):
         min = current_demand_extrema.min
         max = current_demand_extrema.max
         if min == max:
-            return 2.0  # middle of range [0,4]
+            return 0.5  # middle of range [0,1]
 
-        # we map the range [min_raw_demand, max_raw_demand] to [0,4] and
+        # we map the range [min_raw_demand, max_raw_demand] to [0,1] and
         # return the position of self.raw_demand on this new range
-        return 4.0 * float(self.raw_demand - min) / float(max - min)
+        return float(self.raw_demand - min) / float(max - min)
 
     def save(self, *args, **kwargs):
         self.full_code = f"{self.course.full_code}-{self.code}"
