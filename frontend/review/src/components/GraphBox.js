@@ -34,9 +34,7 @@ const sumOfSubArray = (start, end, data) => {
 
 const generateChartData = (data, isPercent) => {
   return {
-    labels: data.map((point) =>
-      Math.round(point[0] * 100) % 10 === 0 ? (point[0] * 100).toFixed() : ""
-    ),
+    labels: data.map((point) => Math.round((point[0] * 100).toFixed())),
     datasets: [
       {
         type: "line",
@@ -47,7 +45,7 @@ const generateChartData = (data, isPercent) => {
           if (index - 5 < 0) {
             average = sumOfSubArray(0, index, data) / index;
           } else {
-            average = sumOfSubArray(index - 5, index, data) / 5;
+            average = sumOfSubArray(index - 4, index, data) / 5;
           }
           return Math.round(average * 100) / (isPercent ? 1 : 100);
         }),
@@ -86,13 +84,16 @@ const chartOptions = {
         ticks: {
           autoSkip: true,
           beginAtZero: true,
-          maxTicksLimit: 10,
+          maxTicksLimit: 5,
           maxRotation: 0,
           minRotation: 0,
           max: 100,
-          stepSize: 10,
           callback: function(value) {
-            return value + "%";
+            if (value % 20 === 0) {
+              return value + "%";
+            } else {
+              return;
+            }
           },
         },
 
@@ -137,13 +138,16 @@ const percentSectionChartOptions = {
         ticks: {
           autoSkip: true,
           beginAtZero: true,
-          maxTicksLimit: 10,
+          maxTicksLimit: 5,
           maxRotation: 0,
           minRotation: 0,
           max: 100,
-          stepSize: 10,
           callback: function(value) {
-            return value + "%";
+            if (value % 20 === 0) {
+              return value + "%";
+            } else {
+              return;
+            }
           },
         },
 
@@ -158,13 +162,17 @@ const percentSectionChartOptions = {
         display: true,
         ticks: {
           autoSkip: true,
-          maxTicksLimit: 10,
+          maxTicksLimit: 4,
           maxRotation: 0,
           minRotation: 0,
           min: 0,
           max: 100,
           callback: function(value) {
-            return value + "%";
+            if (value % 25 === 0) {
+              return value + "%";
+            } else {
+              return;
+            }
           },
         },
       },
@@ -203,6 +211,7 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
     setSemester(courseData[averageOrRecent]["rSemesterCalc"]);
 
     const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
+    console.log(pcaDemandPlot);
     if (pcaDemandPlot) {
       setPCADemandChartData(generateChartData(pcaDemandPlot, false));
     }
