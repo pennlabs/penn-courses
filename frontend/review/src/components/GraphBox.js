@@ -32,7 +32,7 @@ const sumOfSubArray = (start, end, data) => {
   return sum;
 };
 
-const generateChartData = (data) => {
+const generateChartData = (data, isPercent) => {
   return {
     labels: data.map((point) => Math.round(point[0] * 100)),
     datasets: [
@@ -47,7 +47,7 @@ const generateChartData = (data) => {
           } else {
             average = sumOfSubArray(index - 5, index, data) / 5;
           }
-          return Math.round(average * 100) / 100;
+          return Math.round(average * 100) / (isPercent ? 1 : 100);
         }),
         borderColor: "#1866D2",
         borderWidth: 3,
@@ -56,7 +56,9 @@ const generateChartData = (data) => {
       {
         type: "bar",
         label: "Demand",
-        data: data.map((point) => Math.round(point[1] * 100) / 100),
+        data: data.map(
+          (point) => Math.round(point[1] * 100) / (isPercent ? 1 : 100)
+        ),
         backgroundColor: "#AECBFA",
       },
     ],
@@ -114,6 +116,60 @@ const chartOptions = {
   },
 };
 
+const percentSectionChartOptions = {
+  elements: {
+    point: {
+      radius: 0,
+    },
+  },
+  legend: {
+    display: true,
+    position: "bottom",
+    align: "start",
+  },
+  scales: {
+    autoSkip: true,
+    xAxes: [
+      {
+        display: true,
+        ticks: {
+          autoSkip: true,
+          beginAtZero: true,
+          maxTicksLimit: 10,
+          maxRotation: 0,
+          minRotation: 0,
+          max: 100,
+          stepSize: 10,
+          callback: function(value) {
+            return value + "%";
+          },
+        },
+
+        scaleLabel: {
+          display: true,
+          labelString: "Percentage through Add/Drop Period",
+        },
+      },
+    ],
+    yAxes: [
+      {
+        display: true,
+        ticks: {
+          autoSkip: true,
+          maxTicksLimit: 10,
+          maxRotation: 0,
+          minRotation: 0,
+          min: 0,
+          max: 100,
+          callback: function(value) {
+            return value + "%";
+          },
+        },
+      },
+    ],
+  },
+};
+
 const translateSemester = (semester) => {
   const year = semester.substring(0, 4);
   const season = semester.substring(4);
@@ -127,7 +183,7 @@ const translateSemester = (semester) => {
   return year;
 };
 
-const GraphBox = ({ courseCode, courseData }) => {
+const GraphBox = ({ courseCode, courseData, isAverage }) => {
   const [loaded, setLoaded] = useState(false);
   const [pcaDemandChartData, setPCADemandChartData] = useState();
   const [percentSectionsChartData, setPercentSectionsChartData] = useState();
@@ -139,17 +195,20 @@ const GraphBox = ({ courseCode, courseData }) => {
     }
 
     setLoaded(false);
-    setSemester(courseData["recent_reviews"]["rSemesterCalc"]);
 
-    const pcaDemandPlot = courseData["recent_reviews"]["pca_demand_plot"];
+    const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
+
+    setSemester(courseData[averageOrRecent]["rSemesterCalc"]);
+
+    const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
     if (pcaDemandPlot) {
-      setPCADemandChartData(generateChartData(pcaDemandPlot));
+      setPCADemandChartData(generateChartData(pcaDemandPlot, false));
     }
 
     const percentSectionsPlot =
-      courseData["recent_reviews"]["percent_open_plot"];
+      courseData[averageOrRecent]["percent_open_plot"];
     if (percentSectionsPlot) {
-      setPercentSectionsChartData(generateChartData(percentSectionsPlot));
+      setPercentSectionsChartData(generateChartData(percentSectionsPlot, true));
     }
 
     setLoaded(true);
@@ -164,11 +223,14 @@ const GraphBox = ({ courseCode, courseData }) => {
           {pcaDemandChartData ? (
             <div id="row-select-chart-container">
               <ChartTitle>
-                Historical PCA Demand For {courseCode} During Add/Drop
+                Historically, how difficult has it been to get into {courseCode}{" "}
+                during the add/drop period?
               </ChartTitle>
               <ChartDescription>
-                Based on Penn Course Alert registration averages since{" "}
-                {translateSemester(semester)} and section capacity data.
+                'Difficulty' is represented on a 0-1 scale (relative to all
+                classes at Penn), plotted over time as a % of add/drop period
+                elapsed, using Penn Course Alert data from semesters since
+                {translateSemester(semester)})
               </ChartDescription>
               <Bar data={pcaDemandChartData} options={chartOptions} />
             </div>
@@ -195,14 +257,18 @@ const GraphBox = ({ courseCode, courseData }) => {
           {percentSectionsChartData ? (
             <div id="row-select-chart-container">
               <ChartTitle>
-                Percent of Sections Open For {courseCode} During Add/Drop
+                Percent of sections open for {courseCode} during the add/drop
+                period
               </ChartTitle>
               <ChartDescription>
-                Based on PennInTouch registration data since{" "}
+                Based on Penn inTouch registration data since{" "}
                 {translateSemester(semester)}. Calculated by number of sections
                 open divided by the total number of sections.
               </ChartDescription>
-              <Bar data={percentSectionsChartData} options={chartOptions} />
+              <Bar
+                data={percentSectionsChartData}
+                options={percentSectionChartOptions}
+              />
             </div>
           ) : (
             <div>

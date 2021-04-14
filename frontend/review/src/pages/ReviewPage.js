@@ -286,9 +286,15 @@ export class ReviewPage extends Component {
                   ref={this.tableRef}
                 />
               )}
-              {/* {isCourseEval && <GraphBox courseData={data} courseCode={code} />} */}
             </div>
-            {isCourseEval && <GraphBox courseData={data} courseCode={code} />}
+            {isCourseEval && (
+              <GraphBox
+                key={isAverage}
+                courseData={data}
+                courseCode={code}
+                isAverage={isAverage}
+              />
+            )}
           </div>
         ) : (
           <div style={{ textAlign: "center", padding: 45 }}>
