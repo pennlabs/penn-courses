@@ -52,8 +52,8 @@ course_review_aggregation_schema_with_plots = {
             "of this course, at that point in time. The first item of each pair "
             "should be plotted on the 'x-axis' and the second item should be plotted on the "
             "'y-axis'. Note that floating point imprecision may cause "
-            "some of the percent_through values to be slightly off, so you should round if "
-            "you display these data as strings anywhere. "
+            "some of the percent_through values to be slightly off (like 0.35000000000000003), "
+            "so you should round if you display these data as strings anywhere. "
             "This field will not be missing."
         ),
     },
@@ -69,9 +69,9 @@ course_review_aggregation_schema_with_plots = {
             "is a float in the range [0,1], and represents the percent of sections of this course "
             "that were open, at that point in time. The first item of each pair "
             "should be plotted on the 'x-axis' and the second item should be plotted on the "
-            "'y-axis'. Note that floating point imprecision may cause some of the percent_through "
-            "values to be slightly off, so you should round if you display these data "
-            "as strings anywhere. "
+            "'y-axis'. Note that floating point imprecision may cause "
+            "some of the percent_through values to be slightly off (like 0.35000000000000003), "
+            "so you should round if you display these data as strings anywhere. "
             "This field will not be missing."
         ),
     },
