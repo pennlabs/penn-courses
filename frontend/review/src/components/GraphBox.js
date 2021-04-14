@@ -231,7 +231,7 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
               <ChartDescription>
                 'Difficulty' is represented on a 0-1 scale (relative to all
                 classes at Penn), plotted over time as a % of add/drop period
-                elapsed, using Penn Course Alert data from semesters since
+                elapsed, using Penn Course Alert data from semesters since{" "}
                 {translateSemester(semester)})
               </ChartDescription>
               <Bar data={pcaDemandChartData} options={chartOptions} />
