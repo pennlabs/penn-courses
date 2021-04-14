@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime
 
-import pytz
+from dateutil.tz import gettz
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import F
@@ -117,7 +117,7 @@ class Command(BaseCommand):
                         if dt_string is None or dt_string == "" or dt_string == "None":
                             return None
                         dt = datetime.strptime(dt_string, "%Y-%m-%d %H:%M:%S.%f %Z")
-                        return make_aware(dt, timezone=pytz.timezone(TIME_ZONE), is_dst=None)
+                        return make_aware(dt, timezone=gettz(TIME_ZONE), is_dst=None)
 
                     registration_dict = dict()  # fields to unpack into Registration initialization
                     registration_dict["section_id"] = sections_map[full_code, semester]

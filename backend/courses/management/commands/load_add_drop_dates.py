@@ -1,15 +1,15 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
-import pytz
 import requests
 from bs4 import BeautifulSoup
+from dateutil.tz import gettz
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.timezone import make_aware
 
 from alert.models import AddDropPeriod, validate_add_drop_semester
-from courses.util import get_current_semester
+from courses.util import get_add_drop_period, get_current_semester
 from PennCourses.settings.base import TIME_ZONE
 
 
@@ -22,7 +22,7 @@ def load_add_drop_dates(verbose=False):
     with transaction.atomic():
         start_date, end_date = None, None
         try:
-            previous = AddDropPeriod.objects.get(semester=semester)
+            previous = get_add_drop_period(semester)
             start_date = previous.start
             end_date = previous.end
             previous.delete()
@@ -41,7 +41,7 @@ def load_add_drop_dates(verbose=False):
                 "This script currently only supports fall or spring semesters; "
                 f"{semester} is invalid"
             )
-        tz = pytz.timezone(TIME_ZONE)
+        tz = gettz(TIME_ZONE)
 
         s_year, s_month, s_day, e_year, e_month, e_day = (None,) * 6
         start_mode = 0  # 0 if start semester hasn't been found, 1 if it has, 2 if finished sem
@@ -107,14 +107,22 @@ def load_add_drop_dates(verbose=False):
                         day_candidates = [int(s) for s in date_string.split() if s.isdigit()]
                         if len(day_candidates) > 0:
                             e_day = day_candidates[0]
-        if all([d is not None for d in [s_year, s_month, s_day]]):
+        if all([d is not None for d in [s_year, s_month, s_day]]) and start_date is None:
             start_date = make_aware(
-                datetime.strptime(f"{s_year}-{s_month}-{s_day} 00:00", "%Y-%m-%d %H:%M"),
+                datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M")
+                + timedelta(days=1),
                 timezone=tz,
             )
+            if verbose:
+                print(
+                    "NOTE: Add/drop date start was estimated as the end of the advanced "
+                    "registration period. Replace this date with the actual start of the "
+                    "add/drop period through the Django admin console when it is announced "
+                    "to students each semester."
+                )
         if all([d is not None for d in [e_year, e_month, e_day]]):
             end_date = make_aware(
-                datetime.strptime(f"{e_year}-{e_month}-{e_day} 00:00", "%Y-%m-%d %H:%M"),
+                datetime.strptime(f"{e_year}-{e_month}-{e_day} 11:59", "%Y-%m-%d %H:%M"),
                 timezone=tz,
             )
         adp = AddDropPeriod(semester=semester, start=start_date, end=end_date)
@@ -126,7 +134,12 @@ def load_add_drop_dates(verbose=False):
 class Command(BaseCommand):
     help = (
         "Load in the start and end date of the current semester's add drop period "
-        "from the Penn Almanac."
+        "from the Penn Almanac. If an AddDropPeriod object from the given semester "
+        "already exists and its start field is not null, this script will continue "
+        "to use that same start date rather than estimating the start date based on "
+        "the end of the advanced registration period. The end date will always "
+        "be updated if it is found in the almanac, since the almanac explicitly posts "
+        "the date for the end of the add/drop period."
     )
 
     def handle(self, *args, **kwargs):

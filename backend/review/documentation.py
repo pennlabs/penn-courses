@@ -107,6 +107,20 @@ course_reviews_response_schema = {
                         "type": "integer",
                         "description": "The number of sections belonging to this course in its most recent semester.",  # noqa E501
                     },
+                    "current_add_drop_period": {
+                        "type": "object",
+                        "description": "The start and end dates of the upcoming/current semester's add/drop period",  # noqa E501
+                        "properties": {
+                            "start": {
+                                "type": "string",
+                                "description": "A string datetime representation of the start of the current/upcoming add/drop period.",  # noqa E501
+                            },
+                            "end": {
+                                "type": "string",
+                                "description": "A string datetime representation of the end of the current/upcoming add/drop period.",  # noqa E501
+                            },
+                        },
+                    },
                     "average_reviews": {
                         "type": "object",
                         "description": "This course's average reviews across all of its sections from all semesters. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501

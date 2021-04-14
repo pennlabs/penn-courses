@@ -7,9 +7,14 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 
-from alert.models import AddDropPeriod, PcaDemandExtrema, Registration
+from alert.models import PcaDemandExtrema, Registration
 from courses.models import Section, StatusUpdate
-from courses.util import get_course_and_section, get_current_semester, update_course_from_record
+from courses.util import (
+    get_add_drop_period,
+    get_course_and_section,
+    get_current_semester,
+    update_course_from_record,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -65,7 +70,7 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
     """
     section = Section.objects.get(id=section_id)
     semester = section.semester
-    add_drop_period = AddDropPeriod.objects.get(semester=semester)
+    add_drop_period = get_add_drop_period(semester)
     assert semester == get_current_semester()
     if was_active == is_now_active:
         return

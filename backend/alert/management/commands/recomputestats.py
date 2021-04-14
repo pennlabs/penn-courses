@@ -9,10 +9,10 @@ from django.db.models import Count, F, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce
 from tqdm import tqdm
 
-from alert.models import AddDropPeriod, PcaDemandExtrema, Registration, Section
+from alert.models import PcaDemandExtrema, Registration, Section
 from courses.management.commands.load_add_drop_dates import load_add_drop_dates
 from courses.models import Course, StatusUpdate
-from courses.util import get_current_semester
+from courses.util import get_add_drop_period, get_current_semester
 
 
 def get_semesters(semesters=None, verbose=False):
@@ -91,7 +91,7 @@ def recompute_demand_extrema(semesters=None, semesters_precomputed=False, verbos
             # be modified unless the entire update for a semester succeeds.
             # If set_cache is True, we will set the current_demand_extrema variable in cache
 
-            add_drop_period = AddDropPeriod.objects.get(semester=semester)
+            add_drop_period = get_add_drop_period(semester)
 
             if verbose:
                 print(f"Processing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.\n")
@@ -261,7 +261,7 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
             num_erroneous_updates = 0
             num_total_updates = 0
             for section in sections:
-                add_drop = AddDropPeriod.objects.get(semester=section.semester)
+                add_drop = get_add_drop_period(section.semester)
                 add_drop_start = add_drop.estimated_start
                 add_drop_end = add_drop.estimated_end
 

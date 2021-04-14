@@ -18,7 +18,7 @@ from alert import tasks
 from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
-from courses.util import get_or_create_course_and_section
+from courses.util import get_add_drop_period, get_or_create_course_and_section
 from PennCourses.celery import app as celeryapp
 from tests.courses.util import create_mock_data
 
@@ -821,7 +821,7 @@ class WebhookViewTestCase(TestCase):
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
         set_semester()
-        adp = AddDropPeriod.objects.get(semester=TEST_SEMESTER)
+        adp = get_add_drop_period(TEST_SEMESTER)
         start = adp.estimated_start
         end = adp.estimated_end
         duration = end - start

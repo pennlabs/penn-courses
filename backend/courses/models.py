@@ -462,11 +462,12 @@ class Section(models.Model):
         registration period] that this section was open. If this section's registration
         period hasn't started yet, this property is null (None in Python).
         """
-        from alert.models import AddDropPeriod  # imported here to avoid circular imports
-        from courses.util import get_current_semester
+        from courses.util import get_add_drop_period, get_current_semester
+
+        # ^ imported here to avoid circular imports
 
         if self.semester == get_current_semester():
-            add_drop = AddDropPeriod.objects.get(semester=self.semester)
+            add_drop = get_add_drop_period(self.semester)
             add_drop_start = add_drop.estimated_start
             add_drop_end = add_drop.estimated_end
             current_time = timezone.now()
@@ -607,7 +608,15 @@ class StatusUpdate(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        from alert.models import AddDropPeriod, validate_add_drop_semester
+        """
+        This overridden save method first gets the add/drop period object for the semester of this
+        StatusUpdate object (either by using the get_add_drop_period method or by using
+        a passed-in add_drop_period kwarg, which can be used for efficiency in bulk operations
+        over many StatusUpdate objects). Then it calls the overridden save method, and after that
+        it sets the percent_through_add_drop_period field.
+        """
+        from alert.models import validate_add_drop_semester
+        from courses.util import get_add_drop_period
 
         # ^ imported here to avoid circular imports
 
@@ -625,7 +634,7 @@ class StatusUpdate(models.Model):
             return
 
         if add_drop_period is None:
-            add_drop_period = AddDropPeriod.objects.get(semester=self.section.semester)
+            add_drop_period = get_add_drop_period(self.section.semester)
 
         created_at = self.created_at
         start = add_drop_period.estimated_start

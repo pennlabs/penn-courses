@@ -2,7 +2,7 @@ import csv
 import os
 from datetime import datetime
 
-import pytz
+from dateutil.tz import gettz
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import F
@@ -70,9 +70,7 @@ class Command(BaseCommand):
                     full_code = row[0]
                     semester = row[1]
                     created_at = datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S.%f %Z")
-                    created_at = make_aware(
-                        created_at, timezone=pytz.timezone(TIME_ZONE), is_dst=None
-                    )
+                    created_at = make_aware(created_at, timezone=gettz(TIME_ZONE), is_dst=None)
                     old_status = row[3]
                     new_status = row[4]
                     alert_sent = row[5]

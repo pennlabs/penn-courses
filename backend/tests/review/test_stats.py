@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import AddDropPeriod
 from courses.models import Instructor, Section
-from courses.util import record_update
+from courses.util import get_add_drop_period, record_update
 from review.models import Review
 from tests.review.test_api import PCRTestMixin, create_review
 
@@ -105,7 +105,7 @@ class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
             "CIS-120-001", TEST_SEMESTER, cls.instructor_name, {"instructor_quality": 3.5}
         )
         cls.instructor_quality = 3.5
-        cls.adp = AddDropPeriod.objects.get(semester=TEST_SEMESTER)
+        cls.adp = get_add_drop_period(TEST_SEMESTER)
         start = cls.adp.estimated_start
         end = cls.adp.estimated_end
         duration = end - start

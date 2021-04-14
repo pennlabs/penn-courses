@@ -14,6 +14,7 @@ from courses.management.commands.export_test_courses_data import (
     test_data_fields,
     unique_identifying_fields,
 )
+from courses.util import get_add_drop_period
 
 
 class Command(BaseCommand):
@@ -198,9 +199,10 @@ class Command(BaseCommand):
                             self_other_id = id_change_map[data_type][other_id]
                             setattr(objects[data_type][self_new_id], field, self_other_id)
 
-            adp_to_save = []
             for semester in semesters:
-                adp_to_save.append(AddDropPeriod(semester=semester))
-            AddDropPeriod.objects.bulk_create(adp_to_save)
+                try:
+                    get_add_drop_period(semester)
+                except AddDropPeriod.DoesNotExist:
+                    AddDropPeriod(semester=semester).save()
 
         print(f"Finished loading test data {src}... processed {row_count} rows. ")

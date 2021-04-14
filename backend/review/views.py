@@ -1,3 +1,4 @@
+from dateutil.tz import gettz
 from django.db.models import Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import Http404
@@ -7,7 +8,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Course, Department, Instructor, Section, StatusUpdate
+from courses.util import get_add_drop_period, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from PennCourses.settings.base import TIME_ZONE
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     autocomplete_response_schema,
@@ -120,6 +123,9 @@ def course_reviews(request, course_code):
             section_map, bin_size=0
         )
 
+    current_adp = get_add_drop_period(get_current_semester())
+    local_tz = gettz(TIME_ZONE)
+
     return Response(
         {
             "code": course["full_code"],
@@ -140,6 +146,10 @@ def course_reviews(request, course_code):
             .values("full_code", "course__semester")
             .distinct()
             .count(),
+            "current_add_drop_period": {
+                "start": current_adp.estimated_start.astimezone(tz=local_tz),
+                "end": current_adp.estimated_end.astimezone(tz=local_tz),
+            },
             "average_reviews": {
                 **make_subdict("average_", course),
                 "pca_demand_plot": avg_demand_plot,

@@ -5,7 +5,7 @@ from enum import Enum, auto
 from textwrap import dedent
 
 import phonenumbers  # library for parsing and formatting phone numbers.
-import pytz
+from dateutil.tz import gettz
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -16,7 +16,7 @@ from django.utils.timezone import make_aware
 
 from alert.alerts import Email, PushNotification, Text
 from courses.models import Course, Section, StatusUpdate, UserProfile, string_dict_to_html
-from courses.util import get_course_and_section, get_current_semester
+from courses.util import get_add_drop_period, get_course_and_section, get_current_semester
 from PennCourses.settings.base import TIME_ZONE
 
 
@@ -917,11 +917,17 @@ class PcaDemandExtrema(models.Model):
         return current_demand_extrema
 
     def save(self, *args, **kwargs):
+        """
+        This save method first gets the add/drop period object for this PcaDemandExtrema object's
+        semester (either by calling the get_add_drop_period method or by using a passed-in
+        add_drop_period kwarg, which can be used for efficiency in bulk operations over
+        PcaDemandExtrema objects).
+        """
         if "add_drop_period" in kwargs:
             add_drop_period = kwargs["add_drop_period"]
             del kwargs["add_drop_period"]
         else:
-            add_drop_period = AddDropPeriod.objects.get(semester=self.semester)
+            add_drop_period = get_add_drop_period(self.semester)
         super().save(*args, **kwargs)
         created_at = self.created_at
         start = add_drop_period.estimated_start
@@ -1028,6 +1034,13 @@ class AddDropPeriod(models.Model):
             return float((dt - start) / (end - start))
 
     def save(self, *args, **kwargs):
+        """
+        This save method invalidates the add_drop_periods cache, sets the estimated_start and
+        estimated_end fields, updates the in_add_drop_period and percent_through_add_drop_period
+        fields of StatusUpdates and PcaDemandExtremas from this semester, and then calls
+        the overridden save method.
+        """
+        cache.delete("add_drop_periods")  # invalidate add_drop_periods cache
         self.estimated_start = self.estimate_start()
         self.estimated_end = self.estimate_end()
         period = self.estimated_end - self.estimated_start
@@ -1079,7 +1092,7 @@ class AddDropPeriod(models.Model):
                 s_month = 11
                 s_day = 16
             if last_start is None:
-                tz = pytz.timezone(TIME_ZONE)
+                tz = gettz(TIME_ZONE)
                 return make_aware(
                     datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M"),
                     timezone=tz,
@@ -1111,7 +1124,7 @@ class AddDropPeriod(models.Model):
                 else:  # spring semester
                     e_month = 2
                     e_day = 22
-                tz = pytz.timezone(TIME_ZONE)
+                tz = gettz(TIME_ZONE)
                 return make_aware(
                     datetime.strptime(f"{e_year}-{e_month}-{e_day} 23:59", "%Y-%m-%d %H:%M"),
                     timezone=tz,

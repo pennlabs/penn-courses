@@ -53,6 +53,7 @@ django-extensions = "*"
 numpy = "*"
 scikit-learn = "*"
 pandas = "*"
+python-dateutil = "*"
 
 [requires]
 python_version = "3"

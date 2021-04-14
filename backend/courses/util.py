@@ -36,8 +36,8 @@ def get_current_semester(allow_not_found=False):
     indicating that the SEMESTER Option must be set for this API to work properly.
     You can prevent an error from being thrown (and cause the function to just return None
     in this case) by setting allow_not_found=True.
-    The cache has no timeout, but is invalidated whenever the SEMESTER Option is saved
-    (which will occur whenever it is updated), using a post_save hook.
+    The cache has a timeout of 25 hours, but is also invalidated whenever the SEMESTER Option
+    is saved (which will occur whenever it is updated), using a post_save hook.
     See the invalidate_current_semester_cache function below to see how this works.
     """
     cached_val = cache.get("SEMESTER", None)
@@ -53,11 +53,23 @@ def get_current_semester(allow_not_found=False):
                 "replacing 2020C with the current semester, in the backend directory (remember "
                 "to run 'pipenv shell' before running this command, though)."
             )
-    cache.set("SEMESTER", retrieved_val, timeout=None)  # cache only expires upon invalidation
+    cache.set("SEMESTER", retrieved_val, timeout=90000)  # cache expires every 25 hours
     return retrieved_val
 
 
+@receiver(post_save, sender=Option, dispatch_uid="invalidate_current_semester_cache")
+def invalidate_current_semester_cache(sender, instance, **kwargs):
+    """
+    This function invalidates the cached SEMESTER value when the SEMESTER option is updated.
+    """
+    if instance.key == "SEMESTER":
+        cache.delete("SEMESTER")
+
+
 def get_semester(datetime):
+    """
+    Given a datetime, estimate the semester of the period of course registration it occurred in.
+    """
     if 3 <= datetime.month and datetime.month <= 9:
         sem = str(datetime.year) + "C"
     else:
@@ -68,16 +80,28 @@ def get_semester(datetime):
     return sem
 
 
-@receiver(post_save, sender=Option, dispatch_uid="invalidate_current_semester_cache")
-def invalidate_current_semester_cache(sender, instance, **kwargs):
+def get_add_drop_period(semester):
     """
-    This function invalidates the cached SEMESTER value when the SEMESTER option is updated.
-    Note that the timeout value on the cached SEMESTER value is set to None (meaning
-    the cache will not be invalidated by any amount of elapsed time; saving the SEMESTER Option
-    is the only way to invalidate this cached value).
+    Returns the AddDropPeriod object corresponding to the given semester. Throws the same
+    errors and behaves the same way as AddDropPeriod.objects.get(semester=semester) but runs faster.
+    This function uses caching to speed up add/drop period object retrieval. Cached objects
+    expire every 25 hours, and are also invalidated in the AddDropPeriod.save method.
+    The add_drop_periods key in cache points to a dictionary mapping semester to add/drop period
+    object.
     """
-    if instance.key == "SEMESTER":
-        cache.delete("SEMESTER")
+    from alert.models import AddDropPeriod
+
+    changed = False
+    cached_adps = cache.get("add_drop_periods", None)
+    if cached_adps is None:
+        cached_adps = dict()
+        changed = True
+    if semester not in cached_adps:
+        cached_adps[semester] = AddDropPeriod.objects.get(semester=semester)
+        changed = True
+    if changed:
+        cache.set("add_drop_periods", cached_adps, timeout=90000)  # cache expires every 25 hours
+    return cached_adps[semester]
 
 
 def separate_course_code(course_code):
@@ -137,7 +161,11 @@ def update_percent_open(section, last_status_update, new_status_update):
     """
     from alert.models import AddDropPeriod
 
-    add_drop, _ = AddDropPeriod.objects.get_or_create(semester=section.semester)
+    try:
+        add_drop = get_add_drop_period(section.semester)
+    except AddDropPeriod.DoesNotExist:
+        add_drop = AddDropPeriod(semester=section.semester)
+        add_drop.save()
     add_drop_start = add_drop.estimated_start
     add_drop_end = add_drop.estimated_end
     if new_status_update.created_at < add_drop_start:
