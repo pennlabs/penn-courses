@@ -43,13 +43,17 @@ course_review_aggregation_schema_with_plots = {
         "type": "array",
         "description": (
             "The plot of average relative pca demand for sections of this course over time "
-            "during historical add/drop periods. This plot is an array of pairs (2-length arrays), "
+            "during historical add/drop periods. This plot contains data points at evenly-spaced "
+            "1% intervals along the x axis. It is an array of pairs (2-length arrays), "
             "with each pair of the form `[percent_through, relative_pca_demand]`. The "
             "`percent_through` value is a float in the range [0,1], and represents percentage "
             "through the add/drop period. The `relative_pca_demand` value is a float in the "
             "range [0,1], and represents the average of the relative pca demands of all sections "
-            "of this course, at that point in time. Note that the first item of each pair should "
-            "be plotted on the 'x-axis' and the second item should be plotted on the 'y-axis'. "
+            "of this course, at that point in time. The first item of each pair "
+            "should be plotted on the 'x-axis' and the second item should be plotted on the "
+            "'y-axis'. Note that floating point imprecision may cause "
+            "some of the percent_through values to be slightly off, so you should round if "
+            "you display these data as strings anywhere. "
             "This field will not be missing."
         ),
     },
@@ -57,13 +61,17 @@ course_review_aggregation_schema_with_plots = {
         "type": "array",
         "description": (
             "The plot of percentage of sections of this course that were open at each point in "
-            "time during historical add/drop periods. This plot is an array of pairs "
+            "time during historical add/drop periods. This plot contains data points at "
+            "evenly-spaced 1% intervals along the x axis. It is an array of pairs "
             "(2-length arrays), with each pair of the form `[percent_through, "
             "percent_open]`. The `percent_through` value is a float in the range [0,1], "
             "and represents percentage through the add/drop period. The `percent_open` value "
             "is a float in the range [0,1], and represents the percent of sections of this course "
-            "that were open, at that point in time. Note that the first item of each pair should "
-            "be plotted on the 'x-axis' and the second item should be plotted on the 'y-axis'. "
+            "that were open, at that point in time. The first item of each pair "
+            "should be plotted on the 'x-axis' and the second item should be plotted on the "
+            "'y-axis'. Note that floating point imprecision may cause some of the percent_through "
+            "values to be slightly off, so you should round if you display these data "
+            "as strings anywhere. "
             "This field will not be missing."
         ),
     },

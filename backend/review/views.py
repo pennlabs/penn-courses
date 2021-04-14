@@ -117,10 +117,10 @@ def course_reviews(request, course_code):
     )
     if len(section_map.keys()) > 0:
         avg_demand_plot, recent_demand_plot = avg_and_recent_demand_plots(
-            section_map, bin_size=0.01
+            section_map, num_points=100
         )
         avg_percent_open_plot, recent_percent_open_plot = avg_and_recent_percent_open_plots(
-            section_map, bin_size=0
+            section_map, num_points=100
         )
 
     current_adp = get_add_drop_period(get_current_semester())
