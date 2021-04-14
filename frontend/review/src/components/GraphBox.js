@@ -12,16 +12,16 @@ const LoadingContainer = styled.div`
 `;
 
 const ChartTitle = styled.div`
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
-  text-align: center;
+  margin-bottom: 5px;
 `;
 
 const ChartDescription = styled.div`
-  font-size: 14px;
+  font-size: 12px;
   font-weight: normal;
   color: #b2b2b2;
-  text-align: center;
+  margin-bottom: 10px;
 `;
 
 const sumOfSubArray = (start, end, data) => {
@@ -34,7 +34,9 @@ const sumOfSubArray = (start, end, data) => {
 
 const generateChartData = (data, isPercent) => {
   return {
-    labels: data.map((point) => Math.round(point[0] * 100)),
+    labels: data.map((point) =>
+      Math.round(point[0] * 100) % 10 === 0 ? (point[0] * 100).toFixed() : ""
+    ),
     datasets: [
       {
         type: "line",
@@ -49,7 +51,7 @@ const generateChartData = (data, isPercent) => {
           }
           return Math.round(average * 100) / (isPercent ? 1 : 100);
         }),
-        borderColor: "#1866D2",
+        borderColor: "#6378E9",
         borderWidth: 3,
         fill: false,
       },
@@ -59,7 +61,7 @@ const generateChartData = (data, isPercent) => {
         data: data.map(
           (point) => Math.round(point[1] * 100) / (isPercent ? 1 : 100)
         ),
-        backgroundColor: "#AECBFA",
+        backgroundColor: "#AAACEC",
       },
     ],
   };

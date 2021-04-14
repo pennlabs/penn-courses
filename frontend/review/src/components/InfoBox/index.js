@@ -17,9 +17,8 @@ const NewLabel = styled.div`
   letter-spacing: -0.5px;
   padding: 0.1875rem 0.375rem;
   text-align: center;
-  align-self: flex-start;
+  align-self: center;
   margin-right: 10px;
-  margin-top: 5px;
 `;
 
 const ButtonContainer = styled.div`
@@ -150,7 +149,7 @@ const InfoBox = ({
             <button
               onClick={() => setIsCourseEval(false)}
               className={`btn btn-sm ${
-                isCourseEval ? "btn-secondary" : "btn-primary"
+                isCourseEval ? "btn-sub-secondary" : "btn-sub-primary"
               }`}
             >
               Student Evaluations
@@ -158,7 +157,7 @@ const InfoBox = ({
             <button
               onClick={() => setIsCourseEval(true)}
               className={`btn btn-sm ${
-                isCourseEval ? "btn-primary" : "btn-secondary"
+                isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
               }`}
             >
               Course Statistics
