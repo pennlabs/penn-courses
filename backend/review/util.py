@@ -291,6 +291,8 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
                     if num_in_bin > 0:
                         demand_plot.append((bin_start_pct, total_value_in_bin / num_in_bin))
                     bin_start_pct = change["percent_through"]
+                    total_value_in_bin = 0
+                    num_in_bin = 0
                 total_value_in_bin += rel_demand
                 num_in_bin += 1
             if num_in_bin > 0:
