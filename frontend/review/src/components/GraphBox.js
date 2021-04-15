@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Bar, Scatter } from "react-chartjs-2";
+import { defaults, Scatter } from "react-chartjs-2";
 
 let addDropDate = [];
 
@@ -15,11 +15,11 @@ const LoadingContainer = styled.div`
 
 const ChartTitle = styled.div`
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 400;
   margin-bottom: 5px;
 `;
 
-const ChartDescription = styled.div`
+const ChartDescription = styled.p`
   font-size: 12px;
   font-weight: normal;
   color: #b2b2b2;
@@ -61,6 +61,7 @@ const GraphContainer = styled.div`
   box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.07);
   margin-bottom: 30px;
   min-height: 500px;
+  flex: 1;
 `;
 
 const genAverageData = (seriesData) => {
@@ -92,7 +93,7 @@ const genDemandChartData = (data, averageData) => {
     datasets: [
       {
         type: "line",
-        label: "5% Period Average",
+        label: "5% Moving Average",
         data: averageData,
         borderColor: "#6378E9",
         borderWidth: 3,
@@ -101,7 +102,7 @@ const genDemandChartData = (data, averageData) => {
       },
       {
         type: "line",
-        label: "Difficulty",
+        label: "Registration Difficulty",
         data: data.map((point) => {
           return {
             x: (point[0] * 100).toFixed(2),
@@ -122,7 +123,7 @@ const genPercentChartData = (data) => {
     datasets: [
       {
         type: "line",
-        label: "% of Section Open",
+        label: "% of Sections Open",
         data: data.map((point) => {
           return {
             x: Math.round((point[0] * 100).toFixed()),
@@ -143,22 +144,23 @@ const demandChartOptions = {
   tooltips: {
     mode: "index",
     intersect: false,
-    backgroundColor: "#deebff",
+    backgroundColor: "#E9E9E9",
     bodyFontColor: "#000000",
     titleFontColor: "#000000",
     bodyFontSize: 12,
+    cornerRadius: 3,
+    bodySpacing: 3,
     callbacks: {
       title: (toolTipItem, data) => {
         return (
-          "Time: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].x +
-          "%"
+          "% Through Add/Drop"
         );
       },
       beforeBody: (toolTipItem, data) => {
         let bodyText = "";
         bodyText +=
-          "Approx Date: " +
+          "Projected Date: " +
           calcApproxDate(
             addDropDate.start,
             addDropDate.end,
@@ -166,13 +168,12 @@ const demandChartOptions = {
           ) +
           "\n";
         bodyText +=
-          "Difficulty: " +
+          "Registration Difficulty: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
           "\n";
         bodyText +=
-          "5% Period Avg: " +
-          data["datasets"][1]["data"][toolTipItem[0]["index"]].y +
-          "\n";
+          "5% Moving Average: " +
+          data["datasets"][1]["data"][toolTipItem[0]["index"]].y;
         return bodyText;
       },
       label: () => {
@@ -202,8 +203,8 @@ const demandChartOptions = {
         ticks: {
           autoSkip: true,
           beginAtZero: true,
-          maxTicksLimit: 12,
-          stepSize: 10,
+          maxTicksLimit: 6,
+          stepSize: 20,
           maxRotation: 0,
           minRotation: 0,
           max: 100,
@@ -214,7 +215,7 @@ const demandChartOptions = {
 
         scaleLabel: {
           display: true,
-          labelString: "Percentage through Add/Drop Period",
+          labelString: "Percent Through Add/Drop Period",
         },
       },
     ],
@@ -238,22 +239,27 @@ const percentSectionChartOptions = {
   tooltips: {
     mode: "index",
     intersect: false,
-    backgroundColor: "#deebff",
+    backgroundColor: "#E9E9E9",
     bodyFontColor: "#000000",
     titleFontColor: "#000000",
+    cornerRadius: 3,
     bodyFontSize: 12,
+    custom: function(tooltip) {
+      if (!tooltip) return;
+      // disable displaying the color box;
+      tooltip.displayColors = false;
+    },
     callbacks: {
       title: (toolTipItem, data) => {
         return (
-          "Time: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].x +
-          "%"
+          "% Through Add/Drop"
         );
       },
       beforeBody: (toolTipItem, data) => {
         let bodyText = "";
         bodyText +=
-          "Approx Date: " +
+          "Projected Date: " +
           calcApproxDate(
             addDropDate.start,
             addDropDate.end,
@@ -261,9 +267,9 @@ const percentSectionChartOptions = {
           ) +
           "\n";
         bodyText +=
-          "% of Section Open: " +
+          "% of Sections Open: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
-          "%\n";
+          "%";
         return bodyText;
       },
       label: () => {
@@ -305,7 +311,7 @@ const percentSectionChartOptions = {
 
         scaleLabel: {
           display: true,
-          labelString: "Percentage through Add/Drop Period",
+          labelString: "Percent Through Add/Drop Period",
         },
       },
     ],
@@ -359,7 +365,14 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
   const [loaded, setLoaded] = useState(false);
   const [pcaDemandChartData, setPCADemandChartData] = useState();
   const [percentSectionsChartData, setPercentSectionsChartData] = useState();
-  const [semester, setSemester] = useState();
+  const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
+
+  const demandSemester =
+    courseData[averageOrRecent]["pca_demand_plot_since_semester"];
+  const percentSemester =
+    courseData[averageOrRecent]["percent_open_plot_since_semester"];
+
+  defaults.global.defaultFontFamily = "Lato";
 
   useEffect(() => {
     if (!courseCode) {
@@ -368,11 +381,7 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
 
     setLoaded(false);
 
-    const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
-
-    setSemester(courseData[averageOrRecent]["rSemesterCalc"]);
     addDropDate = courseData["current_add_drop_period"];
-    console.log(addDropDate);
 
     //Generate demand plot data
     const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
@@ -408,10 +417,10 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                   {courseCode} during the add/drop period?
                 </ChartTitle>
                 <ChartDescription>
-                  'Difficulty' is represented on a 0-1 scale (relative to all
-                  classes at Penn), plotted over time as a % of add/drop period
-                  elapsed, using Penn Course Alert data from semesters since{" "}
-                  {translateSemester(semester)})
+                  Registration difficulty is represented on a 0-1 scale
+                  (relative to other classes at Penn), plotted over time as a %
+                  of add/drop period elapsed, using Penn Course Alert data from
+                  semesters since {" " + translateSemester(demandSemester)})
                 </ChartDescription>
                 <Scatter
                   data={pcaDemandChartData}
@@ -447,13 +456,13 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
             {percentSectionsChartData ? (
               <div id="row-select-chart-container">
                 <ChartTitle>
-                  Percent of sections open for {courseCode} during the add/drop
-                  period
+                  Percent of historical {courseCode} sections open during the
+                  add/drop period
                 </ChartTitle>
                 <ChartDescription>
-                  Based on Penn inTouch registration data since{" "}
-                  {translateSemester(semester)}. Calculated by number of
-                  sections open divided by the total number of sections.
+                  Based on section status update data during add/drop periods
+                  since {" " + translateSemester(percentSemester)} 
+                  
                 </ChartDescription>
                 <Scatter
                   data={percentSectionsChartData}
