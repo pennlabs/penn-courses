@@ -194,6 +194,8 @@ class Command(BaseCommand):
                                     fields[data_type][4],
                                 ]
                             )
+                            if rows % 5000 == 0:
+                                output_file.flush()
                     continue
 
                 if data_type == "departments":
@@ -232,6 +234,8 @@ class Command(BaseCommand):
                     csv_writer.writerow(
                         [data_type] + [str(getattr(object, field)) for field in fields[data_type]]
                     )
+                    if rows % 5000 == 0:
+                        output_file.flush()
 
         if upload_to_s3:
             S3_resource.meta.client.upload_file(
