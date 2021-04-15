@@ -11,7 +11,9 @@ from review.models import Review
 from tests.review.test_api import PCRTestMixin, create_review
 
 
-TEST_SEMESTER = "2017C"
+TEST_SEMESTER = "2021C"
+
+assert TEST_SEMESTER >= "2021C", "TEST_SEMESTER must be at least 2021C"
 
 
 def set_semester():

@@ -121,16 +121,29 @@ def course_reviews(request, course_code):
             section_map[section.efficient_semester] = dict()
         section_map[section.efficient_semester][section.id] = section
 
-    (avg_demand_plot, recent_demand_plot, avg_percent_open_plot, recent_percent_open_plot) = tuple(
-        [None] * 4
-    )
-    if len(section_map.keys()) > 0 and Course.objects:
-        avg_demand_plot, recent_demand_plot = avg_and_recent_demand_plots(
-            section_map, bin_size=0.005
-        )
-        avg_percent_open_plot, recent_percent_open_plot = avg_and_recent_percent_open_plots(
-            section_map
-        )
+    (
+        avg_demand_plot,
+        avg_demand_plot_min_semester,
+        recent_demand_plot,
+        recent_demand_plot_semester,
+        avg_percent_open_plot,
+        avg_percent_open_plot_min_semester,
+        recent_percent_open_plot,
+        recent_percent_open_plot_semester,
+    ) = tuple([None] * 8)
+    if len(section_map.keys()) > 0:
+        (
+            avg_demand_plot,
+            avg_demand_plot_min_semester,
+            recent_demand_plot,
+            recent_demand_plot_semester,
+        ) = avg_and_recent_demand_plots(section_map, bin_size=0.005)
+        (
+            avg_percent_open_plot,
+            avg_percent_open_plot_min_semester,
+            recent_percent_open_plot,
+            recent_percent_open_plot_semester,
+        ) = avg_and_recent_percent_open_plots(section_map)
 
     current_adp = get_add_drop_period(get_current_semester())
     local_tz = gettz(TIME_ZONE)
@@ -161,12 +174,16 @@ def course_reviews(request, course_code):
             },
             "average_reviews": {
                 **make_subdict("average_", course),
+                "pca_demand_plot_since_semester": avg_demand_plot_min_semester,
                 "pca_demand_plot": avg_demand_plot,
+                "percent_open_plot_since_semester": avg_percent_open_plot_min_semester,
                 "percent_open_plot": avg_percent_open_plot,
             },
             "recent_reviews": {
                 **make_subdict("recent_", course),
+                "pca_demand_plot_since_semester": recent_demand_plot_semester,
                 "pca_demand_plot": recent_demand_plot,
+                "percent_open_plot_since_semester": recent_percent_open_plot_semester,
                 "percent_open_plot": recent_percent_open_plot,
             },
             "num_semesters": course["average_semester_count"],
