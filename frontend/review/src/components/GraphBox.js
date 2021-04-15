@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Bar } from "react-chartjs-2";
+import { Bar, Scatter } from "react-chartjs-2";
 
 const LoadingContainer = styled.div`
   display: flex;
@@ -32,40 +32,70 @@ const sumOfSubArray = (start, end, data) => {
   return sum;
 };
 
-const generateChartData = (data, isPercent) => {
+//PCA Demand Chart Data
+const genDemandChartData = (data) => {
   return {
-    labels: data.map((point) => Math.round((point[0] * 100).toFixed())),
     datasets: [
       {
         type: "line",
         label: "5% Period Average",
         data: data.map((point, index) => {
-          // console.log(point[1]);
           let average;
           if (index - 5 < 0) {
             average = sumOfSubArray(0, index, data) / index;
           } else {
             average = sumOfSubArray(index - 4, index, data) / 5;
           }
-          return Math.round(average * 100) / (isPercent ? 1 : 100);
+          return {
+            x: Math.round((point[0] * 100).toFixed()),
+            y: Math.round(average * 100) / 100,
+          };
         }),
         borderColor: "#6378E9",
         borderWidth: 3,
         fill: false,
       },
       {
-        type: "bar",
+        type: "line",
         label: "Demand",
-        data: data.map(
-          (point) => Math.round(point[1] * 100) / (isPercent ? 1 : 100)
-        ),
+        data: data.map((point) => {
+          return {
+            x: Math.round((point[0] * 100).toFixed()),
+            y: Math.round(point[1] * 100) / 100,
+          };
+        }),
         backgroundColor: "#AAACEC",
+        borderWidth: 0,
+        steppedLine: true,
       },
     ],
   };
 };
 
-const chartOptions = {
+//Percentage of Sections Open Chart Data
+const genPercentChartData = (data) => {
+  return {
+    datasets: [
+      {
+        type: "line",
+        label: "% of Section Open",
+        data: data.map((point) => {
+          return {
+            x: Math.round((point[0] * 100).toFixed()),
+            y: Math.round(point[1] * 100),
+          };
+        }),
+        borderColor: "#AAACEC",
+        backgroundColor: "#e3e4ff",
+        borderWidth: 3,
+        fill: true,
+        steppedLine: true,
+      },
+    ],
+  };
+};
+
+const demandChartOptions = {
   elements: {
     point: {
       radius: 0,
@@ -84,16 +114,12 @@ const chartOptions = {
         ticks: {
           autoSkip: true,
           beginAtZero: true,
-          maxTicksLimit: 5,
+          maxTicksLimit: 6,
           maxRotation: 0,
           minRotation: 0,
           max: 100,
           callback: function(value) {
-            if (value % 20 === 0) {
-              return value + "%";
-            } else {
-              return;
-            }
+            return value + "%";
           },
         },
 
@@ -138,16 +164,13 @@ const percentSectionChartOptions = {
         ticks: {
           autoSkip: true,
           beginAtZero: true,
-          maxTicksLimit: 5,
+          maxTicksLimit: 6,
+          stepSize: 20,
           maxRotation: 0,
           minRotation: 0,
           max: 100,
-          callback: function(value) {
-            if (value % 20 === 0) {
-              return value + "%";
-            } else {
-              return;
-            }
+          callback: (value) => {
+            return value + "%";
           },
         },
 
@@ -162,17 +185,14 @@ const percentSectionChartOptions = {
         display: true,
         ticks: {
           autoSkip: true,
-          maxTicksLimit: 4,
+          maxTicksLimit: 5,
+          stepSize: 25,
           maxRotation: 0,
           minRotation: 0,
           min: 0,
           max: 100,
-          callback: function(value) {
-            if (value % 25 === 0) {
-              return value + "%";
-            } else {
-              return;
-            }
+          callback: (value) => {
+            return value + "%";
           },
         },
       },
@@ -213,13 +233,13 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
     const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
     console.log(pcaDemandPlot);
     if (pcaDemandPlot) {
-      setPCADemandChartData(generateChartData(pcaDemandPlot, false));
+      setPCADemandChartData(genDemandChartData(pcaDemandPlot));
     }
 
     const percentSectionsPlot =
       courseData[averageOrRecent]["percent_open_plot"];
     if (percentSectionsPlot) {
-      setPercentSectionsChartData(generateChartData(percentSectionsPlot, true));
+      setPercentSectionsChartData(genPercentChartData(percentSectionsPlot));
     }
 
     setLoaded(true);
@@ -243,7 +263,7 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                 elapsed, using Penn Course Alert data from semesters since{" "}
                 {translateSemester(semester)})
               </ChartDescription>
-              <Bar data={pcaDemandChartData} options={chartOptions} />
+              <Scatter data={pcaDemandChartData} options={demandChartOptions} />
             </div>
           ) : (
             <div>
@@ -276,7 +296,7 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                 {translateSemester(semester)}. Calculated by number of sections
                 open divided by the total number of sections.
               </ChartDescription>
-              <Bar
+              <Scatter
                 data={percentSectionsChartData}
                 options={percentSectionChartOptions}
               />
