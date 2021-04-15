@@ -99,9 +99,10 @@ class Command(BaseCommand):
                 Registration.objects.filter(
                     section__course__semester__in=semesters,
                     section__course__full_code__startswith=kwargs["courses_query"],
+                ).annotate(
+                    efficient_semester=F("section__course__semester"),
+                    section_full_code=F("section__full_code"),
                 )
-                .annotate(efficient_semester=F("section__course__semester"))
-                .select_related("section")
             ):
                 resubscribed_from_id = (
                     str(registration.resubscribed_from_id)
@@ -133,7 +134,7 @@ class Command(BaseCommand):
                     [
                         str(field)
                         for field in [
-                            registration.section.full_code,
+                            registration.section_full_code,
                             registration.efficient_semester,
                             registration.created_at.strftime("%Y-%m-%d %H:%M:%S.%f %Z"),
                             original_created_at,
