@@ -1,7 +1,6 @@
 import re
 from typing import Dict, List
 
-import numpy as np
 from django.db.models import F
 
 
@@ -167,7 +166,7 @@ def average_given_plots(plots_dict):
     return averaged_plot
 
 
-def avg_and_recent_demand_plots(section_map, num_points=100):
+def avg_and_recent_demand_plots(section_map, bin_size=0.01):
     """
     Aggregate demand plots over time (during historical add/drop periods) for the given
     sections (specified by section_map).
@@ -175,7 +174,8 @@ def avg_and_recent_demand_plots(section_map, num_points=100):
     The average plot will average across all sections, and the recent plot will average across
     sections from only the most recent semester.
     Note that section_map should map semester to section id to section object.
-    The generated plots will have points at increments of step_size in the range [0,1].
+    Points are grouped together with all all remaining points within bin_size to the right,
+    so the minimum separation between data points will be bin_size.
     Returns (avg_demand_plot, recent_demand_plot)
     """
     from alert.models import AddDropPeriod, PcaDemandExtrema, Registration
@@ -269,33 +269,34 @@ def avg_and_recent_demand_plots(section_map, num_points=100):
             registration_volume = 0
             latest_raw_demand_extrema = None
 
-            changes_idx = 0
-            for x in np.linspace(0, 1, num=num_points + 1)[1:]:  # skip 0
-                total_value_in_bin = 0
-                num_in_bin = 0
-                while changes_idx < len(changes) and changes[changes_idx]["percent_through"] <= x:
-                    change = changes[changes_idx]
-                    changes_idx += 1
-                    if change["type"] == "extrema_change":
-                        latest_raw_demand_extrema = change
-                    else:
-                        if latest_raw_demand_extrema is None:
-                            continue
-                        registration_volume += change["volume_change"]
-                    min_val = float(latest_raw_demand_extrema["lowest"])
-                    max_val = float(latest_raw_demand_extrema["highest"])
-                    if min_val == max_val:
-                        rel_demand = 0.5
-                    else:
-                        rel_demand = float(registration_volume / capacity - min_val) / float(
-                            max_val - min_val
-                        )
-                    total_value_in_bin += rel_demand
-                    num_in_bin += 1
-                demand_plot.append(
-                    (x, total_value_in_bin / num_in_bin if num_in_bin > 0 else demand_plot[-1][1])
-                )
-
+            total_value_in_bin = 0
+            num_in_bin = 0
+            bin_start_pct = 0
+            for change in changes:
+                if change["type"] == "extrema_change":
+                    latest_raw_demand_extrema = change
+                else:
+                    if latest_raw_demand_extrema is None:
+                        continue
+                    registration_volume += change["volume_change"]
+                min_val = float(latest_raw_demand_extrema["lowest"])
+                max_val = float(latest_raw_demand_extrema["highest"])
+                if min_val == max_val:
+                    rel_demand = 0.5
+                else:
+                    rel_demand = float(registration_volume / capacity - min_val) / float(
+                        max_val - min_val
+                    )
+                if change["percent_through"] >= bin_start_pct + bin_size:
+                    if num_in_bin > 0:
+                        demand_plot.append((bin_start_pct, total_value_in_bin / num_in_bin))
+                    bin_start_pct = change["percent_through"]
+                total_value_in_bin += rel_demand
+                num_in_bin += 1
+            if num_in_bin > 0:
+                demand_plot.append((bin_start_pct, total_value_in_bin / num_in_bin))
+            if bin_start_pct < 1:
+                demand_plot.append((1, demand_plot[-1][1]))
             demand_plots_map[semester][section_id] = demand_plot
 
     recent_demand_plot = average_given_plots(demand_plots_map[max(section_map.keys())])
@@ -303,7 +304,7 @@ def avg_and_recent_demand_plots(section_map, num_points=100):
     return avg_demand_plot, recent_demand_plot
 
 
-def avg_and_recent_percent_open_plots(section_map, num_points=100):
+def avg_and_recent_percent_open_plots(section_map):
     """
     Aggregate plots of the percentage of sections that were open at each point in time (during
     historical add/drop periods) for the given sections (specified by section_map).
@@ -356,19 +357,14 @@ def avg_and_recent_percent_open_plots(section_map, num_points=100):
             # (percent_through, relative_demand).
 
             latest_status = int(updates[0].old_status == "O")
-            updates_idx = 0
-            for x in np.linspace(0, 1, num=num_points + 1)[1:]:  # skip 0
-                while (
-                    updates_idx < len(updates)
-                    and updates[updates_idx].percent_through_add_drop_period <= x
-                ):
-                    update = updates[updates_idx]
-                    updates_idx += 1
-                    if int(update.old_status == "O") != latest_status:
-                        # Ignore invalid status updates
-                        continue
-                    latest_status = int(update.new_status == "O")
-                open_plot.append((x, latest_status))
+            for update in updates:
+                if int(update.old_status == "O") != latest_status:
+                    # Ignore invalid status updates
+                    continue
+                latest_status = int(update.new_status == "O")
+                open_plot.append((update.percent_through_add_drop_period, latest_status))
+            if open_plot[-1][0] < 1:
+                open_plot.append((1, latest_status))
 
             open_plots[semester][section_id] = open_plot
 

@@ -404,6 +404,7 @@ class Section(models.Model):
     )
     restrictions = models.ManyToManyField(
         Restriction,
+        related_name="sections",
         blank=True,
         help_text="All registration Restriction objects to which this section is subject.",
     )

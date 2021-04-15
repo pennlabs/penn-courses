@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course, Department, Instructor, Section, StatusUpdate
+from courses.models import Course, Department, Instructor, Restriction, Section, StatusUpdate
 from courses.util import get_add_drop_period, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from PennCourses.settings.base import TIME_ZONE
@@ -102,12 +102,21 @@ def course_reviews(request, course_code):
 
     course = dict(course_qs[:1].values()[0])
 
-    # Compute plots
-    sections = Section.objects.filter(
-        course__full_code=course_code, capacity__isnull=False, capacity__gt=0
+    # Compute set of sections to include in plot data
+    sections_no_permit_required = Section.objects.filter(
+        ~Q(
+            id__in=Subquery(
+                Restriction.objects.filter(description__icontains="permission").values_list(
+                    "sections__id", flat=True
+                )
+            )
+        ),  # Filter out sections with permit required
+        course__full_code=course_code,
+        capacity__isnull=False,  # Filter out sections with null capacity
+        capacity__gt=0,  # Filter out sections with 0 capacity
     ).annotate(efficient_semester=F("course__semester"))
     section_map = dict()  # a dict mapping semester to section id to section object
-    for section in sections:
+    for section in sections_no_permit_required:
         if section.efficient_semester not in section_map:
             section_map[section.efficient_semester] = dict()
         section_map[section.efficient_semester][section.id] = section
@@ -115,12 +124,12 @@ def course_reviews(request, course_code):
     (avg_demand_plot, recent_demand_plot, avg_percent_open_plot, recent_percent_open_plot) = tuple(
         [None] * 4
     )
-    if len(section_map.keys()) > 0:
+    if len(section_map.keys()) > 0 and Course.objects:
         avg_demand_plot, recent_demand_plot = avg_and_recent_demand_plots(
-            section_map, num_points=100
+            section_map, bin_size=0.01
         )
         avg_percent_open_plot, recent_percent_open_plot = avg_and_recent_percent_open_plots(
-            section_map, num_points=100
+            section_map
         )
 
     current_adp = get_add_drop_period(get_current_semester())
@@ -360,9 +369,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
             ],
         }
     )
-
-
-# reverse_func("review-autocomplete")
 
 
 @api_view(["GET"])
