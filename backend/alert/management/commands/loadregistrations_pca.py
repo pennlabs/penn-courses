@@ -127,9 +127,9 @@ class Command(BaseCommand):
                     registration_dict["deleted_at"] = extract_date(row[11])
 
                     registration = Registration(**registration_dict)
-                    registration.save()
+                    registration.save(load_script=True)
                     registration.created_at = registration_dict["created_at"]
-                    registration.save()
+                    registration.save(load_script=True)
                     id_corrections[original_id] = registration.id
                     registrations.append((registration, original_id, resubscribed_from_id))
 
