@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { Bar, Scatter } from "react-chartjs-2";
 
+let addDropDate = [];
+
 const LoadingContainer = styled.div`
   display: flex;
   width: 100%;
@@ -28,6 +30,37 @@ const EmptyGraphContainer = styled.div`
   padding: 10px;
   text-align: center;
   color: #8a8a8a;
+`;
+
+const GraphColumn = styled.div`
+  padding: 15px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  position: relative;
+  width: 100%;
+  flex: 0 0 100%;
+  height: 100%;
+
+  @media (min-width: 768px) {
+    max-width: 50%;
+    flex: 0 0 50%;
+    padding-bottom: 30px;
+  }
+`;
+
+const GraphRow = styled.div`
+  padding: 0px 15px;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+`;
+
+const GraphContainer = styled.div`
+  padding: 35px;
+  background-color: #ffffff;
+  box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.07);
+  margin-bottom: 30px;
+  min-height: 500px;
 `;
 
 const genAverageData = (seriesData) => {
@@ -111,6 +144,9 @@ const demandChartOptions = {
     mode: "index",
     intersect: false,
     backgroundColor: "#deebff",
+    bodyFontColor: "#000000",
+    titleFontColor: "#000000",
+    bodyFontSize: 12,
     callbacks: {
       title: (toolTipItem, data) => {
         return (
@@ -121,7 +157,14 @@ const demandChartOptions = {
       },
       beforeBody: (toolTipItem, data) => {
         let bodyText = "";
-        bodyText += "Approx Date: \n";
+        bodyText +=
+          "Approx Date: " +
+          calcApproxDate(
+            addDropDate.start,
+            addDropDate.end,
+            data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
+          ) +
+          "\n";
         bodyText +=
           "Difficulty: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
@@ -136,8 +179,6 @@ const demandChartOptions = {
         return;
       },
     },
-    bodyFontColor: "black",
-    titleFontColor: "black",
   },
   hover: {
     mode: "nearest",
@@ -198,6 +239,9 @@ const percentSectionChartOptions = {
     mode: "index",
     intersect: false,
     backgroundColor: "#deebff",
+    bodyFontColor: "#000000",
+    titleFontColor: "#000000",
+    bodyFontSize: 12,
     callbacks: {
       title: (toolTipItem, data) => {
         return (
@@ -208,19 +252,24 @@ const percentSectionChartOptions = {
       },
       beforeBody: (toolTipItem, data) => {
         let bodyText = "";
-        bodyText += "Approx Date: \n";
+        bodyText +=
+          "Approx Date: " +
+          calcApproxDate(
+            addDropDate.start,
+            addDropDate.end,
+            data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
+          ) +
+          "\n";
         bodyText +=
           "% of Section Open: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
-          "\n";
+          "%\n";
         return bodyText;
       },
       label: () => {
         return;
       },
     },
-    bodyFontColor: "black",
-    titleFontColor: "black",
   },
   hover: {
     mode: "nearest",
@@ -293,12 +342,24 @@ const translateSemester = (semester) => {
   return year;
 };
 
+const calcApproxDate = (startDateString, endDateString, percent) => {
+  let startDate = new Date(startDateString);
+  let endDate = new Date(endDateString);
+
+  let percentageThrough = (endDate.getTime() - startDate.getTime()) * percent;
+  let approxDate = new Date(startDate.getTime() + percentageThrough);
+
+  return approxDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+};
+
 const GraphBox = ({ courseCode, courseData, isAverage }) => {
   const [loaded, setLoaded] = useState(false);
   const [pcaDemandChartData, setPCADemandChartData] = useState();
   const [percentSectionsChartData, setPercentSectionsChartData] = useState();
   const [semester, setSemester] = useState();
-  const [addDropDate, setAddDropDate] = useState();
 
   useEffect(() => {
     if (!courseCode) {
@@ -310,7 +371,8 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
     const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
 
     setSemester(courseData[averageOrRecent]["rSemesterCalc"]);
-    setAddDropDate(courseData["current_add_drop_period"]);
+    addDropDate = courseData["current_add_drop_period"];
+    console.log(addDropDate);
 
     //Generate demand plot data
     const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
@@ -336,86 +398,93 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
 
   return (
     <>
-      {/* <div id="content" className="row"> */}
-      <div className="col-sm-12 box-wrapper" style={{ width: "50%" }}>
-        <div className="box">
-          {pcaDemandChartData ? (
-            <div id="row-select-chart-container">
-              <ChartTitle>
-                Historically, how difficult has it been to get into {courseCode}{" "}
-                during the add/drop period?
-              </ChartTitle>
-              <ChartDescription>
-                'Difficulty' is represented on a 0-1 scale (relative to all
-                classes at Penn), plotted over time as a % of add/drop period
-                elapsed, using Penn Course Alert data from semesters since{" "}
-                {translateSemester(semester)})
-              </ChartDescription>
-              <Scatter data={pcaDemandChartData} options={demandChartOptions} />
-            </div>
-          ) : (
-            <div>
-              {" "}
-              {loaded ? (
-                <EmptyGraphContainer>
-                  All underlying sections either have no data to show, or
-                  require permits for registration (we cannot estimate the
-                  difficulty of being issued a permit).
-                </EmptyGraphContainer>
-              ) : (
-                <LoadingContainer>
-                  <i
-                    className="fa fa-spin fa-cog fa-fw"
-                    style={{ fontSize: "150px", color: "#aaa" }}
-                  />
-                  <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
-                </LoadingContainer>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="col-sm-12 box-wrapper" style={{ width: "50%" }}>
-        <div className="box">
-          {percentSectionsChartData ? (
-            <div id="row-select-chart-container">
-              <ChartTitle>
-                Percent of sections open for {courseCode} during the add/drop
-                period
-              </ChartTitle>
-              <ChartDescription>
-                Based on Penn inTouch registration data since{" "}
-                {translateSemester(semester)}. Calculated by number of sections
-                open divided by the total number of sections.
-              </ChartDescription>
-              <Scatter
-                data={percentSectionsChartData}
-                options={percentSectionChartOptions}
-              />
-            </div>
-          ) : (
-            <div>
-              {" "}
-              {loaded ? (
-                <EmptyGraphContainer>
-                  All underlying sections either have no data to show, or
-                  require permits for registration (we cannot estimate the
-                  difficulty of being issued a permit).
-                </EmptyGraphContainer>
-              ) : (
-                <LoadingContainer>
-                  <i
-                    className="fa fa-spin fa-cog fa-fw"
-                    style={{ fontSize: "150px", color: "#aaa" }}
-                  />
-                  <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
-                </LoadingContainer>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      {/* </div> */}
+      <GraphRow>
+        <GraphColumn>
+          <GraphContainer>
+            {pcaDemandChartData ? (
+              <div id="row-select-chart-container">
+                <ChartTitle>
+                  Historically, how difficult has it been to get into{" "}
+                  {courseCode} during the add/drop period?
+                </ChartTitle>
+                <ChartDescription>
+                  'Difficulty' is represented on a 0-1 scale (relative to all
+                  classes at Penn), plotted over time as a % of add/drop period
+                  elapsed, using Penn Course Alert data from semesters since{" "}
+                  {translateSemester(semester)})
+                </ChartDescription>
+                <Scatter
+                  data={pcaDemandChartData}
+                  options={demandChartOptions}
+                />
+              </div>
+            ) : (
+              <div>
+                {" "}
+                {loaded ? (
+                  <EmptyGraphContainer>
+                    All underlying sections either have no data to show, or
+                    require permits for registration (we cannot estimate the
+                    difficulty of being issued a permit).
+                  </EmptyGraphContainer>
+                ) : (
+                  <LoadingContainer>
+                    <i
+                      className="fa fa-spin fa-cog fa-fw"
+                      style={{ fontSize: "150px", color: "#aaa" }}
+                    />
+                    <h1 style={{ fontSize: "2em", marginTop: 15 }}>
+                      Loading...
+                    </h1>
+                  </LoadingContainer>
+                )}
+              </div>
+            )}
+          </GraphContainer>
+        </GraphColumn>
+        <GraphColumn>
+          <GraphContainer>
+            {percentSectionsChartData ? (
+              <div id="row-select-chart-container">
+                <ChartTitle>
+                  Percent of sections open for {courseCode} during the add/drop
+                  period
+                </ChartTitle>
+                <ChartDescription>
+                  Based on Penn inTouch registration data since{" "}
+                  {translateSemester(semester)}. Calculated by number of
+                  sections open divided by the total number of sections.
+                </ChartDescription>
+                <Scatter
+                  data={percentSectionsChartData}
+                  options={percentSectionChartOptions}
+                />
+              </div>
+            ) : (
+              <div>
+                {" "}
+                {loaded ? (
+                  <EmptyGraphContainer>
+                    All underlying sections either have no data to show, or
+                    require permits for registration (we cannot estimate the
+                    difficulty of being issued a permit).
+                  </EmptyGraphContainer>
+                ) : (
+                  <LoadingContainer>
+                    <i
+                      className="fa fa-spin fa-cog fa-fw"
+                      style={{ fontSize: "150px", color: "#aaa" }}
+                    />
+                    <h1 style={{ fontSize: "2em", marginTop: 15 }}>
+                      Loading...
+                    </h1>
+                  </LoadingContainer>
+                )}
+              </div>
+            )}
+          </GraphContainer>
+        </GraphColumn>
+      </GraphRow>
     </>
   );
 };
