@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { Bar, Scatter } from "react-chartjs-2";
 
+let addDropDate = [];
+
 const LoadingContainer = styled.div`
   display: flex;
   width: 100%;
@@ -142,6 +144,9 @@ const demandChartOptions = {
     mode: "index",
     intersect: false,
     backgroundColor: "#deebff",
+    bodyFontColor: "#000000",
+    titleFontColor: "#000000",
+    bodyFontSize: 12,
     callbacks: {
       title: (toolTipItem, data) => {
         return (
@@ -152,7 +157,14 @@ const demandChartOptions = {
       },
       beforeBody: (toolTipItem, data) => {
         let bodyText = "";
-        bodyText += "Approx Date: \n";
+        bodyText +=
+          "Approx Date: " +
+          calcApproxDate(
+            addDropDate.start,
+            addDropDate.end,
+            data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
+          ) +
+          "\n";
         bodyText +=
           "Difficulty: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
@@ -167,8 +179,6 @@ const demandChartOptions = {
         return;
       },
     },
-    bodyFontColor: "black",
-    titleFontColor: "black",
   },
   hover: {
     mode: "nearest",
@@ -229,6 +239,9 @@ const percentSectionChartOptions = {
     mode: "index",
     intersect: false,
     backgroundColor: "#deebff",
+    bodyFontColor: "#000000",
+    titleFontColor: "#000000",
+    bodyFontSize: 12,
     callbacks: {
       title: (toolTipItem, data) => {
         return (
@@ -239,19 +252,24 @@ const percentSectionChartOptions = {
       },
       beforeBody: (toolTipItem, data) => {
         let bodyText = "";
-        bodyText += "Approx Date: \n";
+        bodyText +=
+          "Approx Date: " +
+          calcApproxDate(
+            addDropDate.start,
+            addDropDate.end,
+            data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
+          ) +
+          "\n";
         bodyText +=
           "% of Section Open: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
-          "\n";
+          "%\n";
         return bodyText;
       },
       label: () => {
         return;
       },
     },
-    bodyFontColor: "black",
-    titleFontColor: "black",
   },
   hover: {
     mode: "nearest",
@@ -324,12 +342,24 @@ const translateSemester = (semester) => {
   return year;
 };
 
+const calcApproxDate = (startDateString, endDateString, percent) => {
+  let startDate = new Date(startDateString);
+  let endDate = new Date(endDateString);
+
+  let percentageThrough = (endDate.getTime() - startDate.getTime()) * percent;
+  let approxDate = new Date(startDate.getTime() + percentageThrough);
+
+  return approxDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+};
+
 const GraphBox = ({ courseCode, courseData, isAverage }) => {
   const [loaded, setLoaded] = useState(false);
   const [pcaDemandChartData, setPCADemandChartData] = useState();
   const [percentSectionsChartData, setPercentSectionsChartData] = useState();
   const [semester, setSemester] = useState();
-  const [addDropDate, setAddDropDate] = useState();
 
   useEffect(() => {
     if (!courseCode) {
@@ -341,7 +371,8 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
     const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
 
     setSemester(courseData[averageOrRecent]["rSemesterCalc"]);
-    setAddDropDate(courseData["current_add_drop_period"]);
+    addDropDate = courseData["current_add_drop_period"];
+    console.log(addDropDate);
 
     //Generate demand plot data
     const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
