@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Scatter } from "react-chartjs-2";
+import { defaults, Scatter } from "react-chartjs-2";
 
 let addDropDate = [];
 
@@ -15,11 +15,11 @@ const LoadingContainer = styled.div`
 
 const ChartTitle = styled.div`
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 400;
   margin-bottom: 5px;
 `;
 
-const ChartDescription = styled.div`
+const ChartDescription = styled.p`
   font-size: 12px;
   font-weight: normal;
   color: #b2b2b2;
@@ -61,6 +61,7 @@ const GraphContainer = styled.div`
   box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.07);
   margin-bottom: 30px;
   min-height: 500px;
+  flex: 1;
 `;
 
 const genAverageData = (seriesData) => {
@@ -143,10 +144,12 @@ const demandChartOptions = {
   tooltips: {
     mode: "index",
     intersect: false,
-    backgroundColor: "#deebff",
+    backgroundColor: "#E9E9E9",
     bodyFontColor: "#000000",
     titleFontColor: "#000000",
     bodyFontSize: 12,
+    cornerRadius: 3,
+    bodySpacing: 3,
     callbacks: {
       title: (toolTipItem, data) => {
         return (
@@ -236,9 +239,10 @@ const percentSectionChartOptions = {
   tooltips: {
     mode: "index",
     intersect: false,
-    backgroundColor: "#deebff",
+    backgroundColor: "#E9E9E9",
     bodyFontColor: "#000000",
     titleFontColor: "#000000",
+    cornerRadius: 3,
     bodyFontSize: 12,
     custom: function(tooltip) {
       if (!tooltip) return;
@@ -368,6 +372,8 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
   const percentSemester =
     courseData[averageOrRecent]["percent_open_plot_since_semester"];
 
+  defaults.global.defaultFontFamily = "Lato";
+
   useEffect(() => {
     if (!courseCode) {
       return;
@@ -455,7 +461,8 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                 </ChartTitle>
                 <ChartDescription>
                   Based on section status update data during add/drop periods
-                  since{" " + translateSemester(percentSemester)}
+                  since {" " + translateSemester(percentSemester)} 
+                  
                 </ChartDescription>
                 <Scatter
                   data={percentSectionsChartData}
