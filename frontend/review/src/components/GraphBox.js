@@ -24,43 +24,54 @@ const ChartDescription = styled.div`
   margin-bottom: 10px;
 `;
 
-const sumOfSubArray = (start, end, data) => {
-  let sum = 0;
-  for (let i = start; i <= end; i++) {
-    sum += data[i][1];
+const EmptyGraphContainer = styled.div`
+  padding: 10px;
+  text-align: center;
+  color: #8a8a8a;
+`;
+
+const genAverageData = (seriesData) => {
+  let averageData = [];
+  let windowSize = 0.05;
+  for (let i = 0; i < seriesData.length; i++) {
+    let xVal = seriesData[i][0];
+    let total = 0;
+    let numInTotal = 0;
+    let j = i;
+    while (j >= 0 && seriesData[j][0] >= xVal - windowSize) {
+      total += seriesData[j][1];
+      numInTotal += 1;
+      j -= 1;
+    }
+    let movingAverageVal = total / numInTotal;
+    averageData.push({
+      x: (xVal * 100).toFixed(2),
+      y: movingAverageVal.toFixed(2),
+    });
   }
-  return sum;
+
+  return averageData;
 };
 
 //PCA Demand Chart Data
-const genDemandChartData = (data) => {
+const genDemandChartData = (data, averageData) => {
   return {
     datasets: [
       {
         type: "line",
         label: "5% Period Average",
-        data: data.map((point, index) => {
-          let average;
-          if (index - 5 < 0) {
-            average = sumOfSubArray(0, index, data) / index;
-          } else {
-            average = sumOfSubArray(index - 4, index, data) / 5;
-          }
-          return {
-            x: Math.round((point[0] * 100).toFixed()),
-            y: Math.round(average * 100) / 100,
-          };
-        }),
+        data: averageData,
         borderColor: "#6378E9",
         borderWidth: 3,
         fill: false,
+        linear: true,
       },
       {
         type: "line",
-        label: "Demand",
+        label: "Difficulty",
         data: data.map((point) => {
           return {
-            x: Math.round((point[0] * 100).toFixed()),
+            x: (point[0] * 100).toFixed(2),
             y: Math.round(point[1] * 100) / 100,
           };
         }),
@@ -85,8 +96,8 @@ const genPercentChartData = (data) => {
             y: Math.round(point[1] * 100),
           };
         }),
-        borderColor: "#AAACEC",
-        backgroundColor: "#e3e4ff",
+        borderColor: "#87BD99",
+        backgroundColor: "#E0EBEC",
         borderWidth: 3,
         fill: true,
         steppedLine: true,
@@ -96,6 +107,42 @@ const genPercentChartData = (data) => {
 };
 
 const demandChartOptions = {
+  tooltips: {
+    mode: "index",
+    intersect: false,
+    backgroundColor: "#deebff",
+    callbacks: {
+      title: (toolTipItem, data) => {
+        return (
+          "Time: " +
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].x +
+          "%"
+        );
+      },
+      beforeBody: (toolTipItem, data) => {
+        let bodyText = "";
+        bodyText += "Approx Date: \n";
+        bodyText +=
+          "Difficulty: " +
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
+          "\n";
+        bodyText +=
+          "5% Period Avg: " +
+          data["datasets"][1]["data"][toolTipItem[0]["index"]].y +
+          "\n";
+        return bodyText;
+      },
+      label: () => {
+        return;
+      },
+    },
+    bodyFontColor: "black",
+    titleFontColor: "black",
+  },
+  hover: {
+    mode: "nearest",
+    intersect: true,
+  },
   elements: {
     point: {
       radius: 0,
@@ -114,7 +161,8 @@ const demandChartOptions = {
         ticks: {
           autoSkip: true,
           beginAtZero: true,
-          maxTicksLimit: 6,
+          maxTicksLimit: 12,
+          stepSize: 10,
           maxRotation: 0,
           minRotation: 0,
           max: 100,
@@ -146,6 +194,38 @@ const demandChartOptions = {
 };
 
 const percentSectionChartOptions = {
+  tooltips: {
+    mode: "index",
+    intersect: false,
+    backgroundColor: "#deebff",
+    callbacks: {
+      title: (toolTipItem, data) => {
+        return (
+          "Time: " +
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].x +
+          "%"
+        );
+      },
+      beforeBody: (toolTipItem, data) => {
+        let bodyText = "";
+        bodyText += "Approx Date: \n";
+        bodyText +=
+          "% of Section Open: " +
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
+          "\n";
+        return bodyText;
+      },
+      label: () => {
+        return;
+      },
+    },
+    bodyFontColor: "black",
+    titleFontColor: "black",
+  },
+  hover: {
+    mode: "nearest",
+    intersect: true,
+  },
   elements: {
     point: {
       radius: 0,
@@ -218,6 +298,7 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
   const [pcaDemandChartData, setPCADemandChartData] = useState();
   const [percentSectionsChartData, setPercentSectionsChartData] = useState();
   const [semester, setSemester] = useState();
+  const [addDropDate, setAddDropDate] = useState();
 
   useEffect(() => {
     if (!courseCode) {
@@ -229,23 +310,30 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
     const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
 
     setSemester(courseData[averageOrRecent]["rSemesterCalc"]);
+    setAddDropDate(courseData["current_add_drop_period"]);
 
+    //Generate demand plot data
     const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
-    console.log(pcaDemandPlot);
     if (pcaDemandPlot) {
-      setPCADemandChartData(genDemandChartData(pcaDemandPlot));
+      const averageData = genAverageData(pcaDemandPlot);
+      setPCADemandChartData(genDemandChartData(pcaDemandPlot, averageData));
+    } else {
+      setPCADemandChartData(null);
     }
 
+    //Generate percent of sections open  plot data
     const percentSectionsPlot =
       courseData[averageOrRecent]["percent_open_plot"];
+
     if (percentSectionsPlot) {
       setPercentSectionsChartData(genPercentChartData(percentSectionsPlot));
+    } else {
+      setPCADemandChartData(null);
     }
 
     setLoaded(true);
   }, [courseCode]);
 
-  console.log(courseData);
   return (
     <>
       {/* <div id="content" className="row"> */}
@@ -269,7 +357,11 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
             <div>
               {" "}
               {loaded ? (
-                "No demand plot for this course"
+                <EmptyGraphContainer>
+                  All underlying sections either have no data to show, or
+                  require permits for registration (we cannot estimate the
+                  difficulty of being issued a permit).
+                </EmptyGraphContainer>
               ) : (
                 <LoadingContainer>
                   <i
@@ -305,7 +397,11 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
             <div>
               {" "}
               {loaded ? (
-                "No demand plot for this course"
+                <EmptyGraphContainer>
+                  All underlying sections either have no data to show, or
+                  require permits for registration (we cannot estimate the
+                  difficulty of being issued a permit).
+                </EmptyGraphContainer>
               ) : (
                 <LoadingContainer>
                   <i
