@@ -245,47 +245,49 @@ export class ReviewPage extends Component {
       <div>
         <Navbar />
         {this.state.data ? (
-          <div id="content" className="row">
-            <div className="col-sm-12 col-md-4 sidebar-col box-wrapper">
-              <InfoBox
-                type={type}
-                code={code}
-                data={data}
-                liveData={liveData}
-                selectedCourses={selectedCourses}
-                isCourseEval={isCourseEval}
-                setIsCourseEval={this.setIsCourseEval}
-              />
-            </div>
-            <div className="col-sm-12 col-md-8 main-col">
-              <ScoreBox
-                data={data}
-                type={type}
-                liveData={liveData}
-                onSelect={handleSelect}
-                isAverage={isAverage}
-                setIsAverage={this.setIsAverage}
-                isCourseEval={isCourseEval}
-              />
-              {type === "course" && (
-                <DetailsBox
+          <>
+            <div id="content" className="row">
+              <div className="col-sm-12 col-md-4 sidebar-col box-wrapper">
+                <InfoBox
                   type={type}
-                  course={code}
-                  instructor={rowCode}
+                  code={code}
+                  data={data}
+                  liveData={liveData}
+                  selectedCourses={selectedCourses}
                   isCourseEval={isCourseEval}
-                  ref={this.tableRef}
+                  setIsCourseEval={this.setIsCourseEval}
                 />
-              )}
+              </div>
+              <div className="col-sm-12 col-md-8 main-col">
+                <ScoreBox
+                  data={data}
+                  type={type}
+                  liveData={liveData}
+                  onSelect={handleSelect}
+                  isAverage={isAverage}
+                  setIsAverage={this.setIsAverage}
+                  isCourseEval={isCourseEval}
+                />
+                {type === "course" && (
+                  <DetailsBox
+                    type={type}
+                    course={code}
+                    instructor={rowCode}
+                    isCourseEval={isCourseEval}
+                    ref={this.tableRef}
+                  />
+                )}
 
-              {type === "instructor" && (
-                <DetailsBox
-                  type={type}
-                  course={rowCode}
-                  instructor={code}
-                  isCourseEval={isCourseEval}
-                  ref={this.tableRef}
-                />
-              )}
+                {type === "instructor" && (
+                  <DetailsBox
+                    type={type}
+                    course={rowCode}
+                    instructor={code}
+                    isCourseEval={isCourseEval}
+                    ref={this.tableRef}
+                  />
+                )}
+              </div>
             </div>
             {type === "course" && isCourseEval && (
               <GraphBox
@@ -295,7 +297,7 @@ export class ReviewPage extends Component {
                 isAverage={isAverage}
               />
             )}
-          </div>
+          </>
         ) : (
           <div style={{ textAlign: "center", padding: 45 }}>
             <i
