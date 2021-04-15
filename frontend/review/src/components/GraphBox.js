@@ -171,8 +171,7 @@ const demandChartOptions = {
           "\n";
         bodyText +=
           "5% Period Avg: " +
-          data["datasets"][1]["data"][toolTipItem[0]["index"]].y +
-          "\n";
+          data["datasets"][1]["data"][toolTipItem[0]["index"]].y;
         return bodyText;
       },
       label: () => {
@@ -242,6 +241,11 @@ const percentSectionChartOptions = {
     bodyFontColor: "#000000",
     titleFontColor: "#000000",
     bodyFontSize: 12,
+    custom: function(tooltip) {
+      if (!tooltip) return;
+      // disable displaying the color box;
+      tooltip.displayColors = false;
+    },
     callbacks: {
       title: (toolTipItem, data) => {
         return (
@@ -263,7 +267,7 @@ const percentSectionChartOptions = {
         bodyText +=
           "% of Section Open: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
-          "%\n";
+          "%";
         return bodyText;
       },
       label: () => {
@@ -372,7 +376,6 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
 
     setSemester(courseData[averageOrRecent]["rSemesterCalc"]);
     addDropDate = courseData["current_add_drop_period"];
-    console.log(addDropDate);
 
     //Generate demand plot data
     const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
