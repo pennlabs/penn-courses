@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Bar, Scatter } from "react-chartjs-2";
+import { Scatter } from "react-chartjs-2";
 
 let addDropDate = [];
 
@@ -150,9 +150,8 @@ const demandChartOptions = {
     callbacks: {
       title: (toolTipItem, data) => {
         return (
-          "% Through Add/Drop: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].x +
-          "%"
+          "% Through Add/Drop"
         );
       },
       beforeBody: (toolTipItem, data) => {
@@ -170,7 +169,7 @@ const demandChartOptions = {
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
           "\n";
         bodyText +=
-          "5% Moving Avg: " +
+          "5% Moving Average: " +
           data["datasets"][1]["data"][toolTipItem[0]["index"]].y;
         return bodyText;
       },
@@ -213,7 +212,7 @@ const demandChartOptions = {
 
         scaleLabel: {
           display: true,
-          labelString: "Percentage Through Add/Drop Period",
+          labelString: "Percent Through Add/Drop Period",
         },
       },
     ],
@@ -249,9 +248,8 @@ const percentSectionChartOptions = {
     callbacks: {
       title: (toolTipItem, data) => {
         return (
-          "% Through Add/Drop: " +
           data["datasets"][0]["data"][toolTipItem[0]["index"]].x +
-          "%"
+          "% Through Add/Drop"
         );
       },
       beforeBody: (toolTipItem, data) => {
@@ -309,7 +307,7 @@ const percentSectionChartOptions = {
 
         scaleLabel: {
           display: true,
-          labelString: "Percentage Through Add/Drop Period",
+          labelString: "Percent Through Add/Drop Period",
         },
       },
     ],
