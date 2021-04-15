@@ -287,7 +287,7 @@ export class ReviewPage extends Component {
                 />
               )}
             </div>
-            {isCourseEval && (
+            {type === "course" && isCourseEval && (
               <GraphBox
                 key={isAverage}
                 courseData={data}
