@@ -382,7 +382,5 @@ def avg_and_recent_percent_open_plots(section_map):
             open_plots[semester][section_id] = open_plot
 
     recent_percent_open_plot = average_given_plots(open_plots[max(section_map.keys())])
-    avg_percent_open_plot = average_given_plots(
-        {semester: average_given_plots(open_plots[semester]) for semester in section_map.keys()}
-    )  # Average the average for each semester
+    avg_percent_open_plot = average_given_plots(open_plots)
     return avg_percent_open_plot, recent_percent_open_plot
