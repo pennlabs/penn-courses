@@ -106,7 +106,7 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
     return aggregated
 
 
-def average_given_plots(plots_dict):
+def average_given_plots(plots_dict, bin_size=0.000001):
     """
     Given plots (i.e. demands plots or section status plots), which should be a dict with
     plot lists as leaves at some depth, aggregate all these plots and return a single average plot.
@@ -115,6 +115,10 @@ def average_given_plots(plots_dict):
     If a dict mapping section ids to section status plot lists is given,
     this function will return a plot of the average percentage of the given sections that
     were open at each point in time.
+    The bin_size argument allows you to specify how far after a certain data point to squash
+    following data points and average into the same point. By default, only data points
+    that are within 0.000001 will be squashed (i.e. almost equal, ignoring floating point
+    precision issues).
     Returns None if no valid plots are found in the given plots_dict dict.
     Note that demand plots are lists of tuples of the form (percent_through, value).
     """
@@ -134,35 +138,32 @@ def average_given_plots(plots_dict):
         return None
 
     assert all(len(plot) > 0 for plot in plots), f"Empty plot given: \n{plots}"
-    demand_frontier = [plots[i][0] for i in range(len(plots))]
-    # demand_frontier: A list mapping plots index to the most recently considered demand update
-    # from that plot in the averaged plot
-    assert all(
-        el[0] == 0 for el in demand_frontier
-    ), f"Some plots in the given plots_dict dict do not start at 0: \n{plots}"
-    frontier_candidate_indices = [1 for _ in range(len(plots))]
+    frontier_candidate_indices = [0 for _ in range(len(plots))]
     # frontier_candidate_indices: A list of the indices of the next candidate elements to add to
     # the frontier
 
-    def get_average():
-        return sum([tup[1] for tup in demand_frontier]) / len(demand_frontier)
-
-    averaged_plot = [(0, get_average())]
+    averaged_plot = []
     # averaged_plot: This will be our final averaged plot (which we will return)
-    while any(plot_idx < len(plots[i]) for i, plot_idx in enumerate(frontier_candidate_indices)):
+    while any([plot_idx < len(plots[i]) for i, plot_idx in enumerate(frontier_candidate_indices)]):
         min_percent_through = min(
             plots[i][frontier_candidate_indices[i]][0]
             for i in range(len(plots))
             if frontier_candidate_indices[i] < len(plots[i])
         )
-        for i in range(len(plots)):
-            if (
-                frontier_candidate_indices[i] < len(plots[i])
-                and abs(plots[i][frontier_candidate_indices[i]][0] - min_percent_through) < 0.000001
+        plots_bins = [[] for _ in range(len(plots))]
+        # plots_bins is a list of lists of y values (one list for each given plot)
+        for plot_num in range(len(plots)):
+            new_frontier_candidate_index = frontier_candidate_indices[plot_num]
+            while (
+                new_frontier_candidate_index < len(plots[plot_num])
+                and plots[plot_num][new_frontier_candidate_index][0]
+                <= min_percent_through + bin_size
             ):
-                demand_frontier[i] = plots[i][frontier_candidate_indices[i]]
-                frontier_candidate_indices[i] += 1
-        averaged_plot.append((min_percent_through, get_average()))
+                plots_bins[plot_num].append(plots[plot_num][new_frontier_candidate_index][1])
+                new_frontier_candidate_index += 1
+            frontier_candidate_indices[plot_num] = new_frontier_candidate_index
+        plots_values = [sum(lst) / len(lst) for lst in plots_bins if len(lst) > 0]
+        averaged_plot.append((min_percent_through, sum(plots_values) / len(plots_values)))
     return averaged_plot
 
 
@@ -287,7 +288,7 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
                     rel_demand = float(registration_volume / capacity - min_val) / float(
                         max_val - min_val
                     )
-                if change["percent_through"] >= bin_start_pct + bin_size:
+                if change["percent_through"] > bin_start_pct + bin_size:
                     if num_in_bin > 0:
                         demand_plot.append((bin_start_pct, total_value_in_bin / num_in_bin))
                     bin_start_pct = change["percent_through"]
@@ -301,8 +302,12 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
                 demand_plot.append((1, demand_plot[-1][1]))
             demand_plots_map[semester][section_id] = demand_plot
 
-    recent_demand_plot = average_given_plots(demand_plots_map[max(section_map.keys())])
-    avg_demand_plot = average_given_plots(demand_plots_map)
+    print("HERE1")
+    recent_demand_plot = average_given_plots(
+        demand_plots_map[max(section_map.keys())], bin_size=bin_size
+    )
+    avg_demand_plot = average_given_plots(demand_plots_map, bin_size=bin_size)
+    print("HERE2")
     return avg_demand_plot, recent_demand_plot
 
 

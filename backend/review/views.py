@@ -126,7 +126,7 @@ def course_reviews(request, course_code):
     )
     if len(section_map.keys()) > 0 and Course.objects:
         avg_demand_plot, recent_demand_plot = avg_and_recent_demand_plots(
-            section_map, bin_size=0
+            section_map, bin_size=0.01
         )
         avg_percent_open_plot, recent_percent_open_plot = avg_and_recent_percent_open_plots(
             section_map
