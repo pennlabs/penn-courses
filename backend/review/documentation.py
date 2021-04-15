@@ -57,6 +57,13 @@ course_review_aggregation_schema_with_plots = {
             "underlying sections with [no permit required for registration] and [valid data]."
         ),
     },
+    "pca_demand_plot_since_semester": {
+        "type": "string",
+        "description": (
+            "The earliest semester from which data is taken for the PCA demand plot given in the "
+            "`pca_demand_plot` field."
+        ),
+    },
     "percent_open_plot": {
         "type": "array",
         "description": (
@@ -73,6 +80,13 @@ course_review_aggregation_schema_with_plots = {
             "so you should round if you display these data as strings anywhere. "
             "This field will not be missing. However, this field will be null if there are no "
             "underlying sections with [no permit required for registration] and [valid data]."
+        ),
+    },
+    "percent_open_plot_since_semester": {
+        "type": "string",
+        "description": (
+            "The earliest semester from which data is taken for the percent open plot given in the "
+            "`percent_open_plot` field."
         ),
     },
     **course_review_aggregation_schema,

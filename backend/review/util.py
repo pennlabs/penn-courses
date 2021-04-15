@@ -3,6 +3,11 @@ from typing import Dict, List
 
 from django.db.models import F
 
+from PennCourses.settings.base import (
+    PCA_REGISTRATIONS_RECORDED_SINCE,
+    STATUS_UPDATES_RECORDED_SINCE,
+)
+
 
 def titleize(name):
     """
@@ -185,7 +190,8 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
     Note that section_map should map semester to section id to section object.
     Points are grouped together with all all remaining points within bin_size to the right,
     so the minimum separation between data points will be bin_size.
-    Returns (avg_demand_plot, recent_demand_plot)
+    Returns (avg_demand_plot, avg_demand_plot_min_semester,
+             recent_demand_plot, recent_demand_plot_semester)
     """
     from alert.models import AddDropPeriod, PcaDemandExtrema, Registration
 
@@ -226,6 +232,8 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
     # Now that all database work has been completed, let's iterate through
     # our semesters and compute demand plots for each section
     for semester in section_map.keys():
+        if semester < PCA_REGISTRATIONS_RECORDED_SINCE:
+            continue
         demand_plots_map[semester] = dict()
         add_drop_period = add_drop_periods_map[semester]
         if semester not in demand_extrema_map:
@@ -310,11 +318,26 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
                 demand_plot.append((1, demand_plot[-1][1]))
             demand_plots_map[semester][section_id] = demand_plot
 
-    recent_demand_plot = average_given_plots(
-        demand_plots_map[max(section_map.keys())], bin_size=bin_size
+    recent_demand_plot_semester = (
+        max(demand_plots_map.keys()) if len(demand_plots_map) > 0 else None
     )
+    recent_demand_plot = (
+        average_given_plots(demand_plots_map[recent_demand_plot_semester], bin_size=bin_size)
+        if len(demand_plots_map) > 0
+        else None
+    )
+
     avg_demand_plot = average_given_plots(demand_plots_map, bin_size=bin_size)
-    return avg_demand_plot, recent_demand_plot
+    avg_demand_plot_min_semester = (
+        min(demand_plots_map.keys()) if len(demand_plots_map) > 0 else None
+    )
+
+    return (
+        avg_demand_plot,
+        avg_demand_plot_min_semester,
+        recent_demand_plot,
+        recent_demand_plot_semester,
+    )
 
 
 def avg_and_recent_percent_open_plots(section_map):
@@ -326,7 +349,8 @@ def avg_and_recent_percent_open_plots(section_map):
     sections from only the most recent semester.
     Note that section_map should map semester to section id to section object.
     The generated plots will have points at increments of step_size in the range [0,1].
-    Returns (avg_percent_open_plot, recent_percent_open_plot)
+    Returns (avg_percent_open_plot, avg_demand_plot_min_semester,
+             recent_percent_open_plot, recent_percent_open_plot_semester)
     """
     from courses.models import StatusUpdate  # imported here to avoid circular imports
 
@@ -354,6 +378,8 @@ def avg_and_recent_percent_open_plots(section_map):
     # Now that all database work has been completed, let's iterate through
     # our semesters and compute open plots for each section
     for semester in section_map.keys():
+        if semester < STATUS_UPDATES_RECORDED_SINCE:
+            continue
         open_plots[semester] = dict()
         for section in section_map[semester].values():
             section_id = section.id
@@ -381,6 +407,17 @@ def avg_and_recent_percent_open_plots(section_map):
 
             open_plots[semester][section_id] = open_plot
 
-    recent_percent_open_plot = average_given_plots(open_plots[max(section_map.keys())])
+    recent_percent_open_plot_semester = max(open_plots.keys()) if len(open_plots) > 0 else None
+    recent_percent_open_plot = (
+        average_given_plots(open_plots[max(section_map.keys())]) if len(section_map) > 0 else None
+    )
+
     avg_percent_open_plot = average_given_plots(open_plots)
-    return avg_percent_open_plot, recent_percent_open_plot
+    avg_percent_open_plot_min_semester = min(open_plots.keys()) if len(open_plots) > 0 else None
+
+    return (
+        avg_percent_open_plot,
+        avg_percent_open_plot_min_semester,
+        recent_percent_open_plot,
+        recent_percent_open_plot_semester,
+    )
