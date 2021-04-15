@@ -143,6 +143,7 @@ def average_given_plots(plots_dict, bin_size=0.000001):
     # the frontier
 
     averaged_plot = []
+    latest_values = [None for _ in range(len(plots))]
     # averaged_plot: This will be our final averaged plot (which we will return)
     while any([plot_idx < len(plots[i]) for i, plot_idx in enumerate(frontier_candidate_indices)]):
         min_percent_through = min(
@@ -154,16 +155,23 @@ def average_given_plots(plots_dict, bin_size=0.000001):
         # plots_bins is a list of lists of y values (one list for each given plot)
         for plot_num in range(len(plots)):
             new_frontier_candidate_index = frontier_candidate_indices[plot_num]
+            take_latest_value = True
             while (
                 new_frontier_candidate_index < len(plots[plot_num])
                 and plots[plot_num][new_frontier_candidate_index][0]
                 <= min_percent_through + bin_size
             ):
+                take_latest_value = False
                 plots_bins[plot_num].append(plots[plot_num][new_frontier_candidate_index][1])
                 new_frontier_candidate_index += 1
+            if take_latest_value and latest_values[plot_num] is not None:
+                plots_bins[plot_num].append(latest_values[plot_num])
             frontier_candidate_indices[plot_num] = new_frontier_candidate_index
-        plots_values = [sum(lst) / len(lst) for lst in plots_bins if len(lst) > 0]
-        averaged_plot.append((min_percent_through, sum(plots_values) / len(plots_values)))
+        latest_values = [sum(lst) / len(lst) if len(lst) > 0 else None for lst in plots_bins]
+        non_null_latest_values = [val for val in latest_values if val is not None]
+        averaged_plot.append(
+            (min_percent_through, sum(non_null_latest_values) / len(non_null_latest_values))
+        )
     return averaged_plot
 
 
@@ -302,12 +310,10 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
                 demand_plot.append((1, demand_plot[-1][1]))
             demand_plots_map[semester][section_id] = demand_plot
 
-    print("HERE1")
     recent_demand_plot = average_given_plots(
         demand_plots_map[max(section_map.keys())], bin_size=bin_size
     )
     avg_demand_plot = average_given_plots(demand_plots_map, bin_size=bin_size)
-    print("HERE2")
     return avg_demand_plot, recent_demand_plot
 
 
@@ -376,5 +382,7 @@ def avg_and_recent_percent_open_plots(section_map):
             open_plots[semester][section_id] = open_plot
 
     recent_percent_open_plot = average_given_plots(open_plots[max(section_map.keys())])
-    avg_percent_open_plot = average_given_plots(open_plots)
+    avg_percent_open_plot = average_given_plots(
+        {semester: average_given_plots(open_plots[semester]) for semester in section_map.keys()}
+    )  # Average the average for each semester
     return avg_percent_open_plot, recent_percent_open_plot
