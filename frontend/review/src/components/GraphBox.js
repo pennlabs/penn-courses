@@ -363,7 +363,8 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
   const [loaded, setLoaded] = useState(false);
   const [pcaDemandChartData, setPCADemandChartData] = useState();
   const [percentSectionsChartData, setPercentSectionsChartData] = useState();
-  const [semester, setSemester] = useState();
+  const [demandSemester, setDemandSemester] = useState();
+  const [percentSemester, setPercentSemester] = useState();
 
   useEffect(() => {
     if (!courseCode) {
@@ -374,7 +375,12 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
 
     const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
 
-    setSemester(courseData[averageOrRecent]["rSemesterCalc"]);
+    setDemandSemester(
+      courseData[averageOrRecent]["pca_demand_plot_since_semester"]
+    );
+    setPercentSemester(
+      courseData[averageOrRecent]["percent_open_plot_since_semester"]
+    );
     addDropDate = courseData["current_add_drop_period"];
 
     //Generate demand plot data
@@ -414,7 +420,7 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                   'Difficulty' is represented on a 0-1 scale (relative to all
                   classes at Penn), plotted over time as a % of add/drop period
                   elapsed, using Penn Course Alert data from semesters since{" "}
-                  {translateSemester(semester)})
+                  {translateSemester(demandSemester)})
                 </ChartDescription>
                 <Scatter
                   data={pcaDemandChartData}
@@ -455,7 +461,7 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                 </ChartTitle>
                 <ChartDescription>
                   Based on Penn inTouch registration data since{" "}
-                  {translateSemester(semester)}. Calculated by number of
+                  {translateSemester(percentSemester)}. Calculated by number of
                   sections open divided by the total number of sections.
                 </ChartDescription>
                 <Scatter
