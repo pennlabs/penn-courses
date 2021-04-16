@@ -71,6 +71,7 @@ export const DetailsBox = forwardRef(
     const [filtered, setFiltered] = useState([]);
     const [filterAll, setFilterAll] = useState("");
     const [emptyStateImg, setEmptyStateImg] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     const showCol = (info) => {
       if (
@@ -102,6 +103,7 @@ export const DetailsBox = forwardRef(
       setEmptyStateImg(PROF_IMAGE_URL(num));
     }, []);
     useEffect(() => {
+      setIsLoading(true)
       if (instructor !== null && course !== null) {
         apiHistory(course, instructor).then((res) => {
           const [firstSection, ...sections] = Object.values(res.sections);
@@ -124,6 +126,9 @@ export const DetailsBox = forwardRef(
               ? selectedSemester
               : semesters[0];
           });
+        })
+        .finally(() => {
+          setIsLoading(false)
         });
       }
     }, [course, instructor, selectedSemester]);
@@ -134,7 +139,7 @@ export const DetailsBox = forwardRef(
     const isCourse = type === "course";
 
     // Return loading component. TODO: Add spinner/ghost loader.
-    if (!hasData && hasSelection)
+    if (!hasData && hasSelection && isLoading)
       return (
         <div
           id="course-details"
