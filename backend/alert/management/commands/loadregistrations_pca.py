@@ -61,10 +61,9 @@ class Command(BaseCommand):
                 row_count += 1
             full_codes = [sec[0] for sec in sections_to_fetch]
             semesters = [sec[1] for sec in sections_to_fetch]
-            section_obs = (
-                Section.objects.filter(full_code__in=full_codes, course__semester__in=semesters)
-                .annotate(efficient_semester=F("course__semester"))
-            )
+            section_obs = Section.objects.filter(
+                full_code__in=full_codes, course__semester__in=semesters
+            ).annotate(efficient_semester=F("course__semester"))
             for section_ob in section_obs:
                 sections_map[section_ob.full_code, section_ob.efficient_semester] = section_ob.id
 
