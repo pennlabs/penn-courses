@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { defaults, Scatter } from "react-chartjs-2";
+import { toNormalizedSemester } from "../utils/helpers";
+import { EVAL_GRAPH_COLORS } from "../constants/colors";
 
-let addDropDate = [];
+const addDropDate = [];
 
 const LoadingContainer = styled.div`
   display: flex;
@@ -13,9 +15,7 @@ const LoadingContainer = styled.div`
   flex-direction: column;
 `;
 
-const ChartTitle = styled.div`
-  font-size: 18px;
-  font-weight: 400;
+const ChartTitle = styled.h3`
   margin-bottom: 5px;
 `;
 
@@ -23,7 +23,7 @@ const ChartDescription = styled.p`
   font-size: 12px;
   font-weight: normal;
   color: #b2b2b2;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 `;
 
 const EmptyGraphContainer = styled.div`
@@ -64,25 +64,36 @@ const GraphContainer = styled.div`
   flex: 1;
 `;
 
+const GraphTextContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 768px) {
+    height: 120px;
+  }
+`;
+
 const genAverageData = (seriesData) => {
-  let averageData = [];
-  let windowSize = 0.05;
-  for (let i = 0; i < seriesData.length; i++) {
-    let xVal = seriesData[i][0];
+  const averageData = [];
+  const windowSize = 0.05;
+  seriesData.map((point, index) => {
+    const xVal = point[0];
     let total = 0;
     let numInTotal = 0;
-    let j = i;
+    let j = index;
+
     while (j >= 0 && seriesData[j][0] >= xVal - windowSize) {
       total += seriesData[j][1];
       numInTotal += 1;
       j -= 1;
     }
-    let movingAverageVal = total / numInTotal;
+
+    const movingAverageVal = total / numInTotal;
     averageData.push({
       x: (xVal * 100).toFixed(2),
       y: movingAverageVal.toFixed(2),
     });
-  }
+  });
 
   return averageData;
 };
@@ -95,7 +106,7 @@ const genDemandChartData = (data, averageData) => {
         type: "line",
         label: "5% Moving Average",
         data: averageData,
-        borderColor: "#6378E9",
+        borderColor: EVAL_GRAPH_COLORS.DEMAND_LINE_BORDER_COLOR,
         borderWidth: 3,
         fill: false,
         linear: true,
@@ -109,7 +120,7 @@ const genDemandChartData = (data, averageData) => {
             y: Math.round(point[1] * 100) / 100,
           };
         }),
-        backgroundColor: "#AAACEC",
+        backgroundColor: EVAL_GRAPH_COLORS.DEMAND_FILL_BACKGROUND_COLOR,
         borderWidth: 0,
         steppedLine: true,
       },
@@ -130,8 +141,8 @@ const genPercentChartData = (data) => {
             y: Math.round(point[1] * 100),
           };
         }),
-        borderColor: "#87BD99",
-        backgroundColor: "#E0EBEC",
+        borderColor: EVAL_GRAPH_COLORS.PERCENT_LINE_BORDER_COLOR,
+        backgroundColor: EVAL_GRAPH_COLORS.PERCENT_FILL_BACKGROUND_COLOR,
         borderWidth: 3,
         fill: true,
         steppedLine: true,
@@ -144,38 +155,27 @@ const demandChartOptions = {
   tooltips: {
     mode: "index",
     intersect: false,
-    backgroundColor: "#E9E9E9",
-    bodyFontColor: "#000000",
-    titleFontColor: "#000000",
+    backgroundColor: EVAL_GRAPH_COLORS.TOOLTIP_BACKGROUND_COLOR,
+    bodyFontColor: EVAL_GRAPH_COLORS.TOOLTIP_FONT_COLOR,
+    titleFontColor: EVAL_GRAPH_COLORS.TOOLTIP_FONT_COLOR,
     bodyFontSize: 12,
     cornerRadius: 3,
     bodySpacing: 3,
     callbacks: {
-      title: (toolTipItem, data) => {
-        return (
-          data["datasets"][0]["data"][toolTipItem[0]["index"]].x +
-          "% Through Add/Drop"
-        );
-      },
-      beforeBody: (toolTipItem, data) => {
-        let bodyText = "";
-        bodyText +=
-          "Projected Date: " +
-          calcApproxDate(
-            addDropDate.start,
-            addDropDate.end,
-            data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
-          ) +
-          "\n";
-        bodyText +=
-          "Registration Difficulty: " +
-          data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
-          "\n";
-        bodyText +=
-          "5% Moving Average: " +
-          data["datasets"][1]["data"][toolTipItem[0]["index"]].y;
-        return bodyText;
-      },
+      title: (toolTipItem, data) =>
+        `${
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].x
+        }% Through Add/Drop`,
+      beforeBody: (toolTipItem, data) =>
+        `Projected Date: ${calcApproxDate(
+          addDropDate[0],
+          addDropDate[1],
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
+        )}\nRegistration Difficulty: ${
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].y
+        }\n5% Moving Average: ${
+          data["datasets"][1]["data"][toolTipItem[0]["index"]].y
+        }`,
       label: () => {
         return;
       },
@@ -208,9 +208,7 @@ const demandChartOptions = {
           maxRotation: 0,
           minRotation: 0,
           max: 100,
-          callback: function(value) {
-            return value + "%";
-          },
+          callback: (value) => value + "%",
         },
 
         scaleLabel: {
@@ -239,39 +237,24 @@ const percentSectionChartOptions = {
   tooltips: {
     mode: "index",
     intersect: false,
-    backgroundColor: "#E9E9E9",
-    bodyFontColor: "#000000",
-    titleFontColor: "#000000",
+    backgroundColor: EVAL_GRAPH_COLORS.TOOLTIP_BACKGROUND_COLOR,
+    bodyFontColor: EVAL_GRAPH_COLORS.TOOLTIP_FONT_COLOR,
+    titleFontColor: EVAL_GRAPH_COLORS.TOOLTIP_FONT_COLOR,
     cornerRadius: 3,
     bodyFontSize: 12,
-    custom: function(tooltip) {
-      if (!tooltip) return;
-      // disable displaying the color box;
-      tooltip.displayColors = false;
-    },
     callbacks: {
-      title: (toolTipItem, data) => {
-        return (
-          data["datasets"][0]["data"][toolTipItem[0]["index"]].x +
-          "% Through Add/Drop"
-        );
-      },
-      beforeBody: (toolTipItem, data) => {
-        let bodyText = "";
-        bodyText +=
-          "Projected Date: " +
-          calcApproxDate(
-            addDropDate.start,
-            addDropDate.end,
-            data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
-          ) +
-          "\n";
-        bodyText +=
-          "% of Sections Open: " +
-          data["datasets"][0]["data"][toolTipItem[0]["index"]].y +
-          "%";
-        return bodyText;
-      },
+      title: (toolTipItem, data) =>
+        `${
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].x
+        }% Through Add/Drop`,
+      beforeBody: (toolTipItem, data) =>
+        `Projected Date: ${calcApproxDate(
+          addDropDate[0],
+          addDropDate[1],
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
+        )}\n% of Sections Open: ${
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].y
+        }%`,
       label: () => {
         return;
       },
@@ -304,9 +287,7 @@ const percentSectionChartOptions = {
           maxRotation: 0,
           minRotation: 0,
           max: 100,
-          callback: (value) => {
-            return value + "%";
-          },
+          callback: (value) => value + "%",
         },
 
         scaleLabel: {
@@ -326,34 +307,19 @@ const percentSectionChartOptions = {
           minRotation: 0,
           min: 0,
           max: 100,
-          callback: (value) => {
-            return value + "%";
-          },
+          callback: (value) => value + "%",
         },
       },
     ],
   },
 };
 
-const translateSemester = (semester) => {
-  const year = semester.substring(0, 4);
-  const season = semester.substring(4);
-  if (season === "A") {
-    return "Spring " + year;
-  } else if (season === "B") {
-    return "Summer " + year;
-  } else if (season === "C") {
-    return "Fall " + year;
-  }
-  return year;
-};
-
 const calcApproxDate = (startDateString, endDateString, percent) => {
-  let startDate = new Date(startDateString);
-  let endDate = new Date(endDateString);
+  const startDate = new Date(startDateString);
+  const endDate = new Date(endDateString);
 
-  let percentageThrough = (endDate.getTime() - startDate.getTime()) * percent;
-  let approxDate = new Date(startDate.getTime() + percentageThrough);
+  const percentageThrough = (endDate.getTime() - startDate.getTime()) * percent;
+  const approxDate = new Date(startDate.getTime() + percentageThrough);
 
   return approxDate.toLocaleDateString("en-US", {
     month: "short",
@@ -363,10 +329,12 @@ const calcApproxDate = (startDateString, endDateString, percent) => {
 
 const GraphBox = ({ courseCode, courseData, isAverage }) => {
   const [loaded, setLoaded] = useState(false);
-  const [pcaDemandChartData, setPCADemandChartData] = useState();
-  const [percentSectionsChartData, setPercentSectionsChartData] = useState();
-  const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
+  const [pcaDemandChartData, setPCADemandChartData] = useState(null);
+  const [percentSectionsChartData, setPercentSectionsChartData] = useState(
+    null
+  );
 
+  const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
   const demandSemester =
     courseData[averageOrRecent]["pca_demand_plot_since_semester"];
   const percentSemester =
@@ -381,7 +349,8 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
 
     setLoaded(false);
 
-    addDropDate = courseData["current_add_drop_period"];
+    addDropDate.push(courseData["current_add_drop_period"].start);
+    addDropDate.push(courseData["current_add_drop_period"].end);
 
     //Generate demand plot data
     const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
@@ -412,16 +381,19 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
           <GraphContainer>
             {pcaDemandChartData ? (
               <div id="row-select-chart-container">
-                <ChartTitle>
-                  Historically, how difficult has it been to get into{" "}
-                  {courseCode} during the add/drop period?
-                </ChartTitle>
-                <ChartDescription>
-                  Registration difficulty is represented on a 0-1 scale
-                  (relative to other classes at Penn), plotted over time as a %
-                  of add/drop period elapsed, using Penn Course Alert data from
-                  semesters since {" " + translateSemester(demandSemester)})
-                </ChartDescription>
+                <GraphTextContainer>
+                  <ChartTitle>
+                    Historically, how difficult has it been to get into{" "}
+                    {courseCode} during the add/drop period?
+                  </ChartTitle>
+                  <ChartDescription>
+                    Registration difficulty is represented on a 0-1 scale
+                    (relative to other classes at Penn), plotted over time as a
+                    % of add/drop period elapsed, using Penn Course Alert data
+                    from semesters since{" "}
+                    {" " + toNormalizedSemester(demandSemester)})
+                  </ChartDescription>
+                </GraphTextContainer>
                 <Scatter
                   data={pcaDemandChartData}
                   options={demandChartOptions}
@@ -455,15 +427,16 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
           <GraphContainer>
             {percentSectionsChartData ? (
               <div id="row-select-chart-container">
-                <ChartTitle>
-                  Percent of historical {courseCode} sections open during the
-                  add/drop period
-                </ChartTitle>
-                <ChartDescription>
-                  Based on section status update data during add/drop periods
-                  since {" " + translateSemester(percentSemester)} 
-                  
-                </ChartDescription>
+                <GraphTextContainer>
+                  <ChartTitle>
+                    Percent of historical {courseCode} sections open during the
+                    add/drop period
+                  </ChartTitle>
+                  <ChartDescription>
+                    Based on section status update data during add/drop periods
+                    since {" " + toNormalizedSemester(percentSemester)}
+                  </ChartDescription>
+                </GraphTextContainer>
                 <Scatter
                   data={percentSectionsChartData}
                   options={percentSectionChartOptions}

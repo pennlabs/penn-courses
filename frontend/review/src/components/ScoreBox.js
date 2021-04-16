@@ -410,10 +410,12 @@ class ScoreBox extends Component {
 
   componentDidUpdate(prevProps) {
     const { data, liveData, isCourseEval } = this.props;
+    const {data: prevData, liveData:  prevLiveData, isCourseEval: prevIsCourseEval } = prevProps;
+
     if (
-      prevProps.data !== data ||
-      prevProps.liveData !== liveData ||
-      prevProps.isCourseEval !== isCourseEval
+      prevData !== data ||
+      prevLiveData !== liveData ||
+      prevIsCourseEval !== isCourseEval
     ) {
       this.generateColumns();
     }
