@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReactTable from "react-table";
 
-export const ScoreTable = (props) => {
+export const ScoreTable = props => {
   const {
     alternating = false,
     noun,
@@ -9,7 +9,7 @@ export const ScoreTable = (props) => {
     data = [],
     onSelect = () => {},
     isAverage = null,
-    isCourseEval = null,
+    isCourseEval = null
   } = props;
   const [selected, setSelected] = useState(multi ? {} : null);
   const [sorted, setSorted] = useState(props.sorted);
@@ -49,7 +49,7 @@ export const ScoreTable = (props) => {
             onSelect(selected);
             setSelected({ ...selected });
           },
-          className: noRow ? "selected" : "",
+          className: noRow ? "selected" : ""
         }
       : {};
   };

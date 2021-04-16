@@ -35,7 +35,7 @@ export class ReviewPage extends Component {
       isAverage: localStorage.getItem("meta-column-type") !== "recent",
       isCourseEval: false,
       showBanner:
-        SHOW_RECRUITMENT_BANNER && !this.cookies.get("hide_pcr_banner"),
+        SHOW_RECRUITMENT_BANNER && !this.cookies.get("hide_pcr_banner")
     };
 
     this.navigateToPage = this.navigateToPage.bind(this);
@@ -63,7 +63,7 @@ export class ReviewPage extends Component {
           code: this.props.match.params.code,
           data: null,
           rowCode: null,
-          error: null,
+          error: null
         },
         this.getReviewData
       );
@@ -96,33 +96,33 @@ export class ReviewPage extends Component {
     const { type, code } = this.state;
     if (type && code) {
       apiReviewData(type, code)
-        .then((data) => {
+        .then(data => {
           const { error, detail, name } = data;
           if (error) {
             this.setState({
               error,
-              error_detail: detail,
+              error_detail: detail
             });
           } else {
             this.setState({ data }, () => {
               if (type === "instructor" && name)
                 apiLiveInstructor(
                   name.replace(/[^A-Za-z0-9 ]/g, "")
-                ).then((liveData) => this.setState({ liveData }));
+                ).then(liveData => this.setState({ liveData }));
             });
           }
         })
         .catch(() =>
           this.setState({
             error:
-              "Could not retrieve review information at this time. Please try again later!",
+              "Could not retrieve review information at this time. Please try again later!"
           })
         );
     }
 
     if (type === "course") {
       apiLive(code)
-        .then((result) => {
+        .then(result => {
           this.setState({ liveData: result });
         })
         .catch(() => {
@@ -150,7 +150,7 @@ export class ReviewPage extends Component {
       if (nextCode) {
         window.scrollTo({
           behavior: "smooth",
-          top: this.tableRef.current.offsetTop,
+          top: this.tableRef.current.offsetTop
         });
       }
     });
@@ -200,10 +200,10 @@ export class ReviewPage extends Component {
               </span>
               <span
                 className="close"
-                onClick={(e) => {
+                onClick={e => {
                   this.setState({ showBanner: false });
                   this.cookies.set("hide_pcr_banner", true, {
-                    expires: new Date(Date.now() + 12096e5),
+                    expires: new Date(Date.now() + 12096e5)
                   });
                   e.preventDefault();
                 }}
@@ -232,13 +232,13 @@ export class ReviewPage extends Component {
       isAverage,
       isCourseEval,
       selectedCourses,
-      type,
+      type
     } = this.state;
 
     const handleSelect = {
       instructor: this.showRowHistory,
       course: this.showRowHistory,
-      department: this.showDepartmentGraph,
+      department: this.showDepartmentGraph
     }[type];
 
     return (
