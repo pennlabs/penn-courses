@@ -117,7 +117,7 @@ class Command(BaseCommand):
                     continue
                 models[data_type].objects.filter(
                     **{semester_filter[data_type] + "__in": list(semesters)}
-                )
+                ).delete()
             for i, data_type in enumerate(data_types):
                 print(f"Loading {data_type} data ({i+1}/{len(data_types)})...")
                 for row in tqdm(rows_map[data_type]):
@@ -134,9 +134,8 @@ class Command(BaseCommand):
                     field_to_index = {field: (1 + i) for i, field in enumerate(fields[data_type])}
                     to_save_dict = dict()  # this will be unpacked into the model initialization
                     for field in fields[data_type]:
-                        if (
-                            row[field_to_index[field]] is None
-                            or row[field_to_index[field]] == "None"
+                        if row[field_to_index[field]] is None or (
+                            row[field_to_index[field]] == "None" and field != "prerequisites"
                         ):
                             to_save_dict[field] = None
                             continue

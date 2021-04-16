@@ -52,7 +52,6 @@ class Command(BaseCommand):
         )
 
         sections_map = dict()  # maps (full_code, semester) to section id
-        registrations_map = dict()  # maps (full_code, semester) to list of registrations
         row_count = 0
         with open(src) as data_file:
             data_reader = csv.reader(data_file, delimiter=",", quotechar='"')
@@ -65,13 +64,9 @@ class Command(BaseCommand):
             section_obs = (
                 Section.objects.filter(full_code__in=full_codes, course__semester__in=semesters)
                 .annotate(efficient_semester=F("course__semester"))
-                .prefetch_related("registrations")
             )
             for section_ob in section_obs:
                 sections_map[section_ob.full_code, section_ob.efficient_semester] = section_ob.id
-                registrations_map[section_ob.full_code, section_ob.efficient_semester] = list(
-                    section_ob.registrations.all()
-                )
 
         id_corrections = dict()
         semesters = set()
@@ -134,7 +129,7 @@ class Command(BaseCommand):
                     registration = Registration(**registration_dict)
                     registration.save(load_script=True)
                     registration.created_at = registration_dict["created_at"]
-                    registration.save()
+                    registration.save(load_script=True)
                     id_corrections[original_id] = registration.id
                     registrations.append((registration, original_id, resubscribed_from_id))
 

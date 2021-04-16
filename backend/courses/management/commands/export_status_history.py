@@ -90,6 +90,8 @@ class Command(BaseCommand):
                         ]
                     ]
                 )
+                if rows % 5000 == 0:
+                    output_file.flush()
         if upload_to_s3:
             S3_resource.meta.client.upload_file(
                 "/app/export_status_history_output.csv", "penn.courses", path
