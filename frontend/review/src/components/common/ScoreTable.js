@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { PERCENTAGE_COLUMNS } from "../../constants/values";
 import ReactTable from "react-table";
 
-export const ScoreTable = props => {
+export const ScoreTable = (props) => {
   const {
     alternating = false,
     noun,
@@ -9,7 +10,7 @@ export const ScoreTable = props => {
     data = [],
     onSelect = () => {},
     isAverage = null,
-    isCourseEval = null
+    isCourseEval = null,
   } = props;
   const [selected, setSelected] = useState(multi ? {} : null);
   const [sorted, setSorted] = useState(props.sorted);
@@ -49,10 +50,31 @@ export const ScoreTable = props => {
             onSelect(selected);
             setSelected({ ...selected });
           },
-          className: noRow ? "selected" : ""
+          className: noRow ? "selected" : "",
         }
       : {};
   };
+
+  // Convert relevant columns to percentages
+  data.forEach((row) => {
+    PERCENTAGE_COLUMNS.forEach((title) => {
+      if (row[title] && row[title].average) {
+        row[title].average =
+          row[title].average.slice(-1) === "%"
+            ? row[title].average
+            : `${Math.floor(parseInt(row[title].average) * 100)}%`;
+      }
+      if (row[title] && row[title].recent) {
+        row[title].recent =
+          row[title].recent.slice(-1) === "%"
+            ? row[title].recent
+            : `${Math.floor(parseInt(row[title].recent) * 100)}%`;
+      }
+      // if (!isNaN(row[title])) {
+      //   row[title] = Math.floor(parseInt(row[title]) * 100);
+      // }
+    });
+  });
 
   return (
     <div>
