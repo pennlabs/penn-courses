@@ -64,6 +64,13 @@ course_review_aggregation_schema_with_plots = {
             "`pca_demand_plot` field."
         ),
     },
+    "pca_demand_plot_num_semesters": {
+        "type": "integer",
+        "description": (
+            "The number of semesters from which data is taken for the PCA demand plot given in the "
+            "`pca_demand_plot` field."
+        ),
+    },
     "percent_open_plot": {
         "type": "array",
         "description": (
@@ -87,6 +94,13 @@ course_review_aggregation_schema_with_plots = {
         "description": (
             "The earliest semester from which data is taken for the percent open plot given in the "
             "`percent_open_plot` field."
+        ),
+    },
+    "percent_open_plot_num_semesters": {
+        "type": "integer",
+        "description": (
+            "The number of semesters from which data is taken for the percent open plot given in "
+            "the `percent_open_plot` field."
         ),
     },
     **course_review_aggregation_schema,

@@ -1,5 +1,4 @@
 import logging
-from contextlib import nullcontext
 from datetime import datetime
 from enum import Enum, auto
 from textwrap import dedent
@@ -9,7 +8,7 @@ from dateutil.tz import gettz
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db import models, transaction
+from django.db import models
 from django.db.models import Case, F, Max, Q, Value, When
 from django.utils import timezone
 from django.utils.timezone import make_aware
@@ -501,8 +500,8 @@ class Registration(models.Model):
         It finally calls the normal save method with args and kwargs.
         Asynchronously after the save completes successfully, if load_script is set to False
         and the registration's semester is the current semester,
-        it updates the PcaDemandExtrema models and current_demand_extrema cache to reflect
-        the demand change if this registration was just created or deactivated.
+        it updates the PcaDemandDistributionEstimate models and current_demand_distribution_estimate
+        cache to reflect the demand change if this registration was just created or deactivated.
         """
         from alert.tasks import registration_update
 
@@ -799,129 +798,167 @@ def register_for_course(
     return RegStatus.SUCCESS, section.full_code, registration
 
 
-class PcaDemandExtrema(models.Model):
+class PcaDemandDistributionEstimate(models.Model):
     """
-    This model tracks changes in the extrema (i.e. highest and lowest values) of
+    This model tracks/estimates changes in the distribution of
     raw PCA demand ratios across all sections in a given semester.
     Raw PCA demand (as opposed to "Relative PCA demand",
-    which maps demand values between extrema to a fixed range of [0,1]) is defined
-    for any given section as (PCA registration volume)/(section capacity).
+    which maps demand values according to an estimated CDF function to a fixed range of [0,1])
+    is defined for any given section as (PCA registration volume)/(section capacity).
     Note that capacity is not stored as a field, while volume is. We do not track capacity changes,
-    and for this reason, the recompute_demand_extrema function (in the recomputestats
+    and for this reason, the recompute_demand_distribution_estimates function (in the recomputestats
     management command script) should be run after each run of the registrarimport script,
-    in case capacity changes affect historical extrema.
+    in case capacity changes affect historical distributions.
     """
-
-    created_at = models.DateTimeField(
-        default=timezone.now,
-        db_index=True,
-        help_text="The datetime at which the extrema were updated.",
-    )
 
     semester = models.CharField(
         max_length=5,
         db_index=True,
         help_text=dedent(
             """
-        The semester of this demand extrema (of the form YYYYx where x is
+        The semester of this demand distribution estimate (of the form YYYYx where x is
         A [for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019.
         """
         ),
     )
 
-    most_popular_section = models.ForeignKey(
-        Section,
-        related_name="most_popular_extrema_occurences",
-        on_delete=models.CASCADE,
-        help_text="A most popular section.",
-    )
-
-    most_popular_volume = models.IntegerField(
-        help_text="The registration volume of the most popular section at this time."
-    )
-
-    least_popular_section = models.ForeignKey(
-        Section,
-        related_name="least_popular_extrema_occurences",
-        on_delete=models.CASCADE,
-        help_text="A least popular section.",
-    )
-
-    least_popular_volume = models.IntegerField(
-        help_text="The registration volume of the least popular section at this time."
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        db_index=True,
+        help_text="The datetime at which the distribution estimates were updated.",
     )
 
     percent_through_add_drop_period = models.FloatField(
         default=0,
-        help_text="The percentage through the add/drop period at which this demand extrema change "
-        "occurred. This percentage is constrained within the range [0,1].",
+        help_text=(
+            "The percentage through the add/drop period at which this demand distribution "
+            "estimate change occurred. This percentage is constrained within the range [0,1]."
+        ),
     )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
-    # and the save() method of PcaDemandExtrema
+    # and the save() method of PcaDemandDistributionEstimate
 
     in_add_drop_period = models.BooleanField(
-        default=False, help_text="Was this demand extrema created during the add/drop period?"
+        default=False,
+        help_text="Was this demand distribution estimate created during the add/drop period?",
     )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
-    # and the save() method of PcaDemandExtrema
+    # and the save() method of PcaDemandDistributionEstimate
 
-    def __str__(self):
-        return f"PcaDemandExtrema {self.semester} @ {self.created_at}"
+    highest_demand_section = models.ForeignKey(
+        Section,
+        on_delete=models.CASCADE,
+        related_name="highest_demand_distribution_estimates",
+        help_text="A section with the highest raw demand value at this time.",
+    )  # It is necessary to define related_name explicitly to avoid related name clash
+    highest_demand_section_volume = models.IntegerField(
+        help_text="The registration volume of the highest_demand_section at this time."
+    )
+    lowest_demand_section = models.ForeignKey(
+        Section,
+        on_delete=models.CASCADE,
+        related_name="lowest_demand_distribution_estimates",
+        help_text="A section with the lowest raw demand value at this time.",
+    )  # It is necessary to define related_name explicitly to avoid related name clash
+    lowest_demand_section_volume = models.IntegerField(
+        help_text="The registration volume of the lowest_demand_section at this time."
+    )
+
+    csdv_gamma_param_alpha = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The fitted gamma distribution alpha parameter of all closed sections' raw demand "
+            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
+            "values'; this is a collection of the raw demand values of each closed section at "
+            "this time."
+        ),
+    )
+    csdv_gamma_param_loc = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The fitted gamma distribution loc parameter of all closed sections' raw demand "
+            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
+            "values'; this is a collection of the raw demand values of each closed section at "
+            "this time."
+        ),
+    )
+    csdv_gamma_param_scale = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The fitted gamma distribution beta parameter of all closed sections' raw demand "
+            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
+            "values'; this is a collection of the raw demand values of each closed section at "
+            "this time."
+        ),
+    )
+    csdv_gamma_fit_mean_log_likelihood = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The mean log likelihood of the fitted gamma distribution over all closed sections' "
+            "raw demand values at this time. The abbreviation 'csdv' stands for 'closed section "
+            "demand values'; this is a collection of the raw demand values of each closed section "
+            "at this time."
+        ),
+    )
+
+    csdv_mean = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The mean of all closed sections' raw demand values at this time. The "
+            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
+            "of the raw demand values of each closed section at this time."
+        ),
+    )
+    csdv_median = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The median of all closed sections' raw demand values at this time. The "
+            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
+            "of the raw demand values of each closed section at this time."
+        ),
+    )
+    csdv_75th_percentile = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The 75th percentile of all closed sections' raw demand values at this time. The "
+            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
+            "of the raw demand values of each closed section at this time."
+        ),
+    )
 
     @property
     def highest_raw_demand(self):
-        if self.most_popular_section.capacity is None or self.most_popular_section.capacity <= 0:
+        if (
+            self.highest_demand_section is None
+            or self.highest_demand_section.capacity is None
+            or self.highest_demand_section.capacity <= 0
+        ):
             return None
-        return float(self.most_popular_volume) / float(self.most_popular_section.capacity)
+        return float(self.highest_demand_section_volume) / float(
+            self.highest_demand_section.capacity
+        )
 
     @property
     def lowest_raw_demand(self):
-        if self.least_popular_section.capacity is None or self.least_popular_section.capacity <= 0:
+        if (
+            self.lowest_demand_section is None
+            or self.lowest_demand_section.capacity is None
+            or self.lowest_demand_section.capacity <= 0
+        ):
             return None
-        return float(self.least_popular_volume) / float(self.least_popular_section.capacity)
-
-    @staticmethod
-    def get_current_demand_extrema(semester):
-        """
-        Returns the latest PcaDemandExtrema object for the specified semester,
-        or None if no valid extrema exist for the specified semester (this won't be the case as
-        long as at least 1 section for the given semester has a non-null and positive capacity).
-        Semester defaults to the current semester.
-
-        See the above model docstring for an explanation of PCA demand.
-        """
-        current_sem = get_current_semester()
-        if semester is None:
-            semester = current_sem
-        is_current_sem = semester == current_sem
-        cache_context = (
-            cache.lock("current_demand_extrema")
-            if (is_current_sem and hasattr(cache, "lock"))
-            else nullcontext()
-        )
-        with transaction.atomic(), cache_context:
-            sentinel = object()
-            current_demand_extrema = sentinel
-            if is_current_sem:
-                current_demand_extrema = cache.get("current_demand_extrema", sentinel)
-            if current_demand_extrema == sentinel or current_demand_extrema["semester"] != semester:
-                try:
-                    latest_extrema_ob = (
-                        PcaDemandExtrema.objects.filter(semester=semester)
-                        .select_for_update()
-                        .latest("created_at")
-                    )
-                    current_demand_extrema = latest_extrema_ob
-                except PcaDemandExtrema.DoesNotExist:
-                    current_demand_extrema = None
-                if is_current_sem:
-                    cache.set("current_demand_extrema", current_demand_extrema, timeout=None)
-        return current_demand_extrema
+        return float(self.lowest_demand_section_volume) / float(self.lowest_demand_section.capacity)
 
     def save(self, *args, **kwargs):
         """
-        This save method first gets the add/drop period object for this PcaDemandExtrema object's
-        semester (either by calling the get_add_drop_period method or by using a passed-in
-        add_drop_period kwarg, which can be used for efficiency in bulk operations over
-        PcaDemandExtrema objects).
+        This save method first gets the add/drop period object for this
+        PcaDemandDistributionEstimate object's semester (either by calling the get_add_drop_period
+        method or by using a passed-in add_drop_period kwarg, which can be used for efficiency in
+        bulk operations over PcaDemandDistributionEstimate objects).
         """
         if "add_drop_period" in kwargs:
             add_drop_period = kwargs["add_drop_period"]
@@ -942,6 +979,9 @@ class PcaDemandExtrema(models.Model):
             self.in_add_drop_period = True
             self.percent_through_add_drop_period = (created_at - start) / (end - start)
         super().save()
+
+    def __str__(self):
+        return f"PcaDemandDistributionEstimate {self.semester} @ {self.created_at}"
 
 
 def validate_add_drop_semester(semester):
@@ -1037,8 +1077,8 @@ class AddDropPeriod(models.Model):
         """
         This save method invalidates the add_drop_periods cache, sets the estimated_start and
         estimated_end fields, updates the in_add_drop_period and percent_through_add_drop_period
-        fields of StatusUpdates and PcaDemandExtremas from this semester, and then calls
-        the overridden save method.
+        fields of StatusUpdates and PcaDemandDistributionEstimates from this semester, and then
+        calls the overridden save method.
         """
         cache.delete("add_drop_periods")  # invalidate add_drop_periods cache
         self.estimated_start = self.estimate_start()
@@ -1046,7 +1086,7 @@ class AddDropPeriod(models.Model):
         period = self.estimated_end - self.estimated_start
         for model, sem_filter_key in [
             (StatusUpdate, "section__course__semester"),
-            (PcaDemandExtrema, "semester"),
+            (PcaDemandDistributionEstimate, "semester"),
         ]:
             sem_filter = {sem_filter_key: self.semester}
             model.objects.filter(**sem_filter).update(

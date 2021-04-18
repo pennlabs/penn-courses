@@ -80,9 +80,21 @@ class SectionAdmin(admin.ModelAdmin):
         "associated_sections",
     )
     list_filter = ("course__semester",)
+
     list_display = ["full_code", "semester", "status"]
 
     list_select_related = ("course", "course__department")
+
+    def get_object(self, request, object_id, from_field=None):
+        # Hook obj for use in formfield_for_manytomany
+        self.obj = super().get_object(request, object_id, from_field)
+        return self.obj
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        # Filter displayed restrictions by whether this section has that restriction
+        if db_field.name == "restrictions":
+            kwargs["queryset"] = Restriction.objects.filter(sections__id=self.obj.id)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def course_link(self, instance):
         link = reverse("admin:courses_course_change", args=[instance.course.id])

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from alert.models import AddDropPeriod, PcaDemandExtrema, Registration
+from alert.models import AddDropPeriod, PcaDemandDistributionEstimate, Registration
 
 
 class RegistrationAdmin(admin.ModelAdmin):
@@ -30,16 +30,16 @@ class RegistrationAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', link, instance.section.__str__())
 
 
-class PcaDemandExtremaAdmin(admin.ModelAdmin):
+class PcaDemandDistributionEstimateAdmin(admin.ModelAdmin):
     search_fields = ("created_at",)
 
-    autocomplete_fields = ("most_popular_section", "least_popular_section")
+    autocomplete_fields = ("highest_demand_section", "lowest_demand_section")
 
     list_filter = ["semester", "created_at"]
 
     def has_change_permission(self, request, obj=None):
         """
-        Don't allow PcaDemandExtrema objects to be changed in the Admin console
+        Don't allow PcaDemandDistributionEstimate objects to be changed in the Admin console
         (although they can be deleted).
         """
         return False
@@ -52,5 +52,5 @@ class AddDropPeriodAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Registration, RegistrationAdmin)
-admin.site.register(PcaDemandExtrema, PcaDemandExtremaAdmin)
+admin.site.register(PcaDemandDistributionEstimate, PcaDemandDistributionEstimateAdmin)
 admin.site.register(AddDropPeriod, AddDropPeriodAdmin)

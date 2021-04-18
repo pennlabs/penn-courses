@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
 from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
@@ -11,7 +12,7 @@ from courses.util import (
     record_update,
     separate_course_code,
     set_crosslistings,
-    update_course_from_record,
+    update_course_from_record, invalidate_current_semester_cache,
 )
 from tests.courses.util import create_mock_data
 
@@ -20,6 +21,7 @@ TEST_SEMESTER = "2019A"
 
 
 def set_semester():
+    post_save.disconnect(receiver=invalidate_current_semester_cache, sender=Option, dispatch_uid="invalidate_current_semester_cache")
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
     AddDropPeriod(semester=TEST_SEMESTER).save()
 

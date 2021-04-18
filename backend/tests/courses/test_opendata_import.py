@@ -1,19 +1,21 @@
 import json
 import os
 
+from django.db.models.signals import post_save
 from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.models import Course, Instructor, Meeting, Section
-from courses.util import relocate_reqs_from_restrictions, upsert_course_from_opendata
-
+from courses.util import relocate_reqs_from_restrictions, upsert_course_from_opendata, \
+    invalidate_current_semester_cache
 
 TEST_SEMESTER = "2019A"
 
 
 def set_semester():
+    post_save.disconnect(receiver=invalidate_current_semester_cache, sender=Option, dispatch_uid="invalidate_current_semester_cache")
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
     AddDropPeriod(semester=TEST_SEMESTER).save()
 

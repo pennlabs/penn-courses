@@ -1,5 +1,5 @@
 from dateutil.tz import gettz
-from django.db.models import Count, F, OuterRef, Q, Subquery, Value
+from django.db.models import Count, F, Max, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from courses.models import Course, Department, Instructor, Restriction, Section, StatusUpdate
 from courses.util import get_add_drop_period, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
-from PennCourses.settings.base import TIME_ZONE
+from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     autocomplete_response_schema,
@@ -24,6 +24,7 @@ from review.util import (
     aggregate_reviews,
     avg_and_recent_demand_plots,
     avg_and_recent_percent_open_plots,
+    get_status_updates_map,
     make_subdict,
 )
 
@@ -76,6 +77,8 @@ def course_reviews(request, course_code):
     if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
         raise Http404()
 
+    current_semester = get_current_semester()
+
     reviews = (
         review_averages(
             Review.objects.filter(section__course__full_code=course_code),
@@ -96,27 +99,41 @@ def course_reviews(request, course_code):
 
     course_qs = annotate_average_and_recent(
         Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
-        match_on=Q(section__course__full_code=OuterRef(OuterRef("full_code"))),
+        match_on=Q(section__course__full_code=course_code),
         extra_metrics=True,
     )
 
     course = dict(course_qs[:1].values()[0])
 
-    # Compute set of sections to include in plot data
-    sections_no_permit_required = Section.objects.filter(
+    # Filters for sections to include in plot aggregations
+    plots_base_section_filters = (
         ~Q(
+            course__department__code__in=WAITLIST_DEPARTMENT_CODES
+        )  # Manually filter out classes from depts with waitlist systems during add/drop
+        & Q(
+            capacity__isnull=False, capacity__gt=0, course__semester__lt=current_semester
+        )  # Filter out sections with invalid capacity or current semester
+        & ~Q(course__semester__icontains="b")  # Filter out summer classes
+        & ~Q(
             id__in=Subquery(
                 Restriction.objects.filter(description__icontains="permission").values_list(
                     "sections__id", flat=True
                 )
             )
-        ),  # Filter out sections with permit required
-        course__full_code=course_code,
-        capacity__isnull=False,  # Filter out sections with null capacity
-        capacity__gt=0,  # Filter out sections with 0 capacity
+        )  # Filter out sections that require permit for registration
+        & Q(
+            id__in=Subquery(Review.objects.all().values_list("section__id", flat=True))
+        )  # Filter out sections that do not have review data
+    )  # If you modify these filters, reflect the same changes in these corresponding filters:
+    # extra_metrics_filter in review/annotations/review_averages and base_section_filters in
+    # demand_distribution_estimates_base_section_filters in alert/management/commands/recomputestats
+
+    # Compute set of sections to include in plot data
+    filtered_sections = Section.objects.filter(
+        plots_base_section_filters, course__full_code=course_code,
     ).annotate(efficient_semester=F("course__semester"))
     section_map = dict()  # a dict mapping semester to section id to section object
-    for section in sections_no_permit_required:
+    for section in filtered_sections:
         if section.efficient_semester not in section_map:
             section_map[section.efficient_semester] = dict()
         section_map[section.efficient_semester][section.id] = section
@@ -131,21 +148,27 @@ def course_reviews(request, course_code):
         recent_percent_open_plot,
         recent_percent_open_plot_semester,
     ) = tuple([None] * 8)
-    if len(section_map.keys()) > 0:
+    avg_demand_plot_num_semesters, avg_percent_open_plot_num_semesters = (0, 0)
+    if (
+        len(section_map.keys()) > 0
+    ):
+        status_updates_map = get_status_updates_map(section_map)
         (
             avg_demand_plot,
             avg_demand_plot_min_semester,
+            avg_demand_plot_num_semesters,
             recent_demand_plot,
             recent_demand_plot_semester,
-        ) = avg_and_recent_demand_plots(section_map, bin_size=0.005)
+        ) = avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.005)
         (
             avg_percent_open_plot,
             avg_percent_open_plot_min_semester,
+            avg_percent_open_plot_num_semesters,
             recent_percent_open_plot,
             recent_percent_open_plot_semester,
-        ) = avg_and_recent_percent_open_plots(section_map)
+        ) = avg_and_recent_percent_open_plots(section_map, status_updates_map)
 
-    current_adp = get_add_drop_period(get_current_semester())
+    current_adp = get_add_drop_period(current_semester)
     local_tz = gettz(TIME_ZONE)
 
     return Response(
@@ -175,15 +198,19 @@ def course_reviews(request, course_code):
             "average_reviews": {
                 **make_subdict("average_", course),
                 "pca_demand_plot_since_semester": avg_demand_plot_min_semester,
+                "pca_demand_plot_num_semesters": avg_demand_plot_num_semesters,
                 "pca_demand_plot": avg_demand_plot,
                 "percent_open_plot_since_semester": avg_percent_open_plot_min_semester,
+                "percent_open_plot_num_semesters": avg_percent_open_plot_num_semesters,
                 "percent_open_plot": avg_percent_open_plot,
             },
             "recent_reviews": {
                 **make_subdict("recent_", course),
                 "pca_demand_plot_since_semester": recent_demand_plot_semester,
+                "pca_demand_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
                 "pca_demand_plot": recent_demand_plot,
                 "percent_open_plot_since_semester": recent_percent_open_plot_semester,
+                "percent_open_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
                 "percent_open_plot": recent_percent_open_plot,
             },
             "num_semesters": course["average_semester_count"],
@@ -220,19 +247,19 @@ def instructor_reviews(request, instructor_id):
     """
     Get all reviews for a given instructor, aggregated by course.
     """
-    instructor = get_object_or_404(Instructor, pk=instructor_id)
+    instructor = get_object_or_404(Instructor, id=instructor_id)
     instructor_qs = annotate_average_and_recent(
-        Instructor.objects.filter(pk=instructor.pk),
-        match_on=Q(instructor_id=OuterRef(OuterRef("id"))),
+        Instructor.objects.filter(id=instructor_id),
+        match_on=Q(instructor_id=instructor_id),
         extra_metrics=True,
     )
 
     courses = annotate_average_and_recent(
         Course.objects.filter(
-            sections__review__isnull=False, sections__instructors__id=instructor.id
+            sections__review__isnull=False, sections__instructors__id=instructor_id
         ).distinct(),
         match_on=Q(
-            section__course__full_code=OuterRef(OuterRef("full_code")), instructor_id=instructor.id,
+            section__course__full_code=OuterRef(OuterRef("full_code")), instructor_id=instructor_id,
         ),
         extra_metrics=True,
     )
@@ -343,7 +370,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     """
     Get the review history of an instructor teaching a course. No aggregations here.
     """
-    instructor = get_object_or_404(Instructor, pk=instructor_id)
+    instructor = get_object_or_404(Instructor, id=instructor_id)
     reviews = review_averages(
         Review.objects.filter(section__course__full_code=course_code, instructor=instructor),
         {"review_id": OuterRef("id")},
@@ -359,10 +386,10 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         num_openings=Coalesce(
             Subquery(
                 StatusUpdate.objects.filter(
-                    section__pk=OuterRef("section__pk"), in_add_drop_period=True
+                    section_id=OuterRef("section_id"), in_add_drop_period=True
                 )
-                .values("pk")
-                .annotate(count=Count("pk"))
+                .values("id")
+                .annotate(count=Count("id"))
                 .values("count")
             ),
             Value(0),
@@ -371,7 +398,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
 
     return Response(
         {
-            "instructor": {"id": instructor.pk, "name": instructor.name,},
+            "instructor": {"id": instructor_id, "name": instructor.name,},
             "course_code": course_code,
             "sections": [
                 {
@@ -406,7 +433,6 @@ def autocomplete(request):
     all the information necessary for frontend-based autocomplete. It is also cached
     to improve performance.
     """
-
     courses = (
         Course.objects.filter(sections__review__isnull=False)
         .order_by("semester")

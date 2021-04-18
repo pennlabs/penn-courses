@@ -3,6 +3,7 @@ import os
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.db.models.signals import post_save
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from options.models import Option
@@ -11,7 +12,7 @@ from rest_framework.test import APIClient
 from alert.models import AddDropPeriod
 from courses.models import Department, Instructor, Requirement
 from courses.search import TypedCourseSearchBackend
-from courses.util import get_or_create_course
+from courses.util import get_or_create_course, invalidate_current_semester_cache
 from tests.courses.util import create_mock_data, create_mock_data_with_reviews
 
 
@@ -19,6 +20,7 @@ TEST_SEMESTER = "2019A"
 
 
 def set_semester():
+    post_save.disconnect(receiver=invalidate_current_semester_cache, sender=Option, dispatch_uid="invalidate_current_semester_cache")
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
     AddDropPeriod(semester=TEST_SEMESTER).save()
 

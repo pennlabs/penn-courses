@@ -1,7 +1,9 @@
 import re
 from typing import Dict, List
 
+import scipy.stats as stats
 from django.db.models import F
+from tqdm import tqdm
 
 from PennCourses.settings.base import (
     PCA_REGISTRATIONS_RECORDED_SINCE,
@@ -180,7 +182,33 @@ def average_given_plots(plots_dict, bin_size=0.000001):
     return averaged_plot
 
 
-def avg_and_recent_demand_plots(section_map, bin_size=0.01):
+def get_status_updates_map(section_map):
+    """
+    Returns status_updates_map, mapping semester to section id to a list of status updates
+    for that section. Every section from the given section_map dict is represented in the
+    returned status_updates_map dict. Note that section_map should map semester to section id
+    to section object.
+    """
+    from courses.models import StatusUpdate  # imported here to avoid circular imports
+
+    status_updates = StatusUpdate.objects.filter(
+        section_id__in=[
+            section_id for semester in section_map.keys() for section_id in section_map[semester]
+        ],
+        in_add_drop_period=True,
+    ).annotate(semester=F("section__course__semester"))
+    status_updates_map = dict()
+    # status_updates_map: maps semester to section id to the status updates for that section
+    for semester in section_map.keys():
+        status_updates_map[semester] = dict()
+        for section_id in section_map[semester].keys():
+            status_updates_map[semester][section_id] = []
+    for status_update in status_updates:
+        status_updates_map[status_update.semester][status_update.section_id].append(status_update)
+    return status_updates_map
+
+
+def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
     """
     Aggregate demand plots over time (during historical add/drop periods) for the given
     sections (specified by section_map).
@@ -188,12 +216,14 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
     The average plot will average across all sections, and the recent plot will average across
     sections from only the most recent semester.
     Note that section_map should map semester to section id to section object.
+    The status_updates_map should map semester to section id to a list of status updates
+    for that section (this can be retrieved with the call get_status_updates_map(section_map)).
     Points are grouped together with all all remaining points within bin_size to the right,
     so the minimum separation between data points will be bin_size.
-    Returns (avg_demand_plot, avg_demand_plot_min_semester,
+    Returns (avg_demand_plot, avg_demand_plot_min_semester, avg_percent_open_plot_num_semesters,
              recent_demand_plot, recent_demand_plot_semester)
     """
-    from alert.models import AddDropPeriod, PcaDemandExtrema, Registration
+    from alert.models import AddDropPeriod, PcaDemandDistributionEstimate, Registration
 
     # ^ imported here to avoid circular imports
     add_drop_periods = AddDropPeriod.objects.filter(semester__in=section_map.keys())
@@ -201,15 +231,16 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
     # add_drop_periods_map: maps semester to that semester's add drop period object
     for adp in add_drop_periods:
         add_drop_periods_map[adp.semester] = adp
-    demand_extrema = PcaDemandExtrema.objects.filter(
+    demand_distribution_estimates = PcaDemandDistributionEstimate.objects.filter(
         semester__in=section_map.keys(), in_add_drop_period=True
-    ).select_related("most_popular_section", "least_popular_section")
-    demand_extrema_map = dict()
-    # demand_extrema_map: maps semester to a list of the demand extrema from that semester
-    for ext in demand_extrema:
-        if ext.semester not in demand_extrema_map:
-            demand_extrema_map[ext.semester] = []
-        demand_extrema_map[ext.semester].append(ext)
+    ).select_related("highest_demand_section", "lowest_demand_section")
+    demand_distribution_estimates_map = dict()
+    # demand_distribution_estimates_map: maps semester
+    # to a list of the demand distribution_estimates from that semester
+    for ext in demand_distribution_estimates:
+        if ext.semester not in demand_distribution_estimates_map:
+            demand_distribution_estimates_map[ext.semester] = []
+        demand_distribution_estimates_map[ext.semester].append(ext)
     registrations_map = dict()
     # registrations_map: maps semester to section id to a list of registrations from that section
     for semester in section_map.keys():
@@ -236,18 +267,20 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
             continue
         demand_plots_map[semester] = dict()
         add_drop_period = add_drop_periods_map[semester]
-        if semester not in demand_extrema_map:
+        if semester not in demand_distribution_estimates_map:
             continue
-        demand_extrema_changes = [
+        demand_distribution_estimates_changes = [
             {
                 "percent_through": ext.percent_through_add_drop_period,
-                "type": "extrema_change",
-                "lowest": ext.lowest_raw_demand,
-                "highest": ext.highest_raw_demand,
+                "type": "distribution_estimate_change",
+                "csdv_gamma_param_alpha": ext.csdv_gamma_param_alpha,
+                "csdv_gamma_param_loc": ext.csdv_gamma_param_loc,
+                "csdv_gamma_param_scale": ext.csdv_gamma_param_scale,
+                "mean_log_likelihood": ext.csdv_gamma_fit_mean_log_likelihood
             }
-            for ext in demand_extrema_map[semester]
+            for ext in demand_distribution_estimates_map[semester]
         ]
-        if len(demand_extrema_changes) == 0:
+        if len(demand_distribution_estimates_changes) == 0:
             continue
         for i, section in enumerate(section_map[semester].values()):
             section_id = section.id
@@ -277,32 +310,66 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
                             "type": "volume_change",
                         }
                     )
+            status_updates_list = [
+                {
+                    "percent_through": update.percent_through_add_drop_period,
+                    "type": "status_update",
+                    "old_status": update.old_status,
+                    "new_status": update.new_status,
+                }
+                for update in status_updates_map[semester][section_id]
+            ]
             demand_plot = [(0, 0)]
             # demand_plot: the demand plot for this section, containing elements of the form
             # (percent_through, relative_demand)
             changes = sorted(
-                volume_changes + demand_extrema_changes, key=lambda x: x["percent_through"]
+                volume_changes + demand_distribution_estimates_changes + status_updates_list,
+                key=lambda x: x["percent_through"],
             )
+
+            # Initialize variables to be maintained in our main changes loop
             registration_volume = 0
-            latest_raw_demand_extrema = None
+            latest_raw_demand_distribution_estimate = None
+            # Initialize section statuses
+            section_status = None
+            for change in changes:
+                if change["type"] == "status_update":
+                    if section_status is None:
+                        section_status = change["old_status"]
+            if section_status is None:
+                section_status = "O" if section.percent_open > 0.5 else "C"
 
             total_value_in_bin = 0
             num_in_bin = 0
             bin_start_pct = 0
             for change in changes:
-                if change["type"] == "extrema_change":
-                    latest_raw_demand_extrema = change
+                if change["type"] == "status_update":
+                    if change["old_status"] != section_status:  # Skip erroneous status updates
+                        continue
+                    section_status = change["new_status"]
+                    continue
+                if change["type"] == "distribution_estimate_change":
+                    latest_raw_demand_distribution_estimate = change
                 else:
-                    if latest_raw_demand_extrema is None:
+                    if latest_raw_demand_distribution_estimate is None:
                         continue
                     registration_volume += change["volume_change"]
-                min_val = float(latest_raw_demand_extrema["lowest"])
-                max_val = float(latest_raw_demand_extrema["highest"])
-                if min_val == max_val:
-                    rel_demand = 0.5
+                if section_status == "O":
+                    rel_demand = 0
+                elif section_status != "C":
+                    rel_demand = 1
                 else:
-                    rel_demand = float(registration_volume / capacity - min_val) / float(
-                        max_val - min_val
+                    param_alpha = latest_raw_demand_distribution_estimate["csdv_gamma_param_alpha"]
+                    param_loc = latest_raw_demand_distribution_estimate["csdv_gamma_param_loc"]
+                    param_scale = latest_raw_demand_distribution_estimate["csdv_gamma_param_scale"]
+                    mean_log_likelihood = latest_raw_demand_distribution_estimate["mean_log_likelihood"]
+                    if (param_alpha is None or param_loc is None or param_scale is None or mean_log_likelihood is None):
+                        continue
+                    rel_demand = stats.gamma.cdf(
+                        registration_volume / capacity,
+                        param_alpha,
+                        param_loc,
+                        param_scale,
                     )
                 if change["percent_through"] > bin_start_pct + bin_size:
                     if num_in_bin > 0:
@@ -331,16 +398,18 @@ def avg_and_recent_demand_plots(section_map, bin_size=0.01):
     avg_demand_plot_min_semester = (
         min(demand_plots_map.keys()) if len(demand_plots_map) > 0 else None
     )
+    avg_percent_open_plot_num_semesters = len(demand_plots_map)
 
     return (
         avg_demand_plot,
         avg_demand_plot_min_semester,
+        avg_percent_open_plot_num_semesters,
         recent_demand_plot,
         recent_demand_plot_semester,
     )
 
 
-def avg_and_recent_percent_open_plots(section_map):
+def avg_and_recent_percent_open_plots(section_map, status_updates_map):
     """
     Aggregate plots of the percentage of sections that were open at each point in time (during
     historical add/drop periods) for the given sections (specified by section_map).
@@ -348,28 +417,12 @@ def avg_and_recent_percent_open_plots(section_map):
     The average plot will average across all sections, and the recent plot will average across
     sections from only the most recent semester.
     Note that section_map should map semester to section id to section object.
+    The status_updates_map should map semester to section id to a list of status updates
+    for that section (this can be retrieved with the call get_status_updates_map(section_map)).
     The generated plots will have points at increments of step_size in the range [0,1].
     Returns (avg_percent_open_plot, avg_demand_plot_min_semester,
              recent_percent_open_plot, recent_percent_open_plot_semester)
     """
-    from courses.models import StatusUpdate  # imported here to avoid circular imports
-
-    section_id_to_semester = {
-        section.id: section.efficient_semester
-        for semester in section_map.keys()
-        for section in section_map[semester].values()
-    }
-    status_updates = StatusUpdate.objects.filter(
-        section_id__in=section_id_to_semester.keys(), in_add_drop_period=True
-    ).annotate(semester=F("section__course__semester"))
-    status_updates_map = dict()
-    # status_updates_map: maps semester to section id to the status updates for that section
-    for semester in section_map.keys():
-        status_updates_map[semester] = dict()
-        for section_id in section_map[semester].keys():
-            status_updates_map[semester][section_id] = []
-    for status_update in status_updates:
-        status_updates_map[status_update.semester][status_update.section_id].append(status_update)
 
     open_plots = dict()
     # open_plots: maps semester to section id to the plot of when that section was open during
@@ -414,10 +467,12 @@ def avg_and_recent_percent_open_plots(section_map):
 
     avg_percent_open_plot = average_given_plots(open_plots)
     avg_percent_open_plot_min_semester = min(open_plots.keys()) if len(open_plots) > 0 else None
+    avg_percent_open_plot_num_semesters = len(open_plots)
 
     return (
         avg_percent_open_plot,
         avg_percent_open_plot_min_semester,
+        avg_percent_open_plot_num_semesters,
         recent_percent_open_plot,
         recent_percent_open_plot_semester,
     )

@@ -1,13 +1,18 @@
 import logging
 from contextlib import nullcontext
 
+import numpy as np
 import redis
+import scipy.stats as stats
 from celery import shared_task
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 
-from alert.models import PcaDemandExtrema, Registration
+from alert.management.commands.recomputestats import (
+    demand_distribution_estimates_base_section_filters,
+)
+from alert.models import PcaDemandDistributionEstimate, Registration
 from courses.models import Section, StatusUpdate
 from courses.util import (
     get_add_drop_period,
@@ -15,6 +20,7 @@ from courses.util import (
     get_current_semester,
     update_course_from_record,
 )
+from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES
 
 
 logger = logging.getLogger(__name__)
@@ -65,103 +71,97 @@ def send_course_alerts(course_code, course_status, semester=None, sent_by=""):
 def registration_update(section_id, was_active, is_now_active, updated_at):
     """
     This method should only be called on sections from the current semester. It updates the
-    registration_volume of the registration's section, it updates the PcaDemandExtrema
-    models and current_demand_extrema cache to reflect the demand change.
+    registration_volume of the registration's section, it updates the PcaDemandDistributionEstimate
+    models and current_demand_distribution_estimate cache to reflect the demand change.
     """
     section = Section.objects.get(id=section_id)
     semester = section.semester
-    add_drop_period = get_add_drop_period(semester)
-    assert semester == get_current_semester()
+    assert (
+        semester == get_current_semester()
+    ), "Error: PCA registration from past semester cannot be updated."
     if was_active == is_now_active:
+        # No change to registration volume
         return
     volume_change = int(is_now_active) - int(was_active)
     if volume_change < 0:
-        if section.registration_volume is None:
-            section.registration_volume = 0
-            section.save()
-        elif section.registration_volume >= 1:
+        if section.registration_volume >= 1:
             section.registration_volume += volume_change
             section.save()
-    else:
-        if section.registration_volume is None:
-            section.registration_volume = 0
+    else:  # volume_change > 0
         section.registration_volume += volume_change
         section.save()
 
     cache_context = (
-        cache.lock("current_demand_extrema") if hasattr(cache, "lock") else nullcontext()
+        cache.lock("current_demand_distribution_estimate")
+        if hasattr(cache, "lock")
+        else nullcontext()
     )
     with transaction.atomic(), cache_context:
+        create_new_distribution_estimate = False
         sentinel = object()
-        current_demand_extrema = cache.get("current_demand_extrema", sentinel)
-        if current_demand_extrema == sentinel or current_demand_extrema["semester"] != semester:
-            try:
-                latest_extrema_ob = (
-                    PcaDemandExtrema.objects.filter(semester=semester)
-                    .select_for_update()
-                    .latest("created_at")
-                )
-                current_demand_extrema = latest_extrema_ob
-            except PcaDemandExtrema.DoesNotExist:
-                current_demand_extrema = None
+        current_demand_distribution_estimate = cache.get(
+            "current_demand_distribution_estimate", sentinel
+        )
+        if (
+            current_demand_distribution_estimate == sentinel
+            or current_demand_distribution_estimate["semester"] != semester
+        ):
+            create_new_distribution_estimate = True
 
-        if current_demand_extrema is None:
-            if section.capacity is not None and section.capacity > 0:
-                pca_demand_extrema = PcaDemandExtrema(
-                    created_at=updated_at,
-                    semester=semester,
-                    most_popular_section=section,
-                    most_popular_volume=section.registration_volume,
-                    least_popular_section=section,
-                    least_popular_volume=section.registration_volume,
-                )
-                pca_demand_extrema.save(add_drop_period=add_drop_period)
-            return
-
-        new_max = section.raw_demand > current_demand_extrema.highest_raw_demand
-        if new_max:
-            most_popular_section = section
-        new_min = section.raw_demand < current_demand_extrema.lowest_raw_demand
-        if new_min:
-            least_popular_section = section
-        new_extrema = new_min or new_max
-        if volume_change < 0 and section == current_demand_extrema.most_popular_section:
-            most_popular_section = (
-                Section.objects.filter(semester=semester)
-                .select_for_update()
-                .order_by("-raw_demand")
-                .first()
+        sections_qs = (
+            Section.objects.filter(
+                demand_distribution_estimates_base_section_filters, course__semester=semester
             )
-            if most_popular_section != section:
-                new_extrema = True
-                new_max = True
-        if volume_change > 0 and section == current_demand_extrema.least_popular_section:
-            least_popular_section = (
-                Section.objects.filter(semester=semester)
-                .select_for_update()
-                .order_by("raw_demand")
-                .first()
-            )
-            if least_popular_section != section:
-                new_extrema = True
-                new_min = True
+            .select_for_update()
+            .order_by("raw_demand")
+        )
 
-        if new_extrema:
-            new_demand_extrema = PcaDemandExtrema(
+        try:
+            highest_demand_section = sections_qs.last()
+            lowest_demand_section = sections_qs.first()
+        except Section.DoesNotExist:
+            return  # Don't add a PcaDemandDistributionEstimate -- there are no valid sections yet
+
+        if (
+            create_new_distribution_estimate
+            or highest_demand_section.raw_demand
+            > current_demand_distribution_estimate.highest_raw_demand
+            or lowest_demand_section.raw_demand
+            < current_demand_distribution_estimate.lowest_raw_demand
+        ):
+            closed_sections_demand_values = np.asarray(
+                sections_qs.filter(status="C").values_list("raw_demand", flat=True)
+            )
+            # "The term 'closed sections demand values' is sometimes abbreviated as 'csdv'
+            csdv_nonempty = len(closed_sections_demand_values) > 0
+            fit_alpha, fit_loc, fit_scale, mean_log_likelihood = (None, None, None, None)
+            if csdv_nonempty:
+                fit_alpha, fit_loc, fit_scale = stats.gamma.fit(closed_sections_demand_values)
+                mean_log_likelihood = stats.gamma.logpdf(closed_sections_demand_values, fit_alpha, fit_loc, fit_scale).mean()
+            new_demand_distribution_estimate = PcaDemandDistributionEstimate(
                 created_at=updated_at,
                 semester=semester,
-                most_popular_section=most_popular_section
-                if new_max
-                else current_demand_extrema.most_popular_section,
-                most_popular_volume=most_popular_section.registration_volume
-                if new_max
-                else current_demand_extrema.most_popular_volume,
-                least_popular_section=least_popular_section
-                if new_min
-                else current_demand_extrema.least_popular_section,
-                least_popular_volume=least_popular_section.registration_volume
-                if new_min
-                else current_demand_extrema.least_popular_volume,
+                highest_demand_section=highest_demand_section,
+                highest_demand_section_volume=highest_demand_section.registration_volume,
+                lowest_demand_section=lowest_demand_section,
+                lowest_demand_section_volume=lowest_demand_section.registration_volume,
+                csdv_gamma_param_alpha=fit_alpha,
+                csdv_gamma_param_loc=fit_loc,
+                csdv_gamma_param_scale=fit_scale,
+                csdv_gamma_fit_mean_log_likelihood=mean_log_likelihood,
+                csdv_mean=(np.mean(closed_sections_demand_values) if csdv_nonempty else None),
+                csdv_median=(np.median(closed_sections_demand_values) if csdv_nonempty else None),
+                csdv_75th_percentile=(
+                    np.percentile(closed_sections_demand_values, 75) if csdv_nonempty else None
+                ),
             )
-            new_demand_extrema.save()
-            cache.set("current_demand_extrema", new_demand_extrema, timeout=None)
+            new_demand_distribution_estimate.save()
+            add_drop_period = get_add_drop_period(semester)
+            cache.set(
+                "current_demand_distribution_estimate",
+                new_demand_distribution_estimate,
+                timeout=(
+                    add_drop_period.estimated_end - add_drop_period.estimated_start
+                ).total_seconds()
+                // ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES,
+            )  # set timeout to roughly follow ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES

@@ -9,6 +9,7 @@ from django.db.models import F
 from django.utils.timezone import make_aware
 from tqdm import tqdm
 
+from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import AddDropPeriod
 from courses.models import Section, StatusUpdate
 from PennCourses.settings.base import TIME_ZONE
@@ -45,8 +46,8 @@ class Command(BaseCommand):
             for row in history_reader:
                 sections_to_fetch.add((row[0], row[1]))
                 row_count += 1
-            full_codes = [sec[0] for sec in sections_to_fetch]
-            semesters = [sec[1] for sec in sections_to_fetch]
+            full_codes = list(set([sec[0] for sec in sections_to_fetch]))
+            semesters = list(set([sec[1] for sec in sections_to_fetch]))
             section_obs = Section.objects.filter(
                 full_code__in=full_codes, course__semester__in=semesters
             ).annotate(efficient_semester=F("course__semester"))
@@ -90,4 +91,10 @@ class Command(BaseCommand):
                     )
                     status_update.save(add_drop_period=add_drop_periods[semester])
                 StatusUpdate.objects.bulk_create(to_save)
-        print(f"Finished loading status history from {src}... processed {row_count} rows. ")
+
+            print(f"Finished loading status history from {src}... processed {row_count} rows. ")
+
+            print(
+                f"Recomputing PCA Demand Distribution Estimates for {len(semesters)} semesters..."
+            )
+            recompute_percent_open(semesters=",".join(semesters), verbose=True)

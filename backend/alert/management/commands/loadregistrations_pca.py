@@ -10,7 +10,7 @@ from django.db.models import F
 from django.utils.timezone import make_aware
 from tqdm import tqdm
 
-from alert.management.commands.recomputestats import recompute_demand_extrema
+from alert.management.commands.recomputestats import recompute_demand_distribution_estimates
 from alert.models import Registration, Section
 from PennCourses.settings.base import TIME_ZONE
 
@@ -143,5 +143,7 @@ class Command(BaseCommand):
 
             print(f"Done! {len(registrations)} registrations added to database.")
 
-            print(f"Recomputing PCA Demand Extrema for {len(semesters)} semesters...")
-            recompute_demand_extrema(semesters=",".join(semesters), verbose=True)
+            print(
+                f"Recomputing PCA Demand Distribution Estimates for {len(semesters)} semesters..."
+            )
+            recompute_demand_distribution_estimates(semesters=",".join(semesters), verbose=True)

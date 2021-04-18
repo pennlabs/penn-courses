@@ -235,8 +235,7 @@ class Course(models.Model):
 
 class Restriction(models.Model):
     """
-    A registration restriction, e.g. PDP (permission needed from department),
-    which CIS-120 happens to be subject to.
+    A registration restriction, e.g. PDP (permission needed from department)
     """
 
     code = models.CharField(
@@ -458,7 +457,7 @@ class Section(models.Model):
     @property
     def current_percent_open(self):
         """
-        The percentage (exressed as a decimal number between 0 and 1) of the period between
+        The percentage (expressed as a decimal number between 0 and 1) of the period between
         the beginning of its add/drop period and min[the current time, the end of its
         registration period] that this section was open. If this section's registration
         period hasn't started yet, this property is null (None in Python).
@@ -510,46 +509,12 @@ class Section(models.Model):
         # Note for backend developers: this is a property, not a field. However,
         # in the Meta class for this model, we define the raw_property index identically to
         # this property's computation. Thus, you can access this value (as an indexed column)
-        # in database queries using the same name. This is useful for computing demand extrema.
+        # in database queries using the same name. This is useful for computing
+        # distribution estimates.
         if self.capacity is None or self.capacity <= 0:
             return None
         else:
             return float(self.registration_volume) / float(self.capacity)
-
-    @property
-    def current_relative_pca_demand(self):
-        """
-        The current relative PCA demand of the section, which is defined as:
-        [the number of active PCA registrations for this section]/[the class capacity]
-        mapped onto the range [0,1] where the lowest current demand (across all sections)
-        maps to 0 and the highest current demand maps to 1.
-        Open sections will automatically have a current relative PCA demand of 0.
-        NOTE: sections with an invalid class capacity (null or non-positive) are excluded from
-        computation of this statistic, and if this section has a null or non-positive capacity,
-        then this property will be None.
-        """
-        from alert.models import PcaDemandExtrema  # imported here to avoid circular imports
-
-        if self.capacity is None or self.capacity <= 0:
-            return None
-        if self.is_open:
-            return 0
-
-        current_demand_extrema = PcaDemandExtrema.get_current_demand_extrema(semester=self.semester)
-        if current_demand_extrema is None:
-            # Should be unreachable code
-            raise ValueError(
-                "current_demand_extrema should not be None if a section exists "
-                "with a positive non-null capacity."
-            )
-        min = current_demand_extrema.min
-        max = current_demand_extrema.max
-        if min == max:
-            return 0.5  # middle of range [0,1]
-
-        # we map the range [min_raw_demand, max_raw_demand] to [0,1] and
-        # return the position of self.raw_demand on this new range
-        return float(self.raw_demand - min) / float(max - min)
 
     def save(self, *args, **kwargs):
         self.full_code = f"{self.course.full_code}-{self.code}"

@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 from decimal import Decimal
 
@@ -43,6 +44,7 @@ def get_current_semester(allow_not_found=False):
     cached_val = cache.get("SEMESTER", None)
     if cached_val is not None:
         return cached_val
+
     retrieved_val = get_value("SEMESTER", None)
     if not allow_not_found:
         if retrieved_val is None:
@@ -62,8 +64,22 @@ def invalidate_current_semester_cache(sender, instance, **kwargs):
     """
     This function invalidates the cached SEMESTER value when the SEMESTER option is updated.
     """
+    from alert.models import AddDropPeriod
+    from courses.management.commands.load_add_drop_dates import load_add_drop_dates
+    from courses.management.commands.registrarimport import registrar_import
+    from courses.tasks import registrar_import_async
+
+    # ^ imported here to avoid circular imports
+
     if instance.key == "SEMESTER":
         cache.delete("SEMESTER")
+        AddDropPeriod(semester=instance.value).save()
+        load_add_drop_dates()
+
+        if "PennCourses.settings.development" in os.environ["DJANGO_SETTINGS_MODULE"]:
+            registrar_import()
+        else:
+            registrar_import_async.delay()
 
 
 def get_semester(datetime):
