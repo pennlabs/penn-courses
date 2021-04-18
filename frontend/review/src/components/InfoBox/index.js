@@ -51,13 +51,13 @@ const InfoBox = ({
     name,
     notes,
     num_sections: numSections,
-    num_sections_recent: numSectionsRecent
+    num_sections_recent: numSectionsRecent,
   },
   data,
   liveData,
   selectedCourses,
   isCourseEval,
-  setIsCourseEval
+  setIsCourseEval,
 }) => {
   const [contact, setContact] = useState(null);
   const [inCourseCart, setInCourseCart] = useState(
@@ -66,12 +66,12 @@ const InfoBox = ({
   const {
     rInstructorQuality: avgInstructorQuality,
     rCourseQuality: avgCourseQuality,
-    rDifficulty: avgDifficulty
+    rDifficulty: avgDifficulty,
   } = average;
   const {
     rInstructorQuality: recentInstructorQuality,
     rCourseQuality: recentCourseQuality,
-    rDifficulty: recentDifficulty
+    rDifficulty: recentDifficulty,
   } = recent;
 
   const isCourse = type === "course";
@@ -82,25 +82,25 @@ const InfoBox = ({
     if (isInstructor) apiContact(name).then(setContact);
   }, [name, isInstructor]);
 
-  const handleCartAdd = key => {
+  const handleCartAdd = (key) => {
     let instructor = "Average Professor";
     if (key !== "average") {
       ({
         name: instructor,
         average_reviews: average,
-        recent_reviews: recent
+        recent_reviews: recent,
       } = instructors[key]);
     }
-    const info = Object.keys(average).map(category => ({
+    const info = Object.keys(average).map((category) => ({
       category,
       average: average[category],
-      recent: recent[category]
+      recent: recent[category],
     }));
     const item = JSON.stringify({
       version: 1,
       course: code,
       instructor,
-      info
+      info,
     });
     localStorage.setItem(code, item);
     if (window.onCartUpdated) window.onCartUpdated();
@@ -142,29 +142,27 @@ const InfoBox = ({
         {isDepartment && <DepartmentHeader name={name} code={code} />}
       </div>
 
-      {isCourse && (
-        <StatsToggleContainer>
-          <NewLabel>NEW</NewLabel>
-          <div className="btn-group">
-            <button
-              onClick={() => setIsCourseEval(false)}
-              className={`btn btn-sm ${
-                isCourseEval ? "btn-sub-secondary" : "btn-sub-primary"
-              }`}
-            >
-              Student Evaluations
-            </button>
-            <button
-              onClick={() => setIsCourseEval(true)}
-              className={`btn btn-sm ${
-                isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
-              }`}
-            >
-              Course Statistics
-            </button>
-          </div>
-        </StatsToggleContainer>
-      )}
+      <StatsToggleContainer>
+        <NewLabel>NEW</NewLabel>
+        <div className="btn-group">
+          <button
+            onClick={() => setIsCourseEval(false)}
+            className={`btn btn-sm ${
+              isCourseEval ? "btn-sub-secondary" : "btn-sub-primary"
+            }`}
+          >
+            Student Evaluations
+          </button>
+          <button
+            onClick={() => setIsCourseEval(true)}
+            className={`btn btn-sm ${
+              isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
+            }`}
+          >
+            Course Statistics
+          </button>
+        </div>
+      </StatsToggleContainer>
 
       {!isDepartment && (
         <div id="banner-score">
