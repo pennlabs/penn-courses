@@ -62,13 +62,13 @@ export const ScoreTable = (props) => {
         row[title].average =
           row[title].average.slice(-1) === "%"
             ? row[title].average
-            : `${Math.floor(parseInt(row[title].average) * 100)}%`;
+            : `${Math.floor(parseFloat(row[title].average) * 100)}%`;
       }
       if (row[title] && row[title].recent) {
         row[title].recent =
           row[title].recent.slice(-1) === "%"
             ? row[title].recent
-            : `${Math.floor(parseInt(row[title].recent) * 100)}%`;
+            : `${Math.floor(parseFloat(row[title].recent) * 100)}%`;
       }
       // if (!isNaN(row[title])) {
       //   row[title] = Math.floor(parseInt(row[title]) * 100);
