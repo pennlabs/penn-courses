@@ -23,7 +23,12 @@ const ChartDescription = styled.p`
   font-size: 12px;
   font-weight: normal;
   color: #b2b2b2;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
+`;
+
+const FilterText = styled.h3`
+  font-size: 12px;
+  margin: 0px;
 `;
 
 const EmptyGraphContainer = styled.div`
@@ -67,9 +72,10 @@ const GraphContainer = styled.div`
 const GraphTextContainer = styled.div`
   display: flex;
   flex-direction: column;
+  margin-bottom: 10px;
 
   @media (min-width: 768px) {
-    height: 120px;
+    height: 140px;
   }
 `;
 
@@ -397,6 +403,10 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                     from semesters since{" "}
                     {" " + toNormalizedSemester(demandSemester)})
                   </ChartDescription>
+                  <FilterText>
+                    Filter By:{" "}
+                    {isAverage ? "All Semesters" : "Most Recent Semester"}
+                  </FilterText>
                 </GraphTextContainer>
                 <Scatter
                   data={pcaDemandChartData}
@@ -440,6 +450,10 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                     Based on section status update data during add/drop periods
                     since {" " + toNormalizedSemester(percentSemester)}
                   </ChartDescription>
+                  <FilterText>
+                    Filter By:{" "}
+                    {isAverage ? "All Semesters" : "Most Recent Semester"}
+                  </FilterText>
                 </GraphTextContainer>
                 <Scatter
                   data={percentSectionsChartData}
