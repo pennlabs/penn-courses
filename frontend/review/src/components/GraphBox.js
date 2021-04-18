@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { defaults, Scatter } from "react-chartjs-2";
+import ReactTooltip from "react-tooltip";
+
 import { toNormalizedSemester } from "../utils/helpers";
 import { EVAL_GRAPH_COLORS } from "../constants/colors";
 
@@ -17,6 +19,7 @@ const LoadingContainer = styled.div`
 
 const ChartTitle = styled.h3`
   margin-bottom: 5px;
+  vertical-align: middle;
 `;
 
 const ChartDescription = styled.p`
@@ -391,6 +394,21 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                   <ChartTitle>
                     Historically, how difficult has it been to get into{" "}
                     {courseCode} during the add/drop period?
+                    <a data-tip data-for="demandInfo">
+                      {" "}
+                      <i
+                        className="fa fa-question-circle"
+                        style={{ color: "#c6c6c6", fontSize: "13px" }}
+                      />
+                    </a>
+                    <ReactTooltip
+                      id="demandInfo"
+                      place="top"
+                      type="light"
+                      effect="solid"
+                    >
+                      <span>Test test test</span>
+                    </ReactTooltip>
                   </ChartTitle>
                   <ChartDescription>
                     Registration difficulty is represented on a 0-1 scale
