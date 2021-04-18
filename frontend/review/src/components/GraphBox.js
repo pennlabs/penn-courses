@@ -348,6 +348,10 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
     courseData[averageOrRecent]["pca_demand_plot_since_semester"];
   const percentSemester =
     courseData[averageOrRecent]["percent_open_plot_since_semester"];
+  const demandNumSemesters =
+    courseData[averageOrRecent]["pca_demand_plot_num_semesters"];
+  const percentNumSemesters =
+    courseData[averageOrRecent]["percent_open_plot_num_semesters"];
 
   defaults.global.defaultFontFamily = "Lato";
 
@@ -414,8 +418,9 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                     Registration difficulty is represented on a 0-1 scale
                     (relative to other classes at Penn), plotted over time as a
                     % of add/drop period elapsed, using Penn Course Alert data
-                    from semesters since{" "}
-                    {" " + toNormalizedSemester(demandSemester)})
+                    from{" "}
+                    {isAverage ? `${demandNumSemesters} semesters since` : ""}{" "}
+                    {toNormalizedSemester(demandSemester)}
                   </ChartDescription>
                   <FilterText>
                     Filter By:{" "}
@@ -462,7 +467,9 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                   </ChartTitle>
                   <ChartDescription>
                     Based on section status update data during add/drop periods
-                    since {" " + toNormalizedSemester(percentSemester)}
+                    from
+                    {isAverage ? ` ${percentNumSemesters} semesters since` : ""}
+                    {" " + toNormalizedSemester(percentSemester)}
                   </ChartDescription>
                   <FilterText>
                     Filter By:{" "}
