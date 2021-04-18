@@ -20,18 +20,14 @@ const LoadingContainer = styled.div`
 const ChartTitle = styled.h3`
   margin-bottom: 5px;
   vertical-align: middle;
+  font-size: 20px;
 `;
 
 const ChartDescription = styled.p`
-  font-size: 12px;
+  font-size: 15px;
   font-weight: normal;
   color: #b2b2b2;
   margin-bottom: 8px;
-`;
-
-const FilterText = styled.h3`
-  font-size: 12px;
-  margin: 0px;
 `;
 
 const EmptyGraphContainer = styled.div`
@@ -336,7 +332,7 @@ const calcApproxDate = (startDateString, endDateString, percent) => {
   });
 };
 
-const GraphBox = ({ courseCode, courseData, isAverage }) => {
+const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
   const [loaded, setLoaded] = useState(false);
   const [pcaDemandChartData, setPCADemandChartData] = useState(null);
   const [percentSectionsChartData, setPercentSectionsChartData] = useState(
@@ -396,8 +392,8 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
               <div id="row-select-chart-container">
                 <GraphTextContainer>
                   <ChartTitle>
-                    Historically, how difficult has it been to get into{" "}
-                    {courseCode} during the add/drop period?
+                    Estimated Registration Difficulty During Historical Add/Drop
+                    Periods
                     <a data-tip data-for="demandInfo">
                       {" "}
                       <i
@@ -405,27 +401,40 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                         style={{ color: "#c6c6c6", fontSize: "13px" }}
                       />
                     </a>
-                    <ReactTooltip
+                    {/* <ReactTooltip
                       id="demandInfo"
                       place="top"
                       type="light"
                       effect="solid"
                     >
                       <span>Test test test</span>
-                    </ReactTooltip>
+                    </ReactTooltip> */}
                   </ChartTitle>
                   <ChartDescription>
-                    Registration difficulty is represented on a 0-1 scale
-                    (relative to other classes at Penn), plotted over time as a
-                    % of add/drop period elapsed, using Penn Course Alert data
-                    from{" "}
+                    Registration difficulty is estimated on a fixed 0-1 scale
+                    (relative to other classes at Penn), using Penn Course Alert
+                    data from{" "}
                     {isAverage ? `${demandNumSemesters} semesters since` : ""}{" "}
                     {toNormalizedSemester(demandSemester)}
                   </ChartDescription>
-                  <FilterText>
-                    Filter By:{" "}
-                    {isAverage ? "All Semesters" : "Most Recent Semester"}
-                  </FilterText>
+                  <div className="btn-group" style={{ width: "fit-content" }}>
+                    <button
+                      onClick={() => setIsAverage(true)}
+                      className={`btn btn-sm ${
+                        isAverage ? "btn-primary" : "btn-secondary"
+                      }`}
+                    >
+                      Average
+                    </button>
+                    <button
+                      onClick={() => setIsAverage(false)}
+                      className={`btn btn-sm ${
+                        isAverage ? "btn-secondary" : "btn-primary"
+                      }`}
+                    >
+                      Most Recent
+                    </button>
+                  </div>
                 </GraphTextContainer>
                 <Scatter
                   data={pcaDemandChartData}
@@ -462,8 +471,7 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
               <div id="row-select-chart-container">
                 <GraphTextContainer>
                   <ChartTitle>
-                    Percent of historical {courseCode} sections open during the
-                    add/drop period
+                    Percent of Sections Open During Historical Add/Drop Periods
                   </ChartTitle>
                   <ChartDescription>
                     Based on section status update data during add/drop periods
@@ -471,10 +479,24 @@ const GraphBox = ({ courseCode, courseData, isAverage }) => {
                     {isAverage ? ` ${percentNumSemesters} semesters since` : ""}
                     {" " + toNormalizedSemester(percentSemester)}
                   </ChartDescription>
-                  <FilterText>
-                    Filter By:{" "}
-                    {isAverage ? "All Semesters" : "Most Recent Semester"}
-                  </FilterText>
+                  <div className="btn-group" style={{ width: "fit-content" }}>
+                    <button
+                      onClick={() => setIsAverage(true)}
+                      className={`btn btn-sm ${
+                        isAverage ? "btn-primary" : "btn-secondary"
+                      }`}
+                    >
+                      Average
+                    </button>
+                    <button
+                      onClick={() => setIsAverage(false)}
+                      className={`btn btn-sm ${
+                        isAverage ? "btn-secondary" : "btn-primary"
+                      }`}
+                    >
+                      Most Recent
+                    </button>
+                  </div>
                 </GraphTextContainer>
                 <Scatter
                   data={percentSectionsChartData}

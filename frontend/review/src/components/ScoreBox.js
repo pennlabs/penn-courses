@@ -432,7 +432,7 @@ class ScoreBox extends Component {
     if (!data) {
       return <h1>Loading Data...</h1>;
     }
-
+    console.log(columns);
     return (
       <div className="box">
         <div className="clearfix">

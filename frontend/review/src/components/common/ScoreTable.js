@@ -75,6 +75,7 @@ export const ScoreTable = (props) => {
       // }
     });
   });
+  console.log(data);
 
   return (
     <div>

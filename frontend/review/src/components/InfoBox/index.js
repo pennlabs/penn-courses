@@ -159,7 +159,7 @@ const InfoBox = ({
               isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
             }`}
           >
-            Course Statistics
+            Registration Statistics
           </button>
         </div>
       </StatsToggleContainer>
