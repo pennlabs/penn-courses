@@ -3,7 +3,6 @@ from typing import Dict, List
 
 import scipy.stats as stats
 from django.db.models import F
-from tqdm import tqdm
 
 from PennCourses.settings.base import (
     PCA_REGISTRATIONS_RECORDED_SINCE,
@@ -276,7 +275,7 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                 "csdv_gamma_param_alpha": ext.csdv_gamma_param_alpha,
                 "csdv_gamma_param_loc": ext.csdv_gamma_param_loc,
                 "csdv_gamma_param_scale": ext.csdv_gamma_param_scale,
-                "mean_log_likelihood": ext.csdv_gamma_fit_mean_log_likelihood
+                "mean_log_likelihood": ext.csdv_gamma_fit_mean_log_likelihood,
             }
             for ext in demand_distribution_estimates_map[semester]
         ]
@@ -362,14 +361,18 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                     param_alpha = latest_raw_demand_distribution_estimate["csdv_gamma_param_alpha"]
                     param_loc = latest_raw_demand_distribution_estimate["csdv_gamma_param_loc"]
                     param_scale = latest_raw_demand_distribution_estimate["csdv_gamma_param_scale"]
-                    mean_log_likelihood = latest_raw_demand_distribution_estimate["mean_log_likelihood"]
-                    if (param_alpha is None or param_loc is None or param_scale is None or mean_log_likelihood is None):
+                    mean_log_likelihood = latest_raw_demand_distribution_estimate[
+                        "mean_log_likelihood"
+                    ]
+                    if (
+                        param_alpha is None
+                        or param_loc is None
+                        or param_scale is None
+                        or mean_log_likelihood is None
+                    ):
                         continue
                     rel_demand = stats.gamma.cdf(
-                        registration_volume / capacity,
-                        param_alpha,
-                        param_loc,
-                        param_scale,
+                        registration_volume / capacity, param_alpha, param_loc, param_scale,
                     )
                 if change["percent_through"] > bin_start_pct + bin_size:
                     if num_in_bin > 0:

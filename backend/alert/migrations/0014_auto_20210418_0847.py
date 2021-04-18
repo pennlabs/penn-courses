@@ -6,17 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('alert', '0013_pcademanddistributionestimate_csdv_gamma_fit_log_likelihood'),
+        ("alert", "0013_pcademanddistributionestimate_csdv_gamma_fit_log_likelihood"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='pcademanddistributionestimate',
-            name='csdv_gamma_fit_log_likelihood',
+            model_name="pcademanddistributionestimate", name="csdv_gamma_fit_log_likelihood",
         ),
         migrations.AddField(
-            model_name='pcademanddistributionestimate',
-            name='csdv_gamma_fit_mean_log_likelihood',
-            field=models.FloatField(blank=True, help_text="The mean log likelihood of the fitted gamma distribution over all closed sections' raw demand values at this time. The abbreviation 'csdv' stands for 'closed section demand values'; this is a collection of the raw demand values of each closed section at this time.", null=True),
+            model_name="pcademanddistributionestimate",
+            name="csdv_gamma_fit_mean_log_likelihood",
+            field=models.FloatField(
+                blank=True,
+                help_text="The mean log likelihood of the fitted gamma distribution over all closed sections' raw demand values at this time. The abbreviation 'csdv' stands for 'closed section demand values'; this is a collection of the raw demand values of each closed section at this time.",
+                null=True,
+            ),
         ),
     ]

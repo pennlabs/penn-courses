@@ -4,7 +4,11 @@ import os
 import zipfile
 
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
+from alert.management.commands.recomputestats import recompute_stats
+from courses.models import Course
+from courses.util import get_current_semester
 from PennCourses.settings.base import S3_client
 from review.import_utils.import_to_db import (
     import_description_rows,
@@ -143,6 +147,16 @@ class Command(BaseCommand):
 
         src = kwargs["src"]
         semesters = kwargs["semester"]
+        possible_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
+        current_semester = get_current_semester()
+        for semester in semesters:
+            if semester not in possible_semesters:
+                raise ValueError(f"Given semester {semester} was not found in db.")
+            if semester == current_semester:
+                raise ValueError(
+                    f"You cannot import reviews for the current semester ({current_semester}). "
+                    f"Did you forget to update the SEMESTER option in the Django admin console?"
+                )
         import_all = kwargs["import_all"]
         s3_bucket = kwargs["s3_bucket"]
         is_zip_file = kwargs["zip"] or s3_bucket is not None
@@ -168,85 +182,96 @@ class Command(BaseCommand):
             S3_client.download_file(kwargs["s3_bucket"], src, fp)
             src = fp
 
-        # TODO: When we import details and crosslistings, get their data here too.
-        tables_to_get = [summary_file]
-        idx = 1
-        detail_idx = -1
-        if import_details:
-            tables_to_get.append(ISC_RATING_TABLE)
-            detail_idx = idx
-            idx += 1
+        print(
+            "This script is an atomic transaction, meaning the database will only be "
+            "modified if the whole script succeeds."
+        )
 
-        description_idx = -1
-        if import_descriptions:
-            tables_to_get.append(ISC_DESC_TABLE)
-            description_idx = idx
-            idx += 1
+        with transaction.atomic():  # Only commit changes if the whole script succeeds
+            # TODO: When we import details and crosslistings, get their data here too.
+            tables_to_get = [summary_file]
+            idx = 1
+            detail_idx = -1
+            if import_details:
+                tables_to_get.append(ISC_RATING_TABLE)
+                detail_idx = idx
+                idx += 1
 
-        files = self.get_files(src, is_zip_file, tables_to_get)
+            description_idx = -1
+            if import_descriptions:
+                tables_to_get.append(ISC_DESC_TABLE)
+                description_idx = idx
+                idx += 1
 
-        summary_fo = files[0]
-        self.display("Loading summary file...")
-        summary_rows = load_sql_dump(
-            summary_fo, show_progress_bar
-        )  # This will show a progress bar.
-        self.display("SQL parsed and loaded!")
+            files = self.get_files(src, is_zip_file, tables_to_get)
 
-        if not import_all:
-            full_len = len(summary_rows)
-            summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
-            filtered_len = len(summary_rows)
-            self.display(f"Filtered {full_len} rows down to {filtered_len} rows.")
-            to_delete = Review.objects.filter(section__course__semester__in=semesters)
-        else:
-            to_delete = Review.objects.all()
+            summary_fo = files[0]
+            self.display("Loading summary file...")
+            summary_rows = load_sql_dump(
+                summary_fo, show_progress_bar
+            )  # This will show a progress bar.
+            self.display("SQL parsed and loaded!")
 
-        delete_count = to_delete.count()
+            if not import_all:
+                full_len = len(summary_rows)
+                summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
+                filtered_len = len(summary_rows)
+                self.display(f"Filtered {full_len} rows down to {filtered_len} rows.")
+                to_delete = Review.objects.filter(section__course__semester__in=semesters)
+            else:
+                to_delete = Review.objects.all()
 
-        if delete_count > 0:
-            if not force:
-                prompt = input(
-                    f"This import will overwrite {delete_count} rows that have already been"
-                    + "imported. Continue? (y/N) "
+            delete_count = to_delete.count()
+
+            if delete_count > 0:
+                if not force:
+                    prompt = input(
+                        f"This import will overwrite {delete_count} rows that have already been"
+                        + "imported. Continue? (y/N) "
+                    )
+                    if prompt.strip().upper() != "Y":
+                        self.display("Aborting...")
+                        return 0
+
+                self.display(
+                    f"Deleting {delete_count} existing reviews for semesters from the database..."
                 )
-                if prompt.strip().upper() != "Y":
-                    self.display("Aborting...")
-                    return 0
+                to_delete.delete()
 
             self.display(
-                f"Deleting {delete_count} existing reviews for semesters from the database..."
+                "Importing reviews for semester(s)"
+                + f"{', '.join(semesters)if not kwargs['import_all'] else 'all'}"
             )
-            to_delete.delete()
-
-        self.display(
-            "Importing reviews for semester(s)"
-            + f"{', '.join(semesters)if not kwargs['import_all'] else 'all'}"
-        )
-        stats = import_summary_rows(summary_rows, show_progress_bar)
-        self.display(stats)
-
-        if import_details:
-            self.display("Loading details file...")
-            detail_rows = load_sql_dump(files[detail_idx], show_progress_bar)
-            self.display("SQL parsed and loaded!")
-            if not import_all:
-                full_len = len(detail_rows)
-                detail_rows = [r for r in detail_rows if r["TERM"] in semesters]
-                filtered_len = len(detail_rows)
-                self.display(f"Filtered {full_len} rows down to {filtered_len} rows.")
-            stats = import_ratings_rows(detail_rows, show_progress_bar)
+            stats = import_summary_rows(summary_rows, show_progress_bar)
             self.display(stats)
 
-        if import_descriptions:
-            self.display("Loading descriptions file...")
-            description_rows = load_sql_dump(files[description_idx], show_progress_bar)
-            self.display("SQL parsed and loaded!")
-            stats = import_description_rows(description_rows, semesters, show_progress_bar)
-            self.display(stats)
+            if import_details:
+                self.display("Loading details file...")
+                detail_rows = load_sql_dump(files[detail_idx], show_progress_bar)
+                self.display("SQL parsed and loaded!")
+                if not import_all:
+                    full_len = len(detail_rows)
+                    detail_rows = [r for r in detail_rows if r["TERM"] in semesters]
+                    filtered_len = len(detail_rows)
+                    self.display(f"Filtered {full_len} rows down to {filtered_len} rows.")
+                stats = import_ratings_rows(detail_rows, show_progress_bar)
+                self.display(stats)
 
-        self.close_files(files)
-        # invalidate cached views
-        self.display("Invalidating cache...")
-        del_count = clear_cache()
-        self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
+            if import_descriptions:
+                self.display("Loading descriptions file...")
+                description_rows = load_sql_dump(files[description_idx], show_progress_bar)
+                self.display("SQL parsed and loaded!")
+                stats = import_description_rows(description_rows, semesters, show_progress_bar)
+                self.display(stats)
+
+            self.close_files(files)
+            # invalidate cached views
+            self.display("Invalidating cache...")
+            del_count = clear_cache()
+            self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
+
+            # Recompute stats to ignore past courses without reviews
+            print(f"Recomputing stats for semesters {semesters}...")
+            recompute_stats(semesters=semesters, semesters_precomputed=True, verbose=True)
+
         return 0

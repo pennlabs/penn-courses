@@ -10,6 +10,7 @@ from django.db import transaction
 from django.db.models import Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from options.models import Option
 from tqdm import tqdm
 
 from alert.models import PcaDemandDistributionEstimate, Registration, Section
@@ -20,6 +21,7 @@ from PennCourses.settings.base import (
     ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES,
     WAITLIST_DEPARTMENT_CODES,
 )
+from review.models import Review
 
 
 def get_semesters(semesters=None, verbose=False):
@@ -198,6 +200,7 @@ demand_distribution_estimates_base_section_filters = (
     )  # Manually filter out classes from depts with waitlist systems during add/drop
     & Q(capacity__isnull=False, capacity__gt=0)
     & ~Q(course__semester__icontains="b")  # Filter out summer classes
+    & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
     & ~Q(
         id__in=Subquery(
             Restriction.objects.filter(description__icontains="permission").values_list(
@@ -205,6 +208,17 @@ demand_distribution_estimates_base_section_filters = (
             )
         )
     )  # Filter out sections that require permit for registration
+    & ~Q(
+        id__in=Subquery(
+            Restriction.objects.filter(description__icontains="permission").values_list(
+                "sections__id", flat=True
+            )
+        )
+    )  # Filter out sections that require permit for registration
+    & (
+        Q(id__in=Subquery(Review.objects.all().values_list("section__id", flat=True)))
+        | Q(course__semester=Subquery(Option.objects.filter(key="SEMESTER").values("value")[:1]))
+    )  # Filter out sections from past semesters that do not have review data
 )  # If you modify these filters, reflect the same changes in these corresponding filters:
 # extra_metrics_filter in review/annotations/review_averages and
 # plots_base_section_filters in review/views/course_reviews accordingly
@@ -414,7 +428,9 @@ def recompute_demand_distribution_estimates(
                         fit_alpha, fit_loc, fit_scale = stats.gamma.fit(
                             closed_sections_demand_values
                         )
-                        mean_log_likelihood = stats.gamma.logpdf(closed_sections_demand_values, fit_alpha, fit_loc, fit_scale).mean()
+                        mean_log_likelihood = stats.gamma.logpdf(
+                            closed_sections_demand_values, fit_alpha, fit_loc, fit_scale
+                        ).mean()
 
                     new_distribution_estimate = PcaDemandDistributionEstimate(
                         created_at=date,
@@ -462,12 +478,13 @@ def recompute_demand_distribution_estimates(
     )
 
 
-def recompute_stats(semesters=None, verbose=False):
+def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
     Recompute the percent_open field on each section, as well
     """
     load_add_drop_dates(verbose=True)
-    semesters = get_semesters(semesters=semesters, verbose=verbose)
+    if not semesters_precomputed:
+        semesters = get_semesters(semesters=semesters, verbose=verbose)
     recompute_demand_distribution_estimates(
         semesters=semesters, semesters_precomputed=True, verbose=verbose
     )

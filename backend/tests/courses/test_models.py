@@ -9,10 +9,11 @@ from courses.models import Course, Department, Requirement, Section, UserProfile
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
+    invalidate_current_semester_cache,
     record_update,
     separate_course_code,
     set_crosslistings,
-    update_course_from_record, invalidate_current_semester_cache,
+    update_course_from_record,
 )
 from tests.courses.util import create_mock_data
 
@@ -21,7 +22,11 @@ TEST_SEMESTER = "2019A"
 
 
 def set_semester():
-    post_save.disconnect(receiver=invalidate_current_semester_cache, sender=Option, dispatch_uid="invalidate_current_semester_cache")
+    post_save.disconnect(
+        receiver=invalidate_current_semester_cache,
+        sender=Option,
+        dispatch_uid="invalidate_current_semester_cache",
+    )
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
     AddDropPeriod(semester=TEST_SEMESTER).save()
 

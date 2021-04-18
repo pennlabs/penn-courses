@@ -529,6 +529,7 @@ class StatusUpdate(models.Model):
     STATUS_CHOICES = (("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted"))
     section = models.ForeignKey(
         Section,
+        related_name="status_updates",
         on_delete=models.CASCADE,
         help_text="The section which this status update applies to.",
     )

@@ -1,5 +1,5 @@
 from dateutil.tz import gettz
-from django.db.models import Count, F, Max, OuterRef, Q, Subquery, Value
+from django.db.models import Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -121,6 +121,7 @@ def course_reviews(request, course_code):
                 )
             )
         )  # Filter out sections that require permit for registration
+        & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
         & Q(
             id__in=Subquery(Review.objects.all().values_list("section__id", flat=True))
         )  # Filter out sections that do not have review data
@@ -149,9 +150,7 @@ def course_reviews(request, course_code):
         recent_percent_open_plot_semester,
     ) = tuple([None] * 8)
     avg_demand_plot_num_semesters, avg_percent_open_plot_num_semesters = (0, 0)
-    if (
-        len(section_map.keys()) > 0
-    ):
+    if len(section_map.keys()) > 0:
         status_updates_map = get_status_updates_map(section_map)
         (
             avg_demand_plot,

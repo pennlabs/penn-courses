@@ -2,6 +2,7 @@ from django.db.models import (
     Avg,
     Case,
     Count,
+    F,
     FloatField,
     IntegerField,
     Max,
@@ -73,6 +74,9 @@ def review_averages(
             review__section__capacity__isnull=False, review__section__capacity__gt=0,
         )  # Filter our sections with invalid capacity
         & ~Q(review__section__course__semester__icontains="b")  # Filter out summer classes
+        & Q(
+            review__section__status_updates__section_id=F("review__section_id")
+        )  # Filter out sections with no status updates
         & ~Q(
             review__section_id__in=Subquery(
                 Restriction.objects.filter(description__icontains="permission").values_list(

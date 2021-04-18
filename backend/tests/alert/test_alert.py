@@ -19,8 +19,11 @@ from alert import tasks
 from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
-from courses.util import get_add_drop_period, get_or_create_course_and_section, \
-    invalidate_current_semester_cache
+from courses.util import (
+    get_add_drop_period,
+    get_or_create_course_and_section,
+    invalidate_current_semester_cache,
+)
 from PennCourses.celery import app as celeryapp
 from tests.courses.util import create_mock_data
 
@@ -35,7 +38,11 @@ def contains_all(l1, l2):
 
 
 def set_semester():
-    post_save.disconnect(receiver=invalidate_current_semester_cache, sender=Option, dispatch_uid="invalidate_current_semester_cache")
+    post_save.disconnect(
+        receiver=invalidate_current_semester_cache,
+        sender=Option,
+        dispatch_uid="invalidate_current_semester_cache",
+    )
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
     AddDropPeriod(semester=TEST_SEMESTER).save()
 

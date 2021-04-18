@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import AddDropPeriod
 from courses.models import Instructor, Section
-from courses.util import get_add_drop_period, record_update, invalidate_current_semester_cache
+from courses.util import get_add_drop_period, invalidate_current_semester_cache, record_update
 from review.models import Review
 from tests.review.test_api import PCRTestMixin, create_review
 
@@ -19,7 +19,11 @@ assert TEST_SEMESTER >= "2021C", "TEST_SEMESTER must be at least 2021C"
 
 
 def set_semester():
-    post_save.disconnect(receiver=invalidate_current_semester_cache, sender=Option, dispatch_uid="invalidate_current_semester_cache")
+    post_save.disconnect(
+        receiver=invalidate_current_semester_cache,
+        sender=Option,
+        dispatch_uid="invalidate_current_semester_cache",
+    )
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
     AddDropPeriod(semester=TEST_SEMESTER).save()
 

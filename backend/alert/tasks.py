@@ -137,7 +137,9 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
             fit_alpha, fit_loc, fit_scale, mean_log_likelihood = (None, None, None, None)
             if csdv_nonempty:
                 fit_alpha, fit_loc, fit_scale = stats.gamma.fit(closed_sections_demand_values)
-                mean_log_likelihood = stats.gamma.logpdf(closed_sections_demand_values, fit_alpha, fit_loc, fit_scale).mean()
+                mean_log_likelihood = stats.gamma.logpdf(
+                    closed_sections_demand_values, fit_alpha, fit_loc, fit_scale
+                ).mean()
             new_demand_distribution_estimate = PcaDemandDistributionEstimate(
                 created_at=updated_at,
                 semester=semester,
