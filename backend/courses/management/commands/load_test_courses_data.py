@@ -5,7 +5,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
-from alert.models import AddDropPeriod
 from courses.management.commands.export_test_courses_data import (
     models,
     related_id_fields,
@@ -14,7 +13,7 @@ from courses.management.commands.export_test_courses_data import (
     test_data_fields,
     unique_identifying_fields,
 )
-from courses.util import get_add_drop_period
+from courses.management.commands.load_add_drop_dates import fill_in_add_drop_periods
 
 
 class Command(BaseCommand):
@@ -198,10 +197,6 @@ class Command(BaseCommand):
                             self_other_id = id_change_map[data_type][other_id]
                             setattr(objects[data_type][self_new_id], field, self_other_id)
 
-            for semester in semesters:
-                try:
-                    get_add_drop_period(semester)
-                except AddDropPeriod.DoesNotExist:
-                    AddDropPeriod(semester=semester).save()
+            fill_in_add_drop_periods(verbose=True)
 
         print(f"Finished loading test data {src}... processed {row_count} rows. ")

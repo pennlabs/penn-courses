@@ -147,16 +147,6 @@ class Command(BaseCommand):
 
         src = kwargs["src"]
         semesters = kwargs["semester"]
-        possible_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
-        current_semester = get_current_semester()
-        for semester in semesters:
-            if semester not in possible_semesters:
-                raise ValueError(f"Given semester {semester} was not found in db.")
-            if semester == current_semester:
-                raise ValueError(
-                    f"You cannot import reviews for the current semester ({current_semester}). "
-                    f"Did you forget to update the SEMESTER option in the Django admin console?"
-                )
         import_all = kwargs["import_all"]
         s3_bucket = kwargs["s3_bucket"]
         is_zip_file = kwargs["zip"] or s3_bucket is not None
@@ -173,6 +163,14 @@ class Command(BaseCommand):
             raise CommandError(
                 "Must define semester with (-s) or explicitly import all semesters with (-a)."
             )
+        if semesters is not None:
+            current_semester = get_current_semester()
+            for semester in semesters:
+                if semester == current_semester:
+                    raise ValueError(
+                        f"You cannot import reviews for the current semester ({current_semester}). "
+                        f"Did you forget to update the SEMESTER option in the Django admin console?"
+                    )
 
         if kwargs["s3_bucket"] is not None:
             fp = "/tmp/pcrdump.zip"
@@ -271,7 +269,15 @@ class Command(BaseCommand):
             self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
 
             # Recompute stats to ignore past courses without reviews
-            print(f"Recomputing stats for semesters {semesters}...")
-            recompute_stats(semesters=semesters, semesters_precomputed=True, verbose=True)
+            print(f"Recomputing stats for semesters {semesters if not import_all else '[all]'}...")
+            if import_all:
+                recompute_stats(semesters="all", semesters_precomputed=True, verbose=True)
+            else:
+                all_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
+                recompute_stats(
+                    semesters=[sem for sem in semesters if sem in all_semesters],
+                    semesters_precomputed=True,
+                    verbose=True,
+                )
 
         return 0

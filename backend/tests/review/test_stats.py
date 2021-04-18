@@ -4,7 +4,7 @@ from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.management.commands.recomputestats import recompute_percent_open
+from alert.management.commands.recomputeESEs import recompute_percent_open
 from alert.models import AddDropPeriod
 from courses.models import Instructor, Section
 from courses.util import get_add_drop_period, invalidate_current_semester_cache, record_update
@@ -12,10 +12,13 @@ from review.models import Review
 from tests.review.test_api import PCRTestMixin, create_review
 
 
-TEST_SEMESTER = "2021C"
+TEST_CURRENT_SEMESTER = "2021C"
+TEST_SEMESTER = "2021A"  # Past semester for reviews
 
-
-assert TEST_SEMESTER >= "2021C", "TEST_SEMESTER must be at least 2021C"
+assert TEST_CURRENT_SEMESTER >= "2021C", "TEST_CURRENT_SEMESTER must be at least 2021C"
+assert "b" not in TEST_CURRENT_SEMESTER.lower(), "TEST_CURRENT_SEMESTER cannot be a summer semester"
+assert TEST_SEMESTER >= "2021A", "TEST_SEMESTER must be at least 2021A"
+assert "b" not in TEST_SEMESTER.lower(), "TEST_SEMESTER cannot be a summer semester"
 
 
 def set_semester():
@@ -24,45 +27,9 @@ def set_semester():
         sender=Option,
         dispatch_uid="invalidate_current_semester_cache",
     )
-    Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    Option(key="SEMESTER", value=TEST_CURRENT_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_CURRENT_SEMESTER).save()
     AddDropPeriod(semester=TEST_SEMESTER).save()
-
-
-class PCRTestMixinExtra(PCRTestMixin):
-    """
-    This mixin class contains a utility function for quickly writing new tests.
-    """
-
-    def assertDictAlmostEquals(self, dict1, dict2, path=None):
-        """
-        Assert that one dictionary almost equals another (allowing small deviations for floats)
-        """
-        path = path if path is not None else []
-        if isinstance(dict1, dict) and isinstance(dict2, dict):
-            self.assertEquals(dict1.keys(), dict2.keys(), "/".join(path))
-            for key in dict1:
-                self.assertDictAlmostEquals(dict1[key], dict2[key], path + [str(key)])
-        try:
-            float1 = float(dict1)
-            float2 = float(dict2)
-            self.assertAlmostEquals(float1, float2, msg="/".join(path))
-        except ValueError:
-            self.assertEquals(dict1, dict2, "/".join(path))
-
-    def assertDictContains(self, entire, subdict, path=None):
-        """
-        Assert that one dictionary is the subset of another.
-        """
-        path = path if path is not None else []
-        if isinstance(entire, dict) and isinstance(subdict, dict):
-            sublist = subdict.items()
-        elif isinstance(entire, list) and isinstance(subdict, list):
-            sublist = enumerate(subdict)
-        else:
-            return self.assertDictAlmostEquals(entire, subdict, path)
-
-        for k, v in sublist:
-            self.assertDictContains(entire[k], subdict[k], path + [str(k)])
 
 
 """
@@ -105,28 +72,31 @@ def rating(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpe
     )
 
 
-class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
+class OneReviewExtraTestCase(TestCase, PCRTestMixin):
     @classmethod
     def setUpTestData(cls):
         set_semester()
         cls.instructor_name = "Instructor One"
         create_review(
-            "CIS-120-001", TEST_SEMESTER, cls.instructor_name, {"instructor_quality": 3.5}
+            "ESE-120-001", TEST_SEMESTER, cls.instructor_name, {"instructor_quality": 3.5}
         )
+        cls.ESE_120_001 = Section.objects.get(full_code="ESE-120-001")
+        cls.ESE_120_001.capacity = 20
+        cls.ESE_120_001.save()
         cls.instructor_quality = 3.5
         cls.adp = get_add_drop_period(TEST_SEMESTER)
         start = cls.adp.estimated_start
         end = cls.adp.estimated_end
         duration = end - start
-        old_status = "O"
-        new_status = "C"
-        for date in [start + i * duration / 7 for i in range(1, 7)]:  # OCOCOC
+        old_ESEus = "O"
+        new_ESEus = "C"
+        for date in [start + i * duration / 7 for i in range(1, 7)]:  # OCOCOCO
             record_update(
-                "CIS-120-001", TEST_SEMESTER, old_status, new_status, False, dict(), created_at=date
+                "ESE-120-001", TEST_SEMESTER, old_ESEus, new_ESEus, False, dict(), created_at=date,
             )
-            old_status, new_status = new_status, old_status
+            old_ESEus, new_ESEus = new_ESEus, old_ESEus
         recompute_percent_open(semesters=TEST_SEMESTER)
-        cls.percent_open = (duration / 2).total_seconds() / duration.total_seconds()
+        cls.percent_open = (duration * 4 / 7).total_seconds() / duration.total_seconds()
         cls.num_updates = 3
         section = Section.objects.get()
         review = Review.objects.get()
@@ -149,9 +119,9 @@ class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
                 self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
             ),
         }
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-reviews",
-            "CIS-120",
+            "ESE-120",
             {**subdict, "instructors": {Instructor.objects.get().pk: subdict}},
         )
 
@@ -164,10 +134,10 @@ class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
                 self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
             ),
         }
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "instructor-reviews",
             Instructor.objects.get().pk,
-            {**subdict, "courses": {"CIS-120": subdict}},
+            {**subdict, "courses": {"ESE-120": subdict}},
         )
 
     def test_department(self):
@@ -179,12 +149,14 @@ class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
                 self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
             ),
         }
-        self.assertRequestContains("department-reviews", "CIS", {"courses": {"CIS-120": subdict}})
+        self.assertRequestContainsAppx(
+            "department-reviews", "ESE", {"courses": {"ESE-120": subdict}}
+        )
 
     def test_history(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-history",
-            ["CIS-120", Instructor.objects.get().pk],
+            ["ESE-120", Instructor.objects.get().pk],
             {
                 "sections": [
                     rating(
@@ -198,19 +170,19 @@ class OneReviewExtraTestCase(TestCase, PCRTestMixinExtra):
         )
 
     def test_autocomplete(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "review-autocomplete",
             [],
             {
                 "instructors": [
                     {
                         "title": self.instructor_name,
-                        "desc": "CIS",
+                        "desc": "ESE",
                         "url": f"/instructor/{Instructor.objects.get().pk}",
                     }
                 ],
-                "courses": [{"title": "CIS-120", "desc": [""], "url": "/course/CIS-120",}],
-                "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
+                "courses": [{"title": "ESE-120", "desc": [""], "url": "/course/ESE-120",}],
+                "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
             },
         )
 
@@ -222,13 +194,13 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixinExtra):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
-        create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review("ESE-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("ESE-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
 
     def test_course(self):
         self.assertRequestContains(
             "course-reviews",
-            "CIS-120",
+            "ESE-120",
             {
                 "num_semesters": 2,
                 **average_and_recent(3, 4),
@@ -245,18 +217,18 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixinExtra):
         self.assertRequestContains(
             "instructor-reviews",
             Instructor.objects.get().pk,
-            {**average_and_recent(3, 4), "courses": {"CIS-120": average_and_recent(3, 4)}},
+            {**average_and_recent(3, 4), "courses": {"ESE-120": average_and_recent(3, 4)}},
         )
 
     def test_department(self):
         self.assertRequestContains(
-            "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(3, 4)}}
+            "department-reviews", "ESE", {"courses": {"ESE-120": average_and_recent(3, 4)}}
         )
 
     def test_history(self):
         self.assertRequestContains(
             "course-history",
-            ["CIS-120", Instructor.objects.get().pk],
+            ["ESE-120", Instructor.objects.get().pk],
             {"sections": [rating(4), rating(2)]},
         )
 
@@ -266,14 +238,14 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixinExtra):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
-        create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
-        create_review("CIS-160-001", "3008C", self.instructor_name, {"instructor_quality": 2})
+        create_review("ESE-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("ESE-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review("ESE-160-001", "3008C", self.instructor_name, {"instructor_quality": 2})
 
     def test_course(self):
         self.assertRequestContains(
             "course-reviews",
-            "CIS-120",
+            "ESE-120",
             {
                 "num_semesters": 2,
                 **average_and_recent(3, 4),
@@ -289,8 +261,8 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixinExtra):
     def test_department(self):
         self.assertRequestContains(
             "department-reviews",
-            "CIS",
-            {"courses": {"CIS-120": average_and_recent(3, 4), "CIS-160": average_and_recent(2, 2)}},
+            "ESE",
+            {"courses": {"ESE-120": average_and_recent(3, 4), "ESE-160": average_and_recent(2, 2)}},
         )
 
 
@@ -299,15 +271,15 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixinExtra):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
-        create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
+        create_review("ESE-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("ESE-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         self.instructor1 = Instructor.objects.get(name=self.instructor_name)
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
         self.assertRequestContains(
             "course-reviews",
-            "CIS-120",
+            "ESE-120",
             {
                 **average_and_recent(3, 3),
                 "instructors": {
@@ -323,13 +295,13 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixinExtra):
         self.assertRequestContains(
             "instructor-reviews",
             self.instructor1.pk,
-            {**average_and_recent(4, 4), "courses": {"CIS-120": average_and_recent(4, 4)}},
+            {**average_and_recent(4, 4), "courses": {"ESE-120": average_and_recent(4, 4)}},
         )
 
         self.assertRequestContains(
             "instructor-reviews",
             self.instructor2.pk,
-            {**average_and_recent(2, 2), "courses": {"CIS-120": average_and_recent(2, 2)}},
+            {**average_and_recent(2, 2), "courses": {"ESE-120": average_and_recent(2, 2)}},
         )
 
 
@@ -338,15 +310,15 @@ class TwoSectionTestCase(TestCase, PCRTestMixinExtra):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
-        create_review("CIS-120-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
+        create_review("ESE-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("ESE-120-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         self.instructor1 = Instructor.objects.get(name=self.instructor_name)
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
         self.assertRequestContains(
             "course-reviews",
-            "CIS-120",
+            "ESE-120",
             {
                 **average_and_recent(3, 3),
                 "instructors": {
@@ -360,13 +332,13 @@ class TwoSectionTestCase(TestCase, PCRTestMixinExtra):
         self.assertRequestContains(
             "instructor-reviews",
             self.instructor1.pk,
-            {**average_and_recent(4, 4), "courses": {"CIS-120": average_and_recent(4, 4)}},
+            {**average_and_recent(4, 4), "courses": {"ESE-120": average_and_recent(4, 4)}},
         )
 
         self.assertRequestContains(
             "instructor-reviews",
             self.instructor2.pk,
-            {**average_and_recent(2, 2), "courses": {"CIS-120": average_and_recent(2, 2)}},
+            {**average_and_recent(2, 2), "courses": {"ESE-120": average_and_recent(2, 2)}},
         )
 
 
@@ -375,18 +347,18 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixinExtra):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
-        create_review("CIS-120-001", "2017A", "Instructor Two", {"instructor_quality": 2})
+        create_review("ESE-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("ESE-120-001", "2017A", "Instructor Two", {"instructor_quality": 2})
 
-        create_review("CIS-120-900", "2012A", self.instructor_name, {"instructor_quality": 2})
-        create_review("CIS-120-003", "2012C", "Instructor Two", {"instructor_quality": 1})
+        create_review("ESE-120-900", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review("ESE-120-003", "2012C", "Instructor Two", {"instructor_quality": 1})
         self.instructor1 = Instructor.objects.get(name=self.instructor_name)
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
         self.assertRequestContains(
             "course-reviews",
-            "CIS-120",
+            "ESE-120",
             {
                 **average_and_recent(2.25, 4),
                 "instructors": {
@@ -400,10 +372,10 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixinExtra):
         )
 
     def test_course_with_cotaught_section(self):
-        create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 1})
+        create_review("ESE-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 1})
         self.assertRequestContains(
             "course-reviews",
-            "CIS-120",
+            "ESE-120",
             {
                 **average_and_recent(2, 2.5),
                 "instructors": {
@@ -424,7 +396,7 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixinExtra):
 
 class TwoDepartmentTestCase(TestCase, PCRTestMixinExtra):
     def setUp(self):
-        create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+        create_review("ESE-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
         create_review("MATH-114-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         create_review("ENM-211-003", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 3})
         self.client = APIClient()
@@ -464,7 +436,7 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixinExtra):
                 "instructors": [
                     {
                         "title": "Instructor One",
-                        "desc": "CIS",
+                        "desc": "ESE",
                         "url": f"/instructor/{self.instructor1.pk}",
                     },
                     {
@@ -479,8 +451,8 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixinExtra):
 
 class NoReviewForSectionTestCase(TestCase, PCRTestMixinExtra):
     def setUp(self):
-        create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
-        _, recitation, _, _ = get_or_create_course_and_section("CIS-120-201", TEST_SEMESTER)
+        create_review("ESE-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+        _, recitation, _, _ = get_or_create_course_and_section("ESE-120-201", TEST_SEMESTER)
         recitation.instructors.add(Instructor.objects.create(name="Instructor Two"))
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
@@ -490,7 +462,7 @@ class NoReviewForSectionTestCase(TestCase, PCRTestMixinExtra):
     def test_course(self):
         res = self.assertRequestContains(
             "course-reviews",
-            "CIS-120",
+            "ESE-120",
             {
                 **average_and_recent(4, 4),
                 "instructors": {self.instructor1.pk: average_and_recent(4, 4)},
@@ -505,25 +477,25 @@ class NotFoundTestCase(TestCase):
         self.client.force_login(User.objects.create_user(username="test"))
 
     def test_course(self):
-        self.assertEqual(404, self.client.get(reverse("course-reviews", args=["BLAH"])).status_code)
+        self.assertEqual(404, self.client.get(reverse("course-reviews", args=["BLAH"])).ESEus_code)
 
     def test_instructor(self):
-        self.assertEqual(404, self.client.get(reverse("instructor-reviews", args=[0])).status_code)
+        self.assertEqual(404, self.client.get(reverse("instructor-reviews", args=[0])).ESEus_code)
 
     def test_department(self):
         self.assertEqual(
-            404, self.client.get(reverse("department-reviews", args=["BLAH"])).status_code
+            404, self.client.get(reverse("department-reviews", args=["BLAH"])).ESEus_code
         )
 
     def test_history(self):
         self.assertEqual(
-            404, self.client.get(reverse("course-history", args=["BLAH", 123])).status_code
+            404, self.client.get(reverse("course-history", args=["BLAH", 123])).ESEus_code
         )
 
     def test_no_reviews(self):
-        get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        get_or_create_course_and_section("ESE-120-001", TEST_SEMESTER)
         self.assertEqual(
-            404, self.client.get(reverse("course-reviews", args=["CIS-120"])).status_code
+            404, self.client.get(reverse("course-reviews", args=["ESE-120"])).ESEus_code
         )
 
 
@@ -532,18 +504,18 @@ class NoAuthTestCase(TestCase):
         self.client = APIClient()
 
     def test_course(self):
-        self.assertEqual(403, self.client.get(reverse("course-reviews", args=["BLAH"])).status_code)
+        self.assertEqual(403, self.client.get(reverse("course-reviews", args=["BLAH"])).ESEus_code)
 
     def test_instructor(self):
-        self.assertEqual(403, self.client.get(reverse("instructor-reviews", args=[0])).status_code)
+        self.assertEqual(403, self.client.get(reverse("instructor-reviews", args=[0])).ESEus_code)
 
     def test_department(self):
         self.assertEqual(
-            403, self.client.get(reverse("department-reviews", args=["BLAH"])).status_code
+            403, self.client.get(reverse("department-reviews", args=["BLAH"])).ESEus_code
         )
 
     def test_history(self):
         self.assertEqual(
-            403, self.client.get(reverse("course-history", args=["BLAH", 0])).status_code
+            403, self.client.get(reverse("course-history", args=["BLAH", 0])).ESEus_code
         )
 """

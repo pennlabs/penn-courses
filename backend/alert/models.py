@@ -503,8 +503,9 @@ class Registration(models.Model):
         it updates the PcaDemandDistributionEstimate models and current_demand_distribution_estimate
         cache to reflect the demand change if this registration was just created or deactivated.
         """
-        from alert.tasks import registration_update
+        from alert.tasks import registration_update  # imported here to avoid circular imports
 
+        super().save(*args, **kwargs)
         update_registration_volume = (
             not load_script
         ) and self.section.semester == get_current_semester()
@@ -529,7 +530,6 @@ class Registration(models.Model):
                 self.user.profile = user_data
                 self.user.save()
                 self.phone = None
-        super().save(*args, **kwargs)
         if self.original_created_at is None:
             if self.resubscribed_from is None:
                 self.original_created_at = self.created_at
@@ -1080,6 +1080,7 @@ class AddDropPeriod(models.Model):
         fields of StatusUpdates and PcaDemandDistributionEstimates from this semester, and then
         calls the overridden save method.
         """
+        super().save(*args, **kwargs)
         cache.delete("add_drop_periods")  # invalidate add_drop_periods cache
         self.estimated_start = self.estimate_start()
         self.estimated_end = self.estimate_end()
@@ -1106,7 +1107,7 @@ class AddDropPeriod(models.Model):
                     output_field=models.FloatField(),
                 ),
             )
-        super().save(*args, **kwargs)
+        super().save()
 
     def estimate_start(self):
         """

@@ -5,6 +5,7 @@ from textwrap import dedent
 import numpy as np
 import scipy.stats as stats
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Count, F, OuterRef, Q, Subquery, Value
@@ -13,8 +14,16 @@ from django.utils import timezone
 from options.models import Option
 from tqdm import tqdm
 
-from alert.models import PcaDemandDistributionEstimate, Registration, Section
-from courses.management.commands.load_add_drop_dates import load_add_drop_dates
+from alert.models import (
+    PcaDemandDistributionEstimate,
+    Registration,
+    Section,
+    validate_add_drop_semester,
+)
+from courses.management.commands.load_add_drop_dates import (
+    fill_in_add_drop_periods,
+    load_add_drop_dates,
+)
 from courses.models import Course, Restriction, StatusUpdate
 from courses.util import get_add_drop_period, get_current_semester
 from PennCourses.settings.base import (
@@ -257,9 +266,11 @@ def recompute_demand_distribution_estimates(
 
     print(f"Recomputing demand distribution estimates for semesters {str(semesters)}...")
     for semester_num, semester in enumerate(semesters):
-        if "b" in semester.lower():
+        try:
+            validate_add_drop_semester(semester)
+        except ValidationError:
             if verbose:
-                print(f"Skipping summer semester {semester}")
+                print(f"Skipping semester {semester} (unsupported kind for stats).")
             continue
         set_cache = semester == current_semester
 
@@ -482,9 +493,10 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
     Recompute the percent_open field on each section, as well
     """
-    load_add_drop_dates(verbose=True)
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
+    fill_in_add_drop_periods(verbose=True)
+    load_add_drop_dates(verbose=True)
     recompute_demand_distribution_estimates(
         semesters=semesters, semesters_precomputed=True, verbose=verbose
     )

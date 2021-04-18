@@ -67,7 +67,7 @@ def dict_average(entries: List[Dict[str, float]]) -> Dict[str, float]:
             sum_, count_ = averages[k]
             averages[k] = (sum_ + v, count_ + 1)
 
-    return {k: round(v[0] / v[1], 2) if v[1] > 0 else 0 for k, v in averages.items()}
+    return {k: v[0] / v[1] if v[1] > 0 else 0 for k, v in averages.items()}
 
 
 def aggregate_reviews(reviews, group_by, **extra_fields):

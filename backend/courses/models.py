@@ -1007,7 +1007,7 @@ class UserProfile(models.Model):
                 )
             except phonenumbers.phonenumberutil.NumberParseException:
                 raise ValidationError("Invalid phone number (this should have been caught already)")
-        super(UserProfile, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 @receiver(post_save, sender=User)

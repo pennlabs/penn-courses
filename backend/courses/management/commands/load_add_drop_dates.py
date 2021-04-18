@@ -4,13 +4,35 @@ from datetime import datetime, timedelta
 import requests
 from bs4 import BeautifulSoup
 from dateutil.tz import gettz
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.timezone import make_aware
 
 from alert.models import AddDropPeriod, validate_add_drop_semester
+from courses.models import Course
 from courses.util import get_add_drop_period, get_current_semester
 from PennCourses.settings.base import TIME_ZONE
+
+
+def fill_in_add_drop_periods(verbose=False):
+    all_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
+    adp_semesters = set(AddDropPeriod.objects.values_list("semester", flat=True).distinct())
+    missing_semesters = set()
+    for candidate in all_semesters - adp_semesters:
+        try:
+            validate_add_drop_semester(candidate)
+            missing_semesters.add(candidate)
+        except ValidationError:
+            if verbose:
+                print(f"Skipping semester {candidate} (unsupported kind for AddDropPeriod).")
+    if verbose:
+        print(
+            "Filling in AddDropPeriod objects for semesters "
+            + (missing_semesters if len(missing_semesters) > 0 else "[none]")
+        )
+    for semester in missing_semesters:
+        AddDropPeriod(semester=semester).save()
 
 
 def load_add_drop_dates(verbose=False):
@@ -145,4 +167,5 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
+        fill_in_add_drop_periods(verbose=True)
         load_add_drop_dates(verbose=True)

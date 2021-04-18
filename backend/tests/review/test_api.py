@@ -64,6 +64,51 @@ class PCRTestMixin(object):
         self.assertDictContains(res.data, expected)
         return res.data
 
+    def assertRequestContainsAppx(self, url, args, expected):
+        """
+        Do the equivalent of a "subset" check on the response from an API endpoint.
+        :param url: `name` of django view
+        :param args: single or multiple arguments for view.
+        :param expected: expected values from view.
+        """
+        if not isinstance(args, list):
+            args = [args]
+        res = self.client.get(reverse(url, args=args))
+        self.assertEqual(200, res.status_code)
+        self.assertDictContainsAppx(res.data, expected)
+        return res.data
+
+    def assertDictAlmostEquals(self, dict1, dict2, path=None):
+        """
+        Assert that one dictionary almost equals another (allowing small deviations for floats)
+        """
+        path = path if path is not None else []
+        if isinstance(dict1, dict) and isinstance(dict2, dict):
+            self.assertEquals(dict1.keys(), dict2.keys(), "/".join(path))
+            for key in dict1:
+                self.assertDictAlmostEquals(dict1[key], dict2[key], path + [str(key)])
+        try:
+            float1 = float(dict1)
+            float2 = float(dict2)
+            self.assertAlmostEquals(float1, float2, msg="/".join(path))
+        except ValueError:
+            self.assertEquals(dict1, dict2, "/".join(path))
+
+    def assertDictContainsAppx(self, entire, subdict, path=None):
+        """
+        Assert that one dictionary is the subset of another.
+        """
+        path = path if path is not None else []
+        if isinstance(entire, dict) and isinstance(subdict, dict):
+            sublist = subdict.items()
+        elif isinstance(entire, list) and isinstance(subdict, list):
+            sublist = enumerate(subdict)
+        else:
+            return self.assertDictAlmostEquals(entire, subdict, path)
+
+        for k, v in sublist:
+            self.assertDictContainsAppx(entire[k], subdict[k], path + [str(k)])
+
 
 """
 Below are some utility functions that make writing out the response.data dictionaries
@@ -101,7 +146,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
 
     def test_course(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-reviews",
             "CIS-120",
             {
@@ -111,24 +156,24 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         )
 
     def test_instructor(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "instructor-reviews",
             Instructor.objects.get().pk,
             {**average_and_recent(4, 4), "courses": {"CIS-120": {**average_and_recent(4, 4)}}},
         )
 
     def test_department(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(4, 4)}}
         )
 
     def test_history(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-history", ["CIS-120", Instructor.objects.get().pk], {"sections": [rating(4)]}
         )
 
     def test_autocomplete(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "review-autocomplete",
             [],
             {
@@ -156,7 +201,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
 
     def test_course(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-reviews",
             "CIS-120",
             {
@@ -172,19 +217,19 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         )
 
     def test_instructor(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "instructor-reviews",
             Instructor.objects.get().pk,
             {**average_and_recent(3, 4), "courses": {"CIS-120": average_and_recent(3, 4)}},
         )
 
     def test_department(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(3, 4)}}
         )
 
     def test_history(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-history",
             ["CIS-120", Instructor.objects.get().pk],
             {"sections": [rating(4), rating(2)]},
@@ -204,7 +249,7 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
         create_review("CIS-160-001", "3008C", self.instructor_name, {"instructor_quality": 2})
 
     def test_course(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-reviews",
             "CIS-120",
             {
@@ -220,7 +265,7 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
         )
 
     def test_department(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "department-reviews",
             "CIS",
             {"courses": {"CIS-120": average_and_recent(3, 4), "CIS-160": average_and_recent(2, 2)}},
@@ -239,7 +284,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-reviews",
             "CIS-120",
             {
@@ -254,13 +299,13 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         )
 
     def test_instructor(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "instructor-reviews",
             self.instructor1.pk,
             {**average_and_recent(4, 4), "courses": {"CIS-120": average_and_recent(4, 4)}},
         )
 
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "instructor-reviews",
             self.instructor2.pk,
             {**average_and_recent(2, 2), "courses": {"CIS-120": average_and_recent(2, 2)}},
@@ -279,7 +324,7 @@ class TwoSectionTestCase(TestCase, PCRTestMixin):
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-reviews",
             "CIS-120",
             {
@@ -292,13 +337,13 @@ class TwoSectionTestCase(TestCase, PCRTestMixin):
         )
 
     def test_instructor(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "instructor-reviews",
             self.instructor1.pk,
             {**average_and_recent(4, 4), "courses": {"CIS-120": average_and_recent(4, 4)}},
         )
 
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "instructor-reviews",
             self.instructor2.pk,
             {**average_and_recent(2, 2), "courses": {"CIS-120": average_and_recent(2, 2)}},
@@ -323,7 +368,7 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-reviews",
             "CIS-120",
             {
@@ -340,7 +385,7 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
 
     def test_course_with_cotaught_section(self):
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 1})
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-reviews",
             "CIS-120",
             {
@@ -351,7 +396,7 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
                         "latest_semester": TEST_SEMESTER,
                     },
                     self.instructor2.pk: {
-                        **average_and_recent(1.33, 1),
+                        **average_and_recent(4 / 3, 1),
                         "latest_semester": TEST_SEMESTER,
                     },
                 },
@@ -373,7 +418,7 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "course-reviews",
             "MATH-114",
             {
@@ -383,7 +428,7 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
         )
 
     def test_instructor(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "instructor-reviews",
             self.instructor2.pk,
             {
@@ -396,7 +441,7 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
         )
 
     def test_autocomplete(self):
-        self.assertRequestContains(
+        self.assertRequestContainsAppx(
             "review-autocomplete",
             [],
             {
@@ -428,7 +473,7 @@ class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
 
     def test_course(self):
-        res = self.assertRequestContains(
+        res = self.assertRequestContainsAppx(
             "course-reviews",
             "CIS-120",
             {
