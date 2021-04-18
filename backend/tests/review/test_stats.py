@@ -4,7 +4,7 @@ from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.management.commands.recomputeESEs import recompute_percent_open
+from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import AddDropPeriod
 from courses.models import Instructor, Section
 from courses.util import get_add_drop_period, invalidate_current_semester_cache, record_update
@@ -88,13 +88,19 @@ class OneReviewExtraTestCase(TestCase, PCRTestMixin):
         start = cls.adp.estimated_start
         end = cls.adp.estimated_end
         duration = end - start
-        old_ESEus = "O"
-        new_ESEus = "C"
+        old_status = "O"
+        new_status = "C"
         for date in [start + i * duration / 7 for i in range(1, 7)]:  # OCOCOCO
             record_update(
-                "ESE-120-001", TEST_SEMESTER, old_ESEus, new_ESEus, False, dict(), created_at=date,
+                "ESE-120-001",
+                TEST_SEMESTER,
+                old_status,
+                new_status,
+                False,
+                dict(),
+                created_at=date,
             )
-            old_ESEus, new_ESEus = new_ESEus, old_ESEus
+            old_status, new_status = new_status, old_status
         recompute_percent_open(semesters=TEST_SEMESTER)
         cls.percent_open = (duration * 4 / 7).total_seconds() / duration.total_seconds()
         cls.num_updates = 3
@@ -477,25 +483,25 @@ class NotFoundTestCase(TestCase):
         self.client.force_login(User.objects.create_user(username="test"))
 
     def test_course(self):
-        self.assertEqual(404, self.client.get(reverse("course-reviews", args=["BLAH"])).ESEus_code)
+        self.assertEqual(404, self.client.get(reverse("course-reviews", args=["BLAH"])).status_code)
 
     def test_instructor(self):
-        self.assertEqual(404, self.client.get(reverse("instructor-reviews", args=[0])).ESEus_code)
+        self.assertEqual(404, self.client.get(reverse("instructor-reviews", args=[0])).status_code)
 
     def test_department(self):
         self.assertEqual(
-            404, self.client.get(reverse("department-reviews", args=["BLAH"])).ESEus_code
+            404, self.client.get(reverse("department-reviews", args=["BLAH"])).status_code
         )
 
     def test_history(self):
         self.assertEqual(
-            404, self.client.get(reverse("course-history", args=["BLAH", 123])).ESEus_code
+            404, self.client.get(reverse("course-history", args=["BLAH", 123])).status_code
         )
 
     def test_no_reviews(self):
         get_or_create_course_and_section("ESE-120-001", TEST_SEMESTER)
         self.assertEqual(
-            404, self.client.get(reverse("course-reviews", args=["ESE-120"])).ESEus_code
+            404, self.client.get(reverse("course-reviews", args=["ESE-120"])).status_code
         )
 
 
@@ -504,18 +510,18 @@ class NoAuthTestCase(TestCase):
         self.client = APIClient()
 
     def test_course(self):
-        self.assertEqual(403, self.client.get(reverse("course-reviews", args=["BLAH"])).ESEus_code)
+        self.assertEqual(403, self.client.get(reverse("course-reviews", args=["BLAH"])).status_code)
 
     def test_instructor(self):
-        self.assertEqual(403, self.client.get(reverse("instructor-reviews", args=[0])).ESEus_code)
+        self.assertEqual(403, self.client.get(reverse("instructor-reviews", args=[0])).status_code)
 
     def test_department(self):
         self.assertEqual(
-            403, self.client.get(reverse("department-reviews", args=["BLAH"])).ESEus_code
+            403, self.client.get(reverse("department-reviews", args=["BLAH"])).status_code
         )
 
     def test_history(self):
         self.assertEqual(
-            403, self.client.get(reverse("course-history", args=["BLAH", 0])).ESEus_code
+            403, self.client.get(reverse("course-history", args=["BLAH", 0])).status_code
         )
 """

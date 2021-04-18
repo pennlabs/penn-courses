@@ -29,7 +29,7 @@ def fill_in_add_drop_periods(verbose=False):
     if verbose:
         print(
             "Filling in AddDropPeriod objects for semesters "
-            + (missing_semesters if len(missing_semesters) > 0 else "[none]")
+            + str(missing_semesters if len(missing_semesters) > 0 else "[none]")
         )
     for semester in missing_semesters:
         AddDropPeriod(semester=semester).save()
