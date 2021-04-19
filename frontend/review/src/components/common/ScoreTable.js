@@ -87,6 +87,9 @@ export const ScoreTable = (props) => {
             ? row[title].recent
             : `${Math.floor(parseFloat(row[title].recent) * 100)}%`;
       }
+      if (!isNaN(row[title])) {
+        row[title] = `${Math.floor(parseFloat(row[title]) * 100)}%`;
+      }
     });
   });
 
@@ -110,11 +113,15 @@ export const ScoreTable = (props) => {
             borderColor="#84b8ba"
             textColor="#4a4a4a"
           >
-            <span class="tooltip-text">
-              Averaged across all sections,<br />the ratio of final enrollment total
-              to section capacity,<br />expressed as a percentage. <br />
-              Note that some classes may have been over-enrolled,<br />causing a
-              final enrollment value above 100%.
+            <span className="tooltip-text">
+              Averaged across all sections,
+              <br />
+              the ratio of final enrollment total to section capacity,
+              <br />
+              expressed as a percentage. <br />
+              Note that some classes may have been over-enrolled,
+              <br />
+              causing a final enrollment value above 100%.
             </span>
           </ReactTooltip>
         </>
@@ -138,9 +145,12 @@ export const ScoreTable = (props) => {
             borderColor="#84b8ba"
             textColor="#4a4a4a"
           >
-            <span class="tooltip-text">
-              Averaged across all sections,<br />the number of times the section
-              changed from<br />closed to open during the add/drop period.
+            <span className="tooltip-text">
+              Averaged across all sections,
+              <br />
+              the number of times the section changed from
+              <br />
+              closed to open during the add/drop period.
             </span>
           </ReactTooltip>
         </>
@@ -164,9 +174,12 @@ export const ScoreTable = (props) => {
             borderColor="#84b8ba"
             textColor="#4a4a4a"
           >
-            <span class="tooltip-text">
-              Averaged across all sections,<br />the percentage of time during the
-              add/drop period<br />that the section was open for registration.
+            <span className="tooltip-text">
+              Averaged across all sections,
+              <br />
+              the percentage of time during the add/drop period
+              <br />
+              that the section was open for registration.
             </span>
           </ReactTooltip>
         </>
