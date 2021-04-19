@@ -157,12 +157,15 @@ const genPercentChartData = (data) => {
 };
 
 const demandChartOptions = {
+  animation: false,
   tooltips: {
     mode: "index",
     intersect: false,
     backgroundColor: EVAL_GRAPH_COLORS.TOOLTIP_BACKGROUND_COLOR,
     bodyFontColor: EVAL_GRAPH_COLORS.TOOLTIP_FONT_COLOR,
     titleFontColor: EVAL_GRAPH_COLORS.TOOLTIP_FONT_COLOR,
+    borderColor: EVAL_GRAPH_COLORS.TOOLTIP_BORDER_COLOR,
+    borderWidth: 0.75,
     bodyFontSize: 12,
     cornerRadius: 3,
     bodySpacing: 3,
@@ -239,12 +242,15 @@ const demandChartOptions = {
 };
 
 const percentSectionChartOptions = {
+  animation: false,
   tooltips: {
     mode: "index",
     intersect: false,
     backgroundColor: EVAL_GRAPH_COLORS.TOOLTIP_BACKGROUND_COLOR,
     bodyFontColor: EVAL_GRAPH_COLORS.TOOLTIP_FONT_COLOR,
     titleFontColor: EVAL_GRAPH_COLORS.TOOLTIP_FONT_COLOR,
+    borderColor: EVAL_GRAPH_COLORS.TOOLTIP_BORDER_COLOR,
+    borderWidth: 0.75,
     cornerRadius: 3,
     bodyFontSize: 12,
     callbacks: {
@@ -394,21 +400,6 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
                   <ChartTitle>
                     Estimated Registration Difficulty During Historical Add/Drop
                     Periods
-                    {/* <a data-tip data-for="demandInfo">
-                      {" "}
-                      <i
-                        className="fa fa-question-circle"
-                        style={{ color: "#c6c6c6", fontSize: "13px" }}
-                      />
-                    </a> */}
-                    {/* <ReactTooltip
-                      id="demandInfo"
-                      place="top"
-                      type="light"
-                      effect="solid"
-                    >
-                      <span>Test test test</span>
-                    </ReactTooltip> */}
                   </ChartTitle>
                   <ChartDescription>
                     Registration difficulty is estimated on a fixed 0-1 scale
@@ -474,7 +465,7 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
                     Percent of Sections Open During Historical Add/Drop Periods
                   </ChartTitle>
                   <ChartDescription>
-                    Based on section status update data during add/drop periods
+                    Based on section status data during add/drop periods
                     from
                     {isAverage ? ` ${percentNumSemesters} semesters since` : ""}
                     {" " + toNormalizedSemester(percentSemester)}
