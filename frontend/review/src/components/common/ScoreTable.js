@@ -103,15 +103,17 @@ export const ScoreTable = (props) => {
           </a>
           <ReactTooltip
             id="final-enrollment"
-            place="top"
+            // place="right"
             type="light"
             effect="solid"
+            border={true}
+            borderColor="#84b8ba"
           >
             <span>
               Averaged across all sections, the ratio of final enrollment total
-              to section capacity, expressed as a percentage. Note that some
-              classes may have been over-enrolled, causing a final enrollment
-              value above 100%.
+              to section capacity, expressed as a percentage. <br />
+              Note that some classes may have been over-enrolled, causing a
+              final enrollment value above 100%.
             </span>
           </ReactTooltip>
         </>
@@ -128,9 +130,11 @@ export const ScoreTable = (props) => {
           </a>
           <ReactTooltip
             id="num-openings"
-            place="top"
+            // place="right"
             type="light"
             effect="solid"
+            border={true}
+            borderColor="#84b8ba"
           >
             <span>
               Averaged across all sections, the number of times the section
@@ -151,9 +155,11 @@ export const ScoreTable = (props) => {
           </a>
           <ReactTooltip
             id="percent-open"
-            place="top"
+            // place="right"
             type="light"
             effect="solid"
+            border={true}
+            borderColor="#84b8ba"
           >
             <span>
               Averaged across all sections, the percentage of time during the
