@@ -90,36 +90,80 @@ export const ScoreTable = (props) => {
     });
   });
 
-  // props.columns.forEach((col) => {
-  //   if (col.Header === "Final Enrollment") {
-  // col.Header = ({ row }) => (
-  //   <span
-  //     dangerouslySetInnerHTML={{
-  //       __html: `Final Enrollment
-  //       <a data-tip data-for="demandInfo">
-  //                 <i
-  //                   class="fa fa-question-circle"
-  //                   style="color: #c6c6c6; font-size: 13px"
-  //                 />
-  //               </a>
-  //               ${ReactDOMServer.renderToStaticMarkup(
-  //                 <ReactTooltip
-  //                   id="demandInfo"
-  //                   place="top"
-  //                   type="light"
-  //                   effect="solid"
-  //                   onClick={() => console.log("cklicked")}
-  //                   zIndex={100}
-  //                 >
-  //                   <span>Test test test</span>
-  //                 </ReactTooltip>
-  //               )}
-  //               `,
-  //     }}
-  //   />
-  // );
-  //   }
-  // });
+  props.columns.forEach((col) => {
+    if (col.Header === "Final Enrollment") {
+      col.Header = (
+        <>
+          Final Enrollment{" "}
+          <a data-tip data-for="final-enrollment">
+            <i
+              className="fa fa-question-circle"
+              style={{ color: "#c6c6c6", fontSize: "13px" }}
+            />
+          </a>
+          <ReactTooltip
+            id="final-enrollment"
+            place="top"
+            type="light"
+            effect="solid"
+          >
+            <span>
+              Averaged across all sections, the ratio of final enrollment total
+              to section capacity, expressed as a percentage. Note that some
+              classes may have been over-enrolled, causing a final enrollment
+              value above 100%.
+            </span>
+          </ReactTooltip>
+        </>
+      );
+    } else if (col.Header === "Num Openings") {
+      col.Header = (
+        <>
+          Num Openings{" "}
+          <a data-tip data-for="num-openings">
+            <i
+              className="fa fa-question-circle"
+              style={{ color: "#c6c6c6", fontSize: "13px" }}
+            />
+          </a>
+          <ReactTooltip
+            id="num-openings"
+            place="top"
+            type="light"
+            effect="solid"
+          >
+            <span>
+              Averaged across all sections, the number of times the section
+              changed from closed to open during the add/drop period.
+            </span>
+          </ReactTooltip>
+        </>
+      );
+    } else if (col.Header === "Percent Open") {
+      col.Header = (
+        <>
+          Percent Open{" "}
+          <a data-tip data-for="percent-open">
+            <i
+              className="fa fa-question-circle"
+              style={{ color: "#c6c6c6", fontSize: "13px" }}
+            />
+          </a>
+          <ReactTooltip
+            id="percent-open"
+            place="top"
+            type="light"
+            effect="solid"
+          >
+            <span>
+              Averaged across all sections, the percentage of time during the
+              add/drop period that the section was open for registration.
+            </span>
+          </ReactTooltip>
+        </>
+      );
+    }
+  });
   return (
     <div>
       <ReactTable

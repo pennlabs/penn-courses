@@ -461,43 +461,6 @@ class ScoreBox extends Component {
             columns={columns}
             onSelect={(columns) => this.setState({ columns })}
           />{" "}
-          {isCourseEval && (
-            <>
-              {" "}
-              <a data-tip data-for="registration-stats">
-                <i
-                  className="fa fa-question-circle"
-                  style={{ color: "#c6c6c6", fontSize: "13px" }}
-                />
-              </a>
-              <ReactTooltip
-                id="registration-stats"
-                place="top"
-                type="light"
-                effect="solid"
-                multiline={true}
-              >
-                <span>
-                  Final Enrollment: Averaged across all sections, the ratio of
-                  final enrollment total to section capacity, expressed as a
-                  percentage. Note that some classes may have been
-                  over-enrolled, causing a final enrollment value above 100%.
-                </span>
-                <br />
-                <span>
-                  Num Openings: Averaged across all sections, the number of
-                  times the section changed from closed to open during the
-                  add/drop period.
-                </span>
-                <br />
-                <span>
-                  Percent Open: Averaged across all sections, the percentage of
-                  time during the add/drop period that the section was open for
-                  registration.
-                </span>
-              </ReactTooltip>
-            </>
-          )}
           <div className="float-right">
             <label className="table-search">
               <input
