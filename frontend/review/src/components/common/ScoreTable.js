@@ -1,6 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { PERCENTAGE_COLUMNS } from "../../constants/values";
 import ReactTable from "react-table";
+import ReactTooltip from "react-tooltip";
+import ReactDOMServer from "react-dom/server";
+
+function testComponent(props) {
+  const { style, className, children, html } = props;
+
+  if (html) {
+    return `<span style='${style}' class='${className}'>${children ||
+      ""}</span>`;
+  }
+
+  return (
+    <span style="${style}" class="${className}">
+      ${children || ""}
+    </span>
+  );
+}
 
 export const ScoreTable = (props) => {
   const {
@@ -70,13 +87,39 @@ export const ScoreTable = (props) => {
             ? row[title].recent
             : `${Math.floor(parseFloat(row[title].recent) * 100)}%`;
       }
-      // if (!isNaN(row[title])) {
-      //   row[title] = Math.floor(parseInt(row[title]) * 100);
-      // }
     });
   });
-  console.log(data);
 
+  // props.columns.forEach((col) => {
+  //   if (col.Header === "Final Enrollment") {
+  // col.Header = ({ row }) => (
+  //   <span
+  //     dangerouslySetInnerHTML={{
+  //       __html: `Final Enrollment
+  //       <a data-tip data-for="demandInfo">
+  //                 <i
+  //                   class="fa fa-question-circle"
+  //                   style="color: #c6c6c6; font-size: 13px"
+  //                 />
+  //               </a>
+  //               ${ReactDOMServer.renderToStaticMarkup(
+  //                 <ReactTooltip
+  //                   id="demandInfo"
+  //                   place="top"
+  //                   type="light"
+  //                   effect="solid"
+  //                   onClick={() => console.log("cklicked")}
+  //                   zIndex={100}
+  //                 >
+  //                   <span>Test test test</span>
+  //                 </ReactTooltip>
+  //               )}
+  //               `,
+  //     }}
+  //   />
+  // );
+  //   }
+  // });
   return (
     <div>
       <ReactTable

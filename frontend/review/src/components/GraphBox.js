@@ -394,13 +394,13 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
                   <ChartTitle>
                     Estimated Registration Difficulty During Historical Add/Drop
                     Periods
-                    <a data-tip data-for="demandInfo">
+                    {/* <a data-tip data-for="demandInfo">
                       {" "}
                       <i
                         className="fa fa-question-circle"
                         style={{ color: "#c6c6c6", fontSize: "13px" }}
                       />
-                    </a>
+                    </a> */}
                     {/* <ReactTooltip
                       id="demandInfo"
                       place="top"
