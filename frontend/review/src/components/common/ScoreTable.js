@@ -110,7 +110,7 @@ export const ScoreTable = props => {
             type="light"
             effect="solid"
             border={true}
-            borderColor="#84b8ba"
+            borderColor="#ededed"
             textColor="#4a4a4a"
           >
             <span className="tooltip-text">
@@ -142,7 +142,7 @@ export const ScoreTable = props => {
             type="light"
             effect="solid"
             border={true}
-            borderColor="#84b8ba"
+            borderColor="#ededed"
             textColor="#4a4a4a"
           >
             <span className="tooltip-text">
@@ -171,7 +171,7 @@ export const ScoreTable = props => {
             type="light"
             effect="solid"
             border={true}
-            borderColor="#84b8ba"
+            borderColor="#ededed"
             textColor="#4a4a4a"
           >
             <span className="tooltip-text">
