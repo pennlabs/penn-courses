@@ -19,7 +19,7 @@ function testComponent(props) {
   );
 }
 
-export const ScoreTable = (props) => {
+export const ScoreTable = props => {
   const {
     alternating = false,
     noun,
@@ -27,7 +27,7 @@ export const ScoreTable = (props) => {
     data = [],
     onSelect = () => {},
     isAverage = null,
-    isCourseEval = null,
+    isCourseEval = null
   } = props;
   const [selected, setSelected] = useState(multi ? {} : null);
   const [sorted, setSorted] = useState(props.sorted);
@@ -67,14 +67,14 @@ export const ScoreTable = (props) => {
             onSelect(selected);
             setSelected({ ...selected });
           },
-          className: noRow ? "selected" : "",
+          className: noRow ? "selected" : ""
         }
       : {};
   };
 
   // Convert relevant columns to percentages
-  data.forEach((row) => {
-    PERCENTAGE_COLUMNS.forEach((title) => {
+  data.forEach(row => {
+    PERCENTAGE_COLUMNS.forEach(title => {
       if (row[title] && row[title].average) {
         row[title].average =
           row[title].average.slice(-1) === "%"
@@ -93,7 +93,7 @@ export const ScoreTable = (props) => {
     });
   });
 
-  props.columns.forEach((col) => {
+  props.columns.forEach(col => {
     if (col.Header === "Final Enrollment") {
       col.Header = (
         <>

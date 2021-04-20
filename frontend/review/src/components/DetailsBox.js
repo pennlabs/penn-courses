@@ -6,7 +6,7 @@ import {
   compareSemesters,
   getColumnName,
   orderColumns,
-  toNormalizedSemester,
+  toNormalizedSemester
 } from "../utils/helpers";
 import { apiHistory } from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
@@ -22,7 +22,7 @@ const semesterCol = {
   accessor: "semester",
   sortMethod: compareSemesters,
   show: true,
-  required: true,
+  required: true
 };
 
 const nameCol = {
@@ -35,7 +35,7 @@ const nameCol = {
   filterMethod: ({ value }, { name, semester }) =>
     value === "" || // If the filter value is blank, all
     name.toLowerCase().includes(value.toLowerCase()) ||
-    semester.toLowerCase().includes(value.toLowerCase()),
+    semester.toLowerCase().includes(value.toLowerCase())
 };
 
 const formsCol = {
@@ -55,7 +55,7 @@ const formsCol = {
           ({((value / original.forms_produced) * 100).toFixed(1)}%)
         </small>
       </center>
-    ),
+    )
 };
 
 /**
@@ -73,7 +73,7 @@ export const DetailsBox = forwardRef(
     const [emptyStateImg, setEmptyStateImg] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const showCol = (info) => {
+    const showCol = info => {
       if (
         info === "rFinalEnrollmentPercentage" ||
         info === "rPercentOpen" ||
@@ -85,7 +85,7 @@ export const DetailsBox = forwardRef(
       }
     };
 
-    const generateCol = (info) => ({
+    const generateCol = info => ({
       id: info,
       width: 150,
       Header: getColumnName(info),
@@ -101,7 +101,7 @@ export const DetailsBox = forwardRef(
               : value.toFixed(2)}
           </center>
         );
-      },
+      }
     });
 
     useEffect(() => {
@@ -112,15 +112,15 @@ export const DetailsBox = forwardRef(
       setIsLoading(true);
       if (instructor !== null && course !== null) {
         apiHistory(course, instructor)
-          .then((res) => {
+          .then(res => {
             const [firstSection, ...sections] = Object.values(res.sections);
             const ratingCols = orderColumns(
               Object.keys(firstSection.ratings)
             ).map(generateCol);
             const semesterSet = new Set(
               [firstSection, ...sections]
-                .filter((a) => a.comments)
-                .map((a) => a.semester)
+                .filter(a => a.comments)
+                .map(a => a.semester)
                 .sort(compareSemesters)
             );
             const semesters = [...semesterSet];
@@ -201,7 +201,7 @@ export const DetailsBox = forwardRef(
 
     const {
       instructor: { name },
-      sections,
+      sections
     } = data;
     const sectionsList = Object.values(sections);
 
@@ -271,13 +271,13 @@ export const DetailsBox = forwardRef(
                     semester,
                     course_name: name,
                     forms_produced: produced,
-                    forms_returned: returned,
+                    forms_returned: returned
                   }) => ({
                     ...ratings,
                     semester: toNormalizedSemester(semester),
                     name,
                     forms_produced: produced,
-                    forms_returned: returned,
+                    forms_returned: returned
                   })
                 )}
                 columns={columns}
@@ -287,7 +287,7 @@ export const DetailsBox = forwardRef(
           ) : (
             <div id="course-details-comments" className="clearfix mt-2">
               <div className="list">
-                {semesterList.map((sem) => (
+                {semesterList.map(sem => (
                   <div
                     key={sem}
                     onClick={() => setSelectedSemester(sem)}
@@ -306,9 +306,9 @@ export const DetailsBox = forwardRef(
                         ({ semester, comments }) =>
                           semester === selectedSemester && comments
                       )
-                      .map((info) => info.comments)
+                      .map(info => info.comments)
                       .join(", ") ||
-                    "This instructor does not have any comments for this course.",
+                    "This instructor does not have any comments for this course."
                 }}
               />
             </div>

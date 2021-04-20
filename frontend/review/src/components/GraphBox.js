@@ -74,11 +74,11 @@ const GraphTextContainer = styled.div`
   margin-bottom: 10px;
 
   @media (min-width: 768px) {
-    height: 140px;
+    height: 150px;
   }
 `;
 
-const genAverageData = (seriesData) => {
+const genAverageData = seriesData => {
   const averageData = [];
   const windowSize = 0.05;
   seriesData.map((point, index) => {
@@ -96,7 +96,7 @@ const genAverageData = (seriesData) => {
     const movingAverageVal = total / numInTotal;
     averageData.push({
       x: (xVal * 100).toFixed(2),
-      y: movingAverageVal.toFixed(2),
+      y: movingAverageVal.toFixed(2)
     });
   });
 
@@ -114,45 +114,45 @@ const genDemandChartData = (data, averageData) => {
         borderColor: EVAL_GRAPH_COLORS.DEMAND_LINE_BORDER_COLOR,
         borderWidth: 3,
         fill: false,
-        linear: true,
+        linear: true
       },
       {
         type: "line",
         label: "Registration Difficulty",
-        data: data.map((point) => {
+        data: data.map(point => {
           return {
             x: (point[0] * 100).toFixed(2),
-            y: Math.round(point[1] * 100) / 100,
+            y: Math.round(point[1] * 100) / 100
           };
         }),
         backgroundColor: EVAL_GRAPH_COLORS.DEMAND_FILL_BACKGROUND_COLOR,
         borderWidth: 0,
-        steppedLine: true,
-      },
-    ],
+        steppedLine: true
+      }
+    ]
   };
 };
 
 //Percentage of Sections Open Chart Data
-const genPercentChartData = (data) => {
+const genPercentChartData = data => {
   return {
     datasets: [
       {
         type: "line",
         label: "% of Sections Open",
-        data: data.map((point) => {
+        data: data.map(point => {
           return {
             x: Math.round((point[0] * 100).toFixed()),
-            y: Math.round(point[1] * 100),
+            y: Math.round(point[1] * 100)
           };
         }),
         borderColor: EVAL_GRAPH_COLORS.PERCENT_LINE_BORDER_COLOR,
         backgroundColor: EVAL_GRAPH_COLORS.PERCENT_FILL_BACKGROUND_COLOR,
         borderWidth: 3,
         fill: true,
-        steppedLine: true,
-      },
-    ],
+        steppedLine: true
+      }
+    ]
   };
 };
 
@@ -186,22 +186,22 @@ const demandChartOptions = {
         }`,
       label: () => {
         return;
-      },
-    },
+      }
+    }
   },
   hover: {
     mode: "nearest",
-    intersect: true,
+    intersect: true
   },
   elements: {
     point: {
-      radius: 0,
-    },
+      radius: 0
+    }
   },
   legend: {
     display: true,
     position: "bottom",
-    align: "start",
+    align: "start"
   },
   scales: {
     autoSkip: true,
@@ -216,14 +216,14 @@ const demandChartOptions = {
           maxRotation: 0,
           minRotation: 0,
           max: 100,
-          callback: (value) => value + "%",
+          callback: value => value + "%"
         },
 
         scaleLabel: {
           display: true,
-          labelString: "Percent Through Add/Drop Period",
-        },
-      },
+          labelString: "Percent Through Add/Drop Period"
+        }
+      }
     ],
     yAxes: [
       {
@@ -234,11 +234,11 @@ const demandChartOptions = {
           maxRotation: 0,
           minRotation: 0,
           min: 0,
-          max: 1,
-        },
-      },
-    ],
-  },
+          max: 1
+        }
+      }
+    ]
+  }
 };
 
 const percentSectionChartOptions = {
@@ -268,22 +268,22 @@ const percentSectionChartOptions = {
         }%`,
       label: () => {
         return;
-      },
-    },
+      }
+    }
   },
   hover: {
     mode: "nearest",
-    intersect: true,
+    intersect: true
   },
   elements: {
     point: {
-      radius: 0,
-    },
+      radius: 0
+    }
   },
   legend: {
     display: true,
     position: "bottom",
-    align: "start",
+    align: "start"
   },
   scales: {
     autoSkip: true,
@@ -298,14 +298,14 @@ const percentSectionChartOptions = {
           maxRotation: 0,
           minRotation: 0,
           max: 100,
-          callback: (value) => value + "%",
+          callback: value => value + "%"
         },
 
         scaleLabel: {
           display: true,
-          labelString: "Percent Through Add/Drop Period",
-        },
-      },
+          labelString: "Percent Through Add/Drop Period"
+        }
+      }
     ],
     yAxes: [
       {
@@ -318,11 +318,11 @@ const percentSectionChartOptions = {
           minRotation: 0,
           min: 0,
           max: 100,
-          callback: (value) => value + "%",
-        },
-      },
-    ],
-  },
+          callback: value => value + "%"
+        }
+      }
+    ]
+  }
 };
 
 const calcApproxDate = (startDateString, endDateString, percent) => {
@@ -334,7 +334,7 @@ const calcApproxDate = (startDateString, endDateString, percent) => {
 
   return approxDate.toLocaleDateString("en-US", {
     month: "short",
-    day: "numeric",
+    day: "numeric"
   });
 };
 
@@ -465,8 +465,7 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
                     Percent of Sections Open During Historical Add/Drop Periods
                   </ChartTitle>
                   <ChartDescription>
-                    Based on section status data during add/drop periods
-                    from
+                    Based on section status data during add/drop periods from
                     {isAverage ? ` ${percentNumSemesters} semesters since` : ""}
                     {" " + toNormalizedSemester(percentSemester)}
                   </ChartDescription>

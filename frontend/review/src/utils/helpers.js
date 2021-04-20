@@ -1,17 +1,17 @@
 import { DEFAULT_COLUMNS } from "../constants";
 
-export const capitalize = (str) =>
-  str.replace(/(?:^|\s)\S/g, (e) => e.toUpperCase());
+export const capitalize = str =>
+  str.replace(/(?:^|\s)\S/g, e => e.toUpperCase());
 
 export function orderColumns(cols) {
   const colSet = new Set(cols);
   const fixedCols = [
     "latest_semester",
     "num_semesters",
-    ...DEFAULT_COLUMNS,
-  ].filter((a) => colSet.has(a));
+    ...DEFAULT_COLUMNS
+  ].filter(a => colSet.has(a));
   const fixedColsSet = new Set(fixedCols);
-  return fixedCols.concat(cols.filter((a) => !fixedColsSet.has(a)).sort());
+  return fixedCols.concat(cols.filter(a => !fixedColsSet.has(a)).sort());
 }
 
 export function getColumnName(key) {
@@ -56,15 +56,15 @@ export function convertInstructorName(name) {
 
 export const getCartCourses = () =>
   Object.keys(localStorage)
-    .filter((k) => !k.startsWith("meta-"))
-    .map((k) => {
+    .filter(k => !k.startsWith("meta-"))
+    .map(k => {
       const out = JSON.parse(localStorage.getItem(k));
       if (typeof out !== "object") {
         return null;
       }
       const typeDict = {};
       if (typeof out.info !== "undefined") {
-        out.info.forEach((v) => {
+        out.info.forEach(v => {
           typeDict[v.category] = v;
         });
         out.info = typeDict;
@@ -72,9 +72,9 @@ export const getCartCourses = () =>
       out.course = k;
       return out;
     })
-    .filter((a) => a !== null);
+    .filter(a => a !== null);
 
-export const toNormalizedSemester = (sem) => {
+export const toNormalizedSemester = sem => {
   const year = sem.slice(0, 4);
   const code = sem.slice(4);
 

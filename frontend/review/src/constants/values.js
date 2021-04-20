@@ -3,7 +3,7 @@ export const DEFAULT_COLUMNS = [
   "rCourseQuality",
   "rInstructorQuality",
   "rDifficulty",
-  "rWorkRequired",
+  "rWorkRequired"
 ];
 
 // All column names inherent to the data provided by the ISC
@@ -19,12 +19,12 @@ export const ALL_DATA_COLUMNS = [
   "rStimulateInterest",
   "rTAQuality",
   "rRecommendMajor",
-  "rRecommendNonMajor",
+  "rRecommendNonMajor"
 ];
 
 export const PERCENTAGE_COLUMNS = [
   "rFinalEnrollmentPercentage",
-  "rPercentOpen",
+  "rPercentOpen"
 ];
 
 export const COLUMN_FULLNAMES = {
@@ -39,7 +39,7 @@ export const COLUMN_FULLNAMES = {
   rStimulateInterest: "Ability to Stimulate Interest",
   rTAQuality: "TA Quality",
   rRecommendMajor: "Recommend for Majors",
-  rRecommendNonMajor: "Recommend for Non-Majors",
+  rRecommendNonMajor: "Recommend for Non-Majors"
 };
 
 export const COLUMN_SHORTNAMES = {
@@ -54,5 +54,5 @@ export const COLUMN_SHORTNAMES = {
   rStimulateInterest: "Interest",
   rTAQuality: "TA Quality",
   rRecommendMajor: "Major",
-  rRecommendNonMajor: "Non-Major",
+  rRecommendNonMajor: "Non-Major"
 };
