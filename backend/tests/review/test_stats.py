@@ -13,6 +13,7 @@ from courses.models import Instructor, Section
 from courses.util import get_add_drop_period, invalidate_current_semester_cache, record_update
 from PennCourses.settings.base import TIME_ZONE
 from review.models import Review
+from tests.courses.util import create_mock_data
 from tests.review.test_api import PCRTestMixin, create_review
 
 
@@ -103,6 +104,302 @@ def get_to_date_func(adp):
         return start + percent * duration
 
     return to_date
+
+
+class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
+    @classmethod
+    def setUpTestData(cls):
+        set_semester()
+        cls.instructor_name = "Instructor One"
+        create_review(
+            "ESE-120-001", TEST_SEMESTER, cls.instructor_name, {"instructor_quality": 3.5}
+        )
+        create_review("ESE-120-001", "2020C", cls.instructor_name, {"instructor_quality": 2})
+        cls.ESE_120_001_TEST_SEMESTER_id = Section.objects.get(
+            full_code="ESE-120-001", course__semester=TEST_SEMESTER
+        ).id
+        cls.ESE_120_001_2020C_id = Section.objects.get(
+            full_code="ESE-120-001", course__semester="2020C"
+        ).id
+        course, section = create_mock_data("ESE-120-001", TEST_CURRENT_SEMESTER)
+        section.capacity = 100
+        section.save()
+        cls.current_sem_adp = get_add_drop_period(TEST_CURRENT_SEMESTER)
+        cls.adp = get_add_drop_period(TEST_SEMESTER)
+        AddDropPeriod(semester="2020C").save()
+        cls.old_adp = get_add_drop_period("2020C")
+        cls.average_instructor_quality = (2 + 3.5) / 2
+        cls.recent_instructor_quality = 3.5
+        cls.old_instructor_quality = 2
+        old_status = "O"
+        new_status = "C"
+        start, end, duration = get_start_end_duration(cls.adp)
+        for date in [start + i * duration / 5 for i in range(1, 5)] + [
+            start + 0.81 * duration,
+            start + 0.82 * duration,
+        ]:
+            # O[.2]C[.4]O[.6]C[.8]O[.81]C[.82]O
+            record_update(
+                "ESE-120-001",
+                TEST_SEMESTER,
+                old_status,
+                new_status,
+                False,
+                dict(),
+                created_at=date,
+            )
+            old_status, new_status = new_status, old_status
+        cls.recent_percent_open_plot = [
+            (0, 1),
+            (0.2, 0.0),
+            (0.4, 1),
+            (0.6, 0.0),
+            (0.8, 1),
+            (0.81, 0),
+            (0.82, 1),
+            (1, 1),
+        ]
+        cls.recent_percent_open = 3 / 5 - 0.01
+        old_status = "C"
+        new_status = "O"
+        start, end, duration = get_start_end_duration(cls.old_adp)
+        for date in [start + i * duration / 4 for i in range(1, 4)]:
+            # C[.25]O[.5]C[.75]O
+            record_update(
+                "ESE-120-001", "2020C", old_status, new_status, False, dict(), created_at=date,
+            )
+            old_status, new_status = new_status, old_status
+        cls.average_percent_open_plot = [
+            (0, 0.5),
+            (0.2, 0),
+            (0.25, 0.5),
+            (0.4, 1),
+            (0.5, 0.5),
+            (0.6, 0.0),
+            (0.75, 0.5),
+            (0.8, 1),
+            (0.81, 0.5),
+            (0.82, 1),
+            (1, 1),
+        ]
+        cls.average_percent_open = (1 / 2 + 3 / 5 - 0.01) / 2
+        cls.old_percent_open = 1 / 2
+        to_date = get_to_date_func(cls.adp)
+        # O[.2]C[.4]O[.6]C[.8]O[.81]C[.82]O
+        registration_list_TS = [
+            {"created_at": to_date(0.1), "cancelled_at": to_date(0.19), "cancelled": True},
+            {
+                "created_at": to_date(0.15),
+                "notification_sent_at": to_date(0.4),
+                "notification_sent": True,
+            },
+            {
+                "created_at": to_date(0.45),
+                "notification_sent_at": to_date(0.6),
+                "notification_sent": True,
+            },
+            {"created_at": to_date(0.61), "deleted_at": to_date(0.79), "deleted": True},
+        ]
+        set_registrations(cls.ESE_120_001_TEST_SEMESTER_id, registration_list_TS)
+        cls.recent_pca_demand_plot = [
+            (0, 0.0),
+            (0.2, 0.5),
+            (0.4, 0.0),
+            (0.6, 0.5),
+            (0.8, 0.0),
+            (0.81, 0.5),
+            (0.82, 0.0),
+        ]
+        to_date = get_to_date_func(cls.old_adp)
+        # C[.25]O[.5]C[.75]O
+        registration_list_2020C = [
+            {
+                "created_at": to_date(0.1001),
+                "notification_sent_at": to_date(0.25),
+                "notification_sent": True,
+            },
+            {
+                "created_at": to_date(0.51),
+                "cancelled_at": to_date(0.52),
+                "deleted_at": to_date(0.53),
+                "deleted": True,
+            },
+            {"created_at": to_date(0.76), "deleted_at": to_date(0.77), "deleted": True},
+        ]
+        set_registrations(cls.ESE_120_001_2020C_id, registration_list_2020C)
+        cls.average_pca_demand_plot = [
+            (0, 0.0),
+            (0.1001, 0.25),
+            (0.2, 0.5),
+            (0.25, 0.25),
+            (0.4, 0.0),
+            (0.5, 0.25),
+            (0.6, 0.5),
+            (0.75, 0.25),
+            (0.8, 0.0),
+            (0.81, 0.25),
+            (0.82, 0.0),
+        ]
+
+        cls.recent_num_updates = 3
+        cls.average_num_updates = (3 + 2) / 2
+        cls.old_num_updates = 2
+        recent_review = Review.objects.get(section_id=cls.ESE_120_001_TEST_SEMESTER_id)
+        recent_review.enrollment = 80
+        recent_review.save()
+        test_sem_class = get_sec_by_id(cls.ESE_120_001_TEST_SEMESTER_id)
+        test_sem_class.capacity = 100
+        test_sem_class.save()
+        average_review = Review.objects.get(section_id=cls.ESE_120_001_2020C_id)
+        average_review.enrollment = 99
+        average_review.save()
+        old_sem_class = get_sec_by_id(cls.ESE_120_001_2020C_id)
+        old_sem_class.capacity = 100
+        old_sem_class.save()
+        cls.recent_enrollment_pct = 80 / 100
+        cls.average_enrollment_pct = (80 / 100 + 99 / 100) / 2
+        cls.old_enrollment_pct = 99 / 100
+
+        recompute_demand_distribution_estimates(
+            semesters=TEST_CURRENT_SEMESTER + "," + TEST_SEMESTER + "," + "2020C"
+        )
+
+        local_tz = gettz(TIME_ZONE)
+        cls.current_add_drop_period = {
+            "start": cls.current_sem_adp.estimated_start.astimezone(tz=local_tz),
+            "end": cls.current_sem_adp.estimated_end.astimezone(tz=local_tz),
+        }
+        cls.recent_pca_demand_plot_since_semester = TEST_SEMESTER
+        cls.average_pca_demand_plot_since_semester = "2020C"
+        cls.recent_pca_demand_plot_num_semesters = 1
+        cls.average_pca_demand_plot_num_semesters = 2
+        cls.recent_percent_open_plot_since_semester = TEST_SEMESTER
+        cls.average_percent_open_plot_since_semester = "2020C"
+        cls.recent_percent_open_plot_num_semesters = 1
+        cls.average_percent_open_plot_num_semesters = 2
+
+    def setUp(self):
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+
+    def test_course(self):
+        subdict = {
+            **average(
+                self.average_instructor_quality,
+                self.average_enrollment_pct,
+                self.average_percent_open,
+                self.average_num_updates,
+            ),
+            **recent(
+                self.recent_instructor_quality,
+                self.recent_enrollment_pct,
+                self.recent_percent_open,
+                self.recent_num_updates,
+            ),
+        }
+        course_subdict = deepcopy(subdict)
+        for field in [
+            "pca_demand_plot",
+            "percent_open_plot",
+            "pca_demand_plot_since_semester",
+            "pca_demand_plot_num_semesters",
+            "percent_open_plot_since_semester",
+            "percent_open_plot_num_semesters",
+        ]:
+            course_subdict["average_reviews"][field] = getattr(self, "average_" + field)
+        for field in [
+            "pca_demand_plot",
+            "percent_open_plot",
+            "pca_demand_plot_since_semester",
+            "pca_demand_plot_num_semesters",
+            "percent_open_plot_since_semester",
+            "percent_open_plot_num_semesters",
+        ]:
+            course_subdict["recent_reviews"][field] = getattr(self, "recent_" + field)
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "ESE-120",
+            {**course_subdict, "instructors": {Instructor.objects.get().pk: subdict}},
+        )
+
+    def test_instructor(self):
+        subdict = {
+            **average(
+                self.average_instructor_quality,
+                self.average_enrollment_pct,
+                self.average_percent_open,
+                self.average_num_updates,
+            ),
+            **recent(
+                self.recent_instructor_quality,
+                self.recent_enrollment_pct,
+                self.recent_percent_open,
+                self.recent_num_updates,
+            ),
+        }
+        self.assertRequestContainsAppx(
+            "instructor-reviews",
+            Instructor.objects.get().pk,
+            {**subdict, "courses": {"ESE-120": subdict}},
+        )
+
+    def test_department(self):
+        subdict = {
+            **average(
+                self.average_instructor_quality,
+                self.average_enrollment_pct,
+                self.average_percent_open,
+                self.average_num_updates,
+            ),
+            **recent(
+                self.recent_instructor_quality,
+                self.recent_enrollment_pct,
+                self.recent_percent_open,
+                self.recent_num_updates,
+            ),
+        }
+        self.assertRequestContainsAppx(
+            "department-reviews", "ESE", {"courses": {"ESE-120": subdict}}
+        )
+
+    def test_history(self):
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["ESE-120", Instructor.objects.get().pk],
+            {
+                "sections": [
+                    rating(
+                        self.recent_instructor_quality,
+                        self.recent_enrollment_pct,
+                        self.recent_percent_open,
+                        self.recent_num_updates,
+                    ),
+                    rating(
+                        self.old_instructor_quality,
+                        self.old_enrollment_pct,
+                        self.old_percent_open,
+                        self.old_num_updates,
+                    ),
+                ]
+            },
+        )
+
+    def test_autocomplete(self):
+        self.assertRequestContainsAppx(
+            "review-autocomplete",
+            [],
+            {
+                "instructors": [
+                    {
+                        "title": self.instructor_name,
+                        "desc": "ESE",
+                        "url": f"/instructor/{Instructor.objects.get().pk}",
+                    }
+                ],
+                "courses": [{"title": "ESE-120", "desc": [""], "url": "/course/ESE-120",}],
+                "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
+            },
+        )
 
 
 class OneReviewTestCase(TestCase, PCRTestMixin):
