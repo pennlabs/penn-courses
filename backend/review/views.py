@@ -400,7 +400,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
                 )
                 .values("id")
                 .annotate(count=Count("id"))
-                .values("count")
+                .values("count")[:1]
             ),
             Value(0),
         ),
