@@ -494,7 +494,8 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                         "title": self.instructor_2_name,
                         "desc": "ESE",
                         "url": (
-                            "/instructor/" + Instructor.objects.get(name=self.instructor_2_name).pk
+                            "/instructor/"
+                            + str(Instructor.objects.get(name=self.instructor_2_name).pk)
                         ),
                     },
                 ],
