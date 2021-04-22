@@ -33,6 +33,7 @@ def fill_in_add_drop_periods(verbose=False):
         )
     for semester in missing_semesters:
         AddDropPeriod(semester=semester).save()
+    return all_semesters.union(missing_semesters)
 
 
 def load_add_drop_dates(verbose=False):

@@ -66,6 +66,9 @@ extra_metrics_section_filters = (
         | Q(course__semester=Subquery(Option.objects.filter(key="SEMESTER").values("value")[:1]))
     )  # Filter out sections from past semesters that do not have review data
 )
+extra_metrics_section_filters_no_current = extra_metrics_section_filters & Q(
+    course__semester__lt=Subquery(Option.objects.filter(key="SEMESTER").values("value")[:1])
+)
 
 
 @api_view(["GET"])
@@ -133,7 +136,9 @@ def course_reviews(request, course_code):
 
     # Compute set of sections to include in plot data
     filtered_sections = (
-        Section.objects.filter(extra_metrics_section_filters, course__full_code=course_code,)
+        Section.objects.filter(
+            extra_metrics_section_filters_no_current, course__full_code=course_code,
+        )
         .annotate(efficient_semester=F("course__semester"))
         .distinct()
     )

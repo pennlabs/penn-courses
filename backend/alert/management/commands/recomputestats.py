@@ -462,7 +462,7 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
-    fill_in_add_drop_periods(verbose=True)
+    semesters = fill_in_add_drop_periods(verbose=True).intersection(semesters)
     load_add_drop_dates(verbose=True)
     recompute_demand_distribution_estimates(
         semesters=semesters, semesters_precomputed=True, verbose=verbose
