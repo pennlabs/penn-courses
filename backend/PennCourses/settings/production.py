@@ -15,9 +15,6 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Allow production host headers
 ALLOWED_HOSTS = ["penncourseplan.com", "penncoursealert.com", "review.penncourses.org"]
 
-# Make sure SECRET_KEY is set to a secret in production
-# SECRET_KEY = os.environ.get("SECRET_KEY", None)  # TODO: remove after testing
-
 # Sentry settings
 SENTRY_URL = os.environ.get("SENTRY_URL", "")
 sentry_sdk.init(dsn=SENTRY_URL, integrations=[CeleryIntegration(), DjangoIntegration()])

@@ -20,7 +20,8 @@ export function getColumnName(key) {
     .split(/(?=[A-Z])/)
     .join(" ")
     .replace("T A", "TA")
-    .replace(/Recommend/g, "Rec.");
+    .replace(/Recommend/g, "Rec.")
+    .replace(" Percentage", "");
 }
 
 // Monotonically maps semesters to integer values - later semesters have higher numbers.

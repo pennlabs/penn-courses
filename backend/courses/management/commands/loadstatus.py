@@ -35,4 +35,5 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
+
         set_all_status(semester=kwargs["semester"])

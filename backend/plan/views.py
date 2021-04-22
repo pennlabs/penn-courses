@@ -191,12 +191,12 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     or see below for an explanation... TLDR: it is grandfathered in from the old version of PCP).
     The `name` is the name of the schedule (all names must be distinct for a single user in a
     single semester; otherwise the response will be a 400). The sections list must be a list of
-    objects with minimum fields `id` (dash-separated, e.g. "CIS-121-001") and `semester`
-    (5 character string, e.g. '2020A').  If any of the sections are invalid, a 404 is returned
+    objects with minimum fields `id` (dash-separated, e.g. `CIS-121-001`) and `semester`
+    (5 character string, e.g. `2020A`).  If any of the sections are invalid, a 404 is returned
     with data `{"detail": "One or more sections not found in database."}`.  If any two sections in
     the `sections` list have differing semesters, a 400 is returned.
 
-    Optionally, you can also include a `semester` field (5 character string, e.g. '2020A') in the
+    Optionally, you can also include a `semester` field (5 character string, e.g. `2020A`) in the
     posted object, which will set the academic semester which the schedule is planning.  If the
     `semester` field is omitted, the semester of the first section in the `sections` list will be
     used (or if the `sections` list is empty, the current semester will be used).  If the

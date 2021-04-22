@@ -1,17 +1,23 @@
 import logging
+from datetime import datetime
 from enum import Enum, auto
 from textwrap import dedent
 
 import phonenumbers  # library for parsing and formatting phone numbers.
+from dateutil.tz import gettz
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
-from django.db.models import Max, Q
+from django.db.models import Case, F, Max, Q, Value, When
+from django.db.models.functions import Extract
 from django.utils import timezone
+from django.utils.timezone import make_aware
 
 from alert.alerts import Email, PushNotification, Text
-from courses.models import Course, Section, UserProfile, string_dict_to_html
-from courses.util import get_course_and_section, get_current_semester
+from courses.models import Course, Section, StatusUpdate, UserProfile, string_dict_to_html
+from courses.util import get_add_drop_period, get_course_and_section, get_current_semester
+from PennCourses.settings.base import TIME_ZONE
 
 
 class RegStatus(Enum):
@@ -64,14 +70,15 @@ class Registration(models.Model):
     registration would send an alert when the section it is watching opens, we call it
     "active".  This rule is encoded in the is_active property.  You can also filter
     for active registrations by unpacking the static is_active_filter() method which returns a
-    dictionary (you cannot filter on a property). A Registration will send a close notification
+    dictionary that you can unpack into the kwargs of the filter method
+    (you cannot filter on a property). A Registration will send a close notification
     when the section it is watching closes, if and only if it has already sent an open alert,
     the user has enabled close notifications for that section, the Registration hasn't sent a
     close_notification before, is not cancelled, and it is not deleted.  If a registration would
     send a close notification when the section it is watching closes, we call it "waiting for
     close".  This rule is encoded in the is_waiting_for_close property.  You can also filter
-    for such registrations by unpacking the static is_waiting_for_close_filter() method which
-    returns a tuple of Q filters (you cannot filter on a property).
+    for such registrations by unpacking (with single *) the static is_waiting_for_close_filter()
+    method which returns a tuple of Q filters (you cannot filter on a property).
 
     After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a user field
     pointing to the user's Penn Labs Accounts User object.  In other words, we implemented a
@@ -125,6 +132,8 @@ class Registration(models.Model):
         ("PCP", "Penn Course Plan"),
         ("PCR", "Penn Course Review"),
         ("PM", "Penn Mobile"),
+        ("SCRIPT_PCN", "The loadregistrations_pcn shell command"),
+        ("SCRIPT_PCA", "The loadregistrations_pca shell command"),
     )
 
     source = models.CharField(
@@ -190,6 +199,7 @@ class Registration(models.Model):
     section = models.ForeignKey(
         Section,
         on_delete=models.CASCADE,
+        related_name="registrations",
         help_text="The section that the user registered to be notified about.",
     )
     cancelled = models.BooleanField(
@@ -332,18 +342,46 @@ class Registration(models.Model):
         Example:
             Registration.objects.filter(**Registration.is_active_filter())
         """
-        return {"notification_sent": False, "deleted": False, "cancelled": False}
+        return {
+            "notification_sent": False,
+            "deleted": False,
+            "cancelled": False,
+        }
 
     @property
     def is_active(self):
         """
-        True if the registration would send an alert hen the watched section changes to open,
-        False otherwise. This is equivalent to not(notification_sent or deleted or cancelled).
+        True if the registration would send an alert when the watched section changes to open,
+        False otherwise. This is equivalent to
+        [not(notification_sent or deleted or cancelled) and semester is current].
         """
-        for k, v in self.is_active_filter().items():
-            if getattr(self, k) != v:
+        for field, active_value in self.is_active_filter().items():
+            assert field != ""  # this should never fail
+            actual_value = getattr(self, field)
+            if actual_value != active_value:
                 return False
         return True
+
+    @property
+    def deactivated_at(self):
+        """
+        The datetime at which this registration was deactivated, if it is not active,
+        otherwise None. This checks all fields in the is_active definition which have a
+        corresponding field+"_at" datetime field, such as notification_sent_at,
+        deleted_at, or cancelled_at, and takes the minimum non-null datetime from these (or
+        returns null if they are all null).
+        """
+        if self.is_active:
+            return None
+        deactivated_dt = None
+        for field in self.is_active_filter().keys():
+            if hasattr(self, field + "_at"):
+                field_changed_at = getattr(self, field + "_at")
+                if deactivated_dt is None or (
+                    field_changed_at is not None and field_changed_at < deactivated_dt
+                ):
+                    deactivated_dt = field_changed_at
+        return deactivated_dt
 
     @staticmethod
     def is_waiting_for_close_filter():
@@ -419,17 +457,16 @@ class Registration(models.Model):
         column should tell them the last time they were alerted about that section).
         """
         return (
-            Registration.objects.filter(
-                user=self.user, section=self.section, notification_sent_at__isnull=False
-            )
+            self.section.registrations.filter(user=self.user, notification_sent_at__isnull=False)
             .aggregate(max_notification_sent_at=Max("notification_sent_at"))
             .get("max_notification_sent_at", None)
         )
 
     def __str__(self):
-        return "%s: %s" % (
-            (self.user.__str__() if self.user is not None else None) or self.email or self.phone,
-            self.section.__str__(),
+        return "%s: %s @ %s" % (
+            (str(self.user) if self.user is not None else None) or self.email or self.phone,
+            str(self.section),
+            str(self.created_at),
         )
 
     def validate_phone(self):
@@ -447,7 +484,7 @@ class Registration(models.Model):
             # if the phone number is unparseable, don't include it.
             self.phone = None
 
-    def save(self, *args, **kwargs):
+    def save(self, load_script=False, *args, **kwargs):
         """
         This save method converts the phone field to E164 format, or sets it to
         None if it is unparseable. Then, if the user field is not None, but either of the phone
@@ -462,7 +499,22 @@ class Registration(models.Model):
         case in which the chain is traversed to find the proper value for original_created_at is
         only for redundancy.
         It finally calls the normal save method with args and kwargs.
+        Asynchronously after the save completes successfully, if load_script is set to False
+        and the registration's semester is the current semester,
+        it updates the PcaDemandDistributionEstimate models and current_demand_distribution_estimate
+        cache to reflect the demand change if this registration was just created or deactivated.
         """
+        from alert.tasks import registration_update  # imported here to avoid circular imports
+
+        super().save(*args, **kwargs)
+        update_registration_volume = (
+            not load_script
+        ) and self.section.semester == get_current_semester()
+        if update_registration_volume:
+            try:
+                was_active = Registration.objects.get(id=self.id).is_active
+            except Registration.DoesNotExist:
+                was_active = False
         self.validate_phone()
         if self.user is not None:
             if self.email is not None:
@@ -479,13 +531,15 @@ class Registration(models.Model):
                 self.user.profile = user_data
                 self.user.save()
                 self.phone = None
-        super().save(*args, **kwargs)
         if self.original_created_at is None:
             if self.resubscribed_from is None:
                 self.original_created_at = self.created_at
             else:
                 self.original_created_at = self.get_original_registration_rec().created_at
         super().save()
+        if update_registration_volume:
+            is_now_active = self.is_active
+            registration_update.delay(self.section.id, was_active, is_now_active, self.updated_at)
 
     def alert(self, forced=False, sent_by="", close_notification=False):
         """
@@ -545,10 +599,10 @@ class Registration(models.Model):
 
     def resubscribe(self):
         """
-        Resubscribe for notifications. If the registration this is called on has had its
-        notification sent, a new registration is made. If it hasn't (or it is cancelled or
-        deleted), return the most recent registration in the resubscription chain which hasn't
-        been used yet.
+        Resubscribe for notifications. If the head of this registration's resubscribe chain
+        is active, just return that registration (don't create a new active registration
+        for no reason). Otherwise, add a new active registration as the new head of the
+        resubscribe chain.
 
         Resubscription is idempotent. No matter how many times you call it (without
         alert() being called on the registration), only one Registration model will
@@ -557,12 +611,7 @@ class Registration(models.Model):
         """
         most_recent_reg = self.get_most_current_rec()
 
-        if (
-            not most_recent_reg.notification_sent
-            and not most_recent_reg.cancelled
-            and not most_recent_reg.deleted
-        ):  # if a notification hasn't been sent on this recent one
-            # (and it hasn't been cancelled or deleted),
+        if most_recent_reg.is_active:  # if the head of this resub chain is active
             return most_recent_reg  # don't create duplicate registrations for no reason.
 
         new_registration = Registration(
@@ -628,6 +677,7 @@ class Registration(models.Model):
                 FROM
                     cte_resubscribes_backward;""",
             (self.id, self.id),  # do not add variables here that could cause vulnerabilities
+            # id is an integer (checked above), and therefore cannot be used for SQL injection
         )
 
     def get_most_current_sql(self):
@@ -730,17 +780,12 @@ def register_for_course(
             section=section, email=email_address, phone=phone, source=source
         )
         registration.validate_phone()
-        if Registration.objects.filter(
-            section=section,
-            email=email_address,
-            phone=registration.phone,
-            **Registration.is_active_filter()
+        if section.registrations.filter(
+            email=email_address, phone=registration.phone, **Registration.is_active_filter()
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
     else:
-        if Registration.objects.filter(
-            section=section, user=user, **Registration.is_active_filter()
-        ).exists():
+        if section.registrations.filter(user=user, **Registration.is_active_filter()).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
         if close_notification and not user.profile.email and not user.profile.push_notifications:
             return RegStatus.TEXT_CLOSE_NOTIFICATION, section.full_code, None
@@ -750,4 +795,389 @@ def register_for_course(
 
     registration.api_key = api_key
     registration.save()
+
     return RegStatus.SUCCESS, section.full_code, registration
+
+
+class PcaDemandDistributionEstimate(models.Model):
+    """
+    This model tracks/estimates changes in the distribution of
+    raw PCA demand ratios across all sections in a given semester.
+    Raw PCA demand (as opposed to "Relative PCA demand",
+    which maps demand values according to an estimated CDF function to a fixed range of [0,1])
+    is defined for any given section as (PCA registration volume)/(section capacity).
+    Note that capacity is not stored as a field, while volume is. We do not track capacity changes,
+    and for this reason, the recompute_demand_distribution_estimates function (in the recomputestats
+    management command script) should be run after each run of the registrarimport script,
+    in case capacity changes affect historical distributions.
+    """
+
+    semester = models.CharField(
+        max_length=5,
+        db_index=True,
+        help_text=dedent(
+            """
+        The semester of this demand distribution estimate (of the form YYYYx where x is
+        A [for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019.
+        """
+        ),
+    )
+
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        db_index=True,
+        help_text="The datetime at which the distribution estimates were updated.",
+    )
+
+    percent_through_add_drop_period = models.FloatField(
+        default=0,
+        help_text=(
+            "The percentage through the add/drop period at which this demand distribution "
+            "estimate change occurred. This percentage is constrained within the range [0,1]."
+        ),
+    )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
+    # and the save() method of PcaDemandDistributionEstimate
+
+    in_add_drop_period = models.BooleanField(
+        default=False,
+        help_text="Was this demand distribution estimate created during the add/drop period?",
+    )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
+    # and the save() method of PcaDemandDistributionEstimate
+
+    highest_demand_section = models.ForeignKey(
+        Section,
+        on_delete=models.CASCADE,
+        related_name="highest_demand_distribution_estimates",
+        help_text="A section with the highest raw demand value at this time.",
+    )  # It is necessary to define related_name explicitly to avoid related name clash
+    highest_demand_section_volume = models.IntegerField(
+        help_text="The registration volume of the highest_demand_section at this time."
+    )
+    lowest_demand_section = models.ForeignKey(
+        Section,
+        on_delete=models.CASCADE,
+        related_name="lowest_demand_distribution_estimates",
+        help_text="A section with the lowest raw demand value at this time.",
+    )  # It is necessary to define related_name explicitly to avoid related name clash
+    lowest_demand_section_volume = models.IntegerField(
+        help_text="The registration volume of the lowest_demand_section at this time."
+    )
+
+    csdv_gamma_param_alpha = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The fitted gamma distribution alpha parameter of all closed sections' raw demand "
+            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
+            "values'; this is a collection of the raw demand values of each closed section at "
+            "this time."
+        ),
+    )
+    csdv_gamma_param_loc = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The fitted gamma distribution loc parameter of all closed sections' raw demand "
+            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
+            "values'; this is a collection of the raw demand values of each closed section at "
+            "this time."
+        ),
+    )
+    csdv_gamma_param_scale = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The fitted gamma distribution beta parameter of all closed sections' raw demand "
+            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
+            "values'; this is a collection of the raw demand values of each closed section at "
+            "this time."
+        ),
+    )
+    csdv_gamma_fit_mean_log_likelihood = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The mean log likelihood of the fitted gamma distribution over all closed sections' "
+            "raw demand values at this time. The abbreviation 'csdv' stands for 'closed section "
+            "demand values'; this is a collection of the raw demand values of each closed section "
+            "at this time."
+        ),
+    )
+
+    csdv_mean = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The mean of all closed sections' raw demand values at this time. The "
+            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
+            "of the raw demand values of each closed section at this time."
+        ),
+    )
+    csdv_median = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The median of all closed sections' raw demand values at this time. The "
+            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
+            "of the raw demand values of each closed section at this time."
+        ),
+    )
+    csdv_75th_percentile = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=(
+            "The 75th percentile of all closed sections' raw demand values at this time. The "
+            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
+            "of the raw demand values of each closed section at this time."
+        ),
+    )
+
+    @property
+    def highest_raw_demand(self):
+        if (
+            self.highest_demand_section is None
+            or self.highest_demand_section.capacity is None
+            or self.highest_demand_section.capacity <= 0
+        ):
+            return None
+        return float(self.highest_demand_section_volume) / float(
+            self.highest_demand_section.capacity
+        )
+
+    @property
+    def lowest_raw_demand(self):
+        if (
+            self.lowest_demand_section is None
+            or self.lowest_demand_section.capacity is None
+            or self.lowest_demand_section.capacity <= 0
+        ):
+            return None
+        return float(self.lowest_demand_section_volume) / float(self.lowest_demand_section.capacity)
+
+    def save(self, *args, **kwargs):
+        """
+        This save method first gets the add/drop period object for this
+        PcaDemandDistributionEstimate object's semester (either by calling the get_add_drop_period
+        method or by using a passed-in add_drop_period kwarg, which can be used for efficiency in
+        bulk operations over PcaDemandDistributionEstimate objects).
+        """
+        if "add_drop_period" in kwargs:
+            add_drop_period = kwargs["add_drop_period"]
+            del kwargs["add_drop_period"]
+        else:
+            add_drop_period = get_add_drop_period(self.semester)
+        super().save(*args, **kwargs)
+        created_at = self.created_at
+        start = add_drop_period.estimated_start
+        end = add_drop_period.estimated_end
+        if created_at < start:
+            self.in_add_drop_period = False
+            self.percent_through_add_drop_period = 0
+        elif created_at > end:
+            self.in_add_drop_period = False
+            self.percent_through_add_drop_period = 1
+        else:
+            self.in_add_drop_period = True
+            self.percent_through_add_drop_period = (created_at - start) / (end - start)
+        super().save()
+
+    def __str__(self):
+        return f"PcaDemandDistributionEstimate {self.semester} @ {self.created_at}"
+
+
+def validate_add_drop_semester(semester):
+    """
+    Validate the passed-in string as a fall or spring semester, such as 2020A or 2021C.
+    """
+    if len(semester) != 5:
+        raise ValidationError(
+            f"Semester {semester} is invalid; valid semesters contain 5 characters."
+        )
+    if semester[4] not in ["A", "C"]:
+        raise ValidationError(f"Semester {semester} is invalid; valid semesters end in 'A' or 'C'.")
+    if not semester[:4].isnumeric():
+        raise ValidationError(
+            f"Semester {semester} is invalid; the 4-letter prefix of a valid semester is numeric."
+        )
+
+
+class AddDropPeriod(models.Model):
+    """
+    This model tracks the start and end date of the add drop period corresponding to
+    a semester (only fall or spring semesters are supported).
+    """
+
+    semester = models.CharField(
+        max_length=5,
+        db_index=True,
+        unique=True,
+        validators=[validate_add_drop_semester],
+        help_text=dedent(
+            """
+        The semester of this add drop period (of the form YYYYx where x is
+        A [for spring], or C [fall]), e.g. `2019C` for fall 2019.
+        """
+        ),
+    )
+    start = models.DateTimeField(
+        null=True, blank=True, help_text="The datetime at which the add drop period started."
+    )
+    end = models.DateTimeField(
+        null=True, blank=True, help_text="The datetime at which the add drop period ended."
+    )
+
+    # estimated_start and estimated_end are filled in automatically in the overridden save method,
+    # so there is no need to maintain them (they are derivative fields of start and end).
+    # The only reason why they aren't properties is we sometimes need to use them in database
+    # filters / aggregations.
+    estimated_start = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            This field estimates the start of the add/drop period based on the semester
+            and historical data, even if the start field hasn't been filled in yet.
+            It equals the start of the add/drop period for this semester if it is explicitly set,
+            otherwise the most recent non-null start to an add/drop period, otherwise
+            (if none exist), estimate as April 5 @ 7:00am ET of the same year (for a fall semester),
+            or November 16 @ 7:00am ET of the previous year (for a spring semester).
+            """
+        ),
+    )
+    estimated_end = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            This field estimates the end of the add/drop period based on the semester
+            and historical data, even if the end field hasn't been filled in yet.
+            The end of the add/drop period for this semester, if it is explicitly set, otherwise
+        the most recent non-null end to an add/drop period, otherwise (if none exist),
+        estimate as October 12 @ 11:59pm ET (for a fall semester),
+        or February 22 @ 11:59pm ET (for a spring semester),
+        of the same year.
+            """
+        ),
+    )
+
+    def get_percent_through_add_drop(self, dt):
+        """
+        The percentage through this add/drop period at which this dt occured.
+        This percentage is constrained within the range [0,1]."
+        """
+        start = self.estimated_start
+        end = self.estimated_end
+        if dt < start:
+            return 0
+        if dt > end:
+            return 1
+        else:
+            return float((dt - start) / (end - start))
+
+    def save(self, *args, **kwargs):
+        """
+        This save method invalidates the add_drop_periods cache, sets the estimated_start and
+        estimated_end fields, updates the in_add_drop_period and percent_through_add_drop_period
+        fields of StatusUpdates and PcaDemandDistributionEstimates from this semester, and then
+        calls the overridden save method.
+        NOTE: make sure to run recompute_percent_open (in recompute_stats) for this semester
+        any time you change the add/drop period.
+        """
+        super().save(*args, **kwargs)
+        cache.delete("add_drop_periods")  # invalidate add_drop_periods cache
+        self.estimated_start = self.estimate_start()
+        self.estimated_end = self.estimate_end()
+        period = self.estimated_end - self.estimated_start
+        for model, sem_filter_key in [
+            (StatusUpdate, "section__course__semester"),
+            (PcaDemandDistributionEstimate, "semester"),
+        ]:
+            sem_filter = {sem_filter_key: self.semester}
+            model.objects.filter(**sem_filter).update(
+                in_add_drop_period=Case(
+                    When(
+                        Q(created_at__gte=self.estimated_start)
+                        & Q(created_at__lte=self.estimated_end),
+                        then=Value(True),
+                    ),
+                    default=Value(False),
+                    output_field=models.BooleanField(),
+                ),
+                percent_through_add_drop_period=Case(
+                    When(Q(created_at__lte=self.estimated_start), then=Value(0),),
+                    When(Q(created_at__gte=self.estimated_end), then=Value(1)),
+                    default=(
+                        Extract(F("created_at"), "epoch") - Value(self.estimated_start.timestamp())
+                    )
+                    / Value(period.total_seconds()),
+                    output_field=models.FloatField(),
+                ),
+            )
+        super().save()
+
+    def estimate_start(self):
+        """
+        The start of the add/drop period for this semester, if it is explicitly set, otherwise
+        the most recent non-null start to an add/drop period, otherwise (if none exist),
+        estimate as April 5 @ 7:00am ET of the same year (for a fall semester),
+        or November 16 @ 7:00am ET of the previous year (for a spring semester).
+        """
+        if self.start is None:
+            last_start = (
+                AddDropPeriod.objects.filter(
+                    start__isnull=False, semester__endswith=str(self.semester)[4]
+                )
+                .order_by("-semester")
+                .first()
+            )
+            if str(self.semester)[4] == "C":  # fall semester
+                s_year = int(str(self.semester)[:4])
+                s_month = 4
+                s_day = 5
+            else:  # spring semester
+                s_year = int(str(self.semester)[:4]) - 1
+                s_month = 11
+                s_day = 16
+            if last_start is None:
+                tz = gettz(TIME_ZONE)
+                return make_aware(
+                    datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M"),
+                    timezone=tz,
+                )
+            return last_start.start.replace(year=s_year)
+        return self.start
+
+    def estimate_end(self):
+        """
+        The end of the add/drop period for this semester, if it is explicitly set, otherwise
+        the most recent non-null end to an add/drop period, otherwise (if none exist),
+        estimate as October 12 @ 11:59pm ET (for a fall semester),
+        or February 22 @ 11:59pm ET (for a spring semester),
+        of the same year.
+        """
+        if self.end is None:
+            last_end = (
+                AddDropPeriod.objects.filter(
+                    end__isnull=False, semester__endswith=str(self.semester)[4]
+                )
+                .order_by("-semester")
+                .first()
+            )
+            e_year = int(str(self.semester)[:4])
+            if last_end is None:
+                if str(self.semester)[4] == "C":  # fall semester
+                    e_month = 10
+                    e_day = 12
+                else:  # spring semester
+                    e_month = 2
+                    e_day = 22
+                tz = gettz(TIME_ZONE)
+                return make_aware(
+                    datetime.strptime(f"{e_year}-{e_month}-{e_day} 23:59", "%Y-%m-%d %H:%M"),
+                    timezone=tz,
+                )
+            return last_end.end.replace(year=e_year)
+        return self.end
+
+    def __str__(self):
+        return f"AddDropPeriod {self.semester}"

@@ -3,13 +3,14 @@ import logging
 import os
 from datetime import datetime
 
-import pytz
+from dateutil.tz import gettz
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import F
 from django.utils.timezone import make_aware
 from tqdm import tqdm
 
+from alert.management.commands.recomputestats import recompute_demand_distribution_estimates
 from alert.models import Registration, Section
 from PennCourses.settings.base import TIME_ZONE
 
@@ -110,7 +111,7 @@ class Command(BaseCommand):
                         if dt_string is None or dt_string == "" or dt_string == "None":
                             return None
                         dt = datetime.strptime(dt_string, "%Y-%m-%d %H:%M:%S.%f %Z")
-                        return make_aware(dt, timezone=pytz.timezone(TIME_ZONE), is_dst=None)
+                        return make_aware(dt, timezone=gettz(TIME_ZONE), is_dst=None)
 
                     registration_dict = dict()  # fields to unpack into Registration initialization
                     registration_dict["section_id"] = sections_map[full_code, semester]
@@ -125,9 +126,9 @@ class Command(BaseCommand):
                     registration_dict["deleted_at"] = extract_date(row[11])
 
                     registration = Registration(**registration_dict)
-                    registration.save()
+                    registration.save(load_script=True)
                     registration.created_at = registration_dict["created_at"]
-                    registration.save()
+                    registration.save(load_script=True)
                     id_corrections[original_id] = registration.id
                     registrations.append((registration, original_id, resubscribed_from_id))
 
@@ -141,3 +142,8 @@ class Command(BaseCommand):
             Registration.objects.bulk_update(to_save, ["resubscribed_from_id"])
 
             print(f"Done! {len(registrations)} registrations added to database.")
+
+            print(
+                f"Recomputing PCA Demand Distribution Estimates for {len(semesters)} semesters..."
+            )
+            recompute_demand_distribution_estimates(semesters=",".join(semesters), verbose=True)

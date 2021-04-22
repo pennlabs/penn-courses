@@ -1,10 +1,11 @@
 @charset "utf-8";
-
 body {
     background-color: #fafcff;
 }
 
-a, p, span {
+a,
+p,
+span {
     font-family: Lato, Helvetica, sans-serif;
 }
 
@@ -12,12 +13,13 @@ p {
     margin-bottom: 0;
 }
 
-th, td {
+th,
+td {
     vertical-align: middle;
 }
 
 div {
-    position:relative;
+    position: relative;
 }
 
 body {
@@ -49,7 +51,7 @@ body {
     flex-direction: column;
 }
 
-.sidebar-col > .box {
+.sidebar-col>.box {
     height: 100%;
 }
 
@@ -115,49 +117,50 @@ body {
 }
 
 .btn-primary {
-    background-color: #84B8BA;
+    background-color: #84b8ba;
     color: white;
-    border: 1px solid #84B8BA;
+    border: 1px solid #84b8ba;
 }
 
 .btn-sub-primary {
-    background-color: #ABAAF1;
+    background-color: #abaaf1;
     color: white;
-    border: 1px solid #ABAAF1;
+    border: 1px solid #abaaf1;
 }
 
 .btn-sub-primary:hover {
-    background-color: #C5C4FF;
-    border-color: #C5C4FF;
+    background-color: #c5c4ff;
+    border-color: #c5c4ff;
 }
 
 .btn-sub-secondary {
-    color: #ABAAF1;
+    color: #abaaf1;
     background-color: white;
-    border: 1px solid #ABAAF1;
+    border: 1px solid #abaaf1;
 }
 
 .btn-sub-secondary:hover {
-    color: #C5C4FF;
-    border-color: #C5C4FF;
+    color: #c5c4ff;
+    border-color: #c5c4ff;
 }
 
-.btn-primary:hover, .show>.btn-primary.dropdown-toggle {
-    background-color: #9ED2D4;
+.btn-primary:hover,
+.show>.btn-primary.dropdown-toggle {
+    background-color: #9ed2d4;
     color: white;
-    border: 1px solid #9ED2D4;
+    border: 1px solid #9ed2d4;
 }
 
 .btn-secondary {
     background-color: white;
-    color: #84B8BA;
-    border: 1px solid #84B8BA;
+    color: #84b8ba;
+    border: 1px solid #84b8ba;
 }
 
 .btn-secondary:hover {
     background-color: white;
-    color: #9ED2D4;
-    border: 1px solid #9ED2D4;
+    color: #9ed2d4;
+    border: 1px solid #9ed2d4;
 }
 
 .btn-action {
@@ -167,19 +170,21 @@ body {
 }
 
 .btn-action:hover {
-    background-color: #84B8BA;
+    background-color: #84b8ba;
     color: white;
 }
 
-.btn-action:focus, .btn-primary:focus {
+.btn-action:focus,
+.btn-primary:focus {
     color: white;
 }
 
 .btn-secondary:focus {
-    color: #84B8BA;
+    color: #84b8ba;
 }
 
-.btn:hover img, .btn:focus img {
+.btn:hover img,
+.btn:focus img {
     opacity: 70%;
 }
 
@@ -213,6 +218,7 @@ body {
     margin-right: 10px;
     color: #ccc;
 }
+
 #cart:hover {
     color: #888;
     cursor: pointer;
@@ -242,31 +248,36 @@ body {
 }
 
 input {
-    font-family:Verdana, Geneva, sans-serif;
-    font-size:16px;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 16px;
 }
 
 #title {
     color: #90b8cb;
     margin-top: 80px;
 }
+
 .courseCartHeader {
     font-size: 2em;
 }
+
 .courseCartDesc {
     max-width: 650px;
     margin-top: 5px;
     margin-bottom: 30px;
     color: #b2b2b2;
 }
+
 #linkbar {
-    margin-top:18px;
-    text-align:right;
+    margin-top: 18px;
+    text-align: right;
     margin-left: 40px;
 }
+
 #linkbar a {
     border-bottom: none;
 }
+
 #linkbar a,
 #linkbar span {
     display: inline-block;
@@ -276,19 +287,23 @@ input {
     float: right;
     margin-top: 16px;
 }
+
 #cartIcon {
     color: #646464;
     margin-left: 10px;
     font-size: 23px;
     padding-top: 2px;
 }
+
 #cartIcon:hover {
     color: #90b8cb;
     cursor: pointer;
 }
+
 #cartIcon {
     text-decoration: none;
 }
+
 
 /***** BANNER *****/
 
@@ -298,15 +313,18 @@ input {
     margin-bottom: 0px;
     font-weight: 500;
 }
+
 #banner-info .subtitle {
     font-size: 20px;
     letter-spacing: -0.5px;
     font-weight: normal;
     margin-bottom: 0;
 }
+
 #banner-info .nowrap {
     white-space: nowrap;
 }
+
 #banner-info p.desc {
     line-height: 150%;
     margin-bottom: 15px;
@@ -314,63 +332,74 @@ input {
     font-size: 15px;
     letter-spacing: -0.3px;
 }
+
 .scorebox.course {
     background-color: #6274f1;
 }
+
 .scorebox.instructor {
     background-color: #ffc107;
 }
+
 .scorebox.difficulty {
     background-color: #76bf96;
 }
+
 .scorebox.workload {
     background-color: #df5d56;
 }
 
 .scorebox.rating-bad {
-    background-color: #FFC107;
+    background-color: #ffc107;
 }
 
 .scorebox.rating-okay {
-    background-color: #6274F1;
+    background-color: #6274f1;
 }
 
 .scorebox.rating-good {
-    background-color: #76BF96;
+    background-color: #76bf96;
 }
 
 .courseCartRow {
     float: none;
 }
+
 .scoredesc {
     margin-top: 15px;
     padding-bottom: 4px;
     margin-bottom: 9px;
     border-bottom: 1px solid #dbdbdb;
 }
-.courseCartRow > .scorebox {
+
+.courseCartRow>.scorebox {
     width: 100px;
     height: 100px;
 }
-.courseCartRow > .scorebox > .desc {
+
+.courseCartRow>.scorebox>.desc {
     font-size: 15px;
     margin-top: -5px;
     color: white;
 }
-.courseCartRow > .scorebox > .num {
+
+.courseCartRow>.scorebox>.num {
     margin-top: 5px;
     font-size: 3em;
     color: white;
 }
+
 .scoredesc .title {
     display: inline-block;
     font-size: 17px;
 }
+
 .scoredesc .subtitle {
     display: inline-block;
     font-size: 15px;
     color: #868686;
 }
+
 .scorebox {
     display: inline-block;
     margin-left: 5px;
@@ -379,22 +408,26 @@ input {
     width: 70px;
     border-radius: 4px;
     text-align: center;
-    background: rgb(255,255,255);
+    background: rgb(255, 255, 255);
 }
+
 .scorebox .num {
     color: white;
     margin-top: 16px;
     font-size: 25px;
 }
+
 .scorebox .desc {
-    font-size:15px;
+    font-size: 15px;
     letter-spacing: -0.3px;
     margin-top: 20px;
 }
 
+
 /***** CONTENT-TABLE *****/
 
-#course-dropdown, #course-details-dropdown {
+#course-dropdown,
+#course-details-dropdown {
     top: -2px;
     left: -5px;
 }
@@ -419,7 +452,7 @@ input {
 }
 
 #course-details-comments .list div.selected {
-    background-color: #ABAAF1;
+    background-color: #abaaf1;
     color: white;
 }
 
@@ -443,7 +476,7 @@ input {
     overflow-y: auto !important;
 }
 
-.ReactTable .rt-tr:hover {
+.ReactTable .rt-tr:not(.ignore-select):hover {
     background-color: #eeeeee;
     cursor: pointer;
 }
@@ -453,7 +486,7 @@ input {
 }
 
 .ReactTable .rt-tr.selected:hover {
-    background-color: #E6EDED;
+    background-color: #e6eded;
 }
 
 .ReactTable .rt-thead {
@@ -462,7 +495,7 @@ input {
 
 .table-search::after {
     position: absolute;
-    content: '\f002';
+    content: "\f002";
     top: 0.3rem;
     right: 8px;
     color: #ccc;
@@ -473,38 +506,41 @@ input {
 }
 
 .lower {
-    color: #6274F1;
+    color: #6274f1;
 }
 
 .higher {
-    color: #76BF96;
+    color: #76bf96;
 }
 
 #course-details {
     flex: 1;
 }
 
-#course-table_info, #course-details-table_info {
+#course-table_info,
+#course-details-table_info {
     color: #b2b2b2;
 }
 
 #course-table {
-    width:100%;
-    position:relative;
+    width: 100%;
+    position: relative;
 }
 
-#content .dataTable thead th, #content table.dataTable.no-footer {
+#content .dataTable thead th,
+#content table.dataTable.no-footer {
     border-bottom: none;
 }
+
 #course-table th {
     border-bottom: 2px solid #636363;
-    font-weight:bold;
+    font-weight: bold;
     color: rgb(102, 146, 161);
     padding: 10px 5px;
 }
 
 #course-details-table th {
-    color: #ABAAF1;
+    color: #abaaf1;
     padding: 10px 5px;
 }
 
@@ -516,63 +552,78 @@ input {
 #section-table {
     width: 100%;
 }
+
 #section-table td {
-    padding:5px 5px;
+    padding: 5px 5px;
     font-size: 12px;
-    border-bottom-color: #CCC;
+    border-bottom-color: #ccc;
 }
+
 #section-table .sec_th {
-    border-bottom: 2px solid #CCC;
-    font-weight:bold;
+    border-bottom: 2px solid #ccc;
+    font-weight: bold;
 }
+
 #section-table td.sec_td_hidden {
     padding: 20px 10px;
 }
-#section-table .sec_td_hidden p{
-    line-height:150%;
-    margin-bottom:0px;
+
+#section-table .sec_td_hidden p {
+    line-height: 150%;
+    margin-bottom: 0px;
 }
+
 
 /***** FOOTER *****/
 
 #footer {
-    margin:15px 0px;
+    margin: 15px 0px;
     width: 100%;
 }
+
 #footer a {
-    border:none;
+    border: none;
 }
+
 #footer-inner {
     padding-bottom: 15px;
-    text-align:center;
-    font-size:0.8em;
+    text-align: center;
+    font-size: 0.8em;
 }
+
 #copyright {
-    margin-top:5px;
+    margin-top: 5px;
 }
+
 
 /*
 We used to have different templates for faq and about but merged them into static.
 The result is this, which is a little unclean, but it works.
  */
+
 #staff span.title {
-    color:#636363;
-    font-style:italic;
+    color: #636363;
+    font-style: italic;
 }
+
 #faqs p.question {
     color: #636363;
     font-size: 1.3em;
-    margin-bottom:8px;
+    margin-bottom: 8px;
 }
+
 #faqs p.answer {
-    margin-bottom:8px;
+    margin-bottom: 8px;
 }
+
 #faqs div {
     margin-bottom: 25px;
 }
+
 #faqlinks ul {
     list-style: none inside none;
 }
+
 #faqlinks li {
     list-style-type: none;
     list-style-image: none;
@@ -587,12 +638,14 @@ li.average {
     text-align: center;
     margin-bottom: 1px;
 }
+
 .professorList {
     list-style-type: none;
     padding-left: 0;
     margin-bottom: 0;
 }
-.professorList > li > button {
+
+.professorList>li>button {
     width: 100%;
     border: 1px solid #b2b2b2;
     color: #b2b2b2;
@@ -602,21 +655,26 @@ li.average {
     background-color: transparent;
     font-family: Lato, Helvetica, sans-serif;
 }
-.professorList > li {
+
+.professorList>li {
     margin-bottom: 5px;
 }
-.professorList > li:last-child {
+
+.professorList>li:last-child {
     margin-bottom: 0;
 }
-.professorList > li > button:hover {
-    background-color: #84B8BA;
-    border-color: #84B8BA;
+
+.professorList>li>button:hover {
+    background-color: #84b8ba;
+    border-color: #84b8ba;
     color: white;
 }
-.professorList > li > button:focus {
+
+.professorList>li>button:focus {
     outline: 0;
 }
-.professorList > tbody > tr > td > button {
+
+.professorList>tbody>tr>td>button {
     color: #b2b2b2;
     width: 27px;
     font-size: 80%;
@@ -628,24 +686,31 @@ li.average {
     cursor: pointer;
     font-family: Lato, Helvetica, sans-serif;
 }
-.professorList > tbody > tr > td > button:hover, .professorList > tbody > tr > td > button:focus, .professorList > tbody > tr > td > button.selected {
+
+.professorList>tbody>tr>td>button:hover,
+.professorList>tbody>tr>td>button:focus,
+.professorList>tbody>tr>td>button.selected {
     outline: none;
-    background-color: #84B8BA;
-    border-color: #84B8BA;
+    background-color: #84b8ba;
+    border-color: #84b8ba;
     color: white;
 }
-.professorList > tbody > tr > td > button.grayedOut:hover, .professorList > tbody > tr > td > button.grayedOut {
+
+.professorList>tbody>tr>td>button.grayedOut:hover,
+.professorList>tbody>tr>td>button.grayedOut {
     color: #eaeaea;
     border-color: #eaeaea;
     cursor: default;
     background-color: white;
 }
 
+
 /***** COURSE CART EXTRAS ***/
 
 .fillerBox {
     height: 24px;
 }
+
 #courseBox {
     text-align: left;
     margin-top: 5px;
@@ -656,9 +721,11 @@ li.average {
     min-height: 150px;
     max-width: 470px;
 }
+
 .courseInBox a {
     color: white;
 }
+
 .courseInBox {
     margin-bottom: 6px;
     margin-right: 6px;
@@ -666,34 +733,42 @@ li.average {
     border: 1px solid white;
     border-radius: 3px;
     color: white;
-    background-color: #84B8BA;
+    background-color: #84b8ba;
     cursor: pointer;
     z-index: 0;
 }
+
 .courseInBox:hover {
-    background: #9ED2D4;
+    background: #9ed2d4;
 }
+
 .courseInBoxGrayed {
     background-color: #b2b2b2;
 }
+
 .courseInBoxGrayed:hover {
     background-color: #ccc;
 }
+
 .courseInBox .fa-times {
     margin-top: 2px;
     margin-left: 8px;
 }
+
 .courseInBox .fa-times:hover {
     color: #df5d56;
 }
+
 .courseInBox .fa-link {
     margin-top: 2px;
     margin-left: 4px;
     font-size: 0.9em;
 }
+
 .courseInBox .fa-link:hover {
-    color: #76BF96;
+    color: #76bf96;
 }
+
 #boxHelpTag {
     margin-top: 25px;
     color: #b2b2b2;
@@ -701,6 +776,7 @@ li.average {
 
 
 /***** TITLE *****/
+
 #title {
     margin-left: auto;
     margin-right: auto;
@@ -719,12 +795,17 @@ li.average {
 
 
 /***** REVIEW *****/
+
 .col_section {
     display: none;
 }
-.col_instructor, .col_code, .col_name {
+
+.col_instructor,
+.col_code,
+.col_name {
     white-space: nowrap;
 }
+
 .col_code {
     min-width: 100px;
 }
@@ -743,6 +824,7 @@ li.average {
     text-align: center;
     margin-bottom: 25px;
 }
+
 #select-row {
     text-align: center;
     display: flex;
@@ -781,7 +863,7 @@ li.average {
 }
 
 #live .badge-primary {
-    background-color: #6274F1;
+    background-color: #6274f1;
 }
 
 #live .badge .count {
@@ -790,7 +872,8 @@ li.average {
     border-left: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-.fa-star, .fa-star-o {
+.fa-star,
+.fa-star-o {
     color: gold;
 }
 
@@ -828,9 +911,8 @@ hr {
     font-weight: 600;
 }
 
-.note
-{
-    background-color: #FFC107;
+.note {
+    background-color: #ffc107;
     color: black;
     padding: 8px 16px;
     padding-bottom: 5px;
@@ -839,7 +921,21 @@ hr {
     margin-bottom: 5px;
 }
 
-.note .fa
-{
+.note .fa {
     margin-right: 4px;
+}
+
+.__react_component_tooltip {
+    transition: none !important;
+    opacity: 0 !important;
+    visibility: visible;
+    font-size: 15px !important;
+    font-family: Lato, Helvetica, sans-serif !important;
+    font-weight: normal;
+}
+
+.__react_component_tooltip.show {
+    visibility: visible;
+    opacity: 1 !important;
+    box-shadow: rgba(10, 10, 10, 0.1) 0px 2px 3px;
 }

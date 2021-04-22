@@ -1,4 +1,5 @@
 import csv
+import logging
 
 import boto3
 from django.core.management import BaseCommand
@@ -36,6 +37,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
+        root_logger = logging.getLogger("")
+        root_logger.setLevel(logging.DEBUG)
+
         src = kwargs["path_to_csv"]
         if kwargs["s3_bucket"] is not None:
             fp = "/tmp/comments.csv"

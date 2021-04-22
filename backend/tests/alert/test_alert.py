@@ -7,6 +7,7 @@ from unittest.mock import patch
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.db.models.signals import post_save
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -15,10 +16,14 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert import tasks
-from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course
+from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
-from courses.util import get_or_create_course_and_section
+from courses.util import (
+    get_add_drop_period,
+    get_or_create_course_and_section,
+    invalidate_current_semester_cache,
+)
 from PennCourses.celery import app as celeryapp
 from tests.courses.util import create_mock_data
 
@@ -33,7 +38,13 @@ def contains_all(l1, l2):
 
 
 def set_semester():
+    post_save.disconnect(
+        receiver=invalidate_current_semester_cache,
+        sender=Option,
+        dispatch_uid="invalidate_current_semester_cache",
+    )
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 def override_delay(modules_names, before_func, before_kwargs):
@@ -637,9 +648,6 @@ class WebhookViewTestCase(TestCase):
         Option.objects.update_or_create(
             key="SEND_FROM_WEBHOOK", value_type="BOOL", defaults={"value": "TRUE"}
         )
-        Option.objects.update_or_create(
-            key="SEMESTER", value_type="TXT", defaults={"value": TEST_SEMESTER}
-        )
 
     def test_alert_called_and_sent_intl(self, mock_alert):
         res = self.client.post(
@@ -823,12 +831,48 @@ class WebhookViewTestCase(TestCase):
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
         set_semester()
+        adp = get_add_drop_period(TEST_SEMESTER)
+        start = adp.estimated_start
+        end = adp.estimated_end
+        duration = end - start
         _, cis120_section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         _, cis160_section = create_mock_data("CIS-160-001", TEST_SEMESTER)
         self.statusUpdates = [
-            StatusUpdate(section=cis120_section, old_status="O", new_status="C", alert_sent=False),
-            StatusUpdate(section=cis120_section, old_status="C", new_status="O", alert_sent=True),
-            StatusUpdate(section=cis160_section, old_status="C", new_status="O", alert_sent=True),
+            StatusUpdate(
+                created_at=start - duration / 4,
+                section=cis120_section,
+                old_status="C",
+                new_status="O",
+                alert_sent=False,
+            ),
+            StatusUpdate(
+                created_at=start + duration / 4,
+                section=cis120_section,
+                old_status="O",
+                new_status="C",
+                alert_sent=False,
+            ),
+            StatusUpdate(
+                created_at=start + duration / 2,
+                section=cis120_section,
+                old_status="C",
+                new_status="O",
+                alert_sent=True,
+            ),
+            StatusUpdate(
+                created_at=start + 3 * duration / 4,
+                section=cis160_section,
+                old_status="C",
+                new_status="O",
+                alert_sent=True,
+            ),
+            StatusUpdate(
+                created_at=end + duration / 4,
+                section=cis160_section,
+                old_status="O",
+                new_status="C",
+                alert_sent=False,
+            ),
         ]
         for s in self.statusUpdates:
             s.save()

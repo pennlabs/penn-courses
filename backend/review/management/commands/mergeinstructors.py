@@ -1,3 +1,4 @@
+import logging
 from typing import Callable, Dict, List, Optional
 
 from django.core.management import BaseCommand
@@ -144,6 +145,9 @@ class Command(BaseCommand):
         group.add_argument("--all", "-a", action="store_const", const=None, dest="strategies")
 
     def handle(self, *args, **kwargs):
+        root_logger = logging.getLogger("")
+        root_logger.setLevel(logging.DEBUG)
+
         dry_run = kwargs["dryrun"]
         manual_merge: List[str] = kwargs["manual"]
         selected_strategies: Optional[List[str]] = kwargs["strategies"]

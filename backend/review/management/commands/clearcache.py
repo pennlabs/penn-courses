@@ -1,3 +1,5 @@
+import logging
+
 import redis
 from django.conf import settings
 from django.core.cache import cache
@@ -25,5 +27,8 @@ def clear_cache():
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        root_logger = logging.getLogger("")
+        root_logger.setLevel(logging.DEBUG)
+
         del_count = clear_cache()
         self.stdout.write(f"{del_count if del_count >=0 else 'all'} cache entries deleted.")

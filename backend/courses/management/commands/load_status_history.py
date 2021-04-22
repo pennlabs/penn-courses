@@ -2,13 +2,15 @@ import csv
 import os
 from datetime import datetime
 
-import pytz
+from dateutil.tz import gettz
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import F
 from django.utils.timezone import make_aware
 from tqdm import tqdm
 
+from alert.management.commands.recomputestats import recompute_percent_open
+from alert.models import AddDropPeriod
 from courses.models import Section, StatusUpdate
 from PennCourses.settings.base import TIME_ZONE
 
@@ -44,13 +46,16 @@ class Command(BaseCommand):
             for row in history_reader:
                 sections_to_fetch.add((row[0], row[1]))
                 row_count += 1
-            full_codes = [sec[0] for sec in sections_to_fetch]
-            semesters = [sec[1] for sec in sections_to_fetch]
+            full_codes = list(set([sec[0] for sec in sections_to_fetch]))
+            semesters = list(set([sec[1] for sec in sections_to_fetch]))
             section_obs = Section.objects.filter(
                 full_code__in=full_codes, course__semester__in=semesters
             ).annotate(efficient_semester=F("course__semester"))
             for section_ob in section_obs:
                 sections_map[section_ob.full_code, section_ob.efficient_semester] = section_ob.id
+        add_drop_periods = dict()  # maps semester to AddDropPeriod object
+        for adp in AddDropPeriod.objects.filter(semester__in=semesters):
+            add_drop_periods[adp.semester] = adp
         print(
             "This script is atomic, meaning either all the status updates from the given "
             "CSV will be loaded into the database, or otherwise if an error is encountered, "
@@ -66,9 +71,7 @@ class Command(BaseCommand):
                     full_code = row[0]
                     semester = row[1]
                     created_at = datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S.%f %Z")
-                    created_at = make_aware(
-                        created_at, timezone=pytz.timezone(TIME_ZONE), is_dst=None
-                    )
+                    created_at = make_aware(created_at, timezone=gettz(TIME_ZONE), is_dst=None)
                     old_status = row[3]
                     new_status = row[4]
                     alert_sent = row[5]
@@ -86,6 +89,12 @@ class Command(BaseCommand):
                         created_at=created_at,
                         alert_sent=alert_sent,
                     )
-                    to_save.append(status_update)
+                    status_update.save(add_drop_period=add_drop_periods[semester])
                 StatusUpdate.objects.bulk_create(to_save)
-        print(f"Finished loading status history from {src}... processed {row_count} rows. ")
+
+            print(f"Finished loading status history from {src}... processed {row_count} rows. ")
+
+            print(
+                f"Recomputing PCA Demand Distribution Estimates for {len(semesters)} semesters..."
+            )
+            recompute_percent_open(semesters=",".join(semesters), verbose=True)

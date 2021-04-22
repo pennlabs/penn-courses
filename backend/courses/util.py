@@ -1,8 +1,11 @@
 import json
+import logging
+import os
 import re
+from decimal import Decimal
 
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from options.models import Option, get_value
@@ -23,6 +26,9 @@ from courses.models import (
 from review.util import titleize
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_current_semester(allow_not_found=False):
     """
     This function retrieves the string value of the current semester, either from
@@ -31,13 +37,14 @@ def get_current_semester(allow_not_found=False):
     indicating that the SEMESTER Option must be set for this API to work properly.
     You can prevent an error from being thrown (and cause the function to just return None
     in this case) by setting allow_not_found=True.
-    The cache has no timeout, but is invalidated whenever the SEMESTER Option is saved
-    (which will occur whenever it is updated), using a post_save hook.
+    The cache has a timeout of 25 hours, but is also invalidated whenever the SEMESTER Option
+    is saved (which will occur whenever it is updated), using a post_save hook.
     See the invalidate_current_semester_cache function below to see how this works.
     """
     cached_val = cache.get("SEMESTER", None)
     if cached_val is not None:
         return cached_val
+
     retrieved_val = get_value("SEMESTER", None)
     if not allow_not_found:
         if retrieved_val is None:
@@ -48,20 +55,69 @@ def get_current_semester(allow_not_found=False):
                 "replacing 2020C with the current semester, in the backend directory (remember "
                 "to run 'pipenv shell' before running this command, though)."
             )
-    cache.set("SEMESTER", retrieved_val, timeout=None)  # cache only expires upon invalidation
+    cache.set("SEMESTER", retrieved_val, timeout=90000)  # cache expires every 25 hours
     return retrieved_val
 
 
-@receiver(post_save, sender=Option, dispatch_uid="update_stock_count")
+@receiver(post_save, sender=Option, dispatch_uid="invalidate_current_semester_cache")
 def invalidate_current_semester_cache(sender, instance, **kwargs):
     """
     This function invalidates the cached SEMESTER value when the SEMESTER option is updated.
-    Note that the timeout value on the cached SEMESTER value is set to None (meaning
-    the cache will not be invalidated by any amount of elapsed time; saving the SEMESTER Option
-    is the only way to invalidate this cached value).
     """
+    from alert.models import AddDropPeriod
+    from courses.management.commands.load_add_drop_dates import load_add_drop_dates
+    from courses.management.commands.registrarimport import registrar_import
+    from courses.tasks import registrar_import_async
+
+    # ^ imported here to avoid circular imports
+
     if instance.key == "SEMESTER":
         cache.delete("SEMESTER")
+        AddDropPeriod(semester=instance.value).save()
+        load_add_drop_dates()
+
+        if "PennCourses.settings.development" in os.environ["DJANGO_SETTINGS_MODULE"]:
+            registrar_import()
+        else:
+            registrar_import_async.delay()
+
+
+def get_semester(datetime):
+    """
+    Given a datetime, estimate the semester of the period of course registration it occurred in.
+    """
+    if 3 <= datetime.month and datetime.month <= 9:
+        sem = str(datetime.year) + "C"
+    else:
+        if datetime.month < 3:
+            sem = str(datetime.year) + "A"
+        else:
+            sem = str(datetime.year + 1) + "A"
+    return sem
+
+
+def get_add_drop_period(semester):
+    """
+    Returns the AddDropPeriod object corresponding to the given semester. Throws the same
+    errors and behaves the same way as AddDropPeriod.objects.get(semester=semester) but runs faster.
+    This function uses caching to speed up add/drop period object retrieval. Cached objects
+    expire every 25 hours, and are also invalidated in the AddDropPeriod.save method.
+    The add_drop_periods key in cache points to a dictionary mapping semester to add/drop period
+    object.
+    """
+    from alert.models import AddDropPeriod
+
+    changed = False
+    cached_adps = cache.get("add_drop_periods", None)
+    if cached_adps is None:
+        cached_adps = dict()
+        changed = True
+    if semester not in cached_adps:
+        cached_adps[semester] = AddDropPeriod.objects.get(semester=semester)
+        changed = True
+    if changed:
+        cache.set("add_drop_periods", cached_adps, timeout=90000)  # cache expires every 25 hours
+    return cached_adps[semester]
 
 
 def separate_course_code(course_code):
@@ -111,8 +167,69 @@ def get_course_and_section(course_code, semester, section_manager=None):
     return course, section
 
 
-def record_update(section_id, semester, old_status, new_status, alerted, req):
+def update_percent_open(section, last_status_update, new_status_update):
+    """
+    This function updates a section's percent_open field when a new status update is processed.
+    It should be called from the record_update function.
+    The last_status_update argument should be given
+    this section's previous status update, or None if this section has not previously had
+    a status update.
+    """
+    from alert.models import AddDropPeriod
+
+    try:
+        add_drop = get_add_drop_period(section.semester)
+    except AddDropPeriod.DoesNotExist:
+        add_drop = AddDropPeriod(semester=section.semester)
+        add_drop.save()
+    add_drop_start = add_drop.estimated_start
+    add_drop_end = add_drop.estimated_end
+    if new_status_update.created_at < add_drop_start:
+        return
+    if last_status_update is not None:
+        if last_status_update.created_at >= add_drop_end:
+            return
+        last_status = last_status_update.new_status
+        if last_status != new_status_update.old_status:
+            logger.error(
+                f"Status update received changing section {section} from "
+                f"{new_status_update.old_status} to {new_status_update.new_status}, "
+                f"after previous status update from {last_status_update.old_status} "
+                f"to {last_status_update.new_status} (erroneous)."
+            )
+        before_seconds = Decimal(
+            max((last_status_update.created_at - add_drop_start).total_seconds(), 0)
+        )
+        after_seconds = Decimal(
+            max(
+                (
+                    min(new_status_update.created_at, add_drop_end)
+                    - max(last_status_update.created_at, add_drop_start)
+                ).total_seconds(),
+                0,
+            )
+        )
+        section.percent_open = (
+            Decimal(section.percent_open) * before_seconds + int(last_status == "O") * after_seconds
+        ) / (before_seconds + after_seconds)
+    else:
+        if new_status_update.created_at >= add_drop_end:
+            return
+        section.percent_open = Decimal(int(new_status_update.old_status == "O"))
+    section.save()
+
+
+def record_update(section_id, semester, old_status, new_status, alerted, req, created_at=None):
+    from alert.models import validate_add_drop_semester  # avoid circular imports
+
     _, section, _, _ = get_or_create_course_and_section(section_id, semester)
+
+    # Get previous status update
+    try:
+        last_status_update = StatusUpdate.objects.filter(section=section).latest("created_at")
+    except StatusUpdate.DoesNotExist:
+        last_status_update = None
+
     u = StatusUpdate(
         section=section,
         old_status=old_status,
@@ -120,7 +237,17 @@ def record_update(section_id, semester, old_status, new_status, alerted, req):
         alert_sent=alerted,
         request_body=req,
     )
+    if created_at is not None:
+        u.created_at = created_at
     u.save()
+    try:
+        # only update percent open if the given semester is valid and fall or spring
+        validate_add_drop_semester(semester)
+        update_percent_open(section, last_status_update, u)
+        # update the section's percent_open field
+    except ValidationError:
+        pass
+
     return u
 
 

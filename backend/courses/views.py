@@ -229,7 +229,7 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
 
 class StatusUpdateView(generics.ListAPIView):
     """
-    Retrieve all Status Update objects for a specific section.
+    Retrieve all Status Update objects from the current semester for a specific section.
     """
 
     schema = PcxAutoSchema(
@@ -246,7 +246,7 @@ class StatusUpdateView(generics.ListAPIView):
                 "GET": {
                     "full_code": (
                         "The code of the section which this status update applies to, in the "
-                        "form '{dept code}-{course code}-{section code}', e.g. 'CIS-120-001' for "
+                        "form '{dept code}-{course code}-{section code}', e.g. `CIS-120-001` for "
                         "the 001 section of CIS-120."
                     )
                 }
@@ -258,4 +258,8 @@ class StatusUpdateView(generics.ListAPIView):
     lookup_field = "section__full_code"
 
     def get_queryset(self):
-        return StatusUpdate.objects.filter(Q(section__full_code=self.kwargs["full_code"]))
+        return StatusUpdate.objects.filter(
+            section__full_code=self.kwargs["full_code"],
+            section__course__semester=get_current_semester(),
+            in_add_drop_period=True,
+        )

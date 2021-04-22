@@ -18,6 +18,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
+
         semester = get_current_semester()
         statuses = registrar.get_all_course_status(semester)
         stats = {

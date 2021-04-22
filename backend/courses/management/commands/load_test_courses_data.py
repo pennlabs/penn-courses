@@ -13,6 +13,7 @@ from courses.management.commands.export_test_courses_data import (
     test_data_fields,
     unique_identifying_fields,
 )
+from courses.management.commands.load_add_drop_dates import fill_in_add_drop_periods
 
 
 class Command(BaseCommand):
@@ -195,5 +196,7 @@ class Command(BaseCommand):
                             self_new_id = id_change_map[data_type][self_id]
                             self_other_id = id_change_map[data_type][other_id]
                             setattr(objects[data_type][self_new_id], field, self_other_id)
+
+            fill_in_add_drop_periods(verbose=True)
 
         print(f"Finished loading test data {src}... processed {row_count} rows. ")

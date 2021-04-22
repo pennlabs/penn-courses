@@ -120,7 +120,7 @@ const TagsWhenOffered = ({
       ({ activity: sectionActivity }) => activity === sectionActivity
     );
   });
-  console.log("inst data", instructorData);
+  // console.log("inst data", instructorData);
   const oldInstructors = Object.values(instructorData).map(({ id }) => id);
   const newInstructors = sections
     .flatMap(({ instructors }) => instructors)

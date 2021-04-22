@@ -18,7 +18,7 @@ const chartColorMap = {
   rWorkRequired: "#df5d56"
 };
 
-const generateChartData = courses => {
+const generateChartData = (courses, isCourseEval) => {
   return {
     labels: Object.values(courses).map(({ original: { code } }) => code),
     datasets: DEFAULT_COLUMNS.map(column => ({
@@ -49,16 +49,19 @@ const chartOptions = {
   }
 };
 
-export const DepartmentGraphs = ({ courses }) => {
+export const DepartmentGraphs = ({ courses, isCourseEval }) => {
   const chartData =
-    courses && Object.keys(courses).length && generateChartData(courses);
+    courses &&
+    !isCourseEval &&
+    Object.keys(courses).length &&
+    generateChartData(courses, isCourseEval);
   return (
     <div className="department-content">
       {chartData ? (
         <div id="row-select-chart-container">
           <Bar data={chartData} options={chartOptions} />
         </div>
-      ) : (
+      ) : isCourseEval ? null : (
         <div id="row-select-placeholder">
           <object type="image/svg+xml" data="/static/image/selectrow.svg">
             <img alt="Select Row" src="/static/image/selectrow.svg" />

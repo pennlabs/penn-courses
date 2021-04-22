@@ -107,14 +107,12 @@ to dicts, and each further subdict maps int response codes to string description
         reverse_func("schedules-list"): {
            "GET": {
                200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",
-               403: "Access denied (missing or improper authentication)."
            },
            "POST": {
                201: "Schedule successfully created.",
                200: "Schedule successfully updated (a schedule with the "
                     "specified id already existed).",
                400: "Bad request (see description above).",
-               403: "Access denied (missing or improper authentication)."
            }
         },
         ...
@@ -403,6 +401,14 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
     (reverse_func("registrationhistory-detail", args=["id"]), "GET"): "Registration History",
     (reverse_func("statusupdate", args=["full_code"]), "GET"): "Status Update",
     (reverse_func("recommend-courses"), "POST"): "Course Recommendations",
+    (reverse_func("course-reviews", args=["course_code"]), "GET"): "Course Reviews",
+    (reverse_func("review-autocomplete"), "GET"): "Autocomplete Dump",
+    (reverse_func("instructor-reviews", args=["instructor_id"]), "GET"): "Instructor Reviews",
+    (reverse_func("department-reviews", args=["department_code"]), "GET"): "Department Reviews",
+    (
+        reverse_func("course-history", args=["course_code", "instructor_id"]),
+        "GET",
+    ): "Section-Specific Reviews",
 }
 assert all(
     [isinstance(k, tuple) and len(k) == 2 and isinstance(k[1], str) for k in custom_name.keys()]
@@ -419,6 +425,7 @@ custom_operation_id = {  # keys are (path, method) tuples, values are custom nam
     (reverse_func("statusupdate", args=["full_code"]), "GET"): "List Status Updates",
     (reverse_func("courses-search", args=["semester"]), "GET"): "Course Search",
     (reverse_func("section-search", args=["semester"]), "GET"): "Section Search",
+    (reverse_func("review-autocomplete"), "GET"): "Retrieve Autocomplete Dump",
 }
 assert all(
     [
@@ -919,15 +926,22 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                 path = path_func()
                 if path not in data["paths"].keys():
                     raise ValueError(
-                        f"Check the {parameter_name} input to PcxAutoSchema instantiation at "
-                        f"{traceback}; invalid path found: '{path}'"
+                        f"Check the {original_kwarg} input to PcxAutoSchema instantiation at "
+                        f"{traceback}; invalid path found: '{path}'."
+                        + (
+                            "If 'id' is in your args list, check if you set primary_key=True for "
+                            "some field in the relevant model, and if so change 'id' "
+                            "in your args list to the name of that field."
+                            if "id" in path
+                            else ""
+                        )
                     )
                 for method in parameter_dict[path_func]:
                     if method == "traceback":
                         continue
                     if method.lower() not in data["paths"][path].keys():
                         raise ValueError(
-                            f"Check the {parameter_name} input to PcxAutoSchema instantiation at "
+                            f"Check the {original_kwarg} input to PcxAutoSchema instantiation at "
                             f"{traceback}; invalid method '{method}' for path '{path}'"
                         )
 

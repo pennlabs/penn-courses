@@ -119,8 +119,8 @@ def accept_webhook(request):
             alert_for_course_called,
             request.body,
         )
-
         update_course_from_record(u)
+
     except ValueError as e:
         logger.error(e)
         return HttpResponse("We got an error but webhook should ignore it", status=200)
@@ -400,10 +400,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                if Registration.objects.filter(
-                    user=registration.user,
-                    section=registration.section,
-                    **Registration.is_active_filter()
+                if registration.section.registrations.filter(
+                    user=registration.user, **Registration.is_active_filter()
                 ).exists():
                     # An active registration for this section already exists
                     return Response(

@@ -3,6 +3,7 @@ import logging
 
 import requests
 from django.conf import settings
+from tqdm import tqdm
 
 
 logger = logging.getLogger(__name__)
@@ -76,10 +77,14 @@ def get_courses(query, semester):
     }
 
     results = []
+    pbar = None
     while True:
         logger.info("making request for page #%d" % params["page_number"])
         data, err = make_api_request(params, headers)
         if data is not None:
+            if pbar is None:
+                pbar = tqdm(total=data["service_meta"]["number_of_pages"])
+            pbar.update(1)
             next_page = data["service_meta"]["next_page_number"]
             results.extend(data["result_data"])
             if int(next_page) <= params["page_number"]:
@@ -88,6 +93,8 @@ def get_courses(query, semester):
         else:
             report_api_error(err)
             break
+    if pbar is not None:
+        pbar.close()
 
     return results
 
