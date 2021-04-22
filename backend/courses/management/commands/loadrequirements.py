@@ -78,7 +78,6 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
-
         print(
             f'Loading requirements for school {kwargs["school"]} and semester {kwargs["semester"]}'
         )
