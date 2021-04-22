@@ -88,10 +88,16 @@ def review_averages(
     # plots_base_section_filters in review/views/course_reviews
 
     class PercentOpenSubqueryAvg(Subquery):
-        template = "(SELECT AVG(percent_open) FROM (%(subquery)s) as percent_open_subquery_for_avg)"
+        template = (
+            "(SELECT AVG(percent_open_annotation) FROM (%(subquery)s) "
+            "as percent_open_subquery_for_avg)"
+        )
 
     class NumOpeningsSubqueryAvg(Subquery):
-        template = "(SELECT AVG(num_openings) FROM (%(subquery)s) as num_openings_subquery_for_avg)"
+        template = (
+            "(SELECT AVG(num_openings_annotation) FROM (%(subquery)s) "
+            "as num_openings_subquery_for_avg)"
+        )
 
     queryset = queryset.annotate(
         **{
@@ -138,7 +144,7 @@ def review_averages(
                         .values("review__section_id", "review__section__percent_open")
                         .order_by()
                         .distinct()
-                        .annotate(percent_open=Avg("review__section__percent_open")),
+                        .annotate(percent_open_annotation=Avg("review__section__percent_open")),
                         output_field=FloatField(),
                     ),
                     (prefix + "num_openings"): NumOpeningsSubqueryAvg(
@@ -147,7 +153,7 @@ def review_averages(
                         .order_by()
                         .distinct()
                         .annotate(
-                            num_openings=Subquery(
+                            num_openings_annotation=Subquery(
                                 StatusUpdate.objects.filter(
                                     new_status="O", section_id=OuterRef("review__section__id")
                                 )
