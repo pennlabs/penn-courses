@@ -10,6 +10,7 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.db.models import Case, F, Max, Q, Value, When
+from django.db.models.functions import Extract
 from django.utils import timezone
 from django.utils.timezone import make_aware
 
@@ -1105,7 +1106,10 @@ class AddDropPeriod(models.Model):
                 percent_through_add_drop_period=Case(
                     When(Q(created_at__lte=self.estimated_start), then=Value(0),),
                     When(Q(created_at__gte=self.estimated_end), then=Value(1)),
-                    default=(F("created_at") - Value(self.estimated_start)) / Value(period),
+                    default=(
+                        Extract(F("created_at"), "epoch") - Value(self.estimated_start.timestamp())
+                    )
+                    / Value(period.total_seconds()),
                     output_field=models.FloatField(),
                 ),
             )
