@@ -89,14 +89,14 @@ def review_averages(
 
     class PercentOpenSubqueryAvg(Subquery):
         template = (
-            "(SELECT AVG(percent_open_annotation) FROM (%(subquery)s) "
-            "as percent_open_subquery_for_avg)"
+            "(SELECT AVG(percent_open_subquery_for_avg.percent_open_annotation) FROM (%(subquery)s)"
+            " as percent_open_subquery_for_avg)"
         )
 
     class NumOpeningsSubqueryAvg(Subquery):
         template = (
-            "(SELECT AVG(num_openings_annotation) FROM (%(subquery)s) "
-            "as num_openings_subquery_for_avg)"
+            "(SELECT AVG(num_openings_subquery_for_avg.num_openings_annotation) FROM (%(subquery)s)"
+            " as num_openings_subquery_for_avg)"
         )
 
     queryset = queryset.annotate(
