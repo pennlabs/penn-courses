@@ -13,7 +13,7 @@ DEBUG = False
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Allow production host headers
-ALLOWED_HOSTS = ["penncourseplan.com", "penncoursealert.com", "beta.penncoursereview.com"]
+ALLOWED_HOSTS = ["penncourseplan.com", "penncoursealert.com", "review.penncourses.org"]
 
 # Sentry settings
 SENTRY_URL = os.environ.get("SENTRY_URL", "")
