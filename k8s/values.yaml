@@ -21,7 +21,7 @@ applications:
           paths: ["/api", "/admin", "/accounts", "/assets"]
         - host: penncoursealert.com
           paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"]
-        - host: beta.penncoursereview.com
+        - host: review.penncourses.org
           paths: ["/api", "/admin", "/accounts", "/assets"]
       annotations:
         ingress.kubernetes.io/content-security-policy: frame-ancestors 'none';
@@ -56,7 +56,7 @@ applications:
     image: pennlabs/pcr-frontend
     ingress:
       hosts:
-      - host: beta.penncoursereview.com
+      - host: review.penncourses.org
         paths: ["/"]
 
 cronjobs:
