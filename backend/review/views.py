@@ -46,7 +46,7 @@ it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
 
 
 # Filters defining which sections we will include in extra pcr plots / metrics
-extra_metrics_section_filters_reviews_ensured = (
+extra_metrics_section_filters = (
     ~Q(
         course__department__code__in=WAITLIST_DEPARTMENT_CODES
     )  # Manually filter out classes from depts with waitlist systems during add/drop
@@ -61,13 +61,11 @@ extra_metrics_section_filters_reviews_ensured = (
         )
     )  # Filter out sections that require permit for registration
     & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
+    & (
+        Q(id__in=Subquery(Review.objects.all().values_list("section__id", flat=True)))
+        | Q(course__semester=Subquery(Option.objects.filter(key="SEMESTER").values("value")[:1]))
+    )  # Filter out sections from past semesters that do not have review data
 )
-extra_metrics_section_filters = extra_metrics_section_filters_reviews_ensured & (
-    Q(id__in=Subquery(Review.objects.all().values_list("section__id", flat=True)))
-    | Q(course__semester=Subquery(Option.objects.filter(key="SEMESTER").values("value")[:1]))
-)  # Filter out sections from past semesters that do not have review data
-# If you modify these filters, reflect the same changes in these corresponding filters:
-# extra_metrics_filter in review/annotations/review_averages and base_section_filters
 
 
 @api_view(["GET"])
@@ -112,6 +110,7 @@ def course_reviews(request, course_code):
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
             extra_metrics=True,
+            section_subfilters={"review__id": OuterRef("id")},
         )
         .annotate(
             course_title=F("section__course__title"),
@@ -127,6 +126,7 @@ def course_reviews(request, course_code):
         Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
         match_on=Q(section__course__full_code=course_code),
         extra_metrics=True,
+        section_subfilters={"course__full_code": course_code},
     )
 
     course = dict(course_qs[:1].values()[0])
@@ -255,6 +255,7 @@ def instructor_reviews(request, instructor_id):
         Instructor.objects.filter(id=instructor_id),
         match_on=Q(instructor_id=instructor_id),
         extra_metrics=True,
+        section_subfilters={"instructors__id": instructor_id},
     )
 
     courses = annotate_average_and_recent(
@@ -265,6 +266,10 @@ def instructor_reviews(request, instructor_id):
             section__course__full_code=OuterRef(OuterRef("full_code")), instructor_id=instructor_id,
         ),
         extra_metrics=True,
+        section_subfilters={
+            "course__full_code": OuterRef("full_code"),
+            "instructors__id": instructor_id,
+        },
     )
 
     inst = instructor_qs.values()[0]
@@ -331,6 +336,7 @@ def department_reviews(request, department_code):
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
             extra_metrics=True,
+            section_subfilters={"review__id": OuterRef("id")},
         )
         .annotate(
             course_title=F("section__course__title"),
@@ -380,6 +386,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         fields=ALL_FIELD_SLUGS,
         prefix="bit_",
         extra_metrics=True,
+        section_subfilters={"review__id": OuterRef("id")},
     )
     reviews = reviews.annotate(
         course_title=F("section__course__title"),
