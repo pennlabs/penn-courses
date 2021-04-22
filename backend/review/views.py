@@ -3,6 +3,7 @@ from django.db.models import Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from options.models import Option
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -42,6 +43,31 @@ but one aggregation of all resources (ReviewBits) that fit a certain filter.
 There probably is a way to fit everything into a serializer, but at the time of writing it felt like
 it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
 """
+
+
+# Filters defining which sections we will include in extra pcr plots / metrics
+extra_metrics_section_filters_reviews_ensured = (
+    ~Q(
+        course__department__code__in=WAITLIST_DEPARTMENT_CODES
+    )  # Manually filter out classes from depts with waitlist systems during add/drop
+    & Q(capacity__isnull=False, capacity__gt=0)
+    & ~Q(course__semester__icontains="b")  # Filter out summer classes
+    & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
+    & ~Q(
+        id__in=Subquery(
+            Restriction.objects.filter(description__icontains="permission").values_list(
+                "sections__id", flat=True
+            )
+        )
+    )  # Filter out sections that require permit for registration
+    & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
+)
+extra_metrics_section_filters = extra_metrics_section_filters_reviews_ensured & (
+    Q(id__in=Subquery(Review.objects.all().values_list("section__id", flat=True)))
+    | Q(course__semester=Subquery(Option.objects.filter(key="SEMESTER").values("value")[:1]))
+)  # Filter out sections from past semesters that do not have review data
+# If you modify these filters, reflect the same changes in these corresponding filters:
+# extra_metrics_filter in review/annotations/review_averages and base_section_filters
 
 
 @api_view(["GET"])
@@ -105,34 +131,12 @@ def course_reviews(request, course_code):
 
     course = dict(course_qs[:1].values()[0])
 
-    # Filters for sections to include in plot aggregations
-    plots_base_section_filters = (
-        ~Q(
-            course__department__code__in=WAITLIST_DEPARTMENT_CODES
-        )  # Manually filter out classes from depts with waitlist systems during add/drop
-        & Q(
-            capacity__isnull=False, capacity__gt=0, course__semester__lt=current_semester
-        )  # Filter out sections with invalid capacity or current semester
-        & ~Q(course__semester__icontains="b")  # Filter out summer classes
-        & ~Q(
-            id__in=Subquery(
-                Restriction.objects.filter(description__icontains="permission").values_list(
-                    "sections__id", flat=True
-                )
-            )
-        )  # Filter out sections that require permit for registration
-        & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
-        & Q(
-            id__in=Subquery(Review.objects.all().values_list("section__id", flat=True))
-        )  # Filter out sections that do not have review data
-    )  # If you modify these filters, reflect the same changes in these corresponding filters:
-    # extra_metrics_filter in review/annotations/review_averages and base_section_filters in
-    # demand_distribution_estimates_base_section_filters in alert/management/commands/recomputestats
-
     # Compute set of sections to include in plot data
-    filtered_sections = Section.objects.filter(
-        plots_base_section_filters, course__full_code=course_code,
-    ).annotate(efficient_semester=F("course__semester"))
+    filtered_sections = (
+        Section.objects.filter(extra_metrics_section_filters, course__full_code=course_code,)
+        .annotate(efficient_semester=F("course__semester"))
+        .distinct()
+    )
     section_map = dict()  # a dict mapping semester to section id to section object
     for section in filtered_sections:
         if section.efficient_semester not in section_map:

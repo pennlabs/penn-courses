@@ -476,7 +476,7 @@ input {
     overflow-y: auto !important;
 }
 
-.ReactTable .rt-tr:hover {
+.ReactTable .rt-tr:not(.ignore-select):hover {
     background-color: #eeeeee;
     cursor: pointer;
 }

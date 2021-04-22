@@ -263,6 +263,7 @@ export const DetailsBox = forwardRef(
             <div id="course-details-data">
               <ScoreTable
                 alternating
+                ignoreSelect
                 sorted={[{ id: "semester", desc: false }]}
                 filtered={filtered}
                 data={sectionsList.map(

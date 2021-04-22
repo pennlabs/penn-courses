@@ -1079,6 +1079,8 @@ class AddDropPeriod(models.Model):
         estimated_end fields, updates the in_add_drop_period and percent_through_add_drop_period
         fields of StatusUpdates and PcaDemandDistributionEstimates from this semester, and then
         calls the overridden save method.
+        NOTE: make sure to run recompute_percent_open (in recompute_stats) for this semester
+        any time you change the add/drop period.
         """
         super().save(*args, **kwargs)
         cache.delete("add_drop_periods")  # invalidate add_drop_periods cache

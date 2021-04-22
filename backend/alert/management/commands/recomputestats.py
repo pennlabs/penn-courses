@@ -8,10 +8,9 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Count, F, OuterRef, Q, Subquery, Value
+from django.db.models import Count, F, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-from options.models import Option
 from tqdm import tqdm
 
 from alert.models import (
@@ -24,13 +23,10 @@ from courses.management.commands.load_add_drop_dates import (
     fill_in_add_drop_periods,
     load_add_drop_dates,
 )
-from courses.models import Course, Restriction, StatusUpdate
+from courses.models import Course, StatusUpdate
 from courses.util import get_add_drop_period, get_current_semester
-from PennCourses.settings.base import (
-    ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES,
-    WAITLIST_DEPARTMENT_CODES,
-)
-from review.models import Review
+from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES
+from review.views import extra_metrics_section_filters
 
 
 def get_semesters(semesters=None, verbose=False):
@@ -202,37 +198,6 @@ def recompute_registration_volumes(semesters=None, semesters_precomputed=False, 
         )
 
 
-# Filters defining which sections we will include in demand distribution estimates
-demand_distribution_estimates_base_section_filters = (
-    ~Q(
-        course__department__code__in=WAITLIST_DEPARTMENT_CODES
-    )  # Manually filter out classes from depts with waitlist systems during add/drop
-    & Q(capacity__isnull=False, capacity__gt=0)
-    & ~Q(course__semester__icontains="b")  # Filter out summer classes
-    & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
-    & ~Q(
-        id__in=Subquery(
-            Restriction.objects.filter(description__icontains="permission").values_list(
-                "sections__id", flat=True
-            )
-        )
-    )  # Filter out sections that require permit for registration
-    & ~Q(
-        id__in=Subquery(
-            Restriction.objects.filter(description__icontains="permission").values_list(
-                "sections__id", flat=True
-            )
-        )
-    )  # Filter out sections that require permit for registration
-    & (
-        Q(id__in=Subquery(Review.objects.all().values_list("section__id", flat=True)))
-        | Q(course__semester=Subquery(Option.objects.filter(key="SEMESTER").values("value")[:1]))
-    )  # Filter out sections from past semesters that do not have review data
-)  # If you modify these filters, reflect the same changes in these corresponding filters:
-# extra_metrics_filter in review/annotations/review_averages and
-# plots_base_section_filters in review/views/course_reviews accordingly
-
-
 def recompute_demand_distribution_estimates(
     semesters=None, semesters_precomputed=False, verbose=False
 ):
@@ -264,7 +229,8 @@ def recompute_demand_distribution_estimates(
     recompute_registration_volumes(semesters=semesters, semesters_precomputed=True, verbose=verbose)
     recompute_percent_open(semesters=semesters, semesters_precomputed=True, verbose=verbose)
 
-    print(f"Recomputing demand distribution estimates for semesters {str(semesters)}...")
+    if verbose:
+        print(f"Recomputing demand distribution estimates for semesters {str(semesters)}...")
     for semester_num, semester in enumerate(semesters):
         try:
             validate_add_drop_semester(semester)
@@ -305,9 +271,9 @@ def recompute_demand_distribution_estimates(
             if verbose:
                 print("Indexing relevant sections...")
             for section in iterator_wrapper(
-                Section.objects.filter(
-                    demand_distribution_estimates_base_section_filters, course__semester=semester
-                ).annotate(efficient_semester=F("course__semester"),)
+                Section.objects.filter(extra_metrics_section_filters, course__semester=semester)
+                .annotate(efficient_semester=F("course__semester"),)
+                .distinct()
             ):
                 sections[section.id] = section
                 volume_changes_map[section.id] = []
@@ -361,7 +327,7 @@ def recompute_demand_distribution_estimates(
                     for section_id, status_updates_list in status_updates_map.items()
                     for update in status_updates_list
                 ],
-                key=lambda x: x["date"],
+                key=lambda x: (x["date"], 1 if x["type"] == "status_update" else 2),
             )
 
             # Initialize variables to be maintained in our main all_changes loop
@@ -483,10 +449,11 @@ def recompute_demand_distribution_estimates(
                 else:
                     cache.set("current_demand_distribution_estimate", None, timeout=None)
 
-    print(
-        "Finished recomputing demand distribution estimate and section registration_volume fields "
-        f"for semesters {str(semesters)}."
-    )
+    if verbose:
+        print(
+            "Finished recomputing demand distribution estimate and section registration_volume "
+            f"fields for semesters {str(semesters)}."
+        )
 
 
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):

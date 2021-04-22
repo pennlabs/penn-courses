@@ -483,6 +483,7 @@ class ScoreBox extends Component {
           data={data}
           columns={columns}
           onSelect={this.handleSelect}
+          ignoreSelect={type === "department" && isCourseEval}
           noun={isCourse ? "instructor" : "course"}
           isAverage={isAverage}
           isCourseEval={isCourseEval}

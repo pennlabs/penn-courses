@@ -9,9 +9,6 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 
-from alert.management.commands.recomputestats import (
-    demand_distribution_estimates_base_section_filters,
-)
 from alert.models import PcaDemandDistributionEstimate, Registration
 from courses.models import Section, StatusUpdate
 from courses.util import (
@@ -21,6 +18,7 @@ from courses.util import (
     update_course_from_record,
 )
 from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES
+from review.views import extra_metrics_section_filters
 
 
 logger = logging.getLogger(__name__)
@@ -109,9 +107,8 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
             create_new_distribution_estimate = True
 
         sections_qs = (
-            Section.objects.filter(
-                demand_distribution_estimates_base_section_filters, course__semester=semester
-            )
+            Section.objects.filter(extra_metrics_section_filters, course__semester=semester)
+            .distinct()
             .select_for_update()
             .order_by("raw_demand")
         )

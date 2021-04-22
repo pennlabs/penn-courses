@@ -26,6 +26,7 @@ export const ScoreTable = props => {
     multi,
     data = [],
     onSelect = () => {},
+    ignoreSelect = false,
     isAverage = null,
     isCourseEval = null
   } = props;
@@ -51,6 +52,9 @@ export const ScoreTable = props => {
             ? { backgroundColor: row._viewIndex % 2 ? "#F5F8F8" : "white" }
             : {},
           onClick: () => {
+            if (ignoreSelect) {
+              return;
+            }
             // Recalculate value every time onClick is called
             const noRow = multi ? index in selected : index === selected;
             if (!multi) {
@@ -67,7 +71,7 @@ export const ScoreTable = props => {
             onSelect(selected);
             setSelected({ ...selected });
           },
-          className: noRow ? "selected" : ""
+          className: ignoreSelect ? "ignore-select" : noRow ? "selected" : ""
         }
       : {};
   };

@@ -75,39 +75,63 @@ class PCRTestMixin(object):
             args = [args]
         res = self.client.get(reverse(url, args=args))
         self.assertEqual(200, res.status_code)
-        self.assertDictContainsAppx(res.data, expected)
+        self.assertDictContainsAppx(
+            res.data,
+            expected,
+            extra_error_str="\nresponse:" + str(res.json()) + "\n\nexpected:" + str(expected),
+        )
         return res.data
 
-    def assertDictAlmostEquals(self, dict1, dict2, path=None):
+    def assertDictAlmostEquals(self, actual, expected, path=None, extra_error_str=""):
         """
         Assert that one dictionary almost equals another (allowing small deviations for floats)
         """
         path = path if path is not None else []
-        if isinstance(dict1, dict) and isinstance(dict2, dict):
-            self.assertEquals(dict1.keys(), dict2.keys(), "/".join(path))
-            for key in dict1:
-                self.assertDictAlmostEquals(dict1[key], dict2[key], path + [str(key)])
+        if isinstance(actual, dict) and isinstance(expected, dict):
+            self.assertEquals(
+                actual.keys(),
+                expected.keys(),
+                "Dict path" + "/".join(path) + "\n" + extra_error_str,
+            )
+            for key in actual:
+                self.assertDictAlmostEquals(actual[key], expected[key], path + [str(key)])
         try:
-            float1 = float(dict1)
-            float2 = float(dict2)
-            self.assertAlmostEquals(float1, float2, msg="/".join(path))
-        except ValueError:
-            self.assertEquals(dict1, dict2, "/".join(path))
+            actual_float = float(actual)
+            expected_float = float(expected)
+            self.assertAlmostEquals(
+                actual_float,
+                expected_float,
+                msg="Dict path: " + "/".join(path) + "\n" + extra_error_str,
+            )
+        except (TypeError, ValueError):
+            self.assertEquals(
+                actual, expected, "Dict path: " + "/".join(path) + "\n" + extra_error_str
+            )
 
-    def assertDictContainsAppx(self, entire, subdict, path=None):
+    def assertDictContainsAppx(self, entire, subdict, path=None, extra_error_str=""):
         """
         Assert that one dictionary is the subset of another.
         """
         path = path if path is not None else []
-        if isinstance(entire, dict) and isinstance(subdict, dict):
-            sublist = subdict.items()
-        elif isinstance(entire, list) and isinstance(subdict, list):
-            sublist = enumerate(subdict)
-        else:
-            return self.assertDictAlmostEquals(entire, subdict, path)
-
-        for k, v in sublist:
-            self.assertDictContainsAppx(entire[k], subdict[k], path + [str(k)])
+        if (isinstance(entire, list) and isinstance(subdict, list)) or (
+            isinstance(entire, tuple) and isinstance(subdict, tuple)
+        ):
+            entire = dict(enumerate(entire))
+            subdict = dict(enumerate(subdict))
+        elif not (isinstance(entire, dict) and isinstance(subdict, dict)):
+            return self.assertDictAlmostEquals(
+                entire, subdict, path, extra_error_str=extra_error_str
+            )
+        for k, v in subdict.items():
+            self.assertTrue(
+                k in entire.keys(),
+                f"{k} not in keys of {entire}, but should be. "
+                + "\nDict path: "
+                + "/".join(path)
+                + "\n"
+                + extra_error_str,
+            )
+            self.assertDictContainsAppx(entire[k], subdict[k], path + [str(k)], extra_error_str)
 
 
 """

@@ -1,4 +1,5 @@
 import re
+from math import isclose
 from typing import Dict, List
 
 import scipy.stats as stats
@@ -175,9 +176,13 @@ def average_given_plots(plots_dict, bin_size=0.000001):
             frontier_candidate_indices[plot_num] = new_frontier_candidate_index
         latest_values = [sum(lst) / len(lst) if len(lst) > 0 else None for lst in plots_bins]
         non_null_latest_values = [val for val in latest_values if val is not None]
-        averaged_plot.append(
-            (min_percent_through, sum(non_null_latest_values) / len(non_null_latest_values))
-        )
+        latest_val_avg = sum(non_null_latest_values) / len(non_null_latest_values)
+        if (
+            len(averaged_plot) == 0
+            or not isclose(averaged_plot[-1][1], latest_val_avg)
+            or min_percent_through == 1
+        ):
+            averaged_plot.append((min_percent_through, latest_val_avg))
     return averaged_plot
 
 
@@ -276,6 +281,8 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                 "csdv_gamma_param_loc": ext.csdv_gamma_param_loc,
                 "csdv_gamma_param_scale": ext.csdv_gamma_param_scale,
                 "mean_log_likelihood": ext.csdv_gamma_fit_mean_log_likelihood,
+                "min": ext.lowest_raw_demand,
+                "max": ext.highest_raw_demand,
             }
             for ext in demand_distribution_estimates_map[semester]
         ]
@@ -283,9 +290,6 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
             continue
         for i, section in enumerate(section_map[semester].values()):
             section_id = section.id
-            capacity = section.capacity
-            if capacity is None or capacity <= 0:
-                continue
             volume_changes = []
             # volume_changes: a list containing registration volume changes over time
             for registration in registrations_map[semester][section_id]:
@@ -323,7 +327,14 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
             # (percent_through, relative_demand)
             changes = sorted(
                 volume_changes + demand_distribution_estimates_changes + status_updates_list,
-                key=lambda x: x["percent_through"],
+                key=lambda x: (
+                    x["percent_through"],
+                    1
+                    if x["type"] == "status_update"
+                    else 2
+                    if x["type"] == "distribution_estimate_change"
+                    else 3,
+                ),
             )
 
             # Initialize variables to be maintained in our main changes loop
@@ -346,17 +357,21 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                     if change["old_status"] != section_status:  # Skip erroneous status updates
                         continue
                     section_status = change["new_status"]
-                    continue
-                if change["type"] == "distribution_estimate_change":
+                elif change["type"] == "distribution_estimate_change":
                     latest_raw_demand_distribution_estimate = change
                 else:
-                    if latest_raw_demand_distribution_estimate is None:
-                        continue
                     registration_volume += change["volume_change"]
+                if latest_raw_demand_distribution_estimate is None:
+                    continue
                 if section_status == "O":
                     rel_demand = 0
                 elif section_status != "C":
                     rel_demand = 1
+                elif (
+                    latest_raw_demand_distribution_estimate["min"]
+                    == latest_raw_demand_distribution_estimate["max"]
+                ):
+                    rel_demand = 1 / 2
                 else:
                     param_alpha = latest_raw_demand_distribution_estimate["csdv_gamma_param_alpha"]
                     param_loc = latest_raw_demand_distribution_estimate["csdv_gamma_param_loc"]
@@ -372,11 +387,13 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                     ):
                         continue
                     rel_demand = stats.gamma.cdf(
-                        registration_volume / capacity, param_alpha, param_loc, param_scale,
+                        registration_volume / section.capacity, param_alpha, param_loc, param_scale,
                     )
                 if change["percent_through"] > bin_start_pct + bin_size:
                     if num_in_bin > 0:
-                        demand_plot.append((bin_start_pct, total_value_in_bin / num_in_bin))
+                        bin_avg = total_value_in_bin / num_in_bin
+                        if len(demand_plot) == 0 or not isclose(demand_plot[-1][1], bin_avg):
+                            demand_plot.append((bin_start_pct, bin_avg))
                     bin_start_pct = change["percent_through"]
                     total_value_in_bin = 0
                     num_in_bin = 0

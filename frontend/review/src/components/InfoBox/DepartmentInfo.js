@@ -61,7 +61,7 @@ export const DepartmentGraphs = ({ courses, isCourseEval }) => {
         <div id="row-select-chart-container">
           <Bar data={chartData} options={chartOptions} />
         </div>
-      ) : (
+      ) : isCourseEval ? null : (
         <div id="row-select-placeholder">
           <object type="image/svg+xml" data="/static/image/selectrow.svg">
             <img alt="Select Row" src="/static/image/selectrow.svg" />
