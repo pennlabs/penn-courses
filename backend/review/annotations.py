@@ -40,10 +40,6 @@ the DB), be *much* slower, and require cacheing.
 """
 
 
-class SubqueryAvg(Subquery):
-    template = "(SELECT AVG(to_average) FROM (%(subquery)s))"
-
-
 def review_averages(
     queryset, subfilters, fields=None, prefix="", semester_aggregations=False, extra_metrics=True
 ):
@@ -91,6 +87,12 @@ def review_averages(
     )  # If you modify these filters, reflect the same changes in these corresponding filters:
     # plots_base_section_filters in review/views/course_reviews
 
+    class PercentOpenSubqueryAvg(Subquery):
+        template = "(SELECT AVG(percent_open) FROM (%(subquery)s) as percent_open_subquery_for_avg)"
+
+    class NumOpeningsSubqueryAvg(Subquery):
+        template = "(SELECT AVG(num_openings) FROM (%(subquery)s) as num_openings_subquery_for_avg)"
+
     queryset = queryset.annotate(
         **{
             **{
@@ -131,21 +133,21 @@ def review_averages(
                         .values("avg_final_enrollment_percentage")[:1],
                         output_field=FloatField(),
                     ),
-                    (prefix + "percent_open"): SubqueryAvg(
+                    (prefix + "percent_open"): PercentOpenSubqueryAvg(
                         ReviewBit.objects.filter(extra_metrics_filter, **subfilters)
                         .values("review__section_id", "review__section__percent_open")
                         .order_by()
                         .distinct()
-                        .annotate(to_average=Avg("review__section__percent_open")),  # percent_open
+                        .annotate(percent_open=Avg("review__section__percent_open")),
                         output_field=FloatField(),
                     ),
-                    (prefix + "num_openings"): SubqueryAvg(
+                    (prefix + "num_openings"): NumOpeningsSubqueryAvg(
                         ReviewBit.objects.filter(extra_metrics_filter, **subfilters)
                         .values("review__section_id")
                         .order_by()
                         .distinct()
                         .annotate(
-                            to_average=Subquery(
+                            num_openings=Subquery(
                                 StatusUpdate.objects.filter(
                                     new_status="O", section_id=OuterRef("review__section__id")
                                 )
@@ -154,7 +156,7 @@ def review_averages(
                                 .annotate(count=Count("*"))
                                 .values("count")[:1],
                                 output_field=IntegerField(),
-                            )  # num_openings
+                            )
                         ),
                         output_field=FloatField(),
                     ),
