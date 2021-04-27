@@ -9,7 +9,7 @@ coverage = "*"
 unittest-xml-reporting = "*"
 flake8 = "*"
 flake8-isort = "*"
-isort = "<5"
+isort = "*"
 flake8-quotes = "*"
 pytest = "*"
 pytest-django = "*"
@@ -17,7 +17,7 @@ django-debug-toolbar = "*"
 black = "==19.10b0"
 
 [packages]
-django = "*"
+django = ">=3.2"
 psycopg2 = {version = "*", sys_platform = "== 'linux'"}
 requests = "*"
 twilio = "*"
@@ -50,6 +50,10 @@ django-redis = "*"
 jsonref = "*"
 tblib = "*"
 django-extensions = "*"
+numpy = "*"
+scikit-learn = "*"
+pandas = "*"
+python-dateutil = "*"
 
 [requires]
 python_version = "3"

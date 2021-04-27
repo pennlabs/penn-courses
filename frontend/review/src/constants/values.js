@@ -22,6 +22,11 @@ export const ALL_DATA_COLUMNS = [
   "rRecommendNonMajor"
 ];
 
+export const PERCENTAGE_COLUMNS = [
+  "rFinalEnrollmentPercentage",
+  "rPercentOpen"
+];
+
 export const COLUMN_FULLNAMES = {
   rCourseQuality: "Course Quality",
   rInstructorQuality: "Instructor Quality",

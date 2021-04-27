@@ -1,26 +1,36 @@
 import base64
 import importlib
 import json
+import os
 from unittest.mock import patch
 
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
+from django.core.management import call_command
+from django.db.models.signals import post_save
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from options.models import Option
 from rest_framework.test import APIClient
-from tests.courses.util import create_mock_data
 
 from alert import tasks
-from alert.models import SOURCE_PCA, Registration, RegStatus, register_for_course
+from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
-from courses.util import get_or_create_course_and_section
+from courses.util import (
+    get_add_drop_period,
+    get_or_create_course_and_section,
+    invalidate_current_semester_cache,
+)
+from PennCourses.celery import app as celeryapp
+from tests.courses.util import create_mock_data
 
 
 TEST_SEMESTER = "2019A"
+
+celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)  # run asynchronous tasks synchronously
 
 
 def contains_all(l1, l2):
@@ -28,7 +38,13 @@ def contains_all(l1, l2):
 
 
 def set_semester():
+    post_save.disconnect(
+        receiver=invalidate_current_semester_cache,
+        sender=Option,
+        dispatch_uid="invalidate_current_semester_cache",
+    )
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 def override_delay(modules_names, before_func, before_kwargs):
@@ -76,6 +92,8 @@ def override_delay(modules_names, before_func, before_kwargs):
 @patch("alert.models.Email.send_alert")
 class SendAlertTestCase(TestCase):
     def setUp(self):
+        # registration_update.delay = registration_update.__wrapped__
+        celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)
         set_semester()
         course, section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
         self.r_legacy = Registration(email="yo@example.com", phone="+15555555555", section=section)
@@ -630,9 +648,6 @@ class WebhookViewTestCase(TestCase):
         Option.objects.update_or_create(
             key="SEND_FROM_WEBHOOK", value_type="BOOL", defaults={"value": "TRUE"}
         )
-        Option.objects.update_or_create(
-            key="SEMESTER", value_type="TXT", defaults={"value": TEST_SEMESTER}
-        )
 
     def test_alert_called_and_sent_intl(self, mock_alert):
         res = self.client.post(
@@ -718,7 +733,7 @@ class WebhookViewTestCase(TestCase):
         )
 
         self.assertEqual(200, res.status_code)
-        self.assertFalse("sent" in json.loads(res.content)["message"])
+        self.assertFalse("sent" in json.loads(res.content)["message"],)
         self.assertFalse(mock_alert.called)
         self.assertEqual(1, StatusUpdate.objects.count())
         u = StatusUpdate.objects.get()
@@ -816,12 +831,48 @@ class WebhookViewTestCase(TestCase):
 class CourseStatusUpdateTestCase(TestCase):
     def setUp(self):
         set_semester()
+        adp = get_add_drop_period(TEST_SEMESTER)
+        start = adp.estimated_start
+        end = adp.estimated_end
+        duration = end - start
         _, cis120_section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         _, cis160_section = create_mock_data("CIS-160-001", TEST_SEMESTER)
         self.statusUpdates = [
-            StatusUpdate(section=cis120_section, old_status="O", new_status="C", alert_sent=False),
-            StatusUpdate(section=cis120_section, old_status="C", new_status="O", alert_sent=True),
-            StatusUpdate(section=cis160_section, old_status="C", new_status="O", alert_sent=True),
+            StatusUpdate(
+                created_at=start - duration / 4,
+                section=cis120_section,
+                old_status="C",
+                new_status="O",
+                alert_sent=False,
+            ),
+            StatusUpdate(
+                created_at=start + duration / 4,
+                section=cis120_section,
+                old_status="O",
+                new_status="C",
+                alert_sent=False,
+            ),
+            StatusUpdate(
+                created_at=start + duration / 2,
+                section=cis120_section,
+                old_status="C",
+                new_status="O",
+                alert_sent=True,
+            ),
+            StatusUpdate(
+                created_at=start + 3 * duration / 4,
+                section=cis160_section,
+                old_status="C",
+                new_status="O",
+                alert_sent=True,
+            ),
+            StatusUpdate(
+                created_at=end + duration / 4,
+                section=cis160_section,
+                old_status="O",
+                new_status="C",
+                alert_sent=False,
+            ),
         ]
         for s in self.statusUpdates:
             s.save()
@@ -853,6 +904,11 @@ class CourseStatusUpdateTestCase(TestCase):
         response = self.client.get(reverse("statusupdate", args=["CIS-121"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
+    def test_export_status_updates(self):
+        call_command(
+            "export_status_history", path=os.devnull, upload_to_s3=False, semesters=TEST_SEMESTER,
+        )
 
 
 @ddt
@@ -1821,6 +1877,36 @@ class AlertRegistrationTestCase(TestCase):
     def test_resub_after_new_registration_for_section_post(self):
         self.resub_after_new_registration_for_section(put=False)
 
+    def resub_when_registration_is_closed(self, put):
+        """
+        This function tests that you cannot resubscribe if registration is closed.
+        """
+
+        Option.objects.update_or_create(key="REGISTRATION_OPEN", value_type="BOOL", value="FALSE")
+
+        first_id = self.registration_cis120.id
+        self.simulate_alert(self.cis120, 1, should_send=True)
+
+        if put:
+            response = self.client.put(
+                reverse("registrations-detail", args=[first_id]),
+                json.dumps({"resubscribe": True}),
+                content_type="application/json",
+            )
+        else:
+            response = self.client.post(
+                reverse("registrations-list"),
+                json.dumps({"id": first_id, "resubscribe": True}),
+                content_type="application/json",
+            )
+        self.assertEqual(503, response.status_code)
+
+    def test_resub_when_registration_is_closed_put(self):
+        self.resub_when_registration_is_closed(put=True)
+
+    def test_resub_when_registration_is_closed_post(self):
+        self.resub_when_registration_is_closed(put=False)
+
     def test_registration_list_multiple_candidates_same_section(self):
         """
         This function tests that registrations-list does not return multiple registrations
@@ -2575,3 +2661,12 @@ class AlertRegistrationTestCase(TestCase):
                 reverse("registrations-detail", args=[ids[specific_ids + "_id"]])
             )
             self.assertIsNone(response.data.get("last_notification_sent_at"))
+
+    def test_export_registrations(self):
+        self.create_auto_resubscribe_group()
+        call_command(
+            "export_anon_registrations",
+            path=os.devnull,
+            upload_to_s3=False,
+            semesters=TEST_SEMESTER,
+        )

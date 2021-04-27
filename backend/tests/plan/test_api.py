@@ -1,18 +1,28 @@
+from django.db.models.signals import post_save
 from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
+
+from alert.models import AddDropPeriod
+from courses.models import Instructor, Requirement
+from courses.util import invalidate_current_semester_cache
+from review.models import Review
 from tests.courses.util import create_mock_data
 
-from courses.models import Instructor, Requirement
-from review.models import Review
 
-
-TEST_SEMESTER = "2019C"
+TEST_SEMESTER = "2021C"
+assert TEST_SEMESTER >= "2021C", "Some tests assume TEST_SEMESTER >= 2021C"
 
 
 def set_semester():
+    post_save.disconnect(
+        receiver=invalidate_current_semester_cache,
+        sender=Option,
+        dispatch_uid="invalidate_current_semester_cache",
+    )
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 class CreditUnitFilterTestCase(TestCase):

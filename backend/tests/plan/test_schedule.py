@@ -1,20 +1,30 @@
 import json
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save
 from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
+
+from alert.models import AddDropPeriod
+from courses.util import get_average_reviews, invalidate_current_semester_cache
+from plan.models import Schedule
 from tests.courses.util import create_mock_data_with_reviews
 
-from courses.util import get_average_reviews
-from plan.models import Schedule
 
+User = get_user_model()
 
 TEST_SEMESTER = "2019C"
 
 
 def set_semester():
+    post_save.disconnect(
+        receiver=invalidate_current_semester_cache,
+        sender=Option,
+        dispatch_uid="invalidate_current_semester_cache",
+    )
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 class ScheduleTest(TestCase):
