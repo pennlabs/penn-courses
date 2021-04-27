@@ -8,6 +8,7 @@ import ManageAlertWrapper from "../components/managealert";
 import { maxWidth, PHONE } from "../constants";
 import Footer from "../components/Footer";
 import AlertForm from "../components/AlertForm";
+import Timeline from "../components/Timeline";
 
 import { Center, Container, Flex } from "../components/common/layout";
 import MessageList from "../components/MessageList";
@@ -128,6 +129,7 @@ function App() {
         { message: string; status: number; key: number }[]
     >([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const [timeline, setTimeline] = useState<string | null>(null);
 
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
@@ -216,12 +218,15 @@ function App() {
                 {page === "home" ? (
                     <Flex col grow={1}>
                         {user ? (
-                            <AlertForm user={user} setResponse={setResponse} />
+                            <AlertForm user={user} setResponse={setResponse} setTimeline={setTimeline}/>
                         ) : null}
                     </Flex>
                 ) : (
                     <ManageAlertWrapper />
                 )}
+
+                <Timeline courseCode={timeline} setTimeline={setTimeline}/>
+
                 <Footer />
             </Container>
         </>
