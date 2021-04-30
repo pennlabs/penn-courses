@@ -168,10 +168,6 @@ const ManageAlertWrapper = () => {
     const [filter, setFilter] = useState({ search: "" });
 
     useEffect(() => {
-       document.title = "Penn Course Alert"
-    }, []);
-
-    useEffect(() => {
         setCurrAlerts(filterAlerts(alerts, filter));
     }, [alerts, filter, setCurrAlerts]);
 

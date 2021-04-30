@@ -104,10 +104,6 @@ const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
     const [autoResub, setAutoResub] = useState("false");
 
     useEffect(() => {
-       document.title = "Penn Course Alert"
-    }, []);
-
-    useEffect(() => {
         const phonenumber =
             user && parsePhoneNumberFromString(user.profile.phone || "");
         setPhone(
