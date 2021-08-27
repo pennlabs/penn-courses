@@ -67,8 +67,9 @@ const CourseCheckbox = ({ checked }: CourseCheckboxProps) => {
             }}
         >
             <i
-                className={`${checked ? "fas fa-check-square" : "far fa-square"
-                    }`}
+                className={`${
+                  checked ? "fas fa-check-square" : "far fa-square"
+                }`}
                 style={checkStyle}
             />
         </div>
