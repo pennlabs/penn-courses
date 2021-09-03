@@ -17,7 +17,11 @@ class RegistrationAdmin(admin.ModelAdmin):
 
     ordering = ("-created_at",)
 
-    list_filter = ["notification_sent", "section__course__semester"]
+    list_filter = [
+        "notification_sent",
+        "section__course__semester",
+        ("resubscribed_to", admin.EmptyFieldListFilter),
+    ]
 
     list_select_related = (
         "section",
