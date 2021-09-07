@@ -26,7 +26,7 @@ To run a frontend development server,
 2. `yarn` to ensure dependencies are up-to-date.
 3. `cd [alert|plan|review]` depending on which frontend you'd like to run.
 4. `yarn` once more (just to be sure `:)`)
-5. `yarn dev` to run the frontend.
+5. `yarn dev` to run the frontend (or `yarn start` for PCR).
 
 Feel free to leave out the `yarn`s when you know dependencies are up-to-date.
 
