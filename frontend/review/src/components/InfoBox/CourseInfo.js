@@ -120,11 +120,17 @@ const TagsWhenOffered = ({
       ({ activity: sectionActivity }) => activity === sectionActivity
     );
   });
-  // console.log("inst data", instructorData);
-  const oldInstructors = Object.values(instructorData).map(({ id }) => id);
+  const oldInstructorIds = new Set(Object.values(instructorData).map(({ id }) => id));
+  const seenNewInstructorIds = new Set();
   const newInstructors = sections
     .flatMap(({ instructors }) => instructors)
-    .filter(({ id }) => oldInstructors.indexOf(id) === -1);
+    .filter(({ id }) => {
+      if (oldInstructorIds.has(id) || seenNewInstructorIds.has(id)) {
+        return false;
+      }
+      seenNewInstructorIds.add(id);
+      return true;
+    })
 
   const syllabi = [];
   const courses = [];

@@ -7,6 +7,7 @@ import { toNormalizedSemester } from "../utils/helpers";
 import { EVAL_GRAPH_COLORS } from "../constants/colors";
 
 var addDropDate = [];
+var cachedPCAChartDataResponse = null;
 
 const LoadingContainer = styled.div`
   display: flex;
@@ -359,44 +360,49 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
 
   defaults.global.defaultFontFamily = "Lato";
 
-  useEffect(() => {
-    setChartData(null);
+  const handlePCAChartDataResponse = res => {
+    cachedPCAChartDataResponse = res;
 
+    addDropDate = [
+      res["current_add_drop_period"].start,
+      res["current_add_drop_period"].end
+    ];
+
+    const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
+    const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
+    setChartData({
+      demandSemester: toNormalizedSemester(
+        res[averageOrRecent]["pca_demand_plot_since_semester"]
+      ),
+      percentSemester: toNormalizedSemester(
+        res[averageOrRecent]["percent_open_plot_since_semester"]
+      ),
+      demandNumSemesters: res[averageOrRecent]["pca_demand_plot_num_semesters"],
+      percentNumSemesters:
+        res[averageOrRecent]["percent_open_plot_num_semesters"],
+      pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
+      percentSectionsChartData:
+        percentOpenPlot && genPercentChartData(percentOpenPlot)
+    });
+  };
+
+  useEffect(() => {
     if (!courseCode) {
       setLoaded(true);
+      setChartData(null);
       return;
     }
 
-    setLoaded(false);
-    apiFetchPCADemandChartData(courseCode)
-      .then(res => {
-        addDropDate = [
-          res["current_add_drop_period"].start,
-          res["current_add_drop_period"].end
-        ];
-
-        const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
-        const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
-        setChartData({
-          demandSemester: toNormalizedSemester(
-            res[averageOrRecent]["pca_demand_plot_since_semester"]
-          ),
-          percentSemester: toNormalizedSemester(
-            res[averageOrRecent]["percent_open_plot_since_semester"]
-          ),
-          demandNumSemesters:
-            res[averageOrRecent]["pca_demand_plot_num_semesters"],
-          percentNumSemesters:
-            res[averageOrRecent]["percent_open_plot_num_semesters"],
-          pcaDemandChartData:
-            pcaDemandPlot && genDemandChartData(pcaDemandPlot),
-          percentSectionsChartData:
-            percentOpenPlot && genPercentChartData(percentOpenPlot)
+    if (cachedPCAChartDataResponse && cachedPCAChartDataResponse.code === courseCode) {
+      handlePCAChartDataResponse(cachedPCAChartDataResponse);
+    } else {
+      setLoaded(false);
+      apiFetchPCADemandChartData(courseCode)
+        .then(handlePCAChartDataResponse)
+        .finally(() => {
+          setLoaded(true);
         });
-      })
-      .finally(() => {
-        setLoaded(true);
-      });
+    }
   }, [courseCode, averageOrRecent]);
 
   return (
