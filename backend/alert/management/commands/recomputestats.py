@@ -1,5 +1,4 @@
 import logging
-from contextlib import nullcontext
 from textwrap import dedent
 
 import numpy as np
@@ -237,18 +236,13 @@ def recompute_demand_distribution_estimates(
             continue
         set_cache = semester == current_semester
 
-        cache_context = (
-            cache.lock("current_demand_distribution_estimate")
-            if (set_cache and hasattr(cache, "lock"))
-            else nullcontext()
-        )
-        with transaction.atomic(), cache_context:
+        add_drop_period = get_add_drop_period(semester)
+
+        with transaction.atomic():
             # We make this command an atomic transaction, so that the database will not
             # be modified unless the entire update for a semester succeeds.
             # If set_cache is True, we will set the current_demand_distribution_estimate variable
             # in cache
-
-            add_drop_period = get_add_drop_period(semester)
 
             if verbose:
                 print(f"Processing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.\n")

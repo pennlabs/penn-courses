@@ -1,5 +1,4 @@
 import logging
-from contextlib import nullcontext
 
 import numpy as np
 import redis
@@ -89,12 +88,7 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
         section.registration_volume += volume_change
         section.save()
 
-    cache_context = (
-        cache.lock("current_demand_distribution_estimate")
-        if hasattr(cache, "lock")
-        else nullcontext()
-    )
-    with transaction.atomic(), cache_context:
+    with transaction.atomic():
         create_new_distribution_estimate = False
         sentinel = object()
         current_demand_distribution_estimate = cache.get(
