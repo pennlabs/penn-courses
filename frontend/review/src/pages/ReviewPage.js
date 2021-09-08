@@ -63,7 +63,8 @@ export class ReviewPage extends Component {
           code: this.props.match.params.code,
           data: null,
           rowCode: null,
-          error: null
+          error: null,
+          isCourseEval: false
         },
         this.getReviewData
       );
