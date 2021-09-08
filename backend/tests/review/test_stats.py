@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from dateutil.tz import gettz
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
