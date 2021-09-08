@@ -1,5 +1,4 @@
 import logging
-from contextlib import nullcontext
 from textwrap import dedent
 
 import numpy as np
@@ -93,12 +92,12 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
             # We make this command an atomic transaction, so that the database will not
             # be modified unless the entire update for a semester succeeds.
 
+            if verbose:
+                print(f"\nProcessing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.")
+
             add_drop = get_add_drop_period(semester)
             add_drop_start = add_drop.estimated_start
             add_drop_end = add_drop.estimated_end
-
-            if verbose:
-                print(f"\nProcessing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.")
 
             StatusUpdate.objects.filter(section__course__semester=semester).select_for_update()
 
@@ -235,20 +234,14 @@ def recompute_demand_distribution_estimates(
             if verbose:
                 print(f"Skipping semester {semester} (unsupported kind for stats).")
             continue
+        add_drop_period = get_add_drop_period(semester)
         set_cache = semester == current_semester
 
-        cache_context = (
-            cache.lock("current_demand_distribution_estimate")
-            if (set_cache and hasattr(cache, "lock"))
-            else nullcontext()
-        )
-        with transaction.atomic(), cache_context:
+        with transaction.atomic():
             # We make this command an atomic transaction, so that the database will not
             # be modified unless the entire update for a semester succeeds.
             # If set_cache is True, we will set the current_demand_distribution_estimate variable
             # in cache
-
-            add_drop_period = get_add_drop_period(semester)
 
             if verbose:
                 print(f"Processing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.\n")
