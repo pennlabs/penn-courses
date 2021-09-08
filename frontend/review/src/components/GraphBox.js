@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { defaults, Scatter } from "react-chartjs-2";
-import ReactTooltip from "react-tooltip";
 
 import { toNormalizedSemester } from "../utils/helpers";
 import { EVAL_GRAPH_COLORS } from "../constants/colors";
@@ -465,8 +464,7 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
                     Percent of Sections Open During Historical Add/Drop Periods
                   </ChartTitle>
                   <ChartDescription>
-                    Based on section status data during add/drop periods
-                    from
+                    Based on section status data during add/drop periods from
                     {isAverage ? ` ${percentNumSemesters} semesters since` : ""}
                     {" " + toNormalizedSemester(percentSemester)}
                   </ChartDescription>
