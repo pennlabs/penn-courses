@@ -120,7 +120,9 @@ const TagsWhenOffered = ({
       ({ activity: sectionActivity }) => activity === sectionActivity
     );
   });
-  const oldInstructorIds = new Set(Object.values(instructorData).map(({ id }) => id));
+  const oldInstructorIds = new Set(
+    Object.values(instructorData).map(({ id }) => id)
+  );
   const seenNewInstructorIds = new Set();
   const newInstructors = sections
     .flatMap(({ instructors }) => instructors)
@@ -130,7 +132,7 @@ const TagsWhenOffered = ({
       }
       seenNewInstructorIds.add(id);
       return true;
-    })
+    });
 
   const syllabi = [];
   const courses = [];

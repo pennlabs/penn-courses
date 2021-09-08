@@ -393,7 +393,10 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
       return;
     }
 
-    if (cachedPCAChartDataResponse && cachedPCAChartDataResponse.code === courseCode) {
+    if (
+      cachedPCAChartDataResponse &&
+      cachedPCAChartDataResponse.code === courseCode
+    ) {
       handlePCAChartDataResponse(cachedPCAChartDataResponse);
     } else {
       setLoaded(false);
