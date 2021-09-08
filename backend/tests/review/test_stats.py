@@ -149,16 +149,6 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
                 created_at=date,
             )
             old_status, new_status = new_status, old_status
-        cls.recent_percent_open_plot = [
-            (0, 1),
-            (0.2, 0.0),
-            (0.4, 1),
-            (0.6, 0.0),
-            (0.8, 1),
-            (0.81, 0),
-            (0.82, 1),
-            (1, 1),
-        ]
         cls.recent_percent_open = 3 / 5 - 0.01
         old_status = "C"
         new_status = "O"
@@ -169,19 +159,6 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
                 "ESE-120-001", "2020C", old_status, new_status, False, dict(), created_at=date,
             )
             old_status, new_status = new_status, old_status
-        cls.average_percent_open_plot = [
-            (0, 0.5),
-            (0.2, 0),
-            (0.25, 0.5),
-            (0.4, 1),
-            (0.5, 0.5),
-            (0.6, 0.0),
-            (0.75, 0.5),
-            (0.8, 1),
-            (0.81, 0.5),
-            (0.82, 1),
-            (1, 1),
-        ]
         cls.average_percent_open = (1 / 2 + 3 / 5 - 0.01) / 2
         cls.old_percent_open = 1 / 2
         to_date = get_to_date_func(cls.adp)
@@ -201,15 +178,6 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             {"created_at": to_date(0.61), "deleted_at": to_date(0.79), "deleted": True},
         ]
         set_registrations(cls.ESE_120_001_TEST_SEMESTER_id, registration_list_TS)
-        cls.recent_pca_demand_plot = [
-            (0, 0.0),
-            (0.2, 0.5),
-            (0.4, 0.0),
-            (0.6, 0.5),
-            (0.8, 0.0),
-            (0.81, 0.5),
-            (0.82, 0.0),
-        ]
         to_date = get_to_date_func(cls.old_adp)
         # C[.25]O[.5]C[.75]O
         registration_list_2020C = [
@@ -227,19 +195,6 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             {"created_at": to_date(0.76), "deleted_at": to_date(0.77), "deleted": True},
         ]
         set_registrations(cls.ESE_120_001_2020C_id, registration_list_2020C)
-        cls.average_pca_demand_plot = [
-            (0, 0.0),
-            (0.1001, 0.25),
-            (0.2, 0.5),
-            (0.25, 0.25),
-            (0.4, 0.0),
-            (0.5, 0.25),
-            (0.6, 0.5),
-            (0.75, 0.25),
-            (0.8, 0.0),
-            (0.81, 0.25),
-            (0.82, 0.0),
-        ]
 
         cls.recent_num_updates = 3
         cls.average_num_updates = (3 + 2) / 2
@@ -265,25 +220,78 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         )
 
         local_tz = gettz(TIME_ZONE)
-        cls.current_add_drop_period = {
-            "start": cls.current_sem_adp.estimated_start.astimezone(tz=local_tz),
-            "end": cls.current_sem_adp.estimated_end.astimezone(tz=local_tz),
+
+        cls.course_plots_subdict = {
+            "code": "ESE-120",
+            "current_add_drop_period": {
+                "start": cls.current_sem_adp.estimated_start.astimezone(tz=local_tz),
+                "end": cls.current_sem_adp.estimated_end.astimezone(tz=local_tz),
+            },
+            "average_plots": {
+                "pca_demand_plot_since_semester": "2020C",
+                "pca_demand_plot_num_semesters": 2,
+                "percent_open_plot_since_semester": "2020C",
+                "percent_open_plot_num_semesters": 2,
+                "pca_demand_plot": [
+                    (0, 0.0),
+                    (0.1001, 0.25),
+                    (0.2, 0.5),
+                    (0.25, 0.25),
+                    (0.4, 0.0),
+                    (0.5, 0.25),
+                    (0.6, 0.5),
+                    (0.75, 0.25),
+                    (0.8, 0.0),
+                    (0.81, 0.25),
+                    (0.82, 0.0),
+                ],
+                "percent_open_plot": [
+                    (0, 0.5),
+                    (0.2, 0),
+                    (0.25, 0.5),
+                    (0.4, 1),
+                    (0.5, 0.5),
+                    (0.6, 0.0),
+                    (0.75, 0.5),
+                    (0.8, 1),
+                    (0.81, 0.5),
+                    (0.82, 1),
+                    (1, 1),
+                ],
+            },
+            "recent_plots": {
+                "pca_demand_plot_since_semester": TEST_SEMESTER,
+                "pca_demand_plot_num_semesters": 1,
+                "percent_open_plot_since_semester": TEST_SEMESTER,
+                "percent_open_plot_num_semesters": 1,
+                "pca_demand_plot": [
+                    (0, 0.0),
+                    (0.2, 0.5),
+                    (0.4, 0.0),
+                    (0.6, 0.5),
+                    (0.8, 0.0),
+                    (0.81, 0.5),
+                    (0.82, 0.0),
+                ],
+                "percent_open_plot": [
+                    (0, 1),
+                    (0.2, 0.0),
+                    (0.4, 1),
+                    (0.6, 0.0),
+                    (0.8, 1),
+                    (0.81, 0),
+                    (0.82, 1),
+                    (1, 1),
+                ],
+            },
         }
-        cls.recent_pca_demand_plot_since_semester = TEST_SEMESTER
-        cls.average_pca_demand_plot_since_semester = "2020C"
-        cls.recent_pca_demand_plot_num_semesters = 1
-        cls.average_pca_demand_plot_num_semesters = 2
-        cls.recent_percent_open_plot_since_semester = TEST_SEMESTER
-        cls.average_percent_open_plot_since_semester = "2020C"
-        cls.recent_percent_open_plot_num_semesters = 1
-        cls.average_percent_open_plot_num_semesters = 2
 
     def setUp(self):
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
 
     def test_course(self):
-        subdict = {
+        reviews_subdict = {
             **average(
                 self.average_instructor_quality,
                 self.average_enrollment_pct,
@@ -297,29 +305,13 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
                 self.recent_num_updates,
             ),
         }
-        course_subdict = deepcopy(subdict)
-        for field in [
-            "pca_demand_plot",
-            "percent_open_plot",
-            "pca_demand_plot_since_semester",
-            "pca_demand_plot_num_semesters",
-            "percent_open_plot_since_semester",
-            "percent_open_plot_num_semesters",
-        ]:
-            course_subdict["average_reviews"][field] = getattr(self, "average_" + field)
-        for field in [
-            "pca_demand_plot",
-            "percent_open_plot",
-            "pca_demand_plot_since_semester",
-            "pca_demand_plot_num_semesters",
-            "percent_open_plot_since_semester",
-            "percent_open_plot_num_semesters",
-        ]:
-            course_subdict["recent_reviews"][field] = getattr(self, "recent_" + field)
         self.assertRequestContainsAppx(
-            "course-plots",
+            "course-reviews",
             "ESE-120",
-            {**course_subdict, "instructors": {Instructor.objects.get().pk: subdict}},
+            {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
+        )
+        self.assertRequestContainsAppx(
+            "course-plots", "ESE-120", self.course_plots_subdict,
         )
 
     def test_instructor(self):
@@ -419,7 +411,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         duration = end - start
         old_status = "O"
         new_status = "C"
-        cls.percent_open_plot = [(0, 1)]
+        percent_open_plot = [(0, 1)]
         for date in [start + i * duration / 7 for i in range(1, 7)]:
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
@@ -432,9 +424,9 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                 dict(),
                 created_at=date,
             )
-            cls.percent_open_plot.append((percent_thru, int(new_status == "O")))
+            percent_open_plot.append((percent_thru, int(new_status == "O")))
             old_status, new_status = new_status, old_status
-        cls.percent_open_plot.append((1, 1))
+        percent_open_plot.append((1, 1))
         to_date = get_to_date_func(cls.adp)
         set_registrations(
             cls.ESE_120_001_id,
@@ -460,26 +452,36 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
 
         cls.percent_open = (duration * 4 / 7).total_seconds() / duration.total_seconds()
-        cls.pca_demand_plot = [
-            (0, 0),
-            (0.25, 0.5),
-            (2 / 7, 0),
-            (3 / 7, 0.5),
-            (4 / 7, 0),
-            (5 / 7, 0.5),
-            (6 / 7, 0),
-            (1, 0),
-        ]
 
         local_tz = gettz(TIME_ZONE)
-        cls.current_add_drop_period = {
-            "start": cls.current_sem_adp.estimated_start.astimezone(tz=local_tz),
-            "end": cls.current_sem_adp.estimated_end.astimezone(tz=local_tz),
+
+        plots = {
+            "pca_demand_plot_since_semester": TEST_SEMESTER,
+            "pca_demand_plot_num_semesters": 1,
+            "percent_open_plot_since_semester": TEST_SEMESTER,
+            "percent_open_plot_num_semesters": 1,
+            "pca_demand_plot": [
+                (0, 0),
+                (0.25, 0.5),
+                (2 / 7, 0),
+                (3 / 7, 0.5),
+                (4 / 7, 0),
+                (5 / 7, 0.5),
+                (6 / 7, 0),
+                (1, 0),
+            ],
+            "percent_open_plot": percent_open_plot,
         }
-        cls.pca_demand_plot_since_semester = TEST_SEMESTER
-        cls.pca_demand_plot_num_semesters = 1
-        cls.percent_open_plot_since_semester = TEST_SEMESTER
-        cls.percent_open_plot_num_semesters = 1
+        cls.course_plots_subdict = {
+            "code": "ESE-120",
+            "current_add_drop_period": {
+                "start": cls.current_sem_adp.estimated_start.astimezone(tz=local_tz),
+                "end": cls.current_sem_adp.estimated_end.astimezone(tz=local_tz),
+            },
+            "average_plots": plots,
+            "recent_plots": plots,
+        }
+
         cls.enrollment_pct = 80 / 100
 
     def setUp(self):
@@ -487,7 +489,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         self.client.force_login(User.objects.create_user(username="test"))
 
     def test_course(self):
-        subdict = {
+        reviews_subdict = {
             **average(
                 self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
             ),
@@ -495,29 +497,13 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                 self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
             ),
         }
-        course_subdict = deepcopy(subdict)
-        for field in [
-            "pca_demand_plot",
-            "percent_open_plot",
-            "pca_demand_plot_since_semester",
-            "pca_demand_plot_num_semesters",
-            "percent_open_plot_since_semester",
-            "percent_open_plot_num_semesters",
-        ]:
-            course_subdict["average_reviews"][field] = getattr(self, field)
-        for field in [
-            "pca_demand_plot",
-            "percent_open_plot",
-            "pca_demand_plot_since_semester",
-            "pca_demand_plot_num_semesters",
-            "percent_open_plot_since_semester",
-            "percent_open_plot_num_semesters",
-        ]:
-            course_subdict["recent_reviews"][field] = getattr(self, field)
         self.assertRequestContainsAppx(
-            "course-plots",
+            "course-reviews",
             "ESE-120",
-            {**course_subdict, "instructors": {Instructor.objects.get().pk: subdict}},
+            {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
+        )
+        self.assertRequestContainsAppx(
+            "course-plots", "ESE-120", self.course_plots_subdict,
         )
 
     def test_instructor(self):
@@ -603,7 +589,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         duration = end - start
         old_status = "O"
         new_status = "C"
-        cls.percent_open_plot = [(0, 1)]
+        percent_open_plot = [(0, 1)]
         for date in [start + i * duration / 7 for i in range(1, 7)]:
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
@@ -616,9 +602,9 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                 dict(),
                 created_at=date,
             )
-            cls.percent_open_plot.append((percent_thru, int(new_status == "O")))
+            percent_open_plot.append((percent_thru, int(new_status == "O")))
             old_status, new_status = new_status, old_status
-        cls.percent_open_plot.append((1, 1))
+        percent_open_plot.append((1, 1))
         to_date = get_to_date_func(cls.adp)
         set_registrations(
             cls.ESE_120_001_id,
@@ -632,6 +618,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                 {"created_at": to_date(0.75), "deleted_at": to_date(5.9 / 7), "deleted": True},
             ],
         )
+        cls.percent_open = (duration * 4 / 7).total_seconds() / duration.total_seconds()
 
         cls.num_updates = 3
         for review in Review.objects.all():
@@ -640,38 +627,44 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         sec = get_sec_by_id(cls.ESE_120_001_id)
         sec.capacity = 100
         sec.save()
+        cls.enrollment_pct = 80 / 100
 
         recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
-
-        cls.percent_open = (duration * 4 / 7).total_seconds() / duration.total_seconds()
-        cls.pca_demand_plot = [
-            (0, 0),
-            (0.25, 0.5),
-            (2 / 7, 0),
-            (3 / 7, 0.5),
-            (4 / 7, 0),
-            (5 / 7, 0.5),
-            (6 / 7, 0),
-            (1, 0),
-        ]
-
         local_tz = gettz(TIME_ZONE)
-        cls.current_add_drop_period = {
-            "start": cls.current_sem_adp.estimated_start.astimezone(tz=local_tz),
-            "end": cls.current_sem_adp.estimated_end.astimezone(tz=local_tz),
+
+        plots = {
+            "pca_demand_plot_since_semester": TEST_SEMESTER,
+            "pca_demand_plot_num_semesters": 1,
+            "percent_open_plot_since_semester": TEST_SEMESTER,
+            "percent_open_plot_num_semesters": 1,
+            "pca_demand_plot": [
+                (0, 0),
+                (0.25, 0.5),
+                (2 / 7, 0),
+                (3 / 7, 0.5),
+                (4 / 7, 0),
+                (5 / 7, 0.5),
+                (6 / 7, 0),
+                (1, 0),
+            ],
+            "percent_open_plot": percent_open_plot,
         }
-        cls.pca_demand_plot_since_semester = TEST_SEMESTER
-        cls.pca_demand_plot_num_semesters = 1
-        cls.percent_open_plot_since_semester = TEST_SEMESTER
-        cls.percent_open_plot_num_semesters = 1
-        cls.enrollment_pct = 80 / 100
+        cls.course_plots_subdict = {
+            "code": "ESE-120",
+            "current_add_drop_period": {
+                "start": cls.current_sem_adp.estimated_start.astimezone(tz=local_tz),
+                "end": cls.current_sem_adp.estimated_end.astimezone(tz=local_tz),
+            },
+            "average_plots": plots,
+            "recent_plots": plots,
+        }
 
     def setUp(self):
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
 
     def test_course(self):
-        subdict = {
+        reviews_subdict = {
             **average(
                 self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
             ),
@@ -679,35 +672,19 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                 self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
             ),
         }
-        course_subdict = deepcopy(subdict)
-        for field in [
-            "pca_demand_plot",
-            "percent_open_plot",
-            "pca_demand_plot_since_semester",
-            "pca_demand_plot_num_semesters",
-            "percent_open_plot_since_semester",
-            "percent_open_plot_num_semesters",
-        ]:
-            course_subdict["average_reviews"][field] = getattr(self, field)
-        for field in [
-            "pca_demand_plot",
-            "percent_open_plot",
-            "pca_demand_plot_since_semester",
-            "pca_demand_plot_num_semesters",
-            "percent_open_plot_since_semester",
-            "percent_open_plot_num_semesters",
-        ]:
-            course_subdict["recent_reviews"][field] = getattr(self, field)
         self.assertRequestContainsAppx(
-            "course-plots",
+            "course-reviews",
             "ESE-120",
             {
-                **course_subdict,
+                **reviews_subdict,
                 "instructors": {
-                    Instructor.objects.get(name=self.instructor_1_name).pk: subdict,
-                    Instructor.objects.get(name=self.instructor_2_name).pk: subdict,
+                    Instructor.objects.get(name=self.instructor_1_name).pk: reviews_subdict,
+                    Instructor.objects.get(name=self.instructor_2_name).pk: reviews_subdict,
                 },
             },
+        )
+        self.assertRequestContainsAppx(
+            "course-plots", "ESE-120", self.course_plots_subdict,
         )
 
     def test_instructor(self):
