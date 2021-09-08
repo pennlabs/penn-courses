@@ -6,7 +6,7 @@ import { apiFetchPCADemandChartData } from "../utils/api";
 import { toNormalizedSemester } from "../utils/helpers";
 import { EVAL_GRAPH_COLORS } from "../constants/colors";
 
-const addDropDate = [];
+var addDropDate = [];
 
 const LoadingContainer = styled.div`
   display: flex;
@@ -370,8 +370,7 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
     setLoaded(false);
     apiFetchPCADemandChartData(courseCode)
       .then(res => {
-        addDropDate.push(res["current_add_drop_period"].start);
-        addDropDate.push(res["current_add_drop_period"].end);
+        addDropDate = [res["current_add_drop_period"].start, res["current_add_drop_period"].end];
 
         const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
         const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];

@@ -218,7 +218,6 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         )
 
         local_tz = gettz(TIME_ZONE)
-
         cls.course_plots_subdict = {
             "code": "ESE-120",
             "current_add_drop_period": {
@@ -425,6 +424,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             percent_open_plot.append((percent_thru, int(new_status == "O")))
             old_status, new_status = new_status, old_status
         percent_open_plot.append((1, 1))
+        cls.percent_open = (duration * 4 / 7).total_seconds() / duration.total_seconds()
         to_date = get_to_date_func(cls.adp)
         set_registrations(
             cls.ESE_120_001_id,
@@ -446,12 +446,9 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         sec = get_sec_by_id(cls.ESE_120_001_id)
         sec.capacity = 100
         sec.save()
+        cls.enrollment_pct = 80 / 100
 
         recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
-
-        cls.percent_open = (duration * 4 / 7).total_seconds() / duration.total_seconds()
-
-        local_tz = gettz(TIME_ZONE)
 
         plots = {
             "pca_demand_plot_since_semester": TEST_SEMESTER,
@@ -470,6 +467,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             ],
             "percent_open_plot": percent_open_plot,
         }
+        local_tz = gettz(TIME_ZONE)
         cls.course_plots_subdict = {
             "code": "ESE-120",
             "current_add_drop_period": {
@@ -479,8 +477,6 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             "average_plots": plots,
             "recent_plots": plots,
         }
-
-        cls.enrollment_pct = 80 / 100
 
     def setUp(self):
         self.client = APIClient()
@@ -628,7 +624,6 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         cls.enrollment_pct = 80 / 100
 
         recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
-        local_tz = gettz(TIME_ZONE)
 
         plots = {
             "pca_demand_plot_since_semester": TEST_SEMESTER,
@@ -647,6 +642,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             ],
             "percent_open_plot": percent_open_plot,
         }
+        local_tz = gettz(TIME_ZONE)
         cls.course_plots_subdict = {
             "code": "ESE-120",
             "current_add_drop_period": {

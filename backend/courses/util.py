@@ -190,7 +190,7 @@ def update_percent_open(section, last_status_update, new_status_update):
     section has not previously had a status update.
     This function returns a string warning message if last_status_update.new_status does not equal
     new_status_update.old_status, but will still update section.percent_open in this case (using
-    last_status_update.old_status).
+    new_status_update.old_status).
     Normally, this function will return an empty string.
     """
 
@@ -199,10 +199,10 @@ def update_percent_open(section, last_status_update, new_status_update):
         return ""
     if last_status_update is None:
         section.percent_open = Decimal(int(new_status_update.old_status == "O"))
+        section.save()
     else:
         if last_status_update.created_at >= add_drop.estimated_end:
             return ""
-        last_status = last_status_update.new_status
         seconds_before_last = Decimal(
             max((last_status_update.created_at - add_drop.estimated_start).total_seconds(), 0)
         )
@@ -217,16 +217,16 @@ def update_percent_open(section, last_status_update, new_status_update):
         )
         section.percent_open = (
             Decimal(section.percent_open) * seconds_before_last
-            + int(last_status == "O") * seconds_since_last
+            + int(new_status_update.old_status == "O") * seconds_since_last
         ) / (seconds_before_last + seconds_since_last)
-        if last_status != new_status_update.old_status:
+        section.save()
+        if last_status_update.new_status != new_status_update.old_status:
             return (
                 f"Status update received changing section {section} from "
                 f"{new_status_update.old_status} to {new_status_update.new_status}, "
                 f"after previous status update from {last_status_update.old_status} "
                 f"to {last_status_update.new_status} (erroneous)."
             )
-    section.save()
     return ""
 
 
