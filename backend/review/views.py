@@ -3,7 +3,6 @@ from django.db.models import Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from options.models import Option
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,6 +14,7 @@ from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     autocomplete_response_schema,
+    course_plots_response_schema,
     course_reviews_response_schema,
     department_reviews_response_schema,
     instructor_for_course_reviews_response_schema,
@@ -45,7 +45,8 @@ it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
 """
 
 
-# Filters defining which sections we will include in extra pcr plots / metrics
+# A Q filter defining which sections we will include in demand distribution estimates,
+# also used by extra_metrics_section_filters_pcr (see below)
 extra_metrics_section_filters = (
     ~Q(
         course__department__code__in=WAITLIST_DEPARTMENT_CODES
@@ -60,15 +61,23 @@ extra_metrics_section_filters = (
             )
         )
     )  # Filter out sections that require permit for registration
-    & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
-    & (
-        Q(id__in=Subquery(Review.objects.all().values_list("section__id", flat=True)))
-        | Q(course__semester=Subquery(Option.objects.filter(key="SEMESTER").values("value")[:1]))
-    )  # Filter out sections from past semesters that do not have review data
 )
-extra_metrics_section_filters_no_current = extra_metrics_section_filters & Q(
-    course__semester__lt=Subquery(Option.objects.filter(key="SEMESTER").values("value")[:1])
-)
+
+
+def extra_metrics_section_filters_pcr(current_semester=None):
+    """
+    This function returns a Q filter for sections that should be included in
+    extra PCR plots / metrics.
+    """
+    if current_semester is None:
+        current_semester = get_current_semester()
+    return (
+        extra_metrics_section_filters
+        & Q(course__semester__lt=current_semester)  # Filter our sections from the current semester
+        & (
+            Q(id__in=Subquery(Review.objects.all().values_list("section__id", flat=True)))
+        )  # Filter out sections that do not have review data
+    )
 
 
 @api_view(["GET"])
@@ -104,8 +113,6 @@ def course_reviews(request, course_code):
     if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
         raise Http404()
 
-    current_semester = get_current_semester()
-
     reviews = (
         review_averages(
             Review.objects.filter(section__course__full_code=course_code),
@@ -134,10 +141,73 @@ def course_reviews(request, course_code):
 
     course = dict(course_qs[:1].values()[0])
 
+    return Response(
+        {
+            "code": course["full_code"],
+            "name": course["title"],
+            "description": course["description"],
+            "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
+            "num_sections": Section.objects.filter(
+                course__full_code=course_code, review__isnull=False
+            )
+            .values("full_code", "course__semester")
+            .distinct()
+            .count(),
+            "num_sections_recent": Section.objects.filter(
+                course__full_code=course_code,
+                course__semester=course["recent_semester_calc"],
+                review__isnull=False,
+            )
+            .values("full_code", "course__semester")
+            .distinct()
+            .count(),
+            "average_reviews": make_subdict("average_", course),
+            "recent_reviews": make_subdict("recent_", course),
+            "num_semesters": course["average_semester_count"],
+            "instructors": instructors,
+        }
+    )
+
+
+@api_view(["GET"])
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("course-plots", args=["course_code"]): {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Plots retrieved successfully.",
+                    404: "Course with given course_code not found.",
+                },
+            },
+        },
+        custom_path_parameter_desc={
+            reverse_func("course-plots", args=["course_code"]): {
+                "GET": {
+                    "course_code": (
+                        "The dash-joined department and code of the course you want plots for, e.g. `CIS-120` for CIS-120."  # noqa E501
+                    )
+                }
+            },
+        },
+        override_response_schema=course_plots_response_schema,
+    )
+)
+# @permission_classes([IsAuthenticated])
+def course_plots(request, course_code):
+    """
+    Get all PCR plots for a given course.
+    """
+    print(request.user)
+    print(request.user.is_authenticated)
+    if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
+        raise Http404()
+
+    current_semester = get_current_semester()
+
     # Compute set of sections to include in plot data
     filtered_sections = (
         Section.objects.filter(
-            extra_metrics_section_filters_no_current, course__full_code=course_code,
+            extra_metrics_section_filters_pcr(current_semester), course__full_code=course_code,
         )
         .annotate(efficient_semester=F("course__semester"))
         .distinct()
@@ -181,30 +251,12 @@ def course_reviews(request, course_code):
 
     return Response(
         {
-            "code": course["full_code"],
-            "name": course["title"],
-            "description": course["description"],
-            "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
-            "num_sections": Section.objects.filter(
-                course__full_code=course_code, review__isnull=False
-            )
-            .values("full_code", "course__semester")
-            .distinct()
-            .count(),
-            "num_sections_recent": Section.objects.filter(
-                course__full_code=course_code,
-                course__semester=course["recent_semester_calc"],
-                review__isnull=False,
-            )
-            .values("full_code", "course__semester")
-            .distinct()
-            .count(),
+            "code": course_code,
             "current_add_drop_period": {
                 "start": current_adp.estimated_start.astimezone(tz=local_tz),
                 "end": current_adp.estimated_end.astimezone(tz=local_tz),
             },
-            "average_reviews": {
-                **make_subdict("average_", course),
+            "average_plots": {
                 "pca_demand_plot_since_semester": avg_demand_plot_min_semester,
                 "pca_demand_plot_num_semesters": avg_demand_plot_num_semesters,
                 "pca_demand_plot": avg_demand_plot,
@@ -212,8 +264,7 @@ def course_reviews(request, course_code):
                 "percent_open_plot_num_semesters": avg_percent_open_plot_num_semesters,
                 "percent_open_plot": avg_percent_open_plot,
             },
-            "recent_reviews": {
-                **make_subdict("recent_", course),
+            "recent_plots": {
                 "pca_demand_plot_since_semester": recent_demand_plot_semester,
                 "pca_demand_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
                 "pca_demand_plot": recent_demand_plot,
@@ -221,8 +272,6 @@ def course_reviews(request, course_code):
                 "percent_open_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
                 "percent_open_plot": recent_percent_open_plot,
             },
-            "num_semesters": course["average_semester_count"],
-            "instructors": instructors,
         }
     )
 

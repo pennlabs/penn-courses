@@ -13,7 +13,7 @@ import { apiReviewData, apiLive, apiLiveInstructor } from "../utils/api";
 /**
  * Enable or disable the Penn Labs recruitment banner.
  */
-const SHOW_RECRUITMENT_BANNER = false;
+const SHOW_RECRUITMENT_BANNER = true;
 
 /**
  * Represents a course, instructor, or department review page.
@@ -292,7 +292,6 @@ export class ReviewPage extends Component {
             {type === "course" && isCourseEval && (
               <GraphBox
                 key={isAverage}
-                courseData={data}
                 courseCode={code}
                 isAverage={isAverage}
                 setIsAverage={this.setIsAverage}

@@ -402,6 +402,7 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
     (reverse_func("statusupdate", args=["full_code"]), "GET"): "Status Update",
     (reverse_func("recommend-courses"), "POST"): "Course Recommendations",
     (reverse_func("course-reviews", args=["course_code"]), "GET"): "Course Reviews",
+    (reverse_func("course-plots", args=["course_code"]), "GET"): "Plots",
     (reverse_func("review-autocomplete"), "GET"): "Autocomplete Dump",
     (reverse_func("instructor-reviews", args=["instructor_id"]), "GET"): "Instructor Reviews",
     (reverse_func("department-reviews", args=["department_code"]), "GET"): "Department Reviews",

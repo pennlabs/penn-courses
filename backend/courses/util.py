@@ -120,6 +120,22 @@ def get_add_drop_period(semester):
     return cached_adps[semester]
 
 
+def get_or_create_add_drop_period(semester):
+    """
+    Behaves the same as get_add_drop_period if an AddDropPeriod object already exists for the given
+    semester, and otherwise creates a new AddDropPeriod object for the given semester, returning
+    the created object.
+    """
+    from alert.models import AddDropPeriod
+
+    try:
+        add_drop = get_add_drop_period(semester)
+    except AddDropPeriod.DoesNotExist:
+        add_drop = AddDropPeriod(semester=semester)
+        add_drop.save()
+    return add_drop
+
+
 def separate_course_code(course_code):
     """return (dept, course, section) ID tuple given a course code in any possible format"""
     course_regexes = [
@@ -170,53 +186,48 @@ def get_course_and_section(course_code, semester, section_manager=None):
 def update_percent_open(section, last_status_update, new_status_update):
     """
     This function updates a section's percent_open field when a new status update is processed.
-    It should be called from the record_update function.
-    The last_status_update argument should be given
-    this section's previous status update, or None if this section has not previously had
-    a status update.
+    The last_status_update parameter takes this section's previous status update, or None if this
+    section has not previously had a status update.
+    This function returns a string warning message if last_status_update.new_status does not equal
+    new_status_update.old_status, but will still update section.percent_open in this case (using
+    new_status_update.old_status).
+    Normally, this function will return an empty string.
     """
-    from alert.models import AddDropPeriod
 
-    try:
-        add_drop = get_add_drop_period(section.semester)
-    except AddDropPeriod.DoesNotExist:
-        add_drop = AddDropPeriod(semester=section.semester)
-        add_drop.save()
-    add_drop_start = add_drop.estimated_start
-    add_drop_end = add_drop.estimated_end
-    if new_status_update.created_at < add_drop_start:
-        return
-    if last_status_update is not None:
-        if last_status_update.created_at >= add_drop_end:
-            return
-        last_status = last_status_update.new_status
-        if last_status != new_status_update.old_status:
-            logger.error(
-                f"Status update received changing section {section} from "
-                f"{new_status_update.old_status} to {new_status_update.new_status}, "
-                f"after previous status update from {last_status_update.old_status} "
-                f"to {last_status_update.new_status} (erroneous)."
-            )
-        before_seconds = Decimal(
-            max((last_status_update.created_at - add_drop_start).total_seconds(), 0)
+    add_drop = get_or_create_add_drop_period(section.semester)
+    if new_status_update.created_at < add_drop.estimated_start:
+        return ""
+    if last_status_update is None:
+        section.percent_open = Decimal(int(new_status_update.old_status == "O"))
+        section.save()
+    else:
+        if last_status_update.created_at >= add_drop.estimated_end:
+            return ""
+        seconds_before_last = Decimal(
+            max((last_status_update.created_at - add_drop.estimated_start).total_seconds(), 0)
         )
-        after_seconds = Decimal(
+        seconds_since_last = Decimal(
             max(
                 (
-                    min(new_status_update.created_at, add_drop_end)
-                    - max(last_status_update.created_at, add_drop_start)
+                    min(new_status_update.created_at, add_drop.estimated_end)
+                    - max(last_status_update.created_at, add_drop.estimated_start)
                 ).total_seconds(),
                 0,
             )
         )
         section.percent_open = (
-            Decimal(section.percent_open) * before_seconds + int(last_status == "O") * after_seconds
-        ) / (before_seconds + after_seconds)
-    else:
-        if new_status_update.created_at >= add_drop_end:
-            return
-        section.percent_open = Decimal(int(new_status_update.old_status == "O"))
-    section.save()
+            Decimal(section.percent_open) * seconds_before_last
+            + int(new_status_update.old_status == "O") * seconds_since_last
+        ) / (seconds_before_last + seconds_since_last)
+        section.save()
+        if last_status_update.new_status != new_status_update.old_status:
+            return (
+                f"Status update received changing section {section} from "
+                f"{new_status_update.old_status} to {new_status_update.new_status}, "
+                f"after previous status update from {last_status_update.old_status} "
+                f"to {last_status_update.new_status} (erroneous)."
+            )
+    return ""
 
 
 def record_update(section_id, semester, old_status, new_status, alerted, req, created_at=None):
@@ -240,14 +251,31 @@ def record_update(section_id, semester, old_status, new_status, alerted, req, cr
     if created_at is not None:
         u.created_at = created_at
     u.save()
+
+    valid_status_choices = dict(Section.STATUS_CHOICES).keys()
+
+    def validate_status(name, status):
+        if status not in valid_status_choices:
+            raise ValidationError(
+                f"{name} is invalid; expected a value in {valid_status_choices}, but got {status}"
+            )
+
+    validate_status("Old status", old_status)
+    validate_status("New status", new_status)
+
+    update_warning = ""
     try:
-        # only update percent open if the given semester is valid and fall or spring
+        # Raises ValidationError if semester is not fall or spring (and correctly formatted)
         validate_add_drop_semester(semester)
-        update_percent_open(section, last_status_update, u)
-        # update the section's percent_open field
+        update_warning = update_percent_open(section, last_status_update, u)
     except ValidationError:
         pass
 
+    section.status = new_status
+    section.save()
+
+    if update_warning:
+        raise ValidationError(update_warning)
     return u
 
 

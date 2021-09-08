@@ -3,6 +3,7 @@ import json
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Max
 from django.http import HttpResponse, JsonResponse
@@ -120,7 +121,8 @@ def accept_webhook(request):
             request.body,
         )
         update_course_from_record(u)
-
+    except ValidationError as e:
+        return HttpResponse(f"Invalid status update: \n{e}", status=400)
     except ValueError as e:
         logger.error(e)
         return HttpResponse("We got an error but webhook should ignore it", status=200)
