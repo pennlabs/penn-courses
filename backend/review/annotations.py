@@ -65,7 +65,7 @@ def review_averages(
         all your subfilters to Section filters, and pass them as section_subfilters
     """
     from courses.models import Section, StatusUpdate
-    from review.views import extra_metrics_section_filters_no_current
+    from review.views import extra_metrics_section_filters_pcr
 
     # ^ imported here to avoid circular imports
 
@@ -123,7 +123,7 @@ def review_averages(
                     ),
                     (prefix + "percent_open"): PercentOpenSubqueryAvg(
                         Section.objects.filter(
-                            extra_metrics_section_filters_no_current, **section_subfilters
+                            extra_metrics_section_filters_pcr(), **section_subfilters
                         )
                         .order_by()
                         .distinct(),
@@ -131,7 +131,7 @@ def review_averages(
                     ),
                     (prefix + "num_openings"): NumOpeningsSubqueryAvg(
                         Section.objects.filter(
-                            extra_metrics_section_filters_no_current, **section_subfilters
+                            extra_metrics_section_filters_pcr(), **section_subfilters
                         )
                         .order_by()
                         .distinct()

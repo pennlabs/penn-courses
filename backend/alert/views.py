@@ -13,6 +13,7 @@ from options.models import get_bool
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.core.exceptions import ValidationError
 
 import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
@@ -120,7 +121,8 @@ def accept_webhook(request):
             request.body,
         )
         update_course_from_record(u)
-
+    except ValidationError as e:
+        return HttpResponse(f"Invalid status update: \n{e}", status=400)
     except ValueError as e:
         logger.error(e)
         return HttpResponse("We got an error but webhook should ignore it", status=200)

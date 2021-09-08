@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { defaults, Scatter } from "react-chartjs-2";
-import ReactTooltip from "react-tooltip";
 
+import { apiFetchPCADemandChartData } from "../utils/api";
 import { toNormalizedSemester } from "../utils/helpers";
 import { EVAL_GRAPH_COLORS } from "../constants/colors";
 
@@ -93,7 +93,7 @@ const GraphTextContainer = styled.div`
 const genAverageData = seriesData => {
   const averageData = [];
   const windowSize = 0.05;
-  seriesData.map((point, index) => {
+  seriesData.forEach((point, index) => {
     const xVal = point[0];
     let total = 0;
     let numInTotal = 0;
@@ -116,7 +116,8 @@ const genAverageData = seriesData => {
 };
 
 //PCA Demand Chart Data
-const genDemandChartData = (data, averageData) => {
+const genDemandChartData = (data) => {
+  const averageData = genAverageData(data);
   return {
     datasets: [
       {
@@ -350,55 +351,44 @@ const calcApproxDate = (startDateString, endDateString, percent) => {
   });
 };
 
-const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
-  const [loaded, setLoaded] = useState(false);
-  const [pcaDemandChartData, setPCADemandChartData] = useState(null);
-  const [percentSectionsChartData, setPercentSectionsChartData] = useState(
-    null
-  );
+const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
+  const averageOrRecent = isAverage ? "average_plots" : "recent_plots";
 
-  const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
-  const demandSemester =
-    courseData[averageOrRecent]["pca_demand_plot_since_semester"];
-  const percentSemester =
-    courseData[averageOrRecent]["percent_open_plot_since_semester"];
-  const demandNumSemesters =
-    courseData[averageOrRecent]["pca_demand_plot_num_semesters"];
-  const percentNumSemesters =
-    courseData[averageOrRecent]["percent_open_plot_num_semesters"];
+  const [chartData, setChartData] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
   defaults.global.defaultFontFamily = "Lato";
 
   useEffect(() => {
+    setChartData(null);
+
     if (!courseCode) {
+      setLoaded(true);
       return;
     }
 
     setLoaded(false);
+    apiFetchPCADemandChartData(courseCode)
+      .then(res => {
+        addDropDate.push(res["current_add_drop_period"].start);
+        addDropDate.push(res["current_add_drop_period"].end);
 
-    addDropDate.push(courseData["current_add_drop_period"].start);
-    addDropDate.push(courseData["current_add_drop_period"].end);
+        const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
+        const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
 
-    //Generate demand plot data
-    const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
-    if (pcaDemandPlot) {
-      const averageData = genAverageData(pcaDemandPlot);
-      setPCADemandChartData(genDemandChartData(pcaDemandPlot, averageData));
-    } else {
-      setPCADemandChartData(null);
-    }
+        setChartData({
+          demandSemester: toNormalizedSemester(res[averageOrRecent]["pca_demand_plot_since_semester"]),
+          percentSemester: toNormalizedSemester(res[averageOrRecent]["percent_open_plot_since_semester"]),
+          demandNumSemesters: res[averageOrRecent]["pca_demand_plot_num_semesters"],
+          percentNumSemesters: res[averageOrRecent]["percent_open_plot_num_semesters"],
+          pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
+          percentSectionsChartData: percentOpenPlot && genPercentChartData(percentOpenPlot),
+        });
+      })
+      .finally(() => {
+        setLoaded(true);
+      });
 
-    //Generate percent of sections open  plot data
-    const percentSectionsPlot =
-      courseData[averageOrRecent]["percent_open_plot"];
-
-    if (percentSectionsPlot) {
-      setPercentSectionsChartData(genPercentChartData(percentSectionsPlot));
-    } else {
-      setPCADemandChartData(null);
-    }
-
-    setLoaded(true);
   }, [courseCode]);
 
   return (
@@ -406,7 +396,7 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
       <GraphRow>
         <GraphColumn>
           <GraphContainer>
-            {pcaDemandChartData ? (
+            {chartData && chartData.pcaDemandChartData ? (
               <div id="row-select-chart-container">
                 <GraphTextContainer>
                   <ChartTitle>
@@ -417,8 +407,8 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
                     Registration difficulty is estimated on a fixed 0-1 scale
                     (relative to other classes at Penn), using Penn Course Alert
                     data from{" "}
-                    {isAverage ? `${demandNumSemesters} semesters since` : ""}{" "}
-                    {toNormalizedSemester(demandSemester)}
+                    {isAverage ? `${chartData.demandNumSemesters} semesters since` : ""}{" "}
+                    {chartData.demandSemester}
                   </ChartDescription>
                 </GraphTextContainer>
                 <div
@@ -443,7 +433,7 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
                   </button>
                 </div>
                 <Scatter
-                  data={pcaDemandChartData}
+                  data={chartData.pcaDemandChartData}
                   options={demandChartOptions}
                 />
               </div>
@@ -473,7 +463,7 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
         </GraphColumn>
         <GraphColumn>
           <GraphContainer>
-            {percentSectionsChartData ? (
+            {chartData && chartData.percentSectionsChartData ? (
               <div id="row-select-chart-container">
                 <GraphTextContainer>
                   <ChartTitle>
@@ -481,8 +471,8 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
                   </ChartTitle>
                   <ChartDescription>
                     Based on section status data during add/drop periods from
-                    {isAverage ? ` ${percentNumSemesters} semesters since` : ""}
-                    {" " + toNormalizedSemester(percentSemester)}
+                    {isAverage ? ` ${chartData.percentNumSemesters} semesters since` : ""}
+                    {" " + chartData.percentSemester}
                   </ChartDescription>
                 </GraphTextContainer>
                 <div
@@ -507,7 +497,7 @@ const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
                   </button>
                 </div>
                 <Scatter
-                  data={percentSectionsChartData}
+                  data={chartData.percentSectionsChartData}
                   options={percentSectionChartOptions}
                 />
               </div>
