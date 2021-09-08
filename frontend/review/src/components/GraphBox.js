@@ -377,7 +377,6 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
 
         const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
         const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
-
         setChartData({
           demandSemester: toNormalizedSemester(
             res[averageOrRecent]["pca_demand_plot_since_semester"]
