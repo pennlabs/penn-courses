@@ -1,10 +1,10 @@
 from django.urls import path
-from django.views.decorators.cache import cache_control, cache_page
+from django.views.decorators.cache import cache_page
 
 from review.views import (
     autocomplete,
-    course_reviews,
     course_plots,
+    course_reviews,
     department_reviews,
     instructor_for_course_reviews,
     instructor_reviews,

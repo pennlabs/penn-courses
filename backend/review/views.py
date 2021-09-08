@@ -3,7 +3,6 @@ from django.db.models import Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from options.models import Option
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,8 +14,8 @@ from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     autocomplete_response_schema,
-    course_reviews_response_schema,
     course_plots_response_schema,
+    course_reviews_response_schema,
     department_reviews_response_schema,
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
@@ -67,7 +66,7 @@ extra_metrics_section_filters = (
 
 def extra_metrics_section_filters_pcr(current_semester=None):
     """
-    This function returns a Q filter for sections that should be included in 
+    This function returns a Q filter for sections that should be included in
     extra PCR plots / metrics.
     """
     if current_semester is None:

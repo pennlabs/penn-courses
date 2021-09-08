@@ -3,6 +3,7 @@ import json
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Max
 from django.http import HttpResponse, JsonResponse
@@ -13,7 +14,6 @@ from options.models import get_bool
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.core.exceptions import ValidationError
 
 import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
