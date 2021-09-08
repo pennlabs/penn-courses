@@ -116,7 +116,7 @@ const genAverageData = seriesData => {
 };
 
 //PCA Demand Chart Data
-const genDemandChartData = (data) => {
+const genDemandChartData = data => {
   const averageData = genAverageData(data);
   return {
     datasets: [
@@ -377,19 +377,26 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
         const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
 
         setChartData({
-          demandSemester: toNormalizedSemester(res[averageOrRecent]["pca_demand_plot_since_semester"]),
-          percentSemester: toNormalizedSemester(res[averageOrRecent]["percent_open_plot_since_semester"]),
-          demandNumSemesters: res[averageOrRecent]["pca_demand_plot_num_semesters"],
-          percentNumSemesters: res[averageOrRecent]["percent_open_plot_num_semesters"],
-          pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
-          percentSectionsChartData: percentOpenPlot && genPercentChartData(percentOpenPlot),
+          demandSemester: toNormalizedSemester(
+            res[averageOrRecent]["pca_demand_plot_since_semester"]
+          ),
+          percentSemester: toNormalizedSemester(
+            res[averageOrRecent]["percent_open_plot_since_semester"]
+          ),
+          demandNumSemesters:
+            res[averageOrRecent]["pca_demand_plot_num_semesters"],
+          percentNumSemesters:
+            res[averageOrRecent]["percent_open_plot_num_semesters"],
+          pcaDemandChartData:
+            pcaDemandPlot && genDemandChartData(pcaDemandPlot),
+          percentSectionsChartData:
+            percentOpenPlot && genPercentChartData(percentOpenPlot)
         });
       })
       .finally(() => {
         setLoaded(true);
       });
-
-  }, [courseCode]);
+  }, [courseCode, averageOrRecent]);
 
   return (
     <>
@@ -407,7 +414,9 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
                     Registration difficulty is estimated on a fixed 0-1 scale
                     (relative to other classes at Penn), using Penn Course Alert
                     data from{" "}
-                    {isAverage ? `${chartData.demandNumSemesters} semesters since` : ""}{" "}
+                    {isAverage
+                      ? `${chartData.demandNumSemesters} semesters since`
+                      : ""}{" "}
                     {chartData.demandSemester}
                   </ChartDescription>
                 </GraphTextContainer>
@@ -471,7 +480,9 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
                   </ChartTitle>
                   <ChartDescription>
                     Based on section status data during add/drop periods from
-                    {isAverage ? ` ${chartData.percentNumSemesters} semesters since` : ""}
+                    {isAverage
+                      ? ` ${chartData.percentNumSemesters} semesters since`
+                      : ""}
                     {" " + chartData.percentSemester}
                   </ChartDescription>
                 </GraphTextContainer>

@@ -317,7 +317,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         ]:
             course_subdict["recent_reviews"][field] = getattr(self, "recent_" + field)
         self.assertRequestContainsAppx(
-            "course-reviews",
+            "course-plots",
             "ESE-120",
             {**course_subdict, "instructors": {Instructor.objects.get().pk: subdict}},
         )
@@ -515,7 +515,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         ]:
             course_subdict["recent_reviews"][field] = getattr(self, field)
         self.assertRequestContainsAppx(
-            "course-reviews",
+            "course-plots",
             "ESE-120",
             {**course_subdict, "instructors": {Instructor.objects.get().pk: subdict}},
         )
@@ -699,7 +699,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         ]:
             course_subdict["recent_reviews"][field] = getattr(self, field)
         self.assertRequestContainsAppx(
-            "course-reviews",
+            "course-plots",
             "ESE-120",
             {
                 **course_subdict,
