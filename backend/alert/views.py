@@ -98,7 +98,6 @@ def accept_webhook(request):
         and (course_status == "O" or course_status == "C")
         and get_current_semester() == course_term
     )
-
     if should_send_alert:
         try:
             alert_for_course(
