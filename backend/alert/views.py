@@ -55,7 +55,6 @@ def accept_webhook(request):
     auth_header = request.META.get("Authorization", request.META.get("HTTP_AUTHORIZATION", ""))
 
     username, password = extract_basic_auth(auth_header)
-
     if username != settings.WEBHOOK_USERNAME or password != settings.WEBHOOK_PASSWORD:
         return HttpResponse(
             """Your credentials cannot be verified.
