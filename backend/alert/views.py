@@ -119,11 +119,7 @@ def accept_webhook(request):
             request.body,
         )
         update_course_from_record(u)
-    except ValidationError:  # as e
-        return HttpResponse("We got an error but webhook should ignore it", status=200)
-        # TODO: ask OpenData if this is due to a bug in their system
-        # return HttpResponse(f"Invalid status update: \n{e}", status=400)
-    except ValueError as e:
+    except (ValidationError, ValueError) as e:
         logger.error(e)
         return HttpResponse("We got an error but webhook should ignore it", status=200)
 
