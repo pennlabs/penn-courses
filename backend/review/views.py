@@ -197,8 +197,6 @@ def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
     """
-    print(request.user)
-    print(request.user.is_authenticated)
     if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
         raise Http404()
 
