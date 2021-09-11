@@ -31,12 +31,6 @@ const ChartDescription = styled.p`
   margin-bottom: 8px;
 `;
 
-const EmptyGraphContainer = styled.div`
-  padding: 10px;
-  text-align: center;
-  color: #8a8a8a;
-`;
-
 const GraphColumn = styled.div`
   padding: 15px;
   padding-top: 0px;
@@ -356,7 +350,7 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
   const averageOrRecent = isAverage ? "average_plots" : "recent_plots";
 
   const [chartData, setChartData] = useState(null);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(true);
 
   defaults.global.defaultFontFamily = "Lato";
 
@@ -369,18 +363,18 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
     ];
 
     const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
+    const demandSemester =
+      res[averageOrRecent]["pca_demand_plot_since_semester"];
     const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
+    const percentSemester =
+      res[averageOrRecent]["percent_open_plot_since_semester"];
     setChartData({
-      demandSemester: toNormalizedSemester(
-        res[averageOrRecent]["pca_demand_plot_since_semester"]
-      ),
-      percentSemester: toNormalizedSemester(
-        res[averageOrRecent]["percent_open_plot_since_semester"]
-      ),
+      demandSemester: demandSemester && toNormalizedSemester(demandSemester),
       demandNumSemesters: res[averageOrRecent]["pca_demand_plot_num_semesters"],
+      pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
+      percentSemester: percentSemester && toNormalizedSemester(percentSemester),
       percentNumSemesters:
         res[averageOrRecent]["percent_open_plot_num_semesters"],
-      pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
       percentSectionsChartData:
         percentOpenPlot && genPercentChartData(percentOpenPlot)
     });
@@ -408,145 +402,146 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
     }
   }, [courseCode, averageOrRecent]);
 
+  const showPcaDemandPlotContainer =
+    (chartData && chartData.pcaDemandChartData) || !loaded;
+  const showPercentOpenPlotContainer =
+    (chartData && chartData.percentSectionsChartData) || !loaded;
+
   return (
     <>
-      <GraphRow>
-        <GraphColumn>
-          <GraphContainer>
-            {chartData && chartData.pcaDemandChartData ? (
-              <div id="row-select-chart-container">
-                <GraphTextContainer>
-                  <ChartTitle>
-                    Estimated Registration Difficulty During Historical Add/Drop
-                    Periods
-                  </ChartTitle>
-                  <ChartDescription>
-                    Registration difficulty is estimated on a fixed 0-1 scale
-                    (relative to other classes at Penn), using Penn Course Alert
-                    data from{" "}
-                    {isAverage
-                      ? `${chartData.demandNumSemesters} semesters since`
-                      : ""}{" "}
-                    {chartData.demandSemester}
-                  </ChartDescription>
-                </GraphTextContainer>
-                <div
-                  className="btn-group"
-                  style={{ width: "fit-content", marginBottom: "18px" }}
-                >
-                  <button
-                    onClick={() => setIsAverage(true)}
-                    className={`btn btn-sm ${
-                      isAverage ? "btn-primary" : "btn-secondary"
-                    }`}
-                  >
-                    Average
-                  </button>
-                  <button
-                    onClick={() => setIsAverage(false)}
-                    className={`btn btn-sm ${
-                      isAverage ? "btn-secondary" : "btn-primary"
-                    }`}
-                  >
-                    Most Recent
-                  </button>
-                </div>
-                <Scatter
-                  data={chartData.pcaDemandChartData}
-                  options={demandChartOptions}
-                />
-              </div>
-            ) : (
-              <div>
-                {" "}
-                {loaded ? (
-                  <EmptyGraphContainer>
-                    All underlying sections either have no data to show, or
-                    require permits for registration (we cannot estimate the
-                    difficulty of being issued a permit).
-                  </EmptyGraphContainer>
-                ) : (
-                  <LoadingContainer>
-                    <i
-                      className="fa fa-spin fa-cog fa-fw"
-                      style={{ fontSize: "150px", color: "#aaa" }}
+      {(showPcaDemandPlotContainer || showPercentOpenPlotContainer) && (
+        <GraphRow>
+          {showPcaDemandPlotContainer && (
+            <GraphColumn>
+              <GraphContainer>
+                {chartData && chartData.pcaDemandChartData ? (
+                  <div id="row-select-chart-container">
+                    <GraphTextContainer>
+                      <ChartTitle>
+                        Estimated Registration Difficulty During Historical
+                        Add/Drop Periods
+                      </ChartTitle>
+                      <ChartDescription>
+                        Registration difficulty is estimated on a fixed 0-1
+                        scale (relative to other classes at Penn), using Penn
+                        Course Alert data from{" "}
+                        {isAverage
+                          ? `${chartData.demandNumSemesters} semesters since`
+                          : ""}{" "}
+                        {chartData.demandSemester}
+                      </ChartDescription>
+                    </GraphTextContainer>
+                    <div
+                      className="btn-group"
+                      style={{ width: "fit-content", marginBottom: "18px" }}
+                    >
+                      <button
+                        onClick={() => setIsAverage(true)}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-primary" : "btn-secondary"
+                        }`}
+                      >
+                        Average
+                      </button>
+                      <button
+                        onClick={() => setIsAverage(false)}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-secondary" : "btn-primary"
+                        }`}
+                      >
+                        Most Recent
+                      </button>
+                    </div>
+                    <Scatter
+                      data={chartData.pcaDemandChartData}
+                      options={demandChartOptions}
                     />
-                    <h1 style={{ fontSize: "2em", marginTop: 15 }}>
-                      Loading...
-                    </h1>
-                  </LoadingContainer>
-                )}
-              </div>
-            )}
-          </GraphContainer>
-        </GraphColumn>
-        <GraphColumn>
-          <GraphContainer>
-            {chartData && chartData.percentSectionsChartData ? (
-              <div id="row-select-chart-container">
-                <GraphTextContainer>
-                  <ChartTitle>
-                    Percent of Sections Open During Historical Add/Drop Periods
-                  </ChartTitle>
-                  <ChartDescription>
-                    Based on section status data during add/drop periods from
-                    {isAverage
-                      ? ` ${chartData.percentNumSemesters} semesters since`
-                      : ""}
-                    {" " + chartData.percentSemester}
-                  </ChartDescription>
-                </GraphTextContainer>
-                <div
-                  className="btn-group"
-                  style={{ width: "fit-content", marginBottom: "18px" }}
-                >
-                  <button
-                    onClick={() => setIsAverage(true)}
-                    className={`btn btn-sm ${
-                      isAverage ? "btn-primary" : "btn-secondary"
-                    }`}
-                  >
-                    Average
-                  </button>
-                  <button
-                    onClick={() => setIsAverage(false)}
-                    className={`btn btn-sm ${
-                      isAverage ? "btn-secondary" : "btn-primary"
-                    }`}
-                  >
-                    Most Recent
-                  </button>
-                </div>
-                <Scatter
-                  data={chartData.percentSectionsChartData}
-                  options={percentSectionChartOptions}
-                />
-              </div>
-            ) : (
-              <div>
-                {" "}
-                {loaded ? (
-                  <EmptyGraphContainer>
-                    All underlying sections either have no data to show, or
-                    require permits for registration (we cannot estimate the
-                    difficulty of being issued a permit).
-                  </EmptyGraphContainer>
+                  </div>
                 ) : (
-                  <LoadingContainer>
-                    <i
-                      className="fa fa-spin fa-cog fa-fw"
-                      style={{ fontSize: "150px", color: "#aaa" }}
-                    />
-                    <h1 style={{ fontSize: "2em", marginTop: 15 }}>
-                      Loading...
-                    </h1>
-                  </LoadingContainer>
+                  <div>
+                    {" "}
+                    {loaded || (
+                      <LoadingContainer>
+                        <i
+                          className="fa fa-spin fa-cog fa-fw"
+                          style={{ fontSize: "150px", color: "#aaa" }}
+                        />
+                        <h1 style={{ fontSize: "2em", marginTop: 15 }}>
+                          Loading...
+                        </h1>
+                      </LoadingContainer>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-          </GraphContainer>
-        </GraphColumn>
-      </GraphRow>
+              </GraphContainer>
+            </GraphColumn>
+          )}
+          {showPercentOpenPlotContainer && (
+            <GraphColumn>
+              <GraphContainer>
+                {chartData && chartData.percentSectionsChartData ? (
+                  <div id="row-select-chart-container">
+                    <GraphTextContainer>
+                      <ChartTitle>
+                        Percent of Sections Open During Historical Add/Drop
+                        Periods
+                      </ChartTitle>
+                      <ChartDescription>
+                        Based on section status data during add/drop periods
+                        from
+                        {isAverage
+                          ? ` ${chartData.percentNumSemesters} semesters since`
+                          : ""}
+                        {" " + chartData.percentSemester}
+                      </ChartDescription>
+                    </GraphTextContainer>
+                    <div
+                      className="btn-group"
+                      style={{ width: "fit-content", marginBottom: "18px" }}
+                    >
+                      <button
+                        onClick={() => setIsAverage(true)}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-primary" : "btn-secondary"
+                        }`}
+                      >
+                        Average
+                      </button>
+                      <button
+                        onClick={() => setIsAverage(false)}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-secondary" : "btn-primary"
+                        }`}
+                      >
+                        Most Recent
+                      </button>
+                    </div>
+                    <Scatter
+                      data={chartData.percentSectionsChartData}
+                      options={percentSectionChartOptions}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    {" "}
+                    {loaded || (
+                      <LoadingContainer>
+                        <i
+                          className="fa fa-spin fa-cog fa-fw"
+                          style={{ fontSize: "150px", color: "#aaa" }}
+                        />
+                        <h1 style={{ fontSize: "2em", marginTop: 15 }}>
+                          Loading...
+                        </h1>
+                      </LoadingContainer>
+                    )}
+                  </div>
+                )}
+              </GraphContainer>
+            </GraphColumn>
+          )}
+        </GraphRow>
+      )}
     </>
   );
 };
