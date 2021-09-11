@@ -9,39 +9,49 @@ const About = () => (
     <p>
       The student-run Penn Course Review has served as a valuable guide for
       course selection since the 1960s. In 2014, Penn Course Review was
-      completely redesigned to simplify the search experience. In 2018, we hope
-      to continue providing you with the best insights on courses and have
-      therefore updated this experience.
-    </p>
-    <p>
-      Interested in building something on the Penn Course Review API?
-      <a href="https://docs.google.com/spreadsheet/viewform?hl=en_US&formkey=dGZOZkJDaVkxdmc5QURUejAteFdBZGc6MQ#gid=0">
-        Request API access
+      completely redesigned to simplify the search experience. In 2018, we
+      updated the site again to continue providing you with the best insights on
+      courses. In 2021, we migrated the site over to a shared backend with{" "}
+      <a
+        target="_blank"
+        rel="noopener noreferrer"
+        href="https://penncoursealert.com/"
+      >
+        Penn Course Alert
+      </a>{" "}
+      and{" "}
+      <a
+        target="_blank"
+        rel="noopener noreferrer"
+        href="https://penncourseplan.com/"
+      >
+        Penn Course Plan
       </a>
-      .
-    </p>
-    <p>
-      Want easy access to Penn Course Review? Get the{" "}
-      <a href="https://pennlabs.org/mobile/">Penn Mobile App</a>!
+      , allowing us to serve additional metrics about course registration
+      difficulty (based on Penn Course Alert usage data and course status
+      updates). We hope to continue updating and improving Penn Course Review in
+      the years to come!
     </p>
 
     <h1>About</h1>
     <p>
       Penn Course Review is a student-run service that provides numerical
-      ratings for undergraduate courses and professors at the University of
-      Pennsylvania. PCR has a long history of being a valuable and influential
-      guide for course selection.
+      ratings and metrics for undergraduate courses and professors at the
+      University of Pennsylvania. PCR has a long history of being a valuable and
+      influential guide for course selection.
     </p>
     <p>
-      PCR is developed and managed by
-      <a href="https://pennlabs.org/">Penn Labs</a>, a student developer
-      organization on Penn’s campus.
+      PCR is developed and managed by{" "}
+      <a target="_blank" rel="noopener noreferrer" href="https://pennlabs.org/">
+        Penn Labs
+      </a>
+      , a student developer organization on Penn’s campus.
     </p>
 
     <p>
-      The Penn Course Review compiles its information from online course
-      evaluations conducted at the end of each semester by the Provost's office
-      in conjunction with ISC.
+      Penn Course Review compiles its information from online course evaluations
+      conducted at the end of each semester by the Provost's office in
+      conjunction with ISC.
     </p>
     <p>
       Your evaluations and comments feed the Review, so the more information you
@@ -50,15 +60,36 @@ const About = () => (
     </p>
 
     <p>
-      If you want to look at courses on the go,
-      <a href="https://pennlabs.org/mobile/">PennMobile</a> is available for
-      download! In the courses section, you are able to view course descriptions
-      and ratings!
+      If you want to look at courses on the go,{" "}
+      <a
+        target="_blank"
+        rel="noopener noreferrer"
+        href="https://pennlabs.org/mobile/"
+      >
+        PennMobile
+      </a>{" "}
+      is available for download! In the courses section, you are able to view
+      course descriptions and ratings!
+    </p>
+    <p>
+      Interested in building something using the Penn Courses API? Check our our{" "}
+      <a
+        target="_blank"
+        rel="noopener noreferrer"
+        href="https://penncoursereview.com/api/documentation/"
+      >
+        API documentation
+      </a>
+      .
     </p>
     <p>
       Version 2.0 was built by Eric Wang, Cassandra Li, Rohan Menezes, Vinai
       Rachakonda, Brandon Lin, Yonah Mann, Josh Doman, Jerry Lu, Daniel Tao and
-      designed by Tiffany Chang.
+      designed by Tiffany Chang. The migration of PCR to the unified Penn
+      Courses backend (and much of the development of the unified backend
+      itself) was undertaken by Davis Haupt. Course registration difficulty
+      metrics and plots were developed by Charley Cunningham, Andy Jiang,
+      Jeffrey Xiao, and designed by Eric Chen.
     </p>
     <p>Thanks and happy searching,</p>
     <p>
@@ -69,8 +100,8 @@ const About = () => (
 
     <h1>Questions</h1>
     <p>
-      If you have any questions, take a look at our
-      <Link to="faq">FAQs</Link> section.
+      If you have any questions, take a look at our <Link to="faq">FAQs</Link>{" "}
+      section.
     </p>
   </div>
 );
