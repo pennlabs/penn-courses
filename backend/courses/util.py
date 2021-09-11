@@ -270,12 +270,9 @@ def record_update(section_id, semester, old_status, new_status, alerted, req, cr
         update_warning = update_percent_open(section, last_status_update, u)
     except ValidationError:
         pass
-
-    section.status = new_status
-    section.save()
-
     if update_warning:
         raise ValidationError(update_warning)
+
     return u
 
 
