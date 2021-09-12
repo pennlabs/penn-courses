@@ -37,7 +37,7 @@ export class ReviewPage extends Component {
     ReactGA.pageview(window.location.pathname + window.location.search);
     fetch("https://platform.pennlabs.org/options/")
       .then(response => response.json())
-      .then(options => this.setState({ showBanner: options.RECRUITING }));
+      .then(options => this.setState({ showBanner: options.RECRUITING && !this.cookies.get("hide_pcr_banner")}));
 
     this.navigateToPage = this.navigateToPage.bind(this);
     this.getReviewData = this.getReviewData.bind(this);
