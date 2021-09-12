@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import ReactGA from "react-ga";
 import Cookies from "universal-cookie";
 import InfoBox from "../components/InfoBox";
 import ScoreBox from "../components/ScoreBox";
