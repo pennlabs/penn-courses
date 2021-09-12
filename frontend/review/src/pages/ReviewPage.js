@@ -33,16 +33,6 @@ export class ReviewPage extends Component {
       showBanner: false
     };
 
-    ReactGA.initialize("UA-21029575-12");
-    ReactGA.pageview(window.location.pathname + window.location.search);
-    fetch("https://platform.pennlabs.org/options/")
-      .then(response => response.json())
-      .then(options =>
-        this.setState({
-          showBanner: options.RECRUITING && !this.cookies.get("hide_pcr_banner")
-        })
-      );
-
     this.navigateToPage = this.navigateToPage.bind(this);
     this.getReviewData = this.getReviewData.bind(this);
     this.setIsAverage = this.setIsAverage.bind(this);
@@ -53,6 +43,14 @@ export class ReviewPage extends Component {
 
   componentDidMount() {
     this.getReviewData();
+
+    fetch("https://platform.pennlabs.org/options/")
+      .then(response => response.json())
+      .then(options =>
+        this.setState({
+          showBanner: options.RECRUITING && !this.cookies.get("hide_pcr_banner")
+        })
+      );
   }
 
   componentDidUpdate(prevProps) {
