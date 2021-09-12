@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import ReactGA from "react-ga";
 import Cookies from "universal-cookie";
 import InfoBox from "../components/InfoBox";
 import ScoreBox from "../components/ScoreBox";
@@ -10,10 +11,6 @@ import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
 import { apiReviewData, apiLive, apiLiveInstructor } from "../utils/api";
 
-/**
- * Enable or disable the Penn Labs recruitment banner.
- */
-const SHOW_RECRUITMENT_BANNER = true;
 
 /**
  * Represents a course, instructor, or department review page.
@@ -34,9 +31,14 @@ export class ReviewPage extends Component {
       selectedCourses: {},
       isAverage: localStorage.getItem("meta-column-type") !== "recent",
       isCourseEval: false,
-      showBanner:
-        SHOW_RECRUITMENT_BANNER && !this.cookies.get("hide_pcr_banner")
+      showBanner: false
     };
+
+    ReactGA.initialize("UA-21029575-12");
+    ReactGA.pageview(window.location.pathname + window.location.search);
+    fetch("https://platform.pennlabs.org/options/")
+        .then((response) => response.json())
+        .then((options) => this.setState({showBanner: options.RECRUITING}));
 
     this.navigateToPage = this.navigateToPage.bind(this);
     this.getReviewData = this.getReviewData.bind(this);
