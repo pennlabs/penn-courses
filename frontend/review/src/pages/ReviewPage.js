@@ -11,7 +11,6 @@ import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
 import { apiReviewData, apiLive, apiLiveInstructor } from "../utils/api";
 
-
 /**
  * Represents a course, instructor, or department review page.
  */
@@ -37,8 +36,8 @@ export class ReviewPage extends Component {
     ReactGA.initialize("UA-21029575-12");
     ReactGA.pageview(window.location.pathname + window.location.search);
     fetch("https://platform.pennlabs.org/options/")
-        .then((response) => response.json())
-        .then((options) => this.setState({showBanner: options.RECRUITING}));
+      .then(response => response.json())
+      .then(options => this.setState({ showBanner: options.RECRUITING }));
 
     this.navigateToPage = this.navigateToPage.bind(this);
     this.getReviewData = this.getReviewData.bind(this);
