@@ -82,15 +82,6 @@ const About = () => (
       </a>
       .
     </p>
-    <p>
-      Version 2.0 was built by Eric Wang, Cassandra Li, Rohan Menezes, Vinai
-      Rachakonda, Brandon Lin, Yonah Mann, Josh Doman, Jerry Lu, Daniel Tao and
-      designed by Tiffany Chang. The migration of PCR to the unified Penn
-      Courses backend (and much of the development of the unified backend
-      itself) was undertaken by Davis Haupt. Course registration difficulty
-      metrics and plots were developed by Charley Cunningham, Andy Jiang,
-      Jeffrey Xiao, and designed by Eric Chen.
-    </p>
     <p>Thanks and happy searching,</p>
     <p>
       <strong>Penn Labs</strong>
