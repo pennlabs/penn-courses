@@ -353,6 +353,7 @@ class Section(models.Model):
         """
         ),
     )
+
     status = models.CharField(
         max_length=4,
         choices=STATUS_CHOICES,
@@ -360,6 +361,7 @@ class Section(models.Model):
         help_text="The registration status of the section. Options and meanings: "
         + string_dict_to_html(dict(STATUS_CHOICES)),
     )
+
     capacity = models.IntegerField(
         default=0,
         help_text="The number of allowed registrations for this section, "
@@ -385,6 +387,7 @@ class Section(models.Model):
         """
         ),
     )
+
     instructors = models.ManyToManyField(
         Instructor, help_text="The Instructor object(s) of the instructor(s) teaching the section."
     )
@@ -404,6 +407,7 @@ class Section(models.Model):
         blank=True,
         help_text="All registration Restriction objects to which this section is subject.",
     )
+
     credits = models.DecimalField(
         max_digits=3,  # some course for 2019C is 14 CR...
         decimal_places=2,
@@ -411,27 +415,6 @@ class Section(models.Model):
         blank=True,
         db_index=True,
         help_text="The number of credits this section is worth.",
-    )
-    meeting_days = models.CharField(
-        max_length=6,
-        null=True,
-        blank=True,
-        help_text="The single day or days on which the meeting takes place (one of M,T,W,R,F,S)"
-        + " or any combination of the above characters (MW, TWF, TS) in chronological ordering.",
-    )
-    earliest_meeting = models.DecimalField(
-        max_digits=4,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="The earliest start time of a meeting; hh:mm is formatted as hh.mm = h+mm/100.",
-    )
-    latest_meeting = models.DecimalField(
-        max_digits=4,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="The latest end time of a meeting; hh:mm is formatted as hh.mm = h+mm/100.",
     )
 
     registration_volume = models.PositiveIntegerField(
@@ -535,19 +518,6 @@ class Section(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_code = f"{self.course.full_code}-{self.code}"
-
-        # adding in meeting days
-        day_list = [meeting.day for meeting in self.meetings.all()]
-        day_list = sorted(day_list, key=lambda days: ["MTWRFS".index(day) for day in days])
-        self.meeting_days = "".join(day_list)
-
-        # adding in earliest and latest meeting times
-        for meeting in self.meetings.all():
-            if (self.earliest_meeting is None) or (meeting.start < self.earliest_meeting):
-                self.earliest_meeting = meeting.start
-            if (self.latest_meeting is None) or (meeting.end > self.latest_meeting):
-                self.latest_meeting = meeting.end
-
         super().save(*args, **kwargs)
 
 
@@ -773,9 +743,9 @@ class Meeting(models.Model):
     @staticmethod
     def int_to_time(time):
         hour = math.floor(time) % 12
-        minute = (time % 1) * 60
+        minute = math.floor((time % 1) * 100)
 
-        return f'{hour if hour != 0 else 12}:{minute if minute != 0 else "00"} {"AM" if time < 12 else "PM"}'  # noqa: E501
+        return f'{hour if hour != 0 else 12}:{str(minute).zfill(2)} {"AM" if time < 12 else "PM"}'  # noqa: E501
 
     @property
     def start_time(self):

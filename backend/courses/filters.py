@@ -1,9 +1,9 @@
 from django.db.models import Q
-from more_itertools import powerset
 from rest_framework import filters
 
 from courses.models import Requirement
 from courses.util import get_current_semester
+from decimal import Decimal
 
 
 def requirement_filter(queryset, req_ids):
@@ -23,17 +23,21 @@ def requirement_filter(queryset, req_ids):
 
 
 def day_filter(queryset, days):
-    day_letters = [day for day in days]
-    all_days = list(powerset(day_letters))
-    combined_days = ["".join(tup) for tup in all_days]
-    queryset = queryset.filter(sections__meeting_days__in=combined_days)
+    # TODO: fix this query
+    queryset = queryset.filter(sections__meetings__day__in=days.split())
     return queryset
 
 
-def time_filter(queryset, start_time, end_time):
+def time_filter(queryset, time_range):
+    start_time, end_time = time_range.split("-")
+    # TODO: fix this query
     queryset = queryset.filter(
-        sections__earliest_meeting__gte=start_time, sections__latest_meeting__lte=end_time
-    ) | queryset.filter(sections__meetings__isnull=True)
+        Q(
+            sections__earliest_meeting__gte=Decimal(start_time),
+            sections__latest_meeting__lte=Decimal(end_time),
+        )
+        | Q(sections__meetings__isnull=True)
+    )
     return queryset
 
 
@@ -70,17 +74,13 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             "instructor_quality": bound_filter("instructor_quality"),
             "difficulty": bound_filter("difficulty"),
             "days": day_filter,
+            "time": time_filter,
         }
 
         for field, filter_func in filters.items():
             param = request.query_params.get(field)
             if param is not None:
                 queryset = filter_func(queryset, param)
-
-        start_time = request.query_params.get("start_time")
-        end_time = request.query_params.get("end_time")
-        if (start_time is not None) and (end_time is not None):
-            queryset = time_filter(queryset, start_time, end_time)
 
         return queryset.distinct()
 
@@ -147,5 +147,24 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 ),
                 "schema": {"type": "string"},
                 "example": "2.5-4",
+            },
+            {
+                "name": "days",
+                "required": False,
+                "in": "query",
+                "description": ("Filter meetings to be within the specified set of days."),
+                "schema": {"type": "string"},
+                "example": "TWR",
+            },
+            {
+                "name": "time",
+                "required": False,
+                "in": "query",
+                "description": (
+                    "Filter meeting times to be within the specified range (specifying times with "
+                    "decimal numbers between 0 and 23.9... (representing the hour of the day in ET)."
+                ),
+                "schema": {"type": "string"},
+                "example": "11.5-18",
             },
         ]
