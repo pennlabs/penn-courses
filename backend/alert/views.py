@@ -3,7 +3,9 @@ import json
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.db.models import Max
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -22,7 +24,7 @@ from alert.serializers import (
 )
 from alert.tasks import send_course_alerts
 from courses.util import get_current_semester, record_update, update_course_from_record
-from PennCourses.docs_settings import PcxAutoSchema
+from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 
 logger = logging.getLogger(__name__)
@@ -53,7 +55,6 @@ def accept_webhook(request):
     auth_header = request.META.get("Authorization", request.META.get("HTTP_AUTHORIZATION", ""))
 
     username, password = extract_basic_auth(auth_header)
-
     if username != settings.WEBHOOK_USERNAME or password != settings.WEBHOOK_PASSWORD:
         return HttpResponse(
             """Your credentials cannot be verified.
@@ -96,7 +97,6 @@ def accept_webhook(request):
         and (course_status == "O" or course_status == "C")
         and get_current_semester() == course_term
     )
-
     if should_send_alert:
         try:
             alert_for_course(
@@ -118,9 +118,8 @@ def accept_webhook(request):
             alert_for_course_called,
             request.body,
         )
-
         update_course_from_record(u)
-    except ValueError as e:
+    except (ValidationError, ValueError) as e:
         logger.error(e)
         return HttpResponse("We got an error but webhook should ignore it", status=200)
 
@@ -143,8 +142,25 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     another way, this endpoint will return a superset of all active registrations: all
     active registrations (meaning registrations which would trigger an alert to be sent if their
     section were to open up), IN ADDITION TO all inactive registrations from the current semester
-    which are at the head of their resubscribe chains.  Each object in the returned list of
-    registrations is of the same form as the object returned by Retrieve Registration.
+    which are at the head of their resubscribe chains and not deleted.  However, one extra
+    modification is made: if multiple registrations for the same section are included in the
+    above-specified set, then all but the most recent (latest `created_at` value) are removed from
+    the list. This ensures that at most 1 registration is returned for each section. Note that this
+    is still a superset of all active registrations. If a registration is active, its `created_at`
+    value will be greater than any other registrations for the same section (our code ensures no
+    registration can be created or resubscribed to when an active registration exists for the same
+    section). This extra modification is actually made to prevent the user from being able to
+    resubscribe to an older registration after creating a new one (which would cause the backend to
+    return a 409 error).
+
+    Each object in the returned list of registrations is of the same form as the object returned
+    by Retrieve Registration.
+
+    Tip: if you sort this list by `original_created_at` (the `created_at` value of the tail of
+    a registration's resubscribe chain), cancelling or resubscribing to registrations will
+    not cause the registration to jump to a different place in the list (which makes for
+    more intuitive/understandable behavior for the user if the registrations are displayed
+    in that order). This is what PCA currently does on the manage alerts page.
 
     create: Use this route to create a PCA registration for a certain section.  A PCA registration
     represents a "subscription" to receive alerts for that section.  The body of the request must
@@ -170,7 +186,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     in their profile (thus making it impossible for them to receive alerts), and a 409 if the
     user is already currently registered to receive alerts for the given section.  If the request
     is redirected to update (when the passed in id is already associated with a registration),
-    other response codes may be returned (see the Update Registration docs for more info).
+    other response codes may be returned (see the Update Registration docs for more info). If
+    registration is not currently open on PCA, a 503 is returned.
 
     update: Use this route to update existing PCA Registrations.  Note that the provided id does
     not always strictly specify which Registration gets modified.  In fact, the actual Registration
@@ -212,35 +229,43 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     triggered registration, trying to make changes to a deleted registration, or otherwise
     breaking rules.  Look in the detail field of the response object for more detail on what
     exactly went wrong if you encounter a 400.  If no registration with the given id is found,
-    a 404 is returned.
+    a 404 is returned. If registration is not currently open on PCA, a 503 is returned.
     """
 
     schema = PcxAutoSchema(
         examples=examples.RegistrationViewSet_examples,
         response_codes={
-            "/api/alert/registrations/": {
+            reverse_func("registrations-list"): {
                 "POST": {
-                    201: "[SCHEMA]Registration successfully created.",
+                    201: "[DESCRIBE_RESPONSE_SCHEMA]Registration successfully created.",
                     400: "Bad request (e.g. given null section).",
                     404: "Given section not found in database.",
                     406: "No contact information (phone or email) set for user.",
                     409: "Registration for given section already exists.",
+                    503: "Registration not currently open.",
                 },
-                "GET": {200: "[SCHEMA]Registrations successfully listed."},
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registrations successfully listed."},
             },
-            "/api/alert/registrations/{id}/": {
+            reverse_func("registrations-detail", args=["id"]): {
                 "PUT": {
                     200: "Registration successfully updated (or no changes necessary).",
                     400: "Bad request (see route description).",
                     404: "Registration not found with given id.",
+                    503: "Registration not currently open.",
                 },
                 "GET": {
-                    200: "[SCHEMA]Registration detail successfully retrieved.",
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Registration detail successfully retrieved.",
                     404: "Registration not found with given id.",
                 },
             },
         },
-        override_schema=examples.RegistrationViewSet_override_schema,
+        override_response_schema={
+            reverse_func("registrations-list"): {
+                "POST": {
+                    201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},
+                }
+            }
+        },
     )
     http_method_names = ["get", "post", "put"]
     permission_classes = [IsAuthenticated]
@@ -355,6 +380,11 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
         try:
             if request.data.get("resubscribe", False):
+                if not get_bool("REGISTRATION_OPEN", True):
+                    return Response(
+                        {"message": "Registration is not open."},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    )
                 if registration.deleted:
                     return Response(
                         {"detail": "You cannot resubscribe to a deleted registration."},
@@ -367,6 +397,17 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                             "has already been sent or has been cancelled."
                         },
                         status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if registration.section.registrations.filter(
+                    user=registration.user, **Registration.is_active_filter()
+                ).exists():
+                    # An active registration for this section already exists
+                    return Response(
+                        {
+                            "message": "You've already registered to get alerts for %s!"
+                            % registration.section.full_code
+                        },
+                        status=status.HTTP_409_CONFLICT,
                     )
                 resub = registration.resubscribe()
                 return Response(
@@ -480,13 +521,22 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_queryset_current(self):
         """
         Returns a superset of all active registrations (also includes cancelled registrations
-        from the current semester at the head of their resubscribe chains).
+        from the current semester at the head of their resubscribe chains). Returns at most 1
+        registration per section (if multiple candidate registrations for a certain section exist,
+        the registration with the later created_at value is chosen).
         """
-        return Registration.objects.filter(
+        registrations = Registration.objects.filter(
             user=self.request.user,
             deleted=False,
             resubscribed_to__isnull=True,
             section__course__semester=get_current_semester(),
+        )
+        # Now resolve conflicts where multiple registrations exist for the same section
+        # (by taking the registration with the later created_at date)
+        return registrations.filter(
+            created_at__in=registrations.values("section")
+            .annotate(max_created_at=Max("created_at"))
+            .values_list("max_created_at", flat=True)
         )
 
 
@@ -505,7 +555,21 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     (GET `/api/alert/registrations/{id}/`) rather than this endpoint.
     """
 
-    schema = PcxAutoSchema()
+    schema = PcxAutoSchema(
+        examples=examples.RegistrationViewSet_examples,
+        response_codes={
+            reverse_func("registrationhistory-list"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registration history successfully listed."}
+            },
+            reverse_func("registrationhistory-detail", args=["id"]): {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Historic registration detail "
+                    "successfully retrieved.",
+                    404: "Historic registration not found with given id.",
+                }
+            },
+        },
+    )
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
 

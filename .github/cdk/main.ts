@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import { App, Stack, Workflow } from "cdkactions";
-import { DeployJob, DjangoProject, ReactProject } from "@pennlabs/kraken";
+import { DeployJob, DjangoProject, DockerPublishJob, ReactProject } from "@pennlabs/kraken";
 
 export class MyStack extends Stack {
   constructor(scope: Construct, name: string) {
@@ -45,6 +45,11 @@ export class MyStack extends Stack {
       },
     });
 
+    const landing = new DockerPublishJob(workflow, 'landing', {
+      imageName: 'pcx-landing',
+      path: 'frontend/landing',
+    });
+
     new DeployJob(
       workflow,
       {},
@@ -54,6 +59,7 @@ export class MyStack extends Stack {
           plan.publishJobId,
           alert.publishJobId,
           review.publishJobId,
+          landing.id,
         ],
       }
     );

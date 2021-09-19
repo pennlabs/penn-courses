@@ -4,10 +4,16 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core import management
 from django.core.management.base import CommandError
+from django.db.models.signals import post_save
 from django.test import TestCase
+from options.models import Option
 
 from courses.models import Course, Instructor, Section
-from courses.util import get_or_create_course, get_or_create_course_and_section
+from courses.util import (
+    get_or_create_course,
+    get_or_create_course_and_section,
+    invalidate_current_semester_cache,
+)
 from review.import_utils.import_to_db import (
     import_course_and_section,
     import_description_rows,
@@ -19,6 +25,17 @@ from review.models import Review, ReviewBit
 
 
 TEST_SEMESTER = "2017A"
+TEST_CURRENT_SEMESTER = "2018A"
+
+
+def set_semester():
+    post_save.disconnect(
+        receiver=invalidate_current_semester_cache,
+        sender=Option,
+        dispatch_uid="invalidate_current_semester_cache",
+    )
+    Option(key="SEMESTER", value=TEST_CURRENT_SEMESTER, value_type="TXT").save()
+
 
 raw_summary = f"""
         Insert into PCRDEV.TEST_PCR_SUMMARY_V
@@ -100,6 +117,7 @@ class SQLParseTestCase(TestCase):
 
 class ReviewImportTestCase(TestCase):
     def setUp(self):
+        set_semester()
         self.row = {
             "SECTION_ID": "CIS 120001",
             "TERM": TEST_SEMESTER,
@@ -272,6 +290,7 @@ class ReviewImportCommandTestCase(TestCase):
     COMMAND_NAME = "iscimport"
 
     def setUp(self):
+        set_semester()
         self.summary_fo = StringIO(raw_summary)
         self.ratings_fo = StringIO(raw_ratings)
         self.description_fo = StringIO(raw_descriptions)

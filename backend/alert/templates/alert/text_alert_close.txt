@@ -1,2 +1,0 @@
-{{course}} just closed. {% if auto_resubscribe %}To cancel alerts, visit{% else %}Resubscribe at{% endif %} http://penncoursealert.com#manage
- (You are receiving this message because you enabled close notifications for this registration.)

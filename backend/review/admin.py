@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from review.models import Review
+from review.models import Review, ReviewBit
 
 
 class ReviewAdmin(admin.ModelAdmin):
@@ -15,7 +15,17 @@ class ReviewAdmin(admin.ModelAdmin):
     ]
 
 
-admin.site.register(Review, ReviewAdmin)
+class ReviewBitAdmin(admin.ModelAdmin):
+    search_fields = ["review__section__full_code"]
+
+    autocomplete_fields = ["review"]
+
+    list_select_related = [
+        "review",
+    ]
 
 
 # Register your models here.
+
+admin.site.register(Review, ReviewAdmin)
+admin.site.register(ReviewBit, ReviewBitAdmin)

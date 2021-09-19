@@ -1,10 +1,16 @@
-import React, { FunctionComponent } from "react";
-
+import React, { FunctionComponent, useState, useEffect } from "react";
+import styled from "styled-components";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
+import getCsrf from "../csrf";
+import { doAPIRequest } from "../../actions/index";
 
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
+import Recs from "../recomendations/Recs";
+
+import { Loading } from "../bulma_derived_components";
+import { Course as CourseType } from "../../types";
 
 import {
     fetchCourseDetails,
@@ -28,7 +34,21 @@ interface SelectorProps {
     scrollPos: number;
     setScrollPos: (scrollPos: number) => void;
     sortMode: SortMode;
+    mobileView: boolean;
 }
+
+const EmptyResultsContainer = styled.div`
+    font-size: 0.8rem;
+    text-align: center;
+    margin-top: 5vh;
+    max-width: 45vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    overflow: hidden;
+`;
+
 const Selector: FunctionComponent<SelectorProps> = ({
     courses,
     course,
@@ -47,39 +67,82 @@ const Selector: FunctionComponent<SelectorProps> = ({
     const isLoading =
         isSearchingCourseInfo || (isLoadingCourseInfo && !isExpanded);
 
-    const loadingIndicator = (
-        <div
-            className="button is-loading"
-            style={{
-                height: "100%",
-                width: "100%",
-                border: "none",
-                fontSize: "3rem",
-            }}
+    const [showRecs, setShowRecs] = useState(true);
+    const [recCourses, setRecCourses] = useState<CourseType[]>([]);
+    //0 - not loaded, 1 - loaded, 2 - error, 3 - no auth
+    const [fetchStatus, setFetchStatus] = useState(0);
+    const [refresh, setRefresh] = useState(false);
+
+    //delete func - does nothing for now
+    const onClickDelete = () => {};
+
+    useEffect(() => {
+        setFetchStatus(0);
+
+        const requestOptions = {
+            method: "POST",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
+            body: JSON.stringify({}),
+        };
+
+        doAPIRequest(`/plan/recommendations/`, requestOptions).then((res) => {
+            setRefresh(false);
+            if (res.ok) {
+                res.json().then((recCoursesResult) => {
+                    setRecCourses(recCoursesResult);
+                    setFetchStatus(1);
+                });
+            } else if (res.status === 400) {
+                return setFetchStatus(2);
+            } else if (res.status === 403) {
+                return setFetchStatus(3);
+            }
+        });
+    }, [refresh, setRecCourses, setFetchStatus]);
+
+    let recPanel = (
+        <Recs
+            showRecs={showRecs}
+            setShowRecs={setShowRecs}
+            recCourses={recCourses}
+            getCourse={getCourse}
+            fetchStatus={fetchStatus}
+            setRefresh={setRefresh}
         />
     );
 
     let element = (
-        <div
-            style={{
-                fontSize: "0.8em",
-                textAlign: "center",
-                marginTop: "5vh",
-                maxWidth: "45vh",
-            }}
-        >
-            <img src="/icons/empty-state-search.svg" alt="" />
-            <h3
-                style={{
-                    fontWeight: "bold",
-                    marginBottom: "0.5rem",
-                }}
-            >
-                No result found
-            </h3>
-            Search for courses, departments, or instructors above. Looking for
-            something specific? Try using the filters!
-        </div>
+        <>
+            <EmptyResultsContainer>
+                <img
+                    src="/icons/empty-state-search.svg"
+                    alt=""
+                    style={{
+                        height: "auto",
+                        maxWidth: "70%",
+                        maxHeight: "18.75rem",
+                    }}
+                />
+                <h3
+                    style={{
+                        fontWeight: "bold",
+                        marginBottom: "0.5rem",
+                    }}
+                >
+                    No result found
+                </h3>
+                Search for courses, departments, or instructors above. Looking
+                for something specific? Try using the filters!
+            </EmptyResultsContainer>
+
+            {recPanel}
+        </>
     );
 
     const courseList = (
@@ -89,6 +152,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
             getCourse={getCourse}
             scrollPos={scrollPos}
             setScrollPos={setScrollPos}
+            recCoursesId={recCourses.map((a) => a.id)}
         />
     );
 
@@ -100,13 +164,19 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     style={{
                         height: "calc(100vh - 12.5em)",
                         borderRight: "1px solid #dddddd",
+                        display: "flex",
+                        flexDirection: "column",
                     }}
                 >
                     {courseList}
+                    {recPanel}
                 </div>
             </div>
         ) : (
-            courseList
+            <>
+                {courseList}
+                {recPanel}
+            </>
         );
     }
 
@@ -118,16 +188,19 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     style={{
                         height: "calc(100vh - 12.5em)",
                         borderRight: "1px solid #dddddd",
+                        display: "flex",
+                        flexDirection: "column",
                     }}
                 >
                     {courseList}
+                    {recPanel}
                 </div>
                 <div
                     className="column is-two-thirds"
                     style={{ height: "calc(100vh - 12.5em)" }}
                 >
                     {isLoadingCourseInfo ? (
-                        loadingIndicator
+                        <Loading />
                     ) : (
                         <CourseInfo
                             getCourse={getCourse}
@@ -138,15 +211,17 @@ const Selector: FunctionComponent<SelectorProps> = ({
                 </div>
             </div>
         ) : (
-            <CourseInfo
-                getCourse={getCourse}
-                course={course}
-                back={clearCourse}
-                view={view}
-            />
+            <>
+                <CourseInfo
+                    getCourse={getCourse}
+                    course={course}
+                    back={clearCourse}
+                    view={view}
+                />
+            </>
         );
     }
-    return <>{isLoading ? loadingIndicator : element}</>;
+    return <>{isLoading ? <Loading /> : element}</>;
 };
 
 const mapStateToProps = ({

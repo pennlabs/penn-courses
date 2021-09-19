@@ -73,7 +73,8 @@ export const markCartSynced = () => ({
     type: MARK_CART_SYNCED,
 });
 
-const doAPIRequest = (path, options = {}) => fetch(`/api/plan${path}`, options);
+export const doAPIRequest = (path, options = {}) =>
+    fetch(`/api${path}`, options);
 
 export const duplicateSchedule = (scheduleName) => ({
     type: DUPLICATE_SCHEDULE,
@@ -172,7 +173,7 @@ export const clearSchedule = () => ({
 });
 
 export const loadRequirements = () => (dispatch) =>
-    doAPIRequest("/requirements/").then(
+    doAPIRequest("/base/current/requirements/").then(
         (response) =>
             response.json().then(
                 (data) => {
@@ -205,7 +206,7 @@ export const loadRequirements = () => (dispatch) =>
     );
 
 function buildCourseSearchUrl(filterData) {
-    let queryString = `/courses/?search=${filterData.searchString}`;
+    let queryString = `/base/current/search/courses/?search=${filterData.searchString}`;
 
     // Requirements filter
     const reqs = [];
@@ -315,7 +316,7 @@ export function updateSearchText(s) {
 }
 
 function buildSectionInfoSearchUrl(searchData) {
-    return `/courses/${searchData.param}`;
+    return `/base/current/courses/${searchData.param}/`;
 }
 
 export function courseSearchError(error) {
@@ -437,7 +438,7 @@ const rateLimitedFetch = (url, init) =>
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
-        doAPIRequest(`/courses/${courseId}`)
+        doAPIRequest(`/base/current/courses/${courseId}/`)
             .then((res) => res.json())
             .then((course) => dispatch(updateCourseInfo(course)))
             .catch((error) => dispatch(sectionInfoSearchError(error)));
@@ -458,7 +459,7 @@ export const fetchBackendSchedulesAndInitializeCart = (
     shouldInitCart,
     onComplete = () => null
 ) => (dispatch) => {
-    doAPIRequest("/schedules/")
+    doAPIRequest("/plan/schedules/")
         .then((res) => res.json())
         .then((schedules) => {
             if (schedules) {
@@ -503,7 +504,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         name,
         sections: schedule.meetings,
     };
-    doAPIRequest(`/schedules/${id}/`, {
+    doAPIRequest(`/plan/schedules/${id}/`, {
         method: "PUT",
         credentials: "include",
         mode: "same-origin",
@@ -552,7 +553,7 @@ export function fetchSectionInfo(searchData) {
  */
 export const createScheduleOnBackend = (name, sections) => (dispatch) => {
     dispatch(creationAttempted(name));
-    rateLimitedFetch("/schedules/", {
+    rateLimitedFetch("/plan/schedules/", {
         method: "POST",
         credentials: "include",
         mode: "same-origin",
@@ -581,7 +582,7 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
 
 export const deleteScheduleOnBackend = (deletedScheduleId) => (dispatch) => {
     dispatch(attemptDeletion(deletedScheduleId));
-    rateLimitedFetch(`/schedules/${deletedScheduleId}/`, {
+    rateLimitedFetch(`/plan/schedules/${deletedScheduleId}/`, {
         method: "DELETE",
         credentials: "include",
         mode: "same-origin",

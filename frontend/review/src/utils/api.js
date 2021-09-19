@@ -72,7 +72,7 @@ export function apiIsAuthenticated(func) {
 
 export function apiLive(code) {
   return apiFetch(
-    `${API_DOMAIN}/api/plan/courses/${encodeURIComponent(code)}/`
+    `${API_DOMAIN}/api/base/current/courses/${encodeURIComponent(code)}/`
   );
 }
 
@@ -113,5 +113,13 @@ export function apiHistory(course, instructor) {
     `${API_DOMAIN}/api/review/course/${encodeURIComponent(
       course
     )}/${encodeURIComponent(instructor)}?token=${encodeURIComponent(API_TOKEN)}`
+  );
+}
+
+export function apiFetchPCADemandChartData(course) {
+  return apiFetch(
+    `${API_DOMAIN}/api/review/course_plots/${encodeURIComponent(
+      course
+    )}?token=${encodeURIComponent(API_TOKEN)}`
   );
 }

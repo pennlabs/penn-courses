@@ -1,43 +1,171 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
+from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 import plan.examples as examples
-from courses.models import Section
+from courses.models import Course, Section
+from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
-from courses.views import CourseList
-from PennCourses.docs_settings import PcxAutoSchema
-from plan.filters import CourseSearchFilterBackend
+from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from plan.management.commands.recommendcourses import (
+    clean_course_input,
+    recommend_courses,
+    retrieve_course_clusters,
+    vectorize_user,
+    vectorize_user_by_courses,
+)
 from plan.models import Schedule
-from plan.search import TypedCourseSearchBackend
 from plan.serializers import ScheduleSerializer
 
 
-class CourseListSearch(CourseList):
-    """
-    The main course API endpoint for PCP. Without any GET parameters, it simply returns all courses
-    for a given semester. There are a few filter query parameters which constitute ranges of
-    floating-point numbers. The values for these are <min>-<max> , with minimum excluded.
-    For example, looking for classes in the range of 0-2.5 in difficulty, you would add the
-    parameter difficulty=0-2.5. If you are a backend developer, you can find these filters in
-    backend/plan/filters.py/CourseSearchFilterBackend. If you are reading the frontend docs,
-    these filters are listed below in the query parameters list (with description starting with
-    "Filter").
-    """
-
-    schema = PcxAutoSchema(
-        examples=examples.CourseListSearch_examples,
+@api_view(["POST"])
+@schema(
+    PcxAutoSchema(
         response_codes={
-            "/api/plan/courses/": {"GET": {200: "[SCHEMA]Courses listed successfully."}}
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
+                    201: "[REMOVE THIS RESPONSE CODE FROM DOCS]",
+                    400: "Invalid curr_courses, past_courses, or n_recommendations (see response).",
+                }
+            }
+        },
+        override_request_schema={
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    "type": "object",
+                    "properties": {
+                        "curr_courses": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user is currently planning to "
+                                "take, each specified by its string full code, of the form "
+                                "DEPT-XXX, e.g. CIS-120."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "past_courses": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user has previously taken, each "
+                                "specified by its string full code, of the form DEPT-XXX, "
+                                "e.g. CIS-120."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "n_recommendations": {
+                            "type": "integer",
+                            "description": (
+                                "The number of course recommendations you want returned. "
+                                "Defaults to 5."
+                            ),
+                        },
+                    },
+                }
+            }
+        },
+        override_response_schema={
+            reverse_func("recommend-courses"): {
+                "POST": {
+                    200: {"type": "array", "items": {"$ref": "#/components/schemas/CourseList"}}
+                }
+            }
         },
     )
+)
+@permission_classes([IsAuthenticated])
+def recommend_courses_view(request):
+    """
+    This route will optionally take in current and past courses. In order to
+    make recommendations solely on the user's courses in past and current PCP schedules, simply
+    omit both the curr_courses and past_courses fields in your request.
+    Otherwise, in order to specify past and current courses,
+    include a "curr-courses" and/or "past_courses" attribute in the request that should each contain
+    an array of string course full codes of the form DEPT-XXX (e.g. CIS-120).
+    If successful, this route will return a list of recommended courses, with the same schema
+    as the List Courses route, starting with the most relevant course. The number of
+    recommended courses returned can be specified using the n_recommendations attribute in the
+    request body, but if this attribute is omitted, the default will be 5.
+    If n_recommendations is not an integer, or is <=0, a 400 will be returned.
+    If curr_courses contains repeated courses or invalid courses or non-current courses, a
+    400 will be returned.
+    If past_courses contains repeated courses or invalid courses, a 400 will be returned.
+    If curr_courses and past_courses contain overlapping courses, a 400 will be returned.
+    """
 
-    filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
-    search_fields = ("full_code", "title", "sections__instructors__name")
+    user = request.user
+    curr_courses = request.data.get("curr_courses", None)
+    curr_courses = curr_courses if curr_courses is not None else []
+    past_courses = request.data.get("past_courses", None)
+    past_courses = past_courses if past_courses is not None else []
+    n_recommendations = request.data.get("n_recommendations", 5)
+
+    # input validation
+    try:
+        n_recommendations = int(n_recommendations)
+    except ValueError:
+        return Response(
+            f"n_recommendations: {n_recommendations} is not int",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if n_recommendations <= 0:
+        return Response(
+            f"n_recommendations: {n_recommendations} <= 0", status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    course_clusters = retrieve_course_clusters()
+
+    (
+        cluster_centroids,
+        clusters,
+        curr_course_vectors_dict,
+        past_course_vectors_dict,
+    ) = course_clusters
+
+    if curr_courses or past_courses:
+        try:
+            user_vector, user_courses = vectorize_user_by_courses(
+                clean_course_input(curr_courses),
+                clean_course_input(past_courses),
+                curr_course_vectors_dict,
+                past_course_vectors_dict,
+            )
+        except ValueError as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST,)
+    else:
+        user_vector, user_courses = vectorize_user(
+            user, curr_course_vectors_dict, past_course_vectors_dict
+        )
+
+    recommended_course_codes = recommend_courses(
+        curr_course_vectors_dict,
+        cluster_centroids,
+        clusters,
+        user_vector,
+        user_courses,
+        n_recommendations,
+    )
+
+    queryset = Course.with_reviews.filter(
+        semester=get_current_semester(), full_code__in=recommended_course_codes
+    )
+    queryset = queryset.prefetch_related(
+        Prefetch(
+            "sections",
+            Section.with_reviews.all()
+            .filter(credits__isnull=False)
+            .filter(Q(status="O") | Q(status="C"))
+            .distinct()
+            .prefetch_related("course", "meetings__room"),
+        )
+    )
+
+    return Response(CourseListSerializer(queryset, many=True,).data, status=status.HTTP_200_OK,)
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
@@ -63,12 +191,12 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     or see below for an explanation... TLDR: it is grandfathered in from the old version of PCP).
     The `name` is the name of the schedule (all names must be distinct for a single user in a
     single semester; otherwise the response will be a 400). The sections list must be a list of
-    objects with minimum fields `id` (dash-separated, e.g. "CIS-121-001") and `semester`
-    (5 character string, e.g. '2020A').  If any of the sections are invalid, a 404 is returned
+    objects with minimum fields `id` (dash-separated, e.g. `CIS-121-001`) and `semester`
+    (5 character string, e.g. `2020A`).  If any of the sections are invalid, a 404 is returned
     with data `{"detail": "One or more sections not found in database."}`.  If any two sections in
     the `sections` list have differing semesters, a 400 is returned.
 
-    Optionally, you can also include a `semester` field (5 character string, e.g. '2020A') in the
+    Optionally, you can also include a `semester` field (5 character string, e.g. `2020A`) in the
     posted object, which will set the academic semester which the schedule is planning.  If the
     `semester` field is omitted, the semester of the first section in the `sections` list will be
     used (or if the `sections` list is empty, the current semester will be used).  If the
@@ -108,8 +236,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     schema = PcxAutoSchema(
         examples=examples.ScheduleViewSet_examples,
         response_codes={
-            "/api/plan/schedules/": {
-                "GET": {200: "[SCHEMA]Schedules listed successfully.",},
+            reverse_func("schedules-list"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",},
                 "POST": {
                     201: "Schedule successfully created.",
                     200: "Schedule successfully updated (a schedule with the "
@@ -117,20 +245,19 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     400: "Bad request (see description above).",
                 },
             },
-            "/api/plan/schedules/{id}/": {
+            reverse_func("schedules-detail", args=["id"]): {
                 "GET": {
-                    200: "[SCHEMA]Successful retrieve (the specified schedule exists).",
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Successful retrieve "
+                    "(the specified schedule exists).",
                     404: "No schedule with the specified id exists.",
                 },
                 "PUT": {
-                    200: "Successful update (the specified schedule exists "
-                    "and was successfully updated).",
+                    200: "Successful update (the specified schedule was found and updated).",
                     400: "Bad request (see description above).",
                     404: "No schedule with the specified id exists.",
                 },
                 "DELETE": {
-                    204: "[SCHEMA]Successful delete (the specified schedule existed "
-                    "and was successfully deleted).",
+                    204: "Successful delete (the specified schedule was found and deleted).",
                     404: "No schedule with the specified id exists.",
                 },
             },
@@ -164,8 +291,6 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     {"detail": "Semester uniformity invariant violated."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        if "semester" not in data:
-            data["semester"] = get_current_semester()
 
     def update(self, request, pk=None):
         try:
@@ -181,13 +306,13 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        semester_res = self.check_semester(request.data, sections)
-        if semester_res is not None:
-            return semester_res
+        semester_check_response = self.check_semester(request.data, sections)
+        if semester_check_response is not None:
+            return semester_check_response
 
         try:
             schedule.person = request.user
-            schedule.semester = request.data.get("semester")
+            schedule.semester = request.data.get("semester", get_current_semester())
             schedule.name = request.data.get("name")
             schedule.save()
             schedule.sections.set(sections)
@@ -213,9 +338,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        semester_res = self.check_semester(request.data, sections)
-        if semester_res is not None:
-            return semester_res
+        semester_check_response = self.check_semester(request.data, sections)
+        if semester_check_response is not None:
+            return semester_check_response
 
         try:
             if (
@@ -223,14 +348,14 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             ):  # Also from above we know that this id does not conflict with existing schedules.
                 schedule = self.get_queryset().create(
                     person=request.user,
-                    semester=request.data.get("semester"),
+                    semester=request.data.get("semester", get_current_semester()),
                     name=request.data.get("name"),
                     id=request.data.get("id"),
                 )
             else:
                 schedule = self.get_queryset().create(
                     person=request.user,
-                    semester=request.data.get("semester"),
+                    semester=request.data.get("semester", get_current_semester()),
                     name=request.data.get("name"),
                 )
             schedule.sections.set(sections)

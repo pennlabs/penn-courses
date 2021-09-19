@@ -3,8 +3,8 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 
 import AwesomeDebouncePromise from "awesome-debounce-promise";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// import { faHistory } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHistory } from "@fortawesome/free-solid-svg-icons";
 
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { Input } from "./Input";
@@ -15,7 +15,7 @@ the search results.
 Including the search term makes it possible to determine if the search result is stale.
  */
 const suggestionsFor = (search) =>
-    fetch(`/api/alert/courses?search=${search}`).then((res) =>
+    fetch(`/api/base/current/search/sections/?search=${search}`).then((res) =>
         res.json().then((searchResult) => ({
             searchResult,
             searchTerm: search,
@@ -100,14 +100,23 @@ const SuggestionSubtitle = styled.div`
     font-family: "Inter", sans-serif;
 `;
 
-// const IconContainer = styled.div`
-//     display: flex;
-//     flex-direction: column;
-//     justify-content: center;
-//     align-items: center;
-//     flex-grow: 1;
-//     flex-basis: 20%;
-// `;
+const IconContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    flex-basis: 20%;
+    font-size: 1.25rem;
+    color: #3baff7;
+`;
+
+const HistoryIcon = styled(FontAwesomeIcon)`
+    color: #c4c4c4;
+    &:hover {
+        color: #209cee;
+    }
+`;
 
 const DropdownItemLeftCol = styled.div`
     max-width: 80%;
@@ -134,7 +143,23 @@ const Container = styled.div<{ inputHeight: string }>`
     height: ${(props) => props.inputHeight};
 `;
 
-const Suggestion = ({ onClick, courseCode, title, instructor, selected }) => {
+interface SuggestionProps {
+    onClick: () => void;
+    onChangeTimeline: () => void;
+    courseCode: string;
+    title: string;
+    instructor: string;
+    selected: boolean;
+}
+
+const Suggestion = ({
+    onClick,
+    onChangeTimeline,
+    courseCode,
+    title,
+    instructor,
+    selected,
+}: SuggestionProps) => {
     const ref = useRef<HTMLDivElement>(null);
     // If the suggestion becomes selected, make sure that it is
     // not fully or partially scrolled out of view
@@ -154,15 +179,15 @@ const Suggestion = ({ onClick, courseCode, title, instructor, selected }) => {
         }
     }, [selected, ref]);
     return (
-        <DropdownItemBox onClick={onClick} selected={selected} ref={ref}>
-            <DropdownItemLeftCol>
+        <DropdownItemBox selected={selected} ref={ref}>
+            <DropdownItemLeftCol onClick={onClick}>
                 <SuggestionTitle>{courseCode}</SuggestionTitle>
                 <SuggestionSubtitle>{title}</SuggestionSubtitle>
                 <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
             </DropdownItemLeftCol>
-            {/* <IconContainer> */}
-            {/*     <FontAwesomeIcon icon={faHistory} color="#c4c4c4" /> */}
-            {/* </IconContainer> */}
+            <IconContainer onClick={onChangeTimeline}>
+                <HistoryIcon icon={faHistory} className="historyIcon" />
+            </IconContainer>
         </DropdownItemBox>
     );
 };
@@ -201,7 +226,7 @@ interface TSuggestion {
     searchTerm: string;
 }
 
-const AutoComplete = ({ onValueChange, disabled }) => {
+const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setInternalValue] = useState("");
     const [suggestions, setSuggestions] = useState<Section[]>([]);
@@ -347,6 +372,9 @@ const AutoComplete = ({ onValueChange, disabled }) => {
                                     }
                                     setActive(false);
                                     setValue(suggestion.section_id);
+                                }}
+                                onChangeTimeline={() => {
+                                    setTimeline(suggestion.section_id);
                                 }}
                                 title={suggestion.course_title}
                                 instructor={suggestion.instructors[0]?.name}

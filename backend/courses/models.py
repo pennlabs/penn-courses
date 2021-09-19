@@ -5,8 +5,10 @@ from textwrap import dedent
 import phonenumbers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import Case, Index, OuterRef, Q, Subquery, When
+from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -72,7 +74,7 @@ class Department(models.Model):
         max_length=8,
         unique=True,
         db_index=True,
-        help_text="The department code, e.g. 'CIS' for the CIS department.",
+        help_text="The department code, e.g. `CIS` for the CIS department.",
     )
     name = models.CharField(
         max_length=255,
@@ -97,11 +99,14 @@ def sections_with_reviews(queryset):
                 Instructor.objects.filter(section=OuterRef(OuterRef("pk"))).values("pk").order_by()
             ),
         },
+        extra_metrics=False,
     ).order_by("code")
 
 
 def course_reviews(queryset):
-    return review_averages(queryset, {"review__section__course__full_code": OuterRef("full_code")})
+    return review_averages(
+        queryset, {"review__section__course__full_code": OuterRef("full_code")}, extra_metrics=False
+    )
 
 
 class CourseManager(models.Manager):
@@ -132,7 +137,7 @@ class Course(models.Model):
         ),
     )
     code = models.CharField(
-        max_length=8, db_index=True, help_text="The course code, e.g. '120' for CIS-120."
+        max_length=8, db_index=True, help_text="The course code, e.g. `120` for CIS-120."
     )
     semester = models.CharField(
         max_length=5,
@@ -140,7 +145,7 @@ class Course(models.Model):
         help_text=dedent(
             """
         The semester of the course (of the form YYYYx where x is A [for spring],
-        B [summer], or C [fall]), e.g. 2019C for fall 2019.
+        B [summer], or C [fall]), e.g. `2019C` for fall 2019.
         """
         ),
     )
@@ -166,7 +171,7 @@ class Course(models.Model):
         max_length=16,
         blank=True,
         db_index=True,
-        help_text="The dash-joined department and code of the course, e.g. 'CIS-120' for CIS-120.",
+        help_text="The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",
     )
 
     prerequisites = models.TextField(
@@ -230,8 +235,7 @@ class Course(models.Model):
 
 class Restriction(models.Model):
     """
-    A registration restriction, e.g. PDP (permission needed from department),
-    which CIS-120 happens to be subject to.
+    A registration restriction, e.g. PDP (permission needed from department)
     """
 
     code = models.CharField(
@@ -302,6 +306,22 @@ class Section(models.Model):
 
     class Meta:
         unique_together = (("code", "course"),)
+        indexes = [
+            Index(
+                Case(
+                    When(
+                        Q(capacity__isnull=False) & Q(capacity__gt=0),
+                        then=(
+                            Cast("registration_volume", models.FloatField(),)
+                            / Cast("capacity", models.FloatField())
+                        ),
+                    ),
+                    default=None,
+                    output_field=models.FloatField(null=True, blank=True),
+                ),
+                name="raw_demand",
+            ),
+        ]
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -309,7 +329,7 @@ class Section(models.Model):
     code = models.CharField(
         max_length=16,
         db_index=True,
-        help_text="The section code, e.g. '001' for the section CIS-120-001.",
+        help_text="The section code, e.g. `001` for the section CIS-120-001.",
     )
     course = models.ForeignKey(
         Course,
@@ -329,7 +349,7 @@ class Section(models.Model):
         help_text=dedent(
             """
         The full code of the section, in the form '{dept code}-{course code}-{section code}',
-        e.g. 'CIS-120-001' for the 001 section of CIS-120.
+        e.g. `CIS-120-001` for the 001 section of CIS-120.
         """
         ),
     )
@@ -343,13 +363,13 @@ class Section(models.Model):
     capacity = models.IntegerField(
         default=0,
         help_text="The number of allowed registrations for this section, "
-        "e.g. 220 for CIS-120-001 (2020A).",
+        "e.g. `220` for CIS-120-001 (2020A).",
     )
     activity = models.CharField(
         max_length=50,
         choices=ACTIVITY_CHOICES,
         db_index=True,
-        help_text="The section activity, e.g. 'LEC' for CIS-120-001 (2020A). Options and meanings: "
+        help_text="The section activity, e.g. `LEC` for CIS-120-001 (2020A). Options and meanings: "
         + string_dict_to_html(dict(ACTIVITY_CHOICES)),
     )
     meeting_times = models.TextField(
@@ -357,8 +377,8 @@ class Section(models.Model):
         help_text=dedent(
             """
         A JSON-stringified list of meeting times of the form
-        '{days code} {start time} - {end time}', e.g.
-        '["MWF 09:00 AM - 10:00 AM","F 11:00 AM - 12:00 PM","T 05:00 PM - 06:00 PM"]' for
+        `{days code} {start time} - {end time}`, e.g.
+        `["MWF 09:00 AM - 10:00 AM","F 11:00 AM - 12:00 PM","T 05:00 PM - 06:00 PM"]` for
         PHYS-151-001 (2020A). Each letter of the days code is of the form M, T, W, R, F for each
         day of the work week, respectively (and multiple days are combined with concatenation).
         To access the Meeting objects for this section, the related field `meetings` can be used.
@@ -380,6 +400,7 @@ class Section(models.Model):
     )
     restrictions = models.ManyToManyField(
         Restriction,
+        related_name="sections",
         blank=True,
         help_text="All registration Restriction objects to which this section is subject.",
     )
@@ -413,6 +434,10 @@ class Section(models.Model):
         help_text="The latest end time of a meeting; hh:mm is formatted as hh.mm = h+mm/100.",
     )
 
+    registration_volume = models.PositiveIntegerField(
+        default=0, help_text="The number of active PCA registrations watching this section."
+    )  # For the set of PCA registrations for this section, use the related field `registrations`.
+
     def __str__(self):
         return "%s %s" % (self.full_code, self.course.semester)
 
@@ -430,6 +455,83 @@ class Section(models.Model):
         True if self.status == "O", False otherwise
         """
         return self.status == "O"
+
+    percent_open = models.FloatField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text=dedent(
+            """
+        If this section is from the current semester, this is the percentage (expressed as a
+        decimal number between 0 and 1) of the period between the beginning of its
+        add/drop period and its last status update that this section was open
+        (or 0 if it has had no status updates strictly within its add/drop period).
+        If this section is from a previous semester, this is the percentage of its
+        whole add/drop period that it was open.
+        """
+        ),
+    )
+
+    @property
+    def current_percent_open(self):
+        """
+        The percentage (expressed as a decimal number between 0 and 1) of the period between
+        the beginning of its add/drop period and min[the current time, the end of its
+        registration period] that this section was open. If this section's registration
+        period hasn't started yet, this property is null (None in Python).
+        """
+        from courses.util import get_add_drop_period, get_current_semester
+
+        # ^ imported here to avoid circular imports
+
+        if self.semester == get_current_semester():
+            add_drop = get_add_drop_period(self.semester)
+            add_drop_start = add_drop.estimated_start
+            add_drop_end = add_drop.estimated_end
+            current_time = timezone.now()
+            if current_time <= add_drop_start:
+                return None
+            try:
+                last_status_update = StatusUpdate.objects.filter(
+                    section=self, created_at__gt=add_drop_start, created_at__lt=add_drop_end
+                ).latest("created_at")
+            except StatusUpdate.DoesNotExist:
+                last_status_update = None
+            last_update_dt = last_status_update.created_at if last_status_update else add_drop_start
+            period_seconds = float(
+                (min(current_time, add_drop_end) - add_drop_start).total_seconds()
+            )
+            percent_after_update = (
+                float(self.is_open)
+                * float((current_time - last_update_dt).total_seconds())
+                / period_seconds
+            )
+            if last_status_update is None:
+                return percent_after_update
+            percent_before_update = (
+                float(self.percent_open)
+                * float((last_update_dt - add_drop_start).total_seconds())
+                / period_seconds
+            )
+            return percent_before_update + percent_after_update
+        else:
+            return self.percent_open
+
+    @property
+    def raw_demand(self):
+        """
+        The current raw PCA demand of the section, which is defined as:
+        [the number of active PCA registrations for this section]/[the class capacity]
+        NOTE: if this section has a null or non-positive capacity, then this property will be None.
+        """
+        # Note for backend developers: this is a property, not a field. However,
+        # in the Meta class for this model, we define the raw_property index identically to
+        # this property's computation. Thus, you can access this value (as an indexed column)
+        # in database queries using the same name. This is useful for computing
+        # distribution estimates.
+        if self.capacity is None or self.capacity <= 0:
+            return None
+        else:
+            return float(self.registration_volume) / float(self.capacity)
 
     def save(self, *args, **kwargs):
         self.full_code = f"{self.course.full_code}-{self.code}"
@@ -451,12 +553,13 @@ class Section(models.Model):
 
 class StatusUpdate(models.Model):
     """
-    A registration status update for a specific section (e.g. CIS-120 went from open to close)
+    A registration status update for a specific section (e.g. CIS-120-001 went from open to close)
     """
 
     STATUS_CHOICES = (("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted"))
     section = models.ForeignKey(
         Section,
+        related_name="status_updates",
         on_delete=models.CASCADE,
         help_text="The section which this status update applies to.",
     )
@@ -481,9 +584,68 @@ class StatusUpdate(models.Model):
     # is not otherwise invalid
     request_body = models.TextField()
 
+    percent_through_add_drop_period = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The percentage through the add/drop period at which this status update occurred."
+        "This percentage is constrained within the range [0,1].",
+    )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
+    # and the save() method of StatusUpdate
+
+    in_add_drop_period = models.BooleanField(
+        default=False, help_text="Was this status update created during the add/drop period?"
+    )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
+    # and the save() method of StatusUpdate
+
     def __str__(self):
         d = dict(self.STATUS_CHOICES)
-        return f"{self.section.__str__()} - {d[self.old_status]} to {d[self.new_status]}"
+        return (
+            f"{str(self.section)} - {d[self.old_status]} to {d[self.new_status]} "
+            f"@ {str(self.created_at)}"
+        )
+
+    def save(self, *args, **kwargs):
+        """
+        This overridden save method first gets the add/drop period object for the semester of this
+        StatusUpdate object (either by using the get_add_drop_period method or by using
+        a passed-in add_drop_period kwarg, which can be used for efficiency in bulk operations
+        over many StatusUpdate objects). Then it calls the overridden save method, and after that
+        it sets the percent_through_add_drop_period field.
+        """
+        from alert.models import validate_add_drop_semester
+        from courses.util import get_add_drop_period
+
+        # ^ imported here to avoid circular imports
+
+        add_drop_period = None
+        if "add_drop_period" in kwargs:
+            add_drop_period = kwargs["add_drop_period"]
+            del kwargs["add_drop_period"]
+
+        super().save(*args, **kwargs)
+
+        # If this is a valid add/drop semester, set the percent_through_add_drop_period field
+        try:
+            validate_add_drop_semester(self.section.semester)
+        except ValidationError:
+            return
+
+        if add_drop_period is None:
+            add_drop_period = get_add_drop_period(self.section.semester)
+
+        created_at = self.created_at
+        start = add_drop_period.estimated_start
+        end = add_drop_period.estimated_end
+        if created_at < start:
+            self.in_add_drop_period = False
+            self.percent_through_add_drop_period = 0
+        elif created_at > end:
+            self.in_add_drop_period = False
+            self.percent_through_add_drop_period = 1
+        else:
+            self.in_add_drop_period = True
+            self.percent_through_add_drop_period = (created_at - start) / (end - start)
+        super().save()
 
 
 """
@@ -523,7 +685,7 @@ class Building(models.Model):
         help_text=dedent(
             """
         The latitude of the building, in the signed decimal degrees format (global range of
-        [-90.0, 90.0]), e.g. 39.961380 for the Towne Building.
+        [-90.0, 90.0]), e.g. `39.961380` for the Towne Building.
         """
         ),
     )
@@ -533,7 +695,7 @@ class Building(models.Model):
         help_text=dedent(
             """
         The longitude of the building, in the signed decimal degrees format (global range of
-        [-180.0, 180.0]), e.g. -75.176773 for the Towne Building.
+        [-180.0, 180.0]), e.g. `-75.176773` for the Towne Building.
         """
         ),
     )
@@ -556,7 +718,7 @@ class Room(models.Model):
         ),
     )
     number = models.CharField(
-        max_length=5, help_text="The room number, e.g. 101 for Wu and Chen Auditorium in Levine."
+        max_length=5, help_text="The room number, e.g. `101` for Wu and Chen Auditorium in Levine."
     )
     name = models.CharField(
         max_length=80,
@@ -653,7 +815,7 @@ class Requirement(models.Model):
         help_text=dedent(
             """
         The semester of the requirement (of the form YYYYx where x is A [for spring], B [summer],
-        or C [fall]), e.g. 2019C for fall 2019. We organize requirements by semester so that we
+        or C [fall]), e.g. `2019C` for fall 2019. We organize requirements by semester so that we
         don't get huge related sets which don't give particularly good info.
         """
         ),
@@ -664,7 +826,7 @@ class Requirement(models.Model):
         db_index=True,
         help_text=dedent(
             """
-        What school this requirement belongs to, e.g. 'SAS' for the SAS 'Formal Reasoning Course'
+        What school this requirement belongs to, e.g. `SAS` for the SAS 'Formal Reasoning Course'
         requirement satisfied by CIS-120. Options and meanings:
         """
             + string_dict_to_html(dict(SCHOOL_CHOICES))
@@ -675,7 +837,7 @@ class Requirement(models.Model):
         db_index=True,
         help_text=dedent(
             """
-        The code identifying this requirement, e.g. 'MFR' for 'Formal Reasoning Course',
+        The code identifying this requirement, e.g. `MFR` for 'Formal Reasoning Course',
         an SAS requirement satisfied by CIS-120.
         """
         ),
@@ -875,7 +1037,7 @@ class UserProfile(models.Model):
                 )
             except phonenumbers.phonenumberutil.NumberParseException:
                 raise ValidationError("Invalid phone number (this should have been caught already)")
-        super(UserProfile, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 @receiver(post_save, sender=User)

@@ -22,10 +22,6 @@ const Footer = ({ style }) => (
         <a href="https://pennlabs.org">
           <strong>Penn Labs</strong>
         </a>{" "}
-        | Hosted by{" "}
-        <a href="https://stwing.upenn.edu/">
-          <strong>STWing</strong>
-        </a>
       </p>
     </div>
   </div>

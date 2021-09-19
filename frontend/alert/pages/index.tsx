@@ -8,6 +8,7 @@ import ManageAlertWrapper from "../components/managealert";
 import { maxWidth, PHONE } from "../constants";
 import Footer from "../components/Footer";
 import AlertForm from "../components/AlertForm";
+import Timeline from "../components/Timeline";
 
 import { Center, Container, Flex } from "../components/common/layout";
 import MessageList from "../components/MessageList";
@@ -109,28 +110,33 @@ const genId = (() => {
     return () => counter++;
 })();
 
-// const RecruitingBanner = styled.div`
-//     text-align: center;
-//     display: grid;
-//     padding: 20px;
-//     width: 100%;
-//     background-color: #fbcd4c;
-//     & > * {
-//         margin: auto;
-//     }
-// `;
+const RecruitingBanner = styled.div`
+    text-align: center;
+    display: grid;
+    padding: 20px;
+    width: 100%;
+    background-color: #fbcd4c;
+    & > * {
+        margin: auto;
+    }
+`;
 
 function App() {
+    const [showRecruiting, setShowRecruiting] = useState<boolean>(false);
     const [user, setUser] = useState<User | null>(null);
     const [page, setPage] = useState("home");
     const [messages, setMessages] = useState<
         { message: string; status: number; key: number }[]
     >([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const [timeline, setTimeline] = useState<string | null>(null);
 
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
         ReactGA.pageview(window.location.pathname + window.location.search);
+        fetch("https://platform.pennlabs.org/options/")
+            .then((response) => response.json())
+            .then((options) => setShowRecruiting(options.RECRUITING));
     }, []);
 
     const MESSAGE_EXPIRATION_MILLIS = 8000;
@@ -174,6 +180,21 @@ function App() {
         <>
             <Container>
                 {showLoginModal && <LoginModal />}
+                {showRecruiting && (
+                    <RecruitingBanner>
+                        <p>
+                            <span role="img" aria-label="party">
+                                🎉
+                            </span>{" "}
+                            Want to build impactful products like Penn Course
+                            Alert? Join Penn Labs this spring!{" "}
+                            <a href="https://pennlabs.org/apply">Apply here!</a>{" "}
+                            <span role="img" aria-label="party">
+                                🎉
+                            </span>
+                        </p>
+                    </RecruitingBanner>
+                )}
                 <Nav
                     login={updateUser}
                     logout={logout}
@@ -197,12 +218,15 @@ function App() {
                 {page === "home" ? (
                     <Flex col grow={1}>
                         {user ? (
-                            <AlertForm user={user} setResponse={setResponse} />
+                            <AlertForm user={user} setResponse={setResponse} setTimeline={setTimeline}/>
                         ) : null}
                     </Flex>
                 ) : (
                     <ManageAlertWrapper />
                 )}
+
+                <Timeline courseCode={timeline} setTimeline={setTimeline}/>
+
                 <Footer />
             </Container>
         </>

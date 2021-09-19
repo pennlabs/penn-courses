@@ -51,7 +51,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         read_only=True,
         help_text=dedent(
             """
-            The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
+            The dash-separated dept, full-code, and section-code, e.g. `CIS-120-001` for the
             001 lecture section of CIS-120.
             """
         ),
@@ -70,7 +70,8 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         ),
     )
 
-    def get_course_title(self, obj):
+    @staticmethod
+    def get_course_title(obj):
         return obj.course.title
 
     class Meta:
@@ -82,12 +83,9 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             "meeting_times",
             "instructors",
             "course_title",
+            "semester",
         ]
         read_only_fields = fields
-
-    @staticmethod
-    def get_semester(obj):
-        return obj.course.semester
 
 
 course_quality_help = "The average course quality rating for this section, on a scale of 0-4."
@@ -101,19 +99,10 @@ class SectionDetailSerializer(serializers.ModelSerializer):
         source="full_code",
         help_text=dedent(
             """
-            The dash-separated dept, full-code, and section-code, e.g. 'CIS-120-001' for the
+            The dash-separated dept, full-code, and section-code, e.g. `CIS-120-001` for the
             001 lecture section of CIS-120.
             """
         ),
-    )
-    semester = serializers.SerializerMethodField(
-        help_text=dedent(
-            """
-            The semester of the section (of the form YYYYx where x is A [for spring], B [summer],
-            or C [fall]), e.g. 2019C for fall 2019. We organize requirements by semester so that we
-            don't get huge related sets which don't give particularly good info.
-            """
-        )
     )
     meetings = MeetingSerializer(
         many=True,
@@ -155,10 +144,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
     )
 
-    @staticmethod
-    def get_semester(obj):
-        return obj.course.semester
-
     class Meta:
         model = Section
         fields = [
@@ -166,6 +151,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "status",
             "activity",
             "credits",
+            "capacity",
             "semester",
             "meetings",
             "instructors",
@@ -199,7 +185,7 @@ class CourseListSerializer(serializers.ModelSerializer):
         help_text=dedent(
             """
         The full code of the course, in the form '{dept code}-{course code}'
-        dash-joined department and code of the course, e.g. 'CIS-120' for CIS-120."""
+        dash-joined department and code of the course, e.g. `CIS-120` for CIS-120."""
         ),
     )
 
@@ -287,7 +273,6 @@ class CourseDetailSerializer(CourseListSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
-            "semester",
         ] + ["crosslistings", "requirements", "sections",]
         read_only_fields = fields
 
@@ -300,7 +285,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(
-        read_only=False, help_text="The user profile object, storing collected info about the user."
+        read_only=False,
+        help_text="The user profile object, storing collected info about the user.",
+        required=False,
     )
 
     def update(self, instance, validated_data):
@@ -331,7 +318,7 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
         help_text=dedent(
             """
             The code of the section which this status update applies to, in the form
-            '{dept code}-{course code}-{section code}', e.g. 'CIS-120-001' for the
+            '{dept code}-{course code}-{section code}', e.g. `CIS-120-001` for the
             001 section of CIS-120.
             """
         ),

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from alert.models import Registration
+from alert.models import AddDropPeriod, PcaDemandDistributionEstimate, Registration
 
 
 class RegistrationAdmin(admin.ModelAdmin):
@@ -15,7 +15,13 @@ class RegistrationAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ("section",)
 
-    list_filter = ["notification_sent", "section__course__semester"]
+    ordering = ("-created_at",)
+
+    list_filter = [
+        "notification_sent",
+        "section__course__semester",
+        ("resubscribed_to", admin.EmptyFieldListFilter),
+    ]
 
     list_select_related = (
         "section",
@@ -28,4 +34,27 @@ class RegistrationAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', link, instance.section.__str__())
 
 
+class PcaDemandDistributionEstimateAdmin(admin.ModelAdmin):
+    search_fields = ("created_at",)
+
+    autocomplete_fields = ("highest_demand_section", "lowest_demand_section")
+
+    list_filter = ["semester", "created_at"]
+
+    def has_change_permission(self, request, obj=None):
+        """
+        Don't allow PcaDemandDistributionEstimate objects to be changed in the Admin console
+        (although they can be deleted).
+        """
+        return False
+
+
+class AddDropPeriodAdmin(admin.ModelAdmin):
+    search_fields = ("semester",)
+
+    list_filter = ["semester"]
+
+
 admin.site.register(Registration, RegistrationAdmin)
+admin.site.register(PcaDemandDistributionEstimate, PcaDemandDistributionEstimateAdmin)
+admin.site.register(AddDropPeriod, AddDropPeriodAdmin)

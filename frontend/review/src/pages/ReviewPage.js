@@ -2,17 +2,13 @@ import React, { Component } from "react";
 import Cookies from "universal-cookie";
 import InfoBox from "../components/InfoBox";
 import ScoreBox from "../components/ScoreBox";
+import GraphBox from "../components/GraphBox";
 import Navbar from "../components/Navbar";
 import DetailsBox from "../components/DetailsBox";
 import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
 import { apiReviewData, apiLive, apiLiveInstructor } from "../utils/api";
-
-/**
- * Enable or disable the Penn Labs recruitment banner.
- */
-const SHOW_RECRUITMENT_BANNER = false;
 
 /**
  * Represents a course, instructor, or department review page.
@@ -32,19 +28,28 @@ export class ReviewPage extends Component {
       liveData: null,
       selectedCourses: {},
       isAverage: localStorage.getItem("meta-column-type") !== "recent",
-      showBanner:
-        SHOW_RECRUITMENT_BANNER && !this.cookies.get("hide_pcr_banner")
+      isCourseEval: false,
+      showBanner: false
     };
 
     this.navigateToPage = this.navigateToPage.bind(this);
     this.getReviewData = this.getReviewData.bind(this);
     this.setIsAverage = this.setIsAverage.bind(this);
+    this.setIsCourseEval = this.setIsCourseEval.bind(this);
     this.showRowHistory = this.showRowHistory.bind(this);
     this.showDepartmentGraph = this.showDepartmentGraph.bind(this);
   }
 
   componentDidMount() {
     this.getReviewData();
+
+    fetch("https://platform.pennlabs.org/options/")
+      .then(response => response.json())
+      .then(options =>
+        this.setState({
+          showBanner: options.RECRUITING && !this.cookies.get("hide_pcr_banner")
+        })
+      );
   }
 
   componentDidUpdate(prevProps) {
@@ -60,7 +65,8 @@ export class ReviewPage extends Component {
           code: this.props.match.params.code,
           data: null,
           rowCode: null,
-          error: null
+          error: null,
+          isCourseEval: false
         },
         this.getReviewData
       );
@@ -71,6 +77,11 @@ export class ReviewPage extends Component {
     this.setState({ isAverage }, () =>
       localStorage.setItem("meta-column-type", isAverage ? "average" : "recent")
     );
+  }
+
+  //add to local storage?
+  setIsCourseEval(isCourseEval) {
+    this.setState({ isCourseEval });
   }
 
   getPageInfo() {
@@ -222,6 +233,7 @@ export class ReviewPage extends Component {
       rowCode,
       liveData,
       isAverage,
+      isCourseEval,
       selectedCourses,
       type
     } = this.state;
@@ -236,43 +248,59 @@ export class ReviewPage extends Component {
       <div>
         <Navbar />
         {this.state.data ? (
-          <div id="content" className="row">
-            <div className="col-sm-12 col-md-4 sidebar-col box-wrapper">
-              <InfoBox
-                type={type}
-                code={code}
-                data={data}
-                liveData={liveData}
-                selectedCourses={selectedCourses}
-              />
+          <>
+            <div id="content" className="row">
+              <div className="col-sm-12 col-md-4 sidebar-col box-wrapper">
+                <InfoBox
+                  type={type}
+                  code={code}
+                  data={data}
+                  liveData={liveData}
+                  selectedCourses={selectedCourses}
+                  isCourseEval={isCourseEval}
+                  setIsCourseEval={this.setIsCourseEval}
+                />
+              </div>
+              <div className="col-sm-12 col-md-8 main-col">
+                <ScoreBox
+                  data={data}
+                  type={type}
+                  liveData={liveData}
+                  onSelect={handleSelect}
+                  isAverage={isAverage}
+                  setIsAverage={this.setIsAverage}
+                  isCourseEval={isCourseEval}
+                />
+                {type === "course" && (
+                  <DetailsBox
+                    type={type}
+                    course={code}
+                    instructor={rowCode}
+                    isCourseEval={isCourseEval}
+                    ref={this.tableRef}
+                  />
+                )}
+
+                {type === "instructor" && (
+                  <DetailsBox
+                    type={type}
+                    course={rowCode}
+                    instructor={code}
+                    isCourseEval={isCourseEval}
+                    ref={this.tableRef}
+                  />
+                )}
+              </div>
             </div>
-            <div className="col-sm-12 col-md-8 main-col">
-              <ScoreBox
-                data={data}
-                type={type}
-                liveData={liveData}
-                onSelect={handleSelect}
+            {type === "course" && isCourseEval && (
+              <GraphBox
+                key={isAverage}
+                courseCode={code}
                 isAverage={isAverage}
                 setIsAverage={this.setIsAverage}
               />
-              {type === "course" && (
-                <DetailsBox
-                  type={type}
-                  course={code}
-                  instructor={rowCode}
-                  ref={this.tableRef}
-                />
-              )}
-              {type === "instructor" && (
-                <DetailsBox
-                  type={type}
-                  course={rowCode}
-                  instructor={code}
-                  ref={this.tableRef}
-                />
-              )}
-            </div>
-          </div>
+            )}
+          </>
         ) : (
           <div style={{ textAlign: "center", padding: 45 }}>
             <i

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 
+import boto3
 import dj_database_url
 
 
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "options.apps.OptionsConfig",
     "django.contrib.admindocs",
+    "django_extensions",
     "alert",
     "courses",
     "plan",
@@ -92,6 +94,10 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(default="sqlite:///" + os.path.join(BASE_DIR, "db.sqlite3"))
 }
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+# Explicitly setting DEFAULT_AUTO_FIELD is necessary to silence warnings after Django 3.2
+# We don't need the range of BigAutoField for auto fields so we can stick with the old behavior
 
 
 # Password validation
@@ -180,3 +186,18 @@ REST_FRAMEWORK = {
 }
 
 STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
+
+S3_client = boto3.client("s3")
+S3_resource = boto3.resource("s3")
+
+STATUS_UPDATES_RECORDED_SINCE = "2019C"  # How far back does our valid Status Update data span?
+PCA_REGISTRATIONS_RECORDED_SINCE = "2020A"  # How far back does our valid Registration data span?
+WAITLIST_DEPARTMENT_CODES = (
+    "CIS",
+    "NETS",
+)  # Which departments (referenced by code)
+# have a waitlist system or require permits for registration during the add/drop period?
+ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = (
+    200  # Aim for at least 200 demand distribution estimates
+)
+# over the course of a semester

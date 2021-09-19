@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@types/rc-slider": "^8.6.6",
-    "@types/react-redux": "^7.1.9"
+    "@types/react-redux": "^7.1.9",
+    "react-dom": "^17.0.2"
   }
 }

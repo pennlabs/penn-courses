@@ -6,6 +6,34 @@ import InstructorInfo from "./InstructorInfo";
 import { DepartmentHeader, DepartmentGraphs } from "./DepartmentInfo";
 import { apiContact } from "../../utils/api";
 
+import styled from "styled-components";
+
+const NewLabel = styled.div`
+  background: #ea5a48;
+  color: #fff;
+  border-radius: 0.875rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  padding: 0.1875rem 0.375rem;
+  text-align: center;
+  align-self: center;
+  margin-right: 10px;
+  justify-self: start;
+`;
+
+const ButtonContainer = styled.div`
+  width: 100%;
+  margin-top: 5px;
+`;
+
+const StatsToggleContainer = styled.div`
+  display: flex;
+  justify-content: start;
+  margin: 20px 0px;
+  flex-direction: row;
+`;
+
 /**
  * Information box on the left most side, containing scores and descriptions
  * of course or professor.
@@ -27,7 +55,9 @@ const InfoBox = ({
   },
   data,
   liveData,
-  selectedCourses
+  selectedCourses,
+  isCourseEval,
+  setIsCourseEval
 }) => {
   const [contact, setContact] = useState(null);
   const [inCourseCart, setInCourseCart] = useState(
@@ -112,6 +142,28 @@ const InfoBox = ({
         {isDepartment && <DepartmentHeader name={name} code={code} />}
       </div>
 
+      <StatsToggleContainer>
+        <NewLabel>NEW</NewLabel>
+        <div className="btn-group">
+          <button
+            onClick={() => setIsCourseEval(false)}
+            className={`btn btn-sm ${
+              isCourseEval ? "btn-sub-secondary" : "btn-sub-primary"
+            }`}
+          >
+            Student Evaluations
+          </button>
+          <button
+            onClick={() => setIsCourseEval(true)}
+            className={`btn btn-sm ${
+              isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
+            }`}
+          >
+            Registration Metrics
+          </button>
+        </div>
+      </StatsToggleContainer>
+
       {!isDepartment && (
         <div id="banner-score">
           <Ratings
@@ -132,7 +184,12 @@ const InfoBox = ({
         </div>
       )}
 
-      {isDepartment && <DepartmentGraphs courses={selectedCourses} />}
+      {isDepartment && (
+        <DepartmentGraphs
+          courses={selectedCourses}
+          isCourseEval={isCourseEval}
+        />
+      )}
 
       {isCourse && <CourseDescription description={description} />}
     </div>
