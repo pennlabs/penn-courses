@@ -745,7 +745,7 @@ class Meeting(models.Model):
         hour = math.floor(time) % 12
         minute = math.floor((time % 1) * 100)
 
-        return f'{hour if hour != 0 else 12}:{str(minute).zfill(2)} {"AM" if time < 12 else "PM"}'  # noqa: E501
+        return f'{hour if hour != 0 else 12}:{str(minute).zfill(2)} {"AM" if time < 12 else "PM"}'
 
     @property
     def start_time(self):

@@ -46,6 +46,7 @@ def bound_filter(field):
         lower_bound, upper_bound = bounds.split("-")
         lower_bound = float(lower_bound)
         upper_bound = float(upper_bound)
+
         return queryset.filter(
             Q(**{f"{field}__gte": lower_bound, f"{field}__lte": upper_bound,})
             | Q(**{f"{field}__isnull": True})
@@ -152,7 +153,11 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "name": "days",
                 "required": False,
                 "in": "query",
-                "description": ("Filter meetings to be within the specified set of days."),
+                "description": (
+                    "Filter meetings to be within the specified set of days. "
+                    "The set of days should be specified as a string containing some "
+                    "combination of the characters [M, T, W, R, F, S, U]."
+                ),
                 "schema": {"type": "string"},
                 "example": "TWR",
             },
@@ -161,10 +166,12 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "required": False,
                 "in": "query",
                 "description": (
-                    "Filter meeting times to be within the specified range (specifying times with "
-                    "decimal numbers between 0 and 23.9... (representing the hour of the day in ET)."
+                    "Filter meeting times to be within the specified range. "
+                    "Times should be specified as decimal numbers of the form `h+mm/100` "
+                    "where h is the hour `[0..23]` and mm is the minute `[0,60)`, in ET. "
+                    "The start and end time of the filter should be dash-separated."
                 ),
                 "schema": {"type": "string"},
-                "example": "11.5-18",
+                "example": "11.30-18",
             },
         ]
