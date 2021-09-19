@@ -1,9 +1,12 @@
 from django.db.models import Q
+from django.db.models.fields import IntegerField
 from rest_framework import filters
 
 from courses.models import Requirement
 from courses.util import get_current_semester
 from decimal import Decimal
+from django.db.models import Count
+from django.db.models import Case, Value, When
 
 
 def requirement_filter(queryset, req_ids):
@@ -23,21 +26,56 @@ def requirement_filter(queryset, req_ids):
 
 
 def day_filter(queryset, days):
-    # TODO: fix this query
-    queryset = queryset.filter(sections__meetings__day__in=days.split())
+    exclude_days = set("MTWRFSU") - set(days)
+    print("DAY FILTER")
+    queryset = queryset.annotate(
+        sections__num_conflicting_meeting_days=Count(
+            Case(
+                When(Q(sections__meetings__day__in=exclude_days), then=Value(1)),
+                output_field=IntegerField(),
+                default=Value(0),
+            )
+        )
+    )
+
+    def get_sections(course):
+        return [
+            {
+                "full_code": section.full_code,
+                "num_conflicting_meeting_days": section.num_conflicting_meeting_days,
+            }
+            for section in course.sections.all()
+        ]
+
+    print([{"code": course.code, "sections": get_sections(course)} for course in queryset])
+    queryset = queryset.filter(sections__num_conflicting_meeting_days=0).distinct()
     return queryset
 
 
 def time_filter(queryset, time_range):
     start_time, end_time = time_range.split("-")
-    # TODO: fix this query
-    queryset = queryset.filter(
-        Q(
-            sections__earliest_meeting__gte=Decimal(start_time),
-            sections__latest_meeting__lte=Decimal(end_time),
+    start_time = Decimal(start_time)
+    end_time = Decimal(end_time)
+    print("TIME FILTER: ")
+    queryset = queryset.annotate(
+        sections__num_conflicting_meeting_times=Count(
+            Case(
+                When(
+                    Q(sections__meetings__start__isnull=False)
+                    & Q(sections__meetings__end__isnull=False)
+                    & (
+                        Q(sections__meetings__start__lt=start_time)
+                        | Q(sections__meetings__end__gt=end_time)
+                    ),
+                    then=Value(1),
+                ),
+                output_field=IntegerField(),
+                default=Value(0),
+            )
         )
-        | Q(sections__meetings__isnull=True)
     )
+    print(queryset)
+    queryset = queryset.filter(sections__num_conflicting_meeting_times=0)
     return queryset
 
 
@@ -48,7 +86,12 @@ def bound_filter(field):
         upper_bound = float(upper_bound)
 
         return queryset.filter(
-            Q(**{f"{field}__gte": lower_bound, f"{field}__lte": upper_bound,})
+            Q(
+                **{
+                    f"{field}__gte": lower_bound,
+                    f"{field}__lte": upper_bound,
+                }
+            )
             | Q(**{f"{field}__isnull": True})
         )
 
