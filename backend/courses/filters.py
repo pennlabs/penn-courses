@@ -1,6 +1,5 @@
 from decimal import Decimal
 
-from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 from django.db.models.expressions import OuterRef
 from rest_framework import filters
@@ -55,7 +54,7 @@ def day_filter(days):
     """
     days = set(days)
     if not days.issubset({"M", "T", "W", "R", "F", "S", "U"}):
-        raise ValidationError(f"Day filter can only contain characters in 'MTWRFSU', got {days}")
+        return Q()
     return Q(day__isnull=True) | Q(day__in=set(days))
 
 
@@ -68,13 +67,11 @@ def time_filter(time_range):
         return Q()
     times = time_range.split("-")
     if len(times) != 2:
-        raise ValidationError(f"Time filter must be of the form <start>-<end>, got {time_range}")
+        return Q()
     times = [t.strip() for t in times]
     for time in times:
         if time and not time.replace(".", "", 1).isdigit():
-            raise ValidationError(
-                f"Non-numeric value in time filter: {time} (part of {time_range})"
-            )
+            return Q()
     start_time, end_time = times
     query = Q()
     if start_time:
@@ -107,15 +104,11 @@ def bound_filter(field):
             return queryset
         bound_arr = bounds.split("-")
         if len(bound_arr) != 2:
-            raise ValidationError(
-                f"Invalid {field} filter; bounds must be of the form <lower>-<upper>, got {bounds}"
-            )
+            return queryset
         bound_arr = [b.strip() for b in bound_arr]
         for bound in bound_arr:
             if bound and not bound.replace(".", "", 1).isdigit():
-                raise ValidationError(
-                    f"Non-numeric value in {field} filter: {bound} (part of {bounds})"
-                )
+                return queryset
         lower_bound, upper_bound = bound_arr
         lower_bound = Decimal(lower_bound)
         upper_bound = Decimal(upper_bound)

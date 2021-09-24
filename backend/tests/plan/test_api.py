@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.test import TestCase
 from django.urls import reverse
@@ -254,11 +253,10 @@ class DayFilterTestCase(TestCase):
         self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_illegal_characters(self):
-        with self.assertRaises(ValidationError):
-            response = self.client.get(
-                reverse("courses-search", args=[TEST_SEMESTER]), {"days": "M-R"}
-            )
-            self.assertEqual(response.status_code, 400)
+        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "M-R"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_lec_no_rec(self):
         response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "TR"})
@@ -374,25 +372,28 @@ class TimeFilterTestCase(TestCase):
         self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_no_dashes(self):
-        with self.assertRaises(ValidationError):
-            response = self.client.get(
-                reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.00"}
-            )
-            self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.00"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_too_many_dashes(self):
-        with self.assertRaises(ValidationError):
-            response = self.client.get(
-                reverse("courses-search", args=[TEST_SEMESTER]), {"time": "-1.00-3.00"}
-            )
-            self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "-1.00-3.00"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_non_numeric(self):
-        with self.assertRaises(ValidationError):
-            response = self.client.get(
-                reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.00am-3.00pm"}
-            )
-            self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.00am-3.00pm"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_crossover_times(self):
         response = self.client.get(
