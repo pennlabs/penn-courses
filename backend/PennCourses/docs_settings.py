@@ -577,13 +577,17 @@ def make_manual_schema_changes(data):
 
     # Remove ID from the documented PUT request body for /api/plan/schedules/
     # (the id field in the request body is ignored in favor of the id path parameter)
+    data["paths"][reverse_func("schedules-detail", args=["id"])()]["put"] = deepcopy(
+        data["paths"][reverse_func("schedules-detail", args=["id"])()]["put"]
+    )
     for content_ob in data["paths"][reverse_func("schedules-detail", args=["id"])()]["put"][
         "requestBody"
     ]["content"].values():
         content_ob["schema"]["properties"].pop("id", None)
 
-    # Make the id and semester fields show up in PCP schedule request body under sections
-    # (and make id required)
+    # Make the name and sections fields of the PCP schedule request body required,
+    # make the id field optionally show up. Also, make the id and semester fields
+    # show up under the sections field, and make id required.
     for path, path_ob in data["paths"].items():
         if reverse_func("schedules-list")() not in path:
             continue
@@ -596,13 +600,27 @@ def make_manual_schema_changes(data):
                     section_ob = properties_ob["sections"]
                     if "required" not in section_ob["items"].keys():
                         section_ob["items"]["required"] = []
-                    section_ob["items"]["required"].append("id")
-                    section_ob["items"]["required"].append("semester")
+                    required = section_ob["items"]["required"]
+                    section_ob["items"]["required"] = list(set(required + ["id", "semester"]))
                     for field, field_ob in section_ob["items"]["properties"].items():
                         if field == "id" or field == "semester":
                             field_ob["readOnly"] = False
-                        if field == "id":
-                            field_ob["readOnly"] = False
+                if "semester" in properties_ob.keys():
+                    properties_ob["semester"]["description"] = dedent(
+                        """
+                        The semester of the course (of the form YYYYx where x is A [for spring],
+                        B [summer], or C [fall]), e.g. `2019C` for fall 2019. You can omit this
+                        field and the semester of the first section in the sections list will be
+                        used instead (or if the sections list is empty, the current semester will
+                        be used). If this field differs from any of the semesters of the sections
+                        in the sections list, a 400 will be returned.
+                        """
+                    )
+                if "id" in properties_ob.keys():
+                    properties_ob["id"]["description"] = (
+                        "The id of the schedule, if you want to explicitly set this (on create) "
+                        "or update an existing schedule by id (optional)."
+                    )
 
     # Make application/json the only content type
     def delete_other_content_types_dfs(dictionary):
@@ -725,6 +743,7 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
 
         for path_name, val in data["paths"].items():
             for method_name, v in val.items():
+                v["responses"] = deepcopy(v["responses"])
                 delete_required_dfs(v["responses"])
 
         # Since tags could not be updated while we were through tags above, we update them now.

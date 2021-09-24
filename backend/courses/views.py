@@ -21,6 +21,13 @@ from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 
+SEMESTER_PARAM_DESCRIPTION = (
+    "The semester of the course (of the form YYYYx where x is A [for spring], "
+    "B [summer], or C [fall]), e.g. '2019C' for fall 2019. Alternatively, you "
+    "can just pass 'current' for the current semester."
+)
+
+
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
     schema = PcxAutoSchema()
 
@@ -63,6 +70,11 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Sections Listed Successfully."}
             }
         },
+        custom_path_parameter_desc={
+            reverse_func("section-search", args=["semester"]): {
+                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
+            }
+        },
     )
 
     serializer_class = MiniSectionSerializer
@@ -87,6 +99,11 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
             }
         },
+        custom_path_parameter_desc={
+            reverse_func("sections-detail", args=["semester", "full_code"]): {
+                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
+            }
+        },
     )
 
     serializer_class = SectionDetailSerializer
@@ -107,6 +124,11 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
         response_codes={
             reverse_func("courses-list", args=["semester"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
+            }
+        },
+        custom_path_parameter_desc={
+            reverse_func("courses-list", args=["semester"]): {
+                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
             }
         },
     )
@@ -150,6 +172,11 @@ class CourseListSearch(CourseList):
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
             }
         },
+        custom_path_parameter_desc={
+            reverse_func("courses-search", args=["semester"]): {
+                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
+            }
+        },
     )
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
@@ -167,6 +194,11 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
         response_codes={
             reverse_func("courses-detail", args=["semester", "full_code"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
+            }
+        },
+        custom_path_parameter_desc={
+            reverse_func("courses-detail", args=["semester", "full_code"]): {
+                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
             }
         },
     )
@@ -204,6 +236,11 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
             reverse_func("requirements-list", args=["semester"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
             },
+        },
+        custom_path_parameter_desc={
+            reverse_func("requirements-list", args=["semester"]): {
+                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
+            }
         },
     )
 

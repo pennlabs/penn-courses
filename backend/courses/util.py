@@ -6,6 +6,9 @@ from decimal import Decimal
 
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db.models.aggregates import Count
+from django.db.models.expressions import Subquery, Value
+from django.db.models.functions.comparison import Coalesce
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from options.models import Option, get_value
@@ -435,3 +438,25 @@ def get_average_reviews(reviews, field):
     if count == 0:
         raise ValueError("No reviews found for given field")
     return total / count
+
+
+def subquery_count_distinct(subquery, column):
+    """
+    Returns a coalesced count of the number of distinct values in the specified column
+    of the specified subquery. Usage example:
+        Course.objects.annotate(
+            num_activities=subquery_count_distinct(
+                subquery=Section.objects.filter(course_id=OuterRef("id")),
+                column="activity"
+            )
+        )  # counts the number of distinct activities each course has
+    """
+    return Coalesce(
+        Subquery(
+            subquery.annotate(common=Value(1))
+            .values("common")
+            .annotate(count=Count(column, distinct=True))
+            .values("count")
+        ),
+        0,
+    )
