@@ -7,12 +7,13 @@ Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
 ## Setting up the Django Backend
 
 1. `cd backend`
-2. `pipenv shell` to activate the virtual environment
-3. `python manage.py migrate`
-4. Make sure everything works by running `python manage.py test` and
+2. `pipenv install --dev`
+3. `pipenv shell` to activate the virtual environment
+4. `python manage.py migrate`
+5. Make sure everything works by running `python manage.py test` and
    ensuring all tests pass.
-5. Create an admin user with `python manage.py createsuperuser`
-6. Run with `python manage.py runserver` and go to `localhost:8000/admin`, login with your
+6. Create an admin user with `python manage.py createsuperuser`
+7. Run with `python manage.py runserver` and go to `localhost:8000/admin`, login with your
    new user to make sure the site backend operational!
 
 ## Quick DB Setup
@@ -21,10 +22,10 @@ To get going quickly with a local database loaded with lots of test data,
 you can download this [db.sqlite3](https://penn-labs.slack.com/files/UNUMGB11A/F02EYAVE5S6/db.sqlite3)
 file and put it in your `backend` directory. This file is only accessible to
 Penn Labs members (anyone else should sign up for a [Penn OpenData API key](https://esb.isc-seo.upenn.edu/8091/documentation#security)
-and follow the steps below). You can replace the existing db.sqlite file generated from step 3 in
+and follow the steps below). You can replace the existing db.sqlite file generated from step 4 in
 [Setting up the Django Backend](#setting-up-the-django-backend).
 The admin username is `admin` and the password is `admin` if you use this test db
-(rather than the admin username and password you created in step 5 of Setting up the Django Backend).
+(rather than the admin username and password you created in step 6 of Setting up the Django Backend).
 
 ## Set the proper semester
 
@@ -40,7 +41,7 @@ B [summer], or C [fall] (e.g. `2019C` for fall 2019).
 ## Environment Variables
 
 If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file to
-put in your `backend` directory. This will contain setting specific to your local
+put in your `backend` directory. This will contain settings specific to your local
 environment and some sensitive credentials (which is why the file contents are not
 pasted in this public README).
 
