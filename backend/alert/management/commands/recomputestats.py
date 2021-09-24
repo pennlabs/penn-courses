@@ -63,7 +63,7 @@ def get_semesters(semesters=None, verbose=False):
 
 def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=False):
     """
-    Recompute the percent_open field for each section in the given semester(s).
+    Recomputes the percent_open field for each section in the given semester(s).
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute percent_open fields,
@@ -153,9 +153,7 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
 
 def recompute_registration_volumes(semesters=None, semesters_precomputed=False, verbose=False):
     """
-    This script recomputes all PcaDemandDistributionEstimate objects for the given semester(s)
-    based on saved Registration objects, as well as the registration_volume fields for all sections
-    in the given semester(s).
+    Recomputes the registration_volume fields for all sections in the given semester(s).
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute demand distribution
@@ -199,8 +197,9 @@ def recompute_demand_distribution_estimates(
 ):
     """
     This script recomputes all PcaDemandDistributionEstimate objects for the given semester(s)
-    based on saved Registration objects, as well as the registration_volume fields for all sections
-    in the given semester(s).
+    based on saved Registration objects. In doing so, it also recomputes the registration_volume
+    and percent_open fields for all sections in the given semester(s)
+    (by calling recompute_registration_volumes and recompute_percent_open).
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute demand distribution
@@ -445,7 +444,8 @@ def recompute_demand_distribution_estimates(
 
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
-    Recompute the percent_open field on each section, as well
+    Recomputes PCA demand distribution estimates, as well as the registration_volume
+    and percent_open fields for all sections in the given semester(s).
     """
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
@@ -458,7 +458,7 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
 
 class Command(BaseCommand):
     help = (
-        "Recompute PCA demand distribution estimate, as well as the registration_volume "
+        "Recomputes PCA demand distribution estimates, as well as the registration_volume "
         "and percent_open fields for all sections in the given semester(s)."
     )
 

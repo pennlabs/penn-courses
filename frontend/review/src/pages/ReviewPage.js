@@ -11,11 +11,6 @@ import { ErrorBox } from "../components/common";
 import { apiReviewData, apiLive, apiLiveInstructor } from "../utils/api";
 
 /**
- * Enable or disable the Penn Labs recruitment banner.
- */
-const SHOW_RECRUITMENT_BANNER = true;
-
-/**
  * Represents a course, instructor, or department review page.
  */
 export class ReviewPage extends Component {
@@ -34,8 +29,7 @@ export class ReviewPage extends Component {
       selectedCourses: {},
       isAverage: localStorage.getItem("meta-column-type") !== "recent",
       isCourseEval: false,
-      showBanner:
-        SHOW_RECRUITMENT_BANNER && !this.cookies.get("hide_pcr_banner")
+      showBanner: false
     };
 
     this.navigateToPage = this.navigateToPage.bind(this);
@@ -48,6 +42,14 @@ export class ReviewPage extends Component {
 
   componentDidMount() {
     this.getReviewData();
+
+    fetch("https://platform.pennlabs.org/options/")
+      .then(response => response.json())
+      .then(options =>
+        this.setState({
+          showBanner: options.RECRUITING && !this.cookies.get("hide_pcr_banner")
+        })
+      );
   }
 
   componentDidUpdate(prevProps) {
