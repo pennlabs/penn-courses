@@ -1,11 +1,12 @@
 from decimal import Decimal
 
 from django.db.models import Count, Q
-from django.db.models.expressions import OuterRef
+from django.db.models.expressions import OuterRef, Subquery
 from rest_framework import filters
 
 from courses.models import Meeting, Requirement, Section
 from courses.util import get_current_semester, subquery_count_distinct
+from plan.models import Schedule
 
 
 def meeting_filter(queryset, meeting_query):
@@ -81,6 +82,38 @@ def time_filter(time_range):
     return query
 
 
+def gen_schedule_filter(request):
+    """
+    Generates a schedule filter function that checks for proper
+    authentication in the given request.
+    """
+
+    def schedule_filter(schedule_id):
+        """
+        Constructs a Q() query object for filtering meetings by
+        whether they fit into the specified schedule.
+        """
+        if not schedule_id:
+            return Q()
+        if not schedule_id.isdigit():
+            return Q()
+        if not request.user.is_authenticated:
+            return Q()
+        meetings = Meeting.objects.filter(
+            section_id__in=Subquery(
+                Schedule.objects.filter(id=int(schedule_id), person_id=request.user.id).values(
+                    "sections__id"
+                )
+            )
+        )
+        query = Q()
+        for meeting in meetings:
+            query &= meeting.no_conflict_query
+        return query
+
+    return schedule_filter
+
+
 def requirement_filter(queryset, req_ids):
     if not req_ids:
         return queryset
@@ -153,6 +186,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         meeting_filters = {
             "days": day_filter,
             "time": time_filter,
+            "schedule-fit": gen_schedule_filter(request),
         }
         meeting_query = Q()
         for field, filter_func in meeting_filters.items():
@@ -235,9 +269,13 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "description": (
                     "Filter meetings to be within the specified set of days. "
                     "The set of days should be specified as a string containing some "
-                    "combination of the characters [M, T, W, R, F, S, U]. Passing an "
-                    "empty string will return only asynchronous classes or classes with "
-                    "meeting days TBD."
+                    "combination of the characters [M, T, W, R, F, S, U]. "
+                    "This filters courses by the following condition: "
+                    "include a course only if the specified day filter "
+                    "does not limit the set of section activities we can participate in "
+                    "for the course. "
+                    "Passing an empty string will return only asynchronous classes "
+                    "or classes with meeting days TBD."
                 ),
                 "schema": {"type": "string"},
                 "example": "TWR",
@@ -252,9 +290,29 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                     "Times should be specified as decimal numbers of the form `h+mm/100` "
                     "where h is the hour `[0..23]` and mm is the minute `[0,60)`, in ET. "
                     "You can omit either the start or end time to leave that side unbounded, "
-                    "e.g. '11.30-'."
+                    "e.g. '11.30-'. "
+                    "This filters courses by the following condition: "
+                    "include a course only if the specified time filter "
+                    "does not limit the set of section activities we can participate in "
+                    "for the course."
                 ),
                 "schema": {"type": "string"},
                 "example": "11.30-18",
+            },
+            {
+                "name": "schedule-fit",
+                "required": False,
+                "in": "query",
+                "description": (
+                    "Filter meeting times to fit into the schedule with the specified integer id. "
+                    "You must be authenticated with the account owning the specified schedule, "
+                    "or this filter will be ignored. "
+                    "This filters courses by the following condition: "
+                    "include a course only if the specified schedule-fit filter "
+                    "does not limit the set of section activities we can participate in "
+                    "for the course."
+                ),
+                "schema": {"type": "string"},
+                "example": "242",
             },
         ]

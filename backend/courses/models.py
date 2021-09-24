@@ -763,6 +763,14 @@ class Meeting(models.Model):
         """
         return Meeting.int_to_time(self.end)
 
+    @property
+    def no_conflict_query(self):
+        """
+        Returns a Q() object representing the condition that another Meeting object
+        does not overlap with this meeting object in day/time.
+        """
+        return ~Q(day=self.day) | Q(end__lte=self.start) | Q(start__gte=self.end)
+
     def __str__(self):
         return f"{self.section}: {self.start_time}-{self.end_time} in {self.room}"
 

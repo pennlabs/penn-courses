@@ -293,10 +293,15 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 )
 
     def update(self, request, pk=None):
+        if not Schedule.objects.filter(id=pk).exists():
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         try:
             schedule = self.get_queryset().get(id=pk)
         except Schedule.DoesNotExist:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "You do not have access to the specified schedule."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         try:
             sections = self.get_sections(request.data)
@@ -327,7 +332,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
     def create(self, request, *args, **kwargs):
-        if self.get_queryset().filter(id=request.data.get("id")).exists():
+        if Section.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
 
         try:
