@@ -96,7 +96,7 @@ def sections_with_reviews(queryset):
             "review__section__course__full_code": OuterRef("course__full_code"),
             # get all the reviews for instructors in the Section.instructors many-to-many
             "review__instructor__in": Subquery(
-                Instructor.objects.filter(section=OuterRef(OuterRef("pk"))).values("pk").order_by()
+                Instructor.objects.filter(section=OuterRef(OuterRef("id"))).values("id").order_by()
             ),
         },
         extra_metrics=False,
@@ -428,7 +428,7 @@ class Section(models.Model):
     def semester(self):
         """
         The semester of the course (of the form YYYYx where x is A [for spring],
-        B [summer], or C [fall]), e.g. 2019C for fall 2019.
+        B [summer], or C [fall]), e.g. `2019C` for fall 2019.
         """
         return self.course.semester
 
@@ -504,7 +504,7 @@ class Section(models.Model):
         """
         The current raw PCA demand of the section, which is defined as:
         [the number of active PCA registrations for this section]/[the class capacity]
-        NOTE: if this section has a null or non-positive capacity, then this property will be None.
+        NOTE: if this section has a null or non-positive capacity, then this property will be null.
         """
         # Note for backend developers: this is a property, not a field. However,
         # in the Meta class for this model, we define the raw_property index identically to

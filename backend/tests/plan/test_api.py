@@ -1,20 +1,15 @@
+from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.test import TestCase
 from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
-from tests.courses.util import (
-    create_mock_async_class,
-    create_mock_data,
-    create_mock_data_days,
-    create_mock_data_multiple_meetings,
-)
 
 from alert.models import AddDropPeriod
 from courses.models import Instructor, Requirement
-from courses.util import invalidate_current_semester_cache
+from courses.util import invalidate_current_semester_cache, set_meetings
 from review.models import Review
-from tests.courses.util import create_mock_data
+from tests.courses.util import create_mock_async_class, create_mock_data
 
 
 TEST_SEMESTER = "2021C"
@@ -194,211 +189,391 @@ class CourseReviewAverageTestCase(TestCase):
 
 class DayFilterTestCase(TestCase):
     def setUp(self):
-        self.course, self.section1 = create_mock_data_days("CIS-120-001", TEST_SEMESTER)
-        _, self.section2 = create_mock_data_days(
-            code="CIS-120-002", semester=TEST_SEMESTER, days="TR"
-        )
-        _, self.section3 = create_mock_data_days(
-            code="CIS-160-001", semester=TEST_SEMESTER, days="F"
-        )
-        _, self.section4 = create_mock_data_days(
-            code="CIS-160-002", semester=TEST_SEMESTER, days="S"
-        )
-        _, self.section7 = create_mock_data_multiple_meetings(
-            code="CIS-121-002", semester=TEST_SEMESTER
+        _, self.cis_120_001 = create_mock_data("CIS-120-001", TEST_SEMESTER)  # days MWF
+
+        _, self.cis_120_002 = create_mock_data(
+            code="CIS-120-002", semester=TEST_SEMESTER, meeting_days="TR"
         )
 
-        # asynchronous so should always show up
-        _, self.section8 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+        _, self.cis_160_001 = create_mock_data(
+            code="CIS-160-001", semester=TEST_SEMESTER, meeting_days="TR"
+        )
+
+        _, self.cis_160_201 = create_mock_data(
+            code="CIS-160-201", semester=TEST_SEMESTER, meeting_days="M"
+        )
+        self.cis_160_201.activity = "REC"
+        self.cis_160_201.save()
+
+        _, self.cis_160_202 = create_mock_data(
+            code="CIS-160-202", semester=TEST_SEMESTER, meeting_days="W"
+        )
+        self.cis_160_202.activity = "REC"
+        self.cis_160_202.save()
+
+        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        set_meetings(
+            self.cis_121_001,
+            [
+                {
+                    "building_code": "LLAB",
+                    "room_number": "10",
+                    "meeting_days": "MT",
+                    "start_time_24": 9.00,
+                    "end_time_24": 10.0,
+                },
+                {
+                    "building_code": "LLAB",
+                    "room_number": "10",
+                    "meeting_days": "WR",
+                    "start_time_24": 13.30,
+                    "end_time_24": 14.30,
+                },
+            ],
+        )
+
+        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+
+        self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
+
         self.client = APIClient()
         set_semester()
 
-    def test_no_days_passed_in(self):
-        response = self.client.get(reverse("courses-current-list"), {})
-        self.assertEqual(4, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+    def test_only_async(self):
+        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": ""})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
 
     def test_all_days(self):
-        response = self.client.get(reverse("courses-current-list"), {"days": "MTWRFS"})
-        self.assertEqual(4, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"days": "MTWRFSU"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
-    def test_no_days(self):
-        # only async
-        response = self.client.get(reverse("courses-current-list"), {"days": ""})
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(response.data[0]["id"], "CIS-262")
-        self.assertEqual(200, response.status_code)
+    def test_illegal_characters(self):
+        with self.assertRaises(ValidationError):
+            response = self.client.get(
+                reverse("courses-search", args=[TEST_SEMESTER]), {"days": "M-R"}
+            )
+            self.assertEqual(response.status_code, 400)
 
-    def test_both_sections_work(self):
-        response = self.client.get(reverse("courses-current-list"), {"days": "FS"})
-        self.assertEqual(2, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-160", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+    def test_lec_no_rec(self):
+        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "TR"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
 
-    def test_one_section_works(self):
-        response = self.client.get(reverse("courses-current-list"), {"days": "FS"})
-        self.assertEqual(2, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-160", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+    def test_rec_no_lec(self):
+        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "MW"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
 
-    def test_all_meetings_work(self):
-        response = self.client.get(reverse("courses-current-list"), {"days": "MTWR"})
-        self.assertEqual(3, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-120", "CIS-121", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+    def test_lec_and_rec(self):
+        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "TWR"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-160", "CIS-120", "CIS-262"})
 
-    def test_one_meeting_works(self):
-        response = self.client.get(reverse("courses-current-list"), {"days": "MT"})
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+    def test_partial_match(self):
+        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "T"},)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_contains_rec_no_sec(self):
+        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "W"},)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_partial_multi_meeting_match(self):
+        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "MT"},)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_full_multi_meeting_match(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"days": "MTWR"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 4)
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-160", "CIS-262"}
+        )
 
 
 class TimeFilterTestCase(TestCase):
     def setUp(self):
-        self.course, self.section1 = create_mock_data_days("CIS-120-001", TEST_SEMESTER)
-        _, self.section2 = create_mock_data_days(
-            code="CIS-120-002", semester=TEST_SEMESTER, start=12.0, end=13.0
-        )
-        _, self.section3 = create_mock_data_days(
-            code="CIS-160-001", semester=TEST_SEMESTER, start=1.0, end=5.0
-        )
-        _, self.section4 = create_mock_data_days(
-            code="CIS-160-002", semester=TEST_SEMESTER, start=2.0, end=4.0
-        )
-        _, self.section7 = create_mock_data_multiple_meetings(
-            code="CIS-121-002", semester=TEST_SEMESTER
+        _, self.cis_120_001 = create_mock_data("CIS-120-001", TEST_SEMESTER)  # time 11.0-12.0
+
+        _, self.cis_120_002 = create_mock_data(
+            code="CIS-120-002", semester=TEST_SEMESTER, start=12.0, end=13.30
         )
 
-        # asynchronous so should always show up
-        _, self.section8 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+        _, self.cis_160_001 = create_mock_data(
+            code="CIS-160-001", semester=TEST_SEMESTER, start=5.0, end=6.30
+        )
+
+        _, self.cis_160_201 = create_mock_data(
+            code="CIS-160-201", semester=TEST_SEMESTER, start=11.0, end=12.0
+        )
+        self.cis_160_201.activity = "REC"
+        self.cis_160_201.save()
+
+        _, self.cis_160_202 = create_mock_data(
+            code="CIS-160-202", semester=TEST_SEMESTER, start=14.0, end=15.0
+        )
+        self.cis_160_202.activity = "REC"
+        self.cis_160_202.save()
+
+        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        set_meetings(
+            self.cis_121_001,
+            [
+                {
+                    "building_code": "LLAB",
+                    "room_number": "10",
+                    "meeting_days": "MT",
+                    "start_time_24": 9.00,
+                    "end_time_24": 10.0,
+                },
+                {
+                    "building_code": "LLAB",
+                    "room_number": "10",
+                    "meeting_days": "WR",
+                    "start_time_24": 13.30,
+                    "end_time_24": 14.30,
+                },
+            ],
+        )
+
+        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+
+        self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
+
         self.client = APIClient()
         set_semester()
 
-    def test_null_passed(self):
-        response = self.client.get(reverse("courses-current-list"), {})
-        self.assertEqual(4, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+    def test_empty_time_all(self):
+        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"time": ""})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
-    def test_all_times(self):
+    def test_whole_day(self):
         response = self.client.get(
-            reverse("courses-current-list"), {"start_time": 0.0, "end_time": 23.59}
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "0.0-23.59"}
         )
-        self.assertEqual(4, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
-    def test_outside_bounds(self):
-        response = self.client.get(
-            reverse("courses-current-list"), {"start_time": -15.0, "end_time": 42.0}
-        )
-        self.assertEqual(4, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-120", "CIS-160", "CIS-121", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+    def test_no_dashes(self):
+        with self.assertRaises(ValidationError):
+            response = self.client.get(
+                reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.00"}
+            )
+            self.assertEqual(response.status_code, 400)
+
+    def test_too_many_dashes(self):
+        with self.assertRaises(ValidationError):
+            response = self.client.get(
+                reverse("courses-search", args=[TEST_SEMESTER]), {"time": "-1.00-3.00"}
+            )
+            self.assertEqual(response.status_code, 400)
+
+    def test_non_numeric(self):
+        with self.assertRaises(ValidationError):
+            response = self.client.get(
+                reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.00am-3.00pm"}
+            )
+            self.assertEqual(response.status_code, 400)
 
     def test_crossover_times(self):
         response = self.client.get(
-            reverse("courses-current-list"), {"start_time": 15.0, "end_time": 2.0}
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "15.0-2.0"}
         )
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
 
-    def test_no_days_start_end_same(self):
-        # only async
+    def test_start_end_same(self):
         response = self.client.get(
-            reverse("courses-current-list"), {"start_time": 5.5, "end_time": 5.5}
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "5.5-5.5"}
         )
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(response.data[0]["id"], "CIS-262")
-        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
 
-    def test_only_one_section_works(self):
+    def test_lec_no_rec(self):
         response = self.client.get(
-            reverse("courses-current-list"), {"start_time": 1.0, "end_time": 4.2}
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "4.59-6.30"}
         )
-        self.assertEqual(2, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-160", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
 
-    def test_both_sections_works(self):
+    def test_one_match(self):
         response = self.client.get(
-            reverse("courses-current-list"), {"start_time": 1.0, "end_time": 5.5}
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.30-13.30"}
         )
-        self.assertEqual(2, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-160", "CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
 
-    def test_contains_parts_not_whole_sec(self):
+    def test_lec_and_rec(self):
         response = self.client.get(
-            # only contains part of first sec for CIS 120 and second sec for CIS 120
-            # starts and ends at different places
-            reverse("courses-current-list"),
-            {"start_time": 11.5, "end_time": 12.5},
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "5.0-12.0"}
         )
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-160", "CIS-120", "CIS-262"})
 
-    def test_contains_whole_sec(self):
+    def test_contains_parts_of_two_sec(self):
         response = self.client.get(
-            # only contains part of first sec for CIS 120 and second sec for CIS 120
-            # starts and ends at different places
-            reverse("courses-current-list"),
-            {"start_time": 11.0, "end_time": 12.0},
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.30-13.0"},
         )
-        self.assertEqual(2, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-262", "CIS-120"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
 
-    def test_only_one_meeting_works(self):
+    def test_contains_rec_no_sec(self):
         response = self.client.get(
-            reverse("courses-current-list"), {"start_time": 21.0, "end_time": 22.0}
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.30-16"},
         )
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
 
-    def test_both_meetings_work(self):
+    def test_unbounded_right(self):
         response = self.client.get(
-            reverse("courses-current-list"), {"start_time": 20.0, "end_time": 22.0}
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.30-"},
         )
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(200, response.status_code)
-        all_codes = ["CIS-262"]
-        for res in response.data:
-            self.assertIn(res["id"], all_codes)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
+    def test_unbounded_left(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "-12.00"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-160", "CIS-262"})
+
+    def test_multi_meeting_match(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "9.00-15.00"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-262"})
+
+
+class DayTimeFilterTestCase(TestCase):
+    def setUp(self):
+        _, self.cis_120_001 = create_mock_data(
+            "CIS-120-001", TEST_SEMESTER
+        )  # time 11.0-12.0, days MWF
+
+        _, self.cis_120_002 = create_mock_data(
+            code="CIS-120-002", semester=TEST_SEMESTER, start=12.0, end=13.30, meeting_days="TR"
+        )
+
+        _, self.cis_160_001 = create_mock_data(
+            code="CIS-160-001", semester=TEST_SEMESTER, start=5.0, end=6.30, meeting_days="TR"
+        )
+
+        _, self.cis_160_201 = create_mock_data(
+            code="CIS-160-201", semester=TEST_SEMESTER, start=11.0, end=12.0, meeting_days="M"
+        )
+        self.cis_160_201.activity = "REC"
+        self.cis_160_201.save()
+
+        _, self.cis_160_202 = create_mock_data(
+            code="CIS-160-202", semester=TEST_SEMESTER, start=14.0, end=15.0, meeting_days="W"
+        )
+        self.cis_160_202.activity = "REC"
+        self.cis_160_202.save()
+
+        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        set_meetings(
+            self.cis_121_001,
+            [
+                {
+                    "building_code": "LLAB",
+                    "room_number": "10",
+                    "meeting_days": "MT",
+                    "start_time_24": 9.00,
+                    "end_time_24": 10.0,
+                },
+                {
+                    "building_code": "LLAB",
+                    "room_number": "10",
+                    "meeting_days": "WR",
+                    "start_time_24": 13.30,
+                    "end_time_24": 14.30,
+                },
+            ],
+        )
+
+        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+
+        self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
+
+        self.client = APIClient()
+        set_semester()
+
+    def test_all_match(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "0-23.59", "days": "MTWRFSU"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_days_match_not_time(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "1.00-2.00", "days": "MTWRFSU"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_time_matches_not_days(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "1.00-", "days": "F"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_days_time_partial_match(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "12.0-15.0", "days": "TWR"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
+    def test_multi_meeting_partial_match(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "9.00-10.00", "days": "MTWR"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_multi_meeting_full_match(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "9.00-14.30", "days": "MTWR"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-262"})

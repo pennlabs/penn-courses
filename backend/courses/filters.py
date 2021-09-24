@@ -1,15 +1,92 @@
-from django.db.models import Q
-from django.db.models.fields import IntegerField
+from decimal import Decimal
+
+from django.core.exceptions import ValidationError
+from django.db.models import Count, Q
+from django.db.models.expressions import OuterRef
 from rest_framework import filters
 
-from courses.models import Requirement
-from courses.util import get_current_semester
-from decimal import Decimal
-from django.db.models import Count
-from django.db.models import Case, Value, When
+from courses.models import Meeting, Requirement, Section
+from courses.util import get_current_semester, subquery_count_distinct
+
+
+def meeting_filter(queryset, meeting_query):
+    """
+    Filters the given queryset of courses by the following condition:
+    include a course only if the specified meeting filter
+    (meeting_query, represented as a Q() query object)
+    does not limit the set of section activities we can participate in for the course.
+    For instance, if meeting_query=Q(day__in={"T","W","R"}),
+    then we would include a course with lecture and recitation sections only if
+    we could enroll in some lecture section and some recitation section and
+    only have to attend meetings on Tuesdays, Wednesdays, and/or Thursdays.
+    However, if the course had a lab section that only met on Fridays,
+    we would no longer include the course (since we cannot attend all the meetings of the
+    lab section, and thus the set of course activities available to us is incomplete).
+    """
+    matching_meetings = Meeting.objects.filter(meeting_query)
+    matching_sections = Section.objects.filter(
+        id__in=Section.objects.annotate(num_meetings=Count("meetings"))
+        .filter(
+            num_meetings=subquery_count_distinct(
+                matching_meetings.filter(section_id=OuterRef("id")), column="id"
+            )
+        )
+        .values("id")
+    )
+    return (
+        queryset.annotate(
+            num_activities=subquery_count_distinct(
+                Section.objects.filter(course_id=OuterRef("id")), column="activity"
+            )
+        )
+        .filter(
+            num_activities=subquery_count_distinct(
+                matching_sections.filter(course_id=OuterRef("id")), column="activity",
+            )
+        )
+        .distinct()
+    )
+
+
+def day_filter(days):
+    """
+    Constructs a Q() query object for filtering meetings by day,
+    based on the given days filter string.
+    """
+    days = set(days)
+    if not days.issubset({"M", "T", "W", "R", "F", "S", "U"}):
+        raise ValidationError("Day filter can only contain characters in 'MTWRFSU', got {days}")
+    return Q(day__isnull=True) | Q(day__in=set(days))
+
+
+def time_filter(time_range):
+    """
+    Constructs a Q() query object for filtering meetings by start/end time,
+    based on the given time_range filter string.
+    """
+    if not time_range:
+        return Q()
+    times = time_range.split("-")
+    if len(times) != 2:
+        raise ValidationError("Time filter must be of the form <start>-<end>, got {time_range}")
+    times = [t.strip() for t in times]
+    for time in times:
+        if time and not time.replace(".", "", 1).isdigit():
+            raise ValidationError(
+                f"Non-numeric value in time filter: {time} (part of {time_range})"
+            )
+    start_time, end_time = times
+    query = Q()
+    if start_time:
+        query &= Q(start__isnull=True) | Q(start__gte=Decimal(start_time))
+    if end_time:
+        query &= Q(end__isnull=True) | Q(end__lte=Decimal(end_time))
+    return query
 
 
 def requirement_filter(queryset, req_ids):
+    if not req_ids:
+        return queryset
     query = Q()
     for req_id in req_ids.split(","):
         code, school = req_id.split("@")
@@ -20,78 +97,20 @@ def requirement_filter(queryset, req_ids):
         except Requirement.DoesNotExist:
             continue
         query &= Q(id__in=requirement.satisfying_courses.all())
-    queryset = queryset.filter(query)
 
-    return queryset
-
-
-def day_filter(queryset, days):
-    exclude_days = set("MTWRFSU") - set(days)
-    print("DAY FILTER")
-    queryset = queryset.annotate(
-        sections__num_conflicting_meeting_days=Count(
-            Case(
-                When(Q(sections__meetings__day__in=exclude_days), then=Value(1)),
-                output_field=IntegerField(),
-                default=Value(0),
-            )
-        )
-    )
-
-    def get_sections(course):
-        return [
-            {
-                "full_code": section.full_code,
-                "num_conflicting_meeting_days": section.num_conflicting_meeting_days,
-            }
-            for section in course.sections.all()
-        ]
-
-    print([{"code": course.code, "sections": get_sections(course)} for course in queryset])
-    queryset = queryset.filter(sections__num_conflicting_meeting_days=0).distinct()
-    return queryset
-
-
-def time_filter(queryset, time_range):
-    start_time, end_time = time_range.split("-")
-    start_time = Decimal(start_time)
-    end_time = Decimal(end_time)
-    print("TIME FILTER: ")
-    queryset = queryset.annotate(
-        sections__num_conflicting_meeting_times=Count(
-            Case(
-                When(
-                    Q(sections__meetings__start__isnull=False)
-                    & Q(sections__meetings__end__isnull=False)
-                    & (
-                        Q(sections__meetings__start__lt=start_time)
-                        | Q(sections__meetings__end__gt=end_time)
-                    ),
-                    then=Value(1),
-                ),
-                output_field=IntegerField(),
-                default=Value(0),
-            )
-        )
-    )
-    print(queryset)
-    queryset = queryset.filter(sections__num_conflicting_meeting_times=0)
-    return queryset
+    return queryset.filter(query)
 
 
 def bound_filter(field):
     def filter_bounds(queryset, bounds):
+        if not bounds:
+            return queryset
         lower_bound, upper_bound = bounds.split("-")
-        lower_bound = float(lower_bound)
-        upper_bound = float(upper_bound)
+        lower_bound = Decimal(lower_bound)
+        upper_bound = Decimal(upper_bound)
 
         return queryset.filter(
-            Q(
-                **{
-                    f"{field}__gte": lower_bound,
-                    f"{field}__lte": upper_bound,
-                }
-            )
+            Q(**{f"{field}__gte": lower_bound, f"{field}__lte": upper_bound,})
             | Q(**{f"{field}__isnull": True})
         )
 
@@ -100,9 +119,12 @@ def bound_filter(field):
 
 def choice_filter(field):
     def filter_choices(queryset, choices):
+        if not choices:
+            return queryset
         query = Q()
         for choice in choices.split(","):
             query = query | Q(**{field: choice})
+
         return queryset.filter(query)
 
     return filter_choices
@@ -117,14 +139,23 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             "course_quality": bound_filter("course_quality"),
             "instructor_quality": bound_filter("instructor_quality"),
             "difficulty": bound_filter("difficulty"),
-            "days": day_filter,
-            "time": time_filter,
         }
-
         for field, filter_func in filters.items():
             param = request.query_params.get(field)
             if param is not None:
                 queryset = filter_func(queryset, param)
+
+        # Combine meeting filter queries for efficiency
+        meeting_filters = {
+            "days": day_filter,
+            "time": time_filter,
+        }
+        meeting_query = Q()
+        for field, filter_func in meeting_filters.items():
+            param = request.query_params.get(field)
+            if param is not None:
+                meeting_query &= filter_func(param)
+        queryset = meeting_filter(queryset, meeting_query)
 
         return queryset.distinct()
 
@@ -199,7 +230,9 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "description": (
                     "Filter meetings to be within the specified set of days. "
                     "The set of days should be specified as a string containing some "
-                    "combination of the characters [M, T, W, R, F, S, U]."
+                    "combination of the characters [M, T, W, R, F, S, U]. Passing an "
+                    "empty string will return only asynchronous classes or classes with "
+                    "meeting days TBD."
                 ),
                 "schema": {"type": "string"},
                 "example": "TWR",
@@ -212,7 +245,8 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                     "Filter meeting times to be within the specified range. "
                     "Times should be specified as decimal numbers of the form `h+mm/100` "
                     "where h is the hour `[0..23]` and mm is the minute `[0,60)`, in ET. "
-                    "The start and end time of the filter should be dash-separated."
+                    "The start and end time of the filter should be dash-separated. You can omit "
+                    "either the start or end time to leave that side unbounded, e.g. '11.30-'."
                 ),
                 "schema": {"type": "string"},
                 "example": "11.30-18",
