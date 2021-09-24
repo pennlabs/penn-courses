@@ -24,15 +24,12 @@ def fill_in_add_drop_periods(verbose=False):
             validate_add_drop_semester(candidate)
             missing_semesters.add(candidate)
         except ValidationError:
-            if verbose:
-                print(f"Skipping semester {candidate} (unsupported kind for AddDropPeriod).")
-    if verbose:
-        print(
-            "Filling in AddDropPeriod objects for semesters "
-            + str(missing_semesters if len(missing_semesters) > 0 else "[none]")
-        )
+            pass
+    if verbose and len(missing_semesters) > 0:
+        print(f"Filling in AddDropPeriod objects for semesters {missing_semesters}")
     for semester in missing_semesters:
         AddDropPeriod(semester=semester).save()
+    return adp_semesters.union(missing_semesters)
 
 
 def load_add_drop_dates(verbose=False):
@@ -68,7 +65,7 @@ def load_add_drop_dates(verbose=False):
         s_year, s_month, s_day, e_year, e_month, e_day = (None,) * 6
         start_mode = 0  # 0 if start semester hasn't been found, 1 if it has, 2 if finished sem
         end_mode = 0  # 0 if end semester hasn't been found, 1 if it has, 2 if finished sem
-        all_th_parents = [el.parent for el in soup.find_all("th")]
+        all_th_parents = {el.parent for el in soup.find_all("th")}
         months = [
             "january",
             "february",
@@ -129,7 +126,7 @@ def load_add_drop_dates(verbose=False):
                         day_candidates = [int(s) for s in date_string.split() if s.isdigit()]
                         if len(day_candidates) > 0:
                             e_day = day_candidates[0]
-        if all([d is not None for d in [s_year, s_month, s_day]]) and start_date is None:
+        if None not in [s_year, s_month, s_day] and start_date is None:
             start_date = make_aware(
                 datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M")
                 + timedelta(days=1),
@@ -142,7 +139,7 @@ def load_add_drop_dates(verbose=False):
                     "add/drop period through the Django admin console when it is announced "
                     "to students each semester."
                 )
-        if all([d is not None for d in [e_year, e_month, e_day]]):
+        if None not in [e_year, e_month, e_day]:
             end_date = make_aware(
                 datetime.strptime(f"{e_year}-{e_month}-{e_day} 11:59", "%Y-%m-%d %H:%M"),
                 timezone=tz,

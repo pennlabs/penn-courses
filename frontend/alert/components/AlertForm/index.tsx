@@ -91,9 +91,10 @@ const doAPIRequest = (
 interface AlertFormProps {
     user: User;
     setResponse: (res: Response) => void;
+    setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-const AlertForm = ({ user, setResponse }: AlertFormProps) => {
+const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
     const [section, setSection] = useState("");
     const [email, setEmail] = useState("");
 
@@ -175,7 +176,7 @@ const AlertForm = ({ user, setResponse }: AlertFormProps) => {
 
     return (
         <Form>
-            <AutoComplete onValueChange={setSection} />
+            <AutoComplete onValueChange={setSection} setTimeline={setTimeline}/>
             <Input
                 placeholder="Email"
                 value={email}

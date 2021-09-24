@@ -1,5 +1,4 @@
 import logging
-from contextlib import nullcontext
 
 import numpy as np
 import redis
@@ -89,12 +88,7 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
         section.registration_volume += volume_change
         section.save()
 
-    cache_context = (
-        cache.lock("current_demand_distribution_estimate")
-        if hasattr(cache, "lock")
-        else nullcontext()
-    )
-    with transaction.atomic(), cache_context:
+    with transaction.atomic():
         create_new_distribution_estimate = False
         sentinel = object()
         current_demand_distribution_estimate = cache.get(
@@ -138,7 +132,6 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
                     closed_sections_demand_values, fit_alpha, fit_loc, fit_scale
                 ).mean()
             new_demand_distribution_estimate = PcaDemandDistributionEstimate(
-                created_at=updated_at,
                 semester=semester,
                 highest_demand_section=highest_demand_section,
                 highest_demand_section_volume=highest_demand_section.registration_volume,
@@ -154,8 +147,10 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
                     np.percentile(closed_sections_demand_values, 75) if csdv_nonempty else None
                 ),
             )
-            new_demand_distribution_estimate.save()
             add_drop_period = get_add_drop_period(semester)
+            new_demand_distribution_estimate.save(add_drop_period=add_drop_period)
+            new_demand_distribution_estimate.created_at = updated_at
+            new_demand_distribution_estimate.save(add_drop_period=add_drop_period)
             cache.set(
                 "current_demand_distribution_estimate",
                 new_demand_distribution_estimate,

@@ -115,3 +115,11 @@ export function apiHistory(course, instructor) {
     )}/${encodeURIComponent(instructor)}?token=${encodeURIComponent(API_TOKEN)}`
   );
 }
+
+export function apiFetchPCADemandChartData(course) {
+  return apiFetch(
+    `${API_DOMAIN}/api/review/course_plots/${encodeURIComponent(
+      course
+    )}?token=${encodeURIComponent(API_TOKEN)}`
+  );
+}

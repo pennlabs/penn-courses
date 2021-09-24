@@ -38,7 +38,7 @@ course_review_aggregation_schema = {
     },
     **course_review_aggregation_schema_no_extras,
 }
-course_review_aggregation_schema_with_plots = {
+plots_schema = {
     "pca_demand_plot": {
         "type": "array",
         "description": (
@@ -103,7 +103,6 @@ course_review_aggregation_schema_with_plots = {
             "the `percent_open_plot` field."
         ),
     },
-    **course_review_aggregation_schema,
 }
 instructor_review_aggregation_schema = {
     # This dict contains the schema of the "_reviews" fields returned in the
@@ -159,13 +158,13 @@ course_reviews_response_schema = {
                     },
                     "average_reviews": {
                         "type": "object",
-                        "description": "This course's average reviews across all of its sections from all semesters. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
-                        "properties": course_review_aggregation_schema_with_plots,
+                        "description": "This course's average reviews across all of its sections from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
+                        "properties": course_review_aggregation_schema,
                     },
                     "recent_reviews": {
                         "type": "object",
-                        "description": "This course's average reviews across all of its sections from the most recent semester. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
-                        "properties": course_review_aggregation_schema_with_plots,
+                        "description": "This course's average reviews across all of its sections from the most recent semester. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
+                        "properties": course_review_aggregation_schema,
                     },
                     "num_semesters": {
                         "type": "integer",
@@ -185,12 +184,12 @@ course_reviews_response_schema = {
                                     },
                                     "average_reviews": {
                                         "type": "object",
-                                        "description": "This instructor's average reviews across all of the sections of this course that he/she has taught. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
+                                        "description": "This instructor's average reviews across all of the sections of this course that he/she has taught. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                                         "properties": instructor_review_aggregation_schema,
                                     },
                                     "recent_reviews": {
                                         "type": "object",
-                                        "description": "This instructor's average reviews across all of the sections of this course that he/she has taught in his/her most recent semester teaching this course. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
+                                        "description": "This instructor's average reviews across all of the sections of this course that he/she has taught in his/her most recent semester teaching this course. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                                         "properties": instructor_review_aggregation_schema,
                                     },
                                     "latest_semester": {
@@ -215,6 +214,45 @@ course_reviews_response_schema = {
     },
 }
 
+course_plots_response_schema = {
+    reverse_func("course-plots", args=["course_code"]): {
+        "GET": {
+            200: {
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                    },
+                    "current_add_drop_period": {
+                        "type": "object",
+                        "description": "The start and end dates of the upcoming/current semester's add/drop period",  # noqa E501
+                        "properties": {
+                            "start": {
+                                "type": "string",
+                                "description": "A string datetime representation of the start of the current/upcoming add/drop period.",  # noqa E501
+                            },
+                            "end": {
+                                "type": "string",
+                                "description": "A string datetime representation of the end of the current/upcoming add/drop period.",  # noqa E501
+                            },
+                        },
+                    },
+                    "average_plots": {
+                        "type": "object",
+                        "description": "This course's plots (PCA demand, percent sections open), averaged across all of its sections from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
+                        "properties": course_review_aggregation_schema,
+                    },
+                    "recent_plots": {
+                        "type": "object",
+                        "description": "This course's plots (PCA demand, percent sections open), averaged across all of its sections from the most recent semester. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
+                        "properties": course_review_aggregation_schema,
+                    },
+                }
+            },
+        }
+    },
+}
+
 instructor_reviews_response_schema = {
     reverse_func("instructor-reviews", args=["instructor_id"]): {
         "GET": {
@@ -231,12 +269,12 @@ instructor_reviews_response_schema = {
                     },
                     "average_reviews": {
                         "type": "object",
-                        "description": "This instructor's average reviews across all of his/her taught sections from all semesters. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
+                        "description": "This instructor's average reviews across all of his/her taught sections from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                         "properties": instructor_review_aggregation_schema,
                     },
                     "recent_reviews": {
                         "type": "object",
-                        "description": "This instructor's average reviews across all of his/her taught sections from only his/her most recent semester teaching. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
+                        "description": "This instructor's average reviews across all of his/her taught sections from only his/her most recent semester teaching. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                         "properties": instructor_review_aggregation_schema,
                     },
                     "num_semesters": {
@@ -254,12 +292,12 @@ instructor_reviews_response_schema = {
                                     "full_code": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                     "average_reviews": {
                                         "type": "object",
-                                        "description": "This course's average reviews across all of its sections taught by this instructor from all semesters. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
+                                        "description": "This course's average reviews across all of its sections taught by this instructor from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                                         "properties": course_review_aggregation_schema,
                                     },
                                     "recent_reviews": {
                                         "type": "object",
-                                        "description": "This course's average reviews across all of its sections taught by this instructor from the most recent semester. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
+                                        "description": "This course's average reviews across all of its sections taught by this instructor from the most recent semester. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                                         "properties": course_review_aggregation_schema,
                                     },
                                     "latest_semester": {
@@ -383,12 +421,12 @@ department_reviews_response_schema = {
                                     "id": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                     "average_reviews": {
                                         "type": "object",
-                                        "description": "This course's average reviews across all of its sections from all semesters. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
+                                        "description": "This course's average reviews across all of its sections from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                                         "properties": course_review_aggregation_schema_no_extras,
                                     },
                                     "recent_reviews": {
                                         "type": "object",
-                                        "description": "This course's average reviews across all of its sections from the most recent semester. Note that if any of these subfields are missing, that means the subfield is not applicable or missing from our data.",  # noqa E501
+                                        "description": "This course's average reviews across all of its sections from the most recent semester. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                                         "properties": course_review_aggregation_schema_no_extras,
                                     },
                                     "latest_semester": {

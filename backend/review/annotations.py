@@ -65,7 +65,7 @@ def review_averages(
         all your subfilters to Section filters, and pass them as section_subfilters
     """
     from courses.models import Section, StatusUpdate
-    from review.views import extra_metrics_section_filters
+    from review.views import extra_metrics_section_filters_pcr
 
     # ^ imported here to avoid circular imports
 
@@ -74,6 +74,12 @@ def review_averages(
 
     if fields is None:
         fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
+
+    class PercentOpenSubqueryAvg(Subquery):
+        template = "(SELECT AVG(percent_open) FROM (%(subquery)s) percent_open_avg_view)"
+
+    class NumOpeningsSubqueryAvg(Subquery):
+        template = "(SELECT AVG(num_openings) FROM (%(subquery)s) num_openings_view)"
 
     queryset = queryset.annotate(
         **{
@@ -115,16 +121,20 @@ def review_averages(
                         .values("avg_final_enrollment_percentage")[:1],
                         output_field=FloatField(),
                     ),
-                    (prefix + "percent_open"): Subquery(
-                        Section.objects.filter(extra_metrics_section_filters, **section_subfilters)
-                        .annotate(percent_open_annotation=Avg("percent_open"))
+                    (prefix + "percent_open"): PercentOpenSubqueryAvg(
+                        Section.objects.filter(
+                            extra_metrics_section_filters_pcr(), **section_subfilters
+                        )
                         .order_by()
-                        .annotate(avg_percent_open=Avg("percent_open"))
-                        .values("avg_percent_open")[:1],
+                        .distinct(),
                         output_field=FloatField(),
                     ),
-                    (prefix + "num_openings"): Subquery(
-                        Section.objects.filter(extra_metrics_section_filters, **section_subfilters)
+                    (prefix + "num_openings"): NumOpeningsSubqueryAvg(
+                        Section.objects.filter(
+                            extra_metrics_section_filters_pcr(), **section_subfilters
+                        )
+                        .order_by()
+                        .distinct()
                         .annotate(
                             num_openings=Subquery(
                                 StatusUpdate.objects.filter(
@@ -132,14 +142,12 @@ def review_averages(
                                 )
                                 .annotate(common=Value(1))
                                 .values("common")
+                                .order_by()
                                 .annotate(count=Count("*"))
                                 .values("count")[:1],
                                 output_field=IntegerField(),
                             )
-                        )
-                        .order_by()
-                        .annotate(avg_num_openings=Avg("num_openings"))
-                        .values("avg_num_openings")[:1],
+                        ),
                         output_field=FloatField(),
                     ),
                 }
@@ -205,6 +213,13 @@ def annotate_with_matching_reviews(
             .annotate(max_semester=Max("section__course__semester"))
             .values("max_semester")[:1]
         )
+        if section_subfilters is not None:
+            section_subfilters["course__semester"] = Subquery(
+                matching_reviews.annotate(common=Value(1))
+                .values("common")
+                .annotate(max_semester=Max("section__course__semester"))
+                .values("max_semester")[:1]
+            )
 
     return review_averages(
         qs,

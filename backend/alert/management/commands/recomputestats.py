@@ -1,5 +1,4 @@
 import logging
-from contextlib import nullcontext
 from textwrap import dedent
 
 import numpy as np
@@ -35,9 +34,8 @@ def get_semesters(semesters=None, verbose=False):
     specified by the argument.
     """
     possible_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
-    current_semester = get_current_semester()
     if semesters is None:
-        semesters = [current_semester]
+        semesters = [get_current_semester()]
     elif semesters == "all":
         semesters = list(possible_semesters)
     else:
@@ -65,7 +63,7 @@ def get_semesters(semesters=None, verbose=False):
 
 def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=False):
     """
-    Recompute the percent_open field for each section in the given semester(s).
+    Recomputes the percent_open field for each section in the given semester(s).
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute percent_open fields,
@@ -93,11 +91,13 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
         with transaction.atomic():
             # We make this command an atomic transaction, so that the database will not
             # be modified unless the entire update for a semester succeeds.
-            # If set_cache is True, we will set the current_demand_distribution_estimate variable
-            # in cache
 
             if verbose:
                 print(f"\nProcessing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.")
+
+            add_drop = get_add_drop_period(semester)
+            add_drop_start = add_drop.estimated_start
+            add_drop_end = add_drop.estimated_end
 
             StatusUpdate.objects.filter(section__course__semester=semester).select_for_update()
 
@@ -105,10 +105,6 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
             num_erroneous_updates = 0
             num_total_updates = 0
             for section in sections:
-                add_drop = get_add_drop_period(section.semester)
-                add_drop_start = add_drop.estimated_start
-                add_drop_end = add_drop.estimated_end
-
                 status_updates = StatusUpdate.objects.filter(
                     section=section, created_at__gt=add_drop_start, created_at__lt=add_drop_end
                 ).order_by("created_at")
@@ -148,7 +144,7 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
             if verbose:
                 print(
                     f"Finished calculating percent_open for {len(sections)} sections from "
-                    f"semester {semester}, ignored {num_erroneous_updates} erroneous "
+                    f"semester {semester}, encountered {num_erroneous_updates} erroneous "
                     f"Status Updates (out of {num_total_updates} total Status Updates)"
                 )
     if verbose:
@@ -157,9 +153,7 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
 
 def recompute_registration_volumes(semesters=None, semesters_precomputed=False, verbose=False):
     """
-    This script recomputes all PcaDemandDistributionEstimate objects for the given semester(s)
-    based on saved Registration objects, as well as the registration_volume fields for all sections
-    in the given semester(s).
+    Recomputes the registration_volume fields for all sections in the given semester(s).
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute demand distribution
@@ -203,8 +197,9 @@ def recompute_demand_distribution_estimates(
 ):
     """
     This script recomputes all PcaDemandDistributionEstimate objects for the given semester(s)
-    based on saved Registration objects, as well as the registration_volume fields for all sections
-    in the given semester(s).
+    based on saved Registration objects. In doing so, it also recomputes the registration_volume
+    and percent_open fields for all sections in the given semester(s)
+    (by calling recompute_registration_volumes and recompute_percent_open).
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute demand distribution
@@ -238,20 +233,14 @@ def recompute_demand_distribution_estimates(
             if verbose:
                 print(f"Skipping semester {semester} (unsupported kind for stats).")
             continue
+        add_drop_period = get_add_drop_period(semester)
         set_cache = semester == current_semester
 
-        cache_context = (
-            cache.lock("current_demand_distribution_estimate")
-            if (set_cache and hasattr(cache, "lock"))
-            else nullcontext()
-        )
-        with transaction.atomic(), cache_context:
+        with transaction.atomic():
             # We make this command an atomic transaction, so that the database will not
             # be modified unless the entire update for a semester succeeds.
             # If set_cache is True, we will set the current_demand_distribution_estimate variable
             # in cache
-
-            add_drop_period = get_add_drop_period(semester)
 
             if verbose:
                 print(f"Processing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.\n")
@@ -263,7 +252,7 @@ def recompute_demand_distribution_estimates(
                 semester=semester
             ).select_for_update().delete()
 
-            sections = dict()  # maps section id to section object (for this semester)
+            section_id_to_object = dict()  # maps section id to section object (for this semester)
             volume_changes_map = dict()  # maps section id to list of volume changes
             status_updates_map = dict()  # maps section id to list of status updates
 
@@ -275,15 +264,14 @@ def recompute_demand_distribution_estimates(
                 .annotate(efficient_semester=F("course__semester"),)
                 .distinct()
             ):
-                sections[section.id] = section
+                section_id_to_object[section.id] = section
                 volume_changes_map[section.id] = []
                 status_updates_map[section.id] = []
 
-            iterator_wrapper = tqdm if verbose else (lambda x: x)
             if verbose:
                 print("Computing registration volume changes over time for each section...")
             for registration in iterator_wrapper(
-                Registration.objects.filter(section_id__in=sections.keys())
+                Registration.objects.filter(section_id__in=section_id_to_object.keys())
                 .annotate(section_capacity=F("section__capacity"))
                 .select_for_update()
             ):
@@ -297,12 +285,11 @@ def recompute_demand_distribution_estimates(
                         {"date": deactivated_at, "volume_change": -1}
                     )
 
-            iterator_wrapper = tqdm if verbose else (lambda x: x)
             if verbose:
                 print("Collecting status updates over time for each section...")
             for status_update in iterator_wrapper(
                 StatusUpdate.objects.filter(
-                    section_id__in=sections.keys(), in_add_drop_period=True
+                    section_id__in=section_id_to_object.keys(), in_add_drop_period=True
                 ).select_for_update()
             ):
                 section_id = status_update.section_id
@@ -318,25 +305,26 @@ def recompute_demand_distribution_estimates(
                 print("Joining updates for each section and sorting...")
             all_changes = sorted(
                 [
-                    {"type": "volume_change", "section_id": section_id, **change}
-                    for section_id, changes_list in volume_changes_map.items()
-                    for change in changes_list
-                ]
-                + [
                     {"type": "status_update", "section_id": section_id, **update}
                     for section_id, status_updates_list in status_updates_map.items()
                     for update in status_updates_list
+                ]
+                + [
+                    {"type": "volume_change", "section_id": section_id, **change}
+                    for section_id, changes_list in volume_changes_map.items()
+                    for change in changes_list
                 ],
-                key=lambda x: (x["date"], 1 if x["type"] == "status_update" else 2),
+                key=lambda x: (x["date"], int(x["type"] != "status_update")),
+                # put status updates first on matching dates
             )
 
             # Initialize variables to be maintained in our main all_changes loop
             latest_popularity_dist_estimate = None
-            registration_volumes = {section_id: 0 for section_id in sections.keys()}
-            demands = {section_id: 0 for section_id in sections.keys()}
+            registration_volumes = {section_id: 0 for section_id in section_id_to_object.keys()}
+            demands = {section_id: 0 for section_id in section_id_to_object.keys()}
 
             # Initialize section statuses
-            section_status = {section_id: None for section_id in sections.keys()}
+            section_status = {section_id: None for section_id in section_id_to_object.keys()}
             for change in all_changes:
                 section_id = change["section_id"]
                 if change["type"] == "status_update":
@@ -355,12 +343,11 @@ def recompute_demand_distribution_estimates(
                         f"hasn't started yet."
                     )
                 continue
-            distribution_estimate_threshold = len(all_changes) // (
-                ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES * percent_through
-            )
+            distribution_estimate_threshold = sum(
+                len(changes_list) for changes_list in volume_changes_map.values()
+            ) // (ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES * percent_through)
             num_changes_without_estimate = 0
 
-            iterator_wrapper = tqdm if verbose else (lambda x: x)
             if verbose:
                 print(f"Creating PcaDemandDistributionEstimate objects for semester {semester}...")
             for change in iterator_wrapper(all_changes):
@@ -368,12 +355,9 @@ def recompute_demand_distribution_estimates(
 
                 if section_status[section_id] is None:
                     section_status[section_id] = (
-                        "O" if sections[section_id].percent_open > 0.5 else "C"
+                        "O" if section_id_to_object[section_id].percent_open > 0.5 else "C"
                     )
                 if change["type"] == "status_update":
-                    if section_status[section_id] != change["old_status"]:
-                        # Ignore erroneous status updates
-                        continue
                     section_status[section_id] = change["new_status"]
                     continue
 
@@ -381,7 +365,7 @@ def recompute_demand_distribution_estimates(
                 volume_change = change["volume_change"]
                 registration_volumes[section_id] += volume_change
                 demands[section_id] = (
-                    registration_volumes[section_id] / sections[section_id].capacity
+                    registration_volumes[section_id] / section_id_to_object[section_id].capacity
                 )
 
                 max_id = max(demands.keys(), key=lambda x: demands[x])
@@ -398,10 +382,8 @@ def recompute_demand_distribution_estimates(
                     closed_sections_demand_values = np.asarray(
                         [val for sec_id, val in demands.items() if section_status[sec_id] == "C"]
                     )
-                    # "The term 'closed sections demand values' is sometimes abbreviated as 'csdv'
-                    csdv_nonempty = len(closed_sections_demand_values) > 0
                     fit_alpha, fit_loc, fit_scale, mean_log_likelihood = (None, None, None, None)
-                    if csdv_nonempty:
+                    if len(closed_sections_demand_values) > 0:
                         fit_alpha, fit_loc, fit_scale = stats.gamma.fit(
                             closed_sections_demand_values
                         )
@@ -412,29 +394,33 @@ def recompute_demand_distribution_estimates(
                     new_distribution_estimate = PcaDemandDistributionEstimate(
                         created_at=date,
                         semester=semester,
-                        highest_demand_section=sections[max_id],
+                        highest_demand_section=section_id_to_object[max_id],
                         highest_demand_section_volume=registration_volumes[max_id],
-                        lowest_demand_section=sections[min_id],
+                        lowest_demand_section=section_id_to_object[min_id],
                         lowest_demand_section_volume=registration_volumes[min_id],
                         csdv_gamma_param_alpha=fit_alpha,
                         csdv_gamma_param_loc=fit_loc,
                         csdv_gamma_param_scale=fit_scale,
                         csdv_gamma_fit_mean_log_likelihood=mean_log_likelihood,
                         csdv_mean=(
-                            np.mean(closed_sections_demand_values) if csdv_nonempty else None
+                            np.mean(closed_sections_demand_values)
+                            if len(closed_sections_demand_values) > 0
+                            else None
                         ),
                         csdv_median=(
-                            np.median(closed_sections_demand_values) if csdv_nonempty else None
+                            np.median(closed_sections_demand_values)
+                            if len(closed_sections_demand_values) > 0
+                            else None
                         ),
                         csdv_75th_percentile=(
                             np.percentile(closed_sections_demand_values, 75)
-                            if csdv_nonempty
+                            if len(closed_sections_demand_values) > 0
                             else None
                         ),
                     )
                     new_distribution_estimate.save(add_drop_period=add_drop_period)
                     new_distribution_estimate.created_at = date
-                    new_distribution_estimate.save()
+                    new_distribution_estimate.save(add_drop_period=add_drop_period)
                     latest_popularity_dist_estimate = new_distribution_estimate
                 else:
                     num_changes_without_estimate += 1
@@ -458,11 +444,12 @@ def recompute_demand_distribution_estimates(
 
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
-    Recompute the percent_open field on each section, as well
+    Recomputes PCA demand distribution estimates, as well as the registration_volume
+    and percent_open fields for all sections in the given semester(s).
     """
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
-    fill_in_add_drop_periods(verbose=True)
+    semesters = fill_in_add_drop_periods(verbose=True).intersection(semesters)
     load_add_drop_dates(verbose=True)
     recompute_demand_distribution_estimates(
         semesters=semesters, semesters_precomputed=True, verbose=verbose
@@ -471,7 +458,7 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
 
 class Command(BaseCommand):
     help = (
-        "Recompute PCA demand distribution estimate, as well as the registration_volume "
+        "Recomputes PCA demand distribution estimates, as well as the registration_volume "
         "and percent_open fields for all sections in the given semester(s)."
     )
 

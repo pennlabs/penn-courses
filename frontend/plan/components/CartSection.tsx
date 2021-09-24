@@ -97,7 +97,7 @@ const CartCourseButton = styled.div`
 `;
 
 interface CourseInfoButtonProps {
-    courseInfo: () => void;
+    courseInfo: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 const CourseInfoButton = ({ courseInfo }: CourseInfoButtonProps) => (
@@ -107,7 +107,7 @@ const CourseInfoButton = ({ courseInfo }: CourseInfoButtonProps) => (
 );
 
 interface CourseTrashCanProps {
-    remove: () => void;
+    remove: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 const CourseTrashCan = ({ remove }: CourseTrashCanProps) => (
@@ -122,8 +122,8 @@ interface CartSectionProps {
     checked: boolean;
     overlaps: boolean;
     toggleCheck: () => void;
-    remove: () => void;
-    courseInfo: () => void;
+    remove: (event: React.MouseEvent<HTMLDivElement>) => void;
+    courseInfo: (event: React.MouseEvent<HTMLDivElement>) => void;
     lastAdded: boolean;
 }
 
@@ -172,17 +172,7 @@ const CartSection = ({
         aria-checked="false"
         lastAdded={lastAdded}
         isMobile={isMobile}
-        onClick={(e) => {
-            // ensure that it's not the trash can or info button being clicked
-            if (
-                // NOTE: explicit typecase and not null assertion operator used
-                (e.target as HTMLElement).parentElement!.getAttribute(
-                    "class"
-                ) !== "CartSection__CartCourseButton-sc-1yc7t2z-1 iJfWAl"
-            ) {
-                toggleCheck();
-            }
-        }}
+        onClick={toggleCheck}
     >
         <CourseCheckbox checked={checked} />
         <CourseDetails meetings={meetings} code={code} overlaps={overlaps} />
