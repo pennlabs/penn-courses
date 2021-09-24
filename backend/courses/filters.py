@@ -20,7 +20,7 @@ def meeting_filter(queryset, meeting_query):
     we could enroll in some lecture section and some recitation section and
     only have to attend meetings on Tuesdays, Wednesdays, and/or Thursdays.
     However, if the course had a lab section that only met on Fridays,
-    we would no longer include the course (since we cannot attend all the meetings of the
+    we would no longer include the course (since we cannot attend the meetings of the
     lab section, and thus the set of course activities available to us is incomplete).
     """
     matching_meetings = Meeting.objects.filter(meeting_query)
@@ -55,7 +55,7 @@ def day_filter(days):
     """
     days = set(days)
     if not days.issubset({"M", "T", "W", "R", "F", "S", "U"}):
-        raise ValidationError("Day filter can only contain characters in 'MTWRFSU', got {days}")
+        raise ValidationError(f"Day filter can only contain characters in 'MTWRFSU', got {days}")
     return Q(day__isnull=True) | Q(day__in=set(days))
 
 
@@ -68,7 +68,7 @@ def time_filter(time_range):
         return Q()
     times = time_range.split("-")
     if len(times) != 2:
-        raise ValidationError("Time filter must be of the form <start>-<end>, got {time_range}")
+        raise ValidationError(f"Time filter must be of the form <start>-<end>, got {time_range}")
     times = [t.strip() for t in times]
     for time in times:
         if time and not time.replace(".", "", 1).isdigit():
@@ -105,13 +105,24 @@ def bound_filter(field):
     def filter_bounds(queryset, bounds):
         if not bounds:
             return queryset
-        lower_bound, upper_bound = bounds.split("-")
+        bound_arr = bounds.split("-")
+        if len(bound_arr) != 2:
+            raise ValidationError(
+                f"Invalid {field} filter; bounds must be of the form <lower>-<upper>, got {bounds}"
+            )
+        bound_arr = [b.strip() for b in bound_arr]
+        for bound in bound_arr:
+            if bound and not bound.replace(".", "", 1).isdigit():
+                raise ValidationError(
+                    f"Non-numeric value in {field} filter: {bound} (part of {bounds})"
+                )
+        lower_bound, upper_bound = bound_arr
         lower_bound = Decimal(lower_bound)
         upper_bound = Decimal(upper_bound)
 
         return queryset.filter(
-            Q(**{f"{field}__gte": lower_bound, f"{field}__lte": upper_bound,})
-            | Q(**{f"{field}__isnull": True})
+            Q(**{f"{field}__isnull": True})
+            | Q(**{f"{field}__gte": lower_bound, f"{field}__lte": upper_bound,})
         )
 
     return filter_bounds
@@ -155,7 +166,8 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             param = request.query_params.get(field)
             if param is not None:
                 meeting_query &= filter_func(param)
-        queryset = meeting_filter(queryset, meeting_query)
+        if len(meeting_query) > 0:
+            queryset = meeting_filter(queryset, meeting_query)
 
         return queryset.distinct()
 
@@ -243,10 +255,11 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "in": "query",
                 "description": (
                     "Filter meeting times to be within the specified range. "
+                    "The start and end time of the filter should be dash-separated. "
                     "Times should be specified as decimal numbers of the form `h+mm/100` "
                     "where h is the hour `[0..23]` and mm is the minute `[0,60)`, in ET. "
-                    "The start and end time of the filter should be dash-separated. You can omit "
-                    "either the start or end time to leave that side unbounded, e.g. '11.30-'."
+                    "You can omit either the start or end time to leave that side unbounded, "
+                    "e.g. '11.30-'."
                 ),
                 "schema": {"type": "string"},
                 "example": "11.30-18",

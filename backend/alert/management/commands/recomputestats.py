@@ -444,9 +444,8 @@ def recompute_demand_distribution_estimates(
 
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
-    Recomputes PCA demand distribution estimate, as well as the registration_volume
-    and percent_open fields for all sections in the given semester(s). Also recomputes
-    meeting summary fields for all sections and courses in the given semester(s).
+    Recomputes PCA demand distribution estimates, as well as the registration_volume
+    and percent_open fields for all sections in the given semester(s).
     """
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
@@ -459,9 +458,8 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
 
 class Command(BaseCommand):
     help = (
-        "Recomputes PCA demand distribution estimate, as well as the registration_volume "
-        "and percent_open fields for all sections in the given semester(s). Also recomputes "
-        "meeting summary fields for all sections and courses in the given semester(s)."
+        "Recomputes PCA demand distribution estimates, as well as the registration_volume "
+        "and percent_open fields for all sections in the given semester(s)."
     )
 
     def add_arguments(self, parser):
