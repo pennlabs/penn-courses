@@ -13,7 +13,7 @@ isort = "*"
 flake8-quotes = "*"
 pytest = "*"
 pytest-django = "*"
-django-debug-toolbar = "*"
+django-debug-toolbar = ">=3.2.1"
 black = "==19.10b0"
 
 [packages]
