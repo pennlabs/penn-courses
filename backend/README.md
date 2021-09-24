@@ -20,14 +20,17 @@ Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
 To get going quickly with a local database loaded with lots of test data,
 you can download this [db.sqlite3](https://penn-labs.slack.com/files/UNUMGB11A/F02EYAVE5S6/db.sqlite3)
 file and put it in your `backend` directory. This file is only accessible to
-Penn Labs members (anyone else should sign up for a [Penn OpenData API key](https://esb.isc-seo.upenn.edu/8091/documentation#security) and follow
-the steps below). You can replace the existing db.sqlite file generated from step 3 in
+Penn Labs members (anyone else should sign up for a [Penn OpenData API key](https://esb.isc-seo.upenn.edu/8091/documentation#security)
+and follow the steps below). You can replace the existing db.sqlite file generated from step 3 in
 [Setting up the Django Backend](#setting-up-the-django-backend).
-The admin username is `admin` and the password is `admin` if you use this test db (rather than the admin username and password you created in step 5 of Setting up the Django Backend).
+The admin username is `admin` and the password is `admin` if you use this test db
+(rather than the admin username and password you created in step 5 of Setting up the Django Backend).
 
 ## Set the proper semester
 
-PCx relies on the semester being set properly to work. You should set the current semester, even if you are using the test database linked in [Quick DB Setup](#quick-db-setup), because that file was created in a previous semester.
+PCx relies on the semester being set properly to work. You should set the current semester,
+even if you are using the test database linked in [Quick DB Setup](#quick-db-setup),
+because that file was created in a previous semester.
 
 `python manage.py setoption SEMESTER <semester>`
 
@@ -44,7 +47,8 @@ pasted in this public README).
 ## Loading Course Data
 
 PCX gets its data from two primary sources: the Penn Registrar for the
-current semester's data (via the [OpenData API](https://esb.isc-seo.upenn.edu/8091/documentation#overview)), and ISC data dumps containing review statistics (from Terry Weber, [weberte@isc.upenn.edu](mailto:weberte@isc.upenn.edu)).
+current semester's data (via the [OpenData API](https://esb.isc-seo.upenn.edu/8091/documentation#overview)),
+and ISC data dumps containing review statistics (from Terry Weber, [weberte@isc.upenn.edu](mailto:weberte@isc.upenn.edu)).
 
 ### Registrar
 
@@ -53,7 +57,8 @@ test database linked in [Quick DB Setup](#quick-db-setup) has course data pre-lo
 To load in course data for a certain semester, set the environment variables
 `API_KEY` and `API_SECRET` to the `Bearer` and `Token` credentials, respectively,
 that you recieve from the Penn OpenData API when you register for an API key
-(these credentials are included in the .env file you should receive from a Penn Courses team lead if you are in Labs).
+(these credentials are already included in the .env file you should receive from a
+Penn Courses team lead if you are in Labs).
 After those have been set, run
 
 `python manage.py registrarimport --semester=<semester> --query=<query>`
