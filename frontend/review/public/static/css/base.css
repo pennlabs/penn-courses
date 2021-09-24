@@ -620,6 +620,10 @@ The result is this, which is a little unclean, but it works.
     margin-bottom: 25px;
 }
 
+#faqs .scorebox {
+    margin-bottom: 0px;
+}
+
 #faqlinks ul {
     list-style: none inside none;
 }

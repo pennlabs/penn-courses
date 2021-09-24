@@ -102,9 +102,14 @@ const Cart = ({
                             lastAdded={lastAdded && code === lastAdded.id}
                             checked={checked}
                             meetings={meetings ? meetings : []}
-                            remove={() => removeItem(code)}
+                            remove={(event) => {
+                                event.stopPropagation();
+                                removeItem(code);
+
+                            }}
                             overlaps={overlaps}
-                            courseInfo={() => {
+                            courseInfo={(event) => {
+                                event.stopPropagation();
                                 const codeParts = code.split("-");
                                 if (!courseInfoLoading) {
                                     courseInfo(
@@ -135,12 +140,12 @@ const mapStateToProps = ({
         ),
         overlaps: course.meetings
             ? meetingSetsIntersect(
-                  course.meetings,
-                  schedules[scheduleSelected].meetings
-                      .filter((s: Section) => s.id !== course.id)
-                      .map((s: Section) => s.meetings)
-                      .flat()
-              )
+                course.meetings,
+                schedules[scheduleSelected].meetings
+                    .filter((s: Section) => s.id !== course.id)
+                    .map((s: Section) => s.meetings)
+                    .flat()
+            )
             : false,
     })),
     lastAdded,

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { defaults, Scatter } from "react-chartjs-2";
-import ReactTooltip from "react-tooltip";
 
+import { apiFetchPCADemandChartData } from "../utils/api";
 import { toNormalizedSemester } from "../utils/helpers";
 import { EVAL_GRAPH_COLORS } from "../constants/colors";
 
-const addDropDate = [];
+var addDropDate = [];
+var cachedPCAChartDataResponse = null;
 
 const LoadingContainer = styled.div`
   display: flex;
@@ -28,12 +29,6 @@ const ChartDescription = styled.p`
   font-weight: normal;
   color: #b2b2b2;
   margin-bottom: 8px;
-`;
-
-const EmptyGraphContainer = styled.div`
-  padding: 10px;
-  text-align: center;
-  color: #8a8a8a;
 `;
 
 const GraphColumn = styled.div`
@@ -93,7 +88,7 @@ const GraphTextContainer = styled.div`
 const genAverageData = seriesData => {
   const averageData = [];
   const windowSize = 0.05;
-  seriesData.map((point, index) => {
+  seriesData.forEach((point, index) => {
     const xVal = point[0];
     let total = 0;
     let numInTotal = 0;
@@ -116,7 +111,8 @@ const genAverageData = seriesData => {
 };
 
 //PCA Demand Chart Data
-const genDemandChartData = (data, averageData) => {
+const genDemandChartData = data => {
+  const averageData = genAverageData(data);
   return {
     datasets: [
       {
@@ -350,192 +346,202 @@ const calcApproxDate = (startDateString, endDateString, percent) => {
   });
 };
 
-const GraphBox = ({ courseCode, courseData, isAverage, setIsAverage }) => {
-  const [loaded, setLoaded] = useState(false);
-  const [pcaDemandChartData, setPCADemandChartData] = useState(null);
-  const [percentSectionsChartData, setPercentSectionsChartData] = useState(
-    null
-  );
+const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
+  const averageOrRecent = isAverage ? "average_plots" : "recent_plots";
 
-  const averageOrRecent = isAverage ? "average_reviews" : "recent_reviews";
-  const demandSemester =
-    courseData[averageOrRecent]["pca_demand_plot_since_semester"];
-  const percentSemester =
-    courseData[averageOrRecent]["percent_open_plot_since_semester"];
-  const demandNumSemesters =
-    courseData[averageOrRecent]["pca_demand_plot_num_semesters"];
-  const percentNumSemesters =
-    courseData[averageOrRecent]["percent_open_plot_num_semesters"];
+  const [chartData, setChartData] = useState(null);
+  const [loaded, setLoaded] = useState(true);
 
   defaults.global.defaultFontFamily = "Lato";
 
+  const handlePCAChartDataResponse = res => {
+    cachedPCAChartDataResponse = res;
+
+    addDropDate = [
+      res["current_add_drop_period"].start,
+      res["current_add_drop_period"].end
+    ];
+
+    const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
+    const demandSemester =
+      res[averageOrRecent]["pca_demand_plot_since_semester"];
+    const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
+    const percentSemester =
+      res[averageOrRecent]["percent_open_plot_since_semester"];
+    setChartData({
+      demandSemester: demandSemester && toNormalizedSemester(demandSemester),
+      demandNumSemesters: res[averageOrRecent]["pca_demand_plot_num_semesters"],
+      pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
+      percentSemester: percentSemester && toNormalizedSemester(percentSemester),
+      percentNumSemesters:
+        res[averageOrRecent]["percent_open_plot_num_semesters"],
+      percentSectionsChartData:
+        percentOpenPlot && genPercentChartData(percentOpenPlot)
+    });
+  };
+
   useEffect(() => {
     if (!courseCode) {
+      setLoaded(true);
+      setChartData(null);
       return;
     }
 
-    setLoaded(false);
-
-    addDropDate.push(courseData["current_add_drop_period"].start);
-    addDropDate.push(courseData["current_add_drop_period"].end);
-
-    //Generate demand plot data
-    const pcaDemandPlot = courseData[averageOrRecent]["pca_demand_plot"];
-    if (pcaDemandPlot) {
-      const averageData = genAverageData(pcaDemandPlot);
-      setPCADemandChartData(genDemandChartData(pcaDemandPlot, averageData));
+    if (
+      cachedPCAChartDataResponse &&
+      cachedPCAChartDataResponse.code === courseCode
+    ) {
+      handlePCAChartDataResponse(cachedPCAChartDataResponse);
     } else {
-      setPCADemandChartData(null);
+      setLoaded(false);
+      apiFetchPCADemandChartData(courseCode)
+        .then(handlePCAChartDataResponse)
+        .finally(() => {
+          setLoaded(true);
+        });
     }
+  }, [courseCode, averageOrRecent]);
 
-    //Generate percent of sections open  plot data
-    const percentSectionsPlot =
-      courseData[averageOrRecent]["percent_open_plot"];
-
-    if (percentSectionsPlot) {
-      setPercentSectionsChartData(genPercentChartData(percentSectionsPlot));
-    } else {
-      setPCADemandChartData(null);
-    }
-
-    setLoaded(true);
-  }, [courseCode]);
+  const showPcaDemandPlotContainer =
+    (chartData && chartData.pcaDemandChartData) || !loaded;
+  const showPercentOpenPlotContainer =
+    (chartData && chartData.percentSectionsChartData) || !loaded;
 
   return (
     <>
-      <GraphRow>
-        <GraphColumn>
-          <GraphContainer>
-            {pcaDemandChartData ? (
-              <div id="row-select-chart-container">
-                <GraphTextContainer>
-                  <ChartTitle>
-                    Estimated Registration Difficulty During Historical Add/Drop
-                    Periods
-                  </ChartTitle>
-                  <ChartDescription>
-                    Registration difficulty is estimated on a fixed 0-1 scale
-                    (relative to other classes at Penn), using Penn Course Alert
-                    data from{" "}
-                    {isAverage ? `${demandNumSemesters} semesters since` : ""}{" "}
-                    {toNormalizedSemester(demandSemester)}
-                  </ChartDescription>
-                </GraphTextContainer>
-                <div
-                  className="btn-group"
-                  style={{ width: "fit-content", marginBottom: "18px" }}
-                >
-                  <button
-                    onClick={() => setIsAverage(true)}
-                    className={`btn btn-sm ${
-                      isAverage ? "btn-primary" : "btn-secondary"
-                    }`}
-                  >
-                    Average
-                  </button>
-                  <button
-                    onClick={() => setIsAverage(false)}
-                    className={`btn btn-sm ${
-                      isAverage ? "btn-secondary" : "btn-primary"
-                    }`}
-                  >
-                    Most Recent
-                  </button>
-                </div>
-                <Scatter
-                  data={pcaDemandChartData}
-                  options={demandChartOptions}
-                />
-              </div>
-            ) : (
-              <div>
-                {" "}
-                {loaded ? (
-                  <EmptyGraphContainer>
-                    All underlying sections either have no data to show, or
-                    require permits for registration (we cannot estimate the
-                    difficulty of being issued a permit).
-                  </EmptyGraphContainer>
-                ) : (
-                  <LoadingContainer>
-                    <i
-                      className="fa fa-spin fa-cog fa-fw"
-                      style={{ fontSize: "150px", color: "#aaa" }}
+      {(showPcaDemandPlotContainer || showPercentOpenPlotContainer) && (
+        <GraphRow>
+          {showPcaDemandPlotContainer && (
+            <GraphColumn>
+              <GraphContainer>
+                {chartData && chartData.pcaDemandChartData ? (
+                  <div id="row-select-chart-container">
+                    <GraphTextContainer>
+                      <ChartTitle>
+                        Estimated Registration Difficulty During Historical
+                        Add/Drop Periods
+                      </ChartTitle>
+                      <ChartDescription>
+                        Registration difficulty is estimated on a fixed 0-1
+                        scale (relative to other classes at Penn), using Penn
+                        Course Alert data from{" "}
+                        {isAverage
+                          ? `${chartData.demandNumSemesters} semesters since`
+                          : ""}{" "}
+                        {chartData.demandSemester}
+                      </ChartDescription>
+                    </GraphTextContainer>
+                    <div
+                      className="btn-group"
+                      style={{ width: "fit-content", marginBottom: "18px" }}
+                    >
+                      <button
+                        onClick={() => setIsAverage(true)}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-primary" : "btn-secondary"
+                        }`}
+                      >
+                        Average
+                      </button>
+                      <button
+                        onClick={() => setIsAverage(false)}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-secondary" : "btn-primary"
+                        }`}
+                      >
+                        Most Recent
+                      </button>
+                    </div>
+                    <Scatter
+                      data={chartData.pcaDemandChartData}
+                      options={demandChartOptions}
                     />
-                    <h1 style={{ fontSize: "2em", marginTop: 15 }}>
-                      Loading...
-                    </h1>
-                  </LoadingContainer>
-                )}
-              </div>
-            )}
-          </GraphContainer>
-        </GraphColumn>
-        <GraphColumn>
-          <GraphContainer>
-            {percentSectionsChartData ? (
-              <div id="row-select-chart-container">
-                <GraphTextContainer>
-                  <ChartTitle>
-                    Percent of Sections Open During Historical Add/Drop Periods
-                  </ChartTitle>
-                  <ChartDescription>
-                    Based on section status data during add/drop periods from
-                    {isAverage ? ` ${percentNumSemesters} semesters since` : ""}
-                    {" " + toNormalizedSemester(percentSemester)}
-                  </ChartDescription>
-                </GraphTextContainer>
-                <div
-                  className="btn-group"
-                  style={{ width: "fit-content", marginBottom: "18px" }}
-                >
-                  <button
-                    onClick={() => setIsAverage(true)}
-                    className={`btn btn-sm ${
-                      isAverage ? "btn-primary" : "btn-secondary"
-                    }`}
-                  >
-                    Average
-                  </button>
-                  <button
-                    onClick={() => setIsAverage(false)}
-                    className={`btn btn-sm ${
-                      isAverage ? "btn-secondary" : "btn-primary"
-                    }`}
-                  >
-                    Most Recent
-                  </button>
-                </div>
-                <Scatter
-                  data={percentSectionsChartData}
-                  options={percentSectionChartOptions}
-                />
-              </div>
-            ) : (
-              <div>
-                {" "}
-                {loaded ? (
-                  <EmptyGraphContainer>
-                    All underlying sections either have no data to show, or
-                    require permits for registration (we cannot estimate the
-                    difficulty of being issued a permit).
-                  </EmptyGraphContainer>
+                  </div>
                 ) : (
-                  <LoadingContainer>
-                    <i
-                      className="fa fa-spin fa-cog fa-fw"
-                      style={{ fontSize: "150px", color: "#aaa" }}
-                    />
-                    <h1 style={{ fontSize: "2em", marginTop: 15 }}>
-                      Loading...
-                    </h1>
-                  </LoadingContainer>
+                  <div>
+                    {" "}
+                    {loaded || (
+                      <LoadingContainer>
+                        <i
+                          className="fa fa-spin fa-cog fa-fw"
+                          style={{ fontSize: "150px", color: "#aaa" }}
+                        />
+                        <h1 style={{ fontSize: "2em", marginTop: 15 }}>
+                          Loading...
+                        </h1>
+                      </LoadingContainer>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-          </GraphContainer>
-        </GraphColumn>
-      </GraphRow>
+              </GraphContainer>
+            </GraphColumn>
+          )}
+          {showPercentOpenPlotContainer && (
+            <GraphColumn>
+              <GraphContainer>
+                {chartData && chartData.percentSectionsChartData ? (
+                  <div id="row-select-chart-container">
+                    <GraphTextContainer>
+                      <ChartTitle>
+                        Percent of Sections Open During Historical Add/Drop
+                        Periods
+                      </ChartTitle>
+                      <ChartDescription>
+                        Based on section status data during add/drop periods
+                        from
+                        {isAverage
+                          ? ` ${chartData.percentNumSemesters} semesters since`
+                          : ""}
+                        {" " + chartData.percentSemester}
+                      </ChartDescription>
+                    </GraphTextContainer>
+                    <div
+                      className="btn-group"
+                      style={{ width: "fit-content", marginBottom: "18px" }}
+                    >
+                      <button
+                        onClick={() => setIsAverage(true)}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-primary" : "btn-secondary"
+                        }`}
+                      >
+                        Average
+                      </button>
+                      <button
+                        onClick={() => setIsAverage(false)}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-secondary" : "btn-primary"
+                        }`}
+                      >
+                        Most Recent
+                      </button>
+                    </div>
+                    <Scatter
+                      data={chartData.percentSectionsChartData}
+                      options={percentSectionChartOptions}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    {" "}
+                    {loaded || (
+                      <LoadingContainer>
+                        <i
+                          className="fa fa-spin fa-cog fa-fw"
+                          style={{ fontSize: "150px", color: "#aaa" }}
+                        />
+                        <h1 style={{ fontSize: "2em", marginTop: 15 }}>
+                          Loading...
+                        </h1>
+                      </LoadingContainer>
+                    )}
+                  </div>
+                )}
+              </GraphContainer>
+            </GraphColumn>
+          )}
+        </GraphRow>
+      )}
     </>
   );
 };

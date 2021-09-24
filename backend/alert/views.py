@@ -3,6 +3,7 @@ import json
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Max
 from django.http import HttpResponse, JsonResponse
@@ -54,7 +55,6 @@ def accept_webhook(request):
     auth_header = request.META.get("Authorization", request.META.get("HTTP_AUTHORIZATION", ""))
 
     username, password = extract_basic_auth(auth_header)
-
     if username != settings.WEBHOOK_USERNAME or password != settings.WEBHOOK_PASSWORD:
         return HttpResponse(
             """Your credentials cannot be verified.
@@ -97,7 +97,6 @@ def accept_webhook(request):
         and (course_status == "O" or course_status == "C")
         and get_current_semester() == course_term
     )
-
     if should_send_alert:
         try:
             alert_for_course(
@@ -120,8 +119,7 @@ def accept_webhook(request):
             request.body,
         )
         update_course_from_record(u)
-
-    except ValueError as e:
+    except (ValidationError, ValueError) as e:
         logger.error(e)
         return HttpResponse("We got an error but webhook should ignore it", status=200)
 
