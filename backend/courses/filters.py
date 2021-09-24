@@ -312,7 +312,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                     "does not limit the set of section activities we can participate in "
                     "for the course."
                 ),
-                "schema": {"type": "string"},
+                "schema": {"type": "integer"},
                 "example": "242",
             },
         ]
