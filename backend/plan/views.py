@@ -332,7 +332,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
     def create(self, request, *args, **kwargs):
-        if Section.objects.filter(id=request.data.get("id")).exists():
+        if Schedule.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
 
         try:
