@@ -10,9 +10,9 @@ import Footer from "../components/Footer";
 import AlertForm from "../components/AlertForm";
 import Timeline from "../components/Timeline";
 
-import { Center, Container, Flex } from "../components/common/layout";
+import { Center, Container, Flex } from "pcx-shared-components/src/common/layout";
 import MessageList from "../components/MessageList";
-import LoginModal from "../components/LoginModal";
+import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import { User } from "../types";
 
 const Tagline = styled.h3`

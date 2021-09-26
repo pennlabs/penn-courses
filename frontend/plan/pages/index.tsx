@@ -20,6 +20,7 @@ import Footer from "../components/footer";
 import Cart from "../components/Cart";
 import ModalContainer from "../components/modals/generic_modal_container";
 import SearchSortDropdown from "../components/search/SearchSortDropdown";
+import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import { openModal } from "../actions";
 import { preventMultipleTabs } from "../components/syncutils";
 import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
@@ -90,6 +91,9 @@ function Index() {
     const containerRef = useRef<HTMLDivElement>();
     const scrollTop = () => window.scrollTo(0, 0);
     const isExpanded = view === 1;
+
+    const [showLoginModal, setShowLoginModal] = useState<boolean>(true);
+    
 
     useEffect(() => {
         setInnerWidth(window.innerWidth);
@@ -185,6 +189,7 @@ function Index() {
         <Provider store={store}>
             {initGA()}
             {headPreamble}
+            {showLoginModal && <LoginModal />}
             <GlobalStyle />
             {innerWidth < 800 ? (
                 <>
