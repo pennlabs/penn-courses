@@ -67,7 +67,6 @@ def invalidate_current_semester_cache(sender, instance, **kwargs):
     """
     This function invalidates the cached SEMESTER value when the SEMESTER option is updated.
     """
-    from alert.models import AddDropPeriod
     from courses.management.commands.load_add_drop_dates import load_add_drop_dates
     from courses.management.commands.registrarimport import registrar_import
     from courses.tasks import registrar_import_async
