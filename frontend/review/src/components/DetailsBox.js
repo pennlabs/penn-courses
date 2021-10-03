@@ -94,10 +94,10 @@ export const DetailsBox = forwardRef(
       Cell: ({ value }) => {
         return (
           <center className={!value ? "empty" : ""}>
-            {isNaN(value) && value.slice(-1) === "%"
-              ? value
-              : isNaN(value)
+            {!value
               ? "N/A"
+              : isNaN(value) && value.slice(-1) === "%"
+              ? value
               : value.toFixed(2)}
           </center>
         );
