@@ -404,6 +404,25 @@ SearchBarProps) {
                     startSearch={conditionalStartSearch}
                 />
             </DropdownButton>
+            <DropdownButton
+                title="Day"
+                filterData={filterData.day}
+                defaultFilter={defaultFilters.filterData.day}
+                clearFilter={clearFilterSearch("day")}
+            >
+                <CheckboxFilter
+                    filterData={filterData}
+                    updateCheckboxFilter={updateCheckboxFilter}
+                    checkboxProperty="day"
+                    startSearch={conditionalStartSearch}
+                />
+            </DropdownButton>
+            <CheckboxFilter
+                filterData={filterData}
+                updateCheckboxFilter={updateCheckboxFilter}
+                checkboxProperty="fit_schedule"
+                startSearch={conditionalStartSearch}
+            />
         </>
     );
     if (mobileView) {

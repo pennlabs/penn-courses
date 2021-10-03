@@ -180,7 +180,6 @@ function Index() {
             <title>Penn Course Plan</title>
         </Head>
     );
-
     return (
         <Provider store={store}>
             {initGA()}

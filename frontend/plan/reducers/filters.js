@@ -35,7 +35,17 @@ export const initialState = {
             1: false,
             1.5: false,
         },
+        day: {
+            M: true,
+            T: true,
+            W: true,
+            R: true,
+            F: true,
+            S: true,
+            U: true,
+        },
     },
+    fit_schedule: false,
     defaultReqs: null,
 };
 

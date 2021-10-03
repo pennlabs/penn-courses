@@ -36,6 +36,7 @@ const ColumnsContainer = styled.div`
 
     @media screen and (min-width: 769px) {
         display: flex;
+        display: table;
     }
 `;
 

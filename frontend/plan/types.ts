@@ -173,6 +173,16 @@ export interface FilterData {
     instructor_quality: [number, number];
     activity: ActivityFilter;
     cu: CUFilter;
+    day: {
+        M: boolean;
+        T: boolean;
+        W: boolean;
+        R: boolean;
+        F: boolean;
+        S: boolean;
+        U: boolean;
+    };
+    fit_schedule: boolean;
 }
 
 export type FilterType =
