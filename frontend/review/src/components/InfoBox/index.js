@@ -142,27 +142,27 @@ const InfoBox = ({
         {isDepartment && <DepartmentHeader name={name} code={code} />}
       </div>
 
+      {/* // TODO: uncomment this to release Registration Metrics
       <StatsToggleContainer>
         <NewLabel>NEW</NewLabel>
         <div className="btn-group">
           <button
             onClick={() => setIsCourseEval(false)}
-            className={`btn btn-sm ${
-              isCourseEval ? "btn-sub-secondary" : "btn-sub-primary"
-            }`}
+            className={`btn btn-sm ${isCourseEval ? "btn-sub-secondary" : "btn-sub-primary"
+              }`}
           >
             Student Evaluations
           </button>
           <button
             onClick={() => setIsCourseEval(true)}
-            className={`btn btn-sm ${
-              isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
-            }`}
+            className={`btn btn-sm ${isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
+              }`}
           >
             Registration Metrics
           </button>
         </div>
       </StatsToggleContainer>
+      */}
 
       {!isDepartment && (
         <div id="banner-score">
