@@ -633,7 +633,7 @@ class Registration(models.Model):
 
     def get_most_current_iter(self):
         """
-        A recursive version of get_most_current that doesn't utilize
+        An iterative version of get_most_current that doesn't utilize
         head_registration relations.
         """
         most_current = self
@@ -643,7 +643,7 @@ class Registration(models.Model):
 
     def get_original_registration_iter(self):
         """
-        A recursive version of get_original_registration that doesn't utilize
+        An iterative version of get_original_registration that doesn't utilize
         head_registration relations.
         """
         original = self
