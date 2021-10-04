@@ -537,6 +537,10 @@ class ResubscribeTestCase(TestCase):
             notification_sent=True,
         )
         reg2.save()
+        self.base_reg.head_registration = reg2
+        self.base_reg.save()
+        reg1.head_registration = reg2
+        reg1.save()
 
         result = self.base_reg.resubscribe()
         self.assertEqual(4, len(Registration.objects.all()))
@@ -570,6 +574,12 @@ class ResubscribeTestCase(TestCase):
             notification_sent=False,
         )
         reg3.save()
+        self.base_reg.head_registration = reg3
+        self.base_reg.save()
+        reg1.head_registration = reg3
+        reg1.save()
+        reg2.head_registration = reg3
+        reg2.save()
 
         result = self.base_reg.resubscribe()
         self.assertEqual(4, len(Registration.objects.all()))
@@ -1044,7 +1054,7 @@ class AlertRegistrationTestCase(TestCase):
             reg.id
             for reg in list(
                 Registration.objects.filter(
-                    section=section, *Registration.is_waiting_for_close_filter()
+                    section=section, **Registration.is_waiting_for_close_filter()
                 )
             )
         ]
@@ -1167,13 +1177,18 @@ class AlertRegistrationTestCase(TestCase):
         fifth (CIS-121-001)
         """
         first_id = self.registration_cis120.id
+        self.assertEqual(self.registration_cis120.head_registration, self.registration_cis120)
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
+
         second_id = response.data["id"]
+        second_ob = Registration.objects.get(id=second_id)
+        self.assertEqual(second_ob.head_registration, second_ob)
+
         response = self.client.get(reverse("registrations-detail", args=[second_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
@@ -1184,7 +1199,15 @@ class AlertRegistrationTestCase(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
+
         third_id = response.data["id"]
+        third_ob = Registration.objects.get(id=third_id)
+        self.assertEqual(third_ob.head_registration, third_ob)
+        second_ob = Registration.objects.get(id=second_id)
+        self.assertEqual(second_ob.head_registration, second_ob)
+        first_ob = Registration.objects.get(id=first_id)
+        self.assertEqual(first_ob.head_registration, third_ob)
+
         response = self.client.get(reverse("registrations-detail", args=[third_id]))
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120.resubscribed_to, response.data)
@@ -1195,14 +1218,28 @@ class AlertRegistrationTestCase(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
+
         fourth_id = response.data["id"]
+        fourth_ob = Registration.objects.get(id=fourth_id)
+        self.assertEqual(fourth_ob.head_registration, fourth_ob)
+        third_ob = Registration.objects.get(id=third_id)
+        self.assertEqual(third_ob.head_registration, fourth_ob)
+        second_ob = Registration.objects.get(id=second_id)
+        self.assertEqual(second_ob.head_registration, second_ob)
+        first_ob = Registration.objects.get(id=first_id)
+        self.assertEqual(first_ob.head_registration, fourth_ob)
+
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps({"section": "CIS-121-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
+
         fifth_id = response.data["id"]
+        fifth_ob = Registration.objects.get(id=fifth_id)
+        self.assertEqual(fifth_ob.head_registration, fifth_ob)
+
         # first is original CIS120 registration, second is disconnected CIS160 registration,
         # third is resubscribed from first, fourth is resubscribed from third,
         # and fifth is disconnected CIS121 registration
@@ -1649,6 +1686,23 @@ class AlertRegistrationTestCase(TestCase):
     def test_registrations_multiple_users(self):
         ids = self.create_resubscribe_group()
         self.registrations_multiple_users_helper(ids)
+
+    def test_registrations_multiple_users_id_isolation(self):
+        ids = self.create_resubscribe_group()
+        new_user = User.objects.create_user(username="new_jacob", password="top_secret")
+        new_user.save()
+        new_user.profile.email = "newj@gmail.com"
+        new_user.profile.phone = "+12234567890"
+        new_user.profile.save()
+        new_client = APIClient()
+        new_client.login(username="new_jacob", password="top_secret")
+        create_mock_data("CIS-192-201", TEST_SEMESTER)
+        response = new_client.post(
+            reverse("registrations-list"),
+            json.dumps({"id": ids["fifth_id"], "section": "CIS-192-201"}),
+            content_type="application/json",
+        )
+        self.assertEqual(403, response.status_code)
 
     def test_registrations_multiple_users_autoresub(self):
         ids = self.create_auto_resubscribe_group()
@@ -2329,7 +2383,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(response.status_code, 406)
         self.assertEqual(1, Registration.objects.count())
 
-    def close_notification_cancel_helper(self, delete=False):
+    def close_notification_cancel_helper(self, delete=False, multiple=False):
         """
         Ensure that cancelling or deleting a registration also cancels a pending close notification
         """
@@ -2498,112 +2552,112 @@ class AlertRegistrationTestCase(TestCase):
     def test_delete_and_change_attrs(self, value, result):
         self.delete_and_change_attrs_helper(value)
 
-    def test_get_most_current_rec(self):
+    def test_get_most_current(self):
         ids = self.create_resubscribe_group()
         self.assertEqual(
             Registration.objects.get(id=ids["fourth_id"]),
-            Registration.objects.get(id=ids["first_id"]).get_most_current_rec(),
+            Registration.objects.get(id=ids["first_id"]).get_most_current(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["second_id"]),
-            Registration.objects.get(id=ids["second_id"]).get_most_current_rec(),
+            Registration.objects.get(id=ids["second_id"]).get_most_current(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["fourth_id"]),
-            Registration.objects.get(id=ids["third_id"]).get_most_current_rec(),
+            Registration.objects.get(id=ids["third_id"]).get_most_current(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["fourth_id"]),
-            Registration.objects.get(id=ids["fourth_id"]).get_most_current_rec(),
+            Registration.objects.get(id=ids["fourth_id"]).get_most_current(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["fifth_id"]),
-            Registration.objects.get(id=ids["fifth_id"]).get_most_current_rec(),
+            Registration.objects.get(id=ids["fifth_id"]).get_most_current(),
         )
 
-    def test_get_original_registration_rec(self):
+    def test_get_most_current_iter(self):
+        ids = self.create_resubscribe_group()
+        self.assertEqual(
+            Registration.objects.get(id=ids["fourth_id"]),
+            Registration.objects.get(id=ids["first_id"]).get_most_current_iter(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["second_id"]),
+            Registration.objects.get(id=ids["second_id"]).get_most_current_iter(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["fourth_id"]),
+            Registration.objects.get(id=ids["third_id"]).get_most_current_iter(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["fourth_id"]),
+            Registration.objects.get(id=ids["fourth_id"]).get_most_current_iter(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["fifth_id"]),
+            Registration.objects.get(id=ids["fifth_id"]).get_most_current_iter(),
+        )
+
+    def get_original_registration(self):
         ids = self.create_resubscribe_group()
         self.assertEqual(
             Registration.objects.get(id=ids["first_id"]),
-            Registration.objects.get(id=ids["first_id"]).get_original_registration_rec(),
+            Registration.objects.get(id=ids["first_id"]).get_original_registration(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["second_id"]),
-            Registration.objects.get(id=ids["second_id"]).get_original_registration_rec(),
+            Registration.objects.get(id=ids["second_id"]).get_original_registration(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["first_id"]),
-            Registration.objects.get(id=ids["third_id"]).get_original_registration_rec(),
+            Registration.objects.get(id=ids["third_id"]).get_original_registration(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["first_id"]),
-            Registration.objects.get(id=ids["fourth_id"]).get_original_registration_rec(),
+            Registration.objects.get(id=ids["fourth_id"]).get_original_registration(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["fifth_id"]),
-            Registration.objects.get(id=ids["fifth_id"]).get_original_registration_rec(),
+            Registration.objects.get(id=ids["fifth_id"]).get_original_registration(),
         )
 
-    def test_get_resubscribe_group_sql(self):
+    def get_original_registration_iter(self):
+        ids = self.create_resubscribe_group()
+        self.assertEqual(
+            Registration.objects.get(id=ids["first_id"]),
+            Registration.objects.get(id=ids["first_id"]).get_original_registration_iter(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["second_id"]),
+            Registration.objects.get(id=ids["second_id"]).get_original_registration_iter(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["first_id"]),
+            Registration.objects.get(id=ids["third_id"]).get_original_registration_iter(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["first_id"]),
+            Registration.objects.get(id=ids["fourth_id"]).get_original_registration_iter(),
+        )
+        self.assertEqual(
+            Registration.objects.get(id=ids["fifth_id"]),
+            Registration.objects.get(id=ids["fifth_id"]).get_original_registration_iter(),
+        )
+
+    def test_get_resubscribe_group(self):
         ids = self.create_resubscribe_group()
         first = Registration.objects.get(id=ids["first_id"])
         third = Registration.objects.get(id=ids["third_id"])
         fourth = Registration.objects.get(id=ids["third_id"])
-        self.assertEqual(len(first.get_resubscribe_group_sql()), 3)
-        self.assertEqual(len(third.get_resubscribe_group_sql()), 3)
-        self.assertEqual(len(fourth.get_resubscribe_group_sql()), 3)
-        self.assertTrue(first in third.get_resubscribe_group_sql())
-        self.assertTrue(third in first.get_resubscribe_group_sql())
-        self.assertTrue(first in fourth.get_resubscribe_group_sql())
-        self.assertTrue(fourth in first.get_resubscribe_group_sql())
-        self.assertTrue(third in fourth.get_resubscribe_group_sql())
-        self.assertTrue(fourth in third.get_resubscribe_group_sql())
-
-    def test_get_most_current_sql(self):
-        ids = self.create_resubscribe_group()
-        self.assertEqual(
-            Registration.objects.get(id=ids["fourth_id"]),
-            Registration.objects.get(id=ids["first_id"]).get_most_current_sql(),
-        )
-        self.assertEqual(
-            Registration.objects.get(id=ids["second_id"]),
-            Registration.objects.get(id=ids["second_id"]).get_most_current_sql(),
-        )
-        self.assertEqual(
-            Registration.objects.get(id=ids["fourth_id"]),
-            Registration.objects.get(id=ids["third_id"]).get_most_current_sql(),
-        )
-        self.assertEqual(
-            Registration.objects.get(id=ids["fourth_id"]),
-            Registration.objects.get(id=ids["fourth_id"]).get_most_current_sql(),
-        )
-        self.assertEqual(
-            Registration.objects.get(id=ids["fifth_id"]),
-            Registration.objects.get(id=ids["fifth_id"]).get_most_current_sql(),
-        )
-
-    def test_get_original_registration_sql(self):
-        ids = self.create_resubscribe_group()
-        self.assertEqual(
-            Registration.objects.get(id=ids["first_id"]),
-            Registration.objects.get(id=ids["first_id"]).get_original_registration_sql(),
-        )
-        self.assertEqual(
-            Registration.objects.get(id=ids["second_id"]),
-            Registration.objects.get(id=ids["second_id"]).get_original_registration_sql(),
-        )
-        self.assertEqual(
-            Registration.objects.get(id=ids["first_id"]),
-            Registration.objects.get(id=ids["third_id"]).get_original_registration_sql(),
-        )
-        self.assertEqual(
-            Registration.objects.get(id=ids["first_id"]),
-            Registration.objects.get(id=ids["fourth_id"]).get_original_registration_sql(),
-        )
-        self.assertEqual(
-            Registration.objects.get(id=ids["fifth_id"]),
-            Registration.objects.get(id=ids["fifth_id"]).get_original_registration_sql(),
-        )
+        self.assertEqual(len(first.get_resubscribe_group()), 3)
+        self.assertEqual(len(third.get_resubscribe_group()), 3)
+        self.assertEqual(len(fourth.get_resubscribe_group()), 3)
+        self.assertTrue(first in third.get_resubscribe_group())
+        self.assertTrue(third in first.get_resubscribe_group())
+        self.assertTrue(first in fourth.get_resubscribe_group())
+        self.assertTrue(fourth in first.get_resubscribe_group())
+        self.assertTrue(third in fourth.get_resubscribe_group())
+        self.assertTrue(fourth in third.get_resubscribe_group())
 
     def test_last_notification_sent_at(self):
         """

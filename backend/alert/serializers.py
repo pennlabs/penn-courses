@@ -81,7 +81,9 @@ class RegistrationCreateSerializer(serializers.ModelSerializer):
         model = Registration
         fields = registration_fields
         read_only_fields = [
-            f for f in registration_fields if f not in ["section", "auto_resubscribe", "id"]
+            f
+            for f in registration_fields
+            if f not in ["section", "auto_resubscribe", "close_notification", "id"]
         ]
 
 
@@ -126,4 +128,6 @@ class RegistrationUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Registration
         fields = registration_fields + ["cancelled", "deleted", "resubscribe"]
-        read_only_fields = [f for f in registration_fields if f != "auto_resubscribe"]
+        read_only_fields = [
+            f for f in registration_fields if f not in ["auto_resubscribe", "close_notification"]
+        ]

@@ -7,7 +7,7 @@ import phonenumbers  # library for parsing and formatting phone numbers.
 from dateutil.tz import gettz
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Case, F, Max, Q, Value, When
 from django.db.models.functions import Extract
@@ -16,7 +16,12 @@ from django.utils.timezone import make_aware
 
 from alert.alerts import Email, PushNotification, Text
 from courses.models import Course, Section, StatusUpdate, UserProfile, string_dict_to_html
-from courses.util import get_add_drop_period, get_course_and_section, get_current_semester
+from courses.util import (
+    does_object_pass_filter,
+    get_add_drop_period,
+    get_course_and_section,
+    get_current_semester,
+)
 from PennCourses.settings.base import TIME_ZONE
 
 
@@ -69,16 +74,17 @@ class Registration(models.Model):
     only if it hasn't sent one before, it isn't cancelled, and it isn't deleted.  If a
     registration would send an alert when the section it is watching opens, we call it
     "active".  This rule is encoded in the is_active property.  You can also filter
-    for active registrations by unpacking the static is_active_filter() method which returns a
+    for active registrations using the static is_active_filter() method which returns a
     dictionary that you can unpack into the kwargs of the filter method
     (you cannot filter on a property). A Registration will send a close notification
     when the section it is watching closes, if and only if it has already sent an open alert,
     the user has enabled close notifications for that section, the Registration hasn't sent a
-    close_notification before, is not cancelled, and it is not deleted.  If a registration would
-    send a close notification when the section it is watching closes, we call it "waiting for
-    close".  This rule is encoded in the is_waiting_for_close property.  You can also filter
-    for such registrations by unpacking (with single *) the static is_waiting_for_close_filter()
-    method which returns a tuple of Q filters (you cannot filter on a property).
+    close_notification before, and its head registration isn't cancelled or deleted.
+    If a registration would send a close notification when the section it is watching closes,
+    we call it "waiting for close".  This rule is encoded in the is_waiting_for_close property.
+    You can also filter for such registrations using the static is_waiting_for_close_filter()
+    method which returns a dictionary that you can unpack into the kwargs of the filter method
+    (you cannot filter on a property).
 
     After the PCA backend refactor in 2019C/2020A, all PCA Registrations have a user field
     pointing to the user's Penn Labs Accounts User object.  In other words, we implemented a
@@ -267,7 +273,7 @@ class Registration(models.Model):
     close_notification = models.BooleanField(
         default=False,
         help_text=dedent(
-            """Defaults to False.  Changes to True if the user opts-in to receive
+            """Defaults to false.  If set to true, the user will receive
         a close notification (an alert when the section closes after an
         alert was sent for it opening).
         """
@@ -317,7 +323,7 @@ class Registration(models.Model):
         "Registration",
         blank=True,
         null=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         related_name="resubscribed_to",
         help_text=dedent(
             """
@@ -332,13 +338,25 @@ class Registration(models.Model):
         """
         ),
     )
+    head_registration = models.ForeignKey(
+        "Registration",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        help_text=dedent(
+            """
+        The head of this registration's resubscribe chain, or null if this registration is
+        the head of its chain.
+        """
+        ),
+    )
 
     @staticmethod
     def is_active_filter():
         """
         Returns a dict of filters defining the behavior of the is_active property.
         Also used in database filtering of registrations (you cannot filter by a property value);
-        unpack the filters with two stars (NOT a single star like is_waiting_for_close_filter).
+        unpack the filters with two stars.
         Example:
             Registration.objects.filter(**Registration.is_active_filter())
         """
@@ -355,12 +373,7 @@ class Registration(models.Model):
         False otherwise. This is equivalent to
         [not(notification_sent or deleted or cancelled) and semester is current].
         """
-        for field, active_value in self.is_active_filter().items():
-            assert field != ""  # this should never fail
-            actual_value = getattr(self, field)
-            if actual_value != active_value:
-                return False
-        return True
+        return does_object_pass_filter(self, self.is_active_filter())
 
     @property
     def deactivated_at(self):
@@ -386,48 +399,21 @@ class Registration(models.Model):
     @staticmethod
     def is_waiting_for_close_filter():
         """
-        Returns a tuple of defining the behavior of the is_waiting_for_close property
+        Returns a dict of filters defining the behavior of the is_waiting_for_close property
         (defining whether the registration is waiting to send a close notification to the user
         once the section closes).
-        Used for database filtering of registrations (you cannot
-        filter by a property value); unpack the filters with a single star
-        (NOT a double star like is_active_filter).
+        Also used in database filtering of registrations (you cannot filter by a property value);
+        unpack the filters with two stars.
         Example:
-            Registration.objects.filter(*Registration.is_waiting_for_close_filter())
-
-        As is the case with any Q filters, you must unpack these filters positionally before any
-        kwarg filters. If you are unfamiliar with Q queries, see the following docs:
-        https://docs.djangoproject.com/en/3.1/topics/db/queries/#complex-lookups-with-q-objects
-
-        All of these conditions are straightforward except for the last. The last condition
-        effectively guarantees the next registration in this registration's resubscribe chain
-        (if it exists) hasn't been deleted or cancelled. If the user has auto-resubscribe on and
-        then cancels the next registration, we don't want the previous registration to send
-        a close notification. Based on the way registrations are shown to the user in PCA,
-        they would expect cancelling or deleting the head of a resubscribe chain to halt all
-        notifications, close or otherwise, from that chain; this condition guarantees that.
-        Note that the only way for a registration 2 away from this one would be canceled is if
-        an alert was sent for the next registration, meaning a close notification for this
-        registration must have already been sent so close_notification_sent=True, or otherwise
-        the user cancelled and resubscribed multiple times, which would mean the next registration
-        would be cancelled. In all cases, is_waiting_for_close would correctly be False based
-        on these filters.
+            Registration.objects.filter(**Registration.is_waiting_for_close_filter())
         """
-        return (
-            Q(notification_sent=True),
-            Q(close_notification=True),
-            Q(deleted=False),
-            Q(cancelled=False),
-            Q(close_notification_sent=False),
-            (
-                Q(resubscribed_to__isnull=True)
-                | (
-                    Q(resubscribed_to__isnull=False)  # SQL short-circuit logic is not guaranteed
-                    & Q(resubscribed_to__cancelled=False)
-                    & Q(resubscribed_to__deleted=False)
-                )
-            ),
-        )
+        return {
+            "notification_sent": True,
+            "close_notification": True,
+            "close_notification_sent": False,
+            "head_registration__deleted": False,
+            "head_registration__cancelled": False,
+        }
 
     @property
     def is_waiting_for_close(self):
@@ -435,13 +421,7 @@ class Registration(models.Model):
         True if the registration is waiting to send a close notification to the user
         once the section closes.  False otherwise.
         """
-
-        # WARNING: you should be frugal with your usage of this property, since it hits the DB
-        # each time it is called.
-
-        return Registration.objects.filter(
-            *Registration.is_waiting_for_close_filter(), id=self.id
-        ).exists()
+        return does_object_pass_filter(self, self.is_waiting_for_close_filter())
 
     @property
     def last_notification_sent_at(self):
@@ -498,6 +478,7 @@ class Registration(models.Model):
         the original_created_at field to new registrations created by a resubscribe, so the
         case in which the chain is traversed to find the proper value for original_created_at is
         only for redundancy.
+        It sets head_registration to the object being saved if the field is null.
         It finally calls the normal save method with args and kwargs.
         Asynchronously after the save completes successfully, if load_script is set to False
         and the registration's semester is the current semester,
@@ -531,11 +512,13 @@ class Registration(models.Model):
                 self.user.profile = user_data
                 self.user.save()
                 self.phone = None
+        if self.head_registration is None:
+            self.head_registration = self
         if self.original_created_at is None:
             if self.resubscribed_from is None:
                 self.original_created_at = self.created_at
             else:
-                self.original_created_at = self.get_original_registration_rec().created_at
+                self.original_created_at = self.get_original_registration_iter().created_at
         super().save()
         if update_registration_volume:
             is_now_active = self.is_active
@@ -609,7 +592,7 @@ class Registration(models.Model):
         be created.
         :return: Registration object for the resubscription
         """
-        most_recent_reg = self.get_most_current_rec()
+        most_recent_reg = self.get_most_current()
 
         if most_recent_reg.is_active:  # if the head of this resub chain is active
             return most_recent_reg  # don't create duplicate registrations for no reason.
@@ -625,120 +608,48 @@ class Registration(models.Model):
             original_created_at=self.original_created_at,
         )
         new_registration.save()
+        Registration.objects.filter(head_registration=most_recent_reg).update(
+            head_registration=new_registration
+        )
         return new_registration
 
-    def get_resubscribe_group_sql(self):
+    def get_resubscribe_group(self):
         """
-        This is an optimization that we can use if we need to but as of now it is unused.
-        ^ Remove this comment if you use it.
-        DO NOT add variable parameters or reference external variables improperly
-        (beware of SQL injection attacks)
-        https://docs.djangoproject.com/en/3.0/topics/db/sql/
-        :return: A QuerySet of all the registrations in this registration's resubscribe chain.
+        Return a QuerySet of all the registrations in this registration's resubscribe chain.
         """
-        if not isinstance(self.id, int):
-            raise ValueError("ID must be an int")
-        return Registration.objects.raw(
-            """
-            WITH RECURSIVE
-            cte_resubscribes_forward AS (
-                SELECT
-                    *
-                FROM
-                    alert_registration
-                WHERE id=%s
-                UNION ALL
-                SELECT
-                    e.*
-                FROM
-                    alert_registration e
-                    INNER JOIN cte_resubscribes_forward o
-                        ON o.id = e.resubscribed_from_id ),
-            cte_resubscribes_backward AS (
-                SELECT
-                    *
-                FROM
-                    alert_registration
-                WHERE id=%s
-                UNION ALL
-                SELECT
-                    e.*
-                FROM
-                    alert_registration e
-                    INNER JOIN cte_resubscribes_backward o
-                        ON o.resubscribed_from_id = e.id )
-            SELECT
-                *
-                FROM
-                    cte_resubscribes_forward
-            UNION
-            SELECT
-                *
-                FROM
-                    cte_resubscribes_backward;""",
-            (self.id, self.id),  # do not add variables here that could cause vulnerabilities
-            # id is an integer (checked above), and therefore cannot be used for SQL injection
-        )
+        return Registration.objects.filter(head_registration=self.head_registration)
 
-    def get_most_current_sql(self):
+    def get_most_current(self):
         """
-        This calls get_resubscribe_group_sql, which is an optimization that we can use if we need
-        to but as of now it is unused.
-        ^ Remove this comment if you use it.
-        :return: The head of the resubscribe chain (the most recent registration).
+        Returns the head of the resubscribe chain (the most recent registration).
         """
-        for r in self.get_resubscribe_group_sql():
-            if not hasattr(r, "resubscribed_to"):
-                return r
-        raise ObjectDoesNotExist(
-            "This means an invariant is violated in the database (a resubscribe group should "
-            + "always have an element with no resubscribed_to)"
-        )
+        return self.get_resubscribe_group().get(resubscribed_to__isnull=True)
 
-    def get_original_registration_sql(self):
+    def get_original_registration(self):
         """
-        This calls get_resubscribe_group_sql, which is an optimization that we can use if we need
-        to but as of now it is unused.
-        ^ Remove this comment if you use it.
-        :return: The tail of the resubscribe chain (the original registration).
+        Returns the tail of the resubscribe chain (the original registration).
         """
-        for r in self.get_resubscribe_group_sql():
-            if r.resubscribed_from is None:
-                return r
-        raise ObjectDoesNotExist(
-            "This means an invariant is violated in the database (a resubscribe group should "
-            + "always have an element with no resubscribed_from)"
-        )
+        return self.get_resubscribe_group().get(resubscribed_from__isnull=True)
 
-    def get_most_current_rec(self):
+    def get_most_current_iter(self):
         """
-        This method recursively gets the head of the resubscribe chain. It is much less efficient
-        than get_most_current_sql, but less prone to opening injection vulnerabilities as a
-        result of improper future modifications, so it is currently used. For tasks which require
-        higher efficiency, use get_most_current_sql. If you ever switch over to
-        using get_most_current_sql, be sure to change all the usages of this method and
-        modify the comments under all of these get registration methods.
-        :return: The head of the resubscribe chain (the most recent registration).
+        A recursive version of get_most_current that doesn't utilize
+        head_registration relations.
         """
-        if hasattr(self, "resubscribed_to"):
-            return self.resubscribed_to.get_most_current_rec()
-        else:
-            return self
+        most_current = self
+        while hasattr(most_current, "resubscribed_to"):
+            most_current = most_current.resubscribed_to
+        return most_current
 
-    def get_original_registration_rec(self):
+    def get_original_registration_iter(self):
         """
-        This method recursively gets the tail of the resubscribe chain. It is much less efficient
-        than get_original_registration_sql, but less prone to opening injection vulnerabilities as
-        a result of improper future modifications, so it is currently used. For tasks which
-        require higher efficiency, use get_original_registration_sql. If you ever switch over to
-        using get_original_registration_sql, be sure to change all the usages of this method and
-        modify the comments under all of these get registration methods.
-        :return: The tail of the resubscribe chain (the original registration).
+        A recursive version of get_original_registration that doesn't utilize
+        head_registration relations.
         """
-        if self.resubscribed_from is not None:
-            return self.resubscribed_from.get_original_registration_rec()
-        else:
-            return self
+        original = self
+        while original.resubscribed_from is not None:
+            original = original.resubscribed_from
+        return original
 
 
 def register_for_course(

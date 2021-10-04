@@ -459,3 +459,17 @@ def subquery_count_distinct(subquery, column):
         ),
         0,
     )
+
+
+def does_object_pass_filter(obj, filter):
+    """
+    Returns True iff the given obj satisfies the given filter dictionary.
+    """
+    for field, expected_value in filter.items():
+        assert field != ""
+        actual_value = getattr(obj, field.split("__")[0])
+        for component in field.split("__")[1:]:
+            actual_value = getattr(actual_value, component)
+        if actual_value != expected_value:
+            return False
+    return True
