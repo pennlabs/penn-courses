@@ -109,9 +109,9 @@ export class ReviewPage extends Component {
           } else {
             this.setState({ data }, () => {
               if (type === "instructor" && name)
-                apiLiveInstructor(
-                  name.replace(/[^A-Za-z0-9 ]/g, "")
-                ).then(liveData => this.setState({ liveData }));
+                apiLiveInstructor(name.replace(/[^A-Za-z0-9 ]/g, "")).then(
+                  liveData => this.setState({ liveData })
+                );
             });
           }
         })
@@ -308,8 +308,7 @@ export class ReviewPage extends Component {
               style={{ fontSize: "150px", color: "#aaa" }}
             />
             <h1 style={{ fontSize: "2em", marginTop: 15 }}>
-              Loading {code}
-              ...
+              Loading {type === "instructor" ? "" : code}...
             </h1>
           </div>
         )}
