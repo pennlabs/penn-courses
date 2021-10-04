@@ -91,17 +91,15 @@ export const DetailsBox = forwardRef(
       Header: getColumnName(info),
       accessor: info,
       show: showCol(info),
-      Cell: ({ value }) => {
-        return (
-          <center className={!value ? "empty" : ""}>
-            {!value
-              ? "N/A"
-              : isNaN(value) && value.slice(-1) === "%"
-              ? value
-              : value.toFixed(2)}
-          </center>
-        );
-      }
+      Cell: ({ value }) => (
+        <center className={!value ? "empty" : ""}>
+          {!value
+            ? "N/A"
+            : isNaN(value) && value.slice(-1) === "%"
+            ? value
+            : value.toFixed(2)}
+        </center>
+      )
     });
 
     useEffect(() => {
