@@ -133,6 +133,7 @@ def course_reviews(request, course_code):
         )
         .values()
     )
+
     instructors = aggregate_reviews(reviews, "instructor_id", name="instructor_name")
 
     course_qs = annotate_average_and_recent(
