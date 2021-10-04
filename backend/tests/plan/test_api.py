@@ -123,7 +123,9 @@ class CourseReviewAverageTestCase(TestCase):
         self.instructor = Instructor(name="Person1")
         self.instructor.save()
         self.rev1 = Review(
-            section=create_mock_data("CIS-120-003", "2005C")[1], instructor=self.instructor
+            section=create_mock_data("CIS-120-003", "2005C")[1],
+            instructor=self.instructor,
+            responses=100,
         )
         self.rev1.save()
         self.rev1.set_averages(
@@ -132,7 +134,9 @@ class CourseReviewAverageTestCase(TestCase):
         self.instructor2 = Instructor(name="Person2")
         self.instructor2.save()
         self.rev2 = Review(
-            section=create_mock_data("CIS-120-002", "2015A")[1], instructor=self.instructor2
+            section=create_mock_data("CIS-120-002", "2015A")[1],
+            instructor=self.instructor2,
+            responses=100,
         )
         self.rev2.instructor = self.instructor2
         self.rev2.save()
@@ -160,7 +164,7 @@ class CourseReviewAverageTestCase(TestCase):
     def test_section_no_duplicates(self):
         instructor3 = Instructor(name="person3")
         instructor3.save()
-        rev3 = Review(section=self.rev2.section, instructor=instructor3)
+        rev3 = Review(section=self.rev2.section, instructor=instructor3, responses=100,)
         rev3.save()
         rev3.set_averages(
             {"course_quality": 1, "instructor_quality": 1, "difficulty": 1,}

@@ -28,7 +28,7 @@ def create_mock_data_with_reviews(code, semester, number_of_instructors):
     for i in range(1, number_of_instructors + 1):
         instr, _ = Instructor.objects.get_or_create(name="Instructor" + str(i))
         section.instructors.add(instr)
-        review = Review(section=section, instructor=instr)
+        review = Review(section=section, instructor=instr, responses=100)
         review.save()
         review.set_averages(
             {

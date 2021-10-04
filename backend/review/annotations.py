@@ -85,7 +85,7 @@ def review_averages(
         **{
             **{
                 (prefix + field): Subquery(
-                    ReviewBit.objects.filter(field=field, **subfilters)
+                    ReviewBit.objects.filter(field=field, review__responses__gt=0, **subfilters)
                     .values("field")
                     .order_by()
                     .annotate(avg=Avg("average"))
@@ -97,7 +97,7 @@ def review_averages(
             **(
                 {
                     (prefix + "final_enrollment_percentage"): Subquery(
-                        ReviewBit.objects.filter(**subfilters)
+                        ReviewBit.objects.filter(review__responses__gt=0, **subfilters)
                         .values("review_id", "review__enrollment", "review__section__capacity")
                         .order_by()
                         .distinct()
@@ -160,12 +160,12 @@ def review_averages(
         queryset = queryset.annotate(
             **{
                 (prefix + "semester_calc"): Subquery(
-                    ReviewBit.objects.filter(**subfilters).values(
+                    ReviewBit.objects.filter(review__responses__gt=0, **subfilters).values(
                         "review__section__course__semester"
                     )[:1]
                 ),
                 (prefix + "semester_count"): Subquery(
-                    ReviewBit.objects.filter(**subfilters)
+                    ReviewBit.objects.filter(review__responses__gt=0, **subfilters)
                     .values("field")
                     .order_by()
                     .annotate(count=Count("review__section__course__semester"))
@@ -203,7 +203,7 @@ def annotate_with_matching_reviews(
     if fields is None:
         fields = ALL_FIELD_SLUGS
 
-    matching_reviews = Review.objects.filter(match_on)
+    matching_reviews = Review.objects.filter(match_on, responses__gt=0)
     filters = {"review_id__in": Subquery(matching_reviews.values("id"))}
     if most_recent:
         # Filter the queryset to include only rows from the most recent semester.
