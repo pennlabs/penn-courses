@@ -109,9 +109,9 @@ export class ReviewPage extends Component {
           } else {
             this.setState({ data }, () => {
               if (type === "instructor" && name)
-                apiLiveInstructor(name.replace(/[^A-Za-z0-9 ]/g, "")).then(
-                  liveData => this.setState({ liveData })
-                );
+                apiLiveInstructor(
+                  name.replace(/[^A-Za-z0-9 ]/g, "")
+                ).then(liveData => this.setState({ liveData }));
             });
           }
         })
