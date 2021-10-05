@@ -1711,6 +1711,14 @@ class AlertRegistrationTestCase(TestCase):
     def test_registrations_put_resubscribe(self):
         self.create_auto_resubscribe_group(put=True)
 
+    def test_put_invalid_id(self):
+        response = self.client.put(
+            reverse("registrations-detail", args=[100]),
+            json.dumps({"deleted": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(404, response.status_code)
+
     def delete_and_resub_helper(self, auto_resub, put, delete_before_sim_webhook):
         """
         This function tests the desired functionality that you cannot resubscribe to
@@ -2383,7 +2391,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(response.status_code, 406)
         self.assertEqual(1, Registration.objects.count())
 
-    def close_notification_cancel_helper(self, delete=False, multiple=False):
+    def close_notification_cancel_helper(self, delete=False):
         """
         Ensure that cancelling or deleting a registration also cancels a pending close notification
         """
