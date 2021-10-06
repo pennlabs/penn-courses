@@ -464,11 +464,18 @@ def subquery_count_distinct(subquery, column):
 def does_object_pass_filter(obj, filter):
     """
     Returns True iff the given obj satisfies the given filter dictionary.
+    Note that this only supports simple equality constraints (although it
+    can traverse a relation to a single related object specified with double
+    underscore notation). It does not support more complex filter conditions
+    such as __gt.
+    Example:
+        does_object_pass_filter(obj, {"key": "value", "parent__key": "value2"})
     """
     for field, expected_value in filter.items():
         assert field != ""
-        actual_value = getattr(obj, field.split("__")[0])
-        for component in field.split("__")[1:]:
+        components = field.split("__")
+        actual_value = getattr(obj, components[0])
+        for component in components[1:]:
             actual_value = getattr(actual_value, component)
         if actual_value != expected_value:
             return False
