@@ -25,6 +25,7 @@ import { openModal } from "../actions";
 import { preventMultipleTabs } from "../components/syncutils";
 import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
 import styled, { createGlobalStyle } from "styled-components";
+import { User } from "../types";
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -93,6 +94,7 @@ function Index() {
     const isExpanded = view === 1;
 
     const [showLoginModal, setShowLoginModal] = useState<boolean>(true);
+    const [user, setUser] = useState<User | null>(null);
     
 
     useEffect(() => {
@@ -140,6 +142,20 @@ function Index() {
             });
         }
     }, [store]);
+
+     // Separates showLoginModal from state so that the login modal doesn't show up on page load
+     const updateUser = (newUserVal: User | null) => {
+        if (!newUserVal) {
+            // the user has logged out; show the login modal
+            setShowLoginModal(true);
+        } else {
+            // the user has logged in; hide the login modal
+            setShowLoginModal(false);
+        }
+        setUser(newUserVal);
+    };
+
+    const logout = () => updateUser(null);
 
     const headPreamble = (
         <Head>
@@ -189,7 +205,7 @@ function Index() {
         <Provider store={store}>
             {initGA()}
             {headPreamble}
-            {showLoginModal && <LoginModal pathname={window.location.pathname} site="Penn Course Plan"/>}
+            {showLoginModal && <LoginModal pathname={typeof window !== "undefined" ? window.location.pathname : ""} siteName="Penn Course Plan"/>}
             <GlobalStyle />
             {innerWidth < 800 ? (
                 <>
@@ -200,6 +216,7 @@ function Index() {
                         mobileView={true}
                         storeLoaded={storeLoaded}
                         isExpanded={isExpanded}
+                        setShowLoginModal={setShowLoginModal}
                     />
                     <CustomTabs value={tab} centered>
                         <Tab
@@ -272,6 +289,7 @@ function Index() {
                         setTab={setTab}
                         mobileView={false}
                         isExpanded={isExpanded}
+                        setShowLoginModal={setShowLoginModal}
                     />
                     <div
                         className="App columns is-mobile main smooth-transition"

@@ -12,13 +12,13 @@ const LoginButtonContainer = styled.div`
 
 interface LoginModalProps {
     pathname: string;
-    site: String;
+    siteName: String;
 }
 
-const LoginModal = ({pathname, site}: LoginModalProps) => (
+const LoginModal = ({pathname, siteName}: LoginModalProps) => (
     <Modal title="Please log in!">
         <Center>
-            {site} now requires login. Please sign in with your
+            {siteName} now requires login. Please sign in with your
             Pennkey by clicking the button below.
         </Center>
         <br />
