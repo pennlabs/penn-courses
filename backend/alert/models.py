@@ -345,8 +345,8 @@ class Registration(models.Model):
         on_delete=models.CASCADE,
         help_text=dedent(
             """
-        The head of this registration's resubscribe chain, or null if this registration is
-        the head of its chain.
+        The head of this registration's resubscribe chain (pointing to
+        itself if this registration is the head of its chain).
         """
         ),
     )

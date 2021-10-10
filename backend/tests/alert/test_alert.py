@@ -2606,7 +2606,7 @@ class AlertRegistrationTestCase(TestCase):
             Registration.objects.get(id=ids["fifth_id"]).get_most_current_iter(),
         )
 
-    def get_original_registration(self):
+    def test_get_original_registration(self):
         ids = self.create_resubscribe_group()
         self.assertEqual(
             Registration.objects.get(id=ids["first_id"]),
@@ -2629,7 +2629,7 @@ class AlertRegistrationTestCase(TestCase):
             Registration.objects.get(id=ids["fifth_id"]).get_original_registration(),
         )
 
-    def get_original_registration_iter(self):
+    def test_get_original_registration_iter(self):
         ids = self.create_resubscribe_group()
         self.assertEqual(
             Registration.objects.get(id=ids["first_id"]),
