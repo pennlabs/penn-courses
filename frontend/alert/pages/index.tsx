@@ -133,8 +133,6 @@ function App() {
 
     const { options } = usePlatformOptions();
 
-    console.log("OPTIONS", options)
-
     const showRecruiting = options?.RECRUITING;
 
     useEffect(() => {
