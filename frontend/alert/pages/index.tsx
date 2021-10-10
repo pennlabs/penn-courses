@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import usePlatformOptions from "pcx-shared-components/src/data-hooks/usePlatformOptions";
 import styled from "styled-components";
 import ReactGA from "react-ga";
 import * as Sentry from "@sentry/browser";
@@ -122,7 +123,6 @@ const RecruitingBanner = styled.div`
 `;
 
 function App() {
-    const [showRecruiting, setShowRecruiting] = useState<boolean>(false);
     const [user, setUser] = useState<User | null>(null);
     const [page, setPage] = useState("home");
     const [messages, setMessages] = useState<
@@ -131,12 +131,13 @@ function App() {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [timeline, setTimeline] = useState<string | null>(null);
 
+    const { options } = usePlatformOptions();
+
+    const showRecruiting = options?.RECRUITING;
+
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
         ReactGA.pageview(window.location.pathname + window.location.search);
-        fetch("https://platform.pennlabs.org/options/")
-            .then((response) => response.json())
-            .then((options) => setShowRecruiting(options.RECRUITING));
     }, []);
 
     const MESSAGE_EXPIRATION_MILLIS = 8000;
