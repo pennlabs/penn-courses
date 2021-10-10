@@ -189,7 +189,7 @@ function Index() {
         <Provider store={store}>
             {initGA()}
             {headPreamble}
-            {showLoginModal && <LoginModal />}
+            {showLoginModal && <LoginModal pathname={window.location.pathname} site="Penn Course Plan"/>}
             <GlobalStyle />
             {innerWidth < 800 ? (
                 <>

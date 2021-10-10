@@ -179,7 +179,7 @@ function App() {
     return (
         <>
             <Container>
-                {showLoginModal && <LoginModal />}
+                {showLoginModal && <LoginModal pathname={window.location.pathname} site="Penn Course Alert"/>}
                 {showRecruiting && (
                     <RecruitingBanner>
                         <p>

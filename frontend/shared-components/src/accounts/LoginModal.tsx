@@ -10,15 +10,20 @@ const LoginButtonContainer = styled.div`
     justify-content: center;
 `;
 
-const LoginModal = () => (
+interface LoginModalProps {
+    pathname: string;
+    site: String;
+}
+
+const LoginModal = ({pathname, site}: LoginModalProps) => (
     <Modal title="Please log in!">
         <Center>
-            Penn Course Alert now requires login. Please sign in with your
+            {site} now requires login. Please sign in with your
             Pennkey by clicking the button below.
         </Center>
         <br />
         <LoginButtonContainer>
-            <LoginButton noMargin pathname={window.location.pathname} />
+            <LoginButton noMargin pathname={pathname}/>
         </LoginButtonContainer>
     </Modal>
 );
