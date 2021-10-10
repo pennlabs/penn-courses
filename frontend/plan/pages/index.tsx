@@ -143,20 +143,6 @@ function Index() {
         }
     }, [store]);
 
-     // Separates showLoginModal from state so that the login modal doesn't show up on page load
-     const updateUser = (newUserVal: User | null) => {
-        if (!newUserVal) {
-            // the user has logged out; show the login modal
-            setShowLoginModal(true);
-        } else {
-            // the user has logged in; hide the login modal
-            setShowLoginModal(false);
-        }
-        setUser(newUserVal);
-    };
-
-    const logout = () => updateUser(null);
-
     const headPreamble = (
         <Head>
             <meta charSet="utf-8" />
