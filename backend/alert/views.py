@@ -361,17 +361,22 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object().get_most_current_rec()
+        instance = self.get_object().get_most_current()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
     def update(self, request, pk=None):
+        if not Registration.objects.filter(id=pk).exists():
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         try:
             registration = self.get_queryset().get(id=pk)
         except Registration.DoesNotExist:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "You do not have access to the specified registration."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        registration = registration.get_most_current_rec()
+        registration = registration.get_most_current()
 
         if registration.section.semester != get_current_semester():
             return Response(
@@ -507,7 +512,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return Response({"detail": "no changes made"}, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
-        if self.get_queryset().filter(id=request.data.get("id")).exists():
+        if Registration.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
         return self.handle_registration(request)
 
