@@ -1,4 +1,5 @@
 from textwrap import dedent
+import numpy as np
 
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
@@ -13,6 +14,7 @@ from courses.models import (
     UserProfile,
 )
 
+from plan.management.commands.recommendcourses import cosine_similarity
 
 class MeetingSerializer(serializers.ModelSerializer):
     room = serializers.StringRelatedField(
@@ -195,8 +197,30 @@ class CourseListSerializer(serializers.ModelSerializer):
         dict(),
     )(read_only=True, help_text="The number of sections for this course.")
 
+    recommendation_score = type(
+        "SerializerDecimalMethodField",
+        (serializers.SerializerMethodField, serializers.DecimalField),
+        dict(),
+    )(
+        read_only=True, 
+        help_text=dedent(
+        """
+        The recommendation score for this course if the user is logged in, or null if the
+        the user is not logged in."""
+        ), max_digits = 4, decimal_places = 3)
+
     def get_num_sections(self, obj):
         return obj.sections.count()
+
+    def get_recommendation_score(self, obj):
+        user_vector = self.context.get('user_vector')
+        course_vector = self.context.get('curr_course_vectors_dict').get(obj.full_code)
+
+        if user_vector is None or course_vector is None:
+            return None
+        else:
+            cs = cosine_similarity(course_vector, user_vector)
+            return cs
 
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
@@ -223,6 +247,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
+            "recommendation_score"
         ]
         read_only_fields = fields
 

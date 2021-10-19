@@ -17,6 +17,10 @@ from courses.serializers import (
     StatusUpdateSerializer,
     UserSerializer,
 )
+from plan.management.commands.recommendcourses import (
+    retrieve_course_clusters,
+    vectorize_user,
+)
 from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
@@ -151,7 +155,6 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
         queryset = self.filter_by_semester(queryset)
         return queryset
 
-
 class CourseListSearch(CourseList):
     """
     This route allows you to list courses by certain search terms and/or filters.
@@ -164,6 +167,30 @@ class CourseListSearch(CourseList):
     these filters are listed below in the query parameters list (with description starting with
     "Filter").
     """
+
+    def get_serializer_context(self):
+        """
+        This method overrides the default `get_serializer_context` (from super class) 
+        in order to add the `user_vector` and `curr_course_vectors_dict` 
+        key/value pairs to the serializer context dictionary. If there is no authenticated user
+        (ie `self.request.user.is_authenticated` is `False`), the value associated with the `user_vector` key
+        is set to `None`. All other key/value pairs that would have been returned by the default
+        `get_serializer_context` (which is `super().get_serializer_context`) are in the dictionary
+        returned in this method. `user_vector` and `curr_course_vectors_dict` encode the vectors used
+        to calculate the recommendation score for a course for a user (see 
+        `backend\plan\management\commands\recommendcourses.py` for details on the vectors)
+        """
+        if self.request.user.is_authenticated:
+            _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
+            user_vector = vectorize_user(self.request.user, curr_course_vectors_dict, past_course_vectors_dict)
+        else:
+            curr_course_vectors_dict = None
+            past_course_vectors_dict = None
+            user_vector = None
+
+        context = super().get_serializer_context()
+        context.update({"user_vector" : user_vector, "curr_course_vectors_dict" : curr_course_vectors_dict})
+        return context
 
     schema = PcxAutoSchema(
         examples=examples.CourseListSearch_examples,

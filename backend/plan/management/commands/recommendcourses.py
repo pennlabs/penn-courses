@@ -94,6 +94,9 @@ def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict):
         list(curr_courses), list(past_courses), curr_course_vectors_dict, past_course_vectors_dict
     )
 
+def cosine_similarity (v1, v2):
+    norm_prod = np.linalg.norm(v1) * np.linalg.norm(v2)
+    return np.dot(v1, v2) / norm_prod if norm_prod > 0 else 0
 
 def best_recommendations(
     cluster,
@@ -107,8 +110,7 @@ def best_recommendations(
         if exclude is not None and course in exclude:
             continue
         course_vector = curr_course_vectors_dict[course]
-        norm_prod = np.linalg.norm(course_vector) * np.linalg.norm(user_vector)
-        similarity = np.dot(course_vector, user_vector) / norm_prod if norm_prod > 0 else 0
+        similarity = cosine_similarity(course_vector, user_vector)
         recs.append((course, similarity))
     rec_course_to_score = {course: score for course, score in recs}
     recs = [
