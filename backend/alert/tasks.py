@@ -11,9 +11,9 @@ from django.db import transaction
 from alert.models import PcaDemandDistributionEstimate, Registration
 from courses.models import Section, StatusUpdate
 from courses.util import (
-    get_or_create_add_drop_period,
     get_course_and_section,
     get_current_semester,
+    get_or_create_add_drop_period,
     update_course_from_record,
 )
 from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES

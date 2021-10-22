@@ -462,7 +462,7 @@ class Section(models.Model):
         registration period] that this section was open. If this section's registration
         period hasn't started yet, this property is null (None in Python).
         """
-        from courses.util import get_or_create_add_drop_period, get_current_semester
+        from courses.util import get_current_semester, get_or_create_add_drop_period
 
         # ^ imported here to avoid circular imports
 

@@ -504,7 +504,7 @@ def recompute_demand_distribution_estimates(
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
     Recomputes PCA demand distribution estimates, as well as the registration_volume
-    and percent_open fields for all sections in the given semester(s). Deduplicates 
+    and percent_open fields for all sections in the given semester(s). Deduplicates
     status updates saved to the database.
     """
     if not semesters_precomputed:

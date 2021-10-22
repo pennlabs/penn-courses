@@ -1,6 +1,7 @@
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
+
 from alert.management.commands.recomputestats import deduplicate_status_updates
 
 
