@@ -48,6 +48,27 @@ User = get_user_model()
 class CourseRecommendationsTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
+        """
+        Creates departments, courses, sections and schedules from `/tests/plan/course_recs_test_data/course_data_test.csv`
+        and `/tests/plan/course_recs_test_data/course_descriptions_test.csv`.
+
+        The contents of `/tests/plan/course_recs_test_data/course_data_test.csv` are 3 columns: a `person_id` (used when creating schedules)
+        a course `full_code` column (ie "PSCI-498") and semester column (ranging between 2016C and 2020A).
+        Courses are created with approximately the following specification:
+        - `department_id`: Corresponds to the department code embedded in the `code`
+        - `full_code` : corresponds to the course code column in `/tests/plan/course_recs_test_data/course_data_test.csv`
+        - `semester` : corresponds to the semester column in `/tests/plan/course_recs_test_data/course_data_test.csv`
+            Additionally, if the value of the semester column in `/tests/plan/course_recs_test_data/course_data_test.csv`
+            for a course is not "2020A" or "2017A" and the course `full_code` is not "HIST-650" another course entry is created
+            with `semester` equal to `TEST_SEMESTER` as defined at the top of this file (2021C at the time of writing.)
+        - `description` : corresponds to the entry in `/tests/plan/course_recs_test_data/course_descriptions_test.csv`
+
+        Sections corresponding to each created course are created with approximately this specification
+        - `code` : "001"
+        - `full_code` : the course's `full_code` + "001"
+
+        """
+
         course_data_path = (
             settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_data_test.csv"
         )

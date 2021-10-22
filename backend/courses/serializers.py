@@ -214,13 +214,12 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     def get_recommendation_score(self, obj):
         user_vector = self.context.get('user_vector')
-        course_vector = self.context.get('curr_course_vectors_dict').get(obj.full_code)
-
-        if user_vector is None or course_vector is None:
+        if user_vector is None:
             return None
         else:
-            cs = cosine_similarity(course_vector, user_vector)
-            return cs
+            course_vector = self.context.get('curr_course_vectors_dict').get(obj.full_code)
+            return cosine_similarity(course_vector, user_vector)
+
 
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
