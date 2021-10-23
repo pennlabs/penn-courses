@@ -211,7 +211,9 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         self.password = "top_secret"
         self.user = User.objects.create_user(username=self.username, password=self.password)
 
-    def test_recommendation_is_null_when_course_not_part_of_model(self):
+    def test_recommendation_is_null_when_course_not_part_of_model_even_when_logged_in(self):
+        self.client.login(username=self.username, password=self.password)
+
         self.course, self.section = create_mock_data("PSCI-437-001", TEST_SEMESTER)
         response = self.client.get(
             reverse("courses-search", args=["current"]), {"search": "PSCI-437", "type": "auto"}
