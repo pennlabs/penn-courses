@@ -19,7 +19,7 @@ Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
 ## Quick DB Setup
 
 To get going quickly with a local database loaded with lots of test data,
-you can download this [db.sqlite3](https://penn-labs.slack.com/files/UNUMGB11A/F02EYAVE5S6/db.sqlite3)
+you can download this [db.sqlite3](https://penn-labs.slack.com/files/UNUMGB11A/F02GKJ0MTDJ/db.sqlite3)
 file and put it in your `backend` directory. This file is only accessible to
 Penn Labs members (anyone else should sign up for a [Penn OpenData API key](https://esb.isc-seo.upenn.edu/8091/documentation#security)
 and follow the steps below). You can replace the existing db.sqlite file generated from step 4 in
