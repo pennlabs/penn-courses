@@ -222,7 +222,8 @@ class CourseListSerializer(serializers.ModelSerializer):
             the user is not logged in."""
         ),
         max_digits=4,
-        decimal_places=3)
+        decimal_places=3,
+    )
 
     def get_num_sections(self, obj):
         return obj.sections.count()
@@ -268,7 +269,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
-            "recommendation_score"
+            "recommendation_score",
         ]
         read_only_fields = fields
 

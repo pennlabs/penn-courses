@@ -312,8 +312,8 @@ def generate_course_clusters(courses_data, n_per_cluster=100, course_description
     (one for having taken that class now, and another for having taken it in the past)
     """
     course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict(
-        courses_data,
-        course_descriptions=course_descriptions)
+        courses_data, course_descriptions=course_descriptions
+    )
     _courses, _course_vectors = zip(*course_vectors_dict_curr.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = round(len(courses) / n_per_cluster)
@@ -347,9 +347,9 @@ def train_recommender(
     if course_data_path is not None:
         assert course_data_path.endswith(".csv"), "Local data path must be .csv"
     if course_descriptions_path is not None:
-        assert course_descriptions_path.endswith(".csv"), (
-            "Local course descriptions path must be .csv"
-        )
+        assert course_descriptions_path.endswith(
+            ".csv"
+        ), "Local course descriptions path must be .csv"
         assert course_data_path is not None, (
             "If course_description_path is provided then course_data_path should also"
             "be provided. Note that the courses should be ordered the same in"
@@ -393,9 +393,7 @@ def train_recommender(
         )
 
     if course_descriptions_path is not None:
-        course_descriptions_or_none = (
-            courses_data_from_csv(course_descriptions_path)
-        )
+        course_descriptions_or_none = courses_data_from_csv(course_descriptions_path)
     else:
         course_descriptions_or_none = None
 
@@ -405,8 +403,9 @@ def train_recommender(
             "the database will be queried to get descriptions downstream"
         )
 
-    course_clusters = generate_course_clusters(courses_data, n_per_cluster,
-                                               course_descriptions=course_descriptions_or_none)
+    course_clusters = generate_course_clusters(
+        courses_data, n_per_cluster, course_descriptions=course_descriptions_or_none
+    )
 
     if upload_to_s3:
         S3_resource.Object("penn.courses", "course-cluster-data.pkl").put(

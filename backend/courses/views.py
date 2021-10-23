@@ -196,9 +196,8 @@ class CourseListSearch(CourseList):
         if self.request is not None and self.request.user and self.request.user.is_authenticated:
             _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
             user_vector, _ = vectorize_user(
-                self.request.user,
-                curr_course_vectors_dict,
-                past_course_vectors_dict)
+                self.request.user, curr_course_vectors_dict, past_course_vectors_dict
+            )
         else:
             curr_course_vectors_dict = None
             past_course_vectors_dict = None
@@ -206,7 +205,8 @@ class CourseListSearch(CourseList):
 
         context = super().get_serializer_context()
         context.update(
-            {"user_vector": user_vector, "curr_course_vectors_dict": curr_course_vectors_dict})
+            {"user_vector": user_vector, "curr_course_vectors_dict": curr_course_vectors_dict}
+        )
         return context
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]

@@ -235,22 +235,22 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         self.client.login(username=self.username, password=self.password)
 
         curr_semester_schedule = Schedule.objects.create(
-            person=self.user,
-            name="curr_semester_schedule",
-            semester=TEST_SEMESTER)
+            person=self.user, name="curr_semester_schedule", semester=TEST_SEMESTER
+        )
         curr_semester_schedule.save()
         # NOTE: many of the sections in this schedule match up with the `semester`
         # used to create the schedule
         curr_semester_schedule.sections.add(
-            Course.objects.get(full_code="PSCI-498", semester="2019A").sections.get(code="001"))
+            Course.objects.get(full_code="PSCI-498", semester="2019A").sections.get(code="001")
+        )
 
         prev_semester_schedule = Schedule.objects.create(
-            person=self.user,
-            name="prev_semester_schedule",
-            semester="2018C")
+            person=self.user, name="prev_semester_schedule", semester="2018C"
+        )
         prev_semester_schedule.save()
         prev_semester_schedule.sections.add(
-            Course.objects.get(full_code="PSCI-181", semester="2019A").sections.get(code="001"))
+            Course.objects.get(full_code="PSCI-181", semester="2019A").sections.get(code="001")
+        )
 
         response = self.client.get(
             reverse("courses-search", args=["current"]), {"search": "PSCI", "type": "auto"}
