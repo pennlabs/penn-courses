@@ -17,12 +17,12 @@ from courses.serializers import (
     StatusUpdateSerializer,
     UserSerializer,
 )
+from courses.util import get_current_semester
+from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from plan.management.commands.recommendcourses import (
     retrieve_course_clusters,
     vectorize_user,
 )
-from courses.util import get_current_semester
-from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 
 SEMESTER_PARAM_DESCRIPTION = (
@@ -155,6 +155,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
         queryset = self.filter_by_semester(queryset)
         return queryset
 
+
 class CourseListSearch(CourseList):
     """
     This route allows you to list courses by certain search terms and/or filters.
@@ -188,23 +189,27 @@ class CourseListSearch(CourseList):
         in order to add the `user_vector` and `curr_course_vectors_dict`
         key/value pairs to the serializer context dictionary. If there is no authenticated user or
         (ie `self.request.user.is_authenticated` is `False`) or `self.request` is `None`,
-        the value associated with the `user_vector` and `curr_course_vectors_dict`key is set to `None`.
-        All other key/value pairs that would have been returned by the default
-        `get_serializer_context` (which is `super().get_serializer_context`) are in the dictionary
-        returned in this method. `user_vector` and `curr_course_vectors_dict` encode the vectors used
-        to calculate the recommendation score for a course for a user (see
+        the value associated with the `user_vector` and `curr_course_vectors_dict`key is set to
+        `None`. All other key/value pairs that would have been returned by the default
+        `get_serializer_context` (which is `super().get_serializer_context`) are in the
+        dictionary returned in this method. `user_vector` and `curr_course_vectors_dict` encode the
+        vectors used to calculate the recommendation score for a course for a user (see
         `backend\plan\management\commands\recommendcourses.py` for details on the vectors)
         """
         if self.request is not None and self.request.user and self.request.user.is_authenticated:
             _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
-            user_vector, _ = vectorize_user(self.request.user, curr_course_vectors_dict, past_course_vectors_dict)
+            user_vector, _ = vectorize_user(
+                self.request.user,
+                curr_course_vectors_dict,
+                past_course_vectors_dict)
         else:
             curr_course_vectors_dict = None
             past_course_vectors_dict = None
             user_vector = None
 
         context = super().get_serializer_context()
-        context.update({"user_vector" : user_vector, "curr_course_vectors_dict" : curr_course_vectors_dict})
+        context.update(
+            {"user_vector": user_vector, "curr_course_vectors_dict": curr_course_vectors_dict})
         return context
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]

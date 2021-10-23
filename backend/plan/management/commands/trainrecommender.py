@@ -61,7 +61,7 @@ def courses_data_from_s3():
         yield tuple(row)
 
 
-def get_description(course, course_descriptions_path = None):
+def get_description(course):
     course_obj = lookup_course(course)
     if course_obj is None or not course_obj.description:
         return ""
@@ -306,13 +306,14 @@ def normalize_class_name(class_name):
     return class_name
 
 
-def generate_course_clusters(courses_data, n_per_cluster=100, course_descriptions = None):
+def generate_course_clusters(courses_data, n_per_cluster=100, course_descriptions=None):
     """
     Clusters courses and also returns a vector representation of each class
     (one for having taken that class now, and another for having taken it in the past)
     """
-    course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict(courses_data,
-                                                                                      course_descriptions=course_descriptions)
+    course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict(
+        courses_data,
+        course_descriptions=course_descriptions)
     _courses, _course_vectors = zip(*course_vectors_dict_curr.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = round(len(courses) / n_per_cluster)
@@ -346,10 +347,14 @@ def train_recommender(
     if course_data_path is not None:
         assert course_data_path.endswith(".csv"), "Local data path must be .csv"
     if course_descriptions_path is not None:
-        assert course_descriptions_path.endswith(".csv"), "Local course descriptions path must be .csv"
-        assert course_data_path is not None, "If course_description_path is provided then course_data_path should also" \
-                                             "be provided. Note that the courses should be ordered the same in" \
-                                             "both csvs."
+        assert course_descriptions_path.endswith(".csv"), (
+            "Local course descriptions path must be .csv"
+        )
+        assert course_data_path is not None, (
+            "If course_description_path is provided then course_data_path should also"
+            "be provided. Note that the courses should be ordered the same in"
+            "both csvs."
+        )
     if output_path is None:
         assert upload_to_s3, "You must either specify an output path, or upload to S3"
     if upload_to_s3:
@@ -400,7 +405,8 @@ def train_recommender(
             "the database will be queried to get descriptions downstream"
         )
 
-    course_clusters = generate_course_clusters(courses_data, n_per_cluster, course_descriptions = course_descriptions_or_none)
+    course_clusters = generate_course_clusters(courses_data, n_per_cluster,
+                                               course_descriptions=course_descriptions_or_none)
 
     if upload_to_s3:
         S3_resource.Object("penn.courses", "course-cluster-data.pkl").put(
@@ -460,7 +466,8 @@ class Command(BaseCommand):
                 "\n the course column should "
                 "contain the course code (in the format DEPT-XXX, e.g. CIS-120)"
                 "as provided in the course_data_path csv, and"
-                "the description column should contain the full text of the description corresponding to the course."
+                "the description column should contain the full text of the description"
+                "corresponding to the course."
             ),
         )
         parser.add_argument(

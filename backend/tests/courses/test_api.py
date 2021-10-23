@@ -1,6 +1,5 @@
 import json
 import os
-import decimal
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -11,13 +10,13 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Department, Instructor, Requirement, Course, Section
-from plan.models import Schedule
+from courses.models import Department, Instructor, Requirement, Course
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course, invalidate_current_semester_cache
+from plan.models import Schedule
 from tests.courses.util import create_mock_data, create_mock_data_with_reviews
 from tests.plan.test_course_recs import CourseRecommendationsTestCase
-from tests.plan import test_course_recs
+
 
 TEST_SEMESTER = "2019A"
 
@@ -233,16 +232,25 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
             self.assertEqual(course["recommendation_score"], None)
 
     def test_recommendation_is_number_when_user_is_logged_in(self):
-        self.client.login(username = self.username, password = self.password)
+        self.client.login(username=self.username, password=self.password)
 
-        curr_semester_schedule = Schedule.objects.create(person = self.user, name = 'curr_semester_schedule', semester = TEST_SEMESTER)
+        curr_semester_schedule = Schedule.objects.create(
+            person=self.user,
+            name="curr_semester_schedule",
+            semester=TEST_SEMESTER)
         curr_semester_schedule.save()
-        # NOTE: many of the sections in this schedule match up with the `semester` used to create the schedule
-        curr_semester_schedule.sections.add(Course.objects.get(full_code = 'PSCI-498', semester = '2019A').sections.get(code = "001"))
+        # NOTE: many of the sections in this schedule match up with the `semester`
+        # used to create the schedule
+        curr_semester_schedule.sections.add(
+            Course.objects.get(full_code="PSCI-498", semester="2019A").sections.get(code="001"))
 
-        prev_semester_schedule = Schedule.objects.create(person = self.user, name = 'prev_semester_schedule', semester = "2018C")
+        prev_semester_schedule = Schedule.objects.create(
+            person=self.user,
+            name="prev_semester_schedule",
+            semester="2018C")
         prev_semester_schedule.save()
-        prev_semester_schedule.sections.add(Course.objects.get(full_code = 'PSCI-181', semester = "2019A").sections.get(code = "001"))
+        prev_semester_schedule.sections.add(
+            Course.objects.get(full_code="PSCI-181", semester="2019A").sections.get(code="001"))
 
         response = self.client.get(
             reverse("courses-search", args=["current"]), {"search": "PSCI", "type": "auto"}
@@ -250,7 +258,8 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
 
         self.assertEqual(200, response.status_code)
         for course in response.data:
-            self.assertIsInstance(course['recommendation_score'], float)
+            self.assertIsInstance(course["recommendation_score"], float)
+
 
 class SectionSearchTestCase(TestCase):
     def setUp(self):
