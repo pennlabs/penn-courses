@@ -186,9 +186,10 @@ class CourseListSearch(CourseList):
         """
         This method overrides the default `get_serializer_context` (from super class)
         in order to add the `user_vector` and `curr_course_vectors_dict`
-        key/value pairs to the serializer context dictionary. If there is no authenticated user
-        (ie `self.request.user.is_authenticated` is `False`), the value associated with the `user_vector` key
-        is set to `None`. All other key/value pairs that would have been returned by the default
+        key/value pairs to the serializer context dictionary. If there is no authenticated user or
+        (ie `self.request.user.is_authenticated` is `False`) or `self.request` is `None`,
+        the value associated with the `user_vector` and `curr_course_vectors_dict`key is set to `None`.
+        All other key/value pairs that would have been returned by the default
         `get_serializer_context` (which is `super().get_serializer_context`) are in the dictionary
         returned in this method. `user_vector` and `curr_course_vectors_dict` encode the vectors used
         to calculate the recommendation score for a course for a user (see
