@@ -194,7 +194,7 @@ class CourseListSearch(CourseList):
         to calculate the recommendation score for a course for a user (see
         `backend\plan\management\commands\recommendcourses.py` for details on the vectors)
         """
-        if self.request.user and self.request.user.is_authenticated:
+        if self.request is not None and self.request.user and self.request.user.is_authenticated:
             _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
             user_vector, _ = vectorize_user(self.request.user, curr_course_vectors_dict, past_course_vectors_dict)
         else:
