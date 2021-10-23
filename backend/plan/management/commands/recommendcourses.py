@@ -160,7 +160,9 @@ def retrieve_course_clusters():
             print("TRAINING DEVELOPMENT MODEL... PLEASE WAIT")
             dev_course_clusters = train_recommender(
                 course_data_path=settings.BASE_DIR
-                + "/tests/plan/course_recs_test_data/course_data_test.csv",
+                                 + "/tests/plan/course_recs_test_data/course_data_test.csv",
+                course_descriptions_path=settings.BASE_DIR
+                                         + "/tests/plan/course_recs_test_data/course_descriptions_test.csv",
                 output_path=os.devnull,
             )
             print("Done training development model.")

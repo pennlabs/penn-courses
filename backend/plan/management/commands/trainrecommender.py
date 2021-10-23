@@ -61,15 +61,14 @@ def courses_data_from_s3():
         yield tuple(row)
 
 
-def get_description(course):
+def get_description(course, course_descriptions_path = None):
     course_obj = lookup_course(course)
     if course_obj is None or not course_obj.description:
         return ""
     return course_obj.description
 
 
-def vectorize_courses_by_description(courses):
-    descriptions = [get_description(course) for course in courses]
+def vectorize_courses_by_description(descriptions):
     vectorizer = TfidfVectorizer()
     has_nonempty_descriptions = (
         sum(1 for description in descriptions if description and len(description) > 0) > 0
@@ -230,7 +229,7 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
     return list(unsequenced_courses_by_user.values())
 
 
-def generate_course_vectors_dict(courses_data, use_descriptions=True):
+def generate_course_vectors_dict(courses_data, use_descriptions=True, course_descriptions=None):
     """
     Generates a dict associating courses to vectors for those courses,
     as well as courses to vector representations
@@ -242,11 +241,17 @@ def generate_course_vectors_dict(courses_data, use_descriptions=True):
     copresence_vectors_by_course = vectorize_by_copresence(grouped_courses)
     copresence_vectors_by_course_past = vectorize_by_copresence(grouped_courses, as_past_class=True)
     courses_by_user = get_unsequenced_courses_by_user(grouped_courses)
-
     courses, courses_vectorized_by_schedule_presence = zip(
         *vectorize_courses_by_schedule_presence(courses_by_user).items()
     )
-    courses_vectorized_by_description = vectorize_courses_by_description(courses)
+
+    if course_descriptions is None:
+        # Note that if the description is not found in `get_description, an empty string is returned
+        descriptions = [get_description(course) for course in courses]
+    else:
+        course_descriptions_dict = dict(course_descriptions)
+        descriptions = [course_descriptions_dict[course] for course in courses]
+    courses_vectorized_by_description = vectorize_courses_by_description(descriptions)
     copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
     copresence_vectors_past = [copresence_vectors_by_course_past[course] for course in courses]
     copresence_vectors = normalize(copresence_vectors)
@@ -301,12 +306,13 @@ def normalize_class_name(class_name):
     return class_name
 
 
-def generate_course_clusters(courses_data, n_per_cluster=100):
+def generate_course_clusters(courses_data, n_per_cluster=100, course_descriptions = None):
     """
     Clusters courses and also returns a vector representation of each class
     (one for having taken that class now, and another for having taken it in the past)
     """
-    course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict(courses_data)
+    course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict(courses_data,
+                                                                                      course_descriptions=course_descriptions)
     _courses, _course_vectors = zip(*course_vectors_dict_curr.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = round(len(courses) / n_per_cluster)
@@ -325,6 +331,7 @@ def generate_course_clusters(courses_data, n_per_cluster=100):
 
 def train_recommender(
     course_data_path=None,
+    course_descriptions_path=None,
     train_from_s3=False,
     output_path=None,
     upload_to_s3=False,
@@ -338,6 +345,11 @@ def train_recommender(
         ), "If you are training on data from S3, there's no need to supply a local data path"
     if course_data_path is not None:
         assert course_data_path.endswith(".csv"), "Local data path must be .csv"
+    if course_descriptions_path is not None:
+        assert course_descriptions_path.endswith(".csv"), "Local course descriptions path must be .csv"
+        assert course_data_path is not None, "If course_description_path is provided then course_data_path should also" \
+                                             "be provided. Note that the courses should be ordered the same in" \
+                                             "both csvs."
     if output_path is None:
         assert upload_to_s3, "You must either specify an output path, or upload to S3"
     if upload_to_s3:
@@ -374,7 +386,21 @@ def train_recommender(
             if course_data_path is not None
             else courses_data_from_db()
         )
-    course_clusters = generate_course_clusters(courses_data, n_per_cluster)
+
+    if course_descriptions_path is not None:
+        course_descriptions_or_none = (
+            courses_data_from_csv(course_descriptions_path)
+        )
+    else:
+        course_descriptions_or_none = None
+
+    if course_descriptions_path is None and verbose:
+        print(
+            "A course_description_path has not been supplied."
+            "the database will be queried to get descriptions downstream"
+        )
+
+    course_clusters = generate_course_clusters(courses_data, n_per_cluster, course_descriptions = course_descriptions_or_none)
 
     if upload_to_s3:
         S3_resource.Object("penn.courses", "course-cluster-data.pkl").put(
@@ -418,6 +444,23 @@ class Command(BaseCommand):
                 "contain the course code (in the format DEPT-XXX, e.g. CIS-120), and "
                 "the semester column should contain  the semester in which the course was taken "
                 "by that user."
+            ),
+        )
+        parser.add_argument(
+            "--course_descriptions_path",
+            type=str,
+            default=None,
+            help=(
+                "The local path to the course description data csv.\n"
+                "If this argument is included, the course_data_path should be includedc"
+                "If this argument is omitted, the model will be trained on description"
+                "data from the db (this only makes sense in prod).\n"
+                "The csv pointed to by this path should have 2 columns:\n"
+                "course, description"
+                "\n the course column should "
+                "contain the course code (in the format DEPT-XXX, e.g. CIS-120)"
+                "as provided in the course_data_path csv, and"
+                "the description column should contain the full text of the description corresponding to the course."
             ),
         )
         parser.add_argument(
