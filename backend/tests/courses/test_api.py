@@ -10,7 +10,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Department, Instructor, Requirement, Course
+from courses.models import Course, Department, Instructor, Requirement
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course, invalidate_current_semester_cache
 from plan.models import Schedule

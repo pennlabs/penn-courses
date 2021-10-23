@@ -165,8 +165,8 @@ def retrieve_course_clusters():
                     settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_data_test.csv"
                 ),
                 course_descriptions_path=(
-                    settings.BASE_DIR +
-                    "/tests/plan/course_recs_test_data/course_descriptions_test.csv"
+                    settings.BASE_DIR
+                    + "/tests/plan/course_recs_test_data/course_descriptions_test.csv"
                 ),
                 output_path=os.devnull,
             )

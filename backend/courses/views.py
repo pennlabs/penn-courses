@@ -19,10 +19,7 @@ from courses.serializers import (
 )
 from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
-from plan.management.commands.recommendcourses import (
-    retrieve_course_clusters,
-    vectorize_user,
-)
+from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
 
 SEMESTER_PARAM_DESCRIPTION = (
@@ -194,7 +191,7 @@ class CourseListSearch(CourseList):
         `get_serializer_context` (which is `super().get_serializer_context`) are in the
         dictionary returned in this method. `user_vector` and `curr_course_vectors_dict` encode the
         vectors used to calculate the recommendation score for a course for a user (see
-        `backend\plan\management\commands\recommendcourses.py` for details on the vectors)
+        `backend/plan/management/commands/recommendcourses.py` for details on the vectors)
         """
         if self.request is not None and self.request.user and self.request.user.is_authenticated:
             _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
