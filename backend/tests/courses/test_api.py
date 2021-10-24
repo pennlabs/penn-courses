@@ -1,5 +1,6 @@
 import json
 import os
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -14,6 +15,7 @@ from courses.models import Course, Department, Instructor, Requirement
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course, invalidate_current_semester_cache
 from plan.models import Schedule
+from tests import production_CourseListSearch_get_serializer_context
 from tests.courses.util import create_mock_data, create_mock_data_with_reviews
 from tests.plan.test_course_recs import CourseRecommendationsTestCase
 
@@ -201,14 +203,17 @@ class CourseSearchTestCase(TestCase):
 
 
 class CourseSearchRecommendationScoreTestCase(TestCase):
-    def setUp(self):
-        set_semester()
+    @classmethod
+    def setUpTestData(cls):
         # Set up test data according to CourseRecommendationTestCase
         CourseRecommendationsTestCase.setUpTestData()
-        self.client = APIClient()
+
+    def setUp(self):
+        set_semester()
         self.username = "jacob"
         self.password = "top_secret"
         self.user = User.objects.create_user(username=self.username, password=self.password)
+        self.client = APIClient()
 
     def test_recommendation_is_null_when_course_not_part_of_model_even_when_logged_in(self):
         self.client.login(username=self.username, password=self.password)
@@ -231,6 +236,10 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         for course in response.data:
             self.assertEqual(course["recommendation_score"], None)
 
+    @patch(
+        "courses.views.CourseListSearch.get_serializer_context",
+        new=production_CourseListSearch_get_serializer_context,
+    )
     def test_recommendation_is_number_when_user_is_logged_in(self):
         self.client.login(username=self.username, password=self.password)
 
