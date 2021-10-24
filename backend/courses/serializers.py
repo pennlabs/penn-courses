@@ -232,10 +232,13 @@ class CourseListSerializer(serializers.ModelSerializer):
         user_vector = self.context.get("user_vector")
         curr_course_vectors_dict = self.context.get("curr_course_vectors_dict")
 
-        if user_vector is None and curr_course_vectors_dict is None:
+        if user_vector is None or curr_course_vectors_dict is None:
+            # NOTE: there should be no case in which user_vector is None
+            # but curr_course_vectors_dict is not None. However, for
+            # stability in production, recommendation_score is None when
+            # either is None
             return None
 
-        assert type(curr_course_vectors_dict) == dict
         course_vector = curr_course_vectors_dict.get(obj.full_code)
         if course_vector is None:
             # Fires when the curr_course_vectors_dict is defined (ie, the user is authenticated)
