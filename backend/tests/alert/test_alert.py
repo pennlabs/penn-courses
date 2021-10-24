@@ -767,6 +767,22 @@ class WebhookViewTestCase(TestCase):
         u = StatusUpdate.objects.get()
         self.assertFalse(u.alert_sent)
 
+    def test_not_current_semester(self, mock_alert):
+        self.body["term"] = "3021C"
+        res = self.client.post(
+            reverse("webhook", urlconf="alert.urls"),
+            data=json.dumps(self.body),
+            content_type="application/json",
+            **self.headers,
+        )
+
+        self.assertEqual(200, res.status_code)
+        self.assertFalse("sent" in json.loads(res.content)["message"])
+        self.assertFalse(mock_alert.called)
+        self.assertEqual(1, StatusUpdate.objects.count())
+        u = StatusUpdate.objects.get()
+        self.assertFalse(u.alert_sent)
+
     def test_bad_format(self, mock_alert):
         self.body = {"hello": "world"}
         res = self.client.post(
