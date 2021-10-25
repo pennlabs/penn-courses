@@ -75,7 +75,11 @@ def extra_metrics_section_filters_pcr(current_semester=None):
         extra_metrics_section_filters
         & Q(course__semester__lt=current_semester)  # Filter our sections from the current semester
         & (
-            Q(id__in=Subquery(Review.objects.all().values_list("section__id", flat=True)))
+            Q(
+                id__in=Subquery(
+                    Review.objects.filter(responses__gt=0).values_list("section__id", flat=True)
+                )
+            )
         )  # Filter out sections that do not have review data
     )
 
@@ -115,7 +119,7 @@ def course_reviews(request, course_code):
 
     reviews = (
         review_averages(
-            Review.objects.filter(section__course__full_code=course_code),
+            Review.objects.filter(section__course__full_code=course_code, responses__gt=0),
             {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
@@ -148,7 +152,7 @@ def course_reviews(request, course_code):
             "description": course["description"],
             "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
             "num_sections": Section.objects.filter(
-                course__full_code=course_code, review__isnull=False
+                course__full_code=course_code, review__isnull=False, review__responses__gt=0
             )
             .values("full_code", "course__semester")
             .distinct()
@@ -157,6 +161,7 @@ def course_reviews(request, course_code):
                 course__full_code=course_code,
                 course__semester=course["recent_semester_calc"],
                 review__isnull=False,
+                review__responses__gt=0,
             )
             .values("full_code", "course__semester")
             .distinct()
@@ -330,9 +335,14 @@ def instructor_reviews(request, instructor_id):
         {
             "name": instructor.name,
             "num_sections_recent": Section.objects.filter(
-                instructors=instructor, course__semester=inst["recent_semester_calc"]
+                instructors=instructor,
+                course__semester=inst["recent_semester_calc"],
+                review__isnull=False,
+                review__responses__gt=0,
             ).count(),
-            "num_sections": Section.objects.filter(instructors=instructor).count(),
+            "num_sections": Section.objects.filter(
+                instructors=instructor, review__isnull=False, review__responses__gt=0,
+            ).count(),
             "average_reviews": make_subdict("average_", inst),
             "recent_reviews": make_subdict("recent_", inst),
             "num_semesters": inst["average_semester_count"],
@@ -383,7 +393,7 @@ def department_reviews(request, department_code):
     department = get_object_or_404(Department, code=department_code)
     reviews = (
         review_averages(
-            Review.objects.filter(section__course__department=department),
+            Review.objects.filter(section__course__department=department, responses__gt=0),
             {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
@@ -433,7 +443,9 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     """
     instructor = get_object_or_404(Instructor, id=instructor_id)
     reviews = review_averages(
-        Review.objects.filter(section__course__full_code=course_code, instructor=instructor),
+        Review.objects.filter(
+            section__course__full_code=course_code, instructor=instructor, responses__gt=0
+        ),
         {"review_id": OuterRef("id")},
         fields=ALL_FIELD_SLUGS,
         prefix="bit_",

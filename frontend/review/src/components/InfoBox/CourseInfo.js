@@ -125,6 +125,7 @@ const TagsWhenOffered = ({
   );
   const seenNewInstructorIds = new Set();
   const newInstructors = sections
+    .filter(section => section.activity !== "REC")
     .flatMap(({ instructors }) => instructors)
     .filter(({ id }) => {
       if (oldInstructorIds.has(id) || seenNewInstructorIds.has(id)) {

@@ -61,14 +61,27 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         read_only=True,
         help_text="A list of the names of the instructors teaching this section.",
     )
+    course_code = serializers.SerializerMethodField(
+        read_only=True,
+        help_text=dedent(
+            """
+            The full code of the course this section belongs to, e.g. `CIS-120` for CIS-120-001.
+            """
+        ),
+    )
     course_title = serializers.SerializerMethodField(
         read_only=True,
         help_text=dedent(
             """
-            The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.
+            The title of the course this section belongs to, e.g.
+            'Programming Languages and Techniques I' for CIS-120-001.
             """
         ),
     )
+
+    @staticmethod
+    def get_course_code(obj):
+        return obj.course.full_code
 
     @staticmethod
     def get_course_title(obj):
@@ -82,6 +95,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             "activity",
             "meeting_times",
             "instructors",
+            "course_code",
             "course_title",
             "semester",
         ]
