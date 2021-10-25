@@ -11,7 +11,7 @@ from django.utils.timezone import make_aware
 
 from alert.models import AddDropPeriod, validate_add_drop_semester
 from courses.models import Course
-from courses.util import get_add_drop_period, get_current_semester
+from courses.util import get_add_drop_period, get_current_semester, get_or_create_add_drop_period
 from PennCourses.settings.base import TIME_ZONE
 
 
@@ -144,7 +144,8 @@ def load_add_drop_dates(verbose=False):
                 datetime.strptime(f"{e_year}-{e_month}-{e_day} 11:59", "%Y-%m-%d %H:%M"),
                 timezone=tz,
             )
-        adp = AddDropPeriod(semester=semester, start=start_date, end=end_date)
+        adp = get_or_create_add_drop_period(semester)
+        adp.start, adp.end = start_date, end_date
         adp.save()
     if verbose:
         print("Done!")

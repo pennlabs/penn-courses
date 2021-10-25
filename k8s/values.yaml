@@ -7,7 +7,8 @@ applications:
   - name: celery
     image: pennlabs/penn-courses-backend
     secret: penn-courses
-    cmd: ["celery", "worker", "-A", "PennCourses", "-Q", "alerts,celery", "-linfo"]
+    cmd:
+      ["celery", "worker", "-A", "PennCourses", "-Q", "alerts,celery", "-linfo"]
     extraEnv:
       - name: DJANGO_SETTINGS_MODULE
         value: PennCourses.settings.production
@@ -21,7 +22,7 @@ applications:
           paths: ["/api", "/admin", "/accounts", "/assets"]
         - host: penncoursealert.com
           paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"]
-        - host: review.penncourses.org
+        - host: penncoursereview.com
           paths: ["/api", "/admin", "/accounts", "/assets"]
       annotations:
         ingress.kubernetes.io/content-security-policy: frame-ancestors 'none';
@@ -56,8 +57,8 @@ applications:
     image: pennlabs/pcr-frontend
     ingress:
       hosts:
-      - host: review.penncourses.org
-        paths: ["/"]
+        - host: penncoursereview.com
+          paths: ["/"]
 
 cronjobs:
   - name: load-courses
