@@ -35,7 +35,6 @@ const DayTimeFilterContainer = styled.div`
     padding-top: 0.2rem;
     padding-left: 0.8rem;
     padding-right: 0.8rem;
-    min-width: 27rem;
     display: flex;
 
     p {
@@ -78,15 +77,15 @@ const DayColumn = styled.div`
 
     @media screen and (min-width: 769px) {
         flex: none;
-        width: 25%;
+        width: 20%;
     }
 `;
 
 const RangeFilterContainer = styled.div`
-    // margin: -0.75rem;
     justify-content: center;
     flex-wrap: wrap;
     height: 100%;
+    width: 100%;
 
     padding: 0.2rem 0.8rem 20px;
 
@@ -116,7 +115,6 @@ const StyledRangeWrapper = styled.div`
 
 const intToTime = (t: number) => {
     let hour = Math.floor(t % 12);
-    // console.log(t);
     const min = Math.round((t % 1) * 60);
     let meridian;
     if (t === 24) {
@@ -128,7 +126,6 @@ const intToTime = (t: number) => {
         hour = 12;
     }
     const minString = min > 9 ? min : `0${min}`;
-    // console.log(t + "   " + minString);
     if (min === 0) {
         return `${hour} ${meridian}`;
     }
@@ -159,7 +156,6 @@ export function DayTimeFilter<
             [rangeProperty]: values,
         });
     };
-    console.log(filterData[rangeProperty]);
     return (
         <DayTimeFilterContainer>
             <DayColumn>
@@ -214,34 +210,30 @@ export function DayTimeFilter<
                             min={minRange}
                             max={maxRange}
                             value={filterData[rangeProperty]}
+                            // TODO: find long-term fix for rc-slider
+                            // rc-slider's "reverse" prop does not work well
+                            // due to a visual bug (package no longer maintained)
+                            // Accounting for error by reversing in place by subtracting from 24
+                            // And fixing it in `actions/index.js`
                             marks={{
-                                0: {
-                                    style: {
-                                        marginTop: "10px",
-                                        width: "60px",
-                                    },
-                                    label: intToTime(
-                                        filterData[rangeProperty][0]
-                                    ),
-                                },
-                                24: {
-                                    style: { width: "60px" },
-                                    label:
-                                        intToTime(
-                                            filterData[rangeProperty][1]
-                                        ) +
-                                        (intToTime(
-                                            filterData[rangeProperty][1]
-                                        ) === "12 AM"
-                                            ? " (next day)"
-                                            : ""),
-                                },
+                                0:
+                                    intToTime(
+                                        24 - filterData[rangeProperty][0]
+                                    ) +
+                                    (intToTime(
+                                        24 - filterData[rangeProperty][0]
+                                    ) === "12 AM"
+                                        ? " (next day)"
+                                        : ""),
+                                24: intToTime(
+                                    24 - filterData[rangeProperty][1]
+                                ),
                             }}
                             step={step}
                             vertical={true}
-                            // reverse={true}
                             allowCross={false}
                             onChange={onSliderChange}
+                            style={{ width: "100%" }}
                         />
                     </StyledRangeWrapper>
                 </RangeFilterContainer>

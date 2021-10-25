@@ -253,8 +253,8 @@ function buildCourseSearchUrl(filterData) {
             const filterRange = filterData[filterFields[i]];
             if (filterFields[i] === "time") {
                 queryString += `&${filterFields[i]}=${decimalToTime(
-                    filterRange[0]
-                )}-${decimalToTime(filterRange[1])}`;
+                    24 - filterRange[1]
+                )}-${decimalToTime(24 - filterRange[0])}`;
             } else {
                 queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
             }
