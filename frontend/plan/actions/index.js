@@ -263,7 +263,6 @@ function buildCourseSearchUrl(filterData) {
 
     // Checkbox Filters
     const checkboxFields = ["cu", "activity", "days"];
-    // const checkboxFields = ["cu", "activity"];
     const checkboxDefaultFields = [
         {
             0.5: 0,
@@ -312,7 +311,6 @@ function buildCourseSearchUrl(filterData) {
             }
         }
     }
-    console.log(queryString);
     return queryString;
 }
 

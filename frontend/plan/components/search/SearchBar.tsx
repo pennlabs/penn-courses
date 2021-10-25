@@ -317,7 +317,7 @@ SearchBarProps) {
         }
     };
     const dropDowns = (
-        <div style={{ overflowX: "visible" }}>
+        <div>
             <DropdownButton
                 title="Requirements"
                 filterData={filterData.selectedReq}

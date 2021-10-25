@@ -65,11 +65,9 @@ export function CheckboxFilter<
     startSearch,
     checkboxProperty,
 }: SearchFieldProps<F, K, V>) {
-    const ordered = Object.keys(filterData[checkboxProperty]);
-    if (checkboxProperty !== "days") ordered.sort();
     return (
         <ColumnsContainer>
-            {ordered.map((key) => {
+            {Object.keys(filterData[checkboxProperty]).map((key) => {
                 // Typecast is necessary since Object.keys() does not
                 // return keyof Object
                 const filterProperty = key as V;
