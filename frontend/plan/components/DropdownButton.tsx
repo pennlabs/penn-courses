@@ -16,6 +16,7 @@ const DropdownContainer = styled.div`
     display: inline-flex;
     position: relative;
     vertical-align: top;
+    overflow: visible !important;
 `;
 
 const DropdownTrigger = styled.div`
@@ -98,6 +99,7 @@ const DropdownMenu = styled.div`
     position: absolute;
     top: 100%;
     z-index: 20;
+    overflow: visible !important;
 `;
 
 const DropdownContent = styled.div`

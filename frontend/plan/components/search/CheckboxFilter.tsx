@@ -65,52 +65,50 @@ export function CheckboxFilter<
     startSearch,
     checkboxProperty,
 }: SearchFieldProps<F, K, V>) {
+    const ordered = Object.keys(filterData[checkboxProperty]);
+    if (checkboxProperty !== "days") ordered.sort();
     return (
         <ColumnsContainer>
-            {Object.keys(filterData[checkboxProperty]) //
-                .sort()
-                .map((key) => {
-                    // Typecast is necessary since Object.keys() does not
-                    // return keyof Object
-                    const filterProperty = key as V;
-                    return (
-                        <FilterColumn key={filterProperty}>
-                            <FilterField>
-                                <CheckboxInput
-                                    type="checkbox"
-                                    id={filterProperty}
-                                    checked={
+            {ordered.map((key) => {
+                // Typecast is necessary since Object.keys() does not
+                // return keyof Object
+                const filterProperty = key as V;
+                return (
+                    <FilterColumn key={filterProperty}>
+                        <FilterField>
+                            <CheckboxInput
+                                type="checkbox"
+                                id={filterProperty}
+                                checked={
+                                    filterData[checkboxProperty][filterProperty]
+                                }
+                                onChange={() => {
+                                    const toChange =
                                         filterData[checkboxProperty][
                                             filterProperty
-                                        ]
-                                    }
-                                    onChange={() => {
-                                        const toChange =
-                                            filterData[checkboxProperty][
-                                                filterProperty
-                                            ];
-                                        updateCheckboxFilter(
-                                            checkboxProperty,
-                                            filterProperty,
-                                            !toChange
-                                        );
-                                        startSearch({
-                                            ...filterData,
-                                            [checkboxProperty]: {
-                                                ...filterData[checkboxProperty],
-                                                [filterProperty]: !toChange,
-                                            },
-                                        });
-                                    }}
-                                />
-                                {/* eslint-disable-next-line jsx-a11y/label-has-for */}
-                                <CheckboxLabel htmlFor={filterProperty}>
-                                    {filterProperty}
-                                </CheckboxLabel>
-                            </FilterField>
-                        </FilterColumn>
-                    );
-                })}
+                                        ];
+                                    updateCheckboxFilter(
+                                        checkboxProperty,
+                                        filterProperty,
+                                        !toChange
+                                    );
+                                    startSearch({
+                                        ...filterData,
+                                        [checkboxProperty]: {
+                                            ...filterData[checkboxProperty],
+                                            [filterProperty]: !toChange,
+                                        },
+                                    });
+                                }}
+                            />
+                            {/* eslint-disable-next-line jsx-a11y/label-has-for */}
+                            <CheckboxLabel htmlFor={filterProperty}>
+                                {filterProperty}
+                            </CheckboxLabel>
+                        </FilterField>
+                    </FilterColumn>
+                );
+            })}
         </ColumnsContainer>
     );
 }

@@ -23,7 +23,6 @@ export const initialState = {
         difficulty: [0, 4],
         course_quality: [0, 4],
         instructor_quality: [0, 4],
-        time: null,
         activity: {
             LAB: false,
             REC: false,
@@ -35,7 +34,7 @@ export const initialState = {
             1: false,
             1.5: false,
         },
-        day: {
+        days: {
             M: true,
             T: true,
             W: true,
@@ -44,6 +43,7 @@ export const initialState = {
             S: true,
             U: true,
         },
+        time: [0, 24],
     },
     fit_schedule: false,
     defaultReqs: null,

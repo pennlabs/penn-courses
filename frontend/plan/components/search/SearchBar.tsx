@@ -9,10 +9,12 @@ import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
+import { DayTimeFilter } from "./DayTimeFilter";
 import { SearchField } from "./SearchField";
 import { initialState as defaultFilters } from "../../reducers/filters";
 import initiateSync from "../syncutils";
 import { FilterData, User, Requirement } from "../../types";
+import { CheckboxInput, CheckboxLabel } from "../bulma_derived_components";
 
 import {
     fetchCourseSearch,
@@ -315,7 +317,7 @@ SearchBarProps) {
         }
     };
     const dropDowns = (
-        <>
+        <div style={{ overflowX: "visible" }}>
             <DropdownButton
                 title="Requirements"
                 filterData={filterData.selectedReq}
@@ -405,25 +407,24 @@ SearchBarProps) {
                 />
             </DropdownButton>
             <DropdownButton
-                title="Day"
-                filterData={filterData.day}
-                defaultFilter={defaultFilters.filterData.day}
-                clearFilter={clearFilterSearch("day")}
+                title="Day/Time"
+                filterData={filterData.days}
+                defaultFilter={defaultFilters.filterData.days}
+                clearFilter={clearFilterSearch("days")}
             >
-                <CheckboxFilter
+                <DayTimeFilter
                     filterData={filterData}
                     updateCheckboxFilter={updateCheckboxFilter}
-                    checkboxProperty="day"
+                    checkboxProperty="days"
                     startSearch={conditionalStartSearch}
+                    minRange={0}
+                    maxRange={24}
+                    step={1 / 60}
+                    updateRangeFilter={updateRangeFilter("time")}
+                    rangeProperty="time"
                 />
             </DropdownButton>
-            <CheckboxFilter
-                filterData={filterData}
-                updateCheckboxFilter={updateCheckboxFilter}
-                checkboxProperty="fit_schedule"
-                startSearch={conditionalStartSearch}
-            />
-        </>
+        </div>
     );
     if (mobileView) {
         return (

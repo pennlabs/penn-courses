@@ -173,7 +173,7 @@ export interface FilterData {
     instructor_quality: [number, number];
     activity: ActivityFilter;
     cu: CUFilter;
-    day: {
+    days: {
         M: boolean;
         T: boolean;
         W: boolean;
@@ -182,6 +182,7 @@ export interface FilterData {
         S: boolean;
         U: boolean;
     };
+    time: [number, number];
     fit_schedule: boolean;
 }
 
