@@ -14,7 +14,6 @@ import { SearchField } from "./SearchField";
 import { initialState as defaultFilters } from "../../reducers/filters";
 import initiateSync from "../syncutils";
 import { FilterData, User, Requirement } from "../../types";
-import { CheckboxInput, CheckboxLabel } from "../bulma_derived_components";
 
 import {
     fetchCourseSearch,

@@ -67,6 +67,7 @@ const ReqBorder = styled.div`
     border-right: 1px solid #c1c1c1;
     display: block;
     padding: 0.75rem;
+    padding-left: 2rem;
     flex: none;
     width: 8.33333%;
 `;
@@ -74,6 +75,7 @@ const ReqBorder = styled.div`
 const DayColumn = styled.div`
     display: block;
     width: 33.3333%;
+    padding: 0.75rem;
 
     @media screen and (min-width: 769px) {
         flex: none;
@@ -159,6 +161,9 @@ export function DayTimeFilter<
     return (
         <DayTimeFilterContainer>
             <DayColumn>
+                <p>
+                    <strong>Day</strong>
+                </p>
                 {Object.keys(filterData[checkboxProperty]).map((key) => {
                     // Typecast is necessary since Object.keys() does not
                     // return keyof Object
@@ -204,6 +209,9 @@ export function DayTimeFilter<
             </DayColumn>
             <ReqBorder />
             <Column>
+                <p>
+                    <strong>Time</strong>
+                </p>
                 <RangeFilterContainer>
                     <StyledRangeWrapper>
                         <Range
@@ -216,18 +224,27 @@ export function DayTimeFilter<
                             // Accounting for error by reversing in place by subtracting from 24
                             // And fixing it in `actions/index.js`
                             marks={{
-                                0:
-                                    intToTime(
-                                        24 - filterData[rangeProperty][0]
-                                    ) +
-                                    (intToTime(
-                                        24 - filterData[rangeProperty][0]
-                                    ) === "12 AM"
-                                        ? " (next day)"
-                                        : ""),
-                                24: intToTime(
-                                    24 - filterData[rangeProperty][1]
-                                ),
+                                // 0 is actually the end time, 24 is the start time
+                                0: {
+                                    style: {
+                                        marginBottom: "10%",
+                                    },
+                                    label:
+                                        intToTime(
+                                            24 - filterData[rangeProperty][0]
+                                        ) +
+                                        (intToTime(
+                                            24 - filterData[rangeProperty][0]
+                                        ) === "12 AM"
+                                            ? " (next day)"
+                                            : ""),
+                                },
+
+                                24: {
+                                    label: intToTime(
+                                        24 - filterData[rangeProperty][1]
+                                    ),
+                                },
                             }}
                             step={step}
                             vertical={true}
