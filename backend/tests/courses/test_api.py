@@ -202,11 +202,13 @@ class CourseSearchTestCase(TestCase):
             )
 
 
+@patch("plan.views.retrieve_course_clusters")
 class CourseSearchRecommendationScoreTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         # Set up test data according to CourseRecommendationTestCase
         CourseRecommendationsTestCase.setUpTestData()
+        cls.course_clusters = CourseRecommendationsTestCase.course_clusters
 
     def setUp(self):
         set_semester()
@@ -215,7 +217,8 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         self.user = User.objects.create_user(username=self.username, password=self.password)
         self.client = APIClient()
 
-    def test_recommendation_is_null_when_course_not_part_of_model_even_when_logged_in(self):
+    def test_recommendation_is_null_when_course_not_part_of_model_even_when_logged_in(self, mock):
+        mock.return_value = self.course_clusters
         self.client.login(username=self.username, password=self.password)
 
         self.course, self.section = create_mock_data("PSCI-437-001", TEST_SEMESTER)
@@ -227,7 +230,8 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         self.assertEqual(len(response.data), 1)
         self.assertIs(response.data[0]["recommendation_score"], None)
 
-    def test_recommendation_is_null_when_user_not_logged_in(self):
+    def test_recommendation_is_null_when_user_not_logged_in(self, mock):
+        mock.return_value = self.course_clusters
         response = self.client.get(
             reverse("courses-search", args=["current"]), {"search": "PSCI", "type": "auto"}
         )
