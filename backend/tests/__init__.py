@@ -20,7 +20,11 @@ def set_mock_get_serializer_context():
     (Note that you should put
     `from tests import production_CourseListSearch_get_serializer_context`
     at the top of the file to make production_CourseListSearch_get_serializer_context
-    is defined)
+    is defined. Note also that reverting may lead to a `botocore`
+    error in the CI tests. To resolve this `botocore` error it is suggested that you patch
+    `plan.management.commands.recommendcourses.retrieve_course_clusters`. See
+     `tests.courses.test_api.CourseSearchRecommendationScoreTestCase.
+     test_recommendation_is_number_when_user_is_logged_in` for an example.).
     """
     print(
         "SETTING `CourseListSearch.get_serializer_context`"
