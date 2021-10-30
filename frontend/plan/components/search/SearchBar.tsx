@@ -315,6 +315,7 @@ SearchBarProps) {
             });
         }
     };
+    console.log(filterData);
     const dropDowns = (
         <div>
             <DropdownButton
@@ -416,8 +417,8 @@ SearchBarProps) {
                     updateCheckboxFilter={updateCheckboxFilter}
                     checkboxProperty="days"
                     startSearch={conditionalStartSearch}
-                    minRange={0}
-                    maxRange={24}
+                    minRange={1.5}
+                    maxRange={17}
                     step={1 / 60}
                     updateRangeFilter={updateRangeFilter("time")}
                     rangeProperty="time"

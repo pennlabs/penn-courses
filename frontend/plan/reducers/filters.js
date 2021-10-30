@@ -43,7 +43,7 @@ export const initialState = {
             S: true,
             U: true,
         },
-        time: [0, 24],
+        time: [1.5, 17],
     },
     fit_schedule: false,
     defaultReqs: null,

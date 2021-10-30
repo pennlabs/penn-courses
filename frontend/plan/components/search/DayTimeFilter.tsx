@@ -157,6 +157,15 @@ export function DayTimeFilter<
             ...filterData,
             [rangeProperty]: values,
         });
+        // const toChange =
+        //     filterData[checkboxProperty][
+        //         filterProperty
+        //     ];
+        // updateCheckboxFilter(
+        //     checkboxProperty,
+        //     filterProperty,
+        //     !toChange
+        // );
     };
     return (
         <DayTimeFilterContainer>
@@ -225,7 +234,7 @@ export function DayTimeFilter<
                             // And fixing it in `actions/index.js`
                             marks={{
                                 // 0 is actually the end time, 24 is the start time
-                                0: {
+                                1.5: {
                                     style: {
                                         marginBottom: "10%",
                                     },
@@ -240,7 +249,8 @@ export function DayTimeFilter<
                                             : ""),
                                 },
 
-                                24: {
+                                17: {
+                                    style: {},
                                     label: intToTime(
                                         24 - filterData[rangeProperty][1]
                                     ),
