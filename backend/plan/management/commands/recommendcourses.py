@@ -60,7 +60,7 @@ def vectorize_user_by_courses(
         else sum(past_course_vectors_dict[course] for course in past_courses)
     )
 
-    vector = curr_courses_vector + past_courses_vector
+    vector = curr_courses_vector * 4 + past_courses_vector
     norm = np.linalg.norm(vector)
     vector = vector / norm if norm > 0 else vector
     return vector, all_courses
@@ -153,7 +153,7 @@ dev_course_clusters = None  # a global variable used to "cache" the course clust
 
 def retrieve_course_clusters():
     global dev_course_clusters
-    if "PennCourses.settings.development" in os.environ.get("DJANGO_SETTINGS_MODULE", ""):
+    if "PennCourses.settings.development" in os.environ.get("DJANGO_SETTINGS_MODULE", "") and False:
         if dev_course_clusters is None:
             print("TRAINING DEVELOPMENT MODEL... PLEASE WAIT")
             dev_course_clusters = train_recommender(
