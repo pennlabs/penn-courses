@@ -96,6 +96,7 @@ def deduplicate_status_updates(semesters=None, verbose=False, semesters_precompu
             if verbose:
                 print(f"\nProcessing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.")
 
+            num_removed = 0
             for section_id in iterator_wrapper(
                 Section.objects.filter(course__semester=semester).values_list("id", flat=True)
             ):
@@ -114,7 +115,11 @@ def deduplicate_status_updates(semesters=None, verbose=False, semesters_precompu
                         continue
                     last_update = update
 
+                num_removed += len(ids_to_remove)
                 StatusUpdate.objects.filter(id__in=ids_to_remove).delete()
+            print(
+                f"Removed {num_removed} duplicate status update objects from semester {semester}."
+            )
 
     if verbose:
         print(f"Finished deduplicating status updates for semesters {str(semesters)}.")

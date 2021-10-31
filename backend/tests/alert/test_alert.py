@@ -2,8 +2,10 @@ import base64
 import importlib
 import json
 import os
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
+from dateutil.tz.tz import gettz
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -25,6 +27,7 @@ from courses.util import (
     invalidate_current_semester_cache,
 )
 from PennCourses.celery import app as celeryapp
+from PennCourses.settings.base import TIME_ZONE
 from tests.courses.util import create_mock_data
 
 
@@ -753,6 +756,24 @@ class WebhookViewTestCase(TestCase):
         Option.objects.update_or_create(
             key="SEND_FROM_WEBHOOK", value_type="BOOL", defaults={"value": "FALSE"}
         )
+        res = self.client.post(
+            reverse("webhook", urlconf="alert.urls"),
+            data=json.dumps(self.body),
+            content_type="application/json",
+            **self.headers,
+        )
+
+        self.assertEqual(200, res.status_code)
+        self.assertFalse("sent" in json.loads(res.content)["message"])
+        self.assertFalse(mock_alert.called)
+        self.assertEqual(1, StatusUpdate.objects.count())
+        u = StatusUpdate.objects.get()
+        self.assertFalse(u.alert_sent)
+
+    def test_after_adp(self, mock_alert):
+        current_adp = get_add_drop_period(semester=TEST_SEMESTER)
+        current_adp.end = datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE)) - timedelta(days=1)
+        current_adp.save()
         res = self.client.post(
             reverse("webhook", urlconf="alert.urls"),
             data=json.dumps(self.body),
@@ -1869,7 +1890,6 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(sixth_id, response.data["id"])
 
     def test_cancel_send_alert(self):
-        # heree
         ids = self.create_auto_resubscribe_group()
         """
         Resubscribe chains created:
@@ -1955,6 +1975,16 @@ class AlertRegistrationTestCase(TestCase):
     def test_resub_after_new_registration_for_section_post(self):
         self.resub_after_new_registration_for_section(put=False)
 
+    def test_registration_closed(self):
+        self.create_resubscribe_group()
+        Option.objects.update_or_create(key="REGISTRATION_OPEN", value_type="BOOL", value="FALSE")
+        response = self.client.post(
+            reverse("registrations-list"),
+            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(503, response.status_code)
+
     def resub_when_registration_is_closed(self, put):
         """
         This function tests that you cannot resubscribe if registration is closed.
@@ -1984,6 +2014,52 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_resub_when_registration_is_closed_post(self):
         self.resub_when_registration_is_closed(put=False)
+
+    def test_registration_after_adp(self):
+        self.create_resubscribe_group()
+
+        current_adp = get_add_drop_period(semester=TEST_SEMESTER)
+        current_adp.end = datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE)) - timedelta(days=1)
+        current_adp.save()
+
+        response = self.client.post(
+            reverse("registrations-list"),
+            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(503, response.status_code)
+
+    def resub_after_adp(self, put):
+        """
+        This function tests that you cannot resubscribe after the add/drop period ends.
+        """
+
+        first_id = self.registration_cis120.id
+        self.simulate_alert(self.cis120, 1, should_send=True)
+
+        current_adp = get_add_drop_period(semester=TEST_SEMESTER)
+        current_adp.end = datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE)) - timedelta(days=1)
+        current_adp.save()
+
+        if put:
+            response = self.client.put(
+                reverse("registrations-detail", args=[first_id]),
+                json.dumps({"resubscribe": True}),
+                content_type="application/json",
+            )
+        else:
+            response = self.client.post(
+                reverse("registrations-list"),
+                json.dumps({"id": first_id, "resubscribe": True}),
+                content_type="application/json",
+            )
+        self.assertEqual(503, response.status_code)
+
+    def test_resub_after_adp_put(self):
+        self.resub_after_adp(put=True)
+
+    def test_resub_after_adp_post(self):
+        self.resub_after_adp(put=False)
 
     def test_registration_list_multiple_candidates_same_section(self):
         """

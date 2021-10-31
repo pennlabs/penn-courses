@@ -27,6 +27,6 @@ def should_send_pca_alert(course_term, course_status):
         and (course_status == "O" or course_status == "C")
         and (
             add_drop_period.end is None
-            or add_drop_period.end > datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE))
+            or datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE)) < add_drop_period.end
         )
     )
