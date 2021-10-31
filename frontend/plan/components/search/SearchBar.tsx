@@ -434,8 +434,8 @@ SearchBarProps) {
                 filterData={filterDataDayTime}
                 defaultFilter={initialDayTime}
                 clearFilter={() => {
-                    clearFilterSearch("days");
-                    clearFilterSearch("time");
+                    clearFilterSearch("days")();
+                    clearFilterSearch("time")();
                 }}
             >
                 <DayTimeFilter
