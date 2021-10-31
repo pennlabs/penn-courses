@@ -11,10 +11,7 @@ import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
 import { DayTimeFilter } from "./DayTimeFilter";
 import { SearchField } from "./SearchField";
-import {
-    initialState as defaultFilters,
-    initialDayTime,
-} from "../../reducers/filters";
+import { initialState as defaultFilters } from "../../reducers/filters";
 import initiateSync from "../syncutils";
 import { FilterData, User, Requirement } from "../../types";
 
@@ -319,8 +316,29 @@ SearchBarProps) {
         }
     };
     // TODO: find less hacky way of combining date and time into single object
-    const filterDataDayTime: any = JSON.parse(JSON.stringify(filterData.days));
-    filterDataDayTime["time"] = filterData.time;
+    const filterDataDayTime: any = {
+        ...JSON.parse(JSON.stringify(filterData.days)),
+        ["time"]: filterData.time,
+    };
+    const initialDayTime: {
+        M: boolean;
+        T: boolean;
+        W: boolean;
+        R: boolean;
+        F: boolean;
+        S: boolean;
+        U: boolean;
+        time: [number, number];
+    } = {
+        M: true,
+        T: true,
+        W: true,
+        R: true,
+        F: true,
+        S: true,
+        U: true,
+        time: [1.5, 17],
+    };
     const dropDowns = (
         <div>
             <DropdownButton

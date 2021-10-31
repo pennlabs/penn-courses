@@ -298,7 +298,7 @@ function buildCourseSearchUrl(filterData) {
                 }
             });
             if (applied.length > 0) {
-                if (checkboxFields[i] == "days") {
+                if (checkboxFields[i] === "days") {
                     queryString +=
                         applied.length < 7 ? `&days=${applied.join("")}` : "";
                 } else {
@@ -320,7 +320,6 @@ const debouncedCourseSearch = AwesomeDebouncePromise(courseSearch, 500);
 
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
-        console.log("in fetchCourseSearch ", filterData);
         dispatch(updateSearchRequest());
         debouncedCourseSearch(dispatch, filterData)
             .then((res) => res.json())

@@ -137,7 +137,7 @@ const intToTime = (t: number) => {
 // mapped types
 export function DayTimeFilter<
     F extends { [P in K]: D },
-    D extends CheckboxFilterData<D>,
+    D extends CheckboxFilterData<D> & [number, number],
     K extends keyof F,
     V extends keyof D & string
 >({

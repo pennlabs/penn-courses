@@ -192,4 +192,14 @@ export type FilterType =
     | { "1": boolean; "0.5": boolean; "1.5": boolean }
     | { [key: string]: boolean }
     | ActivityFilter
-    | { LAB: boolean; REC: boolean; SEM: boolean; STU: boolean };
+    | { LAB: boolean; REC: boolean; SEM: boolean; STU: boolean }
+    | {
+          M: boolean;
+          T: boolean;
+          W: boolean;
+          R: boolean;
+          F: boolean;
+          S: boolean;
+          U: boolean;
+          time: [number, number];
+      };
