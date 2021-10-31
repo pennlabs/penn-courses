@@ -16,7 +16,8 @@ from plan.management.commands.trainrecommender import train_recommender
 from plan.models import Schedule
 
 
-# The proportion by which to up-weight current courses relative to past courses when computing a user vector
+# The proportion by which to up-weight current courses
+# relative to past courses when computing a user vector
 CURR_COURSES_BIAS = 3
 
 
