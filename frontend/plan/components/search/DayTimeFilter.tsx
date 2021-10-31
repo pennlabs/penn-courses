@@ -136,7 +136,7 @@ const intToTime = (t: number) => {
 
 // mapped types
 export function DayTimeFilter<
-    F extends { [P in K]: D & [number, number] },
+    F extends { [P in K]: D },
     D extends CheckboxFilterData<D>,
     K extends keyof F,
     V extends keyof D & string
@@ -157,15 +157,6 @@ export function DayTimeFilter<
             ...filterData,
             [rangeProperty]: values,
         });
-        // const toChange =
-        //     filterData[checkboxProperty][
-        //         filterProperty
-        //     ];
-        // updateCheckboxFilter(
-        //     checkboxProperty,
-        //     filterProperty,
-        //     !toChange
-        // );
     };
     return (
         <DayTimeFilterContainer>
@@ -177,6 +168,7 @@ export function DayTimeFilter<
                     // Typecast is necessary since Object.keys() does not
                     // return keyof Object
                     const filterProperty = key as V;
+                    if (filterProperty === "time") return null;
                     return (
                         <FilterColumn key={filterProperty}>
                             <FilterField>

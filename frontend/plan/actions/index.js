@@ -236,8 +236,7 @@ function buildCourseSearchUrl(filterData) {
         [0, 4],
         [0, 4],
         [0, 4],
-        [0.5, 2],
-        [0, 24],
+        [1.5, 17],
     ];
     const decimalToTime = (t) => {
         const hour = Math.floor(t);
