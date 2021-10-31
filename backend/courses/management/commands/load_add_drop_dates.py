@@ -11,7 +11,7 @@ from django.utils.timezone import make_aware
 
 from alert.models import AddDropPeriod, validate_add_drop_semester
 from courses.models import Course
-from courses.util import get_add_drop_period, get_current_semester
+from courses.util import get_current_semester, get_or_create_add_drop_period
 from PennCourses.settings.base import TIME_ZONE
 
 
@@ -40,13 +40,9 @@ def load_add_drop_dates(verbose=False):
         print(f"Loading add/drop period dates for semester {semester} from the Almanac")
     with transaction.atomic():
         start_date, end_date = None, None
-        try:
-            previous = get_add_drop_period(semester)
-            start_date = previous.start
-            end_date = previous.end
-            previous.delete()
-        except AddDropPeriod.DoesNotExist:
-            pass
+        adp = get_or_create_add_drop_period(semester)
+        start_date = adp.start
+        end_date = adp.end
         html = requests.get("https://almanac.upenn.edu/penn-academic-calendar").content
         soup = BeautifulSoup(html, "html.parser")
         if semester[4] == "C":
@@ -144,7 +140,7 @@ def load_add_drop_dates(verbose=False):
                 datetime.strptime(f"{e_year}-{e_month}-{e_day} 11:59", "%Y-%m-%d %H:%M"),
                 timezone=tz,
             )
-        adp = AddDropPeriod(semester=semester, start=start_date, end=end_date)
+        adp.start, adp.end = start_date, end_date
         adp.save()
     if verbose:
         print("Done!")

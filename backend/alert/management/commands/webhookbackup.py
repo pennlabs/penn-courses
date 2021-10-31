@@ -1,9 +1,9 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from options.models import get_bool
 from tqdm import tqdm
 
+from alert.util import should_send_pca_alert
 from alert.views import alert_for_course
 from courses import registrar
 from courses.util import get_current_semester
@@ -50,13 +50,7 @@ class Command(BaseCommand):
                 stats["missing_data"] += 1
                 continue
 
-            should_send_alert = (
-                get_bool("SEND_FROM_WEBHOOK", False)
-                and (course_status == "O" or course_status == "C")
-                and get_current_semester() == course_term
-            )
-
-            if should_send_alert:
+            if should_send_pca_alert(course_term, course_status):
                 try:
                     alert_for_course(
                         course_id, semester=course_term, sent_by="WEB", course_status=course_status
