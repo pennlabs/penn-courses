@@ -11,9 +11,9 @@ from django.db import transaction
 from alert.models import PcaDemandDistributionEstimate, Registration
 from courses.models import Section, StatusUpdate
 from courses.util import (
-    get_add_drop_period,
     get_course_and_section,
     get_current_semester,
+    get_or_create_add_drop_period,
     update_course_from_record,
 )
 from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES
@@ -145,7 +145,7 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
                     np.percentile(closed_sections_demand_values, 75) if csdv_nonempty else None
                 ),
             )
-            add_drop_period = get_add_drop_period(semester)
+            add_drop_period = get_or_create_add_drop_period(semester)
             new_demand_distribution_estimate.save(add_drop_period=add_drop_period)
             new_demand_distribution_estimate.created_at = updated_at
             new_demand_distribution_estimate.save(add_drop_period=add_drop_period)
