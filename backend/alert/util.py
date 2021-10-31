@@ -3,7 +3,7 @@ from datetime import datetime
 from dateutil.tz.tz import gettz
 from options.models import get_bool
 
-from courses.util import get_or_create_add_drop_period, get_current_semester
+from courses.util import get_current_semester, get_or_create_add_drop_period
 from PennCourses.settings.base import TIME_ZONE
 
 
