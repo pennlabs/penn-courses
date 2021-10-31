@@ -9,26 +9,6 @@ import {
     UPDATE_CHECKBOX_FILTER,
 } from "../actions";
 
-// export const initialDayTime: {
-//     M: boolean;
-//     T: boolean;
-//     W: boolean;
-//     R: boolean;
-//     F: boolean;
-//     S: boolean;
-//     U: boolean;
-//     time: [number, number];
-// } = {
-//     M: true,
-//     T: true,
-//     W: true,
-//     R: true,
-//     F: true,
-//     S: true,
-//     U: true,
-//     time: [1.5, 17],
-// };
-
 export const initialState = {
     schoolReq: {
         SAS: [],
