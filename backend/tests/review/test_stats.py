@@ -397,6 +397,16 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             },
         )
 
+    def test_current_percent_open(self):
+        self.assertAlmostEquals(
+            self.recent_percent_open,
+            Section.objects.get(id=self.ESE_120_001_TEST_SEMESTER_id).current_percent_open,
+        )
+        self.assertAlmostEquals(
+            self.old_percent_open,
+            Section.objects.get(id=self.ESE_120_001_2020C_id).current_percent_open,
+        )
+
 
 class OneReviewTestCase(TestCase, PCRTestMixin):
     @classmethod

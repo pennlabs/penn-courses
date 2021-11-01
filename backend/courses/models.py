@@ -462,12 +462,12 @@ class Section(models.Model):
         registration period] that this section was open. If this section's registration
         period hasn't started yet, this property is null (None in Python).
         """
-        from courses.util import get_add_drop_period, get_current_semester
+        from courses.util import get_current_semester, get_or_create_add_drop_period
 
         # ^ imported here to avoid circular imports
 
         if self.semester == get_current_semester():
-            add_drop = get_add_drop_period(self.semester)
+            add_drop = get_or_create_add_drop_period(self.semester)
             add_drop_start = add_drop.estimated_start
             add_drop_end = add_drop.estimated_end
             current_time = timezone.now()
@@ -550,8 +550,6 @@ class StatusUpdate(models.Model):
         help_text="Was an alert was sent to a User as a result of this status update?"
     )
     # ^^^ alert_sent is true iff alert_for_course was called in accept_webhook in alert/views.py
-    # equivalently, iff SEND_FROM_WEBHOOK == True and SEMESTER == course_term, and the request
-    # is not otherwise invalid
     request_body = models.TextField()
 
     percent_through_add_drop_period = models.FloatField(
@@ -577,13 +575,13 @@ class StatusUpdate(models.Model):
     def save(self, *args, **kwargs):
         """
         This overridden save method first gets the add/drop period object for the semester of this
-        StatusUpdate object (either by using the get_add_drop_period method or by using
+        StatusUpdate object (either by using the get_or_create_add_drop_period method or by using
         a passed-in add_drop_period kwarg, which can be used for efficiency in bulk operations
         over many StatusUpdate objects). Then it calls the overridden save method, and after that
         it sets the percent_through_add_drop_period field.
         """
         from alert.models import validate_add_drop_semester
-        from courses.util import get_add_drop_period
+        from courses.util import get_or_create_add_drop_period
 
         # ^ imported here to avoid circular imports
 
@@ -601,7 +599,7 @@ class StatusUpdate(models.Model):
             return
 
         if add_drop_period is None:
-            add_drop_period = get_add_drop_period(self.section.semester)
+            add_drop_period = get_or_create_add_drop_period(self.section.semester)
 
         created_at = self.created_at
         start = add_drop_period.estimated_start

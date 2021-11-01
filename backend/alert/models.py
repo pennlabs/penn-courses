@@ -100,8 +100,9 @@ class Registration(models.Model):
     Alerts are triggered by webhook requests from the UPenn OpenData API
     (https://esb.isc-seo.upenn.edu/8091/documentation/#coursestatuswebhookservice), and accepted
     by alert/views.py/accept_webhook. Then if the SEND_FROM_WEBHOOK Option is set to True,
-    the semester of the webhook request equals courses.util.get_current_semester(), and the new
-    course status is either "O" (meaning open) or "C" (meaning closed), the method calls
+    the semester of the webhook request equals courses.util.get_current_semester(), the new
+    course status is either "O" (meaning open) or "C" (meaning closed), and the current datetime
+    is less than the current AddDropPeriod's end field (if not null), then the method calls
     alert/views.py/alert_for_course for the relevant course.  That method then calls
     alert/tasks.py/send_course_alerts asynchronously using the Celery delay function.
     This allows for alerts to be queued without holding up the response.  The send_course_alerts
