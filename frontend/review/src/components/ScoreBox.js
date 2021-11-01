@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
+import { REGISTRATION_METRICS_COLUMNS } from "../constants/values";
 
 import {
   capitalize,
@@ -133,11 +134,6 @@ class ScoreBox extends Component {
 
     const EXTRA_KEYS = ["latest_semester", "num_semesters"];
     const SEM_SORT_KEY = "latest_semester";
-    const COURSE_EVAL_COLS = [
-      "rFinalEnrollmentPercentage",
-      "rPercentOpen",
-      "rNumOpenings"
-    ];
 
     const data = Object.keys(infoMap).map(key => {
       const val = isCourse ? results.instructors[key] : results.courses[key];
@@ -147,9 +143,9 @@ class ScoreBox extends Component {
           return;
         }
 
-        //Only show course statistics if toggled
-        //if one of the columns and not courseEval then return
-        if (COURSE_EVAL_COLS.includes(col)) {
+        // Only show registration metrics if toggled
+        // if one of the columns and not courseEval then return
+        if (REGISTRATION_METRICS_COLUMNS.includes(col)) {
           if (!this.props.isCourseEval) {
             return;
           }
@@ -257,7 +253,7 @@ class ScoreBox extends Component {
             ) {
               const other =
                 infoMap[this.state.selected][
-                  this.props.isAverage ? "average_reviews" : "recent_reviews"
+                this.props.isAverage ? "average_reviews" : "recent_reviews"
                 ][id];
               if (Math.abs(val - other) > 0.01) {
                 if (val > other) {
@@ -340,13 +336,12 @@ class ScoreBox extends Component {
               }
             >
               <i
-                className={`ml-1 fa-star ${
-                  this.state.currentCourses[code].filter(
-                    a => !a.is_closed && !a.is_cancelled
-                  ).length
-                    ? "fa"
-                    : "far"
-                }`}
+                className={`ml-1 fa-star ${this.state.currentCourses[code].filter(
+                  a => !a.is_closed && !a.is_cancelled
+                ).length
+                  ? "fa"
+                  : "far"
+                  }`}
               />
             </PopoverTitle>
           )}
@@ -439,17 +434,15 @@ class ScoreBox extends Component {
           <div className="btn-group">
             <button
               onClick={() => setIsAverage(true)}
-              className={`btn btn-sm ${
-                this.props.isAverage ? "btn-primary" : "btn-secondary"
-              }`}
+              className={`btn btn-sm ${this.props.isAverage ? "btn-primary" : "btn-secondary"
+                }`}
             >
               Average
             </button>
             <button
               onClick={() => setIsAverage(false)}
-              className={`btn btn-sm ${
-                this.props.isAverage ? "btn-secondary" : "btn-primary"
-              }`}
+              className={`btn btn-sm ${this.props.isAverage ? "btn-secondary" : "btn-primary"
+                }`}
             >
               Most Recent
             </button>

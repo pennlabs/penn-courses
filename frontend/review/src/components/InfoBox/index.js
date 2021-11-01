@@ -142,7 +142,6 @@ const InfoBox = ({
         {isDepartment && <DepartmentHeader name={name} code={code} />}
       </div>
 
-      {/* // TODO: uncomment this to release Registration Metrics
       <StatsToggleContainer>
         <NewLabel>NEW</NewLabel>
         <div className="btn-group">
@@ -162,7 +161,6 @@ const InfoBox = ({
           </button>
         </div>
       </StatsToggleContainer>
-      */}
 
       {!isDepartment && (
         <div id="banner-score">

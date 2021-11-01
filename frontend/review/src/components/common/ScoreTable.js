@@ -21,11 +21,12 @@ function testComponent(props) {
 
 export const ScoreTable = props => {
   const {
+    columns,
     alternating = false,
     noun,
     multi,
     data = [],
-    onSelect = () => {},
+    onSelect = () => { },
     ignoreSelect = false,
     isAverage = null,
     isCourseEval = null
@@ -48,31 +49,31 @@ export const ScoreTable = props => {
     const noRow = multi ? index in selected : index === selected;
     return rowInfo && row
       ? {
-          style: alternating
-            ? { backgroundColor: row._viewIndex % 2 ? "#F5F8F8" : "white" }
-            : {},
-          onClick: () => {
-            if (ignoreSelect) {
-              return;
-            }
-            // Recalculate value every time onClick is called
-            const noRow = multi ? index in selected : index === selected;
-            if (!multi) {
-              const { key } = original;
-              onSelect(noRow ? null : key);
-              setSelected(noRow ? null : index);
-              return;
-            }
-            if (noRow) {
-              delete selected[index];
-            } else {
-              selected[index] = rowInfo;
-            }
-            onSelect(selected);
-            setSelected({ ...selected });
-          },
-          className: ignoreSelect ? "ignore-select" : noRow ? "selected" : ""
-        }
+        style: alternating
+          ? { backgroundColor: row._viewIndex % 2 ? "#F5F8F8" : "white" }
+          : {},
+        onClick: () => {
+          if (ignoreSelect) {
+            return;
+          }
+          // Recalculate value every time onClick is called
+          const noRow = multi ? index in selected : index === selected;
+          if (!multi) {
+            const { key } = original;
+            onSelect(noRow ? null : key);
+            setSelected(noRow ? null : index);
+            return;
+          }
+          if (noRow) {
+            delete selected[index];
+          } else {
+            selected[index] = rowInfo;
+          }
+          onSelect(selected);
+          setSelected({ ...selected });
+        },
+        className: ignoreSelect ? "ignore-select" : noRow ? "selected" : ""
+      }
       : {};
   };
 
@@ -97,7 +98,7 @@ export const ScoreTable = props => {
     });
   });
 
-  props.columns.forEach(col => {
+  columns.forEach(col => {
     if (col.Header === "Final Enrollment") {
       col.Header = (
         <>
@@ -118,14 +119,7 @@ export const ScoreTable = props => {
             textColor="#4a4a4a"
           >
             <span className="tooltip-text">
-              Averaged across all sections,
-              <br />
-              the ratio of final enrollment total to section capacity,
-              <br />
-              expressed as a percentage. <br />
-              Note that some classes may have been over-enrolled,
-              <br />
-              causing a final enrollment value above 100%.
+              The average final enrollment
             </span>
           </ReactTooltip>
         </>
@@ -184,6 +178,33 @@ export const ScoreTable = props => {
               the percentage of time during the add/drop period
               <br />
               that the section was open for registration.
+            </span>
+          </ReactTooltip>
+        </>
+      );
+    } else if (col.Header === "Filled In Adv Reg") {
+      col.Header = (
+        <>
+          Filled in Adv Reg{" "}
+          <a data-tip data-for="filled-in-adv-reg">
+            <i
+              className="fa fa-question-circle"
+              style={{ color: "#c6c6c6", fontSize: "13px" }}
+            />
+          </a>
+          <ReactTooltip
+            id="filled-in-adv-reg"
+            className="opaque"
+            type="light"
+            effect="solid"
+            border={true}
+            borderColor="#ededed"
+            textColor="#4a4a4a"
+          >
+            <span className="tooltip-text">
+              The percentage of sections that were
+              <br />
+              fully filled during advance registration.
             </span>
           </ReactTooltip>
         </>

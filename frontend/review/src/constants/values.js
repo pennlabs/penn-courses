@@ -23,9 +23,16 @@ export const ALL_DATA_COLUMNS = [
 ];
 
 export const PERCENTAGE_COLUMNS = [
-  "rFinalEnrollmentPercentage",
-  "rPercentOpen"
+  "rPercentOpen",
+  "rFilledInAdvReg"
 ];
+
+export const REGISTRATION_METRICS_COLUMNS = [
+  "rPercentOpen",
+  "rFilledInAdvReg",
+  "rNumOpenings",
+  "rFinalEnrollment"
+]
 
 export const COLUMN_FULLNAMES = {
   rCourseQuality: "Course Quality",

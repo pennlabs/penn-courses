@@ -10,6 +10,7 @@ import {
 } from "../utils/helpers";
 import { apiHistory } from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
+import { REGISTRATION_METRICS_COLUMNS } from "../constants";
 
 /*
  * Settings objects/object generators for the columns of the DetailsBox
@@ -73,34 +74,29 @@ export const DetailsBox = forwardRef(
     const [emptyStateImg, setEmptyStateImg] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const showCol = info => {
-      if (
-        info === "rFinalEnrollmentPercentage" ||
-        info === "rPercentOpen" ||
-        info === "rNumOpenings"
-      ) {
-        return isCourseEval;
-      } else {
-        return !isCourseEval;
+    const showCol = info => REGISTRATION_METRICS_COLUMNS.includes(info) === isCourseEval;
+
+    const generateCol = info => {
+      if (!showCol(info)) {
+        return null;
+      }
+      return {
+        id: info,
+        width: 150,
+        Header: getColumnName(info),
+        accessor: info,
+        show: true,
+        Cell: ({ value }) => (
+          <center className={!value ? "empty" : ""}>
+            {!value
+              ? "N/A"
+              : isNaN(value) && value.slice(-1) === "%"
+                ? value
+                : isCourseEval ? value : value.toFixed(2)}
+          </center>
+        )
       }
     };
-
-    const generateCol = info => ({
-      id: info,
-      width: 150,
-      Header: getColumnName(info),
-      accessor: info,
-      show: showCol(info),
-      Cell: ({ value }) => (
-        <center className={!value ? "empty" : ""}>
-          {!value
-            ? "N/A"
-            : isNaN(value) && value.slice(-1) === "%"
-            ? value
-            : value.toFixed(2)}
-        </center>
-      )
-    });
 
     useEffect(() => {
       const num = Math.floor(Math.random() * 5 + 1);
@@ -114,7 +110,7 @@ export const DetailsBox = forwardRef(
             const [firstSection, ...sections] = Object.values(res.sections);
             const ratingCols = orderColumns(
               Object.keys(firstSection.ratings)
-            ).map(generateCol);
+            ).map(generateCol).filter(col => col);
             const semesterSet = new Set(
               [firstSection, ...sections]
                 .filter(a => a.comments)
@@ -124,6 +120,7 @@ export const DetailsBox = forwardRef(
             const semesters = [...semesterSet];
             setData(res);
             setColumns([semesterCol, nameCol, formsCol, ...ratingCols]);
+            console.log([semesterCol, nameCol, formsCol, ...ratingCols]);
             setSemesterList(semesters);
             setSelectedSemester(() => {
               if (!semesters.length) return null;
@@ -219,18 +216,16 @@ export const DetailsBox = forwardRef(
               <button
                 onClick={() => setViewingRatings(true)}
                 id="view_ratings"
-                className={`btn btn-sm ${
-                  viewingRatings ? "btn-sub-primary" : "btn-sub-secondary"
-                }`}
+                className={`btn btn-sm ${viewingRatings ? "btn-sub-primary" : "btn-sub-secondary"
+                  }`}
               >
                 Ratings
               </button>
               <button
                 onClick={() => setViewingRatings(false)}
                 id="view_comments"
-                className={`btn btn-sm ${
-                  viewingRatings ? "btn-sub-secondary" : "btn-sub-primary"
-                }`}
+                className={`btn btn-sm ${viewingRatings ? "btn-sub-secondary" : "btn-sub-primary"
+                  }`}
               >
                 Comments
               </button>
