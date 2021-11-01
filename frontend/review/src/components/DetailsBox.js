@@ -92,10 +92,10 @@ export const DetailsBox = forwardRef(
             {!value
               ? "N/A"
               : isNaN(value) && value.slice(-1) === "%"
-                ? value
-                : isCourseEval
-                  ? value
-                  : value.toFixed(2)}
+              ? value
+              : isCourseEval
+              ? value
+              : value.toFixed(2)}
           </center>
         )
       };
@@ -218,16 +218,18 @@ export const DetailsBox = forwardRef(
               <button
                 onClick={() => setViewingRatings(true)}
                 id="view_ratings"
-                className={`btn btn-sm ${viewingRatings ? "btn-sub-primary" : "btn-sub-secondary"
-                  }`}
+                className={`btn btn-sm ${
+                  viewingRatings ? "btn-sub-primary" : "btn-sub-secondary"
+                }`}
               >
                 Ratings
               </button>
               <button
                 onClick={() => setViewingRatings(false)}
                 id="view_comments"
-                className={`btn btn-sm ${viewingRatings ? "btn-sub-secondary" : "btn-sub-primary"
-                  }`}
+                className={`btn btn-sm ${
+                  viewingRatings ? "btn-sub-secondary" : "btn-sub-primary"
+                }`}
               >
                 Comments
               </button>
