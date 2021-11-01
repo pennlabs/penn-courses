@@ -26,7 +26,7 @@ export const ScoreTable = props => {
     noun,
     multi,
     data = [],
-    onSelect = () => { },
+    onSelect = () => {},
     ignoreSelect = false,
     isAverage = null,
     isCourseEval = null
@@ -49,31 +49,31 @@ export const ScoreTable = props => {
     const noRow = multi ? index in selected : index === selected;
     return rowInfo && row
       ? {
-        style: alternating
-          ? { backgroundColor: row._viewIndex % 2 ? "#F5F8F8" : "white" }
-          : {},
-        onClick: () => {
-          if (ignoreSelect) {
-            return;
-          }
-          // Recalculate value every time onClick is called
-          const noRow = multi ? index in selected : index === selected;
-          if (!multi) {
-            const { key } = original;
-            onSelect(noRow ? null : key);
-            setSelected(noRow ? null : index);
-            return;
-          }
-          if (noRow) {
-            delete selected[index];
-          } else {
-            selected[index] = rowInfo;
-          }
-          onSelect(selected);
-          setSelected({ ...selected });
-        },
-        className: ignoreSelect ? "ignore-select" : noRow ? "selected" : ""
-      }
+          style: alternating
+            ? { backgroundColor: row._viewIndex % 2 ? "#F5F8F8" : "white" }
+            : {},
+          onClick: () => {
+            if (ignoreSelect) {
+              return;
+            }
+            // Recalculate value every time onClick is called
+            const noRow = multi ? index in selected : index === selected;
+            if (!multi) {
+              const { key } = original;
+              onSelect(noRow ? null : key);
+              setSelected(noRow ? null : index);
+              return;
+            }
+            if (noRow) {
+              delete selected[index];
+            } else {
+              selected[index] = rowInfo;
+            }
+            onSelect(selected);
+            setSelected({ ...selected });
+          },
+          className: ignoreSelect ? "ignore-select" : noRow ? "selected" : ""
+        }
       : {};
   };
 
@@ -118,9 +118,7 @@ export const ScoreTable = props => {
             borderColor="#ededed"
             textColor="#4a4a4a"
           >
-            <span className="tooltip-text">
-              The average final enrollment
-            </span>
+            <span className="tooltip-text">The average final enrollment</span>
           </ReactTooltip>
         </>
       );

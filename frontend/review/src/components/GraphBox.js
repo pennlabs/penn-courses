@@ -179,12 +179,15 @@ const demandChartOptions = {
     bodySpacing: 3,
     callbacks: {
       title: (toolTipItem, data) =>
-        `${Math.round(data["datasets"][0]["data"][toolTipItem[0]["index"]].x)
-        }% Through Add/Drop`,
+        `${Math.round(
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].x
+        )}% Through Add/Drop`,
       beforeBody: (toolTipItem, data) =>
-        `Registration Difficulty: ${Math.round(data["datasets"][0]["data"][toolTipItem[0]["index"]].y)
-        }\n5% Moving Average: ${Math.round(data["datasets"][1]["data"][toolTipItem[0]["index"]].y)
-        }`,
+        `Registration Difficulty: ${Math.round(
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].y
+        )}\n5% Moving Average: ${Math.round(
+          data["datasets"][1]["data"][toolTipItem[0]["index"]].y
+        )}`,
       label: () => {
         return;
       }
@@ -256,11 +259,13 @@ const percentSectionChartOptions = {
     bodyFontSize: 12,
     callbacks: {
       title: (toolTipItem, data) =>
-        `${Math.round(data["datasets"][0]["data"][toolTipItem[0]["index"]].x)
-        }% Through Add/Drop`,
+        `${Math.round(
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].x
+        )}% Through Add/Drop`,
       beforeBody: (toolTipItem, data) =>
-        `% of Sections Open: ${Math.round(data["datasets"][0]["data"][toolTipItem[0]["index"]].y)
-        }%`,
+        `% of Sections Open: ${Math.round(
+          data["datasets"][0]["data"][toolTipItem[0]["index"]].y
+        )}%`,
       label: () => {
         return;
       }
@@ -419,15 +424,17 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
                     >
                       <button
                         onClick={() => setIsAverage(true)}
-                        className={`btn btn-sm ${isAverage ? "btn-primary" : "btn-secondary"
-                          }`}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-primary" : "btn-secondary"
+                        }`}
                       >
                         Average
                       </button>
                       <button
                         onClick={() => setIsAverage(false)}
-                        className={`btn btn-sm ${isAverage ? "btn-secondary" : "btn-primary"
-                          }`}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-secondary" : "btn-primary"
+                        }`}
                       >
                         Most Recent
                       </button>
@@ -481,15 +488,17 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
                     >
                       <button
                         onClick={() => setIsAverage(true)}
-                        className={`btn btn-sm ${isAverage ? "btn-primary" : "btn-secondary"
-                          }`}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-primary" : "btn-secondary"
+                        }`}
                       >
                         Average
                       </button>
                       <button
                         onClick={() => setIsAverage(false)}
-                        className={`btn btn-sm ${isAverage ? "btn-secondary" : "btn-primary"
-                          }`}
+                        className={`btn btn-sm ${
+                          isAverage ? "btn-secondary" : "btn-primary"
+                        }`}
                       >
                         Most Recent
                       </button>

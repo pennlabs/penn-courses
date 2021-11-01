@@ -74,7 +74,8 @@ export const DetailsBox = forwardRef(
     const [emptyStateImg, setEmptyStateImg] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const showCol = info => REGISTRATION_METRICS_COLUMNS.includes(info) === isCourseEval;
+    const showCol = info =>
+      REGISTRATION_METRICS_COLUMNS.includes(info) === isCourseEval;
 
     const generateCol = info => {
       if (!showCol(info)) {
@@ -91,11 +92,13 @@ export const DetailsBox = forwardRef(
             {!value
               ? "N/A"
               : isNaN(value) && value.slice(-1) === "%"
-                ? value
-                : isCourseEval ? value : value.toFixed(2)}
+              ? value
+              : isCourseEval
+              ? value
+              : value.toFixed(2)}
           </center>
         )
-      }
+      };
     };
 
     useEffect(() => {
@@ -108,9 +111,9 @@ export const DetailsBox = forwardRef(
         apiHistory(course, instructor)
           .then(res => {
             const [firstSection, ...sections] = Object.values(res.sections);
-            const ratingCols = orderColumns(
-              Object.keys(firstSection.ratings)
-            ).map(generateCol).filter(col => col);
+            const ratingCols = orderColumns(Object.keys(firstSection.ratings))
+              .map(generateCol)
+              .filter(col => col);
             const semesterSet = new Set(
               [firstSection, ...sections]
                 .filter(a => a.comments)
@@ -216,16 +219,18 @@ export const DetailsBox = forwardRef(
               <button
                 onClick={() => setViewingRatings(true)}
                 id="view_ratings"
-                className={`btn btn-sm ${viewingRatings ? "btn-sub-primary" : "btn-sub-secondary"
-                  }`}
+                className={`btn btn-sm ${
+                  viewingRatings ? "btn-sub-primary" : "btn-sub-secondary"
+                }`}
               >
                 Ratings
               </button>
               <button
                 onClick={() => setViewingRatings(false)}
                 id="view_comments"
-                className={`btn btn-sm ${viewingRatings ? "btn-sub-secondary" : "btn-sub-primary"
-                  }`}
+                className={`btn btn-sm ${
+                  viewingRatings ? "btn-sub-secondary" : "btn-sub-primary"
+                }`}
               >
                 Comments
               </button>
