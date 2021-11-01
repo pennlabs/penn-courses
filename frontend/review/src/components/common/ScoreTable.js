@@ -50,7 +50,9 @@ export const ScoreTable = props => {
     return rowInfo && row
       ? {
           style: alternating
-            ? { backgroundColor: row._viewIndex % 2 ? "#F5F8F8" : "white" }
+            ? {
+                backgroundColor: row._viewIndex % 2 ? "#F5F8F8" : "white"
+              }
             : {},
           onClick: () => {
             if (ignoreSelect) {
@@ -99,6 +101,7 @@ export const ScoreTable = props => {
   });
 
   columns.forEach(col => {
+    col.width = 175;
     if (col.Header === "Final Enrollment") {
       col.Header = (
         <>
@@ -118,7 +121,7 @@ export const ScoreTable = props => {
             borderColor="#ededed"
             textColor="#4a4a4a"
           >
-            <span className="tooltip-text">The average final enrollment</span>
+            <span className="tooltip-text">The average final enrollment.</span>
           </ReactTooltip>
         </>
       );
