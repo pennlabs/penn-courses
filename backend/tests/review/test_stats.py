@@ -126,7 +126,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         new_status = "O"
         start, end, duration = get_start_end_duration(cls.adp)
         for date in (
-            [start - duration / 5]
+            [start - 3 * duration / 5, start - 2 * duration / 5, start - duration / 5]
             + [start + i * duration / 5 for i in range(1, 5)]
             + [start + 0.81 * duration, start + 0.82 * duration,]
         ):
@@ -146,7 +146,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         old_status = "O"
         new_status = "C"
         start, end, duration = get_start_end_duration(cls.old_adp)
-        for date in [start - duration / 5] + [start + i * duration / 4 for i in range(1, 4)]:
+        for date in [start - 3 * duration / 5, start - 2 * duration / 5, start - duration / 5] + [
+            start + i * duration / 4 for i in range(1, 4)
+        ]:
             # C[.25]O[.5]C[.75]O
             record_update(
                 "ESE-120-001", "2020C", old_status, new_status, False, dict(), created_at=date,
@@ -414,7 +416,9 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         old_status = "C"
         new_status = "O"
         percent_open_plot = [(0, 1)]
-        for date in [start - duration / 7] + [start + i * duration / 7 for i in range(1, 7)]:
+        for date in [start - 3 * duration / 7, start - 2 * duration / 7, start - duration / 7] + [
+            start + i * duration / 7 for i in range(1, 7)
+        ]:
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
@@ -616,7 +620,9 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         old_status = "C"
         new_status = "O"
         percent_open_plot = [(0, 1)]
-        for date in [start - duration / 7] + [start + i * duration / 7 for i in range(1, 7)]:
+        for date in [start - 3 * duration / 7, start - 2 * duration / 7, start - duration / 7] + [
+            start + i * duration / 7 for i in range(1, 7)
+        ]:
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
