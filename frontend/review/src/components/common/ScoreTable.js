@@ -21,6 +21,7 @@ function testComponent(props) {
 
 export const ScoreTable = props => {
   const {
+    columns,
     alternating = false,
     noun,
     multi,
@@ -97,7 +98,7 @@ export const ScoreTable = props => {
     });
   });
 
-  props.columns.forEach(col => {
+  columns.forEach(col => {
     if (col.Header === "Final Enrollment") {
       col.Header = (
         <>
@@ -117,16 +118,7 @@ export const ScoreTable = props => {
             borderColor="#ededed"
             textColor="#4a4a4a"
           >
-            <span className="tooltip-text">
-              Averaged across all sections,
-              <br />
-              the ratio of final enrollment total to section capacity,
-              <br />
-              expressed as a percentage. <br />
-              Note that some classes may have been over-enrolled,
-              <br />
-              causing a final enrollment value above 100%.
-            </span>
+            <span className="tooltip-text">The average final enrollment</span>
           </ReactTooltip>
         </>
       );
@@ -184,6 +176,33 @@ export const ScoreTable = props => {
               the percentage of time during the add/drop period
               <br />
               that the section was open for registration.
+            </span>
+          </ReactTooltip>
+        </>
+      );
+    } else if (col.Header === "Filled In Adv Reg") {
+      col.Header = (
+        <>
+          Filled in Adv Reg{" "}
+          <a data-tip data-for="filled-in-adv-reg">
+            <i
+              className="fa fa-question-circle"
+              style={{ color: "#c6c6c6", fontSize: "13px" }}
+            />
+          </a>
+          <ReactTooltip
+            id="filled-in-adv-reg"
+            className="opaque"
+            type="light"
+            effect="solid"
+            border={true}
+            borderColor="#ededed"
+            textColor="#4a4a4a"
+          >
+            <span className="tooltip-text">
+              The percentage of sections that were
+              <br />
+              fully filled during advance registration.
             </span>
           </ReactTooltip>
         </>

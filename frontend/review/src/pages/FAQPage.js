@@ -80,15 +80,16 @@ const FAQ = () => (
       <p className="answer">
         As of fall 2021, PCR now also displays additional metrics to give
         students a sense of registration difficulty (such as avg. number of
-        course openings, avg. final enrollment percentage, avg. percentage of
-        the semester open, and plots of estimated registration difficulty and
-        percent of historical sections open over time). Generally, these metrics
-        can give you a sense of how difficult it will be to register for a
-        course (which is important for planning out your course registration).
-        You can view these metrics by clicking the "Registration Metrics" tab in
-        the left window on an instructor, department, or course page. For more
-        information about any specific metric, hover over the question mark icon
-        next to its name (or for plots, see the description below the title).
+        course openings, avg. final enrollment, avg. percentage of the semester
+        open, percentage of sections filled in advance registration, and plots
+        of estimated registration difficulty / percent of historical sections
+        open over time). Generally, these metrics can give you a sense of how
+        difficult it will be to register for a course (which is important for
+        planning out your course registration). You can view these metrics by
+        clicking the "Registration Metrics" tab in the left window on an
+        instructor, department, or course page. For more information about any
+        specific metric, hover over the question mark icon next to its name (or
+        for plots, see the description below the title).
       </p>
     </div>
   </div>
