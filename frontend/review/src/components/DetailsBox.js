@@ -10,6 +10,7 @@ import {
 } from "../utils/helpers";
 import { apiHistory } from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
+import { REGISTRATION_METRICS_COLUMNS } from "../constants";
 
 /*
  * Settings objects/object generators for the columns of the DetailsBox
@@ -73,36 +74,32 @@ export const DetailsBox = forwardRef(
     const [emptyStateImg, setEmptyStateImg] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const showCol = info => {
-      if (
-        info === "rFinalEnrollmentPercentage" ||
-        info === "rPercentOpen" ||
-        info === "rNumOpenings"
-      ) {
-        return isCourseEval;
-      } else {
-        return !isCourseEval;
-      }
-    };
+    const showCol = info =>
+      REGISTRATION_METRICS_COLUMNS.includes(info) === isCourseEval;
 
-    const generateCol = info => ({
-      id: info,
-      width: 150,
-      Header: getColumnName(info),
-      accessor: info,
-      show: showCol(info),
-      Cell: ({ value }) => {
-        return (
+    const generateCol = info => {
+      if (!showCol(info)) {
+        return null;
+      }
+      return {
+        id: info,
+        width: 150,
+        Header: getColumnName(info),
+        accessor: info,
+        show: true,
+        Cell: ({ value }) => (
           <center className={!value ? "empty" : ""}>
-            {isNaN(value) && value.slice(-1) === "%"
-              ? value
-              : isNaN(value)
+            {!value
               ? "N/A"
+              : isNaN(value) && value.slice(-1) === "%"
+              ? value
+              : isCourseEval
+              ? value
               : value.toFixed(2)}
           </center>
-        );
-      }
-    });
+        )
+      };
+    };
 
     useEffect(() => {
       const num = Math.floor(Math.random() * 5 + 1);
@@ -114,9 +111,9 @@ export const DetailsBox = forwardRef(
         apiHistory(course, instructor)
           .then(res => {
             const [firstSection, ...sections] = Object.values(res.sections);
-            const ratingCols = orderColumns(
-              Object.keys(firstSection.ratings)
-            ).map(generateCol);
+            const ratingCols = orderColumns(Object.keys(firstSection.ratings))
+              .map(generateCol)
+              .filter(col => col);
             const semesterSet = new Set(
               [firstSection, ...sections]
                 .filter(a => a.comments)

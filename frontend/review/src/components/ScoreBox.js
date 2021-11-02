@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
+import { REGISTRATION_METRICS_COLUMNS } from "../constants/values";
 
 import {
   capitalize,
@@ -133,11 +134,6 @@ class ScoreBox extends Component {
 
     const EXTRA_KEYS = ["latest_semester", "num_semesters"];
     const SEM_SORT_KEY = "latest_semester";
-    const COURSE_EVAL_COLS = [
-      "rFinalEnrollmentPercentage",
-      "rPercentOpen",
-      "rNumOpenings"
-    ];
 
     const data = Object.keys(infoMap).map(key => {
       const val = isCourse ? results.instructors[key] : results.courses[key];
@@ -147,9 +143,9 @@ class ScoreBox extends Component {
           return;
         }
 
-        //Only show course statistics if toggled
-        //if one of the columns and not courseEval then return
-        if (COURSE_EVAL_COLS.includes(col)) {
+        // Only show registration metrics if toggled
+        // if one of the columns and not courseEval then return
+        if (REGISTRATION_METRICS_COLUMNS.includes(col)) {
           if (!this.props.isCourseEval) {
             return;
           }

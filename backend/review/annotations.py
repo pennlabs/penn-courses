@@ -11,7 +11,6 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.functions import Cast
 
 from review.models import ALL_FIELD_SLUGS, Review, ReviewBit
 
@@ -59,8 +58,9 @@ def review_averages(
     :param semester_aggregations: option to annotate additional semester aggregations for the
         semester returned by the subfilters (only useful if subfilters filter down to one semester),
         as well as the count of the number of semesters included in the queryset's annotations.
-    :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment
-        percentage, percent of add/drop period open, and average number of openings during add/drop
+    :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment,
+        percent of add/drop period open, average number of openings during add/drop,
+        and percentage of sections filled in advance registration
     :param: section_subfilters: if extra_metrics is set to True, then you should also translate
         all your subfilters to Section filters, and pass them as section_subfilters
     """
@@ -81,11 +81,14 @@ def review_averages(
     class NumOpeningsSubqueryAvg(Subquery):
         template = "(SELECT AVG(num_openings) FROM (%(subquery)s) num_openings_view)"
 
+    class FilledInAdvRegAvg(Subquery):
+        template = "(SELECT AVG(filled_in_adv_reg) FROM (%(subquery)s) filled_in_adv_reg_view)"
+
     queryset = queryset.annotate(
         **{
             **{
                 (prefix + field): Subquery(
-                    ReviewBit.objects.filter(field=field, **subfilters)
+                    ReviewBit.objects.filter(field=field, review__responses__gt=0, **subfilters)
                     .values("field")
                     .order_by()
                     .annotate(avg=Avg("average"))
@@ -96,29 +99,15 @@ def review_averages(
             },
             **(
                 {
-                    (prefix + "final_enrollment_percentage"): Subquery(
-                        ReviewBit.objects.filter(**subfilters)
+                    (prefix + "final_enrollment"): Subquery(
+                        ReviewBit.objects.filter(review__responses__gt=0, **subfilters)
                         .values("review_id", "review__enrollment", "review__section__capacity")
                         .order_by()
                         .distinct()
-                        .annotate(
-                            final_enrollment_percentage=Case(
-                                When(
-                                    Q(review__section__capacity__isnull=False)
-                                    & Q(review__section__capacity__gt=0),
-                                    then=Cast("review__enrollment", FloatField())
-                                    / Cast("review__section__capacity", FloatField()),
-                                ),
-                                default_value=Value(None),
-                                output_field=FloatField(),
-                            ),
-                            common=Value(1),
-                        )
+                        .annotate(common=Value(1))
                         .values("common")
-                        .annotate(
-                            avg_final_enrollment_percentage=Avg("final_enrollment_percentage")
-                        )
-                        .values("avg_final_enrollment_percentage")[:1],
+                        .annotate(avg_final_enrollment=Avg("review__enrollment"))
+                        .values("avg_final_enrollment")[:1],
                         output_field=FloatField(),
                     ),
                     (prefix + "percent_open"): PercentOpenSubqueryAvg(
@@ -138,7 +127,9 @@ def review_averages(
                         .annotate(
                             num_openings=Subquery(
                                 StatusUpdate.objects.filter(
-                                    new_status="O", section_id=OuterRef("id")
+                                    in_add_drop_period=True,
+                                    new_status="O",
+                                    section_id=OuterRef("id"),
                                 )
                                 .annotate(common=Value(1))
                                 .values("common")
@@ -146,6 +137,33 @@ def review_averages(
                                 .annotate(count=Count("*"))
                                 .values("count")[:1],
                                 output_field=IntegerField(),
+                            )
+                        ),
+                        output_field=FloatField(),
+                    ),
+                    (prefix + "filled_in_adv_reg"): FilledInAdvRegAvg(
+                        Section.objects.filter(
+                            extra_metrics_section_filters_pcr(), **section_subfilters
+                        )
+                        .order_by()
+                        .distinct()
+                        .annotate(
+                            filled_in_adv_reg=Subquery(
+                                StatusUpdate.objects.filter(
+                                    in_add_drop_period=False,
+                                    percent_through_add_drop_period=0,
+                                    section_id=OuterRef("id"),
+                                )
+                                .order_by("-created_at")
+                                .annotate(
+                                    filled=Case(
+                                        When(Q(new_status="C"), then=Value(1.0),),
+                                        When(Q(new_status="O"), then=Value(0.0),),
+                                        output_field=FloatField(),
+                                    )
+                                )
+                                .values("filled")[:1],
+                                output_field=FloatField(),
                             )
                         ),
                         output_field=FloatField(),
@@ -160,12 +178,12 @@ def review_averages(
         queryset = queryset.annotate(
             **{
                 (prefix + "semester_calc"): Subquery(
-                    ReviewBit.objects.filter(**subfilters).values(
+                    ReviewBit.objects.filter(review__responses__gt=0, **subfilters).values(
                         "review__section__course__semester"
                     )[:1]
                 ),
                 (prefix + "semester_count"): Subquery(
-                    ReviewBit.objects.filter(**subfilters)
+                    ReviewBit.objects.filter(review__responses__gt=0, **subfilters)
                     .values("field")
                     .order_by()
                     .annotate(count=Count("review__section__course__semester"))
@@ -194,8 +212,9 @@ def annotate_with_matching_reviews(
     :param most_recent: If `True`, only aggregate results for the most recent semester.
     :param fields: list of fields to aggregate.
     :param prefix: prefix of annotated fields on the queryset.
-    :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment
-        percentage, percent of add/drop period open, and average number of openings during add/drop
+    :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment,
+        percent of add/drop period open, average number of openings during add/drop,
+        and percentage of sections filled in advance registration
     :param: section_subfilters: if extra_metrics is set to True, then you should also translate
         all your subfilters to Section filters, and pass them as section_subfilters
     """
@@ -203,7 +222,7 @@ def annotate_with_matching_reviews(
     if fields is None:
         fields = ALL_FIELD_SLUGS
 
-    matching_reviews = Review.objects.filter(match_on)
+    matching_reviews = Review.objects.filter(match_on, responses__gt=0)
     filters = {"review_id__in": Subquery(matching_reviews.values("id"))}
     if most_recent:
         # Filter the queryset to include only rows from the most recent semester.
@@ -239,8 +258,9 @@ def annotate_average_and_recent(qs, match_on, extra_metrics=True, section_subfil
     :param match_on: `Q()` expression representing a filtered subset of reviews to aggregate
         for each row. Use `OuterRef(OuterRef('<field>'))` to refer to <field> on the row
         in the queryset.
-    :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment
-        percentage, percent of add/drop period open, and average number of openings during add/drop
+    :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment,
+        percent of add/drop period open, average number of openings during add/drop,
+        and percentage of sections filled in advance registration
     :param: section_subfilters: if extra_metrics is set to True, then you should also translate
         all your subfilters to Section filters, and pass them as section_subfilters
     """

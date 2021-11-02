@@ -10,7 +10,6 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from options.models import get_bool
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -23,6 +22,7 @@ from alert.serializers import (
     RegistrationUpdateSerializer,
 )
 from alert.tasks import send_course_alerts
+from alert.util import pca_registration_open, should_send_pca_alert
 from courses.util import get_current_semester, record_update, update_course_from_record
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
@@ -92,12 +92,7 @@ def accept_webhook(request):
 
     alert_for_course_called = False
 
-    should_send_alert = (
-        get_bool("SEND_FROM_WEBHOOK", False)
-        and (course_status == "O" or course_status == "C")
-        and get_current_semester() == course_term
-    )
-    if should_send_alert:
+    if should_send_pca_alert(course_term, course_status):
         try:
             alert_for_course(
                 course_id, semester=course_term, sent_by="WEB", course_status=course_status
@@ -280,7 +275,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     @staticmethod
     def handle_registration(request):
-        if not get_bool("REGISTRATION_OPEN", True):
+        if not pca_registration_open():
             return Response(
                 {"message": "Registration is not open."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -361,17 +356,22 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object().get_most_current_rec()
+        instance = self.get_object().get_most_current()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
     def update(self, request, pk=None):
+        if not Registration.objects.filter(id=pk).exists():
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         try:
             registration = self.get_queryset().get(id=pk)
         except Registration.DoesNotExist:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "You do not have access to the specified registration."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        registration = registration.get_most_current_rec()
+        registration = registration.get_most_current()
 
         if registration.section.semester != get_current_semester():
             return Response(
@@ -380,7 +380,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
         try:
             if request.data.get("resubscribe", False):
-                if not get_bool("REGISTRATION_OPEN", True):
+                if not pca_registration_open():
                     return Response(
                         {"message": "Registration is not open."},
                         status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -507,7 +507,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return Response({"detail": "no changes made"}, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
-        if self.get_queryset().filter(id=request.data.get("id")).exists():
+        if Registration.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
         return self.handle_registration(request)
 

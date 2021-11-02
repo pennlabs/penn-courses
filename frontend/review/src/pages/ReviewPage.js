@@ -308,8 +308,7 @@ export class ReviewPage extends Component {
               style={{ fontSize: "150px", color: "#aaa" }}
             />
             <h1 style={{ fontSize: "2em", marginTop: 15 }}>
-              Loading {code}
-              ...
+              Loading {type === "instructor" ? "" : code}...
             </h1>
           </div>
         )}

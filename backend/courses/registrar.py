@@ -63,7 +63,7 @@ def get_departments():
         else:
             raise ValueError("OpenData API returned data with no populated result_data field.")
     else:
-        raise ValueError(f"OpenData API responded with status code {r.status_code}.")
+        raise ValueError(f"OpenData API responded with status code {r.status_code}: {r.json()}.")
 
 
 def get_courses(query, semester):

@@ -140,6 +140,13 @@ class Command(BaseCommand):
                     registration.resubscribed_from_id = id_corrections[resubscribed_from_id]
                     to_save.append(registration)
             Registration.objects.bulk_update(to_save, ["resubscribed_from_id"])
+            to_save = []
+            for registration, _, _ in tqdm(registrations):
+                head_registration = registration.get_most_current_iter()
+                if registration.head_registration != head_registration:
+                    registration.head_registration = head_registration
+                    to_save.append(registration)
+            Registration.objects.bulk_update(to_save, ["head_registration"])
 
             print(f"Done! {len(registrations)} registrations added to database.")
 

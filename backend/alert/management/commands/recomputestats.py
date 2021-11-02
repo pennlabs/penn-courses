@@ -61,9 +61,73 @@ def get_semesters(semesters=None, verbose=False):
     return semesters
 
 
+def deduplicate_status_updates(semesters=None, verbose=False, semesters_precomputed=False):
+    """
+    Removes duplicate/redundant status updates from the specified semesters.
+    Args:
+        semesters: The semesters argument should be a comma-separated list of string semesters
+            corresponding to the semesters for which you want to remove duplicate/redundant
+            status updates, i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
+            It defaults to None, in which case only the current semester is used. If you supply
+            the string "all", it will deduplicate for all semesters found in Courses in the db.
+            If semesters_precomputed is set to True (non-default), then this argument should
+            instead be a list of single string semesters.
+        semesters_precomputed: If False (default), the semesters argument will expect a raw
+            comma-separated string input. If True, the semesters argument will expect a list of
+            individual string semesters.
+        verbose: Set to True if you want this script to print its status as it goes,
+            or keep as False (default) if you want the script to work silently.
+    """
+
+    semesters = (
+        semesters if semesters_precomputed else get_semesters(semesters=semesters, verbose=verbose)
+    )
+
+    if verbose:
+        print(f"Deduplicating status updates for semesters {str(semesters)}...")
+
+    iterator_wrapper = tqdm if verbose else (lambda x: x)
+
+    for semester_num, semester in enumerate(semesters):
+        with transaction.atomic():
+            # We make this command an atomic transaction, so that the database will not
+            # be modified unless the entire update for a semester succeeds.
+
+            if verbose:
+                print(f"\nProcessing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.")
+
+            num_removed = 0
+            for section_id in iterator_wrapper(
+                Section.objects.filter(course__semester=semester).values_list("id", flat=True)
+            ):
+                last_update = None
+                ids_to_remove = []  # IDs of redundant status updates to remove
+
+                for update in StatusUpdate.objects.filter(section_id=section_id).order_by(
+                    "created_at"
+                ):
+                    if (
+                        last_update
+                        and last_update.old_status == update.old_status
+                        and last_update.new_status == update.new_status
+                    ):
+                        ids_to_remove.append(update.id)
+                        continue
+                    last_update = update
+
+                num_removed += len(ids_to_remove)
+                StatusUpdate.objects.filter(id__in=ids_to_remove).delete()
+            print(
+                f"Removed {num_removed} duplicate status update objects from semester {semester}."
+            )
+
+    if verbose:
+        print(f"Finished deduplicating status updates for semesters {str(semesters)}.")
+
+
 def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=False):
     """
-    Recompute the percent_open field for each section in the given semester(s).
+    Recomputes the percent_open field for each section in the given semester(s).
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute percent_open fields,
@@ -153,9 +217,7 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
 
 def recompute_registration_volumes(semesters=None, semesters_precomputed=False, verbose=False):
     """
-    This script recomputes all PcaDemandDistributionEstimate objects for the given semester(s)
-    based on saved Registration objects, as well as the registration_volume fields for all sections
-    in the given semester(s).
+    Recomputes the registration_volume fields for all sections in the given semester(s).
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute demand distribution
@@ -199,8 +261,9 @@ def recompute_demand_distribution_estimates(
 ):
     """
     This script recomputes all PcaDemandDistributionEstimate objects for the given semester(s)
-    based on saved Registration objects, as well as the registration_volume fields for all sections
-    in the given semester(s).
+    based on saved Registration objects. In doing so, it also recomputes the registration_volume
+    and percent_open fields for all sections in the given semester(s)
+    (by calling recompute_registration_volumes and recompute_percent_open).
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute demand distribution
@@ -445,12 +508,15 @@ def recompute_demand_distribution_estimates(
 
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
-    Recompute the percent_open field on each section, as well
+    Recomputes PCA demand distribution estimates, as well as the registration_volume
+    and percent_open fields for all sections in the given semester(s). Deduplicates
+    status updates saved to the database.
     """
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
-    semesters = fill_in_add_drop_periods(verbose=True).intersection(semesters)
-    load_add_drop_dates(verbose=True)
+    semesters = fill_in_add_drop_periods(verbose=verbose).intersection(semesters)
+    load_add_drop_dates(verbose=verbose)
+    deduplicate_status_updates(semesters=semesters, semesters_precomputed=True, verbose=verbose)
     recompute_demand_distribution_estimates(
         semesters=semesters, semesters_precomputed=True, verbose=verbose
     )
@@ -458,7 +524,7 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
 
 class Command(BaseCommand):
     help = (
-        "Recompute PCA demand distribution estimate, as well as the registration_volume "
+        "Recomputes PCA demand distribution estimates, as well as the registration_volume "
         "and percent_open fields for all sections in the given semester(s)."
     )
 

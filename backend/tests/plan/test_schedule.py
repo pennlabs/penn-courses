@@ -606,6 +606,47 @@ class ScheduleTest(TestCase):
         )
         self.assertEqual(403, response.status_code)
 
+    def test_user_cant_access_other_users_schedule(self):
+        User.objects.create_user(
+            username="charley", email="charley@example.com", password="top_secret"
+        )
+        client2 = APIClient()
+        client2.login(username="charley", password="top_secret")
+        response = client2.post(
+            "/api/plan/schedules/",
+            json.dumps(
+                {
+                    "id": str(self.s.id),
+                    "semester": TEST_SEMESTER,
+                    "name": "New Test Schedule",
+                    "sections": [
+                        {"id": "CIS-121-001", "semester": TEST_SEMESTER},
+                        {"id": "CIS-160-001", "semester": TEST_SEMESTER},
+                    ],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(403, response.status_code)
+        response = client2.put(
+            "/api/plan/schedules/" + str(self.s.id) + "/",
+            json.dumps(
+                {
+                    "semester": TEST_SEMESTER,
+                    "name": "New Test Schedule",
+                    "meetings": [
+                        {"id": "CIS-121-001", "semester": TEST_SEMESTER},
+                        {"id": "CIS-160-001", "semester": TEST_SEMESTER},
+                    ],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(403, response.status_code)
+        response = client2.get("/api/plan/schedules/")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(0, len(response.data))
+
     def test_create_schedule_no_semester_no_courses(self):
         response = self.client.post(
             "/api/plan/schedules/",

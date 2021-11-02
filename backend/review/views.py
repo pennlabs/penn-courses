@@ -1,16 +1,19 @@
 from dateutil.tz import gettz
-from django.db.models import Count, F, OuterRef, Q, Subquery, Value
-from django.db.models.functions import Coalesce
+from django.db.models import F, OuterRef, Q, Subquery
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course, Department, Instructor, Restriction, Section, StatusUpdate
-from courses.util import get_add_drop_period, get_current_semester
+from courses.models import Course, Department, Instructor, Restriction, Section
+from courses.util import get_current_semester, get_or_create_add_drop_period
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
-from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
+from PennCourses.settings.base import (
+    PERMIT_REGISTRATION_RESTRICTION_CODES,
+    TIME_ZONE,
+    WAITLIST_DEPARTMENT_CODES,
+)
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     autocomplete_response_schema,
@@ -56,7 +59,7 @@ extra_metrics_section_filters = (
     & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
     & ~Q(
         id__in=Subquery(
-            Restriction.objects.filter(description__icontains="permission").values_list(
+            Restriction.objects.filter(code__in=PERMIT_REGISTRATION_RESTRICTION_CODES).values_list(
                 "sections__id", flat=True
             )
         )
@@ -75,7 +78,11 @@ def extra_metrics_section_filters_pcr(current_semester=None):
         extra_metrics_section_filters
         & Q(course__semester__lt=current_semester)  # Filter our sections from the current semester
         & (
-            Q(id__in=Subquery(Review.objects.all().values_list("section__id", flat=True)))
+            Q(
+                id__in=Subquery(
+                    Review.objects.filter(responses__gt=0).values_list("section__id", flat=True)
+                )
+            )
         )  # Filter out sections that do not have review data
     )
 
@@ -115,12 +122,12 @@ def course_reviews(request, course_code):
 
     reviews = (
         review_averages(
-            Review.objects.filter(section__course__full_code=course_code),
+            Review.objects.filter(section__course__full_code=course_code, responses__gt=0),
             {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
             extra_metrics=True,
-            section_subfilters={"review__id": OuterRef("id")},
+            section_subfilters={"id": OuterRef("section_id")},
         )
         .annotate(
             course_title=F("section__course__title"),
@@ -148,7 +155,7 @@ def course_reviews(request, course_code):
             "description": course["description"],
             "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
             "num_sections": Section.objects.filter(
-                course__full_code=course_code, review__isnull=False
+                course__full_code=course_code, review__isnull=False, review__responses__gt=0
             )
             .values("full_code", "course__semester")
             .distinct()
@@ -157,6 +164,7 @@ def course_reviews(request, course_code):
                 course__full_code=course_code,
                 course__semester=course["recent_semester_calc"],
                 review__isnull=False,
+                review__responses__gt=0,
             )
             .values("full_code", "course__semester")
             .distinct()
@@ -244,7 +252,7 @@ def course_plots(request, course_code):
             recent_percent_open_plot_semester,
         ) = avg_and_recent_percent_open_plots(section_map, status_updates_map)
 
-    current_adp = get_add_drop_period(current_semester)
+    current_adp = get_or_create_add_drop_period(current_semester)
     local_tz = gettz(TIME_ZONE)
 
     return Response(
@@ -330,9 +338,14 @@ def instructor_reviews(request, instructor_id):
         {
             "name": instructor.name,
             "num_sections_recent": Section.objects.filter(
-                instructors=instructor, course__semester=inst["recent_semester_calc"]
+                instructors=instructor,
+                course__semester=inst["recent_semester_calc"],
+                review__isnull=False,
+                review__responses__gt=0,
             ).count(),
-            "num_sections": Section.objects.filter(instructors=instructor).count(),
+            "num_sections": Section.objects.filter(
+                instructors=instructor, review__isnull=False, review__responses__gt=0,
+            ).count(),
             "average_reviews": make_subdict("average_", inst),
             "recent_reviews": make_subdict("recent_", inst),
             "num_semesters": inst["average_semester_count"],
@@ -383,12 +396,12 @@ def department_reviews(request, department_code):
     department = get_object_or_404(Department, code=department_code)
     reviews = (
         review_averages(
-            Review.objects.filter(section__course__department=department),
+            Review.objects.filter(section__course__department=department, responses__gt=0),
             {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
             extra_metrics=True,
-            section_subfilters={"review__id": OuterRef("id")},
+            section_subfilters={"id": OuterRef("section_id")},
         )
         .annotate(
             course_title=F("section__course__title"),
@@ -432,30 +445,19 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     Get the review history of an instructor teaching a course. No aggregations here.
     """
     instructor = get_object_or_404(Instructor, id=instructor_id)
+    print([str(r) for r in Review.objects.filter(instructor_id=instructor_id, responses__gt=0)])
     reviews = review_averages(
-        Review.objects.filter(section__course__full_code=course_code, instructor=instructor),
+        Review.objects.filter(
+            section__course__full_code=course_code, instructor_id=instructor_id, responses__gt=0
+        ),
         {"review_id": OuterRef("id")},
         fields=ALL_FIELD_SLUGS,
         prefix="bit_",
         extra_metrics=True,
-        section_subfilters={"review__id": OuterRef("id")},
+        section_subfilters={"id": OuterRef("section_id")},
     )
     reviews = reviews.annotate(
-        course_title=F("section__course__title"),
-        semester=F("section__course__semester"),
-        section_capacity=F("section__capacity"),
-        percent_open=F("section__percent_open"),
-        num_openings=Coalesce(
-            Subquery(
-                StatusUpdate.objects.filter(
-                    section_id=OuterRef("section_id"), in_add_drop_period=True
-                )
-                .values("id")
-                .annotate(count=Count("id"))
-                .values("count")[:1]
-            ),
-            Value(0),
-        ),
+        course_title=F("section__course__title"), semester=F("section__course__semester"),
     )
 
     return Response(

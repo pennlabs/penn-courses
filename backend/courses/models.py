@@ -96,7 +96,7 @@ def sections_with_reviews(queryset):
             "review__section__course__full_code": OuterRef("course__full_code"),
             # get all the reviews for instructors in the Section.instructors many-to-many
             "review__instructor__in": Subquery(
-                Instructor.objects.filter(section=OuterRef(OuterRef("pk"))).values("pk").order_by()
+                Instructor.objects.filter(section=OuterRef(OuterRef("id"))).values("id").order_by()
             ),
         },
         extra_metrics=False,
@@ -428,7 +428,7 @@ class Section(models.Model):
     def semester(self):
         """
         The semester of the course (of the form YYYYx where x is A [for spring],
-        B [summer], or C [fall]), e.g. 2019C for fall 2019.
+        B [summer], or C [fall]), e.g. `2019C` for fall 2019.
         """
         return self.course.semester
 
@@ -462,12 +462,12 @@ class Section(models.Model):
         registration period] that this section was open. If this section's registration
         period hasn't started yet, this property is null (None in Python).
         """
-        from courses.util import get_add_drop_period, get_current_semester
+        from courses.util import get_current_semester, get_or_create_add_drop_period
 
         # ^ imported here to avoid circular imports
 
         if self.semester == get_current_semester():
-            add_drop = get_add_drop_period(self.semester)
+            add_drop = get_or_create_add_drop_period(self.semester)
             add_drop_start = add_drop.estimated_start
             add_drop_end = add_drop.estimated_end
             current_time = timezone.now()
@@ -504,7 +504,7 @@ class Section(models.Model):
         """
         The current raw PCA demand of the section, which is defined as:
         [the number of active PCA registrations for this section]/[the class capacity]
-        NOTE: if this section has a null or non-positive capacity, then this property will be None.
+        NOTE: if this section has a null or non-positive capacity, then this property will be null.
         """
         # Note for backend developers: this is a property, not a field. However,
         # in the Meta class for this model, we define the raw_property index identically to
@@ -550,8 +550,6 @@ class StatusUpdate(models.Model):
         help_text="Was an alert was sent to a User as a result of this status update?"
     )
     # ^^^ alert_sent is true iff alert_for_course was called in accept_webhook in alert/views.py
-    # equivalently, iff SEND_FROM_WEBHOOK == True and SEMESTER == course_term, and the request
-    # is not otherwise invalid
     request_body = models.TextField()
 
     percent_through_add_drop_period = models.FloatField(
@@ -577,13 +575,13 @@ class StatusUpdate(models.Model):
     def save(self, *args, **kwargs):
         """
         This overridden save method first gets the add/drop period object for the semester of this
-        StatusUpdate object (either by using the get_add_drop_period method or by using
+        StatusUpdate object (either by using the get_or_create_add_drop_period method or by using
         a passed-in add_drop_period kwarg, which can be used for efficiency in bulk operations
         over many StatusUpdate objects). Then it calls the overridden save method, and after that
         it sets the percent_through_add_drop_period field.
         """
         from alert.models import validate_add_drop_semester
-        from courses.util import get_add_drop_period
+        from courses.util import get_or_create_add_drop_period
 
         # ^ imported here to avoid circular imports
 
@@ -601,7 +599,7 @@ class StatusUpdate(models.Model):
             return
 
         if add_drop_period is None:
-            add_drop_period = get_add_drop_period(self.section.semester)
+            add_drop_period = get_or_create_add_drop_period(self.section.semester)
 
         created_at = self.created_at
         start = add_drop_period.estimated_start
@@ -743,9 +741,9 @@ class Meeting(models.Model):
     @staticmethod
     def int_to_time(time):
         hour = math.floor(time) % 12
-        minute = (time % 1) * 60
+        minute = math.floor((time % 1) * 100)
 
-        return f'{hour if hour != 0 else 12}:{minute if minute != 0 else "00"} {"AM" if time < 12 else "PM"}'  # noqa: E501
+        return f'{hour if hour != 0 else 12}:{str(minute).zfill(2)} {"AM" if time < 12 else "PM"}'
 
     @property
     def start_time(self):
@@ -762,6 +760,14 @@ class Meeting(models.Model):
         (hour is not 0 padded but minute is).
         """
         return Meeting.int_to_time(self.end)
+
+    @property
+    def no_conflict_query(self):
+        """
+        Returns a Q() object representing the condition that another Meeting object
+        does not overlap with this meeting object in day/time.
+        """
+        return ~Q(day=self.day) | Q(end__lte=self.start) | Q(start__gte=self.end)
 
     def __str__(self):
         return f"{self.section}: {self.start_time}-{self.end_time} in {self.room}"
