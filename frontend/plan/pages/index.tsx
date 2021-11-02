@@ -20,10 +20,12 @@ import Footer from "../components/footer";
 import Cart from "../components/Cart";
 import ModalContainer from "../components/modals/generic_modal_container";
 import SearchSortDropdown from "../components/search/SearchSortDropdown";
+import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import { openModal } from "../actions";
 import { preventMultipleTabs } from "../components/syncutils";
 import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
 import styled, { createGlobalStyle } from "styled-components";
+import { User } from "../types";
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -90,6 +92,10 @@ function Index() {
     const containerRef = useRef<HTMLDivElement>();
     const scrollTop = () => window.scrollTo(0, 0);
     const isExpanded = view === 1;
+
+    const [showLoginModal, setShowLoginModal] = useState<boolean>(true);
+    const [user, setUser] = useState<User | null>(null);
+    
 
     useEffect(() => {
         setInnerWidth(window.innerWidth);
@@ -185,6 +191,7 @@ function Index() {
         <Provider store={store}>
             {initGA()}
             {headPreamble}
+            {showLoginModal && <LoginModal pathname={typeof window !== "undefined" ? window.location.pathname : ""} siteName="Penn Course Plan"/>}
             <GlobalStyle />
             {innerWidth < 800 ? (
                 <>
@@ -195,6 +202,7 @@ function Index() {
                         mobileView={true}
                         storeLoaded={storeLoaded}
                         isExpanded={isExpanded}
+                        setShowLoginModal={setShowLoginModal}
                     />
                     <CustomTabs value={tab} centered>
                         <Tab
@@ -267,6 +275,7 @@ function Index() {
                         setTab={setTab}
                         mobileView={false}
                         isExpanded={isExpanded}
+                        setShowLoginModal={setShowLoginModal}
                     />
                     <div
                         className="App columns is-mobile main smooth-transition"

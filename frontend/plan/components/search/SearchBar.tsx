@@ -65,6 +65,7 @@ interface SearchBarProps {
     clearScheduleData: () => void;
     store: object;
     storeLoaded: boolean;
+    setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 function shouldSearch(filterData: FilterData) {
@@ -275,6 +276,7 @@ function SearchBar({
     clearScheduleData,
     store,
     storeLoaded,
+    setShowLoginModal,
 }: /* eslint-enable no-shadow */
 SearchBarProps) {
     const router = useRouter();
@@ -412,8 +414,15 @@ SearchBarProps) {
                 <MobileSearchBarInnerContainer>
                     <AccountIndicator
                         user={user}
-                        login={login}
-                        logout={logout}
+                        login={(u: User) => {
+                            login(u);
+                            setShowLoginModal(false);
+                        }}
+                        logout={() => {
+                            logout();
+                            clearScheduleData();
+                            setShowLoginModal(true);
+                        }}
                         onLeft={true}
                         pathname={router.pathname}
                     />
@@ -513,12 +522,16 @@ SearchBarProps) {
                 <LevelItem>
                     <AccountIndicator
                         user={user}
-                        login={login}
+                        login={(u: User) => {
+                            login(u);
+                            setShowLoginModal(false);
+                        }}
                         backgroundColor="purple"
                         nameLength={1}
                         logout={() => {
                             logout();
                             clearScheduleData();
+                            setShowLoginModal(true);
                         }}
                         onLeft={false}
                         pathname={router.pathname}

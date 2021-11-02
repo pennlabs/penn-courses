@@ -1,11 +1,11 @@
 import React, { ChangeEventHandler, PropsWithChildren } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
-import { Flex, FlexProps } from "../common/layout";
+import { Flex, FlexProps } from "pcx-shared-components/src/common/layout";
 import { Img } from "../common/common";
 import { WrappedStyled } from "../../types";
 
-const SearchFlex: WrappedStyled<FlexProps> = styled(Flex)`
+const SearchFlex = styled(Flex)`
     background-color: #f4f4f4;
     border: solid 0.5px #dfe3e8;
     border-radius: 0.2rem;
@@ -18,7 +18,7 @@ const SearchInput = styled.input`
     width: 10rem;
 `;
 
-const SearchBarFlex: WrappedStyled<FlexProps> = styled(Flex)`
+const SearchBarFlex = styled(Flex)`
     & > * {
         display: block;
         margin: 0.1rem;

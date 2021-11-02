@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Header from "./Header";
-import { Flex } from "../common/layout";
+import { Flex } from "pcx-shared-components/src/common/layout";
 import { AlertSearch } from "./AlertSearch";
 import { AlertItem } from "./AlertItem";
 import { maxWidth, PHONE } from "../../constants";
