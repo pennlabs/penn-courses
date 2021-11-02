@@ -44,10 +44,14 @@ def _clean_data(data):
     for row in data:
         dept_code = unidecode.unidecode(row["course_dept"]).strip().upper()
         course_id = row["course_number"].strip()
+
         if dept_code in {"TES", "TEST"}:
             # we emailed support@wharton.upenn.edu about this issue
             # for now just exclude these fake departments manually
             continue
+        if dept_code == "FOLK 280":
+            dept_code = "FOLK"
+
         reqs = row["req_satisfied"].split(",")
         _add_ccp(reqs, row["ccp_flag"])
         reqs = [r for r in reqs if r != "See Advisor"]
