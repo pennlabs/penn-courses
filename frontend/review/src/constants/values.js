@@ -22,9 +22,13 @@ export const ALL_DATA_COLUMNS = [
   "rRecommendNonMajor"
 ];
 
-export const PERCENTAGE_COLUMNS = [
-  "rFinalEnrollmentPercentage",
-  "rPercentOpen"
+export const PERCENTAGE_COLUMNS = ["rPercentOpen", "rFilledInAdvReg"];
+
+export const REGISTRATION_METRICS_COLUMNS = [
+  "rPercentOpen",
+  "rFilledInAdvReg",
+  "rNumOpenings",
+  "rFinalEnrollment"
 ];
 
 export const COLUMN_FULLNAMES = {
