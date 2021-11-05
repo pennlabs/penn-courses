@@ -50,17 +50,20 @@ def meeting_filter(queryset, meeting_query):
         .distinct()
     )
 
+
 def is_open_filter(queryset, *args):
     """
     Filters the given queryset of courses by the following condition:
-    include a course only if filtering its section by whether their `status` is open or
-    not does not limit the set of section activities we can participate in for the course.
+    include a course only if filtering its sections by whether their `status` is open or
+    not does not limit the set of section activities we can participate.
+    In other words, filter to courses for which all activities have open sections.
     For instance, we would include a course with lecture and recitation sections only if
-    we could enroll in some lecture section and some recitation section when we look
-    at the open sections. Note that for compatibility, this function can take additional positional
+    both the lecture section and some recitation section is open.
+    Note that for compatibility, this function can take additional positional
     arguments (`args`) but these are ignored.
     """
-    matching_sections = Section.objects.filter(status = "O")
+
+    matching_sections = Section.objects.filter(status="O")
     return (
         queryset.annotate(
             num_activities=subquery_count_distinct(
@@ -204,7 +207,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             "course_quality": bound_filter("course_quality"),
             "instructor_quality": bound_filter("instructor_quality"),
             "difficulty": bound_filter("difficulty"),
-            "is-open": is_open_filter,
+            "is_open": is_open_filter,
         }
         for field, filter_func in filters.items():
             param = request.query_params.get(field)
@@ -345,17 +348,18 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "example": "242",
             },
             {
-                "name": "is-open",
+                "name": "is_open",
                 "required": False,
                 "in": "query",
                 "description": (
                     "Filter courses to only those that are open. "
                     "A boolean of true should be included if you want to apply the filter. "
-                    "By default (ie when the `is-open` is not supplied, the filter is not applied. "
+                    "By default (ie when the `is_open` is not supplied, the filter is not applied. "
                     "This filters courses by the following condition: "
                     "include a course only if the specification that a section is open "
                     "does not limit the set of section activities we can participate in "
-                    "for the course. "
+                    "for the course."
+                    "In other words, filter to courses for which all activities have open sections."
                 ),
                 "schema": {"type": "boolean"},
                 "example": "true",

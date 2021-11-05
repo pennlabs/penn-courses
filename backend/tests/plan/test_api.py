@@ -138,6 +138,7 @@ class IsOpenFilterTestCase(TestCase):
         def save_all():
             for section in [self.cis_160_001, self.cis_160_201, self.cis_160_202]:
                 section.save()
+
         self.save_all = save_all
         self.all_codes = {"CIS-160"}
         self.non_open_statuses = [
@@ -150,7 +151,7 @@ class IsOpenFilterTestCase(TestCase):
     def test_lec_open_all_rec_open(self):
         response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"is-open": ""})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 3)
+        self.assertEqual(len(response.data), 1)
         self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_lec_open_one_rec_not_open(self):
@@ -158,7 +159,9 @@ class IsOpenFilterTestCase(TestCase):
             self.cis_160_202.status = status
             self.save_all()
 
-            response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"is-open": ""})
+            response = self.client.get(
+                reverse("courses-search", args=[TEST_SEMESTER]), {"is_open": ""}
+            )
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.data), 1)
             self.assertEqual({res["id"] for res in response.data}, self.all_codes)
@@ -169,32 +172,39 @@ class IsOpenFilterTestCase(TestCase):
             self.cis_160_201.status = status
             self.save_all()
 
-            response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"is-open": ""})
+            response = self.client.get(
+                reverse("courses-search", args=[TEST_SEMESTER]), {"is_open": ""}
+            )
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.data), 0)
             self.assertEqual({res["id"] for res in response.data}, set())
 
     def test_rec_open_lec_not_open(self):
         for status in self.non_open_statuses:
-            self.cis_160_202.status = status
+            self.cis_160_001.status = status
             self.save_all()
 
-            response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"is-open": ""})
+            response = self.client.get(
+                reverse("courses-search", args=[TEST_SEMESTER]), {"is_open": ""}
+            )
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.data), 0)
             self.assertEqual({res["id"] for res in response.data}, set())
 
     def test_lec_not_open_all_rec_not_open(self):
-        for status in ['C']:
+        for status in self.non_open_statuses:
             self.cis_160_202.status = status
             self.cis_160_201.status = status
             self.cis_160_001.status = status
             self.save_all()
 
-            response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"is-open": ""})
+            response = self.client.get(
+                reverse("courses-search", args=[TEST_SEMESTER]), {"is_open": ""}
+            )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(response.data), 1)
+            self.assertEqual(len(response.data), 0)
             self.assertEqual({res["id"] for res in response.data}, set())
+
 
 class CourseReviewAverageTestCase(TestCase):
     def setUp(self):
