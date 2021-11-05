@@ -42,17 +42,15 @@ def _add_ccp(reqs, ccp):
 def _clean_data(data):
     cleaned = dict()
     for row in data:
+        dept_code = unidecode.unidecode(row["course_dept"]).strip().upper()
+        course_id = row["course_number"].strip()
         reqs = row["req_satisfied"].split(",")
         _add_ccp(reqs, row["ccp_flag"])
         reqs = [r for r in reqs if r != "See Advisor"]
         for req in reqs:
             req_list = cleaned.get(req, [])
             req_list.append(
-                {
-                    "department": unidecode.unidecode(row["course_dept"]),
-                    "course_id": row["course_number"],
-                    "satisfies": True,
-                }
+                {"department": dept_code, "course_id": course_id, "satisfies": True,}
             )
             cleaned[req] = req_list
     return cleaned

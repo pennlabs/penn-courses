@@ -6,7 +6,6 @@ import { apiFetchPCADemandChartData } from "../utils/api";
 import { toNormalizedSemester } from "../utils/helpers";
 import { EVAL_GRAPH_COLORS } from "../constants/colors";
 
-var addDropDate = [];
 var cachedPCAChartDataResponse = null;
 
 const LoadingContainer = styled.div`
@@ -102,8 +101,8 @@ const genAverageData = seriesData => {
 
     const movingAverageVal = total / numInTotal;
     averageData.push({
-      x: (xVal * 100).toFixed(2),
-      y: movingAverageVal.toFixed(2)
+      x: xVal * 100,
+      y: movingAverageVal
     });
   });
 
@@ -112,6 +111,7 @@ const genAverageData = seriesData => {
 
 //PCA Demand Chart Data
 const genDemandChartData = data => {
+  data = data.map(([x, y]) => [x, y * 100]);
   const averageData = genAverageData(data);
   return {
     datasets: [
@@ -129,8 +129,8 @@ const genDemandChartData = data => {
         label: "Registration Difficulty",
         data: data.map(point => {
           return {
-            x: (point[0] * 100).toFixed(2),
-            y: Math.round(point[1] * 100) / 100
+            x: point[0] * 100,
+            y: point[1]
           };
         }),
         backgroundColor: EVAL_GRAPH_COLORS.DEMAND_FILL_BACKGROUND_COLOR,
@@ -150,8 +150,8 @@ const genPercentChartData = data => {
         label: "% of Sections Open",
         data: data.map(point => {
           return {
-            x: Math.round((point[0] * 100).toFixed()),
-            y: Math.round(point[1] * 100)
+            x: point[0] * 100,
+            y: point[1] * 100
           };
         }),
         borderColor: EVAL_GRAPH_COLORS.PERCENT_LINE_BORDER_COLOR,
@@ -179,19 +179,15 @@ const demandChartOptions = {
     bodySpacing: 3,
     callbacks: {
       title: (toolTipItem, data) =>
-        `${
+        `${Math.round(
           data["datasets"][0]["data"][toolTipItem[0]["index"]].x
-        }% Through Add/Drop`,
+        )}% Through Add/Drop`,
       beforeBody: (toolTipItem, data) =>
-        `Projected Date: ${calcApproxDate(
-          addDropDate[0],
-          addDropDate[1],
-          data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
-        )}\nRegistration Difficulty: ${
+        `Registration Difficulty: ${Math.round(
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y
-        }\n5% Moving Average: ${
+        )}\n5% Moving Average: ${Math.round(
           data["datasets"][1]["data"][toolTipItem[0]["index"]].y
-        }`,
+        )}`,
       label: () => {
         return;
       }
@@ -242,7 +238,7 @@ const demandChartOptions = {
           maxRotation: 0,
           minRotation: 0,
           min: 0,
-          max: 1
+          max: 100
         }
       }
     ]
@@ -263,17 +259,13 @@ const percentSectionChartOptions = {
     bodyFontSize: 12,
     callbacks: {
       title: (toolTipItem, data) =>
-        `${
+        `${Math.round(
           data["datasets"][0]["data"][toolTipItem[0]["index"]].x
-        }% Through Add/Drop`,
+        )}% Through Add/Drop`,
       beforeBody: (toolTipItem, data) =>
-        `Projected Date: ${calcApproxDate(
-          addDropDate[0],
-          addDropDate[1],
-          data["datasets"][0]["data"][toolTipItem[0]["index"]].x / 100
-        )}\n% of Sections Open: ${
+        `% of Sections Open: ${Math.round(
           data["datasets"][0]["data"][toolTipItem[0]["index"]].y
-        }%`,
+        )}%`,
       label: () => {
         return;
       }
@@ -357,11 +349,6 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
   const handlePCAChartDataResponse = res => {
     cachedPCAChartDataResponse = res;
 
-    addDropDate = [
-      res["current_add_drop_period"].start,
-      res["current_add_drop_period"].end
-    ];
-
     const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
     const demandSemester =
       res[averageOrRecent]["pca_demand_plot_since_semester"];
@@ -422,7 +409,7 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
                         Add/Drop Periods
                       </ChartTitle>
                       <ChartDescription>
-                        Registration difficulty is estimated on a fixed 0-1
+                        Registration difficulty is estimated on a fixed 0-100
                         scale (relative to other classes at Penn), using Penn
                         Course Alert data from{" "}
                         {isAverage
