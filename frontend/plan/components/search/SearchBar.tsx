@@ -30,6 +30,8 @@ import {
 } from "../../actions";
 import { login, logout } from "../../actions/login";
 
+const DAY_TIME_ENABLED = false;
+
 // removed: <F, K extends keyof F, V extends keyof K>
 interface SearchBarProps {
     startSearch: (searchObj: FilterData) => void;
@@ -426,29 +428,31 @@ SearchBarProps) {
                     startSearch={conditionalStartSearch}
                 />
             </DropdownButton>
-            <DropdownButton
-                title="Day/Time"
-                filterData={filterDataDayTime}
-                defaultFilter={initialDayTime}
-                clearFilter={() => {
-                    clearFilterSearch("days")();
-                    clearFilterSearch("time")();
-                }}
-            >
-                <DayTimeFilter
-                    // @ts-ignore
-                    filterData={filterData}
-                    updateCheckboxFilter={updateCheckboxFilter}
-                    checkboxProperty="days"
-                    // @ts-ignore
-                    startSearch={conditionalStartSearch}
-                    minRange={1.5}
-                    maxRange={17}
-                    step={1 / 60}
-                    updateRangeFilter={updateRangeFilter("time")}
-                    rangeProperty="time"
-                />
-            </DropdownButton>
+            {DAY_TIME_ENABLED && (
+                <DropdownButton
+                    title="Day/Time"
+                    filterData={filterDataDayTime}
+                    defaultFilter={initialDayTime}
+                    clearFilter={() => {
+                        clearFilterSearch("days")();
+                        clearFilterSearch("time")();
+                    }}
+                >
+                    <DayTimeFilter
+                        // @ts-ignore
+                        filterData={filterData}
+                        updateCheckboxFilter={updateCheckboxFilter}
+                        checkboxProperty="days"
+                        // @ts-ignore
+                        startSearch={conditionalStartSearch}
+                        minRange={1.5}
+                        maxRange={17}
+                        step={1 / 60}
+                        updateRangeFilter={updateRangeFilter("time")}
+                        rangeProperty="time"
+                    />
+                </DropdownButton>
+            )}
         </div>
     );
     if (mobileView) {
