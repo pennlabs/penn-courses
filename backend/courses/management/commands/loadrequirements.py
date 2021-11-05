@@ -49,13 +49,14 @@ def load_requirements(school=None, semester=None, requirements=None):
             semester=semester, school=school, code=req_id, defaults={"name": codes[req_id]}
         )[0]
         for item in items:
-            dept_id = item.get("department")
+            dept_id = item.get("department").strip().upper()
             course_id = item.get("course_id")
             satisfies = item.get("satisfies")
             dept, _ = Department.objects.get_or_create(code=dept_id)
             if course_id is None:
                 requirement.departments.add(dept)
             else:
+                course_id = course_id.strip()
                 # Unlike most functionality with courses, we do not want to create a relation
                 # between a course and a requirement if the course does not exist.
                 try:

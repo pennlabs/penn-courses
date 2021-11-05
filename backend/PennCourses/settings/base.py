@@ -190,14 +190,24 @@ STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
 S3_client = boto3.client("s3")
 S3_resource = boto3.resource("s3")
 
+# Registration Metrics Settings
+
 STATUS_UPDATES_RECORDED_SINCE = "2019C"  # How far back does our valid Status Update data span?
 PCA_REGISTRATIONS_RECORDED_SINCE = "2020A"  # How far back does our valid Registration data span?
 WAITLIST_DEPARTMENT_CODES = (
     "CIS",
     "NETS",
-)  # Which departments (referenced by code)
-# have a waitlist system or require permits for registration during the add/drop period?
+)  # Which departments (referenced by code) have a waitlist system
+# or require permits for registration during the add/drop period?
+PERMIT_REGISTRATION_RESTRICTION_CODES = [
+    "PCG",
+    "PAD",
+    "PCW",
+    "PCD",
+    "PLC",
+    "PIN",
+    "PDP",
+]  # Which permission-required restrictions indicate registration is handled by permit issuance?
 ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = (
-    200  # Aim for at least 200 demand distribution estimates
+    200  # Aim for at least 200 demand distribution estimates over the course of a semester
 )
-# over the course of a semester
