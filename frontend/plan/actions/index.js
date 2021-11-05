@@ -226,13 +226,23 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // Range filters
-    const filterFields = ["difficulty", "course_quality", "instructor_quality"];
+    const filterFields = [
+        "difficulty",
+        "course_quality",
+        "instructor_quality",
+        "time",
+    ];
     const defaultFilters = [
         [0, 4],
         [0, 4],
         [0, 4],
-        [0.5, 2],
+        [1.5, 17],
     ];
+    const decimalToTime = (t) => {
+        const hour = Math.floor(t);
+        const mins = parseFloat(((t % 1) * 0.6).toFixed(2));
+        return Math.min(23.59, hour + mins);
+    };
     for (let i = 0; i < filterFields.length; i += 1) {
         if (
             filterData[filterFields[i]] &&
@@ -240,12 +250,20 @@ function buildCourseSearchUrl(filterData) {
                 JSON.stringify(defaultFilters[i])
         ) {
             const filterRange = filterData[filterFields[i]];
-            queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
+            if (filterFields[i] === "time") {
+                const start = decimalToTime(24 - filterRange[1]);
+                const end = decimalToTime(24 - filterRange[0]);
+                queryString += `&${filterFields[i]}=${
+                    start === 7 ? "" : start
+                }-${end === 10.3 ? "" : end}`;
+            } else {
+                queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
+            }
         }
     }
 
     // Checkbox Filters
-    const checkboxFields = ["cu", "activity"];
+    const checkboxFields = ["cu", "activity", "days"];
     const checkboxDefaultFields = [
         {
             0.5: 0,
@@ -257,6 +275,15 @@ function buildCourseSearchUrl(filterData) {
             REC: 0,
             SEM: 0,
             STU: 0,
+        },
+        {
+            M: 1,
+            T: 1,
+            W: 1,
+            R: 1,
+            F: 1,
+            S: 1,
+            U: 1,
         },
     ];
     for (let i = 0; i < checkboxFields.length; i += 1) {
@@ -273,14 +300,18 @@ function buildCourseSearchUrl(filterData) {
                 }
             });
             if (applied.length > 0) {
-                queryString += `&${checkboxFields[i]}=${applied[0]}`;
-                for (let j = 1; j < applied.length; j += 1) {
-                    queryString += `,${applied[j]}`;
+                if (checkboxFields[i] === "days") {
+                    queryString +=
+                        applied.length < 7 ? `&days=${applied.join("")}` : "";
+                } else {
+                    queryString += `&${checkboxFields[i]}=${applied[0]}`;
+                    for (let j = 1; j < applied.length; j += 1) {
+                        queryString += `,${applied[j]}`;
+                    }
                 }
             }
         }
     }
-
     return queryString;
 }
 
@@ -291,7 +322,6 @@ const debouncedCourseSearch = AwesomeDebouncePromise(courseSearch, 500);
 
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
-        console.log("in fetchCourseSearch ", filterData);
         dispatch(updateSearchRequest());
         debouncedCourseSearch(dispatch, filterData)
             .then((res) => res.json())
