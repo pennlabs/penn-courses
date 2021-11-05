@@ -199,8 +199,7 @@ const PlanViewButton = styled.a`
         isExpanded: boolean;
         expandedButton: boolean;
     }) => (isExpanded === expandedButton ? "white" : "#f0f1f3")};
-    padding: 0.5em;
-    padding-bottom: 0;
+    padding: 0.5em 0.5em 0;
 
     img {
         width: 1.5em;
@@ -210,26 +209,20 @@ const PlanViewButton = styled.a`
 const ClearButton = styled.button`
     user-select: none;
     align-items: center;
-    border: 1px solid transparent;
     border-radius: 4px;
     box-shadow: none;
     display: inline-flex;
-    font-size: 1rem;
     height: 2.25em;
     line-height: 1.5;
     position: relative;
     vertical-align: top;
-    border-width: 1px;
     cursor: pointer;
     justify-content: center;
-    padding-bottom: calc(0.375em - 1px);
-    padding-left: 0.75em;
-    padding-right: 0.75em;
-    padding-top: calc(0.375em - 1px);
+    padding: calc(0.375em - 1px) 0.75em;
     text-align: center;
     white-space: nowrap;
     background-color: white;
-    border-color: transparent;
+    border: 1px solid transparent;
     margin-right: 1em;
     color: #7e7e7e;
     font-size: 0.75rem !important;
@@ -311,6 +304,7 @@ SearchBarProps) {
         } else {
             conditionalStartSearch({
                 ...filterData,
+                // @ts-ignore
                 [property]: defaultFilters.filterData[property],
             });
         }
@@ -318,7 +312,7 @@ SearchBarProps) {
     // TODO: find less hacky way of combining date and time into single object
     const filterDataDayTime: any = {
         ...JSON.parse(JSON.stringify(filterData.days)),
-        ["time"]: filterData.time,
+        time: filterData.time,
     };
     const initialDayTime: {
         M: boolean;
@@ -339,6 +333,7 @@ SearchBarProps) {
         U: true,
         time: [1.5, 17],
     };
+
     const dropDowns = (
         <div>
             <DropdownButton
@@ -439,9 +434,11 @@ SearchBarProps) {
                 }}
             >
                 <DayTimeFilter
+                    // @ts-ignore
                     filterData={filterData}
                     updateCheckboxFilter={updateCheckboxFilter}
                     checkboxProperty="days"
+                    // @ts-ignore
                     startSearch={conditionalStartSearch}
                     minRange={1.5}
                     maxRange={17}
