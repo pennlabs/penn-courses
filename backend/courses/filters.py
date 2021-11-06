@@ -53,13 +53,11 @@ def meeting_filter(queryset, meeting_query):
 def is_open_filter(queryset, *args):
     """
     Filters the given queryset of courses by the following condition:
-    include a course only if filtering its sections by whether their `status` is open or
-    not does not limit the set of section activities we can participate.
-    In other words, filter to courses for which all activities have open sections.
-    For instance, we would include a course with lecture and recitation sections only if
-    both the lecture section and some recitation section is open.
+    include a course only if filtering its sections by `status="O"` does
+    not does not limit the set of section activities we can participate in for the course.
+    In other words, include only courses for which all activities have open sections.
     Note that for compatibility, this function can take additional positional
-    arguments (`args`) but these are ignored.
+    arguments, but these are ignored.
     """
 
     matching_sections = Section.objects.filter(status="O")
