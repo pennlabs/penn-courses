@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { GridItem, Flex, RightItem } from "../common/layout";
+import { GridItem, Flex, RightItem } from "pcx-shared-components/src/common/layout";
 import { Img } from "../common/common";
 import { AlertAction } from "../../types";
 

@@ -1,8 +1,8 @@
 import React from "react";
 import styled from "styled-components";
-import LoginButton from "pcx-shared-components/src/accounts/LoginButton";
-import Modal from "./common/modal";
-import { Center } from "./common/layout";
+import LoginButton from "../accounts/LoginButton";
+import Modal from "../common/modal";
+import { Center } from "../common/layout";
 
 const LoginButtonContainer = styled.div`
     display: flex;
@@ -10,15 +10,20 @@ const LoginButtonContainer = styled.div`
     justify-content: center;
 `;
 
-const LoginModal = () => (
+interface LoginModalProps {
+    pathname: string;
+    siteName: String;
+}
+
+const LoginModal = ({pathname, siteName}: LoginModalProps) => (
     <Modal title="Please log in!">
         <Center>
-            Penn Course Alert now requires login. Please sign in with your
+            {siteName} now requires login. Please sign in with your
             Pennkey by clicking the button below.
         </Center>
         <br />
         <LoginButtonContainer>
-            <LoginButton noMargin pathname={window.location.pathname} />
+            <LoginButton noMargin pathname={pathname}/>
         </LoginButtonContainer>
     </Modal>
 );
