@@ -10,7 +10,6 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from options.models import get_bool
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -23,6 +22,7 @@ from alert.serializers import (
     RegistrationUpdateSerializer,
 )
 from alert.tasks import send_course_alerts
+from alert.util import pca_registration_open, should_send_pca_alert
 from courses.util import get_current_semester, record_update, update_course_from_record
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
@@ -92,12 +92,7 @@ def accept_webhook(request):
 
     alert_for_course_called = False
 
-    should_send_alert = (
-        get_bool("SEND_FROM_WEBHOOK", False)
-        and (course_status == "O" or course_status == "C")
-        and get_current_semester() == course_term
-    )
-    if should_send_alert:
+    if should_send_pca_alert(course_term, course_status):
         try:
             alert_for_course(
                 course_id, semester=course_term, sent_by="WEB", course_status=course_status
@@ -280,7 +275,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     @staticmethod
     def handle_registration(request):
-        if not get_bool("REGISTRATION_OPEN", True):
+        if not pca_registration_open():
             return Response(
                 {"message": "Registration is not open."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -385,7 +380,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
         try:
             if request.data.get("resubscribe", False):
-                if not get_bool("REGISTRATION_OPEN", True):
+                if not pca_registration_open():
                     return Response(
                         {"message": "Registration is not open."},
                         status=status.HTTP_503_SERVICE_UNAVAILABLE,

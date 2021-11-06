@@ -9,6 +9,7 @@ import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
+import { DayTimeFilter } from "./DayTimeFilter";
 import { SearchField } from "./SearchField";
 import { initialState as defaultFilters } from "../../reducers/filters";
 import initiateSync from "../syncutils";
@@ -28,6 +29,8 @@ import {
     clearAllScheduleData,
 } from "../../actions";
 import { login, logout } from "../../actions/login";
+
+const DAY_TIME_ENABLED = false;
 
 // removed: <F, K extends keyof F, V extends keyof K>
 interface SearchBarProps {
@@ -65,6 +68,7 @@ interface SearchBarProps {
     clearScheduleData: () => void;
     store: object;
     storeLoaded: boolean;
+    setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 function shouldSearch(filterData: FilterData) {
@@ -198,8 +202,7 @@ const PlanViewButton = styled.a`
         isExpanded: boolean;
         expandedButton: boolean;
     }) => (isExpanded === expandedButton ? "white" : "#f0f1f3")};
-    padding: 0.5em;
-    padding-bottom: 0;
+    padding: 0.5em 0.5em 0;
 
     img {
         width: 1.5em;
@@ -209,26 +212,20 @@ const PlanViewButton = styled.a`
 const ClearButton = styled.button`
     user-select: none;
     align-items: center;
-    border: 1px solid transparent;
     border-radius: 4px;
     box-shadow: none;
     display: inline-flex;
-    font-size: 1rem;
     height: 2.25em;
     line-height: 1.5;
     position: relative;
     vertical-align: top;
-    border-width: 1px;
     cursor: pointer;
     justify-content: center;
-    padding-bottom: calc(0.375em - 1px);
-    padding-left: 0.75em;
-    padding-right: 0.75em;
-    padding-top: calc(0.375em - 1px);
+    padding: calc(0.375em - 1px) 0.75em;
     text-align: center;
     white-space: nowrap;
     background-color: white;
-    border-color: transparent;
+    border: 1px solid transparent;
     margin-right: 1em;
     color: #7e7e7e;
     font-size: 0.75rem !important;
@@ -275,6 +272,7 @@ function SearchBar({
     clearScheduleData,
     store,
     storeLoaded,
+    setShowLoginModal,
 }: /* eslint-enable no-shadow */
 SearchBarProps) {
     const router = useRouter();
@@ -310,12 +308,38 @@ SearchBarProps) {
         } else {
             conditionalStartSearch({
                 ...filterData,
+                // @ts-ignore
                 [property]: defaultFilters.filterData[property],
             });
         }
     };
+    // TODO: find less hacky way of combining date and time into single object
+    const filterDataDayTime: any = {
+        ...JSON.parse(JSON.stringify(filterData.days)),
+        time: filterData.time,
+    };
+    const initialDayTime: {
+        M: boolean;
+        T: boolean;
+        W: boolean;
+        R: boolean;
+        F: boolean;
+        S: boolean;
+        U: boolean;
+        time: [number, number];
+    } = {
+        M: true,
+        T: true,
+        W: true,
+        R: true,
+        F: true,
+        S: true,
+        U: true,
+        time: [1.5, 17],
+    };
+
     const dropDowns = (
-        <>
+        <div>
             <DropdownButton
                 title="Requirements"
                 filterData={filterData.selectedReq}
@@ -404,7 +428,32 @@ SearchBarProps) {
                     startSearch={conditionalStartSearch}
                 />
             </DropdownButton>
-        </>
+            {DAY_TIME_ENABLED && (
+                <DropdownButton
+                    title="Day/Time"
+                    filterData={filterDataDayTime}
+                    defaultFilter={initialDayTime}
+                    clearFilter={() => {
+                        clearFilterSearch("days")();
+                        clearFilterSearch("time")();
+                    }}
+                >
+                    <DayTimeFilter
+                        // @ts-ignore
+                        filterData={filterData}
+                        updateCheckboxFilter={updateCheckboxFilter}
+                        checkboxProperty="days"
+                        // @ts-ignore
+                        startSearch={conditionalStartSearch}
+                        minRange={1.5}
+                        maxRange={17}
+                        step={1 / 60}
+                        updateRangeFilter={updateRangeFilter("time")}
+                        rangeProperty="time"
+                    />
+                </DropdownButton>
+            )}
+        </div>
     );
     if (mobileView) {
         return (
@@ -412,8 +461,15 @@ SearchBarProps) {
                 <MobileSearchBarInnerContainer>
                     <AccountIndicator
                         user={user}
-                        login={login}
-                        logout={logout}
+                        login={(u: User) => {
+                            login(u);
+                            setShowLoginModal(false);
+                        }}
+                        logout={() => {
+                            logout();
+                            clearScheduleData();
+                            setShowLoginModal(true);
+                        }}
                         onLeft={true}
                         pathname={router.pathname}
                     />
@@ -513,12 +569,16 @@ SearchBarProps) {
                 <LevelItem>
                     <AccountIndicator
                         user={user}
-                        login={login}
+                        login={(u: User) => {
+                            login(u);
+                            setShowLoginModal(false);
+                        }}
                         backgroundColor="purple"
                         nameLength={1}
                         logout={() => {
                             logout();
                             clearScheduleData();
+                            setShowLoginModal(true);
                         }}
                         onLeft={false}
                         pathname={router.pathname}

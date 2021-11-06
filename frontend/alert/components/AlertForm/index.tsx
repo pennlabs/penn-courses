@@ -7,7 +7,7 @@ import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
 import { Input } from "../Input";
 import AutoComplete from "../AutoComplete";
-import { Center } from "../common/layout";
+import { Center } from "pcx-shared-components/src/common/layout";
 import getCsrf from "../../csrf";
 import { User } from "../../types";
 

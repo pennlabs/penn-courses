@@ -10,13 +10,14 @@ from review.util import to_r_camel
 EXPANDED_REVIEW_BIT_LABEL = tuple(
     list(REVIEW_BIT_LABEL)
     + [
-        (
-            "RFINALENROLLMENTPERCENTAGE",
-            "Final Enrollment Percentage (enrollment/capacity)",
-            "final_enrollment_percentage",
-        ),
-        ("RPERCENTOPEN", "Percent of Add/Drop Open", "percent_open"),
+        ("RFINALENROLLMENT", "Final Enrollment at the End of the Semester", "final_enrollment",),
+        ("RPERCENTOPEN", "Percent of Add/Drop Period Open", "percent_open"),
         ("RNUMOPENINGS", "Number of Openings During Add/Drop", "num_openings"),
+        (
+            "RFILLEDINADVREG",
+            "Percent of Sections Completely Filled During Advance Registration",
+            "filled_in_adv_reg",
+        ),
     ]
 )
 

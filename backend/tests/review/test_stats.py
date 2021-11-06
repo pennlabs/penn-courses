@@ -42,37 +42,30 @@ these helper functions cut down on a lot of the repeated characters in the respo
 """
 
 
-def ratings_dict(label, rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
+def ratings_dict(
+    label, rInstructorQuality, rFinalEnrollment, rPercentOpen, rNumOpenings, rFilledInAdvReg,
+):
     return {
         label: {
             "rInstructorQuality": rInstructorQuality,
-            "rFinalEnrollmentPercentage": rFinalEnrollmentPercentage,
+            "rFinalEnrollment": rFinalEnrollment,
             "rPercentOpen": rPercentOpen,
             "rNumOpenings": rNumOpenings,
+            "rFilledInAdvReg": rFilledInAdvReg,
         }
     }
 
 
-def average(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
-    return ratings_dict(
-        "average_reviews",
-        rInstructorQuality,
-        rFinalEnrollmentPercentage,
-        rPercentOpen,
-        rNumOpenings,
-    )
+def average(*fields):
+    return ratings_dict("average_reviews", *fields)
 
 
-def recent(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
-    return ratings_dict(
-        "recent_reviews", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings
-    )
+def recent(*fields):
+    return ratings_dict("recent_reviews", *fields)
 
 
-def rating(rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings):
-    return ratings_dict(
-        "ratings", rInstructorQuality, rFinalEnrollmentPercentage, rPercentOpen, rNumOpenings
-    )
+def rating(*fields):
+    return ratings_dict("ratings", *fields)
 
 
 def set_registrations(section_id, registration_spec_list):
@@ -129,13 +122,14 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         cls.average_instructor_quality = (2 + 3.5) / 2
         cls.recent_instructor_quality = 3.5
         cls.old_instructor_quality = 2
-        old_status = "O"
-        new_status = "C"
+        old_status = "C"
+        new_status = "O"
         start, end, duration = get_start_end_duration(cls.adp)
-        for date in [start + i * duration / 5 for i in range(1, 5)] + [
-            start + 0.81 * duration,
-            start + 0.82 * duration,
-        ]:
+        for date in (
+            [start - 3 * duration / 5, start - 2 * duration / 5, start - duration / 5]
+            + [start + i * duration / 5 for i in range(1, 5)]
+            + [start + 0.81 * duration, start + 0.82 * duration,]
+        ):
             # O[.2]C[.4]O[.6]C[.8]O[.81]C[.82]O
             record_update(
                 "ESE-120-001",
@@ -148,10 +142,13 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             )
             old_status, new_status = new_status, old_status
         cls.recent_percent_open = 3 / 5 - 0.01
-        old_status = "C"
-        new_status = "O"
+        cls.recent_filled_in_adv_reg = 0
+        old_status = "O"
+        new_status = "C"
         start, end, duration = get_start_end_duration(cls.old_adp)
-        for date in [start + i * duration / 4 for i in range(1, 4)]:
+        for date in [start - 3 * duration / 5, start - 2 * duration / 5, start - duration / 5] + [
+            start + i * duration / 4 for i in range(1, 4)
+        ]:
             # C[.25]O[.5]C[.75]O
             record_update(
                 "ESE-120-001", "2020C", old_status, new_status, False, dict(), created_at=date,
@@ -159,6 +156,8 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             old_status, new_status = new_status, old_status
         cls.average_percent_open = (1 / 2 + 3 / 5 - 0.01) / 2
         cls.old_percent_open = 1 / 2
+        cls.average_filled_in_adv_reg = 0.5
+        cls.old_filled_in_adv_reg = 1
         to_date = get_to_date_func(cls.adp)
         # O[.2]C[.4]O[.6]C[.8]O[.81]C[.82]O
         registration_list_TS = [
@@ -209,9 +208,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         old_sem_class = get_sec_by_id(cls.ESE_120_001_2020C_id)
         old_sem_class.capacity = 100
         old_sem_class.save()
-        cls.recent_enrollment_pct = 80 / 100
-        cls.average_enrollment_pct = (80 / 100 + 99 / 100) / 2
-        cls.old_enrollment_pct = 99 / 100
+        cls.recent_enrollment = 80
+        cls.average_enrollment = (80 + 99) / 2
+        cls.old_enrollment = 99
 
         recompute_demand_distribution_estimates(
             semesters=TEST_CURRENT_SEMESTER + "," + TEST_SEMESTER + "," + "2020C"
@@ -291,15 +290,17 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         reviews_subdict = {
             **average(
                 self.average_instructor_quality,
-                self.average_enrollment_pct,
+                self.average_enrollment,
                 self.average_percent_open,
                 self.average_num_updates,
+                self.average_filled_in_adv_reg,
             ),
             **recent(
                 self.recent_instructor_quality,
-                self.recent_enrollment_pct,
+                self.recent_enrollment,
                 self.recent_percent_open,
                 self.recent_num_updates,
+                self.recent_filled_in_adv_reg,
             ),
         }
         self.assertRequestContainsAppx(
@@ -315,15 +316,17 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         subdict = {
             **average(
                 self.average_instructor_quality,
-                self.average_enrollment_pct,
+                self.average_enrollment,
                 self.average_percent_open,
                 self.average_num_updates,
+                self.average_filled_in_adv_reg,
             ),
             **recent(
                 self.recent_instructor_quality,
-                self.recent_enrollment_pct,
+                self.recent_enrollment,
                 self.recent_percent_open,
                 self.recent_num_updates,
+                self.recent_filled_in_adv_reg,
             ),
         }
         self.assertRequestContainsAppx(
@@ -336,15 +339,17 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         subdict = {
             **average(
                 self.average_instructor_quality,
-                self.average_enrollment_pct,
+                self.average_enrollment,
                 self.average_percent_open,
                 self.average_num_updates,
+                self.average_filled_in_adv_reg,
             ),
             **recent(
                 self.recent_instructor_quality,
-                self.recent_enrollment_pct,
+                self.recent_enrollment,
                 self.recent_percent_open,
                 self.recent_num_updates,
+                self.recent_filled_in_adv_reg,
             ),
         }
         self.assertRequestContainsAppx(
@@ -359,15 +364,17 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
                 "sections": [
                     rating(
                         self.recent_instructor_quality,
-                        self.recent_enrollment_pct,
+                        self.recent_enrollment,
                         self.recent_percent_open,
                         self.recent_num_updates,
+                        self.recent_filled_in_adv_reg,
                     ),
                     rating(
                         self.old_instructor_quality,
-                        self.old_enrollment_pct,
+                        self.old_enrollment,
                         self.old_percent_open,
                         self.old_num_updates,
+                        self.old_filled_in_adv_reg,
                     ),
                 ]
             },
@@ -390,6 +397,16 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             },
         )
 
+    def test_current_percent_open(self):
+        self.assertAlmostEquals(
+            self.recent_percent_open,
+            Section.objects.get(id=self.ESE_120_001_TEST_SEMESTER_id).current_percent_open,
+        )
+        self.assertAlmostEquals(
+            self.old_percent_open,
+            Section.objects.get(id=self.ESE_120_001_2020C_id).current_percent_open,
+        )
+
 
 class OneReviewTestCase(TestCase, PCRTestMixin):
     @classmethod
@@ -406,10 +423,12 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         start = cls.adp.estimated_start
         end = cls.adp.estimated_end
         duration = end - start
-        old_status = "O"
-        new_status = "C"
+        old_status = "C"
+        new_status = "O"
         percent_open_plot = [(0, 1)]
-        for date in [start + i * duration / 7 for i in range(1, 7)]:
+        for date in [start - 3 * duration / 7, start - 2 * duration / 7, start - duration / 7] + [
+            start + i * duration / 7 for i in range(1, 7)
+        ]:
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
@@ -421,10 +440,12 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                 dict(),
                 created_at=date,
             )
-            percent_open_plot.append((percent_thru, int(new_status == "O")))
+            if date >= start:
+                percent_open_plot.append((percent_thru, int(new_status == "O")))
             old_status, new_status = new_status, old_status
         percent_open_plot.append((1, 1))
         cls.percent_open = (duration * 4 / 7).total_seconds() / duration.total_seconds()
+        cls.filled_in_adv_reg = 0
         to_date = get_to_date_func(cls.adp)
         set_registrations(
             cls.ESE_120_001_id,
@@ -446,7 +467,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         sec = get_sec_by_id(cls.ESE_120_001_id)
         sec.capacity = 100
         sec.save()
-        cls.enrollment_pct = 80 / 100
+        cls.enrollment = 80
 
         recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
 
@@ -485,10 +506,18 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
     def test_course(self):
         reviews_subdict = {
             **average(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
             **recent(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
         }
         self.assertRequestContainsAppx(
@@ -503,10 +532,18 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
     def test_instructor(self):
         subdict = {
             **average(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
             **recent(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
         }
         self.assertRequestContainsAppx(
@@ -518,10 +555,18 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
     def test_department(self):
         subdict = {
             **average(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
             **recent(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
         }
         self.assertRequestContainsAppx(
@@ -536,9 +581,10 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                 "sections": [
                     rating(
                         self.instructor_quality,
-                        self.enrollment_pct,
+                        self.enrollment,
                         self.percent_open,
                         self.num_updates,
+                        self.filled_in_adv_reg,
                     )
                 ]
             },
@@ -581,10 +627,12 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         start = cls.adp.estimated_start
         end = cls.adp.estimated_end
         duration = end - start
-        old_status = "O"
-        new_status = "C"
+        old_status = "C"
+        new_status = "O"
         percent_open_plot = [(0, 1)]
-        for date in [start + i * duration / 7 for i in range(1, 7)]:
+        for date in [start - 3 * duration / 7, start - 2 * duration / 7, start - duration / 7] + [
+            start + i * duration / 7 for i in range(1, 7)
+        ]:
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
@@ -596,8 +644,10 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                 dict(),
                 created_at=date,
             )
-            percent_open_plot.append((percent_thru, int(new_status == "O")))
+            if date >= start:
+                percent_open_plot.append((percent_thru, int(new_status == "O")))
             old_status, new_status = new_status, old_status
+        cls.filled_in_adv_reg = 0
         percent_open_plot.append((1, 1))
         to_date = get_to_date_func(cls.adp)
         set_registrations(
@@ -621,7 +671,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         sec = get_sec_by_id(cls.ESE_120_001_id)
         sec.capacity = 100
         sec.save()
-        cls.enrollment_pct = 80 / 100
+        cls.enrollment = 80
 
         recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
 
@@ -660,10 +710,18 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
     def test_course(self):
         reviews_subdict = {
             **average(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
             **recent(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
         }
         self.assertRequestContainsAppx(
@@ -684,10 +742,18 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
     def test_instructor(self):
         subdict = {
             **average(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
             **recent(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
         }
         self.assertRequestContainsAppx(
@@ -704,10 +770,18 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
     def test_department(self):
         subdict = {
             **average(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
             **recent(
-                self.instructor_quality, self.enrollment_pct, self.percent_open, self.num_updates
+                self.instructor_quality,
+                self.enrollment,
+                self.percent_open,
+                self.num_updates,
+                self.filled_in_adv_reg,
             ),
         }
         self.assertRequestContainsAppx(
@@ -722,9 +796,10 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                 "sections": [
                     rating(
                         self.instructor_quality,
-                        self.enrollment_pct,
+                        self.enrollment,
                         self.percent_open,
                         self.num_updates,
+                        self.filled_in_adv_reg,
                     )
                 ]
             },
@@ -736,9 +811,10 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                 "sections": [
                     rating(
                         self.instructor_quality,
-                        self.enrollment_pct,
+                        self.enrollment,
                         self.percent_open,
                         self.num_updates,
+                        self.filled_in_adv_reg,
                     )
                 ]
             },

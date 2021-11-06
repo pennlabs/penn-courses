@@ -16,6 +16,11 @@ from plan.management.commands.trainrecommender import train_recommender
 from plan.models import Schedule
 
 
+# The proportion by which to up-weight current courses
+# relative to past courses when computing a user vector
+CURR_COURSES_BIAS = 3
+
+
 def vectorize_user_by_courses(
     curr_courses, past_courses, curr_course_vectors_dict, past_course_vectors_dict
 ):
@@ -60,7 +65,7 @@ def vectorize_user_by_courses(
         else sum(past_course_vectors_dict[course] for course in past_courses)
     )
 
-    vector = curr_courses_vector + past_courses_vector
+    vector = curr_courses_vector * CURR_COURSES_BIAS + past_courses_vector
     norm = np.linalg.norm(vector)
     vector = vector / norm if norm > 0 else vector
     return vector, all_courses
@@ -157,7 +162,8 @@ dev_course_clusters = None  # a global variable used to "cache" the course clust
 
 def retrieve_course_clusters():
     global dev_course_clusters
-    if "PennCourses.settings.development" in os.environ.get("DJANGO_SETTINGS_MODULE", ""):
+    dev_mode = "PennCourses.settings.development" in os.environ.get("DJANGO_SETTINGS_MODULE", "")
+    if dev_mode and os.environ.get("USE_PROD_MODEL", "false") != "true":
         if dev_course_clusters is None:
             print("TRAINING DEVELOPMENT MODEL... PLEASE WAIT")
             dev_course_clusters = train_recommender(
