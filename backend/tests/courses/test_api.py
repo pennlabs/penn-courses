@@ -241,7 +241,7 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         "courses.views.CourseListSearch.get_serializer_context",
         new=production_CourseListSearch_get_serializer_context,
     )
-    @patch("plan.views.retrieve_course_clusters")
+    @patch("courses.views.retrieve_course_clusters")
     def test_recommendation_is_number_when_user_is_logged_in(self, course_clusters_mock):
         course_clusters_mock.return_value = self.course_clusters
         self.client.login(username=self.username, password=self.password)
