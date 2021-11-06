@@ -23,16 +23,44 @@ def meeting_filter(queryset, meeting_query):
     we would no longer include the course (since we cannot attend the meetings of the
     lab section, and thus the set of course activities available to us is incomplete).
     """
-    matching_meetings = Meeting.objects.filter(meeting_query)
+
     matching_sections = Section.objects.filter(
         id__in=Section.objects.annotate(num_meetings=Count("meetings"))
         .filter(
             num_meetings=subquery_count_distinct(
-                matching_meetings.filter(section_id=OuterRef("id")), column="id"
+                Meeting.objects.filter(meeting_query).filter(section_id=OuterRef("id")), column="id"
             )
         )
         .values("id")
     )
+    # Match number of activities per course and number of available activities
+    # in matching sections per course
+    return (
+        queryset.annotate(
+            num_activities=subquery_count_distinct(
+                Section.objects.filter(course_id=OuterRef("id")), column="activity"
+            )
+        )
+        .filter(
+            num_activities=subquery_count_distinct(
+                matching_sections.filter(course_id=OuterRef("id")), column="activity",
+            )
+        )
+        .distinct()
+    )
+
+
+def is_open_filter(queryset, *args):
+    """
+    Filters the given queryset of courses by the following condition:
+    include a course only if filtering its sections by `status="O"` does
+    not does not limit the set of section activities we can participate in for the course.
+    In other words, include only courses for which all activities have open sections.
+    Note that for compatibility, this function can take additional positional
+    arguments, but these are ignored.
+    """
+
+    matching_sections = Section.objects.filter(status="O")
     return (
         queryset.annotate(
             num_activities=subquery_count_distinct(
@@ -176,6 +204,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             "course_quality": bound_filter("course_quality"),
             "instructor_quality": bound_filter("instructor_quality"),
             "difficulty": bound_filter("difficulty"),
+            "is_open": is_open_filter,
         }
         for field, filter_func in filters.items():
             param = request.query_params.get(field)
@@ -314,5 +343,22 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 ),
                 "schema": {"type": "integer"},
                 "example": "242",
+            },
+            {
+                "name": "is_open",
+                "required": False,
+                "in": "query",
+                "description": (
+                    "Filter courses to only those that are open. "
+                    "A boolean of true should be included if you want to apply the filter. "
+                    "By default (ie when the `is_open` is not supplied, the filter is not applied. "
+                    "This filters courses by the following condition: "
+                    "include a course only if the specification that a section is open "
+                    "does not limit the set of section activities we can participate in "
+                    "for the course."
+                    "In other words, filter to courses for which all activities have open sections."
+                ),
+                "schema": {"type": "boolean"},
+                "example": "true",
             },
         ]
