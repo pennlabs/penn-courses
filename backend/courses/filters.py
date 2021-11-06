@@ -24,18 +24,17 @@ def meeting_filter(queryset, meeting_query):
     lab section, and thus the set of course activities available to us is incomplete).
     """
 
-    # Count the number of meetings in the matching_meeting queryset and see if it matches
-    # the full number of meeting associated with the section overall
-    matching_meetings = Meeting.objects.filter(meeting_query)
     matching_sections = Section.objects.filter(
         id__in=Section.objects.annotate(num_meetings=Count("meetings"))
         .filter(
             num_meetings=subquery_count_distinct(
-                matching_meetings.filter(section_id=OuterRef("id")), column="id"
+                Meeting.objects.filter(meeting_query).filter(section_id=OuterRef("id")), column="id"
             )
         )
         .values("id")
     )
+    # Match number of activities per course and number of available activities
+    # in matching sections per course
     return (
         queryset.annotate(
             num_activities=subquery_count_distinct(
