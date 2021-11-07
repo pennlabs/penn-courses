@@ -352,8 +352,7 @@ def train_recommender(
         ), "Local course descriptions path must be .csv"
         assert course_data_path is not None, (
             "If course_description_path is provided then course_data_path should also"
-            "be provided. Note that the courses should be ordered the same in"
-            "both csvs."
+            "be provided."
         )
     if output_path is None:
         assert upload_to_s3, "You must either specify an output path, or upload to S3"

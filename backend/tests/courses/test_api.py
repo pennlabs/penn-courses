@@ -226,7 +226,7 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual(len(response.data), 1)
-        self.assertIs(response.data[0]["recommendation_score"], None)
+        self.assertIsNone(response.data[0]["recommendation_score"])
 
     def test_recommendation_is_null_when_user_not_logged_in(self):
         response = self.client.get(
@@ -250,8 +250,8 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
             person=self.user, name="curr_semester_schedule", semester=TEST_SEMESTER
         )
         curr_semester_schedule.save()
-        # NOTE: many of the sections in this schedule match up with the `semester`
-        # used to create the schedule
+        # NOTE: the `semester` of many of the sections in this schedule do not match up with
+        # the `semester` of the schedule
         curr_semester_schedule.sections.add(
             Course.objects.get(full_code="PSCI-498", semester="2019A").sections.get(code="001")
         )

@@ -59,7 +59,7 @@ class CourseRecommendationsTestCase(TestCase):
         - a semester column (ranging between 2016C and 2020A).
 
         Courses are created with approximately the following specification:
-        - `department_id`: Corresponds to the department code embedded in the `code`
+        - `department_id`: Corresponds to the department code embedded in the `full_code`
         - `full_code` : corresponds to the course code column in
            `/tests/plan/course_recs_test_data/course_data_test.csv`
         - `semester` : corresponds to the semester column in
@@ -74,7 +74,7 @@ class CourseRecommendationsTestCase(TestCase):
         Sections corresponding to each created course are created with approximately this
         specification
         - `code` : "001"
-        - `full_code` : the course's `full_code` + "001"
+        - `full_code` : the course's `full_code` + "-001"
         """
 
         course_data_path = (
