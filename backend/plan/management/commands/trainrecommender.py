@@ -455,13 +455,11 @@ class Command(BaseCommand):
                 "If this argument is included, the course_data_path argument should be included. "
                 "If this argument is omitted, the model will only trained on description "
                 "data from the db (this only makes sense in prod).\n"
-
                 "When this argument is included, descriptions will preferentially be pulled "
                 "from the file that this argument points to. If a course's description "
                 "is not in the file, then the course's description is pulled from "
                 "the db (if it is not present there, an empty string is used as the"
                 "description)\n"
-
                 "The csv pointed to by this path should have 2 columns:\n"
                 "course, description"
                 "\n the course column should "
