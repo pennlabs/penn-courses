@@ -394,7 +394,7 @@ def train_recommender(
 
     if preloaded_descriptions_path is None and verbose:
         print(
-            "A course_description_path has not been supplied."
+            "A preloaded_descriptions_path has not been supplied."
             "the database will be queried to get descriptions downstream"
         )
 
@@ -451,18 +451,18 @@ class Command(BaseCommand):
             type=str,
             default=None,
             help=(
-                "The local path to the course description data csv.\n"
+                "The local path to a course description data csv.\n"
                 "If this argument is included, the course_data_path argument should be included. "
                 "If this argument is omitted, the model will only trained on description "
-                "data from the db (this only makes sense in prod).\n"
+                "data from the db.\n"
                 "When this argument is included, descriptions will preferentially be pulled "
                 "from the file that this argument points to. If a course's description "
                 "is not in the file, then the course's description is pulled from "
-                "the db (if it is not present there, an empty string is used as the"
-                "description)\n"
+                "the db (if it is not present there, an empty string is used as the "
+                "description).\n"
                 "The csv pointed to by this path should have 2 columns:\n"
                 "course, description"
-                "\n the course column should "
+                "\nthe course column should "
                 "contain the course code (in the format DEPT-XXX, e.g. CIS-120) "
                 "as provided in the course_data_path csv, and "
                 "the description column should contain the full text of the description "
