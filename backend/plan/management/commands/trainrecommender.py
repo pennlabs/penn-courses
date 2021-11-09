@@ -68,8 +68,7 @@ def get_description(course):
     return course_obj.description
 
 
-def vectorize_courses_by_description(courses):
-    descriptions = [get_description(course) for course in courses]
+def vectorize_courses_by_description(descriptions):
     vectorizer = TfidfVectorizer()
     has_nonempty_descriptions = (
         sum(1 for description in descriptions if description and len(description) > 0) > 0
@@ -230,7 +229,7 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
     return list(unsequenced_courses_by_user.values())
 
 
-def generate_course_vectors_dict(courses_data, use_descriptions=True):
+def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_descriptions={}):
     """
     Generates a dict associating courses to vectors for those courses,
     as well as courses to vector representations
@@ -242,11 +241,17 @@ def generate_course_vectors_dict(courses_data, use_descriptions=True):
     copresence_vectors_by_course = vectorize_by_copresence(grouped_courses)
     copresence_vectors_by_course_past = vectorize_by_copresence(grouped_courses, as_past_class=True)
     courses_by_user = get_unsequenced_courses_by_user(grouped_courses)
-
     courses, courses_vectorized_by_schedule_presence = zip(
         *vectorize_courses_by_schedule_presence(courses_by_user).items()
     )
-    courses_vectorized_by_description = vectorize_courses_by_description(courses)
+
+    descriptions = []
+    for course in courses:
+        if course in preloaded_descriptions:
+            descriptions.append(preloaded_descriptions[course])
+        else:
+            descriptions.append(get_description(course))
+    courses_vectorized_by_description = vectorize_courses_by_description(descriptions)
     copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
     copresence_vectors_past = [copresence_vectors_by_course_past[course] for course in courses]
     copresence_vectors = normalize(copresence_vectors)
@@ -301,12 +306,14 @@ def normalize_class_name(class_name):
     return class_name
 
 
-def generate_course_clusters(courses_data, n_per_cluster=100):
+def generate_course_clusters(courses_data, n_per_cluster=100, preloaded_descriptions={}):
     """
     Clusters courses and also returns a vector representation of each class
     (one for having taken that class now, and another for having taken it in the past)
     """
-    course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict(courses_data)
+    course_vectors_dict_curr, course_vectors_dict_past = generate_course_vectors_dict(
+        courses_data, preloaded_descriptions=preloaded_descriptions
+    )
     _courses, _course_vectors = zip(*course_vectors_dict_curr.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = round(len(courses) / n_per_cluster)
@@ -325,6 +332,7 @@ def generate_course_clusters(courses_data, n_per_cluster=100):
 
 def train_recommender(
     course_data_path=None,
+    preloaded_descriptions_path=None,
     train_from_s3=False,
     output_path=None,
     upload_to_s3=False,
@@ -338,6 +346,11 @@ def train_recommender(
         ), "If you are training on data from S3, there's no need to supply a local data path"
     if course_data_path is not None:
         assert course_data_path.endswith(".csv"), "Local data path must be .csv"
+    if preloaded_descriptions_path is not None:
+        assert preloaded_descriptions_path.endswith(
+            ".csv"
+        ), "Local course descriptions path must be .csv"
+
     if output_path is None:
         assert upload_to_s3, "You must either specify an output path, or upload to S3"
     if upload_to_s3:
@@ -374,7 +387,20 @@ def train_recommender(
             if course_data_path is not None
             else courses_data_from_db()
         )
-    course_clusters = generate_course_clusters(courses_data, n_per_cluster)
+
+    preloaded_descriptions = dict()
+    if preloaded_descriptions_path is not None:
+        preloaded_descriptions = dict(courses_data_from_csv(preloaded_descriptions_path))
+
+    if preloaded_descriptions_path is None and verbose:
+        print(
+            "A preloaded_descriptions_path has not been supplied."
+            "the database will be queried to get descriptions downstream"
+        )
+
+    course_clusters = generate_course_clusters(
+        courses_data, n_per_cluster, preloaded_descriptions=preloaded_descriptions
+    )
 
     if upload_to_s3:
         S3_resource.Object("penn.courses", "course-cluster-data.pkl").put(
@@ -418,6 +444,29 @@ class Command(BaseCommand):
                 "contain the course code (in the format DEPT-XXX, e.g. CIS-120), and "
                 "the semester column should contain  the semester in which the course was taken "
                 "by that user."
+            ),
+        )
+        parser.add_argument(
+            "--preloaded_descriptions_path",
+            type=str,
+            default=None,
+            help=(
+                "The local path to a course description data csv.\n"
+                "If this argument is included, the course_data_path argument should be included. "
+                "If this argument is omitted, the model will only trained on description "
+                "data from the db.\n"
+                "When this argument is included, descriptions will preferentially be pulled "
+                "from the file that this argument points to. If a course's description "
+                "is not in the file, then the course's description is pulled from "
+                "the db (if it is not present there, an empty string is used as the "
+                "description).\n"
+                "The csv pointed to by this path should have 2 columns:\n"
+                "course, description"
+                "\nthe course column should "
+                "contain the course code (in the format DEPT-XXX, e.g. CIS-120) "
+                "as provided in the course_data_path csv, and "
+                "the description column should contain the full text of the description "
+                "corresponding to the course."
             ),
         )
         parser.add_argument(
