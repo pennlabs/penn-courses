@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.db.models import Count, Q
-from django.db.models.expressions import OuterRef, Subquery
+from django.db.models.expressions import F, OuterRef, Subquery
 from rest_framework import filters
 
 from courses.models import Meeting, Requirement, Section
@@ -24,30 +24,23 @@ def meeting_filter(queryset, meeting_query):
     lab section, and thus the set of course activities available to us is incomplete).
     """
 
-    matching_sections = Section.objects.filter(
-        id__in=Section.objects.annotate(num_meetings=Count("meetings"))
-        .filter(
-            num_meetings=subquery_count_distinct(
-                Meeting.objects.filter(meeting_query).filter(section_id=OuterRef("id")), column="id"
-            )
-        )
-        .values("id")
+    section_ids = (
+        Meeting.objects.filter(meeting_query)
+        .values("section")
+        .annotate(num_matching_meetings=Count("section"))
+        .order_by()
+        .filter(section__num_meetings=F("num_matching_meetings"))
+        .values("section_id")
+        .distinct()
     )
     # Match number of activities per course and number of available activities
     # in matching sections per course
-    return (
-        queryset.annotate(
-            num_activities=subquery_count_distinct(
-                Section.objects.filter(course_id=OuterRef("id")), column="activity"
-            )
+    return queryset.filter(
+        num_activities=subquery_count_distinct(
+            Section.objects.filter(id__in=section_ids).filter(course_id=OuterRef("id")),
+            column="activity",
         )
-        .filter(
-            num_activities=subquery_count_distinct(
-                matching_sections.filter(course_id=OuterRef("id")), column="activity",
-            )
-        )
-        .distinct()
-    )
+    ).distinct()
 
 
 def is_open_filter(queryset, *args):

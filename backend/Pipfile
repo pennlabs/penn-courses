@@ -17,7 +17,7 @@ django-debug-toolbar = "*"
 black = "==19.10b0"
 
 [packages]
-django = ">=3.2"
+django = "==4.0b1"
 psycopg2 = {version = "*", sys_platform = "== 'linux'"}
 requests = "*"
 twilio = "*"
@@ -31,7 +31,6 @@ unidecode = "*"
 coreapi = "*"
 django-filter = "*"
 shortener = "*"
-django-labs-accounts = "*"
 "beautifulsoup4" = "*"
 ipython = "*"
 django-auto-prefetching = "*"
@@ -50,10 +49,14 @@ django-redis = "*"
 jsonref = "*"
 tblib = "*"
 django-extensions = "*"
-numpy = "*"
 scikit-learn = "*"
 pandas = "*"
 python-dateutil = "*"
+numpy = "*"
+django-labs-accounts = "*"
 
 [requires]
 python_version = "3"
+
+[pipenv]
+allow_prereleases = true
