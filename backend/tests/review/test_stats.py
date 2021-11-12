@@ -212,9 +212,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         cls.average_enrollment = (80 + 99) / 2
         cls.old_enrollment = 99
 
-        recompute_demand_distribution_estimates(
-            semesters=TEST_CURRENT_SEMESTER + "," + TEST_SEMESTER + "," + "2020C"
-        )
+        # recompute_demand_distribution_estimates(
+        #     semesters=TEST_CURRENT_SEMESTER + "," + TEST_SEMESTER + "," + "2020C"
+        # )
 
         local_tz = gettz(TIME_ZONE)
         cls.course_plots_subdict = {
@@ -333,6 +333,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             "instructor-reviews",
             Instructor.objects.get().pk,
             {**subdict, "courses": {"ESE-120": subdict}},
+        )
+        self.assertRequestContainsAppx(
+            "course-plots", "ESE-120", "InstructorOne", self.course_plots_subdict,
         )
 
     def test_department(self):
@@ -469,7 +472,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         sec.save()
         cls.enrollment = 80
 
-        recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
+        # recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
 
         plots = {
             "pca_demand_plot_since_semester": TEST_SEMESTER,
@@ -673,7 +676,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         sec.save()
         cls.enrollment = 80
 
-        recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
+        # recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
 
         plots = {
             "pca_demand_plot_since_semester": TEST_SEMESTER,
