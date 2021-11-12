@@ -54,19 +54,11 @@ def is_open_filter(queryset, *args):
     """
 
     matching_sections = Section.objects.filter(status="O")
-    return (
-        queryset.annotate(
-            num_activities=subquery_count_distinct(
-                Section.objects.filter(course_id=OuterRef("id")), column="activity"
-            )
+    return queryset.filter(
+        num_activities=subquery_count_distinct(
+            matching_sections.filter(course_id=OuterRef("id")), column="activity",
         )
-        .filter(
-            num_activities=subquery_count_distinct(
-                matching_sections.filter(course_id=OuterRef("id")), column="activity",
-            )
-        )
-        .distinct()
-    )
+    ).distinct()
 
 
 def day_filter(days):
