@@ -199,9 +199,7 @@ def course_reviews(request, course_code):
                     "course_code": (
                         "The dash-joined department and code of the course you want plots for, e.g. `CIS-120` for CIS-120."  # noqa E501
                     ),
-                    "instructor_id": (
-                        "The id of the instructor (as it appears in the DB)"
-                    )
+                    "instructor_id": ("The id of the instructor (as it appears in the DB)"),
                 }
             },
         },
@@ -230,11 +228,7 @@ def course_plots(request, course_code, instructor_id):
     )
 
     if instructor_id is not None:
-        filtered_sections = (
-            filtered_sections.filter(
-                instructors__in__name=instructor_id,
-            )
-        )
+        filtered_sections = filtered_sections.filter(instructors__in__name=instructor_id,)
 
     section_map = dict()  # a dict mapping semester to section id to section object
     for section in filtered_sections:
