@@ -446,46 +446,30 @@ def recompute_demand_distribution_estimates(
                     closed_sections_demand_values = np.asarray(
                         [val for sec_id, val in demands.items() if section_status[sec_id] == "C"]
                     )
-                    fit_alpha, fit_loc, fit_scale, mean_log_likelihood = (None, None, None, None)
+                    csrdv_frac_zero, fit_shape, fit_loc, fit_scale = (None, None, None, None)
                     if len(closed_sections_demand_values) > 0:
-                        fit_alpha, fit_loc, fit_scale = stats.gamma.fit(
-                            closed_sections_demand_values
-                        )
-                        mean_log_likelihood = stats.gamma.logpdf(
-                            closed_sections_demand_values, fit_alpha, fit_loc, fit_scale
-                        ).mean()
+                        closed_sections_positive_demand_values = closed_sections_demand_values[np.nonzero(closed_sections_demand_values)]
+                        csrdv_frac_zero = 1 - len(closed_sections_positive_demand_values) / len(closed_sections_demand_values)
+                        if len(closed_sections_positive_demand_values) > 0:
+                            fit_shape, fit_loc, fit_scale = stats.lognorm.fit(
+                                closed_sections_positive_demand_values
+                            )
 
-                    new_distribution_estimate = PcaDemandDistributionEstimate(
+                    latest_popularity_dist_estimate = PcaDemandDistributionEstimate(
                         created_at=date,
                         semester=semester,
                         highest_demand_section=section_id_to_object[max_id],
                         highest_demand_section_volume=registration_volumes[max_id],
                         lowest_demand_section=section_id_to_object[min_id],
                         lowest_demand_section_volume=registration_volumes[min_id],
-                        csdv_gamma_param_alpha=fit_alpha,
-                        csdv_gamma_param_loc=fit_loc,
-                        csdv_gamma_param_scale=fit_scale,
-                        csdv_gamma_fit_mean_log_likelihood=mean_log_likelihood,
-                        csdv_mean=(
-                            np.mean(closed_sections_demand_values)
-                            if len(closed_sections_demand_values) > 0
-                            else None
-                        ),
-                        csdv_median=(
-                            np.median(closed_sections_demand_values)
-                            if len(closed_sections_demand_values) > 0
-                            else None
-                        ),
-                        csdv_75th_percentile=(
-                            np.percentile(closed_sections_demand_values, 75)
-                            if len(closed_sections_demand_values) > 0
-                            else None
-                        ),
+                        csrdv_frac_zero=csrdv_frac_zero,
+                        csprdv_lognorm_param_shape=fit_shape,
+                        csprdv_lognorm_param_loc=fit_loc,
+                        csprdv_lognorm_param_scale=fit_scale,
                     )
-                    new_distribution_estimate.save(add_drop_period=add_drop_period)
-                    new_distribution_estimate.created_at = date
-                    new_distribution_estimate.save(add_drop_period=add_drop_period)
-                    latest_popularity_dist_estimate = new_distribution_estimate
+                    latest_popularity_dist_estimate.save(add_drop_period=add_drop_period)
+                    latest_popularity_dist_estimate.created_at = date
+                    latest_popularity_dist_estimate.save(add_drop_period=add_drop_period)
                 else:
                     num_changes_without_estimate += 1
 

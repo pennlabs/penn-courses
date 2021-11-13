@@ -135,7 +135,7 @@ def get_demand_data(semesters, section_query="", verbose=False):
         num_changes_without_estimate = 0
 
         if verbose:
-            print(f"Creating PcaDemandDistributionEstimate objects for semester {semester}...")
+            print(f"Compiling demand data for semester {semester}...")
         for change in iterator_wrapper(all_changes):
             section_id = change["section_id"]
 
