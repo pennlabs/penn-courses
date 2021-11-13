@@ -6,25 +6,9 @@ from django.core.management.base import BaseCommand
 from django.db.models import F
 from tqdm import tqdm
 
+from alert.management.commands.recomputestats import get_semesters
 from alert.models import Registration
-from courses.models import Course
 from PennCourses.settings.base import S3_resource
-
-
-def get_semesters(semesters, verbose=False):
-    """
-    Validate a given string semesters argument, and return a list of the individual string semesters
-    specified by the argument.
-    """
-    possible_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
-    if semesters == "all":
-        semesters = list(possible_semesters)
-    else:
-        semesters = [sem.strip() for sem in semesters.split(",") if len(sem.strip()) > 0]
-        for s in semesters:
-            if s not in possible_semesters:
-                raise ValueError(f"Provided semester {s} was not found in the db.")
-    return semesters
 
 
 class Command(BaseCommand):
@@ -74,7 +58,7 @@ class Command(BaseCommand):
             If you pass "all" to this argument, this script will export all PCA registrations.
                 """
             ),
-            default="",
+            default="all",
         )
 
     def handle(self, *args, **kwargs):
@@ -153,8 +137,6 @@ class Command(BaseCommand):
                     output_file.flush()
 
         if upload_to_s3:
-            S3_resource.meta.client.upload_file(
-                "/app/export_anon_registrations.csv", "penn.courses", path
-            )
-            os.remove("/app/export_anon_registrations.csv")
-        print(f"Generated {script_print_path} with {rows} rows...")
+            S3_resource.meta.client.upload_file(output_file_path, "penn.courses", path)
+            os.remove(output_file_path)
+        print(f"Generated {script_print_path} with {rows} rows.")

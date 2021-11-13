@@ -97,4 +97,4 @@ class Command(BaseCommand):
                 "/app/export_status_history_output.csv", "penn.courses", path
             )
             os.remove("/app/export_status_history_output.csv")
-        print(f"Generated {script_print_path} with {rows} rows...")
+        print(f"Generated {script_print_path} with {rows} rows.")

@@ -238,9 +238,7 @@ class Command(BaseCommand):
                         output_file.flush()
 
         if upload_to_s3:
-            S3_resource.meta.client.upload_file(
-                "/app/export_test_data_output.csv", "penn.courses", path
-            )
-            os.remove("/app/export_test_data_output.csv")
+            S3_resource.meta.client.upload_file(output_file_path, "penn.courses", path)
+            os.remove(output_file_path)
 
         print(f"Exported {rows} of test data from semesters {semesters} to {script_print_path}.")

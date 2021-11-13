@@ -18,9 +18,9 @@ from alert.alerts import Email, PushNotification, Text
 from courses.models import Course, Section, StatusUpdate, UserProfile, string_dict_to_html
 from courses.util import (
     does_object_pass_filter,
-    get_add_drop_period,
     get_course_and_section,
     get_current_semester,
+    get_or_create_add_drop_period,
 )
 from PennCourses.settings.base import TIME_ZONE
 
@@ -869,15 +869,16 @@ class PcaDemandDistributionEstimate(models.Model):
     def save(self, *args, **kwargs):
         """
         This save method first gets the add/drop period object for this
-        PcaDemandDistributionEstimate object's semester (either by calling the get_add_drop_period
-        method or by using a passed-in add_drop_period kwarg, which can be used for efficiency in
-        bulk operations over PcaDemandDistributionEstimate objects).
+        PcaDemandDistributionEstimate object's semester (either by calling the
+        get_or_create_add_drop_period method or by using a passed-in add_drop_period kwarg,
+        which can be used for efficiency in bulk operations over PcaDemandDistributionEstimate
+        objects).
         """
         if "add_drop_period" in kwargs:
             add_drop_period = kwargs["add_drop_period"]
             del kwargs["add_drop_period"]
         else:
-            add_drop_period = get_add_drop_period(self.semester)
+            add_drop_period = get_or_create_add_drop_period(self.semester)
         super().save(*args, **kwargs)
         created_at = self.created_at
         start = add_drop_period.estimated_start
