@@ -277,10 +277,10 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
             {
                 "percent_through": ext.percent_through_add_drop_period,
                 "type": "distribution_estimate_change",
-                "csdv_gamma_param_alpha": ext.csdv_gamma_param_alpha,
-                "csdv_gamma_param_loc": ext.csdv_gamma_param_loc,
-                "csdv_gamma_param_scale": ext.csdv_gamma_param_scale,
-                "mean_log_likelihood": ext.csdv_gamma_fit_mean_log_likelihood,
+                "csrdv_frac_zero": ext.csrdv_frac_zero,
+                "csprdv_lognorm_param_shape": ext.csprdv_lognorm_param_shape,
+                "csprdv_lognorm_param_loc": ext.csprdv_lognorm_param_loc,
+                "csprdv_lognorm_param_scale": ext.csprdv_lognorm_param_scale,
                 "min": ext.lowest_raw_demand,
                 "max": ext.highest_raw_demand,
             }
@@ -288,10 +288,9 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
         ]
         if len(demand_distribution_estimates_changes) == 0:
             continue
-        for i, section in enumerate(section_map[semester].values()):
+        for section in section_map[semester].values():
             section_id = section.id
-            volume_changes = []
-            # volume_changes: a list containing registration volume changes over time
+            volume_changes = []  # a list containing registration volume changes over time
             for registration in registrations_map[semester][section_id]:
                 volume_changes.append(
                     {
@@ -373,22 +372,26 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                 ):
                     rel_demand = 1 / 2
                 else:
-                    param_alpha = latest_raw_demand_distribution_estimate["csdv_gamma_param_alpha"]
-                    param_loc = latest_raw_demand_distribution_estimate["csdv_gamma_param_loc"]
-                    param_scale = latest_raw_demand_distribution_estimate["csdv_gamma_param_scale"]
-                    mean_log_likelihood = latest_raw_demand_distribution_estimate[
-                        "mean_log_likelihood"
-                    ]
-                    if (
-                        param_alpha is None
-                        or param_loc is None
-                        or param_scale is None
-                        or mean_log_likelihood is None
-                    ):
-                        continue
-                    rel_demand = stats.gamma.cdf(
-                        registration_volume / section.capacity, param_alpha, param_loc, param_scale,
-                    )
+                    csrdv_frac_zero = latest_raw_demand_distribution_estimate["csrdv_frac_zero"]
+                    raw_demand = registration_volume / section.capacity
+                    if raw_demand <= 0:
+                        rel_demand = csrdv_frac_zero / 2
+                    else:
+                        param_shape = latest_raw_demand_distribution_estimate[
+                            "csprdv_lognorm_param_shape"
+                        ]
+                        param_loc = latest_raw_demand_distribution_estimate[
+                            "csprdv_lognorm_param_loc"
+                        ]
+                        param_scale = latest_raw_demand_distribution_estimate[
+                            "csprdv_lognorm_param_scale"
+                        ]
+                        if param_shape is None or param_loc is None or param_scale is None:
+                            rel_demand = csrdv_frac_zero
+                        else:
+                            rel_demand = csrdv_frac_zero + stats.lognorm.cdf(
+                                raw_demand, param_shape, param_loc, param_scale,
+                            ) * (1 - csrdv_frac_zero)
                 if change["percent_through"] > bin_start_pct + bin_size:
                     if num_in_bin > 0:
                         bin_avg = total_value_in_bin / num_in_bin

@@ -18,9 +18,9 @@ from alert.alerts import Email, PushNotification, Text
 from courses.models import Course, Section, StatusUpdate, UserProfile, string_dict_to_html
 from courses.util import (
     does_object_pass_filter,
-    get_add_drop_period,
     get_course_and_section,
     get_current_semester,
+    get_or_create_add_drop_period,
 )
 from PennCourses.settings.base import TIME_ZONE
 
@@ -775,72 +775,44 @@ class PcaDemandDistributionEstimate(models.Model):
         help_text="The registration volume of the lowest_demand_section at this time."
     )
 
-    csdv_gamma_param_alpha = models.FloatField(
+    csrdv_frac_zero = models.FloatField(
         null=True,
         blank=True,
         help_text=(
-            "The fitted gamma distribution alpha parameter of all closed sections' raw demand "
-            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
-            "values'; this is a collection of the raw demand values of each closed section at "
-            "this time."
+            "The fraction of closed sections' raw demand values that are 0 (non-positive), "
+            "expressed as a float in the range [0,1]. Null if there are no closed sections. "
+            "The abbreviation 'csrdv' stands for 'closed section raw demand values', not to be "
+            "confused with 'csprdv', which stands for 'closed section positive raw demand values'."
         ),
     )
-    csdv_gamma_param_loc = models.FloatField(
+    csprdv_lognorm_param_shape = models.FloatField(
         null=True,
         blank=True,
         help_text=(
-            "The fitted gamma distribution loc parameter of all closed sections' raw demand "
-            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
-            "values'; this is a collection of the raw demand values of each closed section at "
-            "this time."
+            "The shape parameter of the fitted log-normal distribution on positive "
+            "raw demand values from closed sections. Null if there are no closed sections that "
+            "have positive raw demand values. The abbreviation 'csprdv' stands for "
+            "'closed section positive raw demand values'."
         ),
     )
-    csdv_gamma_param_scale = models.FloatField(
+    csprdv_lognorm_param_loc = models.FloatField(
         null=True,
         blank=True,
         help_text=(
-            "The fitted gamma distribution beta parameter of all closed sections' raw demand "
-            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
-            "values'; this is a collection of the raw demand values of each closed section at "
-            "this time."
+            "The loc parameter of the fitted log-normal distribution on positive "
+            "raw demand values from closed sections. Null if there are no closed sections that "
+            "have positive raw demand values. The abbreviation 'csprdv' stands for "
+            "'closed section positive raw demand values'."
         ),
     )
-    csdv_gamma_fit_mean_log_likelihood = models.FloatField(
+    csprdv_lognorm_param_scale = models.FloatField(
         null=True,
         blank=True,
         help_text=(
-            "The mean log likelihood of the fitted gamma distribution over all closed sections' "
-            "raw demand values at this time. The abbreviation 'csdv' stands for 'closed section "
-            "demand values'; this is a collection of the raw demand values of each closed section "
-            "at this time."
-        ),
-    )
-
-    csdv_mean = models.FloatField(
-        null=True,
-        blank=True,
-        help_text=(
-            "The mean of all closed sections' raw demand values at this time. The "
-            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
-            "of the raw demand values of each closed section at this time."
-        ),
-    )
-    csdv_median = models.FloatField(
-        null=True,
-        blank=True,
-        help_text=(
-            "The median of all closed sections' raw demand values at this time. The "
-            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
-            "of the raw demand values of each closed section at this time."
-        ),
-    )
-    csdv_75th_percentile = models.FloatField(
-        null=True,
-        blank=True,
-        help_text=(
-            "The 75th percentile of all closed sections' raw demand values at this time. The "
-            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
-            "of the raw demand values of each closed section at this time."
+            "The scale parameter of the fitted log-normal distribution on positive "
+            "raw demand values from closed sections. Null if there are no closed sections that "
+            "have positive raw demand values. The abbreviation 'csprdv' stands for "
+            "'closed section positive raw demand values'."
         ),
     )
 
@@ -869,15 +841,16 @@ class PcaDemandDistributionEstimate(models.Model):
     def save(self, *args, **kwargs):
         """
         This save method first gets the add/drop period object for this
-        PcaDemandDistributionEstimate object's semester (either by calling the get_add_drop_period
-        method or by using a passed-in add_drop_period kwarg, which can be used for efficiency in
-        bulk operations over PcaDemandDistributionEstimate objects).
+        PcaDemandDistributionEstimate object's semester (either by calling the
+        get_or_create_add_drop_period method or by using a passed-in add_drop_period kwarg,
+        which can be used for efficiency in bulk operations over PcaDemandDistributionEstimate
+        objects).
         """
         if "add_drop_period" in kwargs:
             add_drop_period = kwargs["add_drop_period"]
             del kwargs["add_drop_period"]
         else:
-            add_drop_period = get_add_drop_period(self.semester)
+            add_drop_period = get_or_create_add_drop_period(self.semester)
         super().save(*args, **kwargs)
         created_at = self.created_at
         start = add_drop_period.estimated_start
