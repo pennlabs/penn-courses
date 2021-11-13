@@ -161,7 +161,6 @@ def get_demand_data(semesters, section_query="", verbose=False):
             demands[section_id] = (
                 registration_volumes[section_id] / section_id_to_object[section_id].capacity
             )
-
             max_id = max(demands.keys(), key=lambda x: demands[x])
             min_id = min(demands.keys(), key=lambda x: demands[x])
             if (
