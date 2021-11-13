@@ -779,10 +779,10 @@ class PcaDemandDistributionEstimate(models.Model):
         null=True,
         blank=True,
         help_text=(
-            "The fraction of closed sections' raw demand values that are 0 (non-positive), expressed "
-            "as a float in the range [0,1]. Null if there are no closed sections. The abbreviation 'csrdv' "
-            "stands for 'closed section raw demand values', not to be confused with 'csprdv', which stands for "
-            "'closed section positive raw demand values'."
+            "The fraction of closed sections' raw demand values that are 0 (non-positive), "
+            "expressed as a float in the range [0,1]. Null if there are no closed sections. "
+            "The abbreviation 'csrdv' stands for 'closed section raw demand values', not to be "
+            "confused with 'csprdv', which stands for 'closed section positive raw demand values'."
         ),
     )
     csprdv_lognorm_param_shape = models.FloatField(

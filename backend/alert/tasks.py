@@ -121,13 +121,20 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
             closed_sections_demand_values = np.asarray(
                 sections_qs.filter(status="C").values_list("raw_demand", flat=True)
             )
-            # "The term 'closed sections positive raw demand values' is sometimes abbreviated as 'csprdv'
+            # "The term 'closed sections positive raw demand values' is
+            # sometimes abbreviated as 'csprdv'
             csrdv_frac_zero, fit_shape, fit_loc, fit_scale = (None, None, None)
             if len(closed_sections_demand_values) > 0:
-                closed_sections_positive_demand_values = closed_sections_demand_values[np.nonzero(closed_sections_demand_values)]
-                csrdv_frac_zero = 1 - len(closed_sections_positive_demand_values) / len(closed_sections_demand_values)
+                closed_sections_positive_demand_values = closed_sections_demand_values[
+                    np.nonzero(closed_sections_demand_values)
+                ]
+                csrdv_frac_zero = 1 - len(closed_sections_positive_demand_values) / len(
+                    closed_sections_demand_values
+                )
                 if len(closed_sections_positive_demand_values) > 0:
-                    fit_shape, fit_loc, fit_scale = stats.lognorm.fit(closed_sections_positive_demand_values)
+                    fit_shape, fit_loc, fit_scale = stats.lognorm.fit(
+                        closed_sections_positive_demand_values
+                    )
             new_demand_distribution_estimate = PcaDemandDistributionEstimate(
                 semester=semester,
                 highest_demand_section=highest_demand_section,

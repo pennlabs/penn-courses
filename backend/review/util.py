@@ -378,14 +378,16 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                     if raw_demand == 0:
                         rel_demand = csrdv_frac_zero / 2
                     else:
-                        param_shape = latest_raw_demand_distribution_estimate["csprdv_lognorm_param_shape"]
-                        param_loc = latest_raw_demand_distribution_estimate["csprdv_lognorm_param_loc"]
-                        param_scale = latest_raw_demand_distribution_estimate["csprdv_lognorm_param_scale"]
-                        if (
-                            param_shape is None
-                            or param_loc is None
-                            or param_scale is None
-                        ):
+                        param_shape = latest_raw_demand_distribution_estimate[
+                            "csprdv_lognorm_param_shape"
+                        ]
+                        param_loc = latest_raw_demand_distribution_estimate[
+                            "csprdv_lognorm_param_loc"
+                        ]
+                        param_scale = latest_raw_demand_distribution_estimate[
+                            "csprdv_lognorm_param_scale"
+                        ]
+                        if param_shape is None or param_loc is None or param_scale is None:
                             rel_demand = csrdv_frac_zero
                         else:
                             if csrdv_frac_zero == 1:
@@ -393,7 +395,7 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                             else:
                                 rel_demand = csrdv_frac_zero + stats.lognorm.cdf(
                                     raw_demand, param_shape, param_loc, param_scale,
-                                ) * (1-csrdv_frac_zero)
+                                ) * (1 - csrdv_frac_zero)
                 if change["percent_through"] > bin_start_pct + bin_size:
                     if num_in_bin > 0:
                         bin_avg = total_value_in_bin / num_in_bin
