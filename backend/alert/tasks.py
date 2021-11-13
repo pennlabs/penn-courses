@@ -123,7 +123,7 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
             )
             # "The term 'closed sections positive raw demand values' is
             # sometimes abbreviated as 'csprdv'
-            csrdv_frac_zero, fit_shape, fit_loc, fit_scale = (None, None, None)
+            csrdv_frac_zero, fit_shape, fit_loc, fit_scale = (None, None, None, None)
             if len(closed_sections_demand_values) > 0:
                 closed_sections_positive_demand_values = closed_sections_demand_values[
                     np.where(closed_sections_demand_values > 0)
