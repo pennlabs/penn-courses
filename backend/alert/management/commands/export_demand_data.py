@@ -8,11 +8,7 @@ from django.db.models import F
 from django.utils import timezone
 from tqdm import tqdm
 
-from alert.management.commands.recomputestats import (
-    get_semesters,
-    recompute_percent_open,
-    recompute_registration_volumes,
-)
+from alert.management.commands.recomputestats import get_semesters
 from alert.models import Registration, Section, validate_add_drop_semester
 from courses.models import StatusUpdate
 from courses.util import get_current_semester, get_or_create_add_drop_period
@@ -22,10 +18,6 @@ from review.views import extra_metrics_section_filters
 
 def get_demand_data(semesters, section_query="", verbose=False):
     current_semester = get_current_semester()
-
-    # Recompute most recent registration volumes and open percentages
-    recompute_registration_volumes(semesters=semesters, semesters_precomputed=True, verbose=verbose)
-    recompute_percent_open(semesters=semesters, semesters_precomputed=True, verbose=verbose)
 
     output_dict = dict()
 
@@ -69,7 +61,6 @@ def get_demand_data(semesters, section_query="", verbose=False):
         for registration in iterator_wrapper(
             Registration.objects.filter(section_id__in=section_id_to_object.keys())
             .annotate(section_capacity=F("section__capacity"))
-            .select_for_update()
         ):
             section_id = registration.section_id
             volume_changes_map[section_id].append(
@@ -84,7 +75,7 @@ def get_demand_data(semesters, section_query="", verbose=False):
         for status_update in iterator_wrapper(
             StatusUpdate.objects.filter(
                 section_id__in=section_id_to_object.keys(), in_add_drop_period=True
-            ).select_for_update()
+            )
         ):
             section_id = status_update.section_id
             status_updates_map[section_id].append(
