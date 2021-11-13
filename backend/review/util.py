@@ -291,7 +291,6 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
         for section in section_map[semester].values():
             section_id = section.id
             volume_changes = []  # a list containing registration volume changes over time
-
             for registration in registrations_map[semester][section_id]:
                 volume_changes.append(
                     {
