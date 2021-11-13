@@ -449,7 +449,7 @@ def recompute_demand_distribution_estimates(
                     csrdv_frac_zero, fit_shape, fit_loc, fit_scale = (None, None, None, None)
                     if len(closed_sections_demand_values) > 0:
                         closed_sections_positive_demand_values = closed_sections_demand_values[
-                            np.nonzero(closed_sections_demand_values)
+                            np.where(closed_sections_demand_values > 0)
                         ]
                         csrdv_frac_zero = 1 - len(closed_sections_positive_demand_values) / len(
                             closed_sections_demand_values

@@ -375,7 +375,7 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                 else:
                     csrdv_frac_zero = latest_raw_demand_distribution_estimate["csrdv_frac_zero"]
                     raw_demand = registration_volume / section.capacity
-                    if raw_demand == 0:
+                    if raw_demand <= 0:
                         rel_demand = csrdv_frac_zero / 2
                     else:
                         param_shape = latest_raw_demand_distribution_estimate[
@@ -390,12 +390,9 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                         if param_shape is None or param_loc is None or param_scale is None:
                             rel_demand = csrdv_frac_zero
                         else:
-                            if csrdv_frac_zero == 1:
-                                rel_demand = 1
-                            else:
-                                rel_demand = csrdv_frac_zero + stats.lognorm.cdf(
-                                    raw_demand, param_shape, param_loc, param_scale,
-                                ) * (1 - csrdv_frac_zero)
+                            rel_demand = csrdv_frac_zero + stats.lognorm.cdf(
+                                raw_demand, param_shape, param_loc, param_scale,
+                            ) * (1 - csrdv_frac_zero)
                 if change["percent_through"] > bin_start_pct + bin_size:
                     if num_in_bin > 0:
                         bin_avg = total_value_in_bin / num_in_bin
