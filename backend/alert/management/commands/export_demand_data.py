@@ -264,9 +264,7 @@ class Command(BaseCommand):
                 semesters, section_query=kwargs["section_query"], verbose=True
             )
             json.dump(output_data, output_file)
-
         if upload_to_s3:
             S3_resource.meta.client.upload_file(output_file_path, "penn.courses", path)
             os.remove(output_file_path)
-
         print(f"Generated {script_print_path} with demand data from {len(semesters)} semesters.")
