@@ -15,9 +15,13 @@ from django.utils import timezone
 from django.utils.timezone import make_aware
 
 from alert.alerts import Email, PushNotification, Text
-from backend.courses.util import get_or_create_add_drop_period
 from courses.models import Course, Section, StatusUpdate, UserProfile, string_dict_to_html
-from courses.util import does_object_pass_filter, get_course_and_section, get_current_semester
+from courses.util import (
+    does_object_pass_filter,
+    get_course_and_section,
+    get_current_semester,
+    get_or_create_add_drop_period,
+)
 from PennCourses.settings.base import TIME_ZONE
 
 
