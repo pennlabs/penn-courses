@@ -448,7 +448,6 @@ def recompute_demand_distribution_estimates(
                     )
                     fit_alpha, fit_loc, fit_scale, mean_log_likelihood = (None, None, None, None)
                     if len(closed_sections_demand_values) > 0:
-                        print(closed_sections_demand_values)
                         fit_alpha, fit_loc, fit_scale = stats.gamma.fit(
                             closed_sections_demand_values
                         )
