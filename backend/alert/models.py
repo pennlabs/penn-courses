@@ -775,72 +775,44 @@ class PcaDemandDistributionEstimate(models.Model):
         help_text="The registration volume of the lowest_demand_section at this time."
     )
 
-    csdv_gamma_param_alpha = models.FloatField(
+    csrdv_frac_zero = models.FloatField(
         null=True,
         blank=True,
         help_text=(
-            "The fitted gamma distribution alpha parameter of all closed sections' raw demand "
-            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
-            "values'; this is a collection of the raw demand values of each closed section at "
-            "this time."
+            "The fraction of closed sections' raw demand values that are 0 (non-positive), "
+            "expressed as a float in the range [0,1]. Null if there are no closed sections. "
+            "The abbreviation 'csrdv' stands for 'closed section raw demand values', not to be "
+            "confused with 'csprdv', which stands for 'closed section positive raw demand values'."
         ),
     )
-    csdv_gamma_param_loc = models.FloatField(
+    csprdv_lognorm_param_shape = models.FloatField(
         null=True,
         blank=True,
         help_text=(
-            "The fitted gamma distribution loc parameter of all closed sections' raw demand "
-            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
-            "values'; this is a collection of the raw demand values of each closed section at "
-            "this time."
+            "The shape parameter of the fitted log-normal distribution on positive "
+            "raw demand values from closed sections. Null if there are no closed sections that "
+            "have positive raw demand values. The abbreviation 'csprdv' stands for "
+            "'closed section positive raw demand values'."
         ),
     )
-    csdv_gamma_param_scale = models.FloatField(
+    csprdv_lognorm_param_loc = models.FloatField(
         null=True,
         blank=True,
         help_text=(
-            "The fitted gamma distribution beta parameter of all closed sections' raw demand "
-            "values at this time. The abbreviation 'csdv' stands for 'closed section demand "
-            "values'; this is a collection of the raw demand values of each closed section at "
-            "this time."
+            "The loc parameter of the fitted log-normal distribution on positive "
+            "raw demand values from closed sections. Null if there are no closed sections that "
+            "have positive raw demand values. The abbreviation 'csprdv' stands for "
+            "'closed section positive raw demand values'."
         ),
     )
-    csdv_gamma_fit_mean_log_likelihood = models.FloatField(
+    csprdv_lognorm_param_scale = models.FloatField(
         null=True,
         blank=True,
         help_text=(
-            "The mean log likelihood of the fitted gamma distribution over all closed sections' "
-            "raw demand values at this time. The abbreviation 'csdv' stands for 'closed section "
-            "demand values'; this is a collection of the raw demand values of each closed section "
-            "at this time."
-        ),
-    )
-
-    csdv_mean = models.FloatField(
-        null=True,
-        blank=True,
-        help_text=(
-            "The mean of all closed sections' raw demand values at this time. The "
-            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
-            "of the raw demand values of each closed section at this time."
-        ),
-    )
-    csdv_median = models.FloatField(
-        null=True,
-        blank=True,
-        help_text=(
-            "The median of all closed sections' raw demand values at this time. The "
-            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
-            "of the raw demand values of each closed section at this time."
-        ),
-    )
-    csdv_75th_percentile = models.FloatField(
-        null=True,
-        blank=True,
-        help_text=(
-            "The 75th percentile of all closed sections' raw demand values at this time. The "
-            "abbreviation 'csdv' stands for 'closed section demand values'; this is a collection "
-            "of the raw demand values of each closed section at this time."
+            "The scale parameter of the fitted log-normal distribution on positive "
+            "raw demand values from closed sections. Null if there are no closed sections that "
+            "have positive raw demand values. The abbreviation 'csprdv' stands for "
+            "'closed section positive raw demand values'."
         ),
     )
 
