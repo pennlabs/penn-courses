@@ -7,11 +7,8 @@ from alert.management.commands.recomputestats import (
     recompute_precomputed_fields,
 )
 from alert.models import AddDropPeriod
-from courses.models import StatusUpdate, Meeting, Course, Section, Building, Room
-from courses.util import (
-    get_or_create_course_and_section,
-    invalidate_current_semester_cache,
-)
+from courses.models import Building, Course, Meeting, Room, Section, StatusUpdate
+from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from tests.courses.util import create_mock_data
 
 
