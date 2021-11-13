@@ -5,7 +5,7 @@ from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.management.commands.recomputestats import recompute_demand_distribution_estimates
+# from alert.management.commands.recomputestats import recompute_demand_distribution_estimates
 from alert.models import AddDropPeriod, Registration
 from courses.models import Instructor, Section
 from courses.util import get_add_drop_period, invalidate_current_semester_cache, record_update
