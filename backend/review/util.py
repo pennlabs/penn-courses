@@ -288,10 +288,10 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
         ]
         if len(demand_distribution_estimates_changes) == 0:
             continue
-        for i, section in enumerate(section_map[semester].values()):
+        for section in section_map[semester].values():
             section_id = section.id
-            volume_changes = []
-            # volume_changes: a list containing registration volume changes over time
+            volume_changes = []  # a list containing registration volume changes over time
+
             for registration in registrations_map[semester][section_id]:
                 volume_changes.append(
                     {
