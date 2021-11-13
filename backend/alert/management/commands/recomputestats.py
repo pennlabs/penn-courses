@@ -23,7 +23,7 @@ from courses.management.commands.load_add_drop_dates import (
     load_add_drop_dates,
 )
 from courses.models import Course, StatusUpdate
-from courses.util import get_add_drop_period, get_current_semester
+from courses.util import get_current_semester, get_or_create_add_drop_period
 from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES
 from review.views import extra_metrics_section_filters
 
@@ -159,7 +159,7 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
             if verbose:
                 print(f"\nProcessing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.")
 
-            add_drop = get_add_drop_period(semester)
+            add_drop = get_or_create_add_drop_period(semester)
             add_drop_start = add_drop.estimated_start
             add_drop_end = add_drop.estimated_end
 
@@ -297,7 +297,7 @@ def recompute_demand_distribution_estimates(
             if verbose:
                 print(f"Skipping semester {semester} (unsupported kind for stats).")
             continue
-        add_drop_period = get_add_drop_period(semester)
+        add_drop_period = get_or_create_add_drop_period(semester)
         set_cache = semester == current_semester
 
         with transaction.atomic():
