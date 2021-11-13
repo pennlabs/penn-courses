@@ -19,7 +19,7 @@ from rest_framework.test import APIClient
 
 from alert import tasks
 from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
-from alert.tasks import get_registrations_for_alerts
+from alert.tasks import get_registrations_for_alerts, registration_update
 from courses.models import StatusUpdate
 from courses.util import (
     get_add_drop_period,
@@ -95,7 +95,7 @@ def override_delay(modules_names, before_func, before_kwargs):
 @patch("alert.models.Email.send_alert")
 class SendAlertTestCase(TestCase):
     def setUp(self):
-        # registration_update.delay = registration_update.__wrapped__
+        registration_update.delay = registration_update.__wrapped__
         celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)
         set_semester()
         course, section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
