@@ -59,8 +59,9 @@ def get_demand_data(semesters, section_query="", verbose=False):
         if verbose:
             print("Computing registration volume changes over time for each section...")
         for registration in iterator_wrapper(
-            Registration.objects.filter(section_id__in=section_id_to_object.keys())
-            .annotate(section_capacity=F("section__capacity"))
+            Registration.objects.filter(section_id__in=section_id_to_object.keys()).annotate(
+                section_capacity=F("section__capacity")
+            )
         ):
             section_id = registration.section_id
             volume_changes_map[section_id].append(
