@@ -57,8 +57,8 @@ const DropdownButton = ({
     </DropdownButtonContainer>
 );
 
-type SortByType = "Name" | "Quality" | "Difficulty" | "Good & Easy";
-const contents: SortByType[] = ["Name", "Quality", "Difficulty", "Good & Easy"];
+type SortByType = "Name" | "Quality" | "Difficulty" | "Good & Easy" | "Suggested";
+const contents: SortByType[] = ["Name", "Suggested", "Quality", "Difficulty", "Good & Easy"];
 
 const DropdownContainer = styled.div`
     border-radius: 0.5rem;

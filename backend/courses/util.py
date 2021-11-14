@@ -367,6 +367,9 @@ def relocate_reqs_from_restrictions(rests, reqs, travellers):
             reqs.append(t)
 
 
+CU_REGEX = re.compile(r"([0-9]*(\.[0-9]+)?)(\s*to\s*[0-9]*(\.[0-9]+)?)?\s*CU")
+
+
 def upsert_course_from_opendata(info, semester):
     course_code = info["section_id_normalized"]
     try:
@@ -380,7 +383,7 @@ def upsert_course_from_opendata(info, semester):
     course.prerequisites = "\n".join(info["prerequisite_notes"])
     set_crosslistings(course, info["crosslist_primary"])
 
-    m = re.match(r"([0-9]*(\.[0-9]+)?) CU", info["credits"])
+    m = CU_REGEX.match(info["credits"])
     if info["credit_type"] == "CU" and m is not None:
         try:
             section.credits = float(m.group(1))
