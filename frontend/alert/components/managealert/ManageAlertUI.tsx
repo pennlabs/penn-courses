@@ -156,7 +156,7 @@ export const ManageAlert = ({
                     batchActionHandler={batchActionHandler}
                     batchSelectHandler={batchSelectHandler}
                 />
-                {alerts.map((alert, i) => (
+                {alerts?.map?.((alert, i) => (
                     <AlertItem
                         key={alert.id}
                         checked={alertSel[alert.id]}
