@@ -65,6 +65,7 @@ export enum SortMode {
     QUALITY = "Quality",
     DIFFICULTY = "Difficulty",
     GOOD_AND_EASY = "Good & Easy",
+    RECOMMENDED = "Suggested",
 }
 
 export interface Instructor {
@@ -136,6 +137,7 @@ export interface Course {
     course_quality: number;
     instructor_quality: number;
     difficulty: number;
+    recommendation_score: number;
     work_required: number;
     crosslistings?: string[];
     requirements?: Requirement[];
