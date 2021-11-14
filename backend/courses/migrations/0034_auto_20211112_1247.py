@@ -6,18 +6,24 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0033_alter_statusupdate_section'),
+        ("courses", "0033_alter_statusupdate_section"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='course',
-            name='num_activities',
-            field=models.IntegerField(default=0, help_text='\nThe number of distinct activities belonging to this course (precomputed for efficiency). \nMaintained by the registrar import / recomputestats script.\n'),
+            model_name="course",
+            name="num_activities",
+            field=models.IntegerField(
+                default=0,
+                help_text="\nThe number of distinct activities belonging to this course (precomputed for efficiency). \nMaintained by the registrar import / recomputestats script.\n",
+            ),
         ),
         migrations.AddField(
-            model_name='section',
-            name='num_meetings',
-            field=models.IntegerField(default=0, help_text='\nThe number of meetings belonging to this section (precomputed for efficiency). \nMaintained by the registrar import / recomputestats script.\n'),
+            model_name="section",
+            name="num_meetings",
+            field=models.IntegerField(
+                default=0,
+                help_text="\nThe number of meetings belonging to this section (precomputed for efficiency). \nMaintained by the registrar import / recomputestats script.\n",
+            ),
         ),
     ]

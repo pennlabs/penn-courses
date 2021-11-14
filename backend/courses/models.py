@@ -198,7 +198,7 @@ class Course(models.Model):
         default=0,
         help_text=dedent(
             """
-            The number of distinct activities belonging to this course (precomputed for efficiency). 
+            The number of distinct activities belonging to this course (precomputed for efficiency).
             Maintained by the registrar import / recomputestats script.
             """
         ),
@@ -401,7 +401,7 @@ class Section(models.Model):
         default=0,
         help_text=dedent(
             """
-            The number of meetings belonging to this section (precomputed for efficiency). 
+            The number of meetings belonging to this section (precomputed for efficiency).
             Maintained by the registrar import / recomputestats script.
             """
         ),
