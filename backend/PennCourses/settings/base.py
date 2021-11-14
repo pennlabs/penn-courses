@@ -64,6 +64,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "accounts.middleware.OAuth2TokenMiddleware",
 ]
 
 ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls")
@@ -182,11 +183,6 @@ MESSAGE_BROKER_URL = REDIS_URL
 # Django REST Framework
 REST_FRAMEWORK = {
     "COERCE_DECIMAL_TO_STRING": False,
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
-        "accounts.authentication.PlatformAuthentication",
-    ],
 }
 
 STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
