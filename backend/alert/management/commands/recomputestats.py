@@ -70,8 +70,8 @@ def recompute_precomputed_fields(semesters=None, verbose=False, semesters_precom
     Recomputes Course.num_sections and Section.num_meetings fields for the given semesters.
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
-            corresponding to the semesters for which you want to remove duplicate/redundant
-            status updates, i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
+            corresponding to the semesters for which you want to recompute precomputed fields,
+            i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
             It defaults to None, in which case only the current semester is used. If you supply
             the string "all", this function will run for all semesters found in Courses in the db.
             If semesters_precomputed is set to True (non-default), then this argument should
