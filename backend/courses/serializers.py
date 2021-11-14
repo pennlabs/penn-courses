@@ -12,6 +12,7 @@ from courses.models import (
     StatusUpdate,
     UserProfile,
 )
+from plan.management.commands.recommendcourses import cosine_similarity
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -209,8 +210,42 @@ class CourseListSerializer(serializers.ModelSerializer):
         dict(),
     )(read_only=True, help_text="The number of sections for this course.")
 
+    recommendation_score = type(
+        "SerializerDecimalMethodField",
+        (serializers.SerializerMethodField, serializers.DecimalField),
+        dict(),
+    )(
+        read_only=True,
+        help_text=dedent(
+            """
+            The recommendation score for this course if the user is logged in, or null if the
+            the user is not logged in."""
+        ),
+        max_digits=4,
+        decimal_places=3,
+    )
+
     def get_num_sections(self, obj):
         return obj.sections.count()
+
+    def get_recommendation_score(self, obj):
+        user_vector = self.context.get("user_vector")
+        curr_course_vectors_dict = self.context.get("curr_course_vectors_dict")
+
+        if user_vector is None or curr_course_vectors_dict is None:
+            # NOTE: there should be no case in which user_vector is None
+            # but curr_course_vectors_dict is not None. However, for
+            # stability in production, recommendation_score is None when
+            # either is None
+            return None
+
+        course_vector = curr_course_vectors_dict.get(obj.full_code)
+        if course_vector is None:
+            # Fires when the curr_course_vectors_dict is defined (ie, the user is authenticated)
+            # but the course code is not in the model
+            return None
+
+        return cosine_similarity(course_vector, user_vector)
 
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
@@ -237,6 +272,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
+            "recommendation_score",
         ]
         read_only_fields = fields
 

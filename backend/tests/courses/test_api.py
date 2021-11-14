@@ -1,5 +1,6 @@
 import json
 import os
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -10,10 +11,13 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Department, Instructor, Requirement
+from courses.models import Course, Department, Instructor, Requirement
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course, invalidate_current_semester_cache
+from plan.models import Schedule
+from tests import production_CourseListSearch_get_serializer_context
 from tests.courses.util import create_mock_data, create_mock_data_with_reviews
+from tests.plan.test_course_recs import CourseRecommendationsTestCase
 
 
 TEST_SEMESTER = "2019A"
@@ -196,6 +200,77 @@ class CourseSearchTestCase(TestCase):
             self.assertTrue(
                 "CIS-120" in course_codes and "MATH-114" not in course_codes, f"search:{search}"
             )
+
+
+class CourseSearchRecommendationScoreTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        # Set up test data according to CourseRecommendationTestCase
+        CourseRecommendationsTestCase.setUpTestData()
+        cls.course_clusters = CourseRecommendationsTestCase.course_clusters
+
+    def setUp(self):
+        set_semester()
+        self.username = "jacob"
+        self.password = "top_secret"
+        self.user = User.objects.create_user(username=self.username, password=self.password)
+        self.client = APIClient()
+
+    def test_recommendation_is_null_when_course_not_part_of_model_even_when_logged_in(self):
+        self.client.login(username=self.username, password=self.password)
+
+        self.course, self.section = create_mock_data("PSCI-437-001", TEST_SEMESTER)
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"search": "PSCI-437", "type": "auto"}
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(len(response.data), 1)
+        self.assertIsNone(response.data[0]["recommendation_score"])
+
+    def test_recommendation_is_null_when_user_not_logged_in(self):
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"search": "PSCI", "type": "auto"}
+        )
+
+        self.assertEqual(200, response.status_code)
+        for course in response.data:
+            self.assertEqual(course["recommendation_score"], None)
+
+    @patch(
+        "courses.views.CourseListSearch.get_serializer_context",
+        new=production_CourseListSearch_get_serializer_context,
+    )
+    @patch("courses.views.retrieve_course_clusters")
+    def test_recommendation_is_number_when_user_is_logged_in(self, course_clusters_mock):
+        course_clusters_mock.return_value = self.course_clusters
+        self.client.login(username=self.username, password=self.password)
+
+        curr_semester_schedule = Schedule.objects.create(
+            person=self.user, name="curr_semester_schedule", semester=TEST_SEMESTER
+        )
+        curr_semester_schedule.save()
+        # NOTE: the `semester` of many of the sections in this schedule do not match up with
+        # the `semester` of the schedule
+        curr_semester_schedule.sections.add(
+            Course.objects.get(full_code="PSCI-498", semester="2019A").sections.get(code="001")
+        )
+
+        prev_semester_schedule = Schedule.objects.create(
+            person=self.user, name="prev_semester_schedule", semester="2018C"
+        )
+        prev_semester_schedule.save()
+        prev_semester_schedule.sections.add(
+            Course.objects.get(full_code="PSCI-181", semester="2019A").sections.get(code="001")
+        )
+
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"search": "PSCI", "type": "auto"}
+        )
+
+        self.assertEqual(200, response.status_code)
+        for course in response.data:
+            self.assertIsInstance(course["recommendation_score"], float)
 
 
 class SectionSearchTestCase(TestCase):

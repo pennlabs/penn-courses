@@ -16,6 +16,11 @@ from plan.management.commands.trainrecommender import train_recommender
 from plan.models import Schedule
 
 
+# The proportion by which to up-weight current courses
+# relative to past courses when computing a user vector
+CURR_COURSES_BIAS = 3
+
+
 def vectorize_user_by_courses(
     curr_courses, past_courses, curr_course_vectors_dict, past_course_vectors_dict
 ):
@@ -60,7 +65,7 @@ def vectorize_user_by_courses(
         else sum(past_course_vectors_dict[course] for course in past_courses)
     )
 
-    vector = curr_courses_vector + past_courses_vector
+    vector = curr_courses_vector * CURR_COURSES_BIAS + past_courses_vector
     norm = np.linalg.norm(vector)
     vector = vector / norm if norm > 0 else vector
     return vector, all_courses
@@ -95,6 +100,11 @@ def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict):
     )
 
 
+def cosine_similarity(v1, v2):
+    norm_prod = np.linalg.norm(v1) * np.linalg.norm(v2)
+    return np.dot(v1, v2) / norm_prod if norm_prod > 0 else 0
+
+
 def best_recommendations(
     cluster,
     curr_course_vectors_dict,
@@ -107,8 +117,7 @@ def best_recommendations(
         if exclude is not None and course in exclude:
             continue
         course_vector = curr_course_vectors_dict[course]
-        norm_prod = np.linalg.norm(course_vector) * np.linalg.norm(user_vector)
-        similarity = np.dot(course_vector, user_vector) / norm_prod if norm_prod > 0 else 0
+        similarity = cosine_similarity(course_vector, user_vector)
         recs.append((course, similarity))
     rec_course_to_score = {course: score for course, score in recs}
     recs = [
@@ -153,12 +162,18 @@ dev_course_clusters = None  # a global variable used to "cache" the course clust
 
 def retrieve_course_clusters():
     global dev_course_clusters
-    if "PennCourses.settings.development" in os.environ.get("DJANGO_SETTINGS_MODULE", ""):
+    dev_mode = "PennCourses.settings.development" in os.environ.get("DJANGO_SETTINGS_MODULE", "")
+    if dev_mode and os.environ.get("USE_PROD_MODEL", "false") != "true":
         if dev_course_clusters is None:
             print("TRAINING DEVELOPMENT MODEL... PLEASE WAIT")
             dev_course_clusters = train_recommender(
-                course_data_path=settings.BASE_DIR
-                + "/tests/plan/course_recs_test_data/course_data_test.csv",
+                course_data_path=(
+                    settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_data_test.csv"
+                ),
+                preloaded_descriptions_path=(
+                    settings.BASE_DIR
+                    + "/tests/plan/course_recs_test_data/course_descriptions_test.csv"
+                ),
                 output_path=os.devnull,
             )
             print("Done training development model.")

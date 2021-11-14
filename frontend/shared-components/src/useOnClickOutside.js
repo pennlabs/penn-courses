@@ -23,6 +23,7 @@ export function useOnClickOutside(
             if (ref.current) {
                 if (
                     !e.target.classList.contains(ignoreElement) &&
+                    e.target.parentElement &&
                     !e.target.parentElement.classList.contains(ignoreElement) &&
                     !ref.current.contains(e.target)
                 ) {

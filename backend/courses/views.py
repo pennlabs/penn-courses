@@ -19,6 +19,7 @@ from courses.serializers import (
 )
 from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
 
 SEMESTER_PARAM_DESCRIPTION = (
@@ -178,6 +179,38 @@ class CourseListSearch(CourseList):
             }
         },
     )
+
+    def get_serializer_context(self):
+        """
+        This method overrides the default `get_serializer_context` (from super class)
+        in order to add the `user_vector` and `curr_course_vectors_dict`
+        key/value pairs to the serializer context dictionary. If there is no authenticated user
+        (ie `self.request.user.is_authenticated` is `False`) or `self.request` is `None`,
+        the value associated with the `user_vector` and `curr_course_vectors_dict`key are not set.
+        All other key/value pairs that would have been returned by the default
+        `get_serializer_context` (which is `CourseList.get_serializer_context`) are in the
+        dictionary returned in this method. `user_vector` and `curr_course_vectors_dict` encode the
+        vectors used to calculate the recommendation score for a course for a user (see
+        `backend/plan/management/commands/recommendcourses.py` for details on the vectors).
+        Note that for testing purposes, this implementation of get_serializer_context is replaced
+        with simply `CourseList.get_serializer_context` to reduce the costly process of training the
+        model in unrelated tests. You can see how this is done and how to override that behavior in
+        in `backend/tests/__init__.py`.
+        """
+        context = super().get_serializer_context()
+
+        if self.request is None or not self.request.user or not self.request.user.is_authenticated:
+            return context
+
+        _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
+        user_vector, _ = vectorize_user(
+            self.request.user, curr_course_vectors_dict, past_course_vectors_dict
+        )
+        context.update(
+            {"user_vector": user_vector, "curr_course_vectors_dict": curr_course_vectors_dict}
+        )
+
+        return context
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")

@@ -121,29 +121,30 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
             closed_sections_demand_values = np.asarray(
                 sections_qs.filter(status="C").values_list("raw_demand", flat=True)
             )
-            # "The term 'closed sections demand values' is sometimes abbreviated as 'csdv'
-            csdv_nonempty = len(closed_sections_demand_values) > 0
-            fit_alpha, fit_loc, fit_scale, mean_log_likelihood = (None, None, None, None)
-            if csdv_nonempty:
-                fit_alpha, fit_loc, fit_scale = stats.gamma.fit(closed_sections_demand_values)
-                mean_log_likelihood = stats.gamma.logpdf(
-                    closed_sections_demand_values, fit_alpha, fit_loc, fit_scale
-                ).mean()
+            # "The term 'closed sections positive raw demand values' is
+            # sometimes abbreviated as 'csprdv'
+            csrdv_frac_zero, fit_shape, fit_loc, fit_scale = (None, None, None, None)
+            if len(closed_sections_demand_values) > 0:
+                closed_sections_positive_demand_values = closed_sections_demand_values[
+                    np.where(closed_sections_demand_values > 0)
+                ]
+                csrdv_frac_zero = 1 - len(closed_sections_positive_demand_values) / len(
+                    closed_sections_demand_values
+                )
+                if len(closed_sections_positive_demand_values) > 0:
+                    fit_shape, fit_loc, fit_scale = stats.lognorm.fit(
+                        closed_sections_positive_demand_values
+                    )
             new_demand_distribution_estimate = PcaDemandDistributionEstimate(
                 semester=semester,
                 highest_demand_section=highest_demand_section,
                 highest_demand_section_volume=highest_demand_section.registration_volume,
                 lowest_demand_section=lowest_demand_section,
                 lowest_demand_section_volume=lowest_demand_section.registration_volume,
-                csdv_gamma_param_alpha=fit_alpha,
-                csdv_gamma_param_loc=fit_loc,
-                csdv_gamma_param_scale=fit_scale,
-                csdv_gamma_fit_mean_log_likelihood=mean_log_likelihood,
-                csdv_mean=(np.mean(closed_sections_demand_values) if csdv_nonempty else None),
-                csdv_median=(np.median(closed_sections_demand_values) if csdv_nonempty else None),
-                csdv_75th_percentile=(
-                    np.percentile(closed_sections_demand_values, 75) if csdv_nonempty else None
-                ),
+                csrdv_frac_zero=csrdv_frac_zero,
+                csprdv_lognorm_param_shape=fit_shape,
+                csprdv_lognorm_param_loc=fit_loc,
+                csprdv_lognorm_param_scale=fit_scale,
             )
             add_drop_period = get_or_create_add_drop_period(semester)
             new_demand_distribution_estimate.save(add_drop_period=add_drop_period)

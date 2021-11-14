@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { Flex, FlexProps } from "../common/layout";
+import { Flex, FlexProps } from "pcx-shared-components/src/common/layout";
 import { Img, P } from "../common/common";
 import { AlertAction, WrappedStyled } from "../../types";
 
@@ -8,13 +8,13 @@ type ActionFlexProps = FlexProps & {
     background: string;
 };
 
-const ActionFlex: WrappedStyled<ActionFlexProps> = styled(Flex)`
+const ActionFlex = styled(Flex)`
     background-color: ${(props: ActionFlexProps) => props.background};
     border-radius: 0.2rem;
     cursor: pointer;
 `;
 
-const ActionButtonFlex: WrappedStyled<FlexProps> = styled(Flex)`
+const ActionButtonFlex = styled(Flex)`
     & > * {
         display: block;
         margin: 0.1rem;
