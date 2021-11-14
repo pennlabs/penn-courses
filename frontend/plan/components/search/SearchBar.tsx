@@ -30,7 +30,7 @@ import {
 } from "../../actions";
 import { login, logout } from "../../actions/login";
 
-const DAY_TIME_ENABLED = false;
+const DAY_TIME_ENABLED = true;
 
 // removed: <F, K extends keyof F, V extends keyof K>
 interface SearchBarProps {
