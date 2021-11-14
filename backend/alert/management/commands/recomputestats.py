@@ -67,7 +67,7 @@ def get_semesters(semesters=None, verbose=False):
 
 def recompute_precomputed_fields(semesters=None, verbose=False, semesters_precomputed=False):
     """
-    Recomputes Course.num_sections and Section.num_meetings fields for the given semesters.
+    Recomputes Course.num_activities and Section.num_meetings fields for the given semesters.
     Args:
         semesters: The semesters argument should be a comma-separated list of string semesters
             corresponding to the semesters for which you want to recompute precomputed fields,
