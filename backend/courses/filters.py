@@ -1,11 +1,11 @@
 from decimal import Decimal
 
 from django.db.models import Count, Q
-from django.db.models.expressions import F, OuterRef, Subquery
+from django.db.models.expressions import F, Subquery
 from rest_framework import filters
 
-from courses.models import Meeting, Requirement, Section, Course
-from courses.util import get_current_semester, subquery_count_distinct
+from courses.models import Meeting, Requirement, Section
+from courses.util import get_current_semester
 from plan.models import Schedule
 
 
@@ -24,6 +24,7 @@ def section_ids_by_meeting_query(meeting_query):
         .distinct()
     )
 
+
 def course_ids_by_section_query(section_query):
     """
     Returns a queryset of the ids of courses for which at least one section
@@ -39,6 +40,7 @@ def course_ids_by_section_query(section_query):
         .distinct()
     )
 
+
 def meeting_filter(queryset, meeting_query):
     """
     Filters the given queryset of courses by the following condition:
@@ -53,7 +55,11 @@ def meeting_filter(queryset, meeting_query):
     we would no longer include the course (since we cannot attend the meetings of the
     lab section, and thus the set of course activities available to us is incomplete).
     """
-    return queryset.filter(id__in=course_ids_by_section_query(Q(num_meetings=0) | Q(id__in=section_ids_by_meeting_query(meeting_query))))
+    return queryset.filter(
+        id__in=course_ids_by_section_query(
+            Q(num_meetings=0) | Q(id__in=section_ids_by_meeting_query(meeting_query))
+        )
+    )
 
 
 def is_open_filter(queryset, *args):

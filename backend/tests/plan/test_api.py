@@ -5,8 +5,8 @@ from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.models import AddDropPeriod
 from alert.management.commands.recomputestats import recompute_precomputed_fields
+from alert.models import AddDropPeriod
 from courses.models import Instructor, Requirement, Section
 from courses.util import invalidate_current_semester_cache, set_meetings
 from plan.models import Schedule

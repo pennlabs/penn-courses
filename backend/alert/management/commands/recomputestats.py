@@ -22,7 +22,7 @@ from courses.management.commands.load_add_drop_dates import (
     fill_in_add_drop_periods,
     load_add_drop_dates,
 )
-from courses.models import Course, StatusUpdate, Meeting
+from courses.models import Course, Meeting, StatusUpdate
 from courses.util import (
     get_current_semester,
     get_or_create_add_drop_period,
@@ -101,7 +101,7 @@ def recompute_precomputed_fields(semesters=None, verbose=False, semesters_precom
     ).update(num_meetings=F("meeting_count"))
 
     if verbose:
-        print(f"done.")
+        print("done.")
 
 
 def deduplicate_status_updates(semesters=None, verbose=False, semesters_precomputed=False):
