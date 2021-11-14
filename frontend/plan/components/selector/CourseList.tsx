@@ -26,6 +26,11 @@ const courseSort = (courses: CourseType[], sortMode: SortMode) => {
                 return !courseB.difficulty
                     ? -1
                     : courseA.difficulty - courseB.difficulty;
+            case SortMode.RECOMMENDED:
+                return !courseB.recommendation_score
+                    ? -1
+                    : courseB.recommendation_score -
+                          courseA.recommendation_score;
             case SortMode.GOOD_AND_EASY:
                 return goodEasy(courseB) - goodEasy(courseA);
             case SortMode.NAME:
