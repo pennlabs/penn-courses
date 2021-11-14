@@ -194,6 +194,16 @@ class Course(models.Model):
         ),
     )
 
+    num_activities = models.IntegerField(
+        default=0,
+        help_text=dedent(
+            """
+            The number of distinct activities belonging to this course (precomputed for efficiency).
+            Maintained by the registrar import / recomputestats script.
+            """
+        ),
+    )
+
     class Meta:
         unique_together = (("department", "code", "semester"), ("full_code", "semester"))
 
@@ -385,6 +395,15 @@ class Section(models.Model):
         day of the work week, respectively (and multiple days are combined with concatenation).
         To access the Meeting objects for this section, the related field `meetings` can be used.
         """
+        ),
+    )
+    num_meetings = models.IntegerField(
+        default=0,
+        help_text=dedent(
+            """
+            The number of meetings belonging to this section (precomputed for efficiency).
+            Maintained by the registrar import / recomputestats script.
+            """
         ),
     )
 
@@ -770,7 +789,7 @@ class Meeting(models.Model):
         return ~Q(day=self.day) | Q(end__lte=self.start) | Q(start__gte=self.end)
 
     def __str__(self):
-        return f"{self.section}: {self.start_time}-{self.end_time} in {self.room}"
+        return f"{self.section}: {self.day} {self.start_time}-{self.end_time} in {self.room}"
 
 
 """
