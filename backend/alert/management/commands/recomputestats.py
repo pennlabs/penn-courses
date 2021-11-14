@@ -22,7 +22,7 @@ from courses.management.commands.load_add_drop_dates import (
     fill_in_add_drop_periods,
     load_add_drop_dates,
 )
-from courses.models import Course, StatusUpdate
+from courses.models import Course, StatusUpdate, Meeting
 from courses.util import (
     get_current_semester,
     get_or_create_add_drop_period,
