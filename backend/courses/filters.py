@@ -1,12 +1,44 @@
 from decimal import Decimal
 
 from django.db.models import Count, Q
-from django.db.models.expressions import OuterRef, Subquery
+from django.db.models.expressions import F, Subquery
 from rest_framework import filters
 
 from courses.models import Meeting, Requirement, Section
-from courses.util import get_current_semester, subquery_count_distinct
+from courses.util import get_current_semester
 from plan.models import Schedule
+
+
+def section_ids_by_meeting_query(meeting_query):
+    """
+    Returns a queryset of the ids of sections for which all meetings pass the
+    given meeting query.
+    """
+    return (
+        Meeting.objects.filter(meeting_query)
+        .values("section")
+        .annotate(num_matching_meetings=Count("id"))
+        .order_by()
+        .filter(section__num_meetings=F("num_matching_meetings"))
+        .values("section_id")
+        .distinct()
+    )
+
+
+def course_ids_by_section_query(section_query):
+    """
+    Returns a queryset of the ids of courses for which at least one section
+    of each activity type passes the given section query.
+    """
+    return (
+        Section.objects.filter(section_query)
+        .values("course")
+        .annotate(num_matching_activities=Count("activity", distinct=True))
+        .order_by()
+        .filter(course__num_activities=F("num_matching_activities"))
+        .values("course_id")
+        .distinct()
+    )
 
 
 def meeting_filter(queryset, meeting_query):
@@ -23,30 +55,10 @@ def meeting_filter(queryset, meeting_query):
     we would no longer include the course (since we cannot attend the meetings of the
     lab section, and thus the set of course activities available to us is incomplete).
     """
-
-    matching_sections = Section.objects.filter(
-        id__in=Section.objects.annotate(num_meetings=Count("meetings"))
-        .filter(
-            num_meetings=subquery_count_distinct(
-                Meeting.objects.filter(meeting_query).filter(section_id=OuterRef("id")), column="id"
-            )
+    return queryset.filter(
+        id__in=course_ids_by_section_query(
+            Q(num_meetings=0) | Q(id__in=section_ids_by_meeting_query(meeting_query))
         )
-        .values("id")
-    )
-    # Match number of activities per course and number of available activities
-    # in matching sections per course
-    return (
-        queryset.annotate(
-            num_activities=subquery_count_distinct(
-                Section.objects.filter(course_id=OuterRef("id")), column="activity"
-            )
-        )
-        .filter(
-            num_activities=subquery_count_distinct(
-                matching_sections.filter(course_id=OuterRef("id")), column="activity",
-            )
-        )
-        .distinct()
     )
 
 
@@ -59,21 +71,7 @@ def is_open_filter(queryset, *args):
     Note that for compatibility, this function can take additional positional
     arguments, but these are ignored.
     """
-
-    matching_sections = Section.objects.filter(status="O")
-    return (
-        queryset.annotate(
-            num_activities=subquery_count_distinct(
-                Section.objects.filter(course_id=OuterRef("id")), column="activity"
-            )
-        )
-        .filter(
-            num_activities=subquery_count_distinct(
-                matching_sections.filter(course_id=OuterRef("id")), column="activity",
-            )
-        )
-        .distinct()
-    )
+    return queryset.filter(id__in=course_ids_by_section_query(Q(status="O")))
 
 
 def day_filter(days):
