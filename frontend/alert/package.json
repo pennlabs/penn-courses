@@ -28,6 +28,7 @@
     "react-dom": "^16.13.1",
     "react-ga": "^2.7.0",
     "styled-components": "^5.1.0",
+    "swr": "^1.0.1",
     "typescript": "^3.9.5"
   },
   "scripts": {
