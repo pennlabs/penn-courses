@@ -124,7 +124,29 @@ const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
         setResponse(new Response(blob, { status }));
     };
 
+    const isCourseOpen = (callback) => {
+        console.log("requesting")
+        fetch(`/api/base/current/sections/${section}/`).then((res) => 
+            res.json().then((courseResult) => {
+                console.log(courseResult["status"]);
+                console.log(courseResult["status"] == "O");
+
+                if (courseResult["status"] == "O") {
+                    sendError(
+                        400,
+                        "Course is currently open!"
+                    );
+
+                    return;
+                } else {
+                    callback();
+                }
+            }))
+            .catch(handleError)
+    }
+
     const handleError = (e) => {
+        console.log(e);
         Sentry.captureException(e);
         sendError(
             500,
@@ -133,6 +155,7 @@ const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
     };
 
     const submitRegistration = () => {
+        console.log("reging")
         doAPIRequest("/api/alert/registrations/", "POST", {
             section,
             auto_resubscribe: autoResub === "true",
@@ -156,7 +179,7 @@ const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
             );
             return;
         }
-
+        
         if (contactInfoChanged()) {
             doAPIRequest("/accounts/me/", "PATCH", {
                 profile: { email, phone },
@@ -165,12 +188,12 @@ const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
                     if (!res.ok) {
                         throw new Error(JSON.stringify(res));
                     } else {
-                        return submitRegistration();
+                        return isCourseOpen(submitRegistration);
                     }
                 })
                 .catch(handleError);
         } else {
-            submitRegistration();
+            isCourseOpen(submitRegistration);
         }
     };
 
