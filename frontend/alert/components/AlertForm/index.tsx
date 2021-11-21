@@ -125,12 +125,8 @@ const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
     };
 
     const isCourseOpen = (callback) => {
-        console.log("requesting")
         fetch(`/api/base/current/sections/${section}/`).then((res) => 
             res.json().then((courseResult) => {
-                console.log(courseResult["status"]);
-                console.log(courseResult["status"] == "O");
-
                 if (courseResult["status"] == "O") {
                     sendError(
                         400,
@@ -155,7 +151,6 @@ const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
     };
 
     const submitRegistration = () => {
-        console.log("reging")
         doAPIRequest("/api/alert/registrations/", "POST", {
             section,
             auto_resubscribe: autoResub === "true",
@@ -179,7 +174,7 @@ const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
             );
             return;
         }
-        
+
         if (contactInfoChanged()) {
             doAPIRequest("/accounts/me/", "PATCH", {
                 profile: { email, phone },
