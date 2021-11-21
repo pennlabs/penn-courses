@@ -5,7 +5,7 @@ from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
-# from alert.management.commands.recomputestats import recompute_demand_distribution_estimates
+from alert.management.commands.recomputestats import recompute_demand_distribution_estimates
 from alert.models import AddDropPeriod, Registration
 from courses.models import Instructor, Section
 from courses.util import get_add_drop_period, invalidate_current_semester_cache, record_update
@@ -212,9 +212,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         cls.average_enrollment = (80 + 99) / 2
         cls.old_enrollment = 99
 
-        # recompute_demand_distribution_estimates(
-        #     semesters=TEST_CURRENT_SEMESTER + "," + TEST_SEMESTER + "," + "2020C"
-        # )
+        recompute_demand_distribution_estimates(
+            semesters=TEST_CURRENT_SEMESTER + "," + TEST_SEMESTER + "," + "2020C"
+        )
 
         local_tz = gettz(TIME_ZONE)
         cls.course_plots_subdict = {
@@ -312,6 +312,14 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             "course-plots", "ESE-120", self.course_plots_subdict,
         )
 
+        instructor_ids = ",".join([str(id) for id in [Instructor.objects.get().pk]])
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={"instructor_ids": instructor_ids,},
+        )
+
     def test_instructor(self):
         subdict = {
             **average(
@@ -333,9 +341,6 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             "instructor-reviews",
             Instructor.objects.get().pk,
             {**subdict, "courses": {"ESE-120": subdict}},
-        )
-        self.assertRequestContainsAppx(
-            "course-plots", "ESE-120", "InstructorOne", self.course_plots_subdict,
         )
 
     def test_department(self):
@@ -472,7 +477,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         sec.save()
         cls.enrollment = 80
 
-        # recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
+        recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
 
         plots = {
             "pca_demand_plot_since_semester": TEST_SEMESTER,
@@ -523,13 +528,17 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                 self.filled_in_adv_reg,
             ),
         }
+
+        self.assertRequestContainsAppx(
+            "course-plots", ["ESE-120"], self.course_plots_subdict,
+        )
+
+        instructor_ids = ",".join([str(id) for id in [Instructor.objects.get().pk]],)
         self.assertRequestContainsAppx(
             "course-reviews",
             "ESE-120",
             {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
-        )
-        self.assertRequestContainsAppx(
-            "course-plots", "ESE-120", self.course_plots_subdict,
+            query_params={"instructor_ids": instructor_ids,},
         )
 
     def test_instructor(self):
@@ -676,7 +685,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         sec.save()
         cls.enrollment = 80
 
-        # recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
+        recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
 
         plots = {
             "pca_demand_plot_since_semester": TEST_SEMESTER,
@@ -740,6 +749,22 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         )
         self.assertRequestContainsAppx(
             "course-plots", "ESE-120", self.course_plots_subdict,
+        )
+
+        instructor_ids = ",".join(
+            [
+                str(id)
+                for id in [
+                    Instructor.objects.get(name=self.instructor_1_name).pk,
+                    Instructor.objects.get(name=self.instructor_2_name).pk,
+                ]
+            ]
+        )
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={"instructor_ids": instructor_ids,},
         )
 
     def test_instructor(self):

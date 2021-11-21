@@ -199,7 +199,6 @@ def course_reviews(request, course_code):
                     "course_code": (
                         "The dash-joined department and code of the course you want plots for, e.g. `CIS-120` for CIS-120."  # noqa E501
                     ),
-                    "instructor_id": ("The id of the instructor (as it appears in the DB)"),
                 }
             },
         },
@@ -207,13 +206,12 @@ def course_reviews(request, course_code):
     )
 )
 # @permission_classes([IsAuthenticated])
-def course_plots(request, course_code, instructor_id):
+def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
     """
-    if not Course.objects.filter(
-        course_filters_pcr, sections__review__isnull=False, full_code=course_code
-    ).exists():
+
+    if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
         raise Http404()
 
     current_semester = get_current_semester()
@@ -226,9 +224,10 @@ def course_plots(request, course_code, instructor_id):
         .annotate(efficient_semester=F("course__semester"))
         .distinct()
     )
-
-    if instructor_id is not None:
-        filtered_sections = filtered_sections.filter(instructors__in__name=instructor_id,)
+    instructor_ids = request.GET.get("instructor_ids")
+    if instructor_ids:
+        instructor_ids = [int(id) for id in instructor_ids.split(",")]
+        filtered_sections = filtered_sections.filter(instructors__id__in=instructor_ids,)
 
     section_map = dict()  # a dict mapping semester to section id to section object
     for section in filtered_sections:
