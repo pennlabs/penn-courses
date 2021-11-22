@@ -182,6 +182,7 @@ MESSAGE_BROKER_URL = REDIS_URL
 # Django REST Framework
 REST_FRAMEWORK = {
     "COERCE_DECIMAL_TO_STRING": False,
+    "DEFAULT_SCHEMA_CLASS": "PennCourses.docs_settings.PcxAutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
