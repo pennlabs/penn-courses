@@ -30,7 +30,7 @@ from plan.serializers import ScheduleSerializer
             reverse_func("recommend-courses"): {
                 "POST": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
-                    201: "[REMOVE THIS RESPONSE CODE FROM DOCS]",
+                    201: "[UNDOCUMENTED]",
                     400: "Invalid curr_courses, past_courses, or n_recommendations (see response).",
                 }
             }
