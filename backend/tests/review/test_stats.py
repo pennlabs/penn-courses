@@ -714,6 +714,23 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "average_plots": plots,
             "recent_plots": plots,
         }
+        empty_plots = {
+            "pca_demand_plot_since_semester": None,
+            "pca_demand_plot_num_semesters": 0,
+            "percent_open_plot_since_semester": None,
+            "percent_open_plot_num_semesters": 0,
+            "pca_demand_plot": None,
+            "percent_open_plot": None,
+        }
+        cls.empty_course_plots_subdict = {
+            "code": "ESE-120",
+            "current_add_drop_period": {
+                "start": cls.current_sem_adp.estimated_start.astimezone(tz=local_tz),
+                "end": cls.current_sem_adp.estimated_end.astimezone(tz=local_tz),
+            },
+            "average_plots": empty_plots,
+            "recent_plots": empty_plots,
+        }
 
     def setUp(self):
         self.client = APIClient()
@@ -793,6 +810,22 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "instructor-reviews",
             Instructor.objects.get(name=self.instructor_2_name).pk,
             {**subdict, "courses": {"ESE-120": subdict}},
+        )
+
+    def test_plots_invalid_instructor_ids(self):
+        max_instructor_id = max(
+            Instructor.objects.filter(
+                name__in=[self.instructor_1_name, self.instructor_2_name]
+            ).values_list("pk", flat=True)
+        )
+        instructor_ids = ",".join(
+            [str(id) for id in [max_instructor_id + 1, max_instructor_id + 2]]
+        )
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.empty_course_plots_subdict,
+            query_params={"instructor_ids": instructor_ids,},
         )
 
     def test_department(self):
