@@ -9,7 +9,7 @@ from django.db.models import F
 from django.utils.timezone import make_aware
 from tqdm import tqdm
 
-from alert.management.commands.recomputestats import recompute_percent_open
+from alert.management.commands.recomputestats import recompute_stats
 from alert.models import AddDropPeriod
 from courses.models import Section, StatusUpdate
 from PennCourses.settings.base import TIME_ZONE
@@ -94,7 +94,5 @@ class Command(BaseCommand):
 
             print(f"Finished loading status history from {src}... processed {row_count} rows. ")
 
-            print(
-                f"Recomputing PCA Demand Distribution Estimates for {len(semesters)} semesters..."
-            )
-            recompute_percent_open(semesters=",".join(semesters), verbose=True)
+            print(f"Recomputing PCA Stats for {len(semesters)} semesters...")
+            recompute_stats(semesters=",".join(semesters), verbose=True)

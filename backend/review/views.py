@@ -87,6 +87,9 @@ def extra_metrics_section_filters_pcr(current_semester=None):
     )
 
 
+course_filters_pcr = (~Q(title="")) | (~Q(description="")) | Q(sections__review__isnull=False)
+
+
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
@@ -117,7 +120,9 @@ def course_reviews(request, course_code):
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
-    if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
+    if not Course.objects.filter(
+        course_filters_pcr, sections__review__isnull=False, full_code=course_code
+    ).exists():
         raise Http404()
 
     reviews = (
@@ -140,7 +145,7 @@ def course_reviews(request, course_code):
     instructors = aggregate_reviews(reviews, "instructor_id", name="instructor_name")
 
     course_qs = annotate_average_and_recent(
-        Course.objects.filter(full_code=course_code).order_by("-semester")[:1],
+        Course.objects.filter(course_filters_pcr, full_code=course_code).order_by("-semester")[:1],
         match_on=Q(section__course__full_code=course_code),
         extra_metrics=True,
         section_subfilters={"course__full_code": course_code},
@@ -205,8 +210,9 @@ def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
     """
-
-    if not Course.objects.filter(sections__review__isnull=False, full_code=course_code).exists():
+    if not Course.objects.filter(
+        course_filters_pcr, sections__review__isnull=False, full_code=course_code
+    ).exists():
         raise Http404()
 
     current_semester = get_current_semester()
@@ -326,7 +332,9 @@ def instructor_reviews(request, instructor_id):
 
     courses = annotate_average_and_recent(
         Course.objects.filter(
-            sections__review__isnull=False, sections__instructors__id=instructor_id
+            course_filters_pcr,
+            sections__review__isnull=False,
+            sections__instructors__id=instructor_id,
         ).distinct(),
         match_on=Q(
             section__course__full_code=OuterRef(OuterRef("full_code")), instructor_id=instructor_id,
@@ -504,7 +512,7 @@ def autocomplete(request):
     to improve performance.
     """
     courses = (
-        Course.objects.filter(sections__review__isnull=False)
+        Course.objects.filter(course_filters_pcr, sections__review__isnull=False)
         .order_by("semester")
         .values("full_code", "title")
         .distinct()

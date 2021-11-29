@@ -22,8 +22,12 @@ from courses.management.commands.load_add_drop_dates import (
     fill_in_add_drop_periods,
     load_add_drop_dates,
 )
-from courses.models import Course, StatusUpdate
-from courses.util import get_current_semester, get_or_create_add_drop_period
+from courses.models import Course, Meeting, StatusUpdate
+from courses.util import (
+    get_current_semester,
+    get_or_create_add_drop_period,
+    subquery_count_distinct,
+)
 from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES
 from review.views import extra_metrics_section_filters
 
@@ -59,6 +63,45 @@ def get_semesters(semesters=None, verbose=False):
                 "(if an error is encountered)."
             )
     return semesters
+
+
+def recompute_precomputed_fields(semesters=None, verbose=False, semesters_precomputed=False):
+    """
+    Recomputes Course.num_activities and Section.num_meetings fields for the given semesters.
+    Args:
+        semesters: The semesters argument should be a comma-separated list of string semesters
+            corresponding to the semesters for which you want to recompute precomputed fields,
+            i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
+            It defaults to None, in which case only the current semester is used. If you supply
+            the string "all", this function will run for all semesters found in Courses in the db.
+            If semesters_precomputed is set to True (non-default), then this argument should
+            instead be a list of single string semesters.
+        semesters_precomputed: If False (default), the semesters argument will expect a raw
+            comma-separated string input. If True, the semesters argument will expect a list of
+            individual string semesters.
+        verbose: Set to True if you want this script to print its status as it goes,
+            or keep as False (default) if you want the script to work silently.
+    """
+    semesters = (
+        semesters if semesters_precomputed else get_semesters(semesters=semesters, verbose=verbose)
+    )
+
+    if verbose:
+        print(f"Recomputing precomputed fields for semesters {str(semesters)}...")
+
+    Course.objects.filter(semester__in=semesters).annotate(
+        activity_count=subquery_count_distinct(
+            Section.objects.filter(course_id=OuterRef("id")), column="activity"
+        )
+    ).update(num_activities=F("activity_count"))
+    Section.objects.filter(course__semester__in=semesters).annotate(
+        meeting_count=subquery_count_distinct(
+            Meeting.objects.filter(section_id=OuterRef("id")), column="id"
+        )
+    ).update(num_meetings=F("meeting_count"))
+
+    if verbose:
+        print("done.")
 
 
 def deduplicate_status_updates(semesters=None, verbose=False, semesters_precomputed=False):
@@ -508,6 +551,7 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     recompute_demand_distribution_estimates(
         semesters=semesters, semesters_precomputed=True, verbose=verbose
     )
+    recompute_precomputed_fields(semesters=semesters, semesters_precomputed=True, verbose=verbose)
 
 
 class Command(BaseCommand):

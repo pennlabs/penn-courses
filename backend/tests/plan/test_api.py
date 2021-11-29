@@ -5,6 +5,7 @@ from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
+from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
 from courses.models import Instructor, Requirement, Section
 from courses.util import invalidate_current_semester_cache, set_meetings
@@ -144,6 +145,8 @@ class IsOpenFilterTestCase(TestCase):
         self.non_open_statuses = [
             status[0] for status in Section.STATUS_CHOICES if status[0] not in ["O"]
         ]
+
+        recompute_precomputed_fields("all")
 
         self.client = APIClient()
         set_semester()
@@ -329,6 +332,8 @@ class DayFilterTestCase(TestCase):
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
+        recompute_precomputed_fields("all")
+
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 
         self.client = APIClient()
@@ -447,6 +452,8 @@ class TimeFilterTestCase(TestCase):
         )
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+
+        recompute_precomputed_fields("all")
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 
@@ -621,6 +628,8 @@ class DayTimeFilterTestCase(TestCase):
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
+        recompute_precomputed_fields("all")
+
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 
         self.client = APIClient()
@@ -724,6 +733,8 @@ class ScheduleFilterTestCase(TestCase):
         )
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+
+        recompute_precomputed_fields("all")
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 

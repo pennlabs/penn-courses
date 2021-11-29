@@ -30,8 +30,6 @@ SEMESTER_PARAM_DESCRIPTION = (
 
 
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
-    schema = PcxAutoSchema()
-
     @staticmethod
     def get_semester_field():
         return "semester"
@@ -286,7 +284,6 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
     This view exposes the Penn Labs Accounts User object.
     """
 
-    schema = PcxAutoSchema()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 

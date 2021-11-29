@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useMemo} from "react";
 import ReactGA from "react-ga";
-import AwesomeDebouncePromise from "awesome-debounce-promise";
+import useSWR from "swr";
 import { ManageAlert } from "./ManageAlertUI";
 import getCsrf from "../../csrf";
 import {
@@ -11,13 +11,17 @@ import {
     TAlertSel,
 } from "../../types";
 
-const fetchAlerts = () =>
-    fetch("/api/alert/registrations/").then((res) => res.json());
+const REGISTRATIONS_API_ROUTE = "/api/alert/registrations/";
 
-const processAlerts = (setAlerts) => {
-    const fetchPromise = () =>
-        fetchAlerts().then((res) =>
-            res.map((registration) => {
+const useAlerts = () => {
+    const { mutate, data, error } = useSWR<any>(
+        REGISTRATIONS_API_ROUTE,
+        (url, init) => fetch(url, init).then((res) => res.json())
+    );
+
+    const alerts = useMemo(
+        () =>
+            data?.map?.((registration) => {
                 let datetime: string | null = null;
                 if (registration.last_notification_sent_at != null) {
                     const date = Intl.DateTimeFormat("en-US").format(
@@ -57,16 +61,15 @@ const processAlerts = (setAlerts) => {
                             ? AlertAction.CANCEL
                             : AlertAction.RESUBSCRIBE,
                 };
-            })
-        );
-
-    AwesomeDebouncePromise(fetchPromise, 300)().then((alerts) =>
-        setAlerts(alerts)
+            }),
+        [data]
     );
+
+    return { alerts, alertsError: error, mutateAlerts: mutate };
 };
 
 const filterAlerts = (alerts, filter) => {
-    const sortedAlerts = alerts.sort((a, b) => {
+    const sortedAlerts = alerts?.sort?.((a, b) => {
         const d1 = new Date(a.originalCreatedAt);
         const d2 = new Date(b.originalCreatedAt);
         if (d1 > d2) {
@@ -76,7 +79,7 @@ const filterAlerts = (alerts, filter) => {
         return 1;
     });
 
-    return sortedAlerts.filter((alert) => {
+    return sortedAlerts?.filter?.((alert) => {
         if (filter.search.length > 0) {
             return alert.section.includes(filter.search.toUpperCase());
         }
@@ -145,11 +148,14 @@ const batchActionHandler = (callback, idList) => (actionenum) => {
 
 const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
     const selMap = {};
-    alerts.forEach((alert) => {
-        selMap[alert.id] = false;
-    });
-    if (!checked) {
-        currAlerts.forEach((alert) => {
+    if (alerts) {
+        alerts.forEach?.((alert) => {
+            selMap[alert.id] = false;
+        });
+    }
+
+    if (!checked && currAlerts) {
+        currAlerts.forEach?.((alert) => {
             selMap[alert.id] = true;
         });
     }
@@ -158,7 +164,8 @@ const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
 
 const ManageAlertWrapper = () => {
     // alerts processed directly from registrationhistory
-    const [alerts, setAlerts] = useState<Alert[]>([]);
+    const { alerts, mutateAlerts, alertsError } = useAlerts();
+    // TODO: handle alertsError
     // state tracking the batch select button
     const [batchSelected, setBatchSelected] = useState(false);
     // state tracking which alert has been selected/ticked
@@ -173,16 +180,14 @@ const ManageAlertWrapper = () => {
 
     useEffect(() => {
         const selMap: TAlertSel = {};
-        alerts.forEach((alert) => {
-            selMap[alert.id] = false;
-        });
+        if (alerts) {
+            alerts.forEach((alert) => {
+                selMap[alert.id] = false;
+            });
+        }
         setAlertSel(selMap);
         setBatchSelected(false);
     }, [alerts, setAlertSel]);
-
-    useEffect(() => {
-        processAlerts(setAlerts);
-    }, []);
 
     return (
         <>
@@ -213,16 +218,14 @@ const ManageAlertWrapper = () => {
                 setAlertSel={setAlertSel}
                 batchSelected={batchSelected}
                 setBatchSelected={setBatchSelected}
-                actionButtonHandler={actionHandler(() =>
-                    processAlerts(setAlerts)
-                )}
+                actionButtonHandler={actionHandler(() => mutateAlerts())}
                 batchSelectHandler={batchSelectHandler(
                     setAlertSel,
                     currAlerts,
                     alerts
                 )}
                 batchActionHandler={batchActionHandler(
-                    () => processAlerts(setAlerts),
+                    () => mutateAlerts(),
                     Object.keys(alertSel).filter((id) => alertSel[id])
                 )}
             />
