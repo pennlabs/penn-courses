@@ -17,7 +17,6 @@ from PennCourses.settings.base import (
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     autocomplete_response_schema,
-    course_plots_response_schema,
     course_reviews_response_schema,
     department_reviews_response_schema,
     instructor_for_course_reviews_response_schema,
@@ -181,23 +180,35 @@ def course_reviews(request, course_code):
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("course-plots", args=["course_code"]): {
+            reverse_func("course-reviews", args=["course_code"]): {
                 "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Plots retrieved successfully.",
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
                     404: "Course with given course_code not found.",
                 },
             },
         },
-        custom_path_parameter_desc={
+        custom_parameters={
             reverse_func("course-plots", args=["course_code"]): {
-                "GET": {
-                    "course_code": (
-                        "The dash-joined department and code of the course you want plots for, e.g. `CIS-120` for CIS-120."  # noqa E501
-                    ),
-                }
+                "GET": [
+                    {
+                        "name": "course_code",
+                        "in": "path",
+                        "description": "The dash-joined department and code of the course you want plots for, e.g. `CIS-120` for CIS-120.",  # noqa: E501
+                        "schema": {"type": "string"},
+                        "required": True,
+                    },
+                    {
+                        "name": "instructor_ids",
+                        "in": "query",
+                        "description": "A comma-separated list of instructor IDs with which to filter the sections underlying the returned plots."  # noqa: E501
+                        "Note that if only invalid instructor IDs are present, plot response fields will be null or 0.",  # noqa: E501
+                        "schema": {"type": "string"},
+                        "required": False,
+                    },
+                ]
             },
         },
-        override_response_schema=course_plots_response_schema,
+        override_response_schema=course_reviews_response_schema,
     )
 )
 # @permission_classes([IsAuthenticated])
