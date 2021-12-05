@@ -312,7 +312,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             "course-plots", "ESE-120", self.course_plots_subdict,
         )
 
-        instructor_ids = ",".join([str(id) for id in [Instructor.objects.get().pk]])
+        instructor_ids = ",".join(str(id) for id in Instructor.objects.values_list("id", flat=True))
         self.assertRequestContainsAppx(
             "course-plots",
             "ESE-120",
@@ -826,6 +826,24 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "ESE-120",
             self.empty_course_plots_subdict,
             query_params={"instructor_ids": instructor_ids,},
+        )
+
+    def test_plots_filter_to_one_instructor(self):
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={
+                "instructor_ids": str(Instructor.objects.get(name=self.instructor_1_name).id),
+            },
+        )
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={
+                "instructor_ids": str(Instructor.objects.get(name=self.instructor_2_name).id),
+            },
         )
 
     def test_department(self):
