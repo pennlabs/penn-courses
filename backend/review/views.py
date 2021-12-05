@@ -17,6 +17,7 @@ from PennCourses.settings.base import (
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     autocomplete_response_schema,
+    course_plots_response_schema,
     course_reviews_response_schema,
     department_reviews_response_schema,
     instructor_for_course_reviews_response_schema,
@@ -185,9 +186,9 @@ def course_reviews(request, course_code):
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("course-reviews", args=["course_code"]): {
+            reverse_func("course-plots", args=["course_code"]): {
                 "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Plots retrieved successfully.",
                     404: "Course with given course_code not found.",
                 },
             },
@@ -213,7 +214,7 @@ def course_reviews(request, course_code):
                 ]
             },
         },
-        override_response_schema=course_reviews_response_schema,
+        override_response_schema=course_plots_response_schema,
     )
 )
 # @permission_classes([IsAuthenticated])
