@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.http import urlencode
 from options.models import Option
 from rest_framework.test import APIClient
 
@@ -65,16 +66,17 @@ class PCRTestMixin(object):
         self.assertDictContains(res.data, expected)
         return res.data
 
-    def assertRequestContainsAppx(self, url, args, expected):
+    def assertRequestContainsAppx(self, url, args, expected, query_params={}):
         """
         Do the equivalent of a "subset" check on the response from an API endpoint.
         :param url: `name` of django view
         :param args: single or multiple arguments for view.
         :param expected: expected values from view.
+        :param query_params: query parameters to be included in request, defaults to empty dict.
         """
         if not isinstance(args, list):
             args = [args]
-        res = self.client.get(reverse(url, args=args))
+        res = self.client.get(f"{reverse(url, args=args)}?{urlencode(query_params)}")
         self.assertEqual(200, res.status_code)
         self.assertDictContainsAppx(
             res.data,
