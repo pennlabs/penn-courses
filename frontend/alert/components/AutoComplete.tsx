@@ -1,6 +1,6 @@
 import React, { RefObject, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import PropTypes from "prop-types";
+import PropTypes, { string } from "prop-types";
 
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -226,9 +226,9 @@ interface TSuggestion {
     searchTerm: string;
 }
 
-const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
+const AutoComplete = ({ defaultValue="", onValueChange, setTimeline, disabled }) => {
     const inputRef = useRef<HTMLInputElement>(null);
-    const [value, setInternalValue] = useState("");
+    const [value, setInternalValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<Section[]>([]);
     const [
         suggestionsFromBackend,
@@ -293,6 +293,7 @@ const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
             ref={useOnClickOutside(() => setActive(false), !show)}
         >
             <AutoCompleteInput
+                defaultValue={defaultValue}
                 disabled={disabled}
                 // @ts-ignore
                 autocomplete="off"
@@ -387,6 +388,7 @@ const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
 };
 
 AutoComplete.propTypes = {
+    defaultValue: PropTypes.string,
     onValueChange: PropTypes.func,
     disabled: PropTypes.bool,
 };

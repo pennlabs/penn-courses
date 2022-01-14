@@ -1043,7 +1043,10 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
         for key, value in cumulative_cp.items():
             if not callable(key) or not isinstance(key(), str):
                 not_using_reverse_func(
-                    "examples", key, PcxAutoSchema=True, traceback=cumulative_cp[key]["traceback"],
+                    "examples",
+                    key,
+                    PcxAutoSchema=True,
+                    traceback=cumulative_cp[key]["traceback"],
                 )
             new_cumulative_cp[key()] = value
 

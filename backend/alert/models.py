@@ -989,7 +989,10 @@ class AddDropPeriod(models.Model):
                     output_field=models.BooleanField(),
                 ),
                 percent_through_add_drop_period=Case(
-                    When(Q(created_at__lte=self.estimated_start), then=Value(0),),
+                    When(
+                        Q(created_at__lte=self.estimated_start),
+                        then=Value(0),
+                    ),
                     When(Q(created_at__gte=self.estimated_end), then=Value(1)),
                     default=(
                         Extract(F("created_at"), "epoch") - Value(self.estimated_start.timestamp())

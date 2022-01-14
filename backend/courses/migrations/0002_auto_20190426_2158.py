@@ -60,7 +60,8 @@ class Migration(migrations.Migration):
             preserve_default=False,
         ),
         migrations.AlterUniqueTogether(
-            name="course", unique_together={("department", "code", "semester")},
+            name="course",
+            unique_together={("department", "code", "semester")},
         ),
         migrations.CreateModel(
             name="Room",
@@ -80,7 +81,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"unique_together": {("building", "roomnum")},},
+            options={
+                "unique_together": {("building", "roomnum")},
+            },
         ),
         migrations.CreateModel(
             name="Meeting",

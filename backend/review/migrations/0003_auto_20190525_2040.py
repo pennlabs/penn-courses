@@ -11,10 +11,22 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(model_name="review", name="course_quality",),
-        migrations.RemoveField(model_name="review", name="difficulty",),
-        migrations.RemoveField(model_name="review", name="instructor_quality",),
-        migrations.RemoveField(model_name="review", name="work_required",),
+        migrations.RemoveField(
+            model_name="review",
+            name="course_quality",
+        ),
+        migrations.RemoveField(
+            model_name="review",
+            name="difficulty",
+        ),
+        migrations.RemoveField(
+            model_name="review",
+            name="instructor_quality",
+        ),
+        migrations.RemoveField(
+            model_name="review",
+            name="work_required",
+        ),
         migrations.CreateModel(
             name="ReviewBit",
             fields=[
@@ -33,6 +45,8 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"unique_together": {("review", "field")},},
+            options={
+                "unique_together": {("review", "field")},
+            },
         ),
     ]

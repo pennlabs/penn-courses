@@ -326,7 +326,11 @@ class CourseDetailSerializer(CourseListSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
-        ] + ["crosslistings", "requirements", "sections",]
+        ] + [
+            "crosslistings",
+            "requirements",
+            "sections",
+        ]
         read_only_fields = fields
 
 
