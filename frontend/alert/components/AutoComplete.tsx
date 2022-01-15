@@ -388,7 +388,7 @@ const AutoComplete = ({ defaultValue="", onValueChange, setTimeline, disabled })
 };
 
 AutoComplete.propTypes = {
-    defaultValue: string | undefined,
+    defaultValue: PropTypes.string,
     onValueChange: PropTypes.func,
     disabled: PropTypes.bool,
 };
