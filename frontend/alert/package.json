@@ -19,7 +19,7 @@
     "express": "^4.17.1",
     "http-proxy-middleware": "^1.0",
     "libphonenumber-js": "^1.7.50",
-    "next": "^9.4.4",
+    "next": "^11.1.3",
     "next-transpile-modules": "^3.3.0",
     "pcx-shared-components": "0.1.0",
     "prettier": "^2.0.5",
