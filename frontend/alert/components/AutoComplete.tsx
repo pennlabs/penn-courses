@@ -283,6 +283,24 @@ const AutoComplete = ({ defaultValue="", onValueChange, setTimeline, disabled })
             .map((suggestion) => suggestion.section_id.toLowerCase())
             .indexOf(value.toLowerCase());
 
+
+    /**
+     * Returns suggested suggestion grouped by course
+     * @return suggestions
+     */
+    const groupedSuggestions = suggestions.reduce((res, obj) => {
+        let [courseName, midNum, endNum] = obj.section_id.split('-');
+        if (res[courseName + '-' + midNum]) {
+            res[courseName + '-' + midNum].push(obj);
+        } else {
+            res[courseName + '-' + midNum] = [obj];
+        }
+
+        return res;
+    },{});
+
+    console.log(groupedSuggestions);
+
     return (
         <Container
             inputHeight={
