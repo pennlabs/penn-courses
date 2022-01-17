@@ -4,11 +4,19 @@ import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHistory } from "@fortawesome/free-solid-svg-icons";
 
-const DropdownItemBox = styled.div<{ selected: boolean }>`
+import { Section } from "../types";
+
+interface DropdownItemBoxProps {
+    selected?: boolean | false;
+    headerBox?: boolean | false;
+}
+
+const DropdownItemBox = styled.div<DropdownItemBoxProps>`
     border-bottom-style: solid;
     border-width: 1px;
     border-color: #d6d6d6;
-    padding-left: 0.5rem;
+    padding-left: ${(props) => props.headerBox ? "1rem" : "2rem"};
+    padding-top: 0.5rem;
     padding-bottom: 1rem;
     display: flex;
     justify-content: stretch;
@@ -21,9 +29,9 @@ const DropdownItemBox = styled.div<{ selected: boolean }>`
     }
 `;
 
-const DropdownItemLeftCol = styled.div`
-    max-width: 80%;
-    flex-basis: 80%;
+const DropdownItemLeftCol = styled.div<{ headerBox?: boolean | false }>`
+    max-width: ${(props) => props.headerBox ? "100%" : "80%"};
+    flex-basis: ${(props) => props.headerBox ? "100%" : "80%"};
     flex-grow: 1;
 `;
 
@@ -53,6 +61,13 @@ const IconContainer = styled.div`
     color: #3baff7;
 `;
 
+const HistoryIcon = styled(FontAwesomeIcon)`
+    color: #c4c4c4;
+    &:hover {
+        color: #209cee;
+    }
+`;
+
 interface SuggestionProps {
     onClick: () => void;
     onChangeTimeline: () => void;
@@ -61,13 +76,6 @@ interface SuggestionProps {
     instructor: string;
     selected: boolean;
 }
-
-const HistoryIcon = styled(FontAwesomeIcon)`
-    color: #c4c4c4;
-    &:hover {
-        color: #209cee;
-    }
-`;
 
 const Suggestion = ({
     onClick,
@@ -99,8 +107,7 @@ const Suggestion = ({
         <DropdownItemBox selected={selected} ref={ref}>
             <DropdownItemLeftCol onClick={onClick}>
                 <SuggestionTitle>{courseCode}</SuggestionTitle>
-                <SuggestionSubtitle>{title}</SuggestionSubtitle>
-                <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
+                <SuggestionSubtitle>{instructor ? instructor : "TBA"}</SuggestionSubtitle>
             </DropdownItemLeftCol>
             <IconContainer onClick={onChangeTimeline}>
                 <HistoryIcon icon={faHistory} className="historyIcon" />
@@ -109,13 +116,50 @@ const Suggestion = ({
     );
 };
 
-const GroupSuggestion = () => {
-    return (
-        <div>
-
-        </div>
-    );
+interface GroupSuggestionProps {
+    sections: Section[];
+    courseCode: string;
+    value: string;
+    inputRef: React.RefObject<HTMLInputElement>;
+    setActive: React.Dispatch<React.SetStateAction<boolean>>;
+    setValue: (v: any) => void;
+    setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-export default GroupSuggestion;
+const GroupSuggestion = ({ sections, courseCode, value, inputRef, setActive, setValue, setTimeline }: GroupSuggestionProps) => {
+    return (
+        <>
+        <DropdownItemBox headerBox={true}>
+            <DropdownItemLeftCol headerBox={true}>
+                <SuggestionTitle>{courseCode}</SuggestionTitle>
+                <SuggestionSubtitle>{sections[0].course_title}</SuggestionSubtitle>
+            </DropdownItemLeftCol>
+        </DropdownItemBox>
+            {sections
+                .map((suggestion, index) => (
+                    <Suggestion
+                        key={suggestion.section_id}
+                        selected={
+                            suggestion.section_id.toLowerCase() ===
+                            value.toLowerCase()
+                        }
+                        courseCode={suggestion.section_id}
+                        onClick={() => {
+                            if (inputRef.current) {
+                                inputRef.current.value = suggestion.section_id;
+                            }
+                            setActive(false);
+                            setValue(suggestion.section_id);
+                        }}
+                        onChangeTimeline={() => {
+                            setTimeline(suggestion.section_id);
+                        }}
+                        title={suggestion.course_title}
+                        instructor={suggestion.instructors[0]?.name}
+                    />
+                ))}
+        </>
+    );
+};
 
+export default GroupSuggestion;

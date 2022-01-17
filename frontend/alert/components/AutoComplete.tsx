@@ -9,6 +9,7 @@ import { faHistory } from "@fortawesome/free-solid-svg-icons";
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { Input } from "./Input";
 import { Section } from "../types";
+import GroupSuggestion from "./GroupSuggestion"
 
 /* A function that takes in a search term and returns a promise with both the search term and
 the search results.
@@ -226,7 +227,12 @@ interface TSuggestion {
     searchTerm: string;
 }
 
-const AutoComplete = ({ defaultValue="", onValueChange, setTimeline, disabled }) => {
+const AutoComplete = ({
+    defaultValue = "",
+    onValueChange,
+    setTimeline,
+    disabled,
+}) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setInternalValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<Section[]>([]);
@@ -283,21 +289,20 @@ const AutoComplete = ({ defaultValue="", onValueChange, setTimeline, disabled })
             .map((suggestion) => suggestion.section_id.toLowerCase())
             .indexOf(value.toLowerCase());
 
-
     /**
      * Returns suggested suggestion grouped by course
      * @return suggestions
      */
-    const groupedSuggestions = suggestions.reduce((res, obj) => {
-        let [courseName, midNum, endNum] = obj.section_id.split('-');
-        if (res[courseName + '-' + midNum]) {
-            res[courseName + '-' + midNum].push(obj);
+    const groupedSuggestions = suggestions.sort((a, b) => a.section_id.localeCompare(b.section_id)).reduce((res, obj) => {
+        const [courseName, midNum, endNum] = obj.section_id.split("-");
+        if (res[`${courseName}-${midNum}`]) {
+            res[`${courseName}-${midNum}`].push(obj);
         } else {
-            res[courseName + '-' + midNum] = [obj];
+            res[`${courseName}-${midNum}`] = [obj];
         }
 
         return res;
-    },{});
+    }, {});
 
     console.log(groupedSuggestions);
 
@@ -372,33 +377,10 @@ const AutoComplete = ({ defaultValue="", onValueChange, setTimeline, disabled })
             />
             <DropdownContainer below={inputRef} hidden={!show}>
                 <DropdownBox>
-                    {suggestions
-                        .sort((a, b) =>
-                            a.section_id.localeCompare(b.section_id)
-                        )
-                        .map((suggestion, index) => (
-                            <Suggestion
-                                key={suggestion.section_id}
-                                selected={
-                                    suggestion.section_id.toLowerCase() ===
-                                    value.toLowerCase()
-                                }
-                                courseCode={suggestion.section_id}
-                                onClick={() => {
-                                    if (inputRef.current) {
-                                        inputRef.current.value =
-                                            suggestion.section_id;
-                                    }
-                                    setActive(false);
-                                    setValue(suggestion.section_id);
-                                }}
-                                onChangeTimeline={() => {
-                                    setTimeline(suggestion.section_id);
-                                }}
-                                title={suggestion.course_title}
-                                instructor={suggestion.instructors[0]?.name}
-                            />
-                        ))}
+                    {Object.keys(groupedSuggestions).map(key => (
+                        <GroupSuggestion sections={groupedSuggestions[key]} courseCode={key} value={value} 
+                        inputRef={inputRef} setActive={setActive} setValue={setValue} setTimeline={setTimeline}/>
+                    ))}
                 </DropdownBox>
             </DropdownContainer>
         </Container>
