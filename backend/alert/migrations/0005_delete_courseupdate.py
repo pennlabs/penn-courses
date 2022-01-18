@@ -41,5 +41,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(forwards, backwards),
-        migrations.DeleteModel(name="CourseUpdate",),
+        migrations.DeleteModel(
+            name="CourseUpdate",
+        ),
     ]

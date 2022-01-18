@@ -368,7 +368,9 @@ def recompute_demand_distribution_estimates(
                 print("Indexing relevant sections...")
             for section in iterator_wrapper(
                 Section.objects.filter(extra_metrics_section_filters, course__semester=semester)
-                .annotate(efficient_semester=F("course__semester"),)
+                .annotate(
+                    efficient_semester=F("course__semester"),
+                )
                 .distinct()
             ):
                 section_id_to_object[section.id] = section

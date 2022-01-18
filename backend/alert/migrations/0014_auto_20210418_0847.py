@@ -11,7 +11,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RemoveField(
-            model_name="pcademanddistributionestimate", name="csdv_gamma_fit_log_likelihood",
+            model_name="pcademanddistributionestimate",
+            name="csdv_gamma_fit_log_likelihood",
         ),
         migrations.AddField(
             model_name="pcademanddistributionestimate",

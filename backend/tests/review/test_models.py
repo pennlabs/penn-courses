@@ -35,7 +35,10 @@ class ReviewTestCase(TestCase):
 
     def test_set_bits(self):
         self.review.set_averages(
-            {"difficulty": 4, "course_quality": 3,}
+            {
+                "difficulty": 4,
+                "course_quality": 3,
+            }
         )
         self.assertEqual(2, ReviewBit.objects.count())
         self.assertEqual(4, ReviewBit.objects.get(field="difficulty").average)

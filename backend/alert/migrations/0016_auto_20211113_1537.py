@@ -12,22 +12,33 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RemoveField(
-            model_name="pcademanddistributionestimate", name="csdv_75th_percentile",
+            model_name="pcademanddistributionestimate",
+            name="csdv_75th_percentile",
         ),
         migrations.RemoveField(
-            model_name="pcademanddistributionestimate", name="csdv_gamma_fit_mean_log_likelihood",
+            model_name="pcademanddistributionestimate",
+            name="csdv_gamma_fit_mean_log_likelihood",
         ),
         migrations.RemoveField(
-            model_name="pcademanddistributionestimate", name="csdv_gamma_param_alpha",
+            model_name="pcademanddistributionestimate",
+            name="csdv_gamma_param_alpha",
         ),
         migrations.RemoveField(
-            model_name="pcademanddistributionestimate", name="csdv_gamma_param_loc",
+            model_name="pcademanddistributionestimate",
+            name="csdv_gamma_param_loc",
         ),
         migrations.RemoveField(
-            model_name="pcademanddistributionestimate", name="csdv_gamma_param_scale",
+            model_name="pcademanddistributionestimate",
+            name="csdv_gamma_param_scale",
         ),
-        migrations.RemoveField(model_name="pcademanddistributionestimate", name="csdv_mean",),
-        migrations.RemoveField(model_name="pcademanddistributionestimate", name="csdv_median",),
+        migrations.RemoveField(
+            model_name="pcademanddistributionestimate",
+            name="csdv_mean",
+        ),
+        migrations.RemoveField(
+            model_name="pcademanddistributionestimate",
+            name="csdv_median",
+        ),
         migrations.AddField(
             model_name="pcademanddistributionestimate",
             name="csprdv_lognorm_param_loc",
