@@ -45,7 +45,10 @@ class Command(BaseCommand):
             notification_sent=False,
         ).count()
         num_cancelled_perpetual = (
-            qs.filter(resubscribed_to__isnull=True, auto_resubscribe=True,)
+            qs.filter(
+                resubscribed_to__isnull=True,
+                auto_resubscribe=True,
+            )
             .filter(Q(deleted=True) | Q(cancelled=True))
             .count()
         )

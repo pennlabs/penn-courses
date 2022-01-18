@@ -174,7 +174,12 @@ def bound_filter(field):
 
         return queryset.filter(
             Q(**{f"{field}__isnull": True})
-            | Q(**{f"{field}__gte": lower_bound, f"{field}__lte": upper_bound,})
+            | Q(
+                **{
+                    f"{field}__gte": lower_bound,
+                    f"{field}__lte": upper_bound,
+                }
+            )
         )
 
     return filter_bounds
