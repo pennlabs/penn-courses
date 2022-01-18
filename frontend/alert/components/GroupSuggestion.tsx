@@ -20,12 +20,15 @@ const DropdownItemBox = styled.div<DropdownItemBoxProps>`
     padding-bottom: 1rem;
     display: flex;
     justify-content: stretch;
-    flex-direction: row;
+    flex-direction: ${(props) => props.headerBox ? "column" : "row"};;
     cursor: pointer;
     ${(props) =>
         props.selected ? "background-color: rgb(235, 235, 235);" : ""}
+
     &:hover {
-        background-color: rgb(220, 220, 220);
+        ${(props) =>
+            !props.headerBox ? "background-color: rgb(220, 220, 220);" : ""}
+        
     }
 `;
 
@@ -60,6 +63,26 @@ const IconContainer = styled.div`
     font-size: 1.25rem;
     color: #3baff7;
 `;
+
+const ButtonContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+    flex-basis: 100%;
+    margin-top: 8px;
+`
+
+const ToggleButton = styled.div<{ toggled: boolean }>`
+    border-radius: 18.5px;
+    border: 1px solid ${(props) => props.toggled ? "#5891FC" : "#D6D6D6"};
+    color: ${(props) => props.toggled ? "#5891FC" : "#7A848D"};
+    font-size: 12px;
+    background-color: ${(props) => props.toggled ? "#EBF2FF" : "#ffffff"};
+    padding: 4px 8px;
+    margin-right: 8px;
+`
+
 
 const HistoryIcon = styled(FontAwesomeIcon)`
     color: #c4c4c4;
@@ -127,6 +150,24 @@ interface GroupSuggestionProps {
 }
 
 const GroupSuggestion = ({ sections, courseCode, value, inputRef, setActive, setValue, setTimeline }: GroupSuggestionProps) => {
+    const [allLectures, setAllLectures] = useState(false);
+    const [allRecs, setAllRecs] = useState(false);
+    const [allLabs, setAllLabs] = useState(false);
+
+    const toggleButton = (type) => {
+        switch(type) {
+            case 1:
+                setAllLectures(!allLectures);
+                break;
+            case 2:
+                setAllRecs(!allRecs);
+                break;
+            case 3:
+                setAllLabs(!allLabs);
+                break;
+        }
+    }
+
     return (
         <>
         <DropdownItemBox headerBox={true}>
@@ -134,6 +175,11 @@ const GroupSuggestion = ({ sections, courseCode, value, inputRef, setActive, set
                 <SuggestionTitle>{courseCode}</SuggestionTitle>
                 <SuggestionSubtitle>{sections[0].course_title}</SuggestionSubtitle>
             </DropdownItemLeftCol>
+            <ButtonContainer>
+                <ToggleButton toggled={allLectures} onClick={() => toggleButton(1)}>All Lectures</ToggleButton>
+                <ToggleButton toggled={allRecs} onClick={() => toggleButton(2)}>All Recitations</ToggleButton>
+                <ToggleButton toggled={allLabs} onClick={() => toggleButton(3)}>All Labs</ToggleButton>
+            </ButtonContainer>
         </DropdownItemBox>
             {sections
                 .map((suggestion, index) => (
