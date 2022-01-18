@@ -16,4 +16,3 @@ ENV SECRET_KEY 'temporary key just to build the docker image'
 
 # Collect static files
 RUN python3 /app/manage.py collectstatic --noinput
-
