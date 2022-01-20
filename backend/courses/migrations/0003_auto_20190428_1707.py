@@ -11,12 +11,18 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name="building", name="latitude", field=models.FloatField(blank=True, null=True),
+            model_name="building",
+            name="latitude",
+            field=models.FloatField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name="building", name="longitude", field=models.FloatField(blank=True, null=True),
+            model_name="building",
+            name="longitude",
+            field=models.FloatField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name="building", name="name", field=models.CharField(blank=True, max_length=80),
+            model_name="building",
+            name="name",
+            field=models.CharField(blank=True, max_length=80),
         ),
     ]

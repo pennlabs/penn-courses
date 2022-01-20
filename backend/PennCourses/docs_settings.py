@@ -27,31 +27,47 @@ https://redocly.github.io/redoc/
 https://github.com/Redocly/redoc/blob/master/demo/openapi.yaml
 
 
-MAINTENENCE:
-For the auto-documentation to work, you need to include the line:
-schema = PcxAutoSchema()
-in all views (this will allow for proper tag and operation_id generation; see below).
-Or, if you are using function-based views, include the following decorator above your views:
-@schema(PcxAutoSchema())
-and include the following import in your views.py file:
-from rest_framework.decorators import schema
-(This is instructed in the DRF docs:
-https://www.django-rest-framework.org/api-guide/views/#view-schema-decorator.)
-In all cases, you must include the following import for PcxAutoSchema:
-from PennCourses.docs_settings import PcxAutoSchema
-PcxAutoSchema (defined below) is a subclass of Django's AutoSchema, and it makes some improvements
-on that class for use with Redoc as well as some customizations specific to our use-cases.
+TERMINOLOGY:
 
-You should include docstrings in views (see
+Each route (e.g. GET /api/plan/schedules/{id}/) has an "operation ID" that is (by default)
+automatically parsed from the codebase (e.g. "Retrieve Schedule"). The base "name" underlying this
+operation ID is also automatically parsed by default (e.g. "Schedule"). The operation ID shows up
+as the title of the route on our Redoc documentation page. You can customize the
+name and/or the operation ID of a route by modifying the custom_name and custom_operation_id
+dicts in this file. Customizing the name will change the operation ID and the tag of the route
+(see below). You can customize the name with the custom_name dict below, and the operation ID
+with the custom_operation_id dict.
+
+Tags are groupings of routes by name. For instance, all the routes
+GET, POST /api/plan/schedules/ and GET, PUT, DELETE /api/plan/schedules/{id}
+are organized under the shared tag "[PCP] Schedule", since they all share the base name "Schedule".
+You can click on a tag in the table of contents of our Redoc documenation, and the section will
+expand to show all the underlying routes (each titled by its operation ID). You can change tag
+names using the custom_tag_names dict below, but the default tag names are usually sensible
+(derived from the base name of the underlying routes). What's more useful is to give a tag a
+description, which you can do with the custom_tag_descriptions dict.
+
+Tag groups organize tags into groups; they show up in the left sidebar of our Redoc page and divide
+the categories of routes into meta categories. We are using them to separate our tags by app.
+For instance, "Penn Course Plan" is a tag group. Each tag group has an abbreviation, specified by
+the tag_group_abbreviations dict. For instance, the "Penn Course Plan" tag group is
+abbreviated "[PCP]". Each tag in a tag group is prefixed by the tag group abbreviation in
+square brackets (for instance "[PCP] Schedule"). The subpath_abbreviations dict below takes Django
+app names (e.g. "plan"), and maps them to the corresponding tag group abbreviation (this is how
+tags are automatically organized into tag groups). You shouldn't need to modify this dict unless
+you change an app name or add a new app). Then, the tag_group_abbreviations dict maps the
+abbreviation to the full name of the tag group.
+
+
+MAINTENENCE:
+
+You can update the introductory sections / readme of the auto-docs page by editing the
+markdown-formatted openapi_description text below.
+You should include docstrings in views (the proper format of docstrings are specified here
 https://www.django-rest-framework.org/coreapi/from-documenting-your-api/#documenting-your-views)
-explaining the function of the view (or of each method if there are multiple supported methods).
-If the meaning of a tag group created automatically by the docs
-(visible in the nav bar) is not clear, you should add a custom description.
-You can do that using the custom_tag_descriptions dictionary below.
-If any auto-generated names are unsatisfactory, you can also manually change any
-operation_id, tag, or tag group name (see below for more on what these are).
-You can update the introductory sections / readme by editing the markdown-formatted
-openapi_description text below.
+explaining the function of the view (or the function of each method if there are multiple supported
+methods). These docstrings will be parsed by the auto-docs and included in the documentation page.
+
 When writing any class-based views where you specify a queryset (such as ViewSets), even if you
 override get_queryset(), you should also specify the queryset field with something like
 queryset = ExampleModel.objects.none() (using .none() to prevent accidental data breach), or
@@ -60,32 +76,51 @@ CourseDetail ViewSet). Basically, just make sure the queryset parameter is alway
 relevant model (if you are using queryset or get_queryset()). This will allow the
 auto-documentation to access the model underlying the queryset (it cannot call get_queryset()
 since it cannot generate a request object which the get_queryset() method might try to access).
+
 If the meaning of a model or serializer field is not clear, you should include the string help_text
 as a parameter when initializing the field, explaining what that field stores. This will show up
 in the documentation such that parameter descriptions are inferred from model or serializer field
 help text. For properties, the docstring will be used since there is no
 way to define help_text for a property; so even if a property's use is clear based on the code,
-keep in mind that describing it's purpose in the docstring will be helpful to frontend engineers
+keep in mind that describing its purpose in the docstring will be helpful to frontend engineers
 who are unfamiliar with the backend code (also, don't include a :return: tag as you might normally
 do for functions; a property is to be treated as a dynamic field, not a method, so just state
 what the method returns as the only text in the docstring).
 Including help_text/docstring when a field/property's purpose is unclear will also
-make the model/serializer code more understandable for newbies. And furthermore, all help_text
-and descriptive docstrings will not only help future Labs developers but it will also show up in
-the backend documentation (accessible at /admin/doc/).
+make the model/serializer code more understandable for future Labs developers.
+And furthermore, all help_text and descriptive docstrings show up in the backend
+documentation (accessible at /admin/doc/).
+
+PcxAutoSchema (defined below) is a subclass of Django's AutoSchema, and it makes some improvements
+on that class for use with Redoc as well as some customizations specific to our use-cases. You can
+customize auto-docs for a specific view by setting
+schema = PcxAutoSchema(...)
+in class-based views, or using the decorator
+@schema(PcxAutoSchema(...))
+in functional views, and passing kwargs (...) into the PcxAutoSchema constructor (search
+PcxAutoSchema in our codebase for some examples of this, and keep reading for a comprehensive
+description of how you can customize PcxAutoSchema using these kwargs).
 
 There are a number of dictionaries you can use to customize these auto-docs; some are passed into
-PcxAutoSchema as initialization kwargs, and some are in this file. Often, these dictionaries
-will contain layers of nested dictionaries with a schema of path/method/...
-However, you will notice in example code snippets and in our codebase, these paths are not
-hardcoded but instead are indicated using reverse_func(...).
-Whenever you see a reverse_func(...) function in these docs or in the code,
-think of that as the url corresponding to the passed-in url name with path parameters
+PcxAutoSchema as initialization kwargs, and some are predefined in this file (in the
+"Customizable Settings" section below). Often, these dictionaries will contain layers of nested
+dictionaries with a schema of path/method/... However, you will notice in example code snippets
+in this README and in our codebase, these paths are not hardcoded but instead are indicated using
+reverse_func(...). Whenever you see a reverse_func(...) function in these docs or in the code,
+think of that as the url corresponding to the passed-in name with path parameters
 replaced in order by the arguments in the args=[...] kwarg list. It works just like Django's
 reverse function:
 https://docs.djangoproject.com/en/3.1/ref/urlresolvers/#reverse
+The only reason we don't just use reverse is to avoid circular imports (reverse_func is lazily
+evaluated; for more details on this see the docstring of reverse_func, defined below).
 To determine the name of a certain url, run `python manage.py show_urls` which will print
 a list of urls and their corresponding names.
+Note that the name of the url here is not to be confused with the base name of the route
+as defined above in the TERMINOLOGY section; the name of the url is specified in the urls.py file,
+whereas the name of the route is auto-generated from the code, and may or may not be derived from
+the url name. For instance "courses-detail" is a url name, and "Course" is the base name of the
+corresponding route for documentation generation.
+Sorry for the confusion / overloading of terms here.
 Your args list should always contain the string names of each of the
 path parameters of the url, in the order they appear in the url. For instance,
 reverse_func("courses-detail", args=["semester", "full_code"])
@@ -93,9 +128,9 @@ would be used to reference /api/base/{semester}/courses/{full_code}/.
 We use reverse_func rather than hardcoding urls so that the only places with hardcoded
 urls are urls.py files (so urls can easily be changed).
 Unimportant implementation detail: in reality, reverse_func doesn't return a string but actually
-returns a function which returns a string (see the reverse_func docstring above if you are curious
+returns a function which returns a string (see the reverse_func docstring if you are curious
 as to why this is necessary to avoid circular imports). You don't need to keep this in mind when
-documenting your code however, since it is handled under the hood by our autodocumentation code.
+documenting your code however, since it is handled under the hood by our auto-docs code.
 Effectively you can think of reverse_func as Django's reverse function.
 
 By default, response codes will be assumed to be 204 (for delete) or 200 (in all other cases).
@@ -124,7 +159,7 @@ be automatically generated by default, but can be customized using the override_
 kwarg; see below).  You should generally enable a response schema for responses which will contain
 useful data for the frontend beyond the response code.  Note that in the example above, the only
 such response is the listing of schedules (the GET 200 response).
-If you include "[REMOVE THIS RESPONSE CODE FROM DOCS]" in your string description, that will
+If you include "[UNDOCUMENTED]" in your string description, that will
 remove that response status code from the schema/docs. This is useful if you want to remove
 a code that is included by default from the schema.
 
@@ -178,7 +213,7 @@ reverse_func) to dicts, where each subdict maps string methods to objects specif
 desired response schema for that path/method.
 The format of these objects is governed by the OpenAPI specification
 (for more on the syntax of how to specify a schema, see this link:
-http://spec.openapis.org/oas/v3.0.3.html#schema-object
+http://spec.openapis.org/oas/v3.0.3.html#schema-object [section 4.7.24]
 you are specifying the dicts mapped to by "schema" keys in the examples at the following link:
 http://spec.openapis.org/oas/v3.0.3.html#request-body-object).  An example:
     override_request_schema={
@@ -207,7 +242,7 @@ reverse_func) to dicts, where each subdict maps string methods to dicts, and eac
 maps int response codes to the objects specifying the desired response schema.
 The format of these objects is governed by the OpenAPI specification
 (for more on the syntax of how to specify a schema, see this link:
-http://spec.openapis.org/oas/v3.0.3.html#schema-object
+http://spec.openapis.org/oas/v3.0.3.html#schema-object [section 4.7.24]
 you are specifying the dicts mapped to by "schema" keys in the examples at the following link:
 http://spec.openapis.org/oas/v3.0.3.html#response-object). You can reference existing schemas
 generated by the docs using the notation {"$ref": "#/components/schemas/VeryComplexType"}.
@@ -246,12 +281,42 @@ with keys of the form path > method > variable_name pointing to a string descrip
         }
     }
 
+If you want to manually specify parameters (query, path, header, or cookie) for a certain 
+path/method, you can do so by including a custom_parameters kwarg in your PcxAutoSchema
+instantiation, passing a dict of the form path > method > [list of query param schema objects]. 
+This kwarg will override custom_path_parameter_desc if they conflict.
+The format of these objects is described by 
+https://spec.openapis.org/oas/v3.0.3.html#parameter-object [section 4.7.12]
+Example:
+    custom_parameters={
+        reverse_func("course-plots", args=["course_code"]): {
+            "GET": [
+                {
+                    "name": "course_code",
+                    "in": "path",
+                    "description": "The dash-joined department and code of the course you want plots for, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                    "schema": {"type": "string"},
+                    "required": True,
+                },
+                {
+                    "name": "instructor_ids",
+                    "in": "query",
+                    "description": "A comma-separated list of instructor IDs with which to filter the sections underlying the returned plots.",  # noqa E501
+                    "schema": {"type": "string"},
+                    "required": False,
+                },
+            ]
+        },
+    },
+
 Finally, if you still need to further customize your API schema, you can do this in the
-make_manual_schema_changes function below. This is applied to the final schema after all
+make_manual_schema_changes function below. This is applied to the final JSON schema after all
 automatic changes / customizations are applied.  For more about the format of an OpenAPI
 schema (which you would need to know a bit about to make further customizations), see this
 documentation:
 http://spec.openapis.org/oas/v3.0.3.html
+To explore our JSON schema (which can help when trying to figure out how to modify it in
+make_manual_schema_changes if you need to), you can download it from the /api/openapi/ route.
 """
 
 
@@ -339,12 +404,6 @@ underlies PLA.
 """
 
 
-# Note that tags are groupings of routes by one name. For instance, all the routes
-# GET, POST /api/plan/schedules/ and GET, PUT, DELETE /api/plan/schedules/{id}
-# are organized under the shared tag "[PCP] Schedule".
-# You can click on a tag in the table of contents of our Redoc documenation, and the section will
-# expand to show all the underlying routes.
-
 # This dictionary takes app names (the string just after /api/ in the path or just after /
 # if /api/ does not come at the beginning of the path)
 # as values and abbreviated versions of those names as values.  It is used to
@@ -363,8 +422,6 @@ assert all(
 )
 
 
-# Tag groups organize tags into groups; they show up in the left sidebar and divide the categories
-# of routes into meta categories. We are using them to separate our tags by app.
 # This dictionary should map abbreviated app names (values from the dict above) to
 # longer form names which will show up as the tag group name in the documentation.
 tag_group_abbreviations = {
@@ -387,7 +444,7 @@ assert all(
 # a list of operation ids, each corresponding to a certain route).
 
 # name here refers to the name underlying the operation id of the view
-# this is NOT the name that you see on the API, it is the name underlying it,
+# this is NOT the full name that you see on the API, it is the base name underlying it,
 # and is used in construction of that name
 # For instance, for POST /api/plan/schedules/, the name is "Schedule" and the operation_id is
 # "Create Schedule" (see below get_name and _get_operation_id methods in PcxAutoSchema for
@@ -667,7 +724,20 @@ def pluralize_word(s):
     return s + "s"  # naive solution because this is how it is done in DRF
 
 
-cumulative_examples = dict()  # populated by PcxAutoSchema __init__ method calls
+# Customization dicts populated by PcxAutoSchema __init__ method calls
+
+# A cumulative version of the examples parameter to PcxAutoSchema
+cumulative_examples = dict()
+# A cumulative version of the response_codes parameter to PcxAutoSchema:
+cumulative_response_codes = dict()
+# A cumulative version of the override_request_schema parameter to PcxAutoSchema:
+cumulative_override_request_schema = dict()
+# A cumulative version of the override_response_schema parameter to PcxAutoSchema:
+cumulative_override_response_schema = dict()
+# A cumulative version of the custom_path_parameter_desc parameter to PcxAutoSchema:
+cumulative_cppd = dict()
+# A cumulative version of the custom_parameters parameter to PcxAutoSchema:
+cumulative_cp = dict()
 
 
 class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
@@ -746,7 +816,8 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                 v["responses"] = deepcopy(v["responses"])
                 delete_required_dfs(v["responses"])
 
-        # Since tags could not be updated while we were through tags above, we update them now.
+        # Since tags could not be updated while we were iterating through tags above,
+        # we update them now.
         for k, v in changes.items():
             tags.remove(k)
             tags.add(v)
@@ -936,6 +1007,7 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                 cumulative_override_response_schema,
             ),
             ("custom_path_parameter_desc", "cumulative_cppd", cumulative_cppd),
+            ("custom_parameters", "cumulative_cp", cumulative_cp),
         ]:
             for path_func in parameter_dict:
                 traceback = parameter_dict[path_func]["traceback"]
@@ -965,20 +1037,39 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                             f"{traceback}; invalid method '{method}' for path '{path}'"
                         )
 
+        # Convert cumulative_cp keys to strings (necessary since keys are paths indicated
+        # by reverse_func).
+        new_cumulative_cp = dict()
+        for key, value in cumulative_cp.items():
+            if not callable(key) or not isinstance(key(), str):
+                not_using_reverse_func(
+                    "examples",
+                    key,
+                    PcxAutoSchema=True,
+                    traceback=cumulative_cp[key]["traceback"],
+                )
+            new_cumulative_cp[key()] = value
+
+        # Update query parameter documentation
+        for path_name, val in data["paths"].items():
+            if path_name not in new_cumulative_cp:
+                continue
+            for method_name, v in val.items():
+                method_name = method_name.upper()
+                if method_name.upper() not in new_cumulative_cp[path_name]:
+                    continue
+                custom_query_params = new_cumulative_cp[path_name][method_name]
+                custom_query_params_names = {param_ob["name"] for param_ob in custom_query_params}
+                v["parameters"] = [
+                    param_ob
+                    for param_ob in v["parameters"]
+                    if param_ob["name"] not in custom_query_params_names
+                ] + custom_query_params
+
         # Make any additional manual changes to the schema programmed by the user
         make_manual_schema_changes(data)
 
         return jsonref.dumps(data, indent=2).encode("utf-8")
-
-
-# A cumulative version of the response_codes parameter to PcxAutoSchema:
-cumulative_response_codes = dict()
-# A cumulative version of the override_request_schema parameter to PcxAutoSchema:
-cumulative_override_request_schema = dict()
-# A cumulative version of the override_response_schema parameter to PcxAutoSchema:
-cumulative_override_response_schema = dict()
-# A cumulative version of the custom_path_parameter_desc parameter to PcxAutoSchema:
-cumulative_cppd = dict()
 
 
 class PcxAutoSchema(AutoSchema):
@@ -997,6 +1088,7 @@ class PcxAutoSchema(AutoSchema):
         override_request_schema=None,
         override_response_schema=None,
         custom_path_parameter_desc=None,
+        custom_parameters=None,
         **kwargs,
     ):
         """
@@ -1019,6 +1111,7 @@ class PcxAutoSchema(AutoSchema):
         override_request_schema=None,
         override_response_schema=None,
         custom_path_parameter_desc=None,
+        custom_parameters=None,
         **kwargs,
     ):
         """
@@ -1044,6 +1137,7 @@ class PcxAutoSchema(AutoSchema):
             ("override_request_schema", override_request_schema),
             ("override_response_schema", override_response_schema),
             ("custom_path_parameter_desc", custom_path_parameter_desc),
+            ("custom_parameters", custom_parameters),
         ]:
             if param_dict is not None:
                 if not isinstance(param_dict, dict):
@@ -1052,6 +1146,13 @@ class PcxAutoSchema(AutoSchema):
                     if not isinstance(dictionary, dict):
                         fail(param_name, f"All values of the {param_name} dict must be dicts.")
                     for nested_dictionary in dictionary.values():
+                        if param_name == "custom_parameters":
+                            if not isinstance(nested_dictionary, list):
+                                fail(
+                                    param_name,
+                                    f"All values of the dict values of {param_name} must be lists.",
+                                )
+                            continue
                         if not isinstance(nested_dictionary, dict):
                             fail(
                                 param_name,
@@ -1150,6 +1251,16 @@ class PcxAutoSchema(AutoSchema):
             for dictionary in for_cumulative_cppd.values():
                 dictionary["traceback"] = self.created_at
             cumulative_cppd = {**cumulative_cppd, **for_cumulative_cppd}
+
+        # Handle passed-in custom query parameter descriptions
+        global cumulative_cp
+        if custom_parameters is not None:
+            custom_parameters = deepcopy(custom_parameters)
+            for key, d in custom_parameters.items():
+                custom_parameters[key] = {k.upper(): v for k, v in d.items()}
+            for dictionary in custom_parameters.values():
+                dictionary["traceback"] = self.created_at
+            cumulative_cp = {**cumulative_cp, **custom_parameters}
 
         super().__init__(*args, **kwargs)
 
@@ -1531,13 +1642,13 @@ class PcxAutoSchema(AutoSchema):
                 include_content = "[DESCRIBE_RESPONSE_SCHEMA]" in custom_description
                 custom_description = custom_description.replace("[DESCRIBE_RESPONSE_SCHEMA]", "")
                 if status_code in responses.keys():
-                    if "[REMOVE THIS RESPONSE CODE FROM DOCS]" in custom_description:
+                    if "[UNDOCUMENTED]" in custom_description:
                         del responses[status_code]
                     else:
                         responses[status_code]["description"] = custom_description
                         if not include_content and "content" in responses[status_code]:
                             del responses[status_code]["content"]
-                elif "[REMOVE THIS RESPONSE CODE FROM DOCS]" not in custom_description:
+                elif "[UNDOCUMENTED]" not in custom_description:
                     responses[status_code] = {"description": custom_description}
                     if include_content:
                         responses[status_code]["content"] = deepcopy(default_schema_content)

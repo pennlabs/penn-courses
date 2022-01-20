@@ -19,6 +19,7 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AlterUniqueTogether(
-            name="requirement", unique_together={("semester", "code", "school")},
+            name="requirement",
+            unique_together={("semester", "code", "school")},
         ),
     ]

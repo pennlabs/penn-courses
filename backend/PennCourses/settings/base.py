@@ -103,10 +103,18 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 
@@ -182,6 +190,7 @@ MESSAGE_BROKER_URL = REDIS_URL
 # Django REST Framework
 REST_FRAMEWORK = {
     "COERCE_DECIMAL_TO_STRING": False,
+    "DEFAULT_SCHEMA_CLASS": "PennCourses.docs_settings.PcxAutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",

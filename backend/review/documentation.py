@@ -10,7 +10,11 @@ from review.util import to_r_camel
 EXPANDED_REVIEW_BIT_LABEL = tuple(
     list(REVIEW_BIT_LABEL)
     + [
-        ("RFINALENROLLMENT", "Final Enrollment at the End of the Semester", "final_enrollment",),
+        (
+            "RFINALENROLLMENT",
+            "Final Enrollment at the End of the Semester",
+            "final_enrollment",
+        ),
         ("RPERCENTOPEN", "Percent of Add/Drop Period Open", "percent_open"),
         ("RNUMOPENINGS", "Number of Openings During Add/Drop", "num_openings"),
         (
@@ -133,7 +137,9 @@ course_reviews_response_schema = {
                     "aliases": {
                         "type": "array",
                         "description": "A list of courses that are crosslisted with this course (each represented by its  dash-joined department and code).",  # noqa E501
-                        "items": {"type": "string",},
+                        "items": {
+                            "type": "string",
+                        },
                     },
                     "num_sections": {
                         "type": "integer",

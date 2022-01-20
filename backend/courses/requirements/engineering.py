@@ -53,7 +53,14 @@ def get_bulk_requirements():
         },
         "ENG": {
             # https://ugrad.seas.upenn.edu/student-handbook/courses-requirements/engineering-courses  # noqa: E501
-            True: {"BE": None, "CBE": None, "CIS": None, "ESE": None, "MSE": None, "MEAM": None,},
+            True: {
+                "BE": None,
+                "CBE": None,
+                "CIS": None,
+                "ESE": None,
+                "MSE": None,
+                "MEAM": None,
+            },
             False: {
                 "BE": [280, 303, 503, 513],
                 "CIS": [100, 101, 105, 106, 125, 160, 260, 261, 262, 313, 355, 590],

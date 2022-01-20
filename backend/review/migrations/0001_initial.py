@@ -39,6 +39,8 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"unique_together": {("section", "instructor")},},
+            options={
+                "unique_together": {("section", "instructor")},
+            },
         ),
     ]

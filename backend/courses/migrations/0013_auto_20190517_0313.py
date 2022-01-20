@@ -28,6 +28,12 @@ class Migration(migrations.Migration):
                 max_length=5,
             ),
         ),
-        migrations.AlterUniqueTogether(name="requirement", unique_together={("semester", "code")},),
-        migrations.RemoveField(model_name="requirement", name="satisfies",),
+        migrations.AlterUniqueTogether(
+            name="requirement",
+            unique_together={("semester", "code")},
+        ),
+        migrations.RemoveField(
+            model_name="requirement",
+            name="satisfies",
+        ),
     ]

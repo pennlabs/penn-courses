@@ -92,10 +92,16 @@ interface AlertFormProps {
     user: User;
     setResponse: (res: Response) => void;
     setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
+    autofillSection?: string;
 }
 
-const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
-    const [section, setSection] = useState("");
+const AlertForm = ({
+    user,
+    setResponse,
+    setTimeline,
+    autofillSection = "",
+}: AlertFormProps) => {
+    const [section, setSection] = useState(autofillSection);
     const [email, setEmail] = useState("");
 
     const [phone, setPhone] = useState("");
@@ -176,7 +182,11 @@ const AlertForm = ({ user, setResponse, setTimeline }: AlertFormProps) => {
 
     return (
         <Form>
-            <AutoComplete onValueChange={setSection} setTimeline={setTimeline}/>
+            <AutoComplete
+                defaultValue={autofillSection}
+                onValueChange={setSection}
+                setTimeline={setTimeline}
+            />
             <Input
                 placeholder="Email"
                 value={email}

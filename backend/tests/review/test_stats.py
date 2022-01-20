@@ -43,7 +43,12 @@ these helper functions cut down on a lot of the repeated characters in the respo
 
 
 def ratings_dict(
-    label, rInstructorQuality, rFinalEnrollment, rPercentOpen, rNumOpenings, rFilledInAdvReg,
+    label,
+    rInstructorQuality,
+    rFinalEnrollment,
+    rPercentOpen,
+    rNumOpenings,
+    rFilledInAdvReg,
 ):
     return {
         label: {
@@ -128,7 +133,10 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         for date in (
             [start - 3 * duration / 5, start - 2 * duration / 5, start - duration / 5]
             + [start + i * duration / 5 for i in range(1, 5)]
-            + [start + 0.81 * duration, start + 0.82 * duration,]
+            + [
+                start + 0.81 * duration,
+                start + 0.82 * duration,
+            ]
         ):
             # O[.2]C[.4]O[.6]C[.8]O[.81]C[.82]O
             record_update(
@@ -151,7 +159,13 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         ]:
             # C[.25]O[.5]C[.75]O
             record_update(
-                "ESE-120-001", "2020C", old_status, new_status, False, dict(), created_at=date,
+                "ESE-120-001",
+                "2020C",
+                old_status,
+                new_status,
+                False,
+                dict(),
+                created_at=date,
             )
             old_status, new_status = new_status, old_status
         cls.average_percent_open = (1 / 2 + 3 / 5 - 0.01) / 2
@@ -309,7 +323,19 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
         )
         self.assertRequestContainsAppx(
-            "course-plots", "ESE-120", self.course_plots_subdict,
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+        )
+
+        instructor_ids = ",".join(str(id) for id in Instructor.objects.values_list("id", flat=True))
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_instructor(self):
@@ -392,7 +418,13 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
                         "url": f"/instructor/{Instructor.objects.get().pk}",
                     }
                 ],
-                "courses": [{"title": "ESE-120", "desc": [""], "url": "/course/ESE-120",}],
+                "courses": [
+                    {
+                        "title": "ESE-120",
+                        "desc": [""],
+                        "url": "/course/ESE-120",
+                    }
+                ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
             },
         )
@@ -520,13 +552,23 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                 self.filled_in_adv_reg,
             ),
         }
+
+        self.assertRequestContainsAppx(
+            "course-plots",
+            ["ESE-120"],
+            self.course_plots_subdict,
+        )
+
+        instructor_ids = ",".join(
+            [str(id) for id in [Instructor.objects.get().pk]],
+        )
         self.assertRequestContainsAppx(
             "course-reviews",
             "ESE-120",
             {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
-        )
-        self.assertRequestContainsAppx(
-            "course-plots", "ESE-120", self.course_plots_subdict,
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_instructor(self):
@@ -602,7 +644,13 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                         "url": f"/instructor/{Instructor.objects.get().pk}",
                     }
                 ],
-                "courses": [{"title": "ESE-120", "desc": [""], "url": "/course/ESE-120",}],
+                "courses": [
+                    {
+                        "title": "ESE-120",
+                        "desc": [""],
+                        "url": "/course/ESE-120",
+                    }
+                ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
             },
         )
@@ -702,6 +750,23 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "average_plots": plots,
             "recent_plots": plots,
         }
+        empty_plots = {
+            "pca_demand_plot_since_semester": None,
+            "pca_demand_plot_num_semesters": 0,
+            "percent_open_plot_since_semester": None,
+            "percent_open_plot_num_semesters": 0,
+            "pca_demand_plot": None,
+            "percent_open_plot": None,
+        }
+        cls.empty_course_plots_subdict = {
+            "code": "ESE-120",
+            "current_add_drop_period": {
+                "start": cls.current_sem_adp.estimated_start.astimezone(tz=local_tz),
+                "end": cls.current_sem_adp.estimated_end.astimezone(tz=local_tz),
+            },
+            "average_plots": empty_plots,
+            "recent_plots": empty_plots,
+        }
 
     def setUp(self):
         self.client = APIClient()
@@ -736,7 +801,27 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             },
         )
         self.assertRequestContainsAppx(
-            "course-plots", "ESE-120", self.course_plots_subdict,
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+        )
+
+        instructor_ids = ",".join(
+            [
+                str(id)
+                for id in [
+                    Instructor.objects.get(name=self.instructor_1_name).pk,
+                    Instructor.objects.get(name=self.instructor_2_name).pk,
+                ]
+            ]
+        )
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_instructor(self):
@@ -765,6 +850,42 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "instructor-reviews",
             Instructor.objects.get(name=self.instructor_2_name).pk,
             {**subdict, "courses": {"ESE-120": subdict}},
+        )
+
+    def test_plots_invalid_instructor_ids(self):
+        max_instructor_id = max(
+            Instructor.objects.filter(
+                name__in=[self.instructor_1_name, self.instructor_2_name]
+            ).values_list("pk", flat=True)
+        )
+        instructor_ids = ",".join(
+            [str(id) for id in [max_instructor_id + 1, max_instructor_id + 2]]
+        )
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.empty_course_plots_subdict,
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
+        )
+
+    def test_plots_filter_to_one_instructor(self):
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={
+                "instructor_ids": str(Instructor.objects.get(name=self.instructor_1_name).id),
+            },
+        )
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={
+                "instructor_ids": str(Instructor.objects.get(name=self.instructor_2_name).id),
+            },
         )
 
     def test_department(self):
@@ -843,7 +964,13 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                         ),
                     },
                 ],
-                "courses": [{"title": "ESE-120", "desc": [""], "url": "/course/ESE-120",}],
+                "courses": [
+                    {
+                        "title": "ESE-120",
+                        "desc": [""],
+                        "url": "/course/ESE-120",
+                    }
+                ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
             },
         )

@@ -11,8 +11,16 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RenameField(
-            model_name="registration", old_name="muted", new_name="auto_resubscribe",
+            model_name="registration",
+            old_name="muted",
+            new_name="auto_resubscribe",
         ),
-        migrations.RemoveField(model_name="registration", name="auto_mute",),
-        migrations.RemoveField(model_name="registration", name="muted_at",),
+        migrations.RemoveField(
+            model_name="registration",
+            name="auto_mute",
+        ),
+        migrations.RemoveField(
+            model_name="registration",
+            name="muted_at",
+        ),
     ]
