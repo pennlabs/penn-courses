@@ -538,6 +538,17 @@ class Section(models.Model):
         else:
             return float(self.registration_volume) / float(self.capacity)
 
+    @property
+    def last_status_update(self):
+        """
+        Returns the last StatusUpdate object for this section, or None if no status updates
+        have occured for this section yet.
+        """
+        try:
+            return StatusUpdate.objects.filter(section=self).latest("created_at")
+        except StatusUpdate.DoesNotExist:
+            return None
+
     def save(self, *args, **kwargs):
         self.full_code = f"{self.course.full_code}-{self.code}"
         super().save(*args, **kwargs)

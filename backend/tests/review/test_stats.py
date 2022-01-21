@@ -140,7 +140,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         ):
             # O[.2]C[.4]O[.6]C[.8]O[.81]C[.82]O
             record_update(
-                "ESE-120-001",
+                Section.objects.get(id=cls.ESE_120_001_TEST_SEMESTER_id),
                 TEST_SEMESTER,
                 old_status,
                 new_status,
@@ -159,7 +159,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         ]:
             # C[.25]O[.5]C[.75]O
             record_update(
-                "ESE-120-001",
+                Section.objects.get(id=cls.ESE_120_001_2020C_id),
                 "2020C",
                 old_status,
                 new_status,
@@ -464,7 +464,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
-                "ESE-120-001",
+                Section.objects.get(id=cls.ESE_120_001_id),
                 TEST_SEMESTER,
                 old_status,
                 new_status,
@@ -684,7 +684,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
-                "ESE-120-001",
+                Section.objects.get(id=cls.ESE_120_001_id),
                 TEST_SEMESTER,
                 old_status,
                 new_status,
