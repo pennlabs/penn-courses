@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHistory } from "@fortawesome/free-solid-svg-icons";
 
 import { Section } from "../types";
+import Checkbox from "./common/Checkbox"
 
 interface DropdownItemBoxProps {
     selected?: boolean | false;
@@ -15,12 +16,12 @@ const DropdownItemBox = styled.div<DropdownItemBoxProps>`
     border-bottom-style: solid;
     border-width: 1px;
     border-color: #d6d6d6;
-    padding-left: ${(props) => props.headerBox ? "1rem" : "2rem"};
+    padding-left: 1rem;
     padding-top: 0.5rem;
     padding-bottom: 1rem;
     display: flex;
     justify-content: stretch;
-    flex-direction: ${(props) => props.headerBox ? "column" : "row"};;
+    flex-direction: ${(props) => props.headerBox ? "column" : "row"};
     cursor: pointer;
     ${(props) =>
         props.selected ? "background-color: rgb(235, 235, 235);" : ""}
@@ -33,8 +34,8 @@ const DropdownItemBox = styled.div<DropdownItemBoxProps>`
 `;
 
 const DropdownItemLeftCol = styled.div<{ headerBox?: boolean | false }>`
-    max-width: ${(props) => props.headerBox ? "100%" : "80%"};
-    flex-basis: ${(props) => props.headerBox ? "100%" : "80%"};
+    max-width: ${(props) => props.headerBox ? "100%" : "65%"};
+    flex-basis: ${(props) => props.headerBox ? "100%" : "65%"};
     flex-grow: 1;
 `;
 
@@ -63,6 +64,15 @@ const IconContainer = styled.div`
     font-size: 1.25rem;
     color: #3baff7;
 `;
+
+const CheckboxContainer = styled.div`
+    display: flex;
+    flex-direction: column; 
+    justify-content: center;
+    align-items: center;
+    flex-basis: 15%;
+    flex-grow: 1;
+`
 
 const ButtonContainer = styled.div`
     display: flex;
@@ -98,6 +108,7 @@ interface SuggestionProps {
     title: string;
     instructor: string;
     selected: boolean;
+    isChecked: boolean;
 }
 
 const Suggestion = ({
@@ -107,8 +118,13 @@ const Suggestion = ({
     title,
     instructor,
     selected,
+    isChecked,
 }: SuggestionProps) => {
     const ref = useRef<HTMLDivElement>(null);
+
+    const [checked, setChecked] = useState(isChecked);
+    console.log(courseCode + ", " + checked);
+
     // If the suggestion becomes selected, make sure that it is
     // not fully or partially scrolled out of view
     useEffect(() => {
@@ -128,6 +144,9 @@ const Suggestion = ({
     }, [selected, ref]);
     return (
         <DropdownItemBox selected={selected} ref={ref}>
+            <CheckboxContainer onClick={() => setChecked(!checked)}>
+                <Checkbox checked={checked}/>
+            </CheckboxContainer>
             <DropdownItemLeftCol onClick={onClick}>
                 <SuggestionTitle>{courseCode}</SuggestionTitle>
                 <SuggestionSubtitle>{instructor ? instructor : "TBA"}</SuggestionSubtitle>
@@ -168,8 +187,22 @@ const GroupSuggestion = ({ sections, courseCode, value, inputRef, setActive, set
         }
     }
 
+    const isChecked = (activity) => {
+        switch (activity) {
+            case "LEC":
+                return allLectures;
+            case "REC":
+                return allRecs;
+            case "LAB":
+                return allLabs;
+            default:
+                return false;
+        }
+    }
+
     return (
         <>
+        {console.log("rerendered")}
         <DropdownItemBox headerBox={true}>
             <DropdownItemLeftCol headerBox={true}>
                 <SuggestionTitle>{courseCode}</SuggestionTitle>
@@ -202,6 +235,7 @@ const GroupSuggestion = ({ sections, courseCode, value, inputRef, setActive, set
                         }}
                         title={suggestion.course_title}
                         instructor={suggestion.instructors[0]?.name}
+                        isChecked={isChecked(suggestion.activity)}
                     />
                 ))}
         </>
