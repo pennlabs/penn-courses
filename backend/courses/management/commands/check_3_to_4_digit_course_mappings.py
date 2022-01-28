@@ -4,13 +4,15 @@ import re
 from textwrap import dedent
 
 import jellyfish
-from django.core.management.base import BaseCommand
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
 from courses.models import Course
 
+
 TEST_SEMESTER = "2021C"
+
 
 class Command(BaseCommand):
     help = dedent(
@@ -28,8 +30,8 @@ class Command(BaseCommand):
             type=str,
             help=dedent(
                 """
-                The mapping_path argument should be the path to a csv with the first column being the old course code
-                and the second being the corresponding new code.
+                The mapping_path argument should be the path to a csv with the first
+                column being the old course code and the second being the corresponding new code.
                 """
             ),
             nargs="?",
@@ -40,15 +42,16 @@ class Command(BaseCommand):
             type=int,
             help=dedent(
                 """
-                The tolerance argument should specify the minimum number of insertions, deletions
-                or substitutions between the original course code and the new one to be reported as
-                a potential error. Should be at least 1 since all 3 -> 4 digit mappings require at
-                least 1 insertion. Note that setting tolerance value to a negative number may result
-                in undesired behavior (such as mappings that are identical being output as different)
+                The tolerance argument should specify the minimum number of insertions,
+                deletions or substitutions between the original course code and the new
+                one to be reported as a potential error. Should be at least 1 since all
+                3 -> 4 digit mappings require at least 1 insertion. Note that setting
+                tolerance value to a negative number may result in undesired behavior
+                (such as mappings that are identical being output as different)
                 """
             ),
             nargs="?",
-            default=2,
+            default=1,
         )
         parser.add_argument(
             "--check_crosslistings",
@@ -71,7 +74,6 @@ class Command(BaseCommand):
             return "File is not a csv."
 
         error_mapping = {}
-        error_list = []
         with open(src) as data_file:
             data_reader = csv.reader(data_file, delimiter=",", quotechar='"')
             for three_digit, four_digit in tqdm(data_reader, desc="Check mapping"):
@@ -92,14 +94,16 @@ class Command(BaseCommand):
                 error_count = 0
                 crosslisting_count = 0
                 try:
-                    course = Course.objects.get(full_code=three_digit, semester=TEST_SEMESTER) # TODO: replace TEST_SEMESTER
+                    course = Course.objects.get(
+                        full_code=three_digit, semester=TEST_SEMESTER
+                    )  # TODO: replace TEST_SEMESTER
                 except ObjectDoesNotExist:
                     continue
                 for associated_code in course.crosslistings.values_list("full_code"):
                     crosslisting_count += 1
                     match error_mapping.get(associated_code):
                         case (_, error):
-                            if error >= kwargs["tolerance"]:
+                            if error > kwargs["tolerance"]:
                                 error_count += 1
                         case _:
                             continue
@@ -112,7 +116,8 @@ class Command(BaseCommand):
             match item:
                 case three_digit, (four_digit, lev, crosslisted_error_frac):
                     print(
-                        f"{three_digit} -> {four_digit}: lev dist {lev} crosslisted error % {crosslisted_error_frac}"
+                        f"{three_digit} -> {four_digit}: "
+                        f"lev dist {lev} crosslisted error % {crosslisted_error_frac}"
                     )
                 case three_digit, (four_digit, lev):
                     print(f"{three_digit} -> {four_digit}: lev dist {lev}")
