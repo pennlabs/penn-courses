@@ -15,6 +15,7 @@ pytest = "*"
 pytest-django = "*"
 django-debug-toolbar = "*"
 black = "==21.12b0"
+jellyfish = "*"
 
 [packages]
 django = ">=3.2"
