@@ -179,6 +179,32 @@ class Course(models.Model):
         help_text="Text describing the prereqs for a course, e.g. 'CIS 120, 160' for CIS-121.",
     )
 
+    previous = models.ForeignKey(
+        "Course",
+        related_name="next",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            The previous courses in the lineage
+        """
+        ),
+    )
+
+    topic = models.ForeignKey(
+        "Topic",
+        related_name="courses_set",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            Topic associated with this course
+            """
+        ),
+    )
+
     primary_listing = models.ForeignKey(
         "Course",
         related_name="listing_set",
@@ -242,6 +268,24 @@ class Course(models.Model):
         self.full_code = f"{self.department.code}-{self.code}"
         super().save(*args, **kwargs)
 
+class Topic(models.Model):
+    """
+    A topic, which keeps track of courses
+    """
+    most_recent = models.ForeignKey(
+        "Course",
+        related_name="+", # Do not create back relation
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+        The primary Course object with which this course is crosslisted (all crosslisted courses
+        have a primary listing). The set of crosslisted courses to which this course belongs can
+        thus be accessed with the related field listing_set on the primary_listing course.
+        """
+        ),
+    )
 
 class Restriction(models.Model):
     """
