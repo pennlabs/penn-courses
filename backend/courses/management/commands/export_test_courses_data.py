@@ -226,11 +226,11 @@ class Command(BaseCommand):
                                 id__in=Subquery(
                                     Course.objects.filter(
                                         full_code__startswith=kwargs["courses_query"],
-                                        semester__in=semesters,
+                                        semester=semester,
                                     ).values_list("primary_listing_id", flat=True)
                                 )
                             ),
-                            semester__in=semesters,
+                            semester=semester,
                         )
                         querysets["courses"] = queryset
                     elif data_type == "sections":
