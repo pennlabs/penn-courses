@@ -69,62 +69,6 @@ const DropdownBox = styled.div`
     }
 `;
 
-const DropdownItemBox = styled.div<{ selected: boolean }>`
-    border-bottom-style: solid;
-    border-width: 1px;
-    border-color: #d6d6d6;
-    padding-left: 0.5rem;
-    padding-bottom: 1rem;
-    display: flex;
-    justify-content: stretch;
-    flex-direction: row;
-    cursor: pointer;
-    ${(props) =>
-        props.selected ? "background-color: rgb(235, 235, 235);" : ""}
-    &:hover {
-        background-color: rgb(220, 220, 220);
-    }
-`;
-
-const SuggestionTitle = styled.div`
-    color: #282828;
-    font-size: 1rem;
-    font-family: "Inter", sans-serif;
-    font-weight: bold;
-    padding-top: 0.5rem;
-`;
-
-const SuggestionSubtitle = styled.div`
-    color: #282828;
-    font-size: 0.9rem;
-    padding-top: 0.4rem;
-    font-family: "Inter", sans-serif;
-`;
-
-const IconContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    flex-grow: 1;
-    flex-basis: 20%;
-    font-size: 1.25rem;
-    color: #3baff7;
-`;
-
-const HistoryIcon = styled(FontAwesomeIcon)`
-    color: #c4c4c4;
-    &:hover {
-        color: #209cee;
-    }
-`;
-
-const DropdownItemLeftCol = styled.div`
-    max-width: 80%;
-    flex-basis: 80%;
-    flex-grow: 1;
-`;
-
 const AutoCompleteInput = styled(Input)`
     position: absolute;
     z-index: 1;
@@ -143,63 +87,6 @@ const Container = styled.div<{ inputHeight: string }>`
     margin-bottom: 1rem;
     height: ${(props) => props.inputHeight};
 `;
-
-interface SuggestionProps {
-    onClick: () => void;
-    onChangeTimeline: () => void;
-    courseCode: string;
-    title: string;
-    instructor: string;
-    selected: boolean;
-}
-
-const Suggestion = ({
-    onClick,
-    onChangeTimeline,
-    courseCode,
-    title,
-    instructor,
-    selected,
-}: SuggestionProps) => {
-    const ref = useRef<HTMLDivElement>(null);
-    // If the suggestion becomes selected, make sure that it is
-    // not fully or partially scrolled out of view
-    useEffect(() => {
-        if (selected && ref.current && ref.current.parentElement) {
-            const { bottom, top } = ref.current.getBoundingClientRect();
-            const { parentElement } = ref.current;
-            const {
-                bottom: parentBottom,
-                top: parentTop,
-            } = parentElement.getBoundingClientRect();
-            if (bottom > parentBottom) {
-                parentElement.scrollBy({ top: bottom - parentBottom });
-            } else if (top < parentTop) {
-                parentElement.scrollBy({ top: top - parentTop });
-            }
-        }
-    }, [selected, ref]);
-    return (
-        <DropdownItemBox selected={selected} ref={ref}>
-            <DropdownItemLeftCol onClick={onClick}>
-                <SuggestionTitle>{courseCode}</SuggestionTitle>
-                <SuggestionSubtitle>{title}</SuggestionSubtitle>
-                <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
-            </DropdownItemLeftCol>
-            <IconContainer onClick={onChangeTimeline}>
-                <HistoryIcon icon={faHistory} className="historyIcon" />
-            </IconContainer>
-        </DropdownItemBox>
-    );
-};
-
-Suggestion.propTypes = {
-    courseCode: PropTypes.string,
-    title: PropTypes.string,
-    instructor: PropTypes.string,
-    onClick: PropTypes.func,
-    selected: PropTypes.bool,
-};
 
 /**
  * Given a current input value and a list of suggestions, generates the backdrop text for the
@@ -242,16 +129,37 @@ const AutoComplete = ({
     ] = useState<TSuggestion | null>(null);
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
+    // const [bulkMode, setBulkMode] = useState(false);
+    const [selectedCourses, setSelectedCourses] = useState<Set<Section>>(new Set())
 
-    //active && suggestions.length > 0;
     const show = active && suggestions.length > 0;
-
-    const [selectedCourses, setSelectedCourses] = useState<Set<String>>(new Set())
+    const bulkMode = selectedCourses.size > 1;
 
     const setValue = (v) => {
         onValueChange(v);
         return setInternalValue(v);
     };
+
+    useEffect(() => {
+        console.log("test");
+        for (let element of Array.from(selectedCourses)) {
+            console.log(element.section_id);
+        }
+
+        if (inputRef.current) {
+            if (bulkMode) {
+                inputRef.current.value = generateCoursesValue();
+            } else if (selectedCourses.size == 1) {
+                setValue(selectedCourses.values().next().value.section_id);
+                inputRef.current.value = value;
+                
+            } else {
+                inputRef.current.value = '';
+                setValue("");
+                console.log(value);
+            }
+        }
+    }, [selectedCourses]);
    
     //create placeholder -----------
     useEffect(() => {
@@ -269,6 +177,13 @@ const AutoComplete = ({
             }
         }
     }, [suggestionsFromBackend, value]);
+
+
+    const generateCoursesValue = () => {
+        let lastElement;
+        for (lastElement of Array.from(selectedCourses));
+        return lastElement.section_id + " + " + (selectedCourses.size - 1) + " more";
+    }
 
     /**
      * Takes in the index of a new selected suggestion and updates state accordingly
@@ -308,16 +223,7 @@ const AutoComplete = ({
         return res;
     }, {});
 
-    // console.log(groupedSuggestions);
-    useEffect(() => {
-        for (let course of Array.from(selectedCourses)) {
-            console.log(course)
-        }
-    }, [selectedCourses])
-
     return (
-        <>
-        {console.log("rerendered2")}
         <Container
             inputHeight={
                 inputRef.current
@@ -329,6 +235,7 @@ const AutoComplete = ({
             <AutoCompleteInput
                 defaultValue={defaultValue}
                 disabled={disabled}
+                readOnly={bulkMode}
                 // @ts-ignore
                 autocomplete="off"
                 placeholder="Course"
@@ -383,8 +290,8 @@ const AutoComplete = ({
             <AutoCompleteInputBackground
                 // @ts-ignore
                 autocomplete="off"
-                disabled={disabled}
-                value={backdrop}
+                disabled={disabled || bulkMode}
+                value={bulkMode ? "" : backdrop}
             />
             <DropdownContainer below={inputRef} hidden={!show}>
                 <DropdownBox>
@@ -395,7 +302,6 @@ const AutoComplete = ({
                 </DropdownBox>
             </DropdownContainer>
         </Container>
-        </>
     );
 };
 

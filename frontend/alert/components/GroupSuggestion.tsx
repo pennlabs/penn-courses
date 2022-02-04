@@ -166,11 +166,12 @@ const Suggestion = ({
     );
 };
 
+
 interface GroupSuggestionProps {
     sections: Section[];
     courseCode: string;
     value: string;
-    selectedCourses: Set<String>;
+    selectedCourses: Set<Section>;
     inputRef: React.RefObject<HTMLInputElement>;
     setActive: React.Dispatch<React.SetStateAction<boolean>>;
     setValue: (v: any) => void;
@@ -187,18 +188,20 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
         switch(type) {
             case 1:
                 setAllLectures(!allLectures);
+                syncCheckAlls("LEC", !allLectures, setSelectedCourses);
                 break;
             case 2:
                 setAllRecs(!allRecs);
+                syncCheckAlls("REC", !allRecs, setSelectedCourses);
                 break;
             case 3:
                 setAllLabs(!allLabs);
+                syncCheckAlls("LAB", !allLabs, setSelectedCourses);
                 break;
         }
     }
 
     const isChecked = (activity) => {
-        
         switch (activity) {
             case "LEC":
                 return allLectures;
@@ -211,18 +214,55 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
         }
     }
 
+    const syncCheckAlls = (type, checked, setSelectedCourses) => {
+        const newSelectedCourses = new Set(selectedCourses);
+        sections.map((section) => {
+            //checked = false but selectedCourses has course
+            if (section.activity == type && newSelectedCourses.has(section) && !checked) {
+                newSelectedCourses.delete(section)
+            
+            //checked = true but selectedCourses doesn't have course
+            } else if (section.activity == type && !newSelectedCourses.has(section) && checked) {
+                newSelectedCourses.add(section)
+            } 
+        })
+        setSelectedCourses(newSelectedCourses);
+    }
+
+    //selectedCourses does not contain type param
+    const doesTypeExist = (type) => {
+        for (let selectedCourse of Array.from(selectedCourses)) {
+            //selected course is the activity we are looking for & is in this group suggestion
+            if (selectedCourse.activity == type && sections.includes(selectedCourse)) {
+                return true;
+            }
+        }
+
+        return false;
+    } 
+
+    const updateSelectedCourses = (selectedCourses, setSelectedCourses, suggestion) => {
+        const newSelectedCourses = new Set(selectedCourses);
+        if (selectedCourses.has(suggestion)) {
+            newSelectedCourses.delete(suggestion);
+        } else {
+            newSelectedCourses.add(suggestion);
+        }
+        setSelectedCourses(newSelectedCourses);
+       
+    }
+
     return (
         <>
-        {console.log("rerendered")}
         <DropdownItemBox headerBox={true}>
             <DropdownItemLeftCol headerBox={true}>
                 <SuggestionTitle>{courseCode}</SuggestionTitle>
                 <SuggestionSubtitle>{sections[0].course_title}</SuggestionSubtitle>
             </DropdownItemLeftCol>
             <ButtonContainer>
-                <ToggleButton toggled={allLectures} onClick={() => toggleButton(1)}>All Lectures</ToggleButton>
-                <ToggleButton toggled={allRecs} onClick={() => toggleButton(2)}>All Recitations</ToggleButton>
-                <ToggleButton toggled={allLabs} onClick={() => toggleButton(3)}>All Labs</ToggleButton>
+                <ToggleButton toggled={doesTypeExist("LEC")} onClick={() => toggleButton(1)}>All Lectures</ToggleButton>
+                <ToggleButton toggled={doesTypeExist("REC")} onClick={() => toggleButton(2)}>All Recitations</ToggleButton>
+                <ToggleButton toggled={doesTypeExist("LAB")} onClick={() => toggleButton(3)}>All Labs</ToggleButton>
             </ButtonContainer>
         </DropdownItemBox>
             {sections
@@ -235,27 +275,23 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
                         }
                         courseCode={suggestion.section_id}
                         onClick={() => {
-                            if (inputRef.current) {
+                            updateSelectedCourses(selectedCourses, setSelectedCourses, suggestion);
+
+                            if (inputRef.current && selectedCourses.size <= 1) {
                                 inputRef.current.value = suggestion.section_id;
                             }
+
                             //setActive(false); dont close backdrop
                             setValue(suggestion.section_id);
                             
-                            const newSelectedCourses = new Set(selectedCourses);
-                            if (selectedCourses.has(suggestion.section_id)) {
-                                newSelectedCourses.delete(suggestion.section_id);
-                            } else {
-                                newSelectedCourses.add(suggestion.section_id);
-                                
-                            }
-                            setSelectedCourses(newSelectedCourses);
+                           
                         }}
                         onChangeTimeline={() => {
                             setTimeline(suggestion.section_id);
                         }}
                         title={suggestion.course_title}
                         instructor={suggestion.instructors[0]?.name}
-                        isChecked={isChecked(suggestion.activity)}
+                        isChecked={isChecked(suggestion.activity) || selectedCourses.has(suggestion)}
                     />
                 ))}
         </>
