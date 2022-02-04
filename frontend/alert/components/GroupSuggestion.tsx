@@ -122,8 +122,11 @@ const Suggestion = ({
 }: SuggestionProps) => {
     const ref = useRef<HTMLDivElement>(null);
 
-    const [checked, setChecked] = useState(isChecked);
-    console.log(courseCode + ", " + checked);
+    const [checked, setChecked] = useState(() => isChecked);
+
+    useEffect(() => {
+        setChecked(isChecked);
+    }, [isChecked]);
 
     // If the suggestion becomes selected, make sure that it is
     // not fully or partially scrolled out of view
@@ -144,10 +147,15 @@ const Suggestion = ({
     }, [selected, ref]);
     return (
         <DropdownItemBox selected={selected} ref={ref}>
-            <CheckboxContainer onClick={() => setChecked(!checked)}>
+            <CheckboxContainer onClick={() => {
+                onClick();
+                setChecked(!checked)}}>
                 <Checkbox checked={checked}/>
             </CheckboxContainer>
-            <DropdownItemLeftCol onClick={onClick}>
+            <DropdownItemLeftCol onClick={() => {
+                onClick();
+                setChecked(!checked);
+            }}>
                 <SuggestionTitle>{courseCode}</SuggestionTitle>
                 <SuggestionSubtitle>{instructor ? instructor : "TBA"}</SuggestionSubtitle>
             </DropdownItemLeftCol>
@@ -162,13 +170,15 @@ interface GroupSuggestionProps {
     sections: Section[];
     courseCode: string;
     value: string;
+    selectedCourses: Set<String>;
     inputRef: React.RefObject<HTMLInputElement>;
     setActive: React.Dispatch<React.SetStateAction<boolean>>;
     setValue: (v: any) => void;
     setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
+    setSelectedCourses: any;
 }
 
-const GroupSuggestion = ({ sections, courseCode, value, inputRef, setActive, setValue, setTimeline }: GroupSuggestionProps) => {
+const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRef, setActive, setValue, setTimeline, setSelectedCourses}: GroupSuggestionProps) => {
     const [allLectures, setAllLectures] = useState(false);
     const [allRecs, setAllRecs] = useState(false);
     const [allLabs, setAllLabs] = useState(false);
@@ -188,6 +198,7 @@ const GroupSuggestion = ({ sections, courseCode, value, inputRef, setActive, set
     }
 
     const isChecked = (activity) => {
+        
         switch (activity) {
             case "LEC":
                 return allLectures;
@@ -227,8 +238,17 @@ const GroupSuggestion = ({ sections, courseCode, value, inputRef, setActive, set
                             if (inputRef.current) {
                                 inputRef.current.value = suggestion.section_id;
                             }
-                            setActive(false);
+                            //setActive(false); dont close backdrop
                             setValue(suggestion.section_id);
+                            
+                            const newSelectedCourses = new Set(selectedCourses);
+                            if (selectedCourses.has(suggestion.section_id)) {
+                                newSelectedCourses.delete(suggestion.section_id);
+                            } else {
+                                newSelectedCourses.add(suggestion.section_id);
+                                
+                            }
+                            setSelectedCourses(newSelectedCourses);
                         }}
                         onChangeTimeline={() => {
                             setTimeline(suggestion.section_id);

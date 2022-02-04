@@ -243,13 +243,17 @@ const AutoComplete = ({
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
 
+    //active && suggestions.length > 0;
     const show = active && suggestions.length > 0;
+
+    const [selectedCourses, setSelectedCourses] = useState<Set<String>>(new Set())
 
     const setValue = (v) => {
         onValueChange(v);
         return setInternalValue(v);
     };
-
+   
+    //create placeholder -----------
     useEffect(() => {
         setBackdrop(
             generateBackdrop(inputRef.current && value, show && suggestions)
@@ -304,9 +308,16 @@ const AutoComplete = ({
         return res;
     }, {});
 
-    console.log(groupedSuggestions);
+    // console.log(groupedSuggestions);
+    useEffect(() => {
+        for (let course of Array.from(selectedCourses)) {
+            console.log(course)
+        }
+    }, [selectedCourses])
 
     return (
+        <>
+        {console.log("rerendered2")}
         <Container
             inputHeight={
                 inputRef.current
@@ -379,11 +390,12 @@ const AutoComplete = ({
                 <DropdownBox>
                     {Object.keys(groupedSuggestions).map(key => (
                         <GroupSuggestion sections={groupedSuggestions[key]} courseCode={key} value={value} 
-                        inputRef={inputRef} setActive={setActive} setValue={setValue} setTimeline={setTimeline}/>
+                        selectedCourses={selectedCourses} inputRef={inputRef} setActive={setActive} setValue={setValue} setTimeline={setTimeline} setSelectedCourses={setSelectedCourses}/>
                     ))}
                 </DropdownBox>
             </DropdownContainer>
         </Container>
+        </>
     );
 };
 
