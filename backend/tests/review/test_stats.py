@@ -159,7 +159,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         ]:
             # C[.25]O[.5]C[.75]O
             record_update(
-                "ESE-120-001",
+                Section.objects.get(id=cls.ESE_120_001_2020C_id),
                 "2020C",
                 old_status,
                 new_status,
@@ -326,6 +326,16 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             "course-plots",
             "ESE-120",
             self.course_plots_subdict,
+        )
+
+        instructor_ids = ",".join(str(id) for id in Instructor.objects.values_list("id", flat=True))
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_instructor(self):
@@ -556,11 +566,9 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             "course-reviews",
             "ESE-120",
             {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
-        )
-        self.assertRequestContainsAppx(
-            "course-plots",
-            "ESE-120",
-            self.course_plots_subdict,
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_instructor(self):
@@ -796,6 +804,24 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "course-plots",
             "ESE-120",
             self.course_plots_subdict,
+        )
+
+        instructor_ids = ",".join(
+            [
+                str(id)
+                for id in [
+                    Instructor.objects.get(name=self.instructor_1_name).pk,
+                    Instructor.objects.get(name=self.instructor_2_name).pk,
+                ]
+            ]
+        )
+        self.assertRequestContainsAppx(
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_instructor(self):

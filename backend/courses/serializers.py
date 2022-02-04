@@ -177,6 +177,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "work_required",
         ] + [
             "associated_sections",
+            "registration_volume",
         ]
         read_only_fields = fields
 
