@@ -99,6 +99,7 @@ class MiniSectionSerializer(serializers.ModelSerializer):
             "course_code",
             "course_title",
             "semester",
+            "registration_volume",
         ]
         read_only_fields = fields
 

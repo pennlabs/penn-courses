@@ -207,13 +207,25 @@ def course_reviews(request, course_code):
                 },
             },
         },
-        custom_path_parameter_desc={
+        custom_parameters={
             reverse_func("course-plots", args=["course_code"]): {
-                "GET": {
-                    "course_code": (
-                        "The dash-joined department and code of the course you want plots for, e.g. `CIS-120` for CIS-120."  # noqa E501
-                    )
-                }
+                "GET": [
+                    {
+                        "name": "course_code",
+                        "in": "path",
+                        "description": "The dash-joined department and code of the course you want plots for, e.g. `CIS-120` for CIS-120.",  # noqa: E501
+                        "schema": {"type": "string"},
+                        "required": True,
+                    },
+                    {
+                        "name": "instructor_ids",
+                        "in": "query",
+                        "description": "A comma-separated list of instructor IDs with which to filter the sections underlying the returned plots."  # noqa: E501
+                        "Note that if only invalid instructor IDs are present, plot response fields will be null or 0.",  # noqa: E501
+                        "schema": {"type": "string"},
+                        "required": False,
+                    },
+                ]
             },
         },
         override_response_schema=course_plots_response_schema,
@@ -240,6 +252,13 @@ def course_plots(request, course_code):
         .annotate(efficient_semester=F("course__semester"))
         .distinct()
     )
+    instructor_ids = request.GET.get("instructor_ids")
+    if instructor_ids:
+        instructor_ids = [int(id) for id in instructor_ids.split(",")]
+        filtered_sections = filtered_sections.filter(
+            instructors__id__in=instructor_ids,
+        )
+
     section_map = dict()  # a dict mapping semester to section id to section object
     for section in filtered_sections:
         if section.efficient_semester not in section_map:
@@ -472,7 +491,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     Get the review history of an instructor teaching a course. No aggregations here.
     """
     instructor = get_object_or_404(Instructor, id=instructor_id)
-    print([str(r) for r in Review.objects.filter(instructor_id=instructor_id, responses__gt=0)])
     reviews = review_averages(
         Review.objects.filter(
             section__course__full_code=course_code, instructor_id=instructor_id, responses__gt=0

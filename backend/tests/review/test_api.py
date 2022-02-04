@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.http import urlencode
 from options.models import Option
 from rest_framework.test import APIClient
 
@@ -65,16 +66,17 @@ class PCRTestMixin(object):
         self.assertDictContains(res.data, expected)
         return res.data
 
-    def assertRequestContainsAppx(self, url, args, expected):
+    def assertRequestContainsAppx(self, url, args, expected, query_params={}):
         """
         Do the equivalent of a "subset" check on the response from an API endpoint.
         :param url: `name` of django view
         :param args: single or multiple arguments for view.
         :param expected: expected values from view.
+        :param query_params: query parameters to be included in request, defaults to empty dict.
         """
         if not isinstance(args, list):
             args = [args]
-        res = self.client.get(reverse(url, args=args))
+        res = self.client.get(f"{reverse(url, args=args)}?{urlencode(query_params)}")
         self.assertEqual(200, res.status_code)
         self.assertDictContainsAppx(
             res.data,
@@ -298,6 +300,55 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
     def test_department(self):
         self.assertRequestContainsAppx(
             "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(3, 4)}}
+        )
+
+    def test_history(self):
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-120", Instructor.objects.get(name=self.instructor_name).pk],
+            {"sections": [rating(4), rating(2)]},
+        )
+
+
+class TwoSectionsOneSemesterTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        self.instructor_name = "Instructor One"
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("CIS-120-002", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 2})
+
+    def test_course(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 1,
+                **average_and_recent(3, 3),
+                "instructors": {
+                    Instructor.objects.get(name=self.instructor_name).pk: {
+                        **average_and_recent(3, 3),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+        )
+
+    def test_instructor(self):
+        self.assertRequestContainsAppx(
+            "instructor-reviews",
+            Instructor.objects.get(name=self.instructor_name).pk,
+            {
+                **average_and_recent(3, 3),
+                "num_semesters": 1,
+                "courses": {"CIS-120": average_and_recent(3, 3)},
+            },
+        )
+
+    def test_department(self):
+        self.assertRequestContainsAppx(
+            "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(3, 3)}}
         )
 
     def test_history(self):

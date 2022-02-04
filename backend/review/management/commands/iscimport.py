@@ -109,6 +109,12 @@ class Command(BaseCommand):
             "--force", action="store_true", help="Complete action in non-interactive mode."
         )
 
+        parser.add_argument(
+            "--skip-recompute-stats",
+            action="store_true",
+            help="Skip the recompute stats script after the review data import.",
+        )
+
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
 
     def get_files(self, src, is_zipfile, tables_to_get):
@@ -155,6 +161,7 @@ class Command(BaseCommand):
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
         force = kwargs["force"]
+        skip_recompute_stats = kwargs["skip_recompute_stats"]
 
         if src is None:
             raise CommandError("source directory or zip must be defined.")
@@ -268,16 +275,21 @@ class Command(BaseCommand):
             del_count = clear_cache()
             self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
 
-            # Recompute stats to ignore past courses without reviews
-            print(f"Recomputing stats for semesters {semesters if not import_all else '[all]'}...")
-            if import_all:
-                recompute_stats(semesters="all", semesters_precomputed=True, verbose=True)
-            else:
-                all_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
-                recompute_stats(
-                    semesters=[sem for sem in semesters if sem in all_semesters],
-                    semesters_precomputed=True,
-                    verbose=True,
+            # Recompute stats to take into past courses with reviews
+            if not skip_recompute_stats:
+                print(
+                    f"Recomputing stats for semesters {semesters if not import_all else '[all]'}..."
                 )
+                if import_all:
+                    recompute_stats(semesters="all", semesters_precomputed=True, verbose=True)
+                else:
+                    all_semesters = set(
+                        Course.objects.values_list("semester", flat=True).distinct()
+                    )
+                    recompute_stats(
+                        semesters=[sem for sem in semesters if sem in all_semesters],
+                        semesters_precomputed=True,
+                        verbose=True,
+                    )
 
         return 0
