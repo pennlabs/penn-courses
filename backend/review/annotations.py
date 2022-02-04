@@ -190,8 +190,8 @@ def review_averages(
                 ),
                 (prefix + "semester_count"): Subquery(
                     ReviewBit.objects.filter(review__responses__gt=0, **subfilters)
-                    .values("field")
-                    .order_by()
+                    .annotate(common=Value(1))
+                    .values("common")
                     .annotate(count=Count("review__section__course__semester", distinct=True))
                     .values("count")[:1]
                 ),
