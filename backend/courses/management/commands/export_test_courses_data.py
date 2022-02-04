@@ -1,3 +1,4 @@
+import contextlib
 import csv
 import os
 from textwrap import dedent
@@ -74,6 +75,8 @@ test_data_fields = {
         "rating4",
     ],
 }  # define fields to export from each data type
+
+cross_semester_data_types = ["departments", "instructors"]
 
 related_id_fields = {
     "courses": {
@@ -178,71 +181,81 @@ class Command(BaseCommand):
 
         rows = 0
         output_file_path = "/app/export_test_data_output.csv" if upload_to_s3 else path
-        with open(output_file_path, "w") as output_file:
-            csv_writer = csv.writer(
-                output_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
-            )
+        if output_file_path != os.devnull:
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(output_file_path)
 
-            for data_type in data_types:
-                print(f"Processing {data_type}...")
+        for i, semester in enumerate(semesters):
+            print(f"Processing semester {semester} ({i+1}/{len(semesters)})...")
+            with open(output_file_path, "a") as output_file:
+                csv_writer = csv.writer(
+                    output_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
+                )
 
-                if data_type.endswith("_m2mfield"):
-                    for object in tqdm(querysets[fields[data_type][0]]):
-                        for related_object in getattr(object, fields[data_type][2]).all():
-                            rows += 1
-                            # _m2mfield schema: from model, from id, through field, to id, to model
-                            csv_writer.writerow(
-                                [data_type]
-                                + [
-                                    fields[data_type][0],
-                                    object.id,
-                                    fields[data_type][2],
-                                    str(related_object.id),
-                                    fields[data_type][4],
-                                ]
-                            )
-                            if rows % 5000 == 0:
-                                output_file.flush()
-                    continue
+                for data_type in data_types:
+                    if i > 0 and data_type in cross_semester_data_types:
+                        continue
+                    print(f"Processing {data_type}...")
 
-                if data_type == "departments":
-                    queryset = Department.objects.all()
-                elif data_type == "courses":
-                    queryset = Course.objects.filter(
-                        Q(full_code__startswith=kwargs["courses_query"])
-                        | Q(
-                            id__in=Subquery(
-                                Course.objects.filter(
-                                    full_code__startswith=kwargs["courses_query"],
-                                    semester__in=semesters,
-                                ).values_list("primary_listing_id", flat=True)
-                            )
-                        ),
-                        semester__in=semesters,
-                    )
-                    querysets["courses"] = queryset
-                elif data_type == "sections":
-                    queryset = Section.objects.filter(
-                        course__in=querysets["courses"]
-                    ).prefetch_related("associated_sections", "instructors")
-                    querysets["sections"] = queryset
-                elif data_type == "instructors":
-                    queryset = Instructor.objects.all()
-                    querysets["instructors"] = queryset
-                elif data_type == "reviews":
-                    queryset = Review.objects.filter(section__in=querysets["sections"])
-                    querysets["reviews"] = queryset
-                elif data_type == "review_bits":
-                    queryset = ReviewBit.objects.filter(review__in=querysets["reviews"])
-                    querysets["review_bits"] = queryset
+                    if data_type.endswith("_m2mfield"):
+                        for object in tqdm(querysets[fields[data_type][0]]):
+                            for related_object in getattr(object, fields[data_type][2]).all():
+                                rows += 1
+                                # _m2mfield schema:
+                                # from model, from id, through field, to id, to model
+                                csv_writer.writerow(
+                                    [data_type]
+                                    + [
+                                        fields[data_type][0],
+                                        object.id,
+                                        fields[data_type][2],
+                                        str(related_object.id),
+                                        fields[data_type][4],
+                                    ]
+                                )
+                                if rows % 5000 == 0:
+                                    output_file.flush()
+                        continue
 
-                for object in tqdm(queryset):
-                    rows += 1
-                    csv_writer.writerow(
-                        [data_type] + [str(getattr(object, field)) for field in fields[data_type]]
-                    )
-                    if rows % 5000 == 0:
-                        output_file.flush()
+                    if data_type == "departments":
+                        queryset = Department.objects.all()
+                    elif data_type == "courses":
+                        queryset = Course.objects.filter(
+                            Q(full_code__startswith=kwargs["courses_query"])
+                            | Q(
+                                id__in=Subquery(
+                                    Course.objects.filter(
+                                        full_code__startswith=kwargs["courses_query"],
+                                        semester__in=semesters,
+                                    ).values_list("primary_listing_id", flat=True)
+                                )
+                            ),
+                            semester__in=semesters,
+                        )
+                        querysets["courses"] = queryset
+                    elif data_type == "sections":
+                        queryset = Section.objects.filter(
+                            course__in=querysets["courses"]
+                        ).prefetch_related("associated_sections", "instructors")
+                        querysets["sections"] = queryset
+                    elif data_type == "instructors":
+                        queryset = Instructor.objects.all()
+                        querysets["instructors"] = queryset
+                    elif data_type == "reviews":
+                        queryset = Review.objects.filter(section__in=querysets["sections"])
+                        querysets["reviews"] = queryset
+                    elif data_type == "review_bits":
+                        queryset = ReviewBit.objects.filter(review__in=querysets["reviews"])
+                        querysets["review_bits"] = queryset
+
+                    for object in tqdm(queryset):
+                        rows += 1
+                        csv_writer.writerow(
+                            [data_type]
+                            + [str(getattr(object, field)) for field in fields[data_type]]
+                        )
+                        if rows % 5000 == 0:
+                            output_file.flush()
 
         if upload_to_s3:
             S3_resource.meta.client.upload_file(output_file_path, "penn.courses", path)
