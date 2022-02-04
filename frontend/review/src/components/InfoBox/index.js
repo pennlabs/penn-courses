@@ -148,20 +148,23 @@ const InfoBox = ({
           <div className="btn-group">
             <button
               onClick={() => setIsCourseEval(false)}
-              className={`btn btn-sm ${isCourseEval ? "btn-sub-secondary" : "btn-sub-primary"
-                }`}
+              className={`btn btn-sm ${
+                isCourseEval ? "btn-sub-secondary" : "btn-sub-primary"
+              }`}
             >
               Student Evaluations
             </button>
             <button
               onClick={() => setIsCourseEval(true)}
-              className={`btn btn-sm ${isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
-                }`}
+              className={`btn btn-sm ${
+                isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
+              }`}
             >
               Registration Metrics
             </button>
           </div>
-        </StatsToggleContainer>)}
+        </StatsToggleContainer>
+      )}
 
       {!isDepartment && (
         <div id="banner-score">

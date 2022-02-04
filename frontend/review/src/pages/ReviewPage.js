@@ -36,14 +36,14 @@ export class ReviewPage extends Component {
     this.getReviewData = this.getReviewData.bind(this);
     this.setIsAverage = this.setIsAverage.bind(this);
     const setIsCourseEval = this.setIsCourseEval.bind(this);
-    this.setIsCourseEval = (val) => {
+    this.setIsCourseEval = val => {
       setIsCourseEval(val);
-      window.ga('send', 'event', {
-        'eventCategory': 'Registration Metrics Mode',
-        'eventAction': 'Toggle',
-        'eventValue': val
+      window.ga("send", "event", {
+        eventCategory: "Registration Metrics Mode",
+        eventAction: "Toggle",
+        eventValue: val
       });
-    }
+    };
     this.showRowHistory = this.showRowHistory.bind(this);
     this.showDepartmentGraph = this.showDepartmentGraph.bind(this);
   }
