@@ -175,7 +175,6 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
-        ] + [
             "associated_sections",
             "registration_volume",
         ]
