@@ -477,7 +477,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     Get the review history of an instructor teaching a course. No aggregations here.
     """
     instructor = get_object_or_404(Instructor, id=instructor_id)
-    print([str(r) for r in Review.objects.filter(instructor_id=instructor_id, responses__gt=0)])
     reviews = review_averages(
         Review.objects.filter(
             section__course__full_code=course_code, instructor_id=instructor_id, responses__gt=0

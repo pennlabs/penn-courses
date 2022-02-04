@@ -310,6 +310,55 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         )
 
 
+class TwoSectionsOneSemesterTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        self.instructor_name = "Instructor One"
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("CIS-120-002", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 2})
+
+    def test_course(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 1,
+                **average_and_recent(3, 3),
+                "instructors": {
+                    Instructor.objects.get(name=self.instructor_name).pk: {
+                        **average_and_recent(3, 3),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+        )
+
+    def test_instructor(self):
+        self.assertRequestContainsAppx(
+            "instructor-reviews",
+            Instructor.objects.get(name=self.instructor_name).pk,
+            {
+                **average_and_recent(3, 3),
+                "num_semesters": 1,
+                "courses": {"CIS-120": average_and_recent(3, 3)},
+            },
+        )
+
+    def test_department(self):
+        self.assertRequestContainsAppx(
+            "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(3, 3)}}
+        )
+
+    def test_history(self):
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-120", Instructor.objects.get(name=self.instructor_name).pk],
+            {"sections": [rating(4), rating(2)]},
+        )
+
+
 class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         set_semester()
