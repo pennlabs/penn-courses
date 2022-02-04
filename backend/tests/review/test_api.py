@@ -705,6 +705,8 @@ class RegistrationMetricsFlagTestCase(TestCase, PCRTestMixin):
         pdp_restriction.save()
         cis_120_001 = Section.objects.get(full_code="CIS-120-001")
         cis_120_001.restrictions.add(pdp_restriction)
+        cis_120_001.capacity = 100
+        cis_120_001.save()
         StatusUpdate(
             section=Section.objects.get(full_code="CIS-120-001"),
             old_status="",
@@ -714,6 +716,9 @@ class RegistrationMetricsFlagTestCase(TestCase, PCRTestMixin):
         ).save()
 
         create_review("CIS-105-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+        cis_105_001 = Section.objects.get(full_code="CIS-105-001")
+        cis_105_001.capacity = 20
+        cis_105_001.save()
         StatusUpdate(
             section=Section.objects.get(full_code="CIS-105-001"),
             old_status="",
