@@ -37,7 +37,7 @@ def load_add_drop_dates(verbose=False):
     validate_add_drop_semester(semester)
 
     if verbose:
-        print(f"Loading add/drop period dates for semester {semester} from the Almanac")
+        print(f"Loading course selection period dates for semester {semester} from the Almanac")
     with transaction.atomic():
         start_date, end_date = None, None
         adp = get_or_create_add_drop_period(semester)
@@ -110,15 +110,15 @@ def load_add_drop_dates(verbose=False):
                         day_candidates = [int(s) for s in dates[1].split() if s.isdigit()]
                         if len(day_candidates) > 0:
                             s_day = day_candidates[0]
-                if title is not None and "drop period ends" in title.get_text().lower():
+                if title is not None and "course selection period ends" in title.get_text().lower():
                     if end_mode == 1:
-                        drop_end_month = None
+                        course_sel_end_month = None
                         for month in months:
                             if month in date_string.lower():
-                                drop_end_month = month
+                                course_sel_end_month = month
                         e_year = int(end_sem[:4])
-                        if drop_end_month is not None:
-                            e_month = months.index(drop_end_month) + 1
+                        if course_sel_end_month is not None:
+                            e_month = months.index(course_sel_end_month) + 1
                         day_candidates = [int(s) for s in date_string.split() if s.isdigit()]
                         if len(day_candidates) > 0:
                             e_day = day_candidates[0]
@@ -148,13 +148,13 @@ def load_add_drop_dates(verbose=False):
 
 class Command(BaseCommand):
     help = (
-        "Load in the start and end date of the current semester's add drop period "
+        "Load in the start and end date of the current semester's open registration period "
         "from the Penn Almanac. If an AddDropPeriod object from the given semester "
         "already exists and its start field is not null, this script will continue "
         "to use that same start date rather than estimating the start date based on "
         "the end of the advanced registration period. The end date will always "
         "be updated if it is found in the almanac, since the almanac explicitly posts "
-        "the date for the end of the add/drop period."
+        "the date for the end of the course selection period."
     )
 
     def handle(self, *args, **kwargs):
