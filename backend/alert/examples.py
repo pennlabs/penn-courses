@@ -83,11 +83,19 @@ RegistrationViewSet_examples = {
         },
         "PUT": {
             "requests": [
-                {"code": 200, "summary": "Resubscribe", "value": {"resubscribe": True,}},
+                {
+                    "code": 200,
+                    "summary": "Resubscribe",
+                    "value": {
+                        "resubscribe": True,
+                    },
+                },
                 {
                     "code": 200,
                     "summary": "Modify Auto-Resubscribe",
-                    "value": {"auto_resubscribe": True,},
+                    "value": {
+                        "auto_resubscribe": True,
+                    },
                 },
                 {"code": 200, "summary": "Cancel Registration", "value": {"cancelled": True}},
                 {"code": 200, "summary": "Delete Registration", "value": {"deleted": True}},

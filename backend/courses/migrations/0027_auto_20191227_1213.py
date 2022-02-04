@@ -50,5 +50,7 @@ class Migration(migrations.Migration):
             name="created_at",
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
-        migrations.DeleteModel(name="UserData",),
+        migrations.DeleteModel(
+            name="UserData",
+        ),
     ]

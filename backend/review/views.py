@@ -1,5 +1,5 @@
 from dateutil.tz import gettz
-from django.db.models import F, OuterRef, Q, Subquery, Value, Case, When, BooleanField
+from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema

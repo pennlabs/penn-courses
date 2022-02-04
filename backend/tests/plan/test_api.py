@@ -222,7 +222,11 @@ class CourseReviewAverageTestCase(TestCase):
         )
         self.rev1.save()
         self.rev1.set_averages(
-            {"course_quality": 4, "instructor_quality": 4, "difficulty": 4,}
+            {
+                "course_quality": 4,
+                "instructor_quality": 4,
+                "difficulty": 4,
+            }
         )
         self.instructor2 = Instructor(name="Person2")
         self.instructor2.save()
@@ -234,7 +238,11 @@ class CourseReviewAverageTestCase(TestCase):
         self.rev2.instructor = self.instructor2
         self.rev2.save()
         self.rev2.set_averages(
-            {"course_quality": 2, "instructor_quality": 2, "difficulty": 2,}
+            {
+                "course_quality": 2,
+                "instructor_quality": 2,
+                "difficulty": 2,
+            }
         )
 
         self.section.instructors.add(self.instructor)
@@ -257,10 +265,18 @@ class CourseReviewAverageTestCase(TestCase):
     def test_section_no_duplicates(self):
         instructor3 = Instructor(name="person3")
         instructor3.save()
-        rev3 = Review(section=self.rev2.section, instructor=instructor3, responses=100,)
+        rev3 = Review(
+            section=self.rev2.section,
+            instructor=instructor3,
+            responses=100,
+        )
         rev3.save()
         rev3.set_averages(
-            {"course_quality": 1, "instructor_quality": 1, "difficulty": 1,}
+            {
+                "course_quality": 1,
+                "instructor_quality": 1,
+                "difficulty": 1,
+            }
         )
         self.section2.instructors.add(instructor3)
         response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
@@ -378,26 +394,36 @@ class DayFilterTestCase(TestCase):
         self.assertEqual({res["id"] for res in response.data}, {"CIS-160", "CIS-120", "CIS-262"})
 
     def test_partial_match(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "T"},)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"days": "T"},
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
 
     def test_contains_rec_no_sec(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "W"},)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"days": "W"},
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
 
     def test_partial_multi_meeting_match(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "MT"},)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"days": "MT"},
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
 
     def test_full_multi_meeting_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"days": "MTWR"},
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"days": "MTWR"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 4)
@@ -540,7 +566,8 @@ class TimeFilterTestCase(TestCase):
 
     def test_contains_parts_of_two_sec(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.30-13.0"},
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "11.30-13.0"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -548,7 +575,8 @@ class TimeFilterTestCase(TestCase):
 
     def test_contains_rec_no_sec(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.30-16"},
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "11.30-16"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -556,7 +584,8 @@ class TimeFilterTestCase(TestCase):
 
     def test_unbounded_right(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "11.30-"},
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "11.30-"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -564,7 +593,8 @@ class TimeFilterTestCase(TestCase):
 
     def test_unbounded_left(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "-12.00"},
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "-12.00"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
@@ -572,7 +602,8 @@ class TimeFilterTestCase(TestCase):
 
     def test_multi_meeting_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "9.00-15.00"},
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "9.00-15.00"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
@@ -743,12 +774,16 @@ class ScheduleFilterTestCase(TestCase):
         )
 
         self.empty_schedule = Schedule(
-            person=self.user, semester=TEST_SEMESTER, name="Empty Schedule",
+            person=self.user,
+            semester=TEST_SEMESTER,
+            name="Empty Schedule",
         )
         self.empty_schedule.save()
 
         self.all_available_schedule = Schedule(
-            person=self.user, semester=TEST_SEMESTER, name="All Classes Available Schedule",
+            person=self.user,
+            semester=TEST_SEMESTER,
+            name="All Classes Available Schedule",
         )
         self.all_available_schedule.save()
         self.all_available_schedule.sections.set([self.cis_120_001])
@@ -762,7 +797,9 @@ class ScheduleFilterTestCase(TestCase):
         self.only_120_262_available_schedule.sections.set([self.cis_120_001, self.cis_121_001])
 
         self.only_262_available_schedule = Schedule(
-            person=self.user, semester=TEST_SEMESTER, name="Only CIS-262 Available Schedule",
+            person=self.user,
+            semester=TEST_SEMESTER,
+            name="Only CIS-262 Available Schedule",
         )
         self.only_262_available_schedule.save()
         self.only_262_available_schedule.sections.set(
@@ -798,7 +835,8 @@ class ScheduleFilterTestCase(TestCase):
     def test_invalid_schedule(self):
         self.client.login(username="jacob", password="top_secret")
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"schedule-fit": "invalid"},
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"schedule-fit": "invalid"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), len(self.all_codes))

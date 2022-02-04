@@ -157,8 +157,14 @@ def review_averages(
                                 .order_by("-created_at")
                                 .annotate(
                                     filled=Case(
-                                        When(Q(new_status="C"), then=Value(1.0),),
-                                        When(Q(new_status="O"), then=Value(0.0),),
+                                        When(
+                                            Q(new_status="C"),
+                                            then=Value(1.0),
+                                        ),
+                                        When(
+                                            Q(new_status="O"),
+                                            then=Value(0.0),
+                                        ),
                                         output_field=FloatField(),
                                     )
                                 )

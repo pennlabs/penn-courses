@@ -174,7 +174,9 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
-        ] + ["associated_sections",]
+        ] + [
+            "associated_sections",
+        ]
         read_only_fields = fields
 
 
@@ -323,7 +325,11 @@ class CourseDetailSerializer(CourseListSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
-        ] + ["crosslistings", "requirements", "sections",]
+        ] + [
+            "crosslistings",
+            "requirements",
+            "sections",
+        ]
         read_only_fields = fields
 
 
