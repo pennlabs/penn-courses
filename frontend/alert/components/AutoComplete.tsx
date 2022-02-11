@@ -4,7 +4,7 @@ import PropTypes, { string } from "prop-types";
 
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHistory } from "@fortawesome/free-solid-svg-icons";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { Input } from "./Input";
@@ -87,6 +87,22 @@ const Container = styled.div<{ inputHeight: string }>`
     margin-bottom: 1rem;
     height: ${(props) => props.inputHeight};
 `;
+
+const AutoCompleteInputContainer = styled.div`
+    
+`
+//do width / 2.
+const ClearSelection = styled(FontAwesomeIcon)<{ hidden?: boolean }>`
+   display: ${(props) => props.hidden ? "none" : "block"};
+   top: 22px;
+   right: 0;
+   padding: 0 8px;
+   position: absolute;
+   cursor: pointer;
+   font-size: 1.25rem;
+   color: #c4c4c4;
+   z-index: 100;
+`
 
 /**
  * Given a current input value and a list of suggestions, generates the backdrop text for the
@@ -232,67 +248,70 @@ const AutoComplete = ({
             }
             ref={useOnClickOutside(() => setActive(false), !show)}
         >
-            <AutoCompleteInput
-                defaultValue={defaultValue}
-                disabled={disabled}
-                readOnly={bulkMode}
-                // @ts-ignore
-                autocomplete="off"
-                placeholder="Course"
-                ref={inputRef}
-                onKeyDown={(e) => {
-                    if (e.keyCode === RETURN_KEY && suggestions) {
-                        e.preventDefault();
-                    }
-                }}
-                onKeyUp={(e) => {
-                    if (
-                        (e.keyCode === RIGHT_ARROW ||
-                            e.keyCode === RETURN_KEY) &&
-                        inputRef.current &&
-                        suggestions &&
-                        suggestions[0]
-                    ) {
-                        // autocomplete with backdrop when the right arrow key is pressed
-                        setValue(backdrop);
-                        setActive(false);
-                        inputRef.current.value = backdrop;
-                    } else if (e.keyCode === DOWN_ARROW && suggestions) {
-                        // select a suggestion when the down arrow key is pressed
-                        const newIndex = getCurrentIndex() + 1;
-                        const newSelectedSuggestion = Math.min(
-                            newIndex,
-                            suggestions.length - 1
-                        );
-                        handleSuggestionSelect(newSelectedSuggestion);
-                    } else if (e.keyCode === UP_ARROW && suggestions) {
-                        // select a suggestion when the up arrow key is pressed
-                        const newSelectedSuggestion = Math.max(
-                            getCurrentIndex() - 1,
-                            -1
-                        );
-                        handleSuggestionSelect(newSelectedSuggestion);
-                    } else {
-                        // @ts-ignore
-                        const newValue = e.target.value;
-                        setValue(newValue);
-                        if (!newValue || newValue.length < 3) {
-                            setSuggestions([]);
-                        } else {
-                            suggestionsDebounced(newValue).then(
-                                setSuggestionsFromBackend
-                            );
+            <AutoCompleteInputContainer>
+                <AutoCompleteInput
+                    defaultValue={defaultValue}
+                    disabled={disabled}
+                    readOnly={bulkMode}
+                    // @ts-ignore
+                    autocomplete="off"
+                    placeholder="Course"
+                    ref={inputRef}
+                    onKeyDown={(e) => {
+                        if (e.keyCode === RETURN_KEY && suggestions) {
+                            e.preventDefault();
                         }
-                    }
-                }}
-                onClick={() => setActive(true)}
-            />
-            <AutoCompleteInputBackground
-                // @ts-ignore
-                autocomplete="off"
-                disabled={disabled || bulkMode}
-                value={bulkMode ? "" : backdrop}
-            />
+                    }}
+                    onKeyUp={(e) => {
+                        if (
+                            (e.keyCode === RIGHT_ARROW ||
+                                e.keyCode === RETURN_KEY) &&
+                            inputRef.current &&
+                            suggestions &&
+                            suggestions[0]
+                        ) {
+                            // autocomplete with backdrop when the right arrow key is pressed
+                            setValue(backdrop);
+                            setActive(false);
+                            inputRef.current.value = backdrop;
+                        } else if (e.keyCode === DOWN_ARROW && suggestions) {
+                            // select a suggestion when the down arrow key is pressed
+                            const newIndex = getCurrentIndex() + 1;
+                            const newSelectedSuggestion = Math.min(
+                                newIndex,
+                                suggestions.length - 1
+                            );
+                            handleSuggestionSelect(newSelectedSuggestion);
+                        } else if (e.keyCode === UP_ARROW && suggestions) {
+                            // select a suggestion when the up arrow key is pressed
+                            const newSelectedSuggestion = Math.max(
+                                getCurrentIndex() - 1,
+                                -1
+                            );
+                            handleSuggestionSelect(newSelectedSuggestion);
+                        } else {
+                            // @ts-ignore
+                            const newValue = e.target.value;
+                            setValue(newValue);
+                            if (!newValue || newValue.length < 3) {
+                                setSuggestions([]);
+                            } else {
+                                suggestionsDebounced(newValue).then(
+                                    setSuggestionsFromBackend
+                                );
+                            }
+                        }
+                    }}
+                    onClick={() => setActive(true)}
+                />
+                <AutoCompleteInputBackground
+                    // @ts-ignore
+                    autocomplete="off"
+                    disabled={disabled || bulkMode}
+                    value={bulkMode ? "" : backdrop}
+                />
+                <ClearSelection icon={faTimes} hidden={!bulkMode}/>
+            </AutoCompleteInputContainer>
             <DropdownContainer below={inputRef} hidden={!show}>
                 <DropdownBox>
                     {Object.keys(groupedSuggestions).map(key => (
