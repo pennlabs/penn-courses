@@ -137,11 +137,12 @@ interface TSuggestion {
 
 const AutoComplete = ({
     defaultValue = "",
-    onValueChange,
     setTimeline,
     disabled,
+    selectedCourses,
+    setSelectedCourses,
+    inputRef
 }) => {
-    const inputRef = useRef<HTMLInputElement>(null);
     const initialRender = useRef(true);
     const [value, setInternalValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<Section[]>([]);
@@ -151,13 +152,11 @@ const AutoComplete = ({
     ] = useState<TSuggestion | null>(null);
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
-    const [selectedCourses, setSelectedCourses] = useState<Set<Section>>(new Set())
 
     const show = active && suggestions.length > 0;
     const bulkMode = selectedCourses.size > 1;
 
     const setValue = (v) => {
-        onValueChange(v);
         return setInternalValue(v);
     };
 

@@ -6,6 +6,7 @@ import { faHistory } from "@fortawesome/free-solid-svg-icons";
 
 import { Section } from "../types";
 import Checkbox from "./common/Checkbox"
+import userEvent from "@testing-library/user-event";
 
 interface DropdownItemBoxProps {
     selected?: boolean | false;
