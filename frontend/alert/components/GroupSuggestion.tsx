@@ -166,24 +166,42 @@ const Suggestion = ({
     );
 };
 
-
 interface GroupSuggestionProps {
     sections: Section[];
     courseCode: string;
     value: string;
     selectedCourses: Set<Section>;
     inputRef: React.RefObject<HTMLInputElement>;
-    setActive: React.Dispatch<React.SetStateAction<boolean>>;
     setValue: (v: any) => void;
     setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
     setSelectedCourses: any;
 }
 
-const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRef, setActive, setValue, setTimeline, setSelectedCourses}: GroupSuggestionProps) => {
-    const [allLectures, setAllLectures] = useState(false);
-    const [allRecs, setAllRecs] = useState(false);
-    const [allLabs, setAllLabs] = useState(false);
+const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRef, setValue, setTimeline, setSelectedCourses}: GroupSuggestionProps) => {
+    
+    /**
+     * Takes the activity/type of a section and return if all sections of {type} have been selected
+     * Used to make sure to update button states when manually selecting each section
+     * @param type
+     */
+    //check if the user selected all courses of a certain type in a group suggestion
+    const selectedAllType = (type) => {
+        for (let section of sections) {
+            //selected course is the activity we are looking for & is in this group suggestion
+            if (section.activity == type && !selectedCourses.has(section)) {
+                return false;
+            }
+        }
+        
+        //all section of type are all selected then need to make sure states are in sync
 
+        return true;
+    } 
+
+    const [allLectures, setAllLectures] = useState(() => selectedAllType("LEC"));
+    const [allRecs, setAllRecs] = useState(() => selectedAllType("REC"));
+    const [allLabs, setAllLabs] = useState(() => selectedAllType("LAB"));
+    
     const toggleButton = (type) => {
         switch(type) {
             case 1:
@@ -201,19 +219,7 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
         }
     }
 
-    const isChecked = (activity) => {
-        switch (activity) {
-            case "LEC":
-                return allLectures;
-            case "REC":
-                return allRecs;
-            case "LAB":
-                return allLabs;
-            default:
-                return false;
-        }
-    }
-
+    //if one of the select all is toggled, update selected courses to match
     const syncCheckAlls = (type, checked, setSelectedCourses) => {
         const newSelectedCourses = new Set(selectedCourses);
         sections.map((section) => {
@@ -229,18 +235,7 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
         setSelectedCourses(newSelectedCourses);
     }
 
-    //selectedCourses does not contain type param
-    const doesTypeExist = (type) => {
-        for (let selectedCourse of Array.from(selectedCourses)) {
-            //selected course is the activity we are looking for & is in this group suggestion
-            if (selectedCourse.activity == type && sections.includes(selectedCourse)) {
-                return true;
-            }
-        }
-
-        return false;
-    } 
-
+    //update the selected courses set when user check/uncheck box
     const updateSelectedCourses = (selectedCourses, setSelectedCourses, suggestion) => {
         const newSelectedCourses = new Set(selectedCourses);
         if (selectedCourses.has(suggestion)) {
@@ -260,13 +255,13 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
                 <SuggestionSubtitle>{sections[0].course_title}</SuggestionSubtitle>
             </DropdownItemLeftCol>
             <ButtonContainer>
-                <ToggleButton toggled={doesTypeExist("LEC")} onClick={() => toggleButton(1)}>All Lectures</ToggleButton>
-                <ToggleButton toggled={doesTypeExist("REC")} onClick={() => toggleButton(2)}>All Recitations</ToggleButton>
-                <ToggleButton toggled={doesTypeExist("LAB")} onClick={() => toggleButton(3)}>All Labs</ToggleButton>
+                <ToggleButton toggled={selectedAllType("LEC")} onClick={() => toggleButton(1)}>All Lectures</ToggleButton>
+                <ToggleButton toggled={selectedAllType("REC")} onClick={() => toggleButton(2)}>All Recitations</ToggleButton>
+                <ToggleButton toggled={selectedAllType("LAB")} onClick={() => toggleButton(3)}>All Labs</ToggleButton>
             </ButtonContainer>
         </DropdownItemBox>
             {sections
-                .map((suggestion, index) => (
+                .map((suggestion) => (
                     <Suggestion
                         key={suggestion.section_id}
                         selected={
@@ -277,13 +272,12 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
                         onClick={() => {
                             updateSelectedCourses(selectedCourses, setSelectedCourses, suggestion);
 
+                            //show the selected course name only if not in bulk mode
                             if (inputRef.current && selectedCourses.size <= 1) {
                                 inputRef.current.value = suggestion.section_id;
                             }
 
-                            //setActive(false); dont close backdrop
                             setValue(suggestion.section_id);
-                            
                            
                         }}
                         onChangeTimeline={() => {
@@ -291,7 +285,7 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
                         }}
                         title={suggestion.course_title}
                         instructor={suggestion.instructors[0]?.name}
-                        isChecked={isChecked(suggestion.activity) || selectedCourses.has(suggestion)}
+                        isChecked={selectedCourses.has(suggestion)}
                     />
                 ))}
         </>

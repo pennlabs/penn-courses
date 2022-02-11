@@ -91,17 +91,22 @@ const Container = styled.div<{ inputHeight: string }>`
 const AutoCompleteInputContainer = styled.div`
     
 `
-//do width / 2.
-const ClearSelection = styled(FontAwesomeIcon)<{ hidden?: boolean }>`
+const ClearSelection = styled(FontAwesomeIcon)<{ hidden?: boolean, parent: RefObject<HTMLInputElement> }>`
    display: ${(props) => props.hidden ? "none" : "block"};
-   top: 22px;
-   right: 0;
+   top: ${({ parent }) =>
+   parent.current &&
+   parent.current.getBoundingClientRect().height / 2}px;
+   right: 5px;
    padding: 0 8px;
    position: absolute;
    cursor: pointer;
    font-size: 1.25rem;
    color: #c4c4c4;
    z-index: 100;
+
+   &:hover {
+    color: #e8746a;
+   }
 `
 
 /**
@@ -137,6 +142,7 @@ const AutoComplete = ({
     disabled,
 }) => {
     const inputRef = useRef<HTMLInputElement>(null);
+    const initialRender = useRef(true);
     const [value, setInternalValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<Section[]>([]);
     const [
@@ -145,7 +151,6 @@ const AutoComplete = ({
     ] = useState<TSuggestion | null>(null);
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
-    // const [bulkMode, setBulkMode] = useState(false);
     const [selectedCourses, setSelectedCourses] = useState<Set<Section>>(new Set())
 
     const show = active && suggestions.length > 0;
@@ -157,27 +162,30 @@ const AutoComplete = ({
     };
 
     useEffect(() => {
-        console.log("test");
-        for (let element of Array.from(selectedCourses)) {
-            console.log(element.section_id);
+        //Don't run if first render to prevent defaultValue of value from emptying
+        if (initialRender.current) {
+            initialRender.current = false;
+            return;
         }
 
+        //update suggestions and input value 
         if (inputRef.current) {
             if (bulkMode) {
+                //display all sections selected
                 inputRef.current.value = generateCoursesValue();
             } else if (selectedCourses.size == 1) {
-                setValue(selectedCourses.values().next().value.section_id);
-                inputRef.current.value = value;
-                
+                //display the one selected section
+                setInternalValue(selectedCourses.values().next().value.section_id);
+                inputRef.current.value = selectedCourses.values().next().value.section_id;
             } else {
+                //No sections selected, clear input and suggestions
                 inputRef.current.value = '';
-                setValue("");
-                console.log(value);
+                setInternalValue("");
             }
         }
     }, [selectedCourses]);
    
-    //create placeholder -----------
+    // Create suggestion text, backdrop
     useEffect(() => {
         setBackdrop(
             generateBackdrop(inputRef.current && value, show && suggestions)
@@ -194,7 +202,12 @@ const AutoComplete = ({
         }
     }, [suggestionsFromBackend, value]);
 
+    // Clear all sections the user selected
+    const clearSelections = () => {
+        setSelectedCourses(new Set());
+    }
 
+    // Create input text for bulk mode in the form of: [last selected section title] + [# selected courses - 1] more
     const generateCoursesValue = () => {
         let lastElement;
         for (lastElement of Array.from(selectedCourses));
@@ -263,6 +276,11 @@ const AutoComplete = ({
                         }
                     }}
                     onKeyUp={(e) => {
+                        //Only allow keying suggestions feature when selecting one section
+                        if (bulkMode) {
+                            return;
+                        }
+
                         if (
                             (e.keyCode === RIGHT_ARROW ||
                                 e.keyCode === RETURN_KEY) &&
@@ -310,13 +328,13 @@ const AutoComplete = ({
                     disabled={disabled || bulkMode}
                     value={bulkMode ? "" : backdrop}
                 />
-                <ClearSelection icon={faTimes} hidden={!bulkMode}/>
+                <ClearSelection icon={faTimes} hidden={!bulkMode} parent={inputRef} onClick={() => clearSelections()}/>
             </AutoCompleteInputContainer>
             <DropdownContainer below={inputRef} hidden={!show}>
                 <DropdownBox>
                     {Object.keys(groupedSuggestions).map(key => (
                         <GroupSuggestion sections={groupedSuggestions[key]} courseCode={key} value={value} 
-                        selectedCourses={selectedCourses} inputRef={inputRef} setActive={setActive} setValue={setValue} setTimeline={setTimeline} setSelectedCourses={setSelectedCourses}/>
+                        selectedCourses={selectedCourses} inputRef={inputRef} setValue={setValue} setTimeline={setTimeline} setSelectedCourses={setSelectedCourses}/>
                     ))}
                 </DropdownBox>
             </DropdownContainer>
