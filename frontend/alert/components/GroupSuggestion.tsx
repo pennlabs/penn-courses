@@ -178,30 +178,61 @@ interface GroupSuggestionProps {
 }
 
 const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRef, setValue, setTimeline, setSelectedCourses}: GroupSuggestionProps) => {
-    
-    /**
+
+    const [allLectures, setAllLectures] = useState(false);
+    const [allRecs, setAllRecs] = useState(false);
+    const [allLabs, setAllLabs] = useState(false);
+
+     /**
      * Takes the activity/type of a section and return if all sections of {type} have been selected
      * Used to make sure to update button states when manually selecting each section
-     * @param type
+     * @param type - section activity
      */
-    //check if the user selected all courses of a certain type in a group suggestion
     const selectedAllType = (type) => {
+        //check if the user selected all courses of a certain type in a group suggestion
         for (let section of sections) {
             //selected course is the activity we are looking for & is in this group suggestion
             if (section.activity == type && !selectedCourses.has(section)) {
+                syncButtonStates(type, false);
                 return false;
             }
         }
         
         //all section of type are all selected then need to make sure states are in sync
-
+        syncButtonStates(type, true);
         return true;
     } 
 
-    const [allLectures, setAllLectures] = useState(() => selectedAllType("LEC"));
-    const [allRecs, setAllRecs] = useState(() => selectedAllType("REC"));
-    const [allLabs, setAllLabs] = useState(() => selectedAllType("LAB"));
+    /**
+     * Update button states to match selected courses in the case the user is manually checking/unchecking sections
+     * Ex. allLectures should be true when user manually select all "LEC" sections
+     * @param type - section activity
+     */
+    const syncButtonStates = (type, correctState) => {
+        // update button state if its not the same as correctState
+        switch (type) {
+            case "LEC":
+                if (allLectures != correctState) {
+                    setAllLectures(correctState);
+                }
+                break;
+            case "REC":
+                if (allRecs != correctState) {
+                    setAllRecs(correctState);
+                }
+                break;
+            case "LAB":
+                if (allLabs != correctState) {
+                    setAllLabs(correctState);
+                }
+                break;
+        }
+    }
     
+     /**
+     * Takes the type of button clicked: LEC, REC, LABS and switch state
+     * @param type - section activity
+     */
     const toggleButton = (type) => {
         switch(type) {
             case 1:
@@ -219,7 +250,12 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
         }
     }
 
-    //if one of the select all is toggled, update selected courses to match
+    /**
+     * If one of the select all is toggled, update selected courses to match
+     * @param type - section activity
+     * @param checked - whether the section is selected or not
+     * @param setSelectedCourses - method to update selected courses set
+     */
     const syncCheckAlls = (type, checked, setSelectedCourses) => {
         const newSelectedCourses = new Set(selectedCourses);
         sections.map((section) => {
@@ -235,7 +271,12 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
         setSelectedCourses(newSelectedCourses);
     }
 
-    //update the selected courses set when user check/uncheck box
+    /**
+     * Update the selected courses set when user check/uncheck box
+     * @param selectedCourses - selected courses set
+     * @param setSelectedCourses - method to update selected courses set
+     * @param setSelectedCourses - the section
+     */
     const updateSelectedCourses = (selectedCourses, setSelectedCourses, suggestion) => {
         const newSelectedCourses = new Set(selectedCourses);
         if (selectedCourses.has(suggestion)) {
