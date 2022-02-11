@@ -141,6 +141,11 @@ const AlertForm = ({
         );
     };
 
+    // Clear all sections the user selected
+    const clearSelections = () => {
+        setSelectedCourses(new Set());
+    }
+
     const submitRegistration = () => {
         //if user has a auto fill section and didn't change the input value then register for section
         if (autoCompleteInputRef.current && autoCompleteInputRef.current.value == autofillSection) {
@@ -164,9 +169,22 @@ const AlertForm = ({
             promises.push(promise)
         })
 
+        let success = true;
         Promise.all(promises)
-            .then((responses) => responses.map(res => setResponse(res)))
-            .catch(handleError);
+            .then((responses) => {
+                responses.forEach(res => setResponse(res));
+                success = false;
+                console.log(success);
+            })
+            .catch(handleError)
+            .finally(() => {
+                if (success) {
+                    sendError(201, "Successfully registered for all sections!")
+                    clearSelections();
+                }
+            })
+        
+        
     };
 
     const onSubmit = () => {
@@ -210,6 +228,7 @@ const AlertForm = ({
                 setSelectedCourses={setSelectedCourses}
                 setTimeline={setTimeline}
                 inputRef={autoCompleteInputRef}
+                clearSelections={clearSelections}
             />
             <Input
                 placeholder="Email"

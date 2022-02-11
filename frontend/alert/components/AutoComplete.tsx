@@ -141,7 +141,8 @@ const AutoComplete = ({
     disabled,
     selectedCourses,
     setSelectedCourses,
-    inputRef
+    inputRef,
+    clearSelections
 }) => {
     const initialRender = useRef(true);
     const [value, setInternalValue] = useState(defaultValue);
@@ -200,11 +201,6 @@ const AutoComplete = ({
             }
         }
     }, [suggestionsFromBackend, value]);
-
-    // Clear all sections the user selected
-    const clearSelections = () => {
-        setSelectedCourses(new Set());
-    }
 
     // Create input text for bulk mode in the form of: [last selected section title] + [# selected courses - 1] more
     const generateCoursesValue = () => {
