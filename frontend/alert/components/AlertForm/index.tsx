@@ -172,7 +172,7 @@ const AlertForm = ({
         let success = true;
         Promise.all(promises)
             .then((responses) => {
-                responses.forEach(res => setResponse(res));
+                responses.forEach((res: Response) => setResponse(res));
                 success = false;
                 console.log(success);
             })
