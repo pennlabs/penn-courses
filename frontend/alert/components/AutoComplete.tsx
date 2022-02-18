@@ -187,7 +187,6 @@ const AutoComplete = ({
                     //Run when the only course that was selected is unselected
                     inputRef.current.value = '';
                     setInternalValue("");
-                    console.log(inputValDelete.current)
                 } else {
                     inputValDelete.current = false;
                 }
@@ -266,8 +265,6 @@ const AutoComplete = ({
         return res;
     }, {});
 
-    console.log(groupedSuggestions)
-
     return (
         <Container
             inputHeight={
@@ -324,7 +321,6 @@ const AutoComplete = ({
                             );
                             handleSuggestionSelect(newSelectedSuggestion);
                         } else if (e.keyCode === DELETE_KEY && selectedCourses.size == 1) {
-                                console.log("test")
                                 inputValDelete.current = true;
                                 clearSelections();
 
