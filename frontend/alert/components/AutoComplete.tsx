@@ -253,27 +253,17 @@ const AutoComplete = ({
         const activity = obj.activity;
     
         if (res[`${courseName}-${midNum}`]) {
-            if (res[`${courseName}-${midNum}`][`${activity}`]) {
-                res[`${courseName}-${midNum}`][`${activity}`].push(obj);
+            if (res[`${courseName}-${midNum}`][activity]) {
+                res[`${courseName}-${midNum}`][activity].push(obj);
             } else {
-                res[`${courseName}-${midNum}`][`${activity}`] = [obj];
+                res[`${courseName}-${midNum}`][activity] = [obj];
             }
            
         } else {
-            res[`${courseName}-${midNum}`] = {}
-            res[`${courseName}-${midNum}`][`${activity}`] = [obj];
+            res[`${courseName}-${midNum}`] = {[activity]: [obj]};
         }
 
         return res;
-
-        // const [courseName, midNum, endNum] = obj.section_id.split("-");
-        // if (res[`${courseName}-${midNum}`]) {
-        //     res[`${courseName}-${midNum}`].push(obj);
-        // } else {
-        //     res[`${courseName}-${midNum}`] = [obj];
-        // }
-
-        // return res;
     }, {});
 
     console.log(groupedSuggestions)

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHistory } from "@fortawesome/free-solid-svg-icons";
+import { faBullseye, faHistory } from "@fortawesome/free-solid-svg-icons";
 
 import { Section } from "../types";
 import Checkbox from "./common/Checkbox"
@@ -182,9 +182,17 @@ interface GroupSuggestionProps {
 }
 
 const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRef, setValue, setTimeline, setSelectedCourses}: GroupSuggestionProps) => {
-    const [allLectures, setAllLectures] = useState(false);
-    const [allRecs, setAllRecs] = useState(false);
-    const [allLabs, setAllLabs] = useState(false);
+    
+    const initializeButtonStates = () => {
+        let states = {};
+        Object.keys(sections).map(key => {
+            states[key] = false;
+        })
+
+        return states;
+    }
+    
+    const [buttonStates, setButtonStates] = useState(initializeButtonStates)
 
      /**
      * Takes the activity/type of a section and return if all sections of {type} have been selected
@@ -193,19 +201,17 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
      */
     const selectedAllType = (type) => {
         //check if the user selected all courses of a certain type in a group suggestion
-        if (sections[type]) {
-            for (let section of sections[type]) {
-                if (!selectedCourses.has(section)) {
-                     syncButtonStates(type, false);
-                    return false;
-                }
+        let selectedAll = true;
+
+        sections[type].map(section => {
+            if (!selectedCourses.has(section)) {
+                selectedAll = false;
             }
+         })
 
-            syncButtonStates(type, true);
-        }
+        syncButtonStates(type, selectedAll);
+        return selectedAll;
 
-
-        return true;
     } 
 
     /**
@@ -215,46 +221,24 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
      */
     const syncButtonStates = (type, correctState) => {
         // update button state if its not the same as correctState
-        switch (type) {
-            case "LEC":
-                if (allLectures != correctState) {
-                    setAllLectures(correctState);
-                }
-                break;
-            case "REC":
-                if (allRecs != correctState) {
-                    setAllRecs(correctState);
-                }
-                break;
-            case "LAB":
-                if (allLabs != correctState) {
-                    setAllLabs(correctState);
-                }
-                break;
-            default:
-                break;
+        if (buttonStates[type] && buttonStates[type] != correctState) {
+            const newButtonStates = {...buttonStates};
+            newButtonStates[type] = correctState;
+            setButtonStates(newButtonStates);
         }
     }
     
      /**
-     * Takes the type of button clicked: LEC, REC, LABS and switch state
+     * Takes the type of button clicked: LEC, REC, LABS, etc and switch state
      * @param type - section activity
      */
     const toggleButton = (type) => {
-        switch(type) {
-            case 1:
-                setAllLectures(!allLectures);
-                syncCheckAlls("LEC", !allLectures, setSelectedCourses);
-                break;
-            case 2:
-                setAllRecs(!allRecs);
-                syncCheckAlls("REC", !allRecs, setSelectedCourses);
-                break;
-            case 3:
-                setAllLabs(!allLabs);
-                syncCheckAlls("LAB", !allLabs, setSelectedCourses);
-                break;
-        }
+        const newButtonStates = {...buttonStates};
+        
+        newButtonStates[type] = !newButtonStates[type];
+        syncCheckAlls(type, newButtonStates[type], setSelectedCourses);
+
+        setButtonStates(newButtonStates);
     }
 
     /**
@@ -308,7 +292,7 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
             </DropdownItemLeftCol>
             <ButtonContainer>
                 {Object.keys(sections).map((key, index) => (
-                    <ToggleButton toggled={selectedAllType(key)} onClick={() => toggleButton(index + 1)}>All {mapActivityToString(key).length > 0 ? mapActivityToString(key) : "Uncategorized"}</ToggleButton>
+                    <ToggleButton toggled={selectedAllType(key)} onClick={() => toggleButton(key)}>All {mapActivityToString(key).length > 0 ? mapActivityToString(key) : "Uncategorized"}</ToggleButton>
                 ))}
             </ButtonContainer>
         </DropdownItemBox>
