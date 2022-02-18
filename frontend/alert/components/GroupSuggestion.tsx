@@ -7,6 +7,7 @@ import { faHistory } from "@fortawesome/free-solid-svg-icons";
 import { Section } from "../types";
 import Checkbox from "./common/Checkbox"
 import userEvent from "@testing-library/user-event";
+import { mapActivityToString } from "../util"
 
 interface DropdownItemBoxProps {
     selected?: boolean | false;
@@ -146,7 +147,9 @@ const Suggestion = ({
             }
         }
     }, [selected, ref]);
+
     return (
+        
         <DropdownItemBox selected={selected} ref={ref}>
             <CheckboxContainer onClick={() => {
                 onClick();
@@ -168,7 +171,7 @@ const Suggestion = ({
 };
 
 interface GroupSuggestionProps {
-    sections: Section[];
+    sections: any;
     courseCode: string;
     value: string;
     selectedCourses: Set<Section>;
@@ -179,7 +182,6 @@ interface GroupSuggestionProps {
 }
 
 const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRef, setValue, setTimeline, setSelectedCourses}: GroupSuggestionProps) => {
-
     const [allLectures, setAllLectures] = useState(false);
     const [allRecs, setAllRecs] = useState(false);
     const [allLabs, setAllLabs] = useState(false);
@@ -191,16 +193,18 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
      */
     const selectedAllType = (type) => {
         //check if the user selected all courses of a certain type in a group suggestion
-        for (let section of sections) {
-            //selected course is the activity we are looking for & is in this group suggestion
-            if (section.activity == type && !selectedCourses.has(section)) {
-                syncButtonStates(type, false);
-                return false;
+        if (sections[type]) {
+            for (let section of sections[type]) {
+                if (!selectedCourses.has(section)) {
+                     syncButtonStates(type, false);
+                    return false;
+                }
             }
+
+            syncButtonStates(type, true);
         }
-        
-        //all section of type are all selected then need to make sure states are in sync
-        syncButtonStates(type, true);
+
+
         return true;
     } 
 
@@ -226,6 +230,8 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
                 if (allLabs != correctState) {
                     setAllLabs(correctState);
                 }
+                break;
+            default:
                 break;
         }
     }
@@ -254,22 +260,26 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
     /**
      * If one of the select all is toggled, update selected courses to match
      * @param type - section activity
-     * @param checked - whether the section is selected or not
+     * @param checkedAll - whether all sections of type should be checked or not
      * @param setSelectedCourses - method to update selected courses set
      */
-    const syncCheckAlls = (type, checked, setSelectedCourses) => {
+    const syncCheckAlls = (type, checkedAll, setSelectedCourses) => {
         const newSelectedCourses = new Set(selectedCourses);
-        sections.map((section) => {
-            //checked = false but selectedCourses has course
-            if (section.activity == type && newSelectedCourses.has(section) && !checked) {
-                newSelectedCourses.delete(section)
-            
-            //checked = true but selectedCourses doesn't have course
-            } else if (section.activity == type && !newSelectedCourses.has(section) && checked) {
-                newSelectedCourses.add(section)
-            } 
-        })
-        setSelectedCourses(newSelectedCourses);
+        
+        if (sections[type]) {
+            sections[type].map((section) => {
+                //checkedAll = false but selectedCourses has course
+                if (newSelectedCourses.has(section) && !checkedAll) {
+                    newSelectedCourses.delete(section)
+                
+                //checkedAll = true but selectedCourses doesn't have course
+                } else if (!newSelectedCourses.has(section) && checkedAll) {
+                    newSelectedCourses.add(section)
+                } 
+            })
+            setSelectedCourses(newSelectedCourses);
+        }
+        
     }
 
     /**
@@ -294,16 +304,16 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
         <DropdownItemBox headerBox={true}>
             <DropdownItemLeftCol headerBox={true}>
                 <SuggestionTitle>{courseCode}</SuggestionTitle>
-                <SuggestionSubtitle>{sections[0].course_title}</SuggestionSubtitle>
+                <SuggestionSubtitle>{sections[Object.keys(sections)[0]].length > 0 && sections[Object.keys(sections)[0]][0].course_title}</SuggestionSubtitle>
             </DropdownItemLeftCol>
             <ButtonContainer>
-                <ToggleButton toggled={selectedAllType("LEC")} onClick={() => toggleButton(1)}>All Lectures</ToggleButton>
-                <ToggleButton toggled={selectedAllType("REC")} onClick={() => toggleButton(2)}>All Recitations</ToggleButton>
-                <ToggleButton toggled={selectedAllType("LAB")} onClick={() => toggleButton(3)}>All Labs</ToggleButton>
+                {Object.keys(sections).map((key, index) => (
+                    <ToggleButton toggled={selectedAllType(key)} onClick={() => toggleButton(index + 1)}>All {mapActivityToString(key).length > 0 ? mapActivityToString(key) : "Uncategorized"}</ToggleButton>
+                ))}
             </ButtonContainer>
         </DropdownItemBox>
-            {sections
-                .map((suggestion) => (
+            {Object.keys(sections).map(key => (
+                sections[key].map(suggestion => (
                     <Suggestion
                         key={suggestion.section_id}
                         selected={
@@ -329,7 +339,8 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
                         instructor={suggestion.instructors[0]?.name}
                         isChecked={selectedCourses.has(suggestion)}
                     />
-                ))}
+                ))  
+            ))}
         </>
     );
 };

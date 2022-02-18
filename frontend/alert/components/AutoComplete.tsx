@@ -38,6 +38,7 @@ const UP_ARROW = 38;
 const RIGHT_ARROW = 39;
 const DOWN_ARROW = 40;
 const RETURN_KEY = 13;
+const DELETE_KEY = 8;
 
 const DropdownContainer = styled.div<{ below: RefObject<HTMLInputElement> }>`
     position: absolute;
@@ -145,6 +146,8 @@ const AutoComplete = ({
     clearSelections
 }) => {
     const initialRender = useRef(true);
+    const inputValDelete = useRef(false);
+
     const [value, setInternalValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<Section[]>([]);
     const [
@@ -178,10 +181,19 @@ const AutoComplete = ({
                 setInternalValue(selectedCourses.values().next().value.section_id);
                 inputRef.current.value = selectedCourses.values().next().value.section_id;
             } else {
-                //No sections selected, clear input and suggestions
-                inputRef.current.value = '';
-                setInternalValue("");
+                if (!inputValDelete.current) {
+                    
+                    //No sections selected, clear input and suggestions
+                    //Run when the only course that was selected is unselected
+                    inputRef.current.value = '';
+                    setInternalValue("");
+                    console.log(inputValDelete.current)
+                } else {
+                    inputValDelete.current = false;
+                }
+                
             }
+            
         }
     }, [selectedCourses]);
    
@@ -238,14 +250,33 @@ const AutoComplete = ({
      */
     const groupedSuggestions = suggestions.sort((a, b) => a.section_id.localeCompare(b.section_id)).reduce((res, obj) => {
         const [courseName, midNum, endNum] = obj.section_id.split("-");
+        const activity = obj.activity;
+    
         if (res[`${courseName}-${midNum}`]) {
-            res[`${courseName}-${midNum}`].push(obj);
+            if (res[`${courseName}-${midNum}`][`${activity}`]) {
+                res[`${courseName}-${midNum}`][`${activity}`].push(obj);
+            } else {
+                res[`${courseName}-${midNum}`][`${activity}`] = [obj];
+            }
+           
         } else {
-            res[`${courseName}-${midNum}`] = [obj];
+            res[`${courseName}-${midNum}`] = {}
+            res[`${courseName}-${midNum}`][`${activity}`] = [obj];
         }
 
         return res;
+
+        // const [courseName, midNum, endNum] = obj.section_id.split("-");
+        // if (res[`${courseName}-${midNum}`]) {
+        //     res[`${courseName}-${midNum}`].push(obj);
+        // } else {
+        //     res[`${courseName}-${midNum}`] = [obj];
+        // }
+
+        // return res;
     }, {});
+
+    console.log(groupedSuggestions)
 
     return (
         <Container
@@ -302,6 +333,11 @@ const AutoComplete = ({
                                 -1
                             );
                             handleSuggestionSelect(newSelectedSuggestion);
+                        } else if (e.keyCode === DELETE_KEY && selectedCourses.size == 1) {
+                                console.log("test")
+                                inputValDelete.current = true;
+                                clearSelections();
+
                         } else {
                             // @ts-ignore
                             const newValue = e.target.value;
