@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components"
+import styled from "styled-components";
 
 import { faCheckSquare, faSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -12,21 +12,19 @@ const IconContainer = styled.div<IconContainerProps>`
     align-items: center;
     justify-content: center;
     font-size: 1.25rem;
-    color: #489BE8;
+    color: #489be8;
     width: 1rem;
     height: 1rem;
 
     ${(props) =>
         !props.checked ? "border: 1px solid #7A848D" : "border: none"}
-`
-
+`;
 
 interface CheckboxProps {
     checked: boolean;
 }
 
-const Checkbox = ({checked}: CheckboxProps) => {
-
+const Checkbox = ({ checked }: CheckboxProps) => {
     return (
         <div
             aria-checked="false"
@@ -41,10 +39,10 @@ const Checkbox = ({checked}: CheckboxProps) => {
             }}
         >
             <IconContainer checked={checked}>
-                {checked && <FontAwesomeIcon icon={faCheckSquare}></FontAwesomeIcon>}
+                {checked && <FontAwesomeIcon icon={faCheckSquare} />}
             </IconContainer>
         </div>
     );
-}
+};
 
 export default Checkbox;
