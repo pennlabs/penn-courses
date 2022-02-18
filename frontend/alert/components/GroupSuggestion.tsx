@@ -195,21 +195,21 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
     const [buttonStates, setButtonStates] = useState(initializeButtonStates)
 
      /**
-     * Takes the activity/type of a section and return if all sections of {type} have been selected
+     * Takes the activity/activity of a section and return if all sections of {activity} have been selected
      * Used to make sure to update button states when manually selecting each section
-     * @param type - section activity
+     * @param activity - section activity
      */
-    const selectedAllType = (type) => {
-        //check if the user selected all courses of a certain type in a group suggestion
+    const selectedAllactivity = (activity) => {
+        //check if the user selected all courses of a certain activity in a group suggestion
         let selectedAll = true;
 
-        sections[type].map(section => {
+        sections[activity].map(section => {
             if (!selectedCourses.has(section)) {
                 selectedAll = false;
             }
          })
 
-        syncButtonStates(type, selectedAll);
+        syncButtonStates(activity, selectedAll);
         return selectedAll;
 
     } 
@@ -217,41 +217,41 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
     /**
      * Update button states to match selected courses in the case the user is manually checking/unchecking sections
      * Ex. allLectures should be true when user manually select all "LEC" sections
-     * @param type - section activity
+     * @param activity - section activity
      */
-    const syncButtonStates = (type, correctState) => {
+    const syncButtonStates = (activity, correctState) => {
         // update button state if its not the same as correctState
-        if (buttonStates[type] && buttonStates[type] != correctState) {
+        if (buttonStates[activity] && buttonStates[activity] != correctState) {
             const newButtonStates = {...buttonStates};
-            newButtonStates[type] = correctState;
+            newButtonStates[activity] = correctState;
             setButtonStates(newButtonStates);
         }
     }
     
      /**
-     * Takes the type of button clicked: LEC, REC, LABS, etc and switch state
-     * @param type - section activity
+     * Takes the activity of button clicked: LEC, REC, LABS, etc and switch state
+     * @param activity - section activity
      */
-    const toggleButton = (type) => {
+    const toggleButton = (activity) => {
         const newButtonStates = {...buttonStates};
         
-        newButtonStates[type] = !newButtonStates[type];
-        syncCheckAlls(type, newButtonStates[type], setSelectedCourses);
+        newButtonStates[activity] = !newButtonStates[activity];
+        syncCheckAlls(activity, newButtonStates[activity], setSelectedCourses);
 
         setButtonStates(newButtonStates);
     }
 
     /**
      * If one of the select all is toggled, update selected courses to match
-     * @param type - section activity
-     * @param checkedAll - whether all sections of type should be checked or not
+     * @param activity - section activity
+     * @param checkedAll - whether all sections of activity should be checked or not
      * @param setSelectedCourses - method to update selected courses set
      */
-    const syncCheckAlls = (type, checkedAll, setSelectedCourses) => {
+    const syncCheckAlls = (activity, checkedAll, setSelectedCourses) => {
         const newSelectedCourses = new Set(selectedCourses);
         
-        if (sections[type]) {
-            sections[type].map((section) => {
+        if (sections[activity]) {
+            sections[activity].map((section) => {
                 //checkedAll = false but selectedCourses has course
                 if (newSelectedCourses.has(section) && !checkedAll) {
                     newSelectedCourses.delete(section)
@@ -292,7 +292,7 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
             </DropdownItemLeftCol>
             <ButtonContainer>
                 {Object.keys(sections).map((key, index) => (
-                    <ToggleButton toggled={selectedAllType(key)} onClick={() => toggleButton(key)}>All {mapActivityToString(key).length > 0 ? mapActivityToString(key) : "Uncategorized"}</ToggleButton>
+                    <ToggleButton toggled={selectedAllactivity(key)} onClick={() => toggleButton(key)}>All {mapActivityToString(key).length > 0 ? mapActivityToString(key) : "Uncategorized"}</ToggleButton>
                 ))}
             </ButtonContainer>
         </DropdownItemBox>
