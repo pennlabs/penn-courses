@@ -101,7 +101,9 @@ const AlertForm = ({
     setTimeline,
     autofillSection = "",
 }: AlertFormProps) => {
-    const [selectedCourses, setSelectedCourses] = useState<Set<Section>>(new Set())
+    const [selectedCourses, setSelectedCourses] = useState<Set<Section>>(
+        new Set()
+    );
 
     const [email, setEmail] = useState("");
 
@@ -144,11 +146,14 @@ const AlertForm = ({
     // Clear all sections the user selected
     const clearSelections = () => {
         setSelectedCourses(new Set());
-    }
+    };
 
     const submitRegistration = () => {
-        //if user has a auto fill section and didn't change the input value then register for section
-        if (autoCompleteInputRef.current && autoCompleteInputRef.current.value == autofillSection) {
+        // if user has a auto fill section and didn't change the input value then register for section
+        if (
+            autoCompleteInputRef.current &&
+            autoCompleteInputRef.current.value == autofillSection
+        ) {
             doAPIRequest("/api/alert/registrations/", "POST", {
                 section: autofillSection,
                 auto_resubscribe: autoResub === "true",
@@ -157,17 +162,15 @@ const AlertForm = ({
                 .catch(handleError);
         }
 
-        selectedCourses.forEach((section) => console.log(section.section_id))
-
         // register all selected sections
-        let promises: any = []
+        const promises: any = [];
         selectedCourses.forEach((section) => {
             const promise = doAPIRequest("/api/alert/registrations/", "POST", {
                 section: section.section_id,
                 auto_resubscribe: autoResub === "true",
-            })
-            promises.push(promise)
-        })
+            });
+            promises.push(promise);
+        });
 
         let success = true;
         Promise.all(promises)
@@ -179,12 +182,10 @@ const AlertForm = ({
             .catch(handleError)
             .finally(() => {
                 if (success) {
-                    sendError(201, "Successfully registered for all sections!")
+                    sendError(201, "Successfully registered for all sections!");
                     clearSelections();
                 }
-            })
-        
-        
+            });
     };
 
     const onSubmit = () => {

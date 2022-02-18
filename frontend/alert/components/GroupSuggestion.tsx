@@ -4,10 +4,10 @@ import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBullseye, faHistory } from "@fortawesome/free-solid-svg-icons";
 
-import { Section } from "../types";
-import Checkbox from "./common/Checkbox"
 import userEvent from "@testing-library/user-event";
-import { mapActivityToString } from "../util"
+import { Section } from "../types";
+import Checkbox from "./common/Checkbox";
+import { mapActivityToString } from "../util";
 
 interface DropdownItemBoxProps {
     selected?: boolean | false;
@@ -23,7 +23,7 @@ const DropdownItemBox = styled.div<DropdownItemBoxProps>`
     padding-bottom: 1rem;
     display: flex;
     justify-content: stretch;
-    flex-direction: ${(props) => props.headerBox ? "column" : "row"};
+    flex-direction: ${(props) => (props.headerBox ? "column" : "row")};
     cursor: pointer;
     ${(props) =>
         props.selected ? "background-color: rgb(235, 235, 235);" : ""}
@@ -31,13 +31,12 @@ const DropdownItemBox = styled.div<DropdownItemBoxProps>`
     &:hover {
         ${(props) =>
             !props.headerBox ? "background-color: rgb(220, 220, 220);" : ""}
-        
     }
 `;
 
 const DropdownItemLeftCol = styled.div<{ headerBox?: boolean | false }>`
-    max-width: ${(props) => props.headerBox ? "100%" : "65%"};
-    flex-basis: ${(props) => props.headerBox ? "100%" : "65%"};
+    max-width: ${(props) => (props.headerBox ? "100%" : "65%")};
+    flex-basis: ${(props) => (props.headerBox ? "100%" : "65%")};
     flex-grow: 1;
 `;
 
@@ -69,12 +68,12 @@ const IconContainer = styled.div`
 
 const CheckboxContainer = styled.div`
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     flex-basis: 15%;
     flex-grow: 1;
-`
+`;
 
 const ButtonContainer = styled.div`
     display: flex;
@@ -83,18 +82,17 @@ const ButtonContainer = styled.div`
     flex-grow: 1;
     flex-basis: 100%;
     margin-top: 8px;
-`
+`;
 
 const ToggleButton = styled.div<{ toggled: boolean }>`
     border-radius: 18.5px;
-    border: 1px solid ${(props) => props.toggled ? "#5891FC" : "#D6D6D6"};
-    color: ${(props) => props.toggled ? "#5891FC" : "#7A848D"};
+    border: 1px solid ${(props) => (props.toggled ? "#5891FC" : "#D6D6D6")};
+    color: ${(props) => (props.toggled ? "#5891FC" : "#7A848D")};
     font-size: 12px;
-    background-color: ${(props) => props.toggled ? "#EBF2FF" : "#ffffff"};
+    background-color: ${(props) => (props.toggled ? "#EBF2FF" : "#ffffff")};
     padding: 4px 8px;
     margin-right: 8px;
-`
-
+`;
 
 const HistoryIcon = styled(FontAwesomeIcon)`
     color: #c4c4c4;
@@ -149,19 +147,23 @@ const Suggestion = ({
     }, [selected, ref]);
 
     return (
-        
         <DropdownItemBox selected={selected} ref={ref}>
-            <CheckboxContainer onClick={() => {
-                onClick();
-                setChecked(!checked)}}>
-                <Checkbox checked={checked}/>
+            <CheckboxContainer
+                onClick={() => {
+                    onClick();
+                    setChecked(!checked);
+                }}
+            >
+                <Checkbox checked={checked} />
             </CheckboxContainer>
-            <DropdownItemLeftCol onClick={() => {
-                onClick();
-                setChecked(!checked);
-            }}>
+            <DropdownItemLeftCol
+                onClick={() => {
+                    onClick();
+                    setChecked(!checked);
+                }}
+            >
                 <SuggestionTitle>{courseCode}</SuggestionTitle>
-                <SuggestionSubtitle>{instructor ? instructor : "TBA"}</SuggestionSubtitle>
+                <SuggestionSubtitle>{instructor || "TBA"}</SuggestionSubtitle>
             </DropdownItemLeftCol>
             <IconContainer onClick={onChangeTimeline}>
                 <HistoryIcon icon={faHistory} className="historyIcon" />
@@ -181,38 +183,45 @@ interface GroupSuggestionProps {
     setSelectedCourses: any;
 }
 
-const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRef, setValue, setTimeline, setSelectedCourses}: GroupSuggestionProps) => {
-    
+const GroupSuggestion = ({
+    sections,
+    courseCode,
+    value,
+    selectedCourses,
+    inputRef,
+    setValue,
+    setTimeline,
+    setSelectedCourses,
+}: GroupSuggestionProps) => {
     const initializeButtonStates = () => {
-        let states = {};
-        Object.keys(sections).map(key => {
+        const states = {};
+        Object.keys(sections).map((key) => {
             states[key] = false;
-        })
+        });
 
         return states;
-    }
-    
-    const [buttonStates, setButtonStates] = useState(initializeButtonStates)
+    };
 
-     /**
+    const [buttonStates, setButtonStates] = useState(initializeButtonStates);
+
+    /**
      * Takes the activity/activity of a section and return if all sections of {activity} have been selected
      * Used to make sure to update button states when manually selecting each section
      * @param activity - section activity
      */
-    const selectedAllactivity = (activity) => {
-        //check if the user selected all courses of a certain activity in a group suggestion
+    const selectedAllActivity = (activity) => {
+        // check if the user selected all courses of a certain activity in a group suggestion
         let selectedAll = true;
 
-        sections[activity].map(section => {
+        sections[activity].map((section) => {
             if (!selectedCourses.has(section)) {
                 selectedAll = false;
             }
-         })
+        });
 
         syncButtonStates(activity, selectedAll);
         return selectedAll;
-
-    } 
+    };
 
     /**
      * Update button states to match selected courses in the case the user is manually checking/unchecking sections
@@ -221,25 +230,25 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
      */
     const syncButtonStates = (activity, correctState) => {
         // update button state if its not the same as correctState
-        if (buttonStates[activity] && buttonStates[activity] != correctState) {
-            const newButtonStates = {...buttonStates};
+        if (buttonStates[activity] != correctState) {
+            const newButtonStates = { ...buttonStates };
             newButtonStates[activity] = correctState;
             setButtonStates(newButtonStates);
         }
-    }
-    
-     /**
+    };
+
+    /**
      * Takes the activity of button clicked: LEC, REC, LABS, etc and switch state
      * @param activity - section activity
      */
     const toggleButton = (activity) => {
-        const newButtonStates = {...buttonStates};
-        
+        const newButtonStates = { ...buttonStates };
+
         newButtonStates[activity] = !newButtonStates[activity];
         syncCheckAlls(activity, newButtonStates[activity], setSelectedCourses);
 
         setButtonStates(newButtonStates);
-    }
+    };
 
     /**
      * If one of the select all is toggled, update selected courses to match
@@ -249,22 +258,21 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
      */
     const syncCheckAlls = (activity, checkedAll, setSelectedCourses) => {
         const newSelectedCourses = new Set(selectedCourses);
-        
+
         if (sections[activity]) {
             sections[activity].map((section) => {
-                //checkedAll = false but selectedCourses has course
+                // checkedAll = false but selectedCourses has course
                 if (newSelectedCourses.has(section) && !checkedAll) {
-                    newSelectedCourses.delete(section)
-                
-                //checkedAll = true but selectedCourses doesn't have course
+                    newSelectedCourses.delete(section);
+
+                    // checkedAll = true but selectedCourses doesn't have course
                 } else if (!newSelectedCourses.has(section) && checkedAll) {
-                    newSelectedCourses.add(section)
-                } 
-            })
+                    newSelectedCourses.add(section);
+                }
+            });
             setSelectedCourses(newSelectedCourses);
         }
-        
-    }
+    };
 
     /**
      * Update the selected courses set when user check/uncheck box
@@ -272,7 +280,11 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
      * @param setSelectedCourses - method to update selected courses set
      * @param setSelectedCourses - the section
      */
-    const updateSelectedCourses = (selectedCourses, setSelectedCourses, suggestion) => {
+    const updateSelectedCourses = (
+        selectedCourses,
+        setSelectedCourses,
+        suggestion
+    ) => {
         const newSelectedCourses = new Set(selectedCourses);
         if (selectedCourses.has(suggestion)) {
             newSelectedCourses.delete(suggestion);
@@ -280,24 +292,34 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
             newSelectedCourses.add(suggestion);
         }
         setSelectedCourses(newSelectedCourses);
-       
-    }
+    };
 
     return (
         <>
-        <DropdownItemBox headerBox={true}>
-            <DropdownItemLeftCol headerBox={true}>
-                <SuggestionTitle>{courseCode}</SuggestionTitle>
-                <SuggestionSubtitle>{sections[Object.keys(sections)[0]].length > 0 && sections[Object.keys(sections)[0]][0].course_title}</SuggestionSubtitle>
-            </DropdownItemLeftCol>
-            <ButtonContainer>
-                {Object.keys(sections).map((key, index) => (
-                    <ToggleButton toggled={selectedAllactivity(key)} onClick={() => toggleButton(key)}>All {mapActivityToString(key).length > 0 ? mapActivityToString(key) : "Uncategorized"}</ToggleButton>
-                ))}
-            </ButtonContainer>
-        </DropdownItemBox>
-            {Object.keys(sections).map(key => (
-                sections[key].map(suggestion => (
+            <DropdownItemBox headerBox={true}>
+                <DropdownItemLeftCol headerBox={true}>
+                    <SuggestionTitle>{courseCode}</SuggestionTitle>
+                    <SuggestionSubtitle>
+                        {sections[Object.keys(sections)[0]].length > 0 &&
+                            sections[Object.keys(sections)[0]][0].course_title}
+                    </SuggestionSubtitle>
+                </DropdownItemLeftCol>
+                <ButtonContainer>
+                    {Object.keys(sections).map((key, index) => (
+                        <ToggleButton
+                            toggled={selectedAllActivity(key)}
+                            onClick={() => toggleButton(key)}
+                        >
+                            All{" "}
+                            {mapActivityToString(key).length > 0
+                                ? mapActivityToString(key)
+                                : "Uncategorized"}
+                        </ToggleButton>
+                    ))}
+                </ButtonContainer>
+            </DropdownItemBox>
+            {Object.keys(sections).map((key) =>
+                sections[key].map((suggestion) => (
                     <Suggestion
                         key={suggestion.section_id}
                         selected={
@@ -306,15 +328,18 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
                         }
                         courseCode={suggestion.section_id}
                         onClick={() => {
-                            updateSelectedCourses(selectedCourses, setSelectedCourses, suggestion);
+                            updateSelectedCourses(
+                                selectedCourses,
+                                setSelectedCourses,
+                                suggestion
+                            );
 
-                            //show the selected course name only if not in bulk mode
+                            // show the selected course name only if not in bulk mode
                             if (inputRef.current && selectedCourses.size <= 1) {
                                 inputRef.current.value = suggestion.section_id;
                             }
 
                             setValue(suggestion.section_id);
-                           
                         }}
                         onChangeTimeline={() => {
                             setTimeline(suggestion.section_id);
@@ -323,8 +348,8 @@ const GroupSuggestion = ({ sections, courseCode, value, selectedCourses, inputRe
                         instructor={suggestion.instructors[0]?.name}
                         isChecked={selectedCourses.has(suggestion)}
                     />
-                ))  
-            ))}
+                ))
+            )}
         </>
     );
 };

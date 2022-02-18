@@ -9,7 +9,7 @@ import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { Input } from "./Input";
 import { Section } from "../types";
-import GroupSuggestion from "./GroupSuggestion"
+import GroupSuggestion from "./GroupSuggestion";
 
 /* A function that takes in a search term and returns a promise with both the search term and
 the search results.
@@ -89,26 +89,27 @@ const Container = styled.div<{ inputHeight: string }>`
     height: ${(props) => props.inputHeight};
 `;
 
-const AutoCompleteInputContainer = styled.div`
-    
-`
-const ClearSelection = styled(FontAwesomeIcon)<{ hidden?: boolean, parent: RefObject<HTMLInputElement> }>`
-   display: ${(props) => props.hidden ? "none" : "block"};
-   top: ${({ parent }) =>
-   parent.current &&
-   parent.current.getBoundingClientRect().height / 2}px;
-   right: 5px;
-   padding: 0 8px;
-   position: absolute;
-   cursor: pointer;
-   font-size: 1.25rem;
-   color: #c4c4c4;
-   z-index: 100;
+const AutoCompleteInputContainer = styled.div``;
 
-   &:hover {
-    color: #e8746a;
-   }
-`
+const ClearSelection = styled(FontAwesomeIcon)<{
+    hidden?: boolean;
+    parent: RefObject<HTMLInputElement>;
+}>`
+    display: ${(props) => (props.hidden ? "none" : "block")};
+    top: ${({ parent }) =>
+        parent.current && parent.current.getBoundingClientRect().height / 2}px;
+    right: 5px;
+    padding: 0 8px;
+    position: absolute;
+    cursor: pointer;
+    font-size: 1.25rem;
+    color: #c4c4c4;
+    z-index: 100;
+
+    &:hover {
+        color: #e8746a;
+    }
+`;
 
 /**
  * Given a current input value and a list of suggestions, generates the backdrop text for the
@@ -143,7 +144,7 @@ const AutoComplete = ({
     selectedCourses,
     setSelectedCourses,
     inputRef,
-    clearSelections
+    clearSelections,
 }) => {
     const initialRender = useRef(true);
     const inputValDelete = useRef(false);
@@ -165,37 +166,36 @@ const AutoComplete = ({
     };
 
     useEffect(() => {
-        //Don't run if first render to prevent defaultValue of value from emptying
+        // Don't run if first render to prevent defaultValue of value from emptying
         if (initialRender.current) {
             initialRender.current = false;
             return;
         }
 
-        //update suggestions and input value 
+        // update suggestions and input value
         if (inputRef.current) {
             if (bulkMode) {
-                //display all sections selected
+                // display all sections selected
                 inputRef.current.value = generateCoursesValue();
             } else if (selectedCourses.size == 1) {
-                //display the one selected section
-                setInternalValue(selectedCourses.values().next().value.section_id);
-                inputRef.current.value = selectedCourses.values().next().value.section_id;
+                // display the one selected section
+                setInternalValue(
+                    selectedCourses.values().next().value.section_id
+                );
+                inputRef.current.value = selectedCourses
+                    .values()
+                    .next().value.section_id;
+            } else if (!inputValDelete.current) {
+                // No sections selected, clear input and suggestions
+                // Run when the only course that was selected is unselected
+                inputRef.current.value = "";
+                setInternalValue("");
             } else {
-                if (!inputValDelete.current) {
-                    
-                    //No sections selected, clear input and suggestions
-                    //Run when the only course that was selected is unselected
-                    inputRef.current.value = '';
-                    setInternalValue("");
-                } else {
-                    inputValDelete.current = false;
-                }
-                
+                inputValDelete.current = false;
             }
-            
         }
     }, [selectedCourses]);
-   
+
     // Create suggestion text, backdrop
     useEffect(() => {
         setBackdrop(
@@ -217,8 +217,8 @@ const AutoComplete = ({
     const generateCoursesValue = () => {
         let lastElement;
         for (lastElement of Array.from(selectedCourses));
-        return lastElement.section_id + " + " + (selectedCourses.size - 1) + " more";
-    }
+        return `${lastElement.section_id} + ${selectedCourses.size - 1} more`;
+    };
 
     /**
      * Takes in the index of a new selected suggestion and updates state accordingly
@@ -247,23 +247,24 @@ const AutoComplete = ({
      * Returns suggested suggestion grouped by course
      * @return suggestions
      */
-    const groupedSuggestions = suggestions.sort((a, b) => a.section_id.localeCompare(b.section_id)).reduce((res, obj) => {
-        const [courseName, midNum, endNum] = obj.section_id.split("-");
-        const activity = obj.activity;
-    
-        if (res[`${courseName}-${midNum}`]) {
-            if (res[`${courseName}-${midNum}`][activity]) {
-                res[`${courseName}-${midNum}`][activity].push(obj);
-            } else {
-                res[`${courseName}-${midNum}`][activity] = [obj];
-            }
-           
-        } else {
-            res[`${courseName}-${midNum}`] = {[activity]: [obj]};
-        }
+    const groupedSuggestions = suggestions
+        .sort((a, b) => a.section_id.localeCompare(b.section_id))
+        .reduce((res, obj) => {
+            const [courseName, midNum, endNum] = obj.section_id.split("-");
+            const { activity } = obj;
 
-        return res;
-    }, {});
+            if (res[`${courseName}-${midNum}`]) {
+                if (res[`${courseName}-${midNum}`][activity]) {
+                    res[`${courseName}-${midNum}`][activity].push(obj);
+                } else {
+                    res[`${courseName}-${midNum}`][activity] = [obj];
+                }
+            } else {
+                res[`${courseName}-${midNum}`] = { [activity]: [obj] };
+            }
+
+            return res;
+        }, {});
 
     return (
         <Container
@@ -289,7 +290,7 @@ const AutoComplete = ({
                         }
                     }}
                     onKeyUp={(e) => {
-                        //Only allow keying suggestions feature when selecting one section
+                        // Only allow keying suggestions feature when selecting one section
                         if (bulkMode) {
                             return;
                         }
@@ -320,10 +321,12 @@ const AutoComplete = ({
                                 -1
                             );
                             handleSuggestionSelect(newSelectedSuggestion);
-                        } else if (e.keyCode === DELETE_KEY && selectedCourses.size == 1) {
-                                inputValDelete.current = true;
-                                clearSelections();
-
+                        } else if (
+                            e.keyCode === DELETE_KEY &&
+                            selectedCourses.size == 1
+                        ) {
+                            inputValDelete.current = true;
+                            clearSelections();
                         } else {
                             // @ts-ignore
                             const newValue = e.target.value;
@@ -345,13 +348,26 @@ const AutoComplete = ({
                     disabled={disabled || bulkMode}
                     value={bulkMode ? "" : backdrop}
                 />
-                <ClearSelection icon={faTimes} hidden={!bulkMode} parent={inputRef} onClick={() => clearSelections()}/>
+                <ClearSelection
+                    icon={faTimes}
+                    hidden={!bulkMode}
+                    parent={inputRef}
+                    onClick={() => clearSelections()}
+                />
             </AutoCompleteInputContainer>
             <DropdownContainer below={inputRef} hidden={!show}>
                 <DropdownBox>
-                    {Object.keys(groupedSuggestions).map(key => (
-                        <GroupSuggestion sections={groupedSuggestions[key]} courseCode={key} value={value} 
-                        selectedCourses={selectedCourses} inputRef={inputRef} setValue={setValue} setTimeline={setTimeline} setSelectedCourses={setSelectedCourses}/>
+                    {Object.keys(groupedSuggestions).map((key) => (
+                        <GroupSuggestion
+                            sections={groupedSuggestions[key]}
+                            courseCode={key}
+                            value={value}
+                            selectedCourses={selectedCourses}
+                            inputRef={inputRef}
+                            setValue={setValue}
+                            setTimeline={setTimeline}
+                            setSelectedCourses={setSelectedCourses}
+                        />
                     ))}
                 </DropdownBox>
             </DropdownContainer>
