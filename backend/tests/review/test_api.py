@@ -7,7 +7,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Instructor
+from courses.models import Instructor, Restriction, Section, StatusUpdate
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
 
@@ -172,7 +172,11 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         self.client.force_login(User.objects.create_user(username="test"))
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review(
-            "CIS-120-002", "2007C", self.instructor_name, {"instructor_quality": 0}, responses=0,
+            "CIS-120-002",
+            "2007C",
+            self.instructor_name,
+            {"instructor_quality": 0},
+            responses=0,
         )
         create_review(
             "CIS-120-001",
@@ -234,7 +238,13 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                         "url": f"/instructor/{no_responses_instructor.pk}",
                     },
                 ],
-                "courses": [{"title": "CIS-120", "desc": [""], "url": "/course/CIS-120",}],
+                "courses": [
+                    {
+                        "title": "CIS-120",
+                        "desc": [""],
+                        "url": "/course/CIS-120",
+                    }
+                ],
                 "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
             },
         )
@@ -250,7 +260,11 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review(
-            "CIS-120-002", "2007C", self.instructor_name, {"instructor_quality": 0}, responses=0,
+            "CIS-120-002",
+            "2007C",
+            self.instructor_name,
+            {"instructor_quality": 0},
+            responses=0,
         )
         create_review(
             "CIS-120-001",
@@ -296,6 +310,55 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         )
 
 
+class TwoSectionsOneSemesterTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        self.instructor_name = "Instructor One"
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("CIS-120-002", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 2})
+
+    def test_course(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 1,
+                **average_and_recent(3, 3),
+                "instructors": {
+                    Instructor.objects.get(name=self.instructor_name).pk: {
+                        **average_and_recent(3, 3),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+        )
+
+    def test_instructor(self):
+        self.assertRequestContainsAppx(
+            "instructor-reviews",
+            Instructor.objects.get(name=self.instructor_name).pk,
+            {
+                **average_and_recent(3, 3),
+                "num_semesters": 1,
+                "courses": {"CIS-120": average_and_recent(3, 3)},
+            },
+        )
+
+    def test_department(self):
+        self.assertRequestContainsAppx(
+            "department-reviews", "CIS", {"courses": {"CIS-120": average_and_recent(3, 3)}}
+        )
+
+    def test_history(self):
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-120", Instructor.objects.get(name=self.instructor_name).pk],
+            {"sections": [rating(4), rating(2)]},
+        )
+
+
 class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         set_semester()
@@ -307,7 +370,11 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review(
-            "CIS-120-002", "2007C", self.instructor_name, {"instructor_quality": 0}, responses=0,
+            "CIS-120-002",
+            "2007C",
+            self.instructor_name,
+            {"instructor_quality": 0},
+            responses=0,
         )
         create_review(
             "CIS-120-001",
@@ -351,7 +418,11 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         create_review(
-            "CIS-120-002", "2007C", self.instructor_name, {"instructor_quality": 0}, responses=0,
+            "CIS-120-002",
+            "2007C",
+            self.instructor_name,
+            {"instructor_quality": 0},
+            responses=0,
         )
         create_review(
             "CIS-120-001",
@@ -401,7 +472,11 @@ class TwoSectionTestCase(TestCase, PCRTestMixin):
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         create_review(
-            "CIS-120-002", "2007C", self.instructor_name, {"instructor_quality": 0}, responses=0,
+            "CIS-120-002",
+            "2007C",
+            self.instructor_name,
+            {"instructor_quality": 0},
+            responses=0,
         )
         create_review(
             "CIS-120-001",
@@ -452,7 +527,11 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
         create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", "2017A", "Instructor Two", {"instructor_quality": 2})
         create_review(
-            "CIS-120-002", "2007C", self.instructor_name, {"instructor_quality": 0}, responses=0,
+            "CIS-120-002",
+            "2007C",
+            self.instructor_name,
+            {"instructor_quality": 0},
+            responses=0,
         )
         create_review(
             "CIS-120-001",
@@ -511,7 +590,11 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
         set_semester()
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
         create_review(
-            "CIS-120-002", "2007C", "Instructor One", {"instructor_quality": 0}, responses=0,
+            "CIS-120-002",
+            "2007C",
+            "Instructor One",
+            {"instructor_quality": 0},
+            responses=0,
         )
         create_review(
             "CIS-120-001",
@@ -582,7 +665,11 @@ class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
         set_semester()
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
         create_review(
-            "CIS-120-002", "2007C", "Instructor One", {"instructor_quality": 0}, responses=0,
+            "CIS-120-002",
+            "2007C",
+            "Instructor One",
+            {"instructor_quality": 0},
+            responses=0,
         )
         create_review(
             "CIS-120-001",
@@ -608,6 +695,63 @@ class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
             },
         )
         self.assertEqual(1, len(res["instructors"]))
+
+
+class RegistrationMetricsFlagTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+        pdp_restriction = Restriction(code="PDP", description="Permission required from dept.")
+        pdp_restriction.save()
+        cis_120_001 = Section.objects.get(full_code="CIS-120-001")
+        cis_120_001.restrictions.add(pdp_restriction)
+        cis_120_001.capacity = 100
+        cis_120_001.save()
+        StatusUpdate(
+            section=Section.objects.get(full_code="CIS-120-001"),
+            old_status="",
+            new_status="O",
+            alert_sent=False,
+            request_body="",
+        ).save()
+
+        create_review("CIS-105-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+        cis_105_001 = Section.objects.get(full_code="CIS-105-001")
+        cis_105_001.capacity = 20
+        cis_105_001.save()
+        StatusUpdate(
+            section=Section.objects.get(full_code="CIS-105-001"),
+            old_status="",
+            new_status="O",
+            alert_sent=False,
+            request_body="",
+        ).save()
+
+        create_review("OIDD-101-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+
+    def test_registration_metrics_pdp(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {"registration_metrics": False},
+        )
+
+    def test_registration_metrics_true(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-105",
+            {"registration_metrics": True},
+        )
+
+    def test_registration_metrics_no_status_updates(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "OIDD-101",
+            {"registration_metrics": False},
+        )
 
 
 class NotFoundTestCase(TestCase):

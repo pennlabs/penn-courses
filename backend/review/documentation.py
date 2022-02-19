@@ -10,7 +10,11 @@ from review.util import to_r_camel
 EXPANDED_REVIEW_BIT_LABEL = tuple(
     list(REVIEW_BIT_LABEL)
     + [
-        ("RFINALENROLLMENT", "Final Enrollment at the End of the Semester", "final_enrollment",),
+        (
+            "RFINALENROLLMENT",
+            "Final Enrollment at the End of the Semester",
+            "final_enrollment",
+        ),
         ("RPERCENTOPEN", "Percent of Add/Drop Period Open", "percent_open"),
         ("RNUMOPENINGS", "Number of Openings During Add/Drop", "num_openings"),
         (
@@ -130,10 +134,16 @@ course_reviews_response_schema = {
                         "type": "string",
                         "description": "The description of the course, e.g. 'A fast-paced introduction to the fundamental concepts of programming... [etc.]' for CIS-120.",  # noqa E501
                     },
+                    "registration_metrics": {
+                        "type": "boolean",
+                        "description": "True if this course has registration metrics that you can access via the Retrieve Plots route.",  # noqa E501
+                    },
                     "aliases": {
                         "type": "array",
                         "description": "A list of courses that are crosslisted with this course (each represented by its  dash-joined department and code).",  # noqa E501
-                        "items": {"type": "string",},
+                        "items": {
+                            "type": "string",
+                        },
                     },
                     "num_sections": {
                         "type": "integer",

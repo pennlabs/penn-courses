@@ -1,10 +1,11 @@
 import React from "react";
 import styled from "styled-components";
+import { useSelector } from "react-redux";
 import scrollIntoView from "scroll-into-view-if-needed";
 
 import Badge from "../Badge";
 
-import { getTimeString } from "../meetUtil";
+import { getTimeString, meetingSetsIntersect } from "../meetUtil";
 import { Section as SectionType } from "../../types";
 
 interface SectionProps {
@@ -49,7 +50,7 @@ const IdAndInstructorContainer = styled.div`
 const IdAndActivityContainer = styled.div`
     font-size: 1rem;
     font-weight: bold;
-    margin-right: 1em;
+    margin-right: 1.5em;
     display: flex;
     align-items: center;
 `;
@@ -72,7 +73,7 @@ const MiscellaneousInfoContainer = styled.div`
     margin-top: 0.5em;
     display: grid;
     font-size: 0.7rem;
-    grid-template-columns: 40% 15% 40%;
+    grid-template-columns: 39% 15% 46%;
 `;
 
 const BadgesContainer = styled.div`
@@ -125,6 +126,19 @@ const HoverSwitch = styled.div`
 
 export default function Section({ section, cart, inCart }: SectionProps) {
     const { instructors, meetings, status } = section;
+
+    const {schedules, scheduleSelected} = useSelector((store: any) => store.schedule);
+
+    const overlap = section.meetings
+    ? meetingSetsIntersect(
+        section.meetings,
+        schedules[scheduleSelected].meetings
+            .filter((s: SectionType) => s.id !== section.id)
+            .map((s: SectionType) => s.meetings)
+            .flat()
+    )
+    : false;
+
     const cartAdd = () => {
         cart.add();
         setTimeout(() => {
@@ -165,7 +179,20 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                         </InstructorContainer>
                     </IdAndInstructorContainer>
                     <MiscellaneousInfoContainer>
-                        <div>{meetings && getTimeString(meetings)}</div>
+                        <div style={{ paddingRight: "5px"}}>
+                            {overlap && (
+                            <div className="popover is-popover-right">
+                                <i
+                                    style={{ paddingRight: "5px", color: "#c6c6c6" }}
+                                    className="fas fa-calendar-times"
+                                />
+                                 <span className="popover-content">
+                                    Conflicts with schedule!
+                                </span>
+                            </div>
+                            )} 
+                            {meetings && getTimeString(meetings)}
+                        </div>
                         <div>{`${section.credits} CU`}</div>
                         <div>
                             {meetings && meetings.length > 0 ? (

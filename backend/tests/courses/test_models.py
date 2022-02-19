@@ -105,7 +105,7 @@ class CourseStatusUpdateTestCase(TestCase):
     def test_update_status(self):
         self.section.status = "C"
         self.section.save()
-        up = record_update(self.section.full_code, TEST_SEMESTER, "C", "O", True, "JSON")
+        up = record_update(self.section, TEST_SEMESTER, "C", "O", True, "JSON")
         up.save()
         update_course_from_record(up)
         _, section = create_mock_data(self.section.full_code, TEST_SEMESTER)
