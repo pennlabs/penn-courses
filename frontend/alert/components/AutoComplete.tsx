@@ -137,19 +137,28 @@ interface TSuggestion {
     searchTerm: string;
 }
 
+interface AutoCompleteProps {
+    defaultValue: string;
+    setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
+    selectedCourses: Set<Section>,
+    setSelectedCourses: React.Dispatch<React.SetStateAction<Set<Section>>>,
+    inputRef: React.RefObject<HTMLInputElement>,
+    clearSelections: () => void,
+}
+
+
 const AutoComplete = ({
     defaultValue = "",
     setTimeline,
-    disabled,
     selectedCourses,
     setSelectedCourses,
     inputRef,
     clearSelections,
-}) => {
+}: AutoCompleteProps) => {
     const initialRender = useRef(true);
     const inputValDelete = useRef(false);
 
-    const [value, setInternalValue] = useState(defaultValue);
+    const [value, setValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<Section[]>([]);
     const [
         suggestionsFromBackend,
@@ -160,10 +169,6 @@ const AutoComplete = ({
 
     const show = active && suggestions.length > 0;
     const bulkMode = selectedCourses.size > 1;
-
-    const setValue = (v) => {
-        return setInternalValue(v);
-    };
 
     useEffect(() => {
         // Don't run if first render to prevent defaultValue of value from emptying
@@ -179,7 +184,7 @@ const AutoComplete = ({
                 inputRef.current.value = generateCoursesValue();
             } else if (selectedCourses.size == 1) {
                 // display the one selected section
-                setInternalValue(
+                setValue(
                     selectedCourses.values().next().value.section_id
                 );
                 inputRef.current.value = selectedCourses
@@ -189,7 +194,7 @@ const AutoComplete = ({
                 // No sections selected, clear input and suggestions
                 // Run when the only course that was selected is unselected
                 inputRef.current.value = "";
-                setInternalValue("");
+                setValue("");
             } else {
                 inputValDelete.current = false;
             }
@@ -266,6 +271,8 @@ const AutoComplete = ({
             return res;
         }, {});
 
+    console.log(groupedSuggestions);
+
     return (
         <Container
             inputHeight={
@@ -278,7 +285,6 @@ const AutoComplete = ({
             <AutoCompleteInputContainer>
                 <AutoCompleteInput
                     defaultValue={defaultValue}
-                    disabled={disabled}
                     readOnly={bulkMode}
                     // @ts-ignore
                     autocomplete="off"
@@ -345,7 +351,7 @@ const AutoComplete = ({
                 <AutoCompleteInputBackground
                     // @ts-ignore
                     autocomplete="off"
-                    disabled={disabled || bulkMode}
+                    disabled={bulkMode}
                     value={bulkMode ? "" : backdrop}
                 />
                 <ClearSelection
@@ -373,12 +379,6 @@ const AutoComplete = ({
             </DropdownContainer>
         </Container>
     );
-};
-
-AutoComplete.propTypes = {
-    defaultValue: PropTypes.string,
-    onValueChange: PropTypes.func,
-    disabled: PropTypes.bool,
 };
 
 export default AutoComplete;

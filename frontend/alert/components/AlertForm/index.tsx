@@ -158,12 +158,12 @@ const AlertForm = ({
                 section: autofillSection,
                 auto_resubscribe: autoResub === "true",
             })
-                .then((res) => setResponse(res))
+                .then(setResponse)
                 .catch(handleError);
         }
 
         // register all selected sections
-        const promises: any = [];
+        const promises: Array<Promise<Response>> = [];
         selectedCourses.forEach((section) => {
             const promise = doAPIRequest("/api/alert/registrations/", "POST", {
                 section: section.section_id,

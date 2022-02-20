@@ -205,19 +205,13 @@ const GroupSuggestion = ({
     const [buttonStates, setButtonStates] = useState(initializeButtonStates);
 
     /**
-     * Takes the activity/activity of a section and return if all sections of {activity} have been selected
+     * Takes the activity of a section and return if all sections of {activity} have been selected
      * Used to make sure to update button states when manually selecting each section
      * @param activity - section activity
      */
     const selectedAllActivity = (activity) => {
         // check if the user selected all courses of a certain activity in a group suggestion
-        let selectedAll = true;
-
-        sections[activity].map((section) => {
-            if (!selectedCourses.has(section)) {
-                selectedAll = false;
-            }
-        });
+        const selectedAll = sections[activity].every((section) => selectedCourses.has(section));
 
         syncButtonStates(activity, selectedAll);
         return selectedAll;
@@ -230,7 +224,7 @@ const GroupSuggestion = ({
      */
     const syncButtonStates = (activity, correctState) => {
         // update button state if its not the same as correctState
-        if (buttonStates[activity] != correctState) {
+        if (buttonStates[activity] !== correctState) {
             const newButtonStates = { ...buttonStates };
             newButtonStates[activity] = correctState;
             setButtonStates(newButtonStates);
@@ -242,47 +236,32 @@ const GroupSuggestion = ({
      * @param activity - section activity
      */
     const toggleButton = (activity) => {
-        const newButtonStates = { ...buttonStates };
-
-        newButtonStates[activity] = !newButtonStates[activity];
-        syncCheckAlls(activity, newButtonStates[activity], setSelectedCourses);
-
-        setButtonStates(newButtonStates);
+        const newState = !buttonStates[activity];
+        syncButtonStates(activity, newState);
+        syncCheckAlls(activity, newState);
     };
 
     /**
      * If one of the select all is toggled, update selected courses to match
      * @param activity - section activity
      * @param checkedAll - whether all sections of activity should be checked or not
-     * @param setSelectedCourses - method to update selected courses set
      */
-    const syncCheckAlls = (activity, checkedAll, setSelectedCourses) => {
+    const syncCheckAlls = (activity, checkedAll) => {
         const newSelectedCourses = new Set(selectedCourses);
 
-        if (sections[activity]) {
-            sections[activity].map((section) => {
-                // checkedAll = false but selectedCourses has course
-                if (newSelectedCourses.has(section) && !checkedAll) {
-                    newSelectedCourses.delete(section);
+        sections[activity].forEach(section => checkedAll ? newSelectedCourses.add(section) : newSelectedCourses.delete(section));
 
-                    // checkedAll = true but selectedCourses doesn't have course
-                } else if (!newSelectedCourses.has(section) && checkedAll) {
-                    newSelectedCourses.add(section);
-                }
-            });
-            setSelectedCourses(newSelectedCourses);
-        }
+        setSelectedCourses(newSelectedCourses);
+    
     };
 
     /**
      * Update the selected courses set when user check/uncheck box
      * @param selectedCourses - selected courses set
-     * @param setSelectedCourses - method to update selected courses set
-     * @param setSelectedCourses - the section
+     * @param suggestion - the section
      */
     const updateSelectedCourses = (
         selectedCourses,
-        setSelectedCourses,
         suggestion
     ) => {
         const newSelectedCourses = new Set(selectedCourses);
@@ -330,7 +309,6 @@ const GroupSuggestion = ({
                         onClick={() => {
                             updateSelectedCourses(
                                 selectedCourses,
-                                setSelectedCourses,
                                 suggestion
                             );
 
