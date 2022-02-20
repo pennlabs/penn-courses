@@ -12,6 +12,7 @@ from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.db import transaction
 
 from review.annotations import review_averages
 
@@ -179,30 +180,13 @@ class Course(models.Model):
         help_text="Text describing the prereqs for a course, e.g. 'CIS 120, 160' for CIS-121.",
     )
 
-    previous = models.ForeignKey(
-        "Course",
-        related_name="next",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        help_text=dedent(
-            """
-            The previous courses in the lineage
-        """
-        ),
-    )
-
     topic = models.ForeignKey(
         "Topic",
-        related_name="courses_set",
-        on_delete=models.CASCADE,
+        related_name="courses",
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=dedent(
-            """
-            Topic associated with this course
-            """
-        ),
+        help_text="The Topic of this course",
     )
 
     primary_listing = models.ForeignKey(
@@ -236,6 +220,9 @@ class Course(models.Model):
     def __str__(self):
         return "%s %s" % (self.full_code, self.semester)
 
+    def full_str(self):
+        return f"{self.full_code} ({self.semester}): {self.title}\n{self.description}"
+
     @property
     def crosslistings(self):
         """
@@ -268,13 +255,15 @@ class Course(models.Model):
         self.full_code = f"{self.department.code}-{self.code}"
         super().save(*args, **kwargs)
 
+
 class Topic(models.Model):
     """
     A topic, which keeps track of courses
     """
+
     most_recent = models.ForeignKey(
         "Course",
-        related_name="+", # Do not create back relation
+        related_name="+",  # Do not create back relation
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -286,6 +275,35 @@ class Topic(models.Model):
         """
         ),
     )
+
+    @staticmethod
+    def from_course(course):
+        """
+        Creates a new topic from a given course.
+        """
+        topic = Topic()
+        topic.most_recent = course
+        course.topic = topic
+        course.save()
+        topic.save()
+        return topic
+
+    def add_course(self, course):
+        """
+        Adds the specified course to an existing topic.
+        """
+        with transaction.atomic():
+            if course.primary_listing:
+                course = course.primary_listing
+            if course.semester > self.most_recent.semester:
+                self.most_recent = course
+                self.save()
+            course.topic = self
+            course.save()
+            for crosslisted_course in course.crosslistings:
+                crosslisted_course.topic = self
+                crosslisted_course.save()
+
 
 class Restriction(models.Model):
     """
