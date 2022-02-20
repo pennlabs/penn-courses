@@ -148,6 +148,13 @@ const AlertForm = ({
         setSelectedCourses(new Set());
     };
 
+    const deselectCourse = (section: Section): boolean => {
+        const newSelectedCourses = new Set(selectedCourses);
+        const removed = newSelectedCourses.delete(section);
+        removed && setSelectedCourses(newSelectedCourses);
+        return removed;
+    }
+
     const submitRegistration = () => {
         // if user has a auto fill section and didn't change the input value then register for section
         if (
@@ -172,20 +179,18 @@ const AlertForm = ({
             promises.push(promise);
         });
 
-        let success = true;
-        Promise.all(promises)
-            .then((responses) => {
-                responses.forEach((res: Response) => setResponse(res));
-                success = false;
-                console.log(success);
-            })
-            .catch(handleError)
-            .finally(() => {
-                if (success) {
-                    sendError(201, "Successfully registered for all sections!");
-                    clearSelections();
-                }
-            });
+        let sections = Array.from(selectedCourses)
+
+        Promise.allSettled(promises)
+            .then((responses) => responses.forEach(
+                (res: PromiseSettledResult<Response>, i) => {
+                    if (res.status === "fulfilled") {
+                        setResponse(res.value);
+                        deselectCourse(sections[i]);
+                    } else {
+                        handleError(res.reason);
+                    }
+                }));
     };
 
     const onSubmit = () => {

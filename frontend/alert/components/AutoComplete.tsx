@@ -220,8 +220,7 @@ const AutoComplete = ({
 
     // Create input text for bulk mode in the form of: [last selected section title] + [# selected courses - 1] more
     const generateCoursesValue = () => {
-        let lastElement;
-        for (lastElement of Array.from(selectedCourses));
+        const lastElement = Array.from(selectedCourses).pop()!;
         return `${lastElement.section_id} + ${selectedCourses.size - 1} more`;
     };
 

@@ -284,7 +284,7 @@ const GroupSuggestion = ({
                     </SuggestionSubtitle>
                 </DropdownItemLeftCol>
                 <ButtonContainer>
-                    {Object.keys(sections).map((key, index) => (
+                    {Object.keys(sections).map((key) => (
                         <ToggleButton
                             toggled={selectedAllActivity(key)}
                             onClick={() => toggleButton(key)}
