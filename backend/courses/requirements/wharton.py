@@ -50,7 +50,11 @@ def _clean_data(data):
         for req in reqs:
             req_list = cleaned.get(req, [])
             req_list.append(
-                {"department": dept_code, "course_id": course_id, "satisfies": True,}
+                {
+                    "department": dept_code,
+                    "course_id": course_id,
+                    "satisfies": True,
+                }
             )
             cleaned[req] = req_list
     return cleaned

@@ -43,7 +43,12 @@ these helper functions cut down on a lot of the repeated characters in the respo
 
 
 def ratings_dict(
-    label, rInstructorQuality, rFinalEnrollment, rPercentOpen, rNumOpenings, rFilledInAdvReg,
+    label,
+    rInstructorQuality,
+    rFinalEnrollment,
+    rPercentOpen,
+    rNumOpenings,
+    rFilledInAdvReg,
 ):
     return {
         label: {
@@ -128,11 +133,14 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         for date in (
             [start - 3 * duration / 5, start - 2 * duration / 5, start - duration / 5]
             + [start + i * duration / 5 for i in range(1, 5)]
-            + [start + 0.81 * duration, start + 0.82 * duration,]
+            + [
+                start + 0.81 * duration,
+                start + 0.82 * duration,
+            ]
         ):
             # O[.2]C[.4]O[.6]C[.8]O[.81]C[.82]O
             record_update(
-                "ESE-120-001",
+                Section.objects.get(id=cls.ESE_120_001_TEST_SEMESTER_id),
                 TEST_SEMESTER,
                 old_status,
                 new_status,
@@ -151,7 +159,13 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         ]:
             # C[.25]O[.5]C[.75]O
             record_update(
-                "ESE-120-001", "2020C", old_status, new_status, False, dict(), created_at=date,
+                Section.objects.get(id=cls.ESE_120_001_2020C_id),
+                "2020C",
+                old_status,
+                new_status,
+                False,
+                dict(),
+                created_at=date,
             )
             old_status, new_status = new_status, old_status
         cls.average_percent_open = (1 / 2 + 3 / 5 - 0.01) / 2
@@ -309,7 +323,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
         )
         self.assertRequestContainsAppx(
-            "course-plots", "ESE-120", self.course_plots_subdict,
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
         )
 
         instructor_ids = ",".join(str(id) for id in Instructor.objects.values_list("id", flat=True))
@@ -317,7 +333,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             "course-plots",
             "ESE-120",
             self.course_plots_subdict,
-            query_params={"instructor_ids": instructor_ids,},
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_instructor(self):
@@ -400,7 +418,13 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
                         "url": f"/instructor/{Instructor.objects.get().pk}",
                     }
                 ],
-                "courses": [{"title": "ESE-120", "desc": [""], "url": "/course/ESE-120",}],
+                "courses": [
+                    {
+                        "title": "ESE-120",
+                        "desc": [""],
+                        "url": "/course/ESE-120",
+                    }
+                ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
             },
         )
@@ -440,7 +464,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
-                "ESE-120-001",
+                Section.objects.get(id=cls.ESE_120_001_id),
                 TEST_SEMESTER,
                 old_status,
                 new_status,
@@ -530,15 +554,21 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         }
 
         self.assertRequestContainsAppx(
-            "course-plots", ["ESE-120"], self.course_plots_subdict,
+            "course-plots",
+            ["ESE-120"],
+            self.course_plots_subdict,
         )
 
-        instructor_ids = ",".join([str(id) for id in [Instructor.objects.get().pk]],)
+        instructor_ids = ",".join(
+            [str(id) for id in [Instructor.objects.get().pk]],
+        )
         self.assertRequestContainsAppx(
             "course-reviews",
             "ESE-120",
             {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
-            query_params={"instructor_ids": instructor_ids,},
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_instructor(self):
@@ -614,7 +644,13 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                         "url": f"/instructor/{Instructor.objects.get().pk}",
                     }
                 ],
-                "courses": [{"title": "ESE-120", "desc": [""], "url": "/course/ESE-120",}],
+                "courses": [
+                    {
+                        "title": "ESE-120",
+                        "desc": [""],
+                        "url": "/course/ESE-120",
+                    }
+                ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
             },
         )
@@ -648,7 +684,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
-                "ESE-120-001",
+                Section.objects.get(id=cls.ESE_120_001_id),
                 TEST_SEMESTER,
                 old_status,
                 new_status,
@@ -765,7 +801,9 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             },
         )
         self.assertRequestContainsAppx(
-            "course-plots", "ESE-120", self.course_plots_subdict,
+            "course-plots",
+            "ESE-120",
+            self.course_plots_subdict,
         )
 
         instructor_ids = ",".join(
@@ -781,7 +819,9 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "course-plots",
             "ESE-120",
             self.course_plots_subdict,
-            query_params={"instructor_ids": instructor_ids,},
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_instructor(self):
@@ -825,7 +865,9 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "course-plots",
             "ESE-120",
             self.empty_course_plots_subdict,
-            query_params={"instructor_ids": instructor_ids,},
+            query_params={
+                "instructor_ids": instructor_ids,
+            },
         )
 
     def test_plots_filter_to_one_instructor(self):
@@ -922,7 +964,13 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                         ),
                     },
                 ],
-                "courses": [{"title": "ESE-120", "desc": [""], "url": "/course/ESE-120",}],
+                "courses": [
+                    {
+                        "title": "ESE-120",
+                        "desc": [""],
+                        "url": "/course/ESE-120",
+                    }
+                ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
             },
         )

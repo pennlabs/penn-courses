@@ -115,7 +115,8 @@ def recommend_courses_view(request):
         )
     if n_recommendations <= 0:
         return Response(
-            f"n_recommendations: {n_recommendations} <= 0", status=status.HTTP_400_BAD_REQUEST,
+            f"n_recommendations: {n_recommendations} <= 0",
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     course_clusters = retrieve_course_clusters()
@@ -136,7 +137,10 @@ def recommend_courses_view(request):
                 past_course_vectors_dict,
             )
         except ValueError as e:
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST,)
+            return Response(
+                str(e),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
     else:
         user_vector, user_courses = vectorize_user(
             user, curr_course_vectors_dict, past_course_vectors_dict
@@ -165,7 +169,13 @@ def recommend_courses_view(request):
         )
     )
 
-    return Response(CourseListSerializer(queryset, many=True,).data, status=status.HTTP_200_OK,)
+    return Response(
+        CourseListSerializer(
+            queryset,
+            many=True,
+        ).data,
+        status=status.HTTP_200_OK,
+    )
 
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
@@ -237,7 +247,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         examples=examples.ScheduleViewSet_examples,
         response_codes={
             reverse_func("schedules-list"): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",},
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",
+                },
                 "POST": {
                     201: "Schedule successfully created.",
                     200: "Schedule successfully updated (a schedule with the "

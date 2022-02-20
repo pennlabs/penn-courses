@@ -49,7 +49,9 @@ def get_demand_data(semesters, section_query="", verbose=False):
                 full_code__startswith=section_query,
                 course__semester=semester,
             )
-            .annotate(efficient_semester=F("course__semester"),)
+            .annotate(
+                efficient_semester=F("course__semester"),
+            )
             .distinct()
         ):
             section_id_to_object[section.id] = section

@@ -10,8 +10,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(model_name="section", name="prereq_notes",),
+        migrations.RemoveField(
+            model_name="section",
+            name="prereq_notes",
+        ),
         migrations.AddField(
-            model_name="course", name="prerequisites", field=models.TextField(blank=True),
+            model_name="course",
+            name="prerequisites",
+            field=models.TextField(blank=True),
         ),
     ]

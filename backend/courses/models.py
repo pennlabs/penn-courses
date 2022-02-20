@@ -322,7 +322,10 @@ class Section(models.Model):
                     When(
                         Q(capacity__isnull=False) & Q(capacity__gt=0),
                         then=(
-                            Cast("registration_volume", models.FloatField(),)
+                            Cast(
+                                "registration_volume",
+                                models.FloatField(),
+                            )
                             / Cast("capacity", models.FloatField())
                         ),
                     ),
@@ -535,6 +538,17 @@ class Section(models.Model):
         else:
             return float(self.registration_volume) / float(self.capacity)
 
+    @property
+    def last_status_update(self):
+        """
+        Returns the last StatusUpdate object for this section, or None if no status updates
+        have occured for this section yet.
+        """
+        try:
+            return StatusUpdate.objects.filter(section=self).latest("created_at")
+        except StatusUpdate.DoesNotExist:
+            return None
+
     def save(self, *args, **kwargs):
         self.full_code = f"{self.course.full_code}-{self.code}"
         super().save(*args, **kwargs)
@@ -644,7 +658,7 @@ The next section of models store information related to scheduling and location.
 
 
 class Building(models.Model):
-    """ A building at Penn. """
+    """A building at Penn."""
 
     code = models.CharField(
         max_length=4,
@@ -692,7 +706,7 @@ class Building(models.Model):
 
 
 class Room(models.Model):
-    """ A room in a Building. It optionally may be named. """
+    """A room in a Building. It optionally may be named."""
 
     building = models.ForeignKey(
         Building,
@@ -713,7 +727,7 @@ class Room(models.Model):
     )
 
     class Meta:
-        """ To hold uniqueness constraint """
+        """To hold uniqueness constraint"""
 
         unique_together = (("building", "number"),)
 

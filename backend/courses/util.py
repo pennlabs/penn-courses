@@ -185,26 +185,20 @@ def get_course_and_section(course_code, semester, section_manager=None):
     return course, section
 
 
-def update_percent_open(section, last_status_update, new_status_update):
+def update_percent_open(section, new_status_update):
     """
     This function updates a section's percent_open field when a new status update is processed.
-    The last_status_update parameter takes this section's previous status update, or None if this
-    section has not previously had a status update.
-    This function returns a string warning message if last_status_update.new_status does not equal
-    new_status_update.old_status, but will still update section.percent_open in this case (using
-    new_status_update.old_status).
-    Normally, this function will return an empty string.
     """
-
     add_drop = get_or_create_add_drop_period(section.semester)
+    last_status_update = section.last_status_update
     if new_status_update.created_at < add_drop.estimated_start:
-        return ""
+        return
     if last_status_update is None:
         section.percent_open = Decimal(int(new_status_update.old_status == "O"))
         section.save()
     else:
         if last_status_update.created_at >= add_drop.estimated_end:
-            return ""
+            return
         seconds_before_last = Decimal(
             max((last_status_update.created_at - add_drop.estimated_start).total_seconds(), 0)
         )
@@ -222,26 +216,10 @@ def update_percent_open(section, last_status_update, new_status_update):
             + int(new_status_update.old_status == "O") * seconds_since_last
         ) / (seconds_before_last + seconds_since_last)
         section.save()
-        if last_status_update.new_status != new_status_update.old_status:
-            return (
-                f"Status update received changing section {section} from "
-                f"{new_status_update.old_status} to {new_status_update.new_status}, "
-                f"after previous status update from {last_status_update.old_status} "
-                f"to {last_status_update.new_status} (erroneous)."
-            )
-    return ""
 
 
-def record_update(section_id, semester, old_status, new_status, alerted, req, created_at=None):
+def record_update(section, semester, old_status, new_status, alerted, req, created_at=None):
     from alert.models import validate_add_drop_semester  # avoid circular imports
-
-    _, section, _, _ = get_or_create_course_and_section(section_id, semester)
-
-    # Get previous status update
-    try:
-        last_status_update = StatusUpdate.objects.filter(section=section).latest("created_at")
-    except StatusUpdate.DoesNotExist:
-        last_status_update = None
 
     u = StatusUpdate(
         section=section,
@@ -265,15 +243,9 @@ def record_update(section_id, semester, old_status, new_status, alerted, req, cr
     validate_status("Old status", old_status)
     validate_status("New status", new_status)
 
-    update_warning = ""
-    try:
-        # Raises ValidationError if semester is not fall or spring (and correctly formatted)
-        validate_add_drop_semester(semester)
-        update_warning = update_percent_open(section, last_status_update, u)
-    except ValidationError:
-        pass
-    if update_warning:
-        raise ValidationError(update_warning)
+    # Raises ValidationError if semester is not fall or spring (and correctly formatted)
+    validate_add_drop_semester(semester)
+    update_percent_open(section, u)
 
     return u
 

@@ -59,7 +59,10 @@ class CourseAdmin(admin.ModelAdmin):
             "\n",
             '<li><a href="{}">{}</li>',
             (
-                (reverse("admin:courses_course_change", args=[c.id]), str(c),)
+                (
+                    reverse("admin:courses_course_change", args=[c.id]),
+                    str(c),
+                )
                 for c in instance.crosslistings.all()
             ),
         )
