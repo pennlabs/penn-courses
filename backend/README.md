@@ -20,8 +20,10 @@ Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) installed.
 
 To get going quickly with a local database loaded with lots of test data,
 you can download this [db.sqlite3](https://penn-labs.slack.com/files/UNUMGB11A/F02GKJ0MTDJ/db.sqlite3)
-file and put it in your `backend` directory. This file is only accessible to
-Penn Labs members (anyone else should sign up for a [Penn OpenData API key](https://esb.isc-seo.upenn.edu/8091/documentation#security)
+file and put it in your `backend` directory. Then you should run `python manage.py migrate`
+in your `backend` directory to make sure the db schema is up-to-date with the most recent code changes.
+This file is only accessible to Penn Labs members
+(anyone else should sign up for a [Penn OpenData API key](https://esb.isc-seo.upenn.edu/8091/documentation#security)
 and follow the steps below). You can replace the existing db.sqlite file generated from step 4 in
 [Setting up the Django Backend](#setting-up-the-django-backend).
 The admin username is `admin` and the password is `admin` if you use this test db
