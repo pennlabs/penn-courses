@@ -159,7 +159,7 @@ const AlertForm = ({
         // if user has a auto fill section and didn't change the input value then register for section
         if (
             autoCompleteInputRef.current &&
-            autoCompleteInputRef.current.value == autofillSection
+            autoCompleteInputRef.current.value === autofillSection
         ) {
             doAPIRequest("/api/alert/registrations/", "POST", {
                 section: autofillSection,
@@ -179,12 +179,13 @@ const AlertForm = ({
             promises.push(promise);
         });
 
-        let sections = Array.from(selectedCourses)
+        const sections = Array.from(selectedCourses)
 
         Promise.allSettled(promises)
             .then((responses) => responses.forEach(
                 (res: PromiseSettledResult<Response>, i) => {
                     if (res.status === "fulfilled") {
+                        console.log("fulfilled")
                         setResponse(res.value);
                         deselectCourse(sections[i]);
                     } else {

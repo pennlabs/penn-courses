@@ -182,7 +182,7 @@ const AutoComplete = ({
             if (bulkMode) {
                 // display all sections selected
                 inputRef.current.value = generateCoursesValue();
-            } else if (selectedCourses.size == 1) {
+            } else if (selectedCourses.size === 1) {
                 // display the one selected section
                 setValue(
                     selectedCourses.values().next().value.section_id
@@ -190,13 +190,10 @@ const AutoComplete = ({
                 inputRef.current.value = selectedCourses
                     .values()
                     .next().value.section_id;
-            } else if (!inputValDelete.current) {
-                // No sections selected, clear input and suggestions
-                // Run when the only course that was selected is unselected
-                inputRef.current.value = "";
-                setValue("");
             } else {
-                inputValDelete.current = false;
+                console.log(inputRef.current.value);
+                inputRef.current.value = inputRef.current.value;
+                console.log(inputRef.current.value);
             }
         }
     }, [selectedCourses]);
@@ -217,6 +214,15 @@ const AutoComplete = ({
             }
         }
     }, [suggestionsFromBackend, value]);
+
+    // Clear the input value and set current value the suggestions are based on to empty
+    const clearInput = () => {
+        if (inputRef.current) {
+            inputRef.current.value = "";
+            console.log(value);
+            setValue("");
+        }
+    }
 
     // Create input text for bulk mode in the form of: [last selected section title] + [# selected courses - 1] more
     const generateCoursesValue = () => {
@@ -328,7 +334,7 @@ const AutoComplete = ({
                             handleSuggestionSelect(newSelectedSuggestion);
                         } else if (
                             e.keyCode === DELETE_KEY &&
-                            selectedCourses.size == 1
+                            selectedCourses.size === 1
                         ) {
                             inputValDelete.current = true;
                             clearSelections();
@@ -372,6 +378,7 @@ const AutoComplete = ({
                             setValue={setValue}
                             setTimeline={setTimeline}
                             setSelectedCourses={setSelectedCourses}
+                            clearInput={clearInput}
                         />
                     ))}
                 </DropdownBox>

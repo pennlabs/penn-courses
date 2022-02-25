@@ -180,7 +180,8 @@ interface GroupSuggestionProps {
     inputRef: React.RefObject<HTMLInputElement>;
     setValue: (v: any) => void;
     setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
-    setSelectedCourses: any;
+    setSelectedCourses: React.Dispatch<React.SetStateAction<Set<Section>>>;
+    clearInput: () => void;
 }
 
 const GroupSuggestion = ({
@@ -192,6 +193,7 @@ const GroupSuggestion = ({
     setValue,
     setTimeline,
     setSelectedCourses,
+    clearInput,
 }: GroupSuggestionProps) => {
     const initializeButtonStates = () => {
         const states = {};
@@ -264,13 +266,22 @@ const GroupSuggestion = ({
         selectedCourses,
         suggestion
     ) => {
-        const newSelectedCourses = new Set(selectedCourses);
+        const newSelectedCourses: Set<Section> = new Set(selectedCourses);
         if (selectedCourses.has(suggestion)) {
             newSelectedCourses.delete(suggestion);
         } else {
             newSelectedCourses.add(suggestion);
         }
+
+        // If the only selected courses is deselected then clear input value
+        if (newSelectedCourses.size === 0 && inputRef.current) {
+            console.log("test")
+            inputRef.current.value = "";
+            setValue("");
+        }
+
         setSelectedCourses(newSelectedCourses);
+
     };
 
     return (
