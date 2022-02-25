@@ -54,9 +54,9 @@ def courses_data_from_csv(course_data_path):
 
 def courses_data_from_s3():
     for row in csv.reader(
-        codecs.getreader("utf-8")(
-            S3_client.get_object(Bucket="penn.courses", Key="course_data.csv")["Body"]
-        )
+            codecs.getreader("utf-8")(
+                S3_client.get_object(Bucket="penn.courses", Key="course_data.csv")["Body"]
+            )
     ):
         yield tuple(row)
 
@@ -71,7 +71,7 @@ def get_description(course):
 def vectorize_courses_by_description(descriptions):
     vectorizer = TfidfVectorizer()
     has_nonempty_descriptions = (
-        sum(1 for description in descriptions if description and len(description) > 0) > 0
+            sum(1 for description in descriptions if description and len(description) > 0) > 0
     )
     if has_nonempty_descriptions:
         vectors = vectorizer.fit_transform(descriptions)
@@ -118,7 +118,7 @@ def group_courses(courses_data: Iterable[Tuple[int, str, str]]):
 
 
 def vectorize_by_copresence(
-    courses_by_semester_by_user, as_past_class=False
+        courses_by_semester_by_user, as_past_class=False
 ) -> Dict[str, np.ndarray]:
     """
     Vectorizes courses by whether they're in the user's schedule at the same time,
@@ -229,6 +229,16 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
     return list(unsequenced_courses_by_user.values())
 
 
+def get_descriptions(courses, preloaded_descriptions):
+    descriptions = []
+    for course in courses:
+        if course in preloaded_descriptions:
+            descriptions.append(preloaded_descriptions[course])
+        else:
+            descriptions.append(get_description(course))
+    return descriptions
+
+
 def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_descriptions={}):
     """
     Generates a dict associating courses to vectors for those courses,
@@ -244,14 +254,9 @@ def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_
     courses, courses_vectorized_by_schedule_presence = zip(
         *vectorize_courses_by_schedule_presence(courses_by_user).items()
     )
-
-    descriptions = []
-    for course in courses:
-        if course in preloaded_descriptions:
-            descriptions.append(preloaded_descriptions[course])
-        else:
-            descriptions.append(get_description(course))
-    courses_vectorized_by_description = vectorize_courses_by_description(descriptions)
+    courses_vectorized_by_description = vectorize_courses_by_description(
+        get_descriptions(courses, preloaded_descriptions)
+    )
     copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
     copresence_vectors_past = [copresence_vectors_by_course_past[course] for course in courses]
     copresence_vectors = normalize(copresence_vectors)
@@ -264,11 +269,11 @@ def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_
         dim_reduce = TruncatedSVD(n_components=dim_reduced_components)
         copresence_vectors_past = dim_reduce.fit_transform(copresence_vectors_past)
     for (
-        course,
-        schedule_vector,
-        description_vector,
-        copresence_vector,
-        copresence_vector_past,
+            course,
+            schedule_vector,
+            description_vector,
+            copresence_vector,
+            copresence_vector_past,
     ) in zip(
         courses,
         courses_vectorized_by_schedule_presence,
@@ -331,18 +336,18 @@ def generate_course_clusters(courses_data, n_per_cluster=100, preloaded_descript
 
 
 def train_recommender(
-    course_data_path=None,
-    preloaded_descriptions_path=None,
-    train_from_s3=False,
-    output_path=None,
-    upload_to_s3=False,
-    n_per_cluster=100,
-    verbose=False,
+        course_data_path=None,
+        preloaded_descriptions_path=None,
+        train_from_s3=False,
+        output_path=None,
+        upload_to_s3=False,
+        n_per_cluster=100,
+        verbose=False,
 ):
     # input validation
     if train_from_s3:
         assert (
-            course_data_path is None
+                course_data_path is None
         ), "If you are training on data from S3, there's no need to supply a local data path"
     if course_data_path is not None:
         assert course_data_path.endswith(".csv"), "Local data path must be .csv"
@@ -361,7 +366,7 @@ def train_recommender(
     else:
         assert output_path is not None, "You must either specify an output path, or upload to S3"
         assert (
-            output_path.endswith(".pkl") or output_path == os.devnull
+                output_path.endswith(".pkl") or output_path == os.devnull
         ), "Output file must have a .pkl extension"
 
     if verbose and not upload_to_s3 and not output_path.endswith("course-cluster-data.pkl"):
@@ -500,7 +505,7 @@ class Command(BaseCommand):
             type=int,
             default=100,
             help="The number of courses to include in each cluster (a hyperparameter). "
-            "Defaults to 100.",
+                 "Defaults to 100.",
         )
 
     def handle(self, *args, **kwargs):
