@@ -261,6 +261,18 @@ const AutoComplete = ({
 
             return res;
         }, {});
+    
+    /**
+     * Clear the input value and setValue
+     * @param newSelectedCourses - most up-to-date selected courses set
+     * @param suggestion - the section
+     */
+     const clearInputValue = () => {
+        if (inputRef.current) {
+            inputRef.current.value = "";
+            setValue("");
+        }
+    }
 
     return (
         <Container
@@ -346,7 +358,10 @@ const AutoComplete = ({
                     icon={faTimes}
                     hidden={!bulkMode}
                     parent={inputRef}
-                    onClick={() => clearSelections()}
+                    onClick={() => {
+                        clearSelections();
+                        clearInputValue();
+                    }}
                 />
             </AutoCompleteInputContainer>
             <DropdownContainer below={inputRef} hidden={!show}>
@@ -357,10 +372,10 @@ const AutoComplete = ({
                             courseCode={key}
                             value={value}
                             selectedCourses={selectedCourses}
-                            inputRef={inputRef}
                             setValue={setValue}
                             setTimeline={setTimeline}
                             setSelectedCourses={setSelectedCourses}
+                            clearInputValue={clearInputValue}
                         />
                     ))}
                 </DropdownBox>
