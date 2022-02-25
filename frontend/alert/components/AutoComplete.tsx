@@ -156,7 +156,6 @@ const AutoComplete = ({
     clearSelections,
 }: AutoCompleteProps) => {
     const initialRender = useRef(true);
-    const inputValDelete = useRef(false);
 
     const [value, setValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<Section[]>([]);
@@ -190,11 +189,7 @@ const AutoComplete = ({
                 inputRef.current.value = selectedCourses
                     .values()
                     .next().value.section_id;
-            } else {
-                console.log(inputRef.current.value);
-                inputRef.current.value = inputRef.current.value;
-                console.log(inputRef.current.value);
-            }
+            } 
         }
     }, [selectedCourses]);
 
@@ -214,15 +209,6 @@ const AutoComplete = ({
             }
         }
     }, [suggestionsFromBackend, value]);
-
-    // Clear the input value and set current value the suggestions are based on to empty
-    const clearInput = () => {
-        if (inputRef.current) {
-            inputRef.current.value = "";
-            console.log(value);
-            setValue("");
-        }
-    }
 
     // Create input text for bulk mode in the form of: [last selected section title] + [# selected courses - 1] more
     const generateCoursesValue = () => {
@@ -275,8 +261,6 @@ const AutoComplete = ({
 
             return res;
         }, {});
-
-    console.log(groupedSuggestions);
 
     return (
         <Container
@@ -336,7 +320,6 @@ const AutoComplete = ({
                             e.keyCode === DELETE_KEY &&
                             selectedCourses.size === 1
                         ) {
-                            inputValDelete.current = true;
                             clearSelections();
                         } else {
                             // @ts-ignore
@@ -378,7 +361,6 @@ const AutoComplete = ({
                             setValue={setValue}
                             setTimeline={setTimeline}
                             setSelectedCourses={setSelectedCourses}
-                            clearInput={clearInput}
                         />
                     ))}
                 </DropdownBox>

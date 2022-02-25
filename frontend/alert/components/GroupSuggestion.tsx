@@ -181,7 +181,6 @@ interface GroupSuggestionProps {
     setValue: (v: any) => void;
     setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
     setSelectedCourses: React.Dispatch<React.SetStateAction<Set<Section>>>;
-    clearInput: () => void;
 }
 
 const GroupSuggestion = ({
@@ -193,7 +192,6 @@ const GroupSuggestion = ({
     setValue,
     setTimeline,
     setSelectedCourses,
-    clearInput,
 }: GroupSuggestionProps) => {
     const initializeButtonStates = () => {
         const states = {};
@@ -252,7 +250,11 @@ const GroupSuggestion = ({
         const newSelectedCourses = new Set(selectedCourses);
 
         sections[activity].forEach(section => checkedAll ? newSelectedCourses.add(section) : newSelectedCourses.delete(section));
-
+        
+        if (newSelectedCourses.size === 0) {
+            clearInputValue();
+        }
+        
         setSelectedCourses(newSelectedCourses);
     
     };
@@ -273,16 +275,23 @@ const GroupSuggestion = ({
             newSelectedCourses.add(suggestion);
         }
 
-        // If the only selected courses is deselected then clear input value
-        if (newSelectedCourses.size === 0 && inputRef.current) {
-            console.log("test")
+        setSelectedCourses(newSelectedCourses);
+
+        return newSelectedCourses
+
+    };
+
+     /**
+     * Clear the input value and setValue
+     * @param newSelectedCourses - most up-to-date selected courses set
+     * @param suggestion - the section
+     */
+    const clearInputValue = () => {
+        if (inputRef.current) {
             inputRef.current.value = "";
             setValue("");
         }
-
-        setSelectedCourses(newSelectedCourses);
-
-    };
+    }
 
     return (
         <>
@@ -318,17 +327,19 @@ const GroupSuggestion = ({
                         }
                         courseCode={suggestion.section_id}
                         onClick={() => {
-                            updateSelectedCourses(
+                            const newSelectedCourses = updateSelectedCourses(
                                 selectedCourses,
                                 suggestion
                             );
-
-                            // show the selected course name only if not in bulk mode
-                            if (inputRef.current && selectedCourses.size <= 1) {
-                                inputRef.current.value = suggestion.section_id;
+                            
+                            //update suggestion value
+                            if (newSelectedCourses.size >= 1) {
+                                setValue(suggestion.section_id)
+                            } else {
+                                clearInputValue();
                             }
 
-                            setValue(suggestion.section_id);
+
                         }}
                         onChangeTimeline={() => {
                             setTimeline(suggestion.section_id);
