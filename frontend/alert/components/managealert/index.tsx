@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useMemo} from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ReactGA from "react-ga";
 import useSWR from "swr";
 import { ManageAlert } from "./ManageAlertUI";

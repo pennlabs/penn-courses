@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle } from "@fortawesome/free-solid-svg-icons";
 
-//const to calculate segment length
+// const to calculate segment length
 const MIN_SEGMENT_LENGTH = 20;
 const MAX_SEGMENT_LENGTH = 250;
 const MULTIPLIER = 18;
@@ -50,9 +50,9 @@ const convertTime = (timeString) => {
     /* Convert time string to array with MM/DD as
      * the first element and HR:MIN pm/am as the second
      */
-    let d = new Date(timeString);
+    const d = new Date(timeString);
 
-    //format: ["MM:DD", "HR:MIN pm/am"]
+    // format: ["MM:DD", "HR:MIN pm/am"]
     return [
         d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" }),
         d
@@ -66,7 +66,7 @@ const convertTime = (timeString) => {
 };
 
 const timeInHours = (timeString) => {
-    let d = new Date(timeString);
+    const d = new Date(timeString);
     return d.getHours();
 };
 
@@ -87,8 +87,8 @@ interface TimelineElementProps {
 }
 
 const TimelineElement = ({ courseStatusData, index }: TimelineElementProps) => {
-    const prevTime = courseStatusData[index - 1][0]["created_at"];
-    const currTime = courseStatusData[index][0]["created_at"];
+    const prevTime = courseStatusData[index - 1][0].created_at;
+    const currTime = courseStatusData[index][0].created_at;
     const segLength = calcSegmentLength(prevTime, currTime);
 
     // second index is formatted differently (time info on circle layer) than rest
@@ -109,12 +109,12 @@ const TimelineElement = ({ courseStatusData, index }: TimelineElementProps) => {
                 </>
             ) : (
                 <>
-                    <div></div>
+                    <div />
                     <Segment
                         open={courseStatusData[index - 1][1] == "opened"}
                         length={segLength}
                     />
-                    <div></div>
+                    <div />
                 </>
             )}
 
