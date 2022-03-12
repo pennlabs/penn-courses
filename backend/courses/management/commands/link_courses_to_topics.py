@@ -1,19 +1,20 @@
+import os
+from collections import defaultdict
 from textwrap import dedent
 
+import pandas as pd
 from django.core.management.base import BaseCommand
-from django.db.models import Q, F
+from django.db.models import F, Max, OuterRef, Q, Subquery
 from tqdm import tqdm
-from pandas import pd
 
 from alert.management.commands.export_anon_registrations import get_semesters
-from courses.models import Topic
-from courses.models import Course
-from collections import defaultdict
-import logging
-
-
-def should_link_courses(course_a, course_b):
-    pass
+from courses.management.commands.merge_topics import (
+    ShouldLinkCoursesResponse,
+    merge_topics,
+    should_link_courses,
+)
+from courses.models import Course, Topic
+from PennCourses.settings.base import S3_client
 
 
 def get_branches_from_cross_walk(cross_walk):
@@ -51,27 +52,76 @@ def get_direct_backlinks_from_cross_walk(cross_walk):
     return guaranteed_links
 
 
-def link_courses_to_topics(semester, cross_walk=None, verbose=False, topics=None):
+def get_topics_and_courses(semester):
     """
-    Links all courses in the given semester to existing Topics when possible,
-    creating new Topics when necessary.
+    Returns a list of the form [(most_recent_course, topic), ... for each topic]
+    where most_recent_course is the most recent primary course in that topic offered
+    before or during the given semester.
+    """
+    max_sem_subq = Subquery(
+        Course.objects.filter(topic=OuterRef("topic"), semester__lte=semester)
+        .annotate(max_sem=Max("semester"))
+        .values("max_sem")
+    )
+    courses = (
+        Course.objects.annotate(max_sem=max_sem_subq)
+        .filter(
+            Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
+            semester__eq=F("max_sem"),
+        )
+        .select_related("topic")
+    )
+    return [(course, course.topic) for course in courses]
+
+
+def link_course_to_topics(course, topics=None, verbose=False):
+    """
+    Links a given course to existing Topics when possible, creating a new Topic if necessary.
     Args:
-        semester: The semester from which to link courses to existing Topics
-        cross_walk: Optionally, a path to a crosswalk of manual links between course codes
+        course: A course object to link
+        topics: You can precompute the Topics used by this script in case you are calling it
+            in a loop; the format should be the same as returned by `get_topics_and_courses`.
         verbose: If verbose=True, this script will print its progress and prompt for user input
             upon finding possible (but not definite) links. Otherwise it will run silently and
             log found possible links to Sentry (more appropriate if this function is called
             from an automated cron job like registrarimport).
-        topics: You can precompute the Topics used by this script in case you are calling it
-            in a loop; the format should be [(most_recent_course, topic), ... for each topic].
     """
-    guaranteed_links = get_direct_backlinks_from_cross_walk(cross_walk) if cross_walk else dict()
     if not topics:
-        topics = [(t.most_recent, t) for t in Topic.objects.select_related("most_recent").all()]
+        topics = get_topics_and_courses(course.semester)
+    for most_recent, topic in topics:
+        if (
+            should_link_courses(most_recent, course, verbose=verbose)
+            == ShouldLinkCoursesResponse.DEFINITELY
+        ):
+            topic.add_course(course)
+    if not course.topic:
+        Topic.from_course(course)
+
+
+def link_courses_to_topics(semester, guaranteed_links=None, verbose=False):
+    """
+    Links all courses *without Topics* in the given semester to existing Topics when possible,
+    creating new Topics when necessary.
+    Args:
+        semester: The semester for which to link courses to existing Topics
+        guaranteed_links: Optionally, a `guaranteed_links` dict returned by
+            `get_direct_backlinks_from_cross_walk`.
+        verbose: If verbose=True, this script will print its progress and prompt for user input
+            upon finding possible (but not definite) links. Otherwise it will run silently and
+            log found possible links to Sentry (more appropriate if this function is called
+            from an automated cron job like registrarimport).
+    """
+    guaranteed_links = guaranteed_links or dict()
+    topics = get_topics_and_courses(semester)
     full_code_to_topic = {c.full_code: t for c, t in topics}
-    for course in Course.objects.filter(
-        Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")), semester=semester
-    ).prefetch_related("primary_listing__listing_set"):
+    iterator_wrapper = tqdm if verbose else lambda i: i
+    for course in iterator_wrapper(
+        Course.objects.filter(
+            Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
+            semester=semester,
+            topic__isnull=True,
+        ).prefetch_related("primary_listing__listing_set")
+    ):
         if course.full_code in guaranteed_links:
             old_full_code = guaranteed_links[course.full_code]
             if old_full_code in full_code_to_topic:
@@ -79,29 +129,16 @@ def link_courses_to_topics(semester, cross_walk=None, verbose=False, topics=None
             else:
                 Topic.from_course(course)
         else:
-            for most_recent, topic in topics:
-                should_link = should_link_courses(most_recent, course)
-                if should_link == "definitely":
-                    topic.add_course(course)
-                elif should_link == "maybe":
-                    if verbose:
-                        print("\n\n============>\n")
-                        print(most_recent.full_str())
-                        print("\n")
-                        print(course.full_str())
-                        print("\n<============")
-                        prompt = input("Should the above 2 courses be linked? (y/N) ")
-                        print("\n\n")
-                        if prompt.strip().upper() != "Y":
-                            continue
-                        topic.add_course(course)
-                    else:
-                        # Log possible link
-                        logging.info(f"Found possible link between {most_recent} and {course}")
+            link_course_to_topics(course, topics=topics, verbose=verbose)
 
 
 class Command(BaseCommand):
-    help = "Export test courses, sections, instructors, and reviews data from the given semesters."
+    help = (
+        "This script populates the Topic table in the database, using a combination of an "
+        "optionally provided crosswalk, heuristics, and user input to merge courses with different "
+        "codes into the same Topic when appropriate. This script is only intended to be run "
+        "once, right after the Topic model is added to the codebase."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -113,8 +150,8 @@ class Command(BaseCommand):
             corresponding to the semesters from which you want to link courses with topics,
             i.e. "2019C,2020A,2020B,2020C" for fall 2019, spring 2020, summer 2020, and fall 2020.
             If you pass "all" to this argument, this script will export all status updates.
-            NOTE: you should only pass a set of consecutive semesters (or "all"), because this script
-            links courses to topics using the most recent course in a topic.
+            NOTE: you should only pass a set of consecutive semesters (or "all"), because
+            this script links courses to topics using the most recent course in a topic.
                 """
             ),
             default="",
@@ -124,19 +161,24 @@ class Command(BaseCommand):
             type=str,
             help=dedent(
                 """
-                Optionally specify a path to a crosswalk specifying links between course codes 
-                (in the format provided by Susan Collins [squant@isc.upenn.edu] from the data warehouse team; 
-                https://bit.ly/3HtqPq3).
+                Optionally specify a path to a crosswalk specifying links between course codes
+                (in the format provided by Susan Collins [squant@isc.upenn.edu] from
+                the data warehouse team; https://bit.ly/3HtqPq3).
                 """
             ),
             default="",
         )
+        parser.add_argument(
+            "-s3", "--s3_bucket", help="download crosswalk from specified s3 bucket."
+        )
 
     def handle(self, *args, **kwargs):
         semesters = get_semesters(kwargs["semesters"], verbose=True)
-        if len(semesters) == 0:
-            raise ValueError("No semesters provided for course/topic linking.")
+        if not semesters:
+            return "ERROR: no semesters provided for course/topic linking"
         semesters = sorted(semesters)
+        cross_walk_src = kwargs["cross_walk"]
+        s3_bucket = kwargs["s3_bucket"]
 
         # Check that no semesters are skipped in the ordering
         if not all(
@@ -150,8 +192,24 @@ class Command(BaseCommand):
         ):
             return "ERROR: please specify a set of consecutive semesters, or 'all'"
 
+        if cross_walk_src and s3_bucket:
+            fp = "/tmp/" + cross_walk_src
+            print(f"downloading crosswalk from s3://{s3_bucket}/{cross_walk_src}")
+            S3_client.download_file(s3_bucket, cross_walk_src, fp)
+            cross_walk_src = fp
+
+        guaranteed_links = (
+            get_direct_backlinks_from_cross_walk(cross_walk_src) if cross_walk_src else dict()
+        )
+
+        if s3_bucket:
+            # Remove temporary file
+            os.remove(cross_walk_src)
+
+        merge_topics(guaranteed_links=guaranteed_links, verbose=True)
+
         for i, semester in enumerate(semesters):
             print(f"Processing semester {semester} ({i+1}/{len(semesters)})...")
-            link_courses_to_topics(semester, cross_walk=kwargs["cross_walk"], verbose=True)
+            link_courses_to_topics(semester, guaranteed_links=guaranteed_links, verbose=True)
 
         print(f"Finished linking courses to topics for semesters {semesters}.")
