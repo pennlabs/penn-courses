@@ -5,6 +5,8 @@ from review.models import Review
 
 def create_mock_data(code, semester, meeting_days="MWF", start=11.0, end=12.0):
     course, section, _, _ = get_or_create_course_and_section(code, semester)
+    course.description = "This is a fake class."
+    course.save()
     section.credits = 1
     section.status = "O"
     section.activity = "LEC"

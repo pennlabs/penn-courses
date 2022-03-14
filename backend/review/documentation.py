@@ -124,7 +124,23 @@ course_reviews_response_schema = {
                 "properties": {
                     "code": {
                         "type": "string",
-                        "description": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                        "description": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                    },
+                    "aliases": {
+                        "type": "array",
+                        "description": "A list of courses that are crosslisted with this course (each represented by its  dash-joined department and code).",  # noqa E501
+                        "items": {
+                            "type": "string",
+                        },
+                    },
+                    "historical_codes": {
+                        "type": "array",
+                        "description": "A list of course codes (dash-joined department and code) that have historically represented this course (other than the most recent code).",  # noqa E501
+                        "items": {"type": "string"},
+                    },
+                    "branched_from": {
+                        "type": "string",
+                        "description": "The full code (dash-joined department and code) of the course this topic branched from (e.g. in 2022C, HIST-640 -> HIST-6420, HIST-6400, HIST-6410, HIST-6430). Null if this topic did not branch from a previous topic.",  # noqa E501
                     },
                     "name": {
                         "type": "string",
@@ -133,13 +149,6 @@ course_reviews_response_schema = {
                     "description": {
                         "type": "string",
                         "description": "The description of the course, e.g. 'A fast-paced introduction to the fundamental concepts of programming... [etc.]' for CIS-120.",  # noqa E501
-                    },
-                    "aliases": {
-                        "type": "array",
-                        "description": "A list of courses that are crosslisted with this course (each represented by its  dash-joined department and code).",  # noqa E501
-                        "items": {
-                            "type": "string",
-                        },
                     },
                     "num_sections": {
                         "type": "integer",
@@ -228,7 +237,7 @@ course_plots_response_schema = {
                 "properties": {
                     "code": {
                         "type": "string",
-                        "description": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                        "description": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                     },
                     "current_add_drop_period": {
                         "type": "object",
@@ -294,9 +303,9 @@ instructor_reviews_response_schema = {
                         "properties": {
                             "COURSE_FULL_CODE": {
                                 "type": "object",
-                                "description": "This key `COURSE_FULL_CODE` is a placeholder for potentially many course full code keys. Each full code is the dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                "description": "This key `COURSE_FULL_CODE` is a placeholder for potentially many course full code keys. Each full code is the dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                 "properties": {
-                                    "full_code": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                    "full_code": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                     "average_reviews": {
                                         "type": "object",
                                         "description": "This course's average reviews across all of its sections taught by this instructor from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
@@ -315,7 +324,7 @@ instructor_reviews_response_schema = {
                                         "type": "integer",
                                         "description": "The number of semesters from which we have reviews for this course taught by this instructor.",  # noqa E501
                                     },
-                                    "code": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                    "code": "Same as `full_code`.",  # noqa E501
                                     "name": {
                                         "type": "string",
                                         "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501
@@ -344,6 +353,10 @@ autocomplete_response_schema = {
                                 "title": {
                                     "type": "string",
                                     "description": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                },
+                                "most_recent_full_code": {
+                                    "type": "string",
+                                    "description": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                 },
                                 "desc": {
                                     "type": "string",
@@ -423,9 +436,9 @@ department_reviews_response_schema = {
                         "properties": {
                             "COURSE_FULL_CODE": {
                                 "type": "object",
-                                "description": "This key `COURSE_FULL_CODE` is a placeholder for potentially many course full code keys. Each full code is the dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                "description": "This key `COURSE_FULL_CODE` is a placeholder for potentially many course full code keys. Each full code is the dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                 "properties": {
-                                    "id": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                    "id": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                     "average_reviews": {
                                         "type": "object",
                                         "description": "This course's average reviews across all of its sections from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
@@ -444,7 +457,7 @@ department_reviews_response_schema = {
                                         "type": "integer",
                                         "description": "The number of semesters from which we have reviews for this course.",  # noqa E501
                                     },
-                                    "code": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                    "code": "Same as `id`.",
                                     "name": {
                                         "type": "string",
                                         "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501
@@ -480,7 +493,7 @@ instructor_for_course_reviews_response_schema = {
                     },
                     "course_code": {
                         "type": "string",
-                        "description": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                        "description": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                     },
                     "sections": {
                         "type": "array",
@@ -488,6 +501,10 @@ instructor_for_course_reviews_response_schema = {
                         "items": {
                             "type": "object",
                             "properties": {
+                                "section_code": {
+                                    "type": "string",
+                                    "description": "The dash-joined department, course code, and section code of the course, e.g. `CIS-120-001` for CIS-120.",  # noqa E501
+                                },
                                 "course_name": {
                                     "type": "string",
                                     "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501

@@ -121,17 +121,29 @@ def course_reviews(request, course_code):
     only the most recent semester, and instructor-specific views.
     """
     try:
-        course = Course.objects.filter(
-            course_filters_pcr, sections__review__isnull=False, full_code=course_code
-        ).order_by("-semester")[0]
+        course = (
+            Course.objects.filter(course_filters_pcr, full_code=course_code)
+            .order_by("-semester")[:1]
+            .select_related(
+                "primary_listing",
+                "topic",
+                "topic__most_recent",
+                "topic__branched_from",
+                "topic__branched_from__most_recent",
+            )
+            .prefetch_related("topic__courses")
+            .get()
+        )
     except Course.DoesNotExist:
         raise Http404()
 
-    courses = course.topic.courses
+    topic = course.topic
+    course = topic.most_recent
+    aliases = course.crosslistings.values_list("full_code", flat=True)
 
     reviews = (
         review_averages(
-            Review.objects.filter(section__course__in=courses, responses__gt=0),
+            Review.objects.filter(section__course__topic=topic, responses__gt=0),
             {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
@@ -149,10 +161,12 @@ def course_reviews(request, course_code):
     instructors = aggregate_reviews(reviews, "instructor_id", name="instructor_name")
 
     course_qs = annotate_average_and_recent(
-        Course.objects.filter(course_filters_pcr, full_code=course_code).order_by("-semester")[:1],
-        match_on=Q(section__course__full_code=course_code),
+        Course.objects.filter(
+            Q(topic__most_recent_id=F("pk")), course_filters_pcr, topic=topic
+        ).order_by("-semester")[:1],
+        match_on=Q(section__course__topic=topic),
         extra_metrics=True,
-        section_subfilters={"course__full_code": course_code},
+        section_subfilters={"course__topic": topic},
     )
 
     course = dict(course_qs[:1].values()[0])
@@ -162,7 +176,13 @@ def course_reviews(request, course_code):
             "code": course["full_code"],
             "name": course["title"],
             "description": course["description"],
-            "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
+            "aliases": aliases,
+            "historical_codes": [
+                c for c in topic.courses.values_list("full_code", flat=True) if c not in aliases
+            ],
+            "branched_from": topic.branched_from.most_recent.full_code
+            if topic.branched_from
+            else None,
             "num_sections": Section.objects.filter(
                 course__full_code=course_code, review__isnull=False, review__responses__gt=0
             )
@@ -221,15 +241,23 @@ def course_reviews(request, course_code):
         override_response_schema=course_plots_response_schema,
     )
 )
-# @permission_classes([IsAuthenticated])
 def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
     """
-    if not Course.objects.filter(
-        course_filters_pcr, sections__review__isnull=False, full_code=course_code
-    ).exists():
+    try:
+        course = (
+            Course.objects.filter(
+                course_filters_pcr, sections__review__isnull=False, full_code=course_code
+            )
+            .order_by("-semester")[:1]
+            .select_related("topic", "topic__most_recent")
+            .get()
+        )
+    except Course.DoesNotExist:
         raise Http404()
+
+    course = course.topic.most_recent
 
     current_semester = get_current_semester()
 
@@ -237,7 +265,7 @@ def course_plots(request, course_code):
     filtered_sections = (
         Section.objects.filter(
             extra_metrics_section_filters_pcr(current_semester),
-            course__full_code=course_code,
+            course__topic_id=course.topic_id,
         )
         .annotate(efficient_semester=F("course__semester"))
         .distinct()
@@ -352,21 +380,20 @@ def instructor_reviews(request, instructor_id):
     courses = annotate_average_and_recent(
         Course.objects.filter(
             course_filters_pcr,
-            sections__review__isnull=False,
             sections__instructors__id=instructor_id,
         ).distinct(),
         match_on=Q(
-            section__course__full_code=OuterRef(OuterRef("full_code")),
+            section__course__topic=OuterRef(OuterRef("topic")),
             instructor_id=instructor_id,
         ),
         extra_metrics=True,
         section_subfilters={
-            "course__full_code": OuterRef("full_code"),
+            "course__topic": OuterRef("topic"),
             "instructors__id": instructor_id,
         },
-    )
+    ).annotate(most_recent=F("topic__most_recent__full_code"))
 
-    inst = instructor_qs.values()[0]
+    inst = instructor_qs.values()[:1].get()
 
     return Response(
         {
@@ -396,6 +423,7 @@ def instructor_reviews(request, instructor_id):
                     "name": r["title"],
                 }
                 for r in courses.values()
+                if r["full_code"] == r["most_recent"]
             },
         }
     )
@@ -441,12 +469,12 @@ def department_reviews(request, department_code):
         )
         .annotate(
             course_title=F("section__course__title"),
-            course_code=F("section__course__full_code"),
+            full_code=F("section__course__topic__most_recent__full_code"),
             semester=F("section__course__semester"),
         )
         .values()
     )
-    courses = aggregate_reviews(reviews, "course_code", code="course_code", name="course_title")
+    courses = aggregate_reviews(reviews, "full_code", code="full_code", name="course_title")
 
     return Response({"code": department.code, "name": department.name, "courses": courses})
 
@@ -480,10 +508,23 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     """
     Get the review history of an instructor teaching a course. No aggregations here.
     """
+    try:
+        course = (
+            Course.objects.filter(course_filters_pcr, full_code=course_code)
+            .order_by("-semester")[:1]
+            .select_related("topic", "topic__most_recent")
+            .get()
+        )
+    except Course.DoesNotExist:
+        raise Http404()
+
     instructor = get_object_or_404(Instructor, id=instructor_id)
+
+    course = course.topic.most_recent
+
     reviews = review_averages(
         Review.objects.filter(
-            section__course__full_code=course_code, instructor_id=instructor_id, responses__gt=0
+            section__course__topic_id=course.topic_id, instructor_id=instructor_id, responses__gt=0
         ),
         {"review_id": OuterRef("id")},
         fields=ALL_FIELD_SLUGS,
@@ -493,6 +534,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     )
     reviews = reviews.annotate(
         course_title=F("section__course__title"),
+        section_code=F("section__full_code"),
         semester=F("section__course__semester"),
     )
 
@@ -502,9 +544,10 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
                 "id": instructor_id,
                 "name": instructor.name,
             },
-            "course_code": course_code,
+            "course_code": course.full_code,
             "sections": [
                 {
+                    "section_code": review["section_code"],
                     "course_name": review["course_title"],
                     "semester": review["semester"],
                     "forms_returned": review["responses"],
@@ -537,14 +580,16 @@ def autocomplete(request):
     to improve performance.
     """
     courses = (
-        Course.objects.filter(course_filters_pcr, sections__review__isnull=False)
+        Course.objects.filter(course_filters_pcr)
         .order_by("semester")
-        .values("full_code", "title")
+        .annotate(most_recent_full_code=F("topic__most_recent__full_code"))
+        .values("full_code", "most_recent_full_code", "title")
         .distinct()
     )
     course_set = [
         {
             "title": course["full_code"],
+            "most_recent_full_code": course["most_recent_full_code"],
             "desc": [course["title"]],
             "url": f"/course/{course['full_code']}",
         }
