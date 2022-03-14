@@ -116,18 +116,22 @@ course_filters_pcr = (~Q(title="")) | (~Q(description="")) | Q(sections__review_
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code):
     """
-    Get all reviews for a given course and other relevant information.
+    Get all reviews for the topic of a given course and other relevant information.
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
-    if not Course.objects.filter(
-        course_filters_pcr, sections__review__isnull=False, full_code=course_code
-    ).exists():
+    try:
+        course = Course.objects.filter(
+            course_filters_pcr, sections__review__isnull=False, full_code=course_code
+        ).order_by("-semester")[0]
+    except Course.DoesNotExist:
         raise Http404()
+
+    courses = course.topic.courses
 
     reviews = (
         review_averages(
-            Review.objects.filter(section__course__full_code=course_code, responses__gt=0),
+            Review.objects.filter(section__course__in=courses, responses__gt=0),
             {"review_id": OuterRef("id")},
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
