@@ -29,7 +29,7 @@ def average_by_dept(fields, semesters="all", departments=None, path=None):
             fields=fields,
             subfilters={
                 "review__section__course__semester": semester,
-                "review__section__course__department__id": OuterRef("id"),
+                "review__section__course__department_id": OuterRef("id"),
             },
             extra_metrics=False,
         ).values("code", *fields)
@@ -47,10 +47,6 @@ class Command(BaseCommand):
         Compute the average of given `fields`
         (see `alert.models.ReviewBit` for an enumeration of fields)
         by semester by department, and print or save to a file.
-        You may need to add quotes for arguments
-        that require whitespace seperated values (namely `--fields` and
-        `--departments`). For example, you would use `--departments "ACCT CIS"`
-        rather than just `--departments ACCT CIS`).
         Note that this is an untested and unoptimized command.
         """
     )
@@ -62,7 +58,7 @@ class Command(BaseCommand):
             default=None,
             help=dedent(
                 """
-                fields as strings seperated by whitespace. If not provided, defaults to
+                fields as strings seperated by commas. If not provided, defaults to
                 ["course_quality", "difficulty", "instructor_quality", "work_required"].
                 """
             ),
@@ -86,7 +82,7 @@ class Command(BaseCommand):
             help=dedent(
                 """
                 semesters to aggregate data for (in XXXXx form) as strings seperated
-                by commas (not whitespace). If semesters not provided then all semesters used.
+                by commas. If semesters not provided then all semesters used.
                 """
             ),
         )
@@ -98,7 +94,7 @@ class Command(BaseCommand):
             help=dedent(
                 """
                 department codes to aggregate data for as strings seperated by
-                whitespace. If departments not provided then all departments used.
+                commas. If departments not provided then all departments used.
                 """
             ),
         )
@@ -107,12 +103,11 @@ class Command(BaseCommand):
         if kwargs["fields"] is None:
             fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
         else:
-            fields = re.split(r"\s+", kwargs["fields"])
+            fields = kwargs["fields"].strip().split(",")
         if kwargs["departments"] is None:
             departments = None
         else:
-            departments = re.split(r"\s+", kwargs["departments"])
-            print(departments)
+            departments = kwargs["departments"].strip().split(",")
 
         average_by_dept(
             fields, path=kwargs["path"], semesters=kwargs["semesters"], departments=departments
