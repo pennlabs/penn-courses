@@ -2,7 +2,7 @@ import json
 import re
 from textwrap import dedent
 
-from click import BaseCommand
+from django.core.management.base import BaseCommand
 from django.db.models import OuterRef
 from tqdm import tqdm
 
@@ -11,16 +11,21 @@ from courses.models import Department
 from review.annotations import review_averages
 
 
-def average_by_dept(fields, path=None):
+def average_by_dept(fields, semesters="all", departments=None, path=None):
     """
     For each department and year, compute the average of given fields
     (see `alert.models.ReviewBit` for an enumeration of fields) across all (valid) sections.
     Note that if fields should be a list of strings representing the review fields to be aggregated.
     """
     dept_avgs = {}
-    for semester in tqdm(get_semesters(semesters="all")):
+
+    for semester in tqdm(get_semesters(semesters=semesters)):
+        if departments is None:
+            depts_qs = Department.objects.all()
+        else:
+            depts_qs = Department.objects.filter(code__in=departments)
         semester_dept_avgs = review_averages(
-            Department.objects.all(),
+            depts_qs,
             fields=fields,
             subfilters={
                 "review__section__course__semester": semester,
@@ -32,8 +37,8 @@ def average_by_dept(fields, path=None):
         dept_avgs[semester] = {dept_dict.pop("code"): dept_dict for dept_dict in semester_dept_avgs}
     if path is None:
         return print(dept_avgs)
-    with open(path) as f:
-        json.dump(dept_avgs, f)
+    with open(path, "w+") as f:
+        json.dump(dept_avgs, f, indent=4)
 
 
 class Command(BaseCommand):
@@ -42,6 +47,10 @@ class Command(BaseCommand):
         Compute the average of given `fields`
         (see `alert.models.ReviewBit` for an enumeration of fields)
         by semester by department, and print or save to a file.
+        You may need to add quotes for arguments
+        that require whitespace seperated values (namely `--fields` and
+        `--departments`). For example, you would use `--departments "ACCT CIS"`
+        rather than just `--departments ACCT CIS`).
         Note that this is an untested and unoptimized command.
         """
     )
@@ -53,7 +62,7 @@ class Command(BaseCommand):
             default=None,
             help=dedent(
                 """
-                fields as strings seperated by whitespace. If fields is not provided, defaults to
+                fields as strings seperated by whitespace. If not provided, defaults to
                 ["course_quality", "difficulty", "instructor_quality", "work_required"].
                 """
             ),
@@ -69,9 +78,42 @@ class Command(BaseCommand):
                 """
             ),
         )
+        parser.add_argument(
+            "--semesters",
+            nargs="?",
+            default=None,
+            type=str,
+            help=dedent(
+                """
+                semesters to aggregate data for (in XXXXx form) as strings seperated
+                by commas (not whitespace). If semesters not provided then all semesters used.
+                """
+            ),
+        )
+        parser.add_argument(
+            "--departments",
+            nargs="?",
+            default=None,
+            type=str,
+            help=dedent(
+                """
+                department codes to aggregate data for as strings seperated by
+                whitespace. If departments not provided then all departments used.
+                """
+            ),
+        )
 
     def handle(self, *args, **kwargs):
-        fields = re.split(r"\w", kwargs["fields"])
-        if fields is None:
+        if kwargs["fields"] is None:
             fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
-        average_by_dept(fields, path=kwargs["path"])
+        else:
+            fields = re.split(r"\s+", kwargs["fields"])
+        if kwargs["departments"] is None:
+            departments = None
+        else:
+            departments = re.split(r"\s+", kwargs["departments"])
+            print(departments)
+
+        average_by_dept(
+            fields, path=kwargs["path"], semesters=kwargs["semesters"], departments=departments
+        )
