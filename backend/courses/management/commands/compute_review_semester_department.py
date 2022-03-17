@@ -1,5 +1,4 @@
 import json
-import re
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
