@@ -1,4 +1,6 @@
+import contextlib
 import json
+import os
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
@@ -7,6 +9,7 @@ from tqdm import tqdm
 
 from alert.management.commands.recomputestats import get_semesters
 from courses.models import Department
+from PennCourses.settings.base import S3_resource
 from review.annotations import review_averages
 
 
@@ -14,7 +17,7 @@ def average_by_dept(fields, semesters="all", departments=None, path=None):
     """
     For each department and year, compute the average of given fields
     (see `alert.models.ReviewBit` for an enumeration of fields) across all (valid) sections.
-    Note that if fields should be a list of strings representing the review fields to be aggregated.
+    Note that fields should be a list of strings representing the review fields to be aggregated.
     """
     dept_avgs = {}
 
@@ -34,10 +37,8 @@ def average_by_dept(fields, semesters="all", departments=None, path=None):
         ).values("code", *fields)
 
         dept_avgs[semester] = {dept_dict.pop("code"): dept_dict for dept_dict in semester_dept_avgs}
-    if path is None:
-        return print(dept_avgs)
-    with open(path, "w+") as f:
-        json.dump(dept_avgs, f, indent=4)
+
+    return dept_avgs
 
 
 class Command(BaseCommand):
@@ -46,7 +47,6 @@ class Command(BaseCommand):
         Compute the average of given `fields`
         (see `alert.models.ReviewBit` for an enumeration of fields)
         by semester by department, and print or save to a file.
-        Note that this is an untested and unoptimized command.
         """
     )
 
@@ -71,6 +71,15 @@ class Command(BaseCommand):
                 """
                 path to the output file. If not provided then will simply be printed to console.
                 """
+            ),
+        )
+        parser.add_argument(
+            "--upload_to_s3",
+            default=False,
+            action="store_true",
+            help=(
+                "Enable this argument to upload the output of this script to the penn.courses "
+                "S3 bucket, at the path specified by the path argument."
             ),
         )
         parser.add_argument(
@@ -99,6 +108,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
+        upload_to_s3 = kwargs["upload_to_s3"]
+        path = kwargs["path"]
+        assert path is None or path.endswith(".json")
+
         if kwargs["fields"] is None:
             fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
         else:
@@ -108,6 +121,18 @@ class Command(BaseCommand):
         else:
             departments = kwargs["departments"].strip().split(",")
 
-        average_by_dept(
-            fields, path=kwargs["path"], semesters=kwargs["semesters"], departments=departments
-        )
+        dept_avgs = average_by_dept(fields, semesters=kwargs["semesters"], departments=departments)
+
+        if path is None:
+            print(json.dumps(dept_avgs, indent=4))
+        else:
+            output_file_path = (
+                "/tmp/review_semester_department_export.json" if upload_to_s3 else path
+            )
+
+            with open(path, "w+") as f:
+                json.dump(dept_avgs, f, indent=4)
+
+            if upload_to_s3:
+                S3_resource.meta.client.upload_file(output_file_path, "penn.courses", path)
+                os.remove(output_file_path)

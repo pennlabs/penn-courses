@@ -65,7 +65,7 @@ class Command(BaseCommand):
         script_print_path = ("s3://penn.courses/" if upload_to_s3 else "") + path
         print(f"Generating {script_print_path} with status updates from semesters {semesters}...")
         rows = 0
-        output_file_path = "/app/export_status_history_output.csv" if upload_to_s3 else path
+        output_file_path = "/tmp/export_status_history_output.csv" if upload_to_s3 else path
         with open(output_file_path, "w") as output_file:
             csv_writer = csv.writer(
                 output_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
@@ -94,7 +94,7 @@ class Command(BaseCommand):
                     output_file.flush()
         if upload_to_s3:
             S3_resource.meta.client.upload_file(
-                "/app/export_status_history_output.csv", "penn.courses", path
+                "/tmp/export_status_history_output.csv", "penn.courses", path
             )
-            os.remove("/app/export_status_history_output.csv")
+            os.remove("/tmp/export_status_history_output.csv")
         print(f"Generated {script_print_path} with {rows} rows.")

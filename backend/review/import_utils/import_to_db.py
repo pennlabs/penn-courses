@@ -187,7 +187,8 @@ def import_summary_row(row, stat):
     )
 
     # Attach instructor to course.
-    section.instructors.add(inst)
+    if inst is not None:
+        section.instructors.add(inst)
 
     # We finished importing this row!
     stat("row_count")
