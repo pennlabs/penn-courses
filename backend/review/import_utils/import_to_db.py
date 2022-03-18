@@ -1,7 +1,6 @@
 import uuid
 
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
 from tqdm import tqdm
 
 from courses.models import Course, Instructor
@@ -61,11 +60,7 @@ def import_instructor(pennid, fullname, stat):
             inst.save()
             inst_created = False
         else:
-            try:
-                inst = Instructor.objects.create(user=user, name=fullname)
-            except IntegrityError:
-                stat("instructor:integrity_error")
-                return
+            inst = Instructor.objects.create(user=user, name=fullname)
             inst_created = True
 
         if inst_created:
@@ -121,25 +116,17 @@ def import_course_and_section(full_course_code, semester, course_title, primary_
 def import_review(section, instructor, enrollment, responses, form_type, bits, stat):
     # Assumption: that all review objects for the semesters in question were
     # deleted before this runs.
-    try:
-        review = Review.objects.create(
-            section=section,
-            instructor=instructor,
-            enrollment=enrollment,
-            responses=responses,
-            form_type=form_type,
-        )
-    except IntegrityError:
-        stat("review:integrity_error")
-        return
+    review = Review.objects.create(
+        section=section,
+        instructor=instructor,
+        enrollment=enrollment,
+        responses=responses,
+        form_type=form_type,
+    )
     review_bits = [ReviewBit(review=review, field=k, average=v) for k, v in bits.items()]
 
     # This saves us a bunch of database calls per row, since reviews have > 10 bits.
-    try:
-        ReviewBit.objects.bulk_create(review_bits)
-    except IntegrityError:
-        stat("reviewbit:integrity_error")
-        return
+    ReviewBit.objects.bulk_create(review_bits)
     stat("reviewbit_created_count", len(review_bits))
 
 
