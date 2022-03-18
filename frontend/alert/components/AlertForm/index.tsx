@@ -32,10 +32,26 @@ const AlertText = styled.div`
     color: #555555;
 `;
 
+const ClosedText = styled.div`
+    padding-top: 0.5rem;
+    color: #555555;
+    align-items: center;
+    justify-content: center;
+`;
+
 const Form = styled.form`
     display: flex;
     flex-direction: column;
 `;
+
+
+const spacer = {
+    container: {
+      width: "auto",
+      height: "auto",
+      marginLeft: "0.25rem",
+    },
+  } as const;
 
 interface RadioSetProps {
     selected: string;
@@ -47,7 +63,7 @@ const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
     <span>
         {options.map(({ label, value }) => (
             <>
-                <label htmlFor={value}>
+                <label htmlFor={value} style={spacer.container}>
                     <input
                         type="radio"
                         name="name"
@@ -111,6 +127,7 @@ const AlertForm = ({
     const [isPhoneDirty, setPhoneDirty] = useState(false);
 
     const [autoResub, setAutoResub] = useState("false");
+    const [closedNotif, setClosedNotif] = useState(false);
 
     const autoCompleteInputRef = useRef<HTMLInputElement>(null);
 
@@ -157,6 +174,7 @@ const AlertForm = ({
             doAPIRequest("/api/alert/registrations/", "POST", {
                 section: autofillSection,
                 auto_resubscribe: autoResub === "true",
+                // close_notification: closedNotif,
             })
                 .then(setResponse)
                 .catch(handleError);
@@ -168,6 +186,7 @@ const AlertForm = ({
             const promise = doAPIRequest("/api/alert/registrations/", "POST", {
                 section: section.section_id,
                 auto_resubscribe: autoResub === "true",
+                // close_notification: closedNotif,
             });
             promises.push(promise);
         });
@@ -256,6 +275,19 @@ const AlertForm = ({
                         selected={autoResub}
                     />
                 </AlertText>
+{/* 
+                <ClosedText>
+                    Closed Notification?
+                    <Input
+                        type="checkbox"
+                        checked={closedNotif}
+                        onChange={(e) => {
+                            setClosedNotif(e.target.checked);
+                        }}
+                        style={spacer.container}
+                    />
+                </ClosedText> */}
+
                 <SubmitButton
                     onClick={(e) => {
                         e.preventDefault();
