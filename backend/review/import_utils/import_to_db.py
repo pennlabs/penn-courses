@@ -116,17 +116,19 @@ def import_course_and_section(full_course_code, semester, course_title, primary_
 def import_review(section, instructor, enrollment, responses, form_type, bits, stat):
     # Assumption: that all review objects for the semesters in question were
     # deleted before this runs.
-    review = Review.objects.create(
+    review = Review.objects.get_or_create(
         section=section,
         instructor=instructor,
-        enrollment=enrollment,
-        responses=responses,
-        form_type=form_type,
+        defaults={
+            "enrollment": enrollment,
+            "responses": responses,
+            "form_type": form_type,
+        },
     )
     review_bits = [ReviewBit(review=review, field=k, average=v) for k, v in bits.items()]
 
     # This saves us a bunch of database calls per row, since reviews have > 10 bits.
-    ReviewBit.objects.bulk_create(review_bits)
+    ReviewBit.objects.bulk_create(review_bits, ignore_conflicts=True)
     stat("reviewbit_created_count", len(review_bits))
 
 
