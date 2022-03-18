@@ -29,6 +29,7 @@ course_review_aggregation_schema_no_extras = {
     to_r_camel(bit_label[2]): {"type": "number", "description": f"Average {bit_label[1]}"}
     for bit_label in EXPANDED_REVIEW_BIT_LABEL
 }
+
 course_review_aggregation_schema = {
     # This dict contains the schema of the "_reviews" fields returned in course review views
     **{
@@ -43,6 +44,7 @@ course_review_aggregation_schema = {
     },
     **course_review_aggregation_schema_no_extras,
 }
+
 plots_schema = {
     "pca_demand_plot": {
         "type": "array",
@@ -109,6 +111,7 @@ plots_schema = {
         ),
     },
 }
+
 instructor_review_aggregation_schema = {
     # This dict contains the schema of the "_reviews" fields returned in the
     # course-specific instructor review aggregation object within the response returned by
