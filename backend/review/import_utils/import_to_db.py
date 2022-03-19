@@ -247,11 +247,10 @@ def import_ratings_row(row, stat):
     stat("detail_count")
 
 
-def import_rows(rows, import_func, show_progress_bar=True):
+def gen_stat(stats):
     """
-    Given a list of SQL rows, import them using the given import function
+    Generates a stat function for a given stats dict.
     """
-    stats = dict()
 
     def stat(key, amt=1):
         """
@@ -261,34 +260,42 @@ def import_rows(rows, import_func, show_progress_bar=True):
         value = stats.get(key, 0)
         stats[key] = value + amt
 
-    for row in tqdm(rows, disable=(not show_progress_bar)):
-        import_func(row, stat)
-
-    return stats
+    return stat
 
 
 def import_summary_rows(summaries, show_progress_bar=True):
-    return import_rows(summaries, import_summary_row, show_progress_bar)
+    """
+    Imports summary rows given a summaries list.
+    """
+    stats = dict()
+    stat = gen_stat(stats)
+    for row in tqdm(summaries, disable=(not show_progress_bar)):
+        import_summary_row(row, stat)
+    return stats
 
 
-def import_ratings_rows(ratings, show_progress_bar=True):
-    return import_rows(ratings, import_ratings_row, show_progress_bar)
+def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=True):
+    """
+    Imports rating rows given an iterator ratings and total number of rows num_ratings.
+    Optionally filter rows to import by semester with the given semesters list.
+    """
+    stats = dict()
+    stat = gen_stat(stats)
+    for row in tqdm(ratings, total=num_ratings, disable=(not show_progress_bar)):
+        if semesters is None or row["TERM"] in semesters:
+            import_ratings_row(row, stat)
+    return stats
 
 
-def import_description_rows(rows, semesters=None, show_progress_bar=True):
+def import_description_rows(num_rows, rows, semesters=None, show_progress_bar=True):
+    """
+    Imports description rows given an iterator rows and total number of rows num_rows.
+    Optionally filter courses for which to update descriptions by semester with the
+    given semesters list.
+    """
     descriptions = dict()
 
-    stats = dict()
-
-    def stat(key, amt=1):
-        """
-        Helper function to keep track of how many rows we are adding to the DB,
-        along with any errors in processing the incoming rows.
-        """
-        value = stats.get(key, 0)
-        stats[key] = value + amt
-
-    for row in tqdm(rows, disable=(not show_progress_bar)):
+    for row in tqdm(rows, total=num_rows, disable=(not show_progress_bar)):
         course_code = row.get("COURSE_ID")
         paragraph_num = row.get("PARAGRAPH_NUMBER")
         description_paragraph = row.get("COURSE_DESCRIPTION")
