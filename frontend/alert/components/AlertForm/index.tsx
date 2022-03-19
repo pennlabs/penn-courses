@@ -190,12 +190,10 @@ const AlertForm = ({
                     }
                     setResponse(res)
                 })
-                .catch((res) => {
-                    handleError(res);
-                } );
+                .catch(handleError);
+
             return;
             
-
         }
 
         // register all selected sections
