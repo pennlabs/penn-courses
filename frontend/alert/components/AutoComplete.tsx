@@ -139,7 +139,7 @@ interface TSuggestion {
 
 interface AutoCompleteProps {
     defaultValue: string,
-    setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
+    setTimeline: React.Dispatch<React.SetStateAction<string | null>>,
     selectedCourses: Set<Section>,
     setSelectedCourses: React.Dispatch<React.SetStateAction<Set<Section>>>,
     value: string,
