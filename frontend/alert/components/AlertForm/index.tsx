@@ -185,7 +185,7 @@ const AlertForm = ({
                 auto_resubscribe: autoResub === "true",
             })
                 .then((res) => {
-                    if (res.status === 200) {
+                    if (res.ok) {
                         clearInputValue();
                     }
                     setResponse(res)
@@ -213,13 +213,11 @@ const AlertForm = ({
                 (res: PromiseSettledResult<Response>, i) => {
                     //fulfilled if response is returned, even if reg is unsuccessful.
                     if (res.status === "fulfilled") {
-                        if (res.value.status === 200) {
-                            setResponse(res.value);
+                        setResponse(res.value);
+                        if (res.value.ok) {
                             deselectCourse(sections[i]);
-                        } else {
-                            setResponse(res.value);
-                        }
-                    //only if error occurred
+                        } 
+                    //only if network error occurred
                     } else {
                         handleError(res.reason);
                     }
