@@ -181,7 +181,7 @@ const AlertForm = ({
             doAPIRequest("/api/alert/registrations/", "POST", {
                 section: autofillSection,
                 auto_resubscribe: autoResub === "true",
-                // close_notification: closedNotif,
+                close_notification: closedNotif,
             })
                 .then(setResponse)
                 .catch(handleError);
@@ -193,7 +193,7 @@ const AlertForm = ({
             const promise = doAPIRequest("/api/alert/registrations/", "POST", {
                 section: section.section_id,
                 auto_resubscribe: autoResub === "true",
-                // close_notification: closedNotif,
+                close_notification: closedNotif,
             });
             promises.push(promise);
         });
@@ -281,7 +281,7 @@ const AlertForm = ({
                         selected={autoResub}
                     />
                 </AlertText>
-{/* 
+ 
                 <ClosedText>
                     Closed Notification?
                     <Input
@@ -292,7 +292,7 @@ const AlertForm = ({
                         }}
                         style={spacer.container}
                     />
-                </ClosedText> */}
+                </ClosedText>
 
                 <SubmitButton
                     onClick={(e) => {
