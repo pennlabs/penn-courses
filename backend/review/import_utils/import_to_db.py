@@ -243,19 +243,26 @@ def import_ratings_row(row, stat):
         stat(f"missing slug for '{context}'")
         return
 
+    details = {
+        "average": row.get("MEAN_TOTAL_RATING"),
+        "median": row.get("MEDIAN_TOTAL_RATING"),
+        "stddev": row.get("STANDARD_DEVIATION"),
+        "rating0": row.get("TOTAL_RATING_0"),
+        "rating1": row.get("TOTAL_RATING_1"),
+        "rating2": row.get("TOTAL_RATING_2"),
+        "rating3": row.get("TOTAL_RATING_3"),
+        "rating4": row.get("TOTAL_RATING_4"),
+    }
+
+    for key, val in details.items():
+        if val is None:
+            stat(f"null value for {key}")
+            return
+
     ReviewBit.objects.update_or_create(
         review=review,
         field=field,
-        defaults={
-            "average": row.get("MEAN_TOTAL_RATING"),
-            "median": row.get("MEDIAN_TOTAL_RATING"),
-            "stddev": row.get("STANDARD_DEVIATION"),
-            "rating0": row.get("TOTAL_RATING_0"),
-            "rating1": row.get("TOTAL_RATING_1"),
-            "rating2": row.get("TOTAL_RATING_2"),
-            "rating3": row.get("TOTAL_RATING_3"),
-            "rating4": row.get("TOTAL_RATING_4"),
-        },
+        defaults=details,
     )
 
     stat("detail_count")
