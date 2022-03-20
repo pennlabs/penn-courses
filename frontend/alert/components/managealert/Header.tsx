@@ -60,7 +60,7 @@ const Header = ({
                 <input
                     type="checkbox"
                     checked={batchSelected}
-                    onClick={() => {
+                    onChange={() => {
                         batchSelectHandler(batchSelected);
                         setBatchSelected(!batchSelected);
                     }}

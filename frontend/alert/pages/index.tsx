@@ -74,7 +74,7 @@ const Nav = ({ login, logout, user, page, setPage }: NavProps) => (
     <NavContainer>
         <NavElt>
             <AccountIndicator
-                onLeft={true}
+                leftAligned={true}
                 user={user}
                 backgroundColor="dark"
                 nameLength={2}

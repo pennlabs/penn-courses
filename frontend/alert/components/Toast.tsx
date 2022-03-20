@@ -132,7 +132,10 @@ const Toast = ({ onClose, children, type }: PropsWithChildren<ToastProps>) => {
 };
 
 Toast.propTypes = {
-    children: PropTypes.arrayOf(PropTypes.element),
+    children: PropTypes.oneOfType([
+        PropTypes.arrayOf(PropTypes.node),
+        PropTypes.node
+    ]).isRequired,
     onClose: PropTypes.func,
     type: PropTypes.number,
 };

@@ -470,7 +470,7 @@ SearchBarProps) {
                             clearScheduleData();
                             setShowLoginModal(true);
                         }}
-                        onLeft={true}
+                        leftAligned={true}
                         pathname={router.pathname}
                     />
                     <SearchField
@@ -580,7 +580,7 @@ SearchBarProps) {
                             clearScheduleData();
                             setShowLoginModal(true);
                         }}
-                        onLeft={false}
+                        leftAligned={false}
                         pathname={router.pathname}
                     />
                 </LevelItem>
