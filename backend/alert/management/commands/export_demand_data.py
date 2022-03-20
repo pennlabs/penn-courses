@@ -49,7 +49,9 @@ def get_demand_data(semesters, section_query="", verbose=False):
                 full_code__startswith=section_query,
                 course__semester=semester,
             )
-            .annotate(efficient_semester=F("course__semester"),)
+            .annotate(
+                efficient_semester=F("course__semester"),
+            )
             .distinct()
         ):
             section_id_to_object[section.id] = section
@@ -249,7 +251,7 @@ class Command(BaseCommand):
             f"Generating {script_print_path} with demand data data from "
             f"semesters {semesters}..."
         )
-        output_file_path = "/app/export_demand_data.json" if upload_to_s3 else path
+        output_file_path = "/tmp/export_demand_data.json" if upload_to_s3 else path
         with open(output_file_path, "w") as output_file:
             output_data = get_demand_data(
                 semesters, section_query=kwargs["section_query"], verbose=True

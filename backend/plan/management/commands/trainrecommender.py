@@ -409,7 +409,8 @@ def train_recommender(
         cache.set("course-cluster-data", course_clusters, timeout=90000)
     else:
         pickle.dump(
-            course_clusters, open(output_path, "wb"),
+            course_clusters,
+            open(output_path, "wb"),
         )
 
     if verbose:

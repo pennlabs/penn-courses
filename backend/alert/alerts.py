@@ -156,7 +156,11 @@ class PushNotification(Alert):
             try:
                 response = requests.post(
                     "https:/api.pennlabs.org/notifications/send/internal",
-                    data={"title": alert_title, "body": alert_body, "pennkey": pennkey,},
+                    data={
+                        "title": alert_title,
+                        "body": alert_body,
+                        "pennkey": pennkey,
+                    },
                     headers={"Authorization": f"Bearer {bearer_token}"},
                 )
                 if response.status_code != 200:

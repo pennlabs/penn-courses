@@ -3,17 +3,22 @@ import usePlatformOptions from "pcx-shared-components/src/data-hooks/usePlatform
 import styled from "styled-components";
 import ReactGA from "react-ga";
 import * as Sentry from "@sentry/browser";
+import { useRouter } from "next/router";
 
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
+import {
+    Center,
+    Container,
+    Flex,
+} from "pcx-shared-components/src/common/layout";
+import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import ManageAlertWrapper from "../components/managealert";
 import { maxWidth, PHONE } from "../constants";
 import Footer from "../components/Footer";
 import AlertForm from "../components/AlertForm";
 import Timeline from "../components/Timeline";
 
-import { Center, Container, Flex } from "pcx-shared-components/src/common/layout";
 import MessageList from "../components/MessageList";
-import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import { User } from "../types";
 
 const Tagline = styled.h3`
@@ -123,6 +128,7 @@ const RecruitingBanner = styled.div`
 `;
 
 function App() {
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [page, setPage] = useState("home");
     const [messages, setMessages] = useState<
@@ -180,7 +186,12 @@ function App() {
     return (
         <>
             <Container>
-                {showLoginModal && <LoginModal pathname={window.location.pathname} siteName="Penn Course Alert"/>}
+                {showLoginModal && (
+                    <LoginModal
+                        pathname={window.location.pathname}
+                        siteName="Penn Course Alert"
+                    />
+                )}
                 {showRecruiting && (
                     <RecruitingBanner>
                         <p>
@@ -219,14 +230,19 @@ function App() {
                 {page === "home" ? (
                     <Flex col grow={1}>
                         {user ? (
-                            <AlertForm user={user} setResponse={setResponse} setTimeline={setTimeline}/>
+                            <AlertForm
+                                user={user}
+                                setResponse={setResponse}
+                                setTimeline={setTimeline}
+                                autofillSection={router.query.course as string}
+                            />
                         ) : null}
                     </Flex>
                 ) : (
                     <ManageAlertWrapper />
                 )}
 
-                <Timeline courseCode={timeline} setTimeline={setTimeline}/>
+                <Timeline courseCode={timeline} setTimeline={setTimeline} />
 
                 <Footer />
             </Container>

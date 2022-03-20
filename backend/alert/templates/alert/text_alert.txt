@@ -1,3 +1,3 @@
-{{course}} is now open! Register on PennInTouch: http://bit.ly/pitouch.
-{% if auto_resubscribe %}To cancel alerts, visit{% else %}Resubscribe at{% endif %} http://penncoursealert.com#manage
+{{course}} is open! Register on PennInTouch: http://bit.ly/pitouch.
+{% if auto_resubscribe %}To cancel alerts, visit{% else %}Resubscribe at{% endif %} http://u.pennlabs.org/pca
 - Thanks for using Penn Course Alert!

@@ -1,14 +1,15 @@
 import React, { RefObject, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import PropTypes from "prop-types";
+import PropTypes, { string } from "prop-types";
 
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHistory } from "@fortawesome/free-solid-svg-icons";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { Input } from "./Input";
 import { Section } from "../types";
+import GroupSuggestion from "./GroupSuggestion";
 
 /* A function that takes in a search term and returns a promise with both the search term and
 the search results.
@@ -37,6 +38,7 @@ const UP_ARROW = 38;
 const RIGHT_ARROW = 39;
 const DOWN_ARROW = 40;
 const RETURN_KEY = 13;
+const DELETE_KEY = 8;
 
 const DropdownContainer = styled.div<{ below: RefObject<HTMLInputElement> }>`
     position: absolute;
@@ -68,62 +70,6 @@ const DropdownBox = styled.div`
     }
 `;
 
-const DropdownItemBox = styled.div<{ selected: boolean }>`
-    border-bottom-style: solid;
-    border-width: 1px;
-    border-color: #d6d6d6;
-    padding-left: 0.5rem;
-    padding-bottom: 1rem;
-    display: flex;
-    justify-content: stretch;
-    flex-direction: row;
-    cursor: pointer;
-    ${(props) =>
-        props.selected ? "background-color: rgb(235, 235, 235);" : ""}
-    &:hover {
-        background-color: rgb(220, 220, 220);
-    }
-`;
-
-const SuggestionTitle = styled.div`
-    color: #282828;
-    font-size: 1rem;
-    font-family: "Inter", sans-serif;
-    font-weight: bold;
-    padding-top: 0.5rem;
-`;
-
-const SuggestionSubtitle = styled.div`
-    color: #282828;
-    font-size: 0.9rem;
-    padding-top: 0.4rem;
-    font-family: "Inter", sans-serif;
-`;
-
-const IconContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    flex-grow: 1;
-    flex-basis: 20%;
-    font-size: 1.25rem;
-    color: #3baff7;
-`;
-
-const HistoryIcon = styled(FontAwesomeIcon)`
-    color: #c4c4c4;
-    &:hover {
-        color: #209cee;
-    }
-`;
-
-const DropdownItemLeftCol = styled.div`
-    max-width: 80%;
-    flex-basis: 80%;
-    flex-grow: 1;
-`;
-
 const AutoCompleteInput = styled(Input)`
     position: absolute;
     z-index: 1;
@@ -143,62 +89,27 @@ const Container = styled.div<{ inputHeight: string }>`
     height: ${(props) => props.inputHeight};
 `;
 
-interface SuggestionProps {
-    onClick: () => void;
-    onChangeTimeline: () => void;
-    courseCode: string;
-    title: string;
-    instructor: string;
-    selected: boolean;
-}
+const AutoCompleteInputContainer = styled.div``;
 
-const Suggestion = ({
-    onClick,
-    onChangeTimeline,
-    courseCode,
-    title,
-    instructor,
-    selected,
-}: SuggestionProps) => {
-    const ref = useRef<HTMLDivElement>(null);
-    // If the suggestion becomes selected, make sure that it is
-    // not fully or partially scrolled out of view
-    useEffect(() => {
-        if (selected && ref.current && ref.current.parentElement) {
-            const { bottom, top } = ref.current.getBoundingClientRect();
-            const { parentElement } = ref.current;
-            const {
-                bottom: parentBottom,
-                top: parentTop,
-            } = parentElement.getBoundingClientRect();
-            if (bottom > parentBottom) {
-                parentElement.scrollBy({ top: bottom - parentBottom });
-            } else if (top < parentTop) {
-                parentElement.scrollBy({ top: top - parentTop });
-            }
-        }
-    }, [selected, ref]);
-    return (
-        <DropdownItemBox selected={selected} ref={ref}>
-            <DropdownItemLeftCol onClick={onClick}>
-                <SuggestionTitle>{courseCode}</SuggestionTitle>
-                <SuggestionSubtitle>{title}</SuggestionSubtitle>
-                <SuggestionSubtitle>{instructor}</SuggestionSubtitle>
-            </DropdownItemLeftCol>
-            <IconContainer onClick={onChangeTimeline}>
-                <HistoryIcon icon={faHistory} className="historyIcon" />
-            </IconContainer>
-        </DropdownItemBox>
-    );
-};
+const ClearSelection = styled(FontAwesomeIcon)<{
+    hidden?: boolean;
+    parent: RefObject<HTMLInputElement>;
+}>`
+    display: ${(props) => (props.hidden ? "none" : "block")};
+    top: ${({ parent }) =>
+        parent.current && parent.current.getBoundingClientRect().height / 2}px;
+    right: 5px;
+    padding: 0 8px;
+    position: absolute;
+    cursor: pointer;
+    font-size: 1.25rem;
+    color: #c4c4c4;
+    z-index: 100;
 
-Suggestion.propTypes = {
-    courseCode: PropTypes.string,
-    title: PropTypes.string,
-    instructor: PropTypes.string,
-    onClick: PropTypes.func,
-    selected: PropTypes.bool,
-};
+    &:hover {
+        color: #e8746a;
+    }
+`;
 
 /**
  * Given a current input value and a list of suggestions, generates the backdrop text for the
@@ -226,9 +137,32 @@ interface TSuggestion {
     searchTerm: string;
 }
 
-const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const [value, setInternalValue] = useState("");
+interface AutoCompleteProps {
+    defaultValue: string,
+    setTimeline: React.Dispatch<React.SetStateAction<string | null>>,
+    selectedCourses: Set<Section>,
+    setSelectedCourses: React.Dispatch<React.SetStateAction<Set<Section>>>,
+    value: string,
+    setValue: React.Dispatch<React.SetStateAction<string>>,
+    inputRef: React.RefObject<HTMLInputElement>,
+    clearSelections: () => void,
+    clearInputValue: () => void,
+}
+
+
+const AutoComplete = ({
+    defaultValue = "",
+    setTimeline,
+    selectedCourses,
+    setSelectedCourses,
+    value,
+    setValue,
+    inputRef,
+    clearSelections,
+    clearInputValue,
+}: AutoCompleteProps) => {
+    const initialRender = useRef(true);
+
     const [suggestions, setSuggestions] = useState<Section[]>([]);
     const [
         suggestionsFromBackend,
@@ -238,12 +172,33 @@ const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
     const [backdrop, setBackdrop] = useState("");
 
     const show = active && suggestions.length > 0;
+    const bulkMode = selectedCourses.size > 1;
 
-    const setValue = (v) => {
-        onValueChange(v);
-        return setInternalValue(v);
-    };
+    useEffect(() => {
+        // Don't run if first render to prevent defaultValue of value from emptying
+        if (initialRender.current) {
+            initialRender.current = false;
+            return;
+        }
 
+        // update suggestions and input value
+        if (inputRef.current) {
+            if (bulkMode) {
+                // display all sections selected
+                inputRef.current.value = generateCoursesValue();
+            } else if (selectedCourses.size === 1) {
+                // display the one selected section
+                setValue(
+                    selectedCourses.values().next().value.section_id
+                );
+                inputRef.current.value = selectedCourses
+                    .values()
+                    .next().value.section_id;
+            } 
+        }
+    }, [selectedCourses]);
+
+    // Create suggestion text, backdrop
     useEffect(() => {
         setBackdrop(
             generateBackdrop(inputRef.current && value, show && suggestions)
@@ -259,6 +214,12 @@ const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
             }
         }
     }, [suggestionsFromBackend, value]);
+
+    // Create input text for bulk mode in the form of: [last selected section title] + [# selected courses - 1] more
+    const generateCoursesValue = () => {
+        const lastElement = Array.from(selectedCourses).pop()!;
+        return `${lastElement.section_id} + ${selectedCourses.size - 1} more`;
+    };
 
     /**
      * Takes in the index of a new selected suggestion and updates state accordingly
@@ -283,6 +244,29 @@ const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
             .map((suggestion) => suggestion.section_id.toLowerCase())
             .indexOf(value.toLowerCase());
 
+    /**
+     * Returns suggested suggestion grouped by course
+     * @return suggestions
+     */
+    const groupedSuggestions = suggestions
+        .sort((a, b) => a.section_id.localeCompare(b.section_id))
+        .reduce((res, obj) => {
+            const [courseName, midNum, endNum] = obj.section_id.split("-");
+            const { activity } = obj;
+
+            if (res[`${courseName}-${midNum}`]) {
+                if (res[`${courseName}-${midNum}`][activity]) {
+                    res[`${courseName}-${midNum}`][activity].push(obj);
+                } else {
+                    res[`${courseName}-${midNum}`][activity] = [obj];
+                }
+            } else {
+                res[`${courseName}-${midNum}`] = { [activity]: [obj] };
+            }
+
+            return res;
+        }, {});
+
     return (
         <Container
             inputHeight={
@@ -292,103 +276,105 @@ const AutoComplete = ({ onValueChange, setTimeline, disabled }) => {
             }
             ref={useOnClickOutside(() => setActive(false), !show)}
         >
-            <AutoCompleteInput
-                disabled={disabled}
-                // @ts-ignore
-                autocomplete="off"
-                placeholder="Course"
-                ref={inputRef}
-                onKeyDown={(e) => {
-                    if (e.keyCode === RETURN_KEY && suggestions) {
-                        e.preventDefault();
-                    }
-                }}
-                onKeyUp={(e) => {
-                    if (
-                        (e.keyCode === RIGHT_ARROW ||
-                            e.keyCode === RETURN_KEY) &&
-                        inputRef.current &&
-                        suggestions &&
-                        suggestions[0]
-                    ) {
-                        // autocomplete with backdrop when the right arrow key is pressed
-                        setValue(backdrop);
-                        setActive(false);
-                        inputRef.current.value = backdrop;
-                    } else if (e.keyCode === DOWN_ARROW && suggestions) {
-                        // select a suggestion when the down arrow key is pressed
-                        const newIndex = getCurrentIndex() + 1;
-                        const newSelectedSuggestion = Math.min(
-                            newIndex,
-                            suggestions.length - 1
-                        );
-                        handleSuggestionSelect(newSelectedSuggestion);
-                    } else if (e.keyCode === UP_ARROW && suggestions) {
-                        // select a suggestion when the up arrow key is pressed
-                        const newSelectedSuggestion = Math.max(
-                            getCurrentIndex() - 1,
-                            -1
-                        );
-                        handleSuggestionSelect(newSelectedSuggestion);
-                    } else {
-                        // @ts-ignore
-                        const newValue = e.target.value;
-                        setValue(newValue);
-                        if (!newValue || newValue.length < 3) {
-                            setSuggestions([]);
-                        } else {
-                            suggestionsDebounced(newValue).then(
-                                setSuggestionsFromBackend
-                            );
+            <AutoCompleteInputContainer>
+                <AutoCompleteInput
+                    defaultValue={defaultValue}
+                    readOnly={bulkMode}
+                    // @ts-ignore
+                    autocomplete="off"
+                    placeholder="Course"
+                    ref={inputRef}
+                    onKeyDown={(e) => {
+                        if (e.keyCode === RETURN_KEY && suggestions) {
+                            e.preventDefault();
                         }
-                    }
-                }}
-                onClick={() => setActive(true)}
-            />
-            <AutoCompleteInputBackground
-                // @ts-ignore
-                autocomplete="off"
-                disabled={disabled}
-                value={backdrop}
-            />
+                    }}
+                    onKeyUp={(e) => {
+                        // Only allow keying suggestions feature when selecting one section
+                        if (bulkMode) {
+                            return;
+                        }
+
+                        if (
+                            (e.keyCode === RIGHT_ARROW ||
+                                e.keyCode === RETURN_KEY) &&
+                            inputRef.current &&
+                            suggestions &&
+                            suggestions[0]
+                        ) {
+                            // autocomplete with backdrop when the right arrow key is pressed
+                            setValue(backdrop);
+                            setActive(false);
+                            inputRef.current.value = backdrop;
+                        } else if (e.keyCode === DOWN_ARROW && suggestions) {
+                            // select a suggestion when the down arrow key is pressed
+                            const newIndex = getCurrentIndex() + 1;
+                            const newSelectedSuggestion = Math.min(
+                                newIndex,
+                                suggestions.length - 1
+                            );
+                            handleSuggestionSelect(newSelectedSuggestion);
+                        } else if (e.keyCode === UP_ARROW && suggestions) {
+                            // select a suggestion when the up arrow key is pressed
+                            const newSelectedSuggestion = Math.max(
+                                getCurrentIndex() - 1,
+                                -1
+                            );
+                            handleSuggestionSelect(newSelectedSuggestion);
+                        } else if (
+                            e.keyCode === DELETE_KEY &&
+                            selectedCourses.size === 1
+                        ) {
+                            clearSelections();
+                        } else {
+                            // @ts-ignore
+                            const newValue = e.target.value;
+                            setValue(newValue);
+                            if (!newValue || newValue.length < 3) {
+                                setSuggestions([]);
+                            } else {
+                                suggestionsDebounced(newValue).then(
+                                    setSuggestionsFromBackend
+                                );
+                            }
+                        }
+                    }}
+                    onClick={() => setActive(true)}
+                />
+                <AutoCompleteInputBackground
+                    // @ts-ignore
+                    autocomplete="off"
+                    disabled={bulkMode}
+                    value={bulkMode ? "" : backdrop}
+                />
+                <ClearSelection
+                    icon={faTimes}
+                    hidden={!bulkMode}
+                    parent={inputRef}
+                    onClick={() => {
+                        clearSelections();
+                        clearInputValue();
+                    }}
+                />
+            </AutoCompleteInputContainer>
             <DropdownContainer below={inputRef} hidden={!show}>
                 <DropdownBox>
-                    {suggestions
-                        .sort((a, b) =>
-                            a.section_id.localeCompare(b.section_id)
-                        )
-                        .map((suggestion, index) => (
-                            <Suggestion
-                                key={suggestion.section_id}
-                                selected={
-                                    suggestion.section_id.toLowerCase() ===
-                                    value.toLowerCase()
-                                }
-                                courseCode={suggestion.section_id}
-                                onClick={() => {
-                                    if (inputRef.current) {
-                                        inputRef.current.value =
-                                            suggestion.section_id;
-                                    }
-                                    setActive(false);
-                                    setValue(suggestion.section_id);
-                                }}
-                                onChangeTimeline={() => {
-                                    setTimeline(suggestion.section_id);
-                                }}
-                                title={suggestion.course_title}
-                                instructor={suggestion.instructors[0]?.name}
-                            />
-                        ))}
+                    {Object.keys(groupedSuggestions).map((key) => (
+                        <GroupSuggestion
+                            sections={groupedSuggestions[key]}
+                            courseCode={key}
+                            value={value}
+                            selectedCourses={selectedCourses}
+                            setValue={setValue}
+                            setTimeline={setTimeline}
+                            setSelectedCourses={setSelectedCourses}
+                            clearInputValue={clearInputValue}
+                        />
+                    ))}
                 </DropdownBox>
             </DropdownContainer>
         </Container>
     );
-};
-
-AutoComplete.propTypes = {
-    onValueChange: PropTypes.func,
-    disabled: PropTypes.bool,
 };
 
 export default AutoComplete;

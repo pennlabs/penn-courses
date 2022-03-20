@@ -129,8 +129,6 @@ def deduplicate_status_updates(semesters=None, verbose=False, semesters_precompu
     if verbose:
         print(f"Deduplicating status updates for semesters {str(semesters)}...")
 
-    iterator_wrapper = tqdm if verbose else (lambda x: x)
-
     for semester_num, semester in enumerate(semesters):
         with transaction.atomic():
             # We make this command an atomic transaction, so that the database will not
@@ -140,8 +138,9 @@ def deduplicate_status_updates(semesters=None, verbose=False, semesters_precompu
                 print(f"\nProcessing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.")
 
             num_removed = 0
-            for section_id in iterator_wrapper(
-                Section.objects.filter(course__semester=semester).values_list("id", flat=True)
+            for section_id in tqdm(
+                Section.objects.filter(course__semester=semester).values_list("id", flat=True),
+                disable=(not verbose),
             ):
                 last_update = None
                 ids_to_remove = []  # IDs of redundant status updates to remove
@@ -368,7 +367,9 @@ def recompute_demand_distribution_estimates(
                 print("Indexing relevant sections...")
             for section in iterator_wrapper(
                 Section.objects.filter(extra_metrics_section_filters, course__semester=semester)
-                .annotate(efficient_semester=F("course__semester"),)
+                .annotate(
+                    efficient_semester=F("course__semester"),
+                )
                 .distinct()
             ):
                 section_id_to_object[section.id] = section

@@ -173,7 +173,10 @@ class MergeInstructorsCommandTestCase(TestCase):
         self.inst_a.save()
         self.inst_b.save()
         management.call_command(
-            self.COMMAND_NAME, "--all", stdout=self.out, stderr=self.err,
+            self.COMMAND_NAME,
+            "--all",
+            stdout=self.out,
+            stderr=self.err,
         )
         self.assertEqual(1, Instructor.objects.all().count())
         self.assertEqual(2, Review.objects.filter(instructor=self.inst_b).count())
@@ -181,7 +184,10 @@ class MergeInstructorsCommandTestCase(TestCase):
 
     def test_with_one_strat(self):
         management.call_command(
-            self.COMMAND_NAME, "--strategy=case-insensitive", stdout=self.out, stderr=self.err,
+            self.COMMAND_NAME,
+            "--strategy=case-insensitive",
+            stdout=self.out,
+            stderr=self.err,
         )
         self.assertEqual(2, Instructor.objects.all().count())
         self.assertEqual(2, Review.objects.filter(instructor=self.inst_a).count())
@@ -210,7 +216,11 @@ class MergeInstructorsCommandTestCase(TestCase):
         self.inst_a.save()
         self.inst_b.save()
         management.call_command(
-            self.COMMAND_NAME, "--all", "--dryrun", stdout=self.out, stderr=self.err,
+            self.COMMAND_NAME,
+            "--all",
+            "--dryrun",
+            stdout=self.out,
+            stderr=self.err,
         )
         self.assertEqual(3, Instructor.objects.all().count())
         self.assertEqual(0, Review.objects.filter(instructor=self.inst_b).count())

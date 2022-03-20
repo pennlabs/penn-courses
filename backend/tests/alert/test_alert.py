@@ -746,7 +746,9 @@ class WebhookViewTestCase(TestCase):
         )
 
         self.assertEqual(200, res.status_code)
-        self.assertFalse("sent" in json.loads(res.content)["message"],)
+        self.assertFalse(
+            "sent" in json.loads(res.content)["message"],
+        )
         self.assertFalse(mock_alert.called)
         self.assertEqual(1, StatusUpdate.objects.count())
         u = StatusUpdate.objects.get()
@@ -954,7 +956,10 @@ class CourseStatusUpdateTestCase(TestCase):
 
     def test_export_status_updates(self):
         call_command(
-            "export_status_history", path=os.devnull, upload_to_s3=False, semesters=TEST_SEMESTER,
+            "export_status_history",
+            path=os.devnull,
+            upload_to_s3=False,
+            semesters=TEST_SEMESTER,
         )
 
 
@@ -1102,7 +1107,10 @@ class AlertRegistrationTestCase(TestCase):
                     "requests.post", return_value=MockResponse(200)
                 ) as push_notification_mock:
                     override_delay(
-                        [("alert.tasks", "send_course_alerts"), ("alert.tasks", "send_alert"),],
+                        [
+                            ("alert.tasks", "send_course_alerts"),
+                            ("alert.tasks", "send_alert"),
+                        ],
                         self.simulate_alert_helper_before,
                         {
                             "section": section,
@@ -1206,7 +1214,7 @@ class AlertRegistrationTestCase(TestCase):
                     for u in StatusUpdate.objects.all():
                         self.assertTrue(u.alert_sent)
 
-    def create_resubscribe_group(self):
+    def create_resubscribe_group(self, close_notifications=False):
         """
         Resubscribe chains created:
         first -> third -> fourth (CIS-120-001)
@@ -1248,7 +1256,10 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-detail", args=[third_id]))
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(self.registration_cis120.resubscribed_to, response.data)
-        self.simulate_alert(self.cis120, 2)
+        self.simulate_alert(
+            self.cis120, 2, close_notification=True, should_send=close_notifications
+        )
+        self.simulate_alert(self.cis120, 3)
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps({"id": third_id, "resubscribe": True}),
@@ -1288,7 +1299,7 @@ class AlertRegistrationTestCase(TestCase):
             "fifth_id": fifth_id,
         }
 
-    def create_auto_resubscribe_group(self, put=False):
+    def create_auto_resubscribe_group(self, put=False, close_notifications=False):
         """
         Resubscribe chains created:
         first -> third -> fourth (CIS-120-001)
@@ -1332,7 +1343,10 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-detail", args=[third_id]))
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(third_ob, response.data)
-        self.simulate_alert(self.cis120, 2)
+        self.simulate_alert(
+            self.cis120, 2, close_notification=True, should_send=close_notifications
+        )
+        self.simulate_alert(self.cis120, 3)
         first_ob = Registration.objects.get(id=first_id)
         third_ob = first_ob.resubscribed_to
         fourth_ob = third_ob.resubscribed_to
@@ -1441,7 +1455,8 @@ class AlertRegistrationTestCase(TestCase):
         third_data = next(item for item in response.data if item["id"] == ids["third_id"])
         third_ob = Registration.objects.get(id=ids["third_id"])
         self.assertEqual(
-            self.registration_cis120.resubscribed_to, Registration.objects.get(id=ids["third_id"]),
+            self.registration_cis120.resubscribed_to,
+            Registration.objects.get(id=ids["third_id"]),
         )
         self.assertEqual(first_ob, third_ob.resubscribed_from)
         self.assertEqual(first_ob.created_at, self.convert_date(third_data["original_created_at"]))
@@ -1483,7 +1498,8 @@ class AlertRegistrationTestCase(TestCase):
         """
         first_ob = Registration.objects.get(id=ids["first_id"])
         fourth_ob = Registration.objects.get(id=ids["fourth_id"])
-        self.simulate_alert(self.cis120, 3)
+        self.simulate_alert(self.cis120, 4, close_notification=True, should_send=False)
+        self.simulate_alert(self.cis120, 5)
         if auto_resub:
             sixth_id = Registration.objects.get(id=ids["fourth_id"]).resubscribed_to.id
         else:
@@ -1646,7 +1662,8 @@ class AlertRegistrationTestCase(TestCase):
         response = new_client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(
-            0, len([item for item in response.data if item["id"] in [id for id in ids.values()]]),
+            0,
+            len([item for item in response.data if item["id"] in [id for id in ids.values()]]),
         )
         self.assertEqual(2, len(response.data))
         response = self.client.get(reverse("registrations-list"))
@@ -1660,9 +1677,10 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
         self.assertEqual(5, len(response.data))
         # now test resubscribing with multiple users and alerts for multiple users
+        self.simulate_alert(self.cis120, 4, close_notification=True, should_send=False)
         self.simulate_alert(
             self.cis120,
-            3,
+            5,
             [
                 {"number": "+11234567890", "email": "j@gmail.com"},
                 {"number": "+12234567890", "email": "newj@gmail.com"},
@@ -1716,7 +1734,8 @@ class AlertRegistrationTestCase(TestCase):
         response = new_client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(
-            0, len([item for item in response.data if item["id"] in [id for id in ids.values()]]),
+            0,
+            len([item for item in response.data if item["id"] in [id for id in ids.values()]]),
         )
         self.assertEqual(3, len(response.data))
 
@@ -1811,14 +1830,16 @@ class AlertRegistrationTestCase(TestCase):
                 )
             self.assertEqual(400, response.status_code)
             self.assertEqual(
-                "You cannot resubscribe to a deleted registration.", response.data["detail"],
+                "You cannot resubscribe to a deleted registration.",
+                response.data["detail"],
             )
         if not delete_before_sim_webhook:
             self.assertTrue(Registration.objects.get(id=first_id).notification_sent)
             if auto_resub:
                 self.assertFalse(
                     hasattr(
-                        Registration.objects.get(id=first_id).resubscribed_to, "resubscribed_to",
+                        Registration.objects.get(id=first_id).resubscribed_to,
+                        "resubscribed_to",
                     )
                 )
                 self.assertFalse(Registration.objects.get(id=first_id).deleted)
@@ -1904,7 +1925,8 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
 
-        self.simulate_alert(self.cis120, 3, should_send=False)
+        self.simulate_alert(self.cis120, 4, close_notification=True, should_send=False)
+        self.simulate_alert(self.cis120, 5, should_send=False)
 
         response = self.client.put(
             reverse("registrations-detail", args=[ids["fourth_id"]]),
@@ -1936,7 +1958,8 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
 
-        self.simulate_alert(self.cis120, 4, should_send=False)
+        self.simulate_alert(self.cis120, 6, close_notification=True, should_send=False)
+        self.simulate_alert(self.cis120, 7, should_send=False)
 
     def resub_after_new_registration_for_section(self, put):
         """
@@ -2083,7 +2106,8 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
 
-        self.simulate_alert(self.cis120, 3, should_send=True)
+        self.simulate_alert(self.cis120, 4, close_notification=True, should_send=False)
+        self.simulate_alert(self.cis120, 5, should_send=True)
 
         response = self.client.post(
             reverse("registrations-list"),
@@ -2169,7 +2193,8 @@ class AlertRegistrationTestCase(TestCase):
             if auto_resub:
                 self.assertFalse(
                     hasattr(
-                        Registration.objects.get(id=first_id).resubscribed_to, "resubscribed_to",
+                        Registration.objects.get(id=first_id).resubscribed_to,
+                        "resubscribed_to",
                     )
                 )
                 self.assertFalse(Registration.objects.get(id=first_id).cancelled)
@@ -2644,7 +2669,8 @@ class AlertRegistrationTestCase(TestCase):
         self.assertFalse(Registration.objects.get(id=first_id).auto_resubscribe)
         self.assertEquals(400, response.status_code)
         self.assertEquals(
-            "You cannot make changes to a deleted registration.", response.data["detail"],
+            "You cannot make changes to a deleted registration.",
+            response.data["detail"],
         )
 
     @data((True, None), (False, None))

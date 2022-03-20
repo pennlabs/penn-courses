@@ -172,7 +172,8 @@ class ParseOpendataResponseTestCase(TestCase):
         else:
             test_file_path = os.path.join(BASE_DIR, "tests/courses/test-opendata.json")
         upsert_course_from_opendata(
-            json.load(open(test_file_path, "r"))["result_data"][0], TEST_SEMESTER,
+            json.load(open(test_file_path, "r"))["result_data"][0],
+            TEST_SEMESTER,
         )
         self.assertEqual(1, Course.objects.count())
         self.assertEqual(21, Section.objects.count())

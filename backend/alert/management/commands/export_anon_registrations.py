@@ -74,7 +74,7 @@ class Command(BaseCommand):
             f"semesters {semesters}..."
         )
         rows = 0
-        output_file_path = "/app/export_anon_registrations.csv" if upload_to_s3 else path
+        output_file_path = "/tmp/export_anon_registrations.csv" if upload_to_s3 else path
         with open(output_file_path, "w") as output_file:
             csv_writer = csv.writer(
                 output_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL

@@ -122,13 +122,17 @@ def import_review(section, instructor, enrollment, responses, form_type, bits, s
     # Assumption: that all review objects for the semesters in question were
     # deleted before this runs.
     try:
-        review = Review.objects.create(
+        review, created = Review.objects.get_or_create(
             section=section,
             instructor=instructor,
-            enrollment=enrollment,
-            responses=responses,
-            form_type=form_type,
+            defaults={
+                "enrollment": enrollment,
+                "responses": responses,
+                "form_type": form_type,
+            },
         )
+        if not created:
+            stat("duplicate_review")
     except IntegrityError:
         stat("review:integrity_error")
         return
@@ -136,11 +140,11 @@ def import_review(section, instructor, enrollment, responses, form_type, bits, s
 
     # This saves us a bunch of database calls per row, since reviews have > 10 bits.
     try:
-        ReviewBit.objects.bulk_create(review_bits)
+        ReviewBit.objects.bulk_create(review_bits, ignore_conflicts=True)
+        stat("reviewbit_created_count", len(review_bits))
     except IntegrityError:
-        stat("reviewbit:integrity_error")
+        stat("review:integrity_error")
         return
-    stat("reviewbit_created_count", len(review_bits))
 
 
 def import_summary_row(row, stat):
@@ -187,7 +191,8 @@ def import_summary_row(row, stat):
     )
 
     # Attach instructor to course.
-    section.instructors.add(inst)
+    if inst is not None:
+        section.instructors.add(inst)
 
     # We finished importing this row!
     stat("row_count")
@@ -236,30 +241,37 @@ def import_ratings_row(row, stat):
     field = CONTEXT_TO_SLUG.get(context)
     if field is None:
         stat(f"missing slug for '{context}'")
+        return
+
+    details = {
+        "average": row.get("MEAN_TOTAL_RATING"),
+        "median": row.get("MEDIAN_TOTAL_RATING"),
+        "stddev": row.get("STANDARD_DEVIATION"),
+        "rating0": row.get("TOTAL_RATING_0"),
+        "rating1": row.get("TOTAL_RATING_1"),
+        "rating2": row.get("TOTAL_RATING_2"),
+        "rating3": row.get("TOTAL_RATING_3"),
+        "rating4": row.get("TOTAL_RATING_4"),
+    }
+
+    for key, val in details.items():
+        if val is None:
+            stat(f"null value for {key}")
+            return
 
     ReviewBit.objects.update_or_create(
         review=review,
         field=field,
-        defaults={
-            "average": row.get("MEAN_TOTAL_RATING"),
-            "median": row.get("MEDIAN_TOTAL_RATING"),
-            "stddev": row.get("STANDARD_DEVIATION"),
-            "rating0": row.get("TOTAL_RATING_0"),
-            "rating1": row.get("TOTAL_RATING_1"),
-            "rating2": row.get("TOTAL_RATING_2"),
-            "rating3": row.get("TOTAL_RATING_3"),
-            "rating4": row.get("TOTAL_RATING_4"),
-        },
+        defaults=details,
     )
 
     stat("detail_count")
 
 
-def import_rows(rows, import_func, show_progress_bar=True):
+def gen_stat(stats):
     """
-    Given a list of SQL rows, import them using the given import function
+    Generates a stat function for a given stats dict.
     """
-    stats = dict()
 
     def stat(key, amt=1):
         """
@@ -269,34 +281,42 @@ def import_rows(rows, import_func, show_progress_bar=True):
         value = stats.get(key, 0)
         stats[key] = value + amt
 
-    for row in tqdm(rows, disable=(not show_progress_bar)):
-        import_func(row, stat)
-
-    return stats
+    return stat
 
 
 def import_summary_rows(summaries, show_progress_bar=True):
-    return import_rows(summaries, import_summary_row, show_progress_bar)
+    """
+    Imports summary rows given a summaries list.
+    """
+    stats = dict()
+    stat = gen_stat(stats)
+    for row in tqdm(summaries, disable=(not show_progress_bar)):
+        import_summary_row(row, stat)
+    return stats
 
 
-def import_ratings_rows(ratings, show_progress_bar=True):
-    return import_rows(ratings, import_ratings_row, show_progress_bar)
+def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=True):
+    """
+    Imports rating rows given an iterator ratings and total number of rows num_ratings.
+    Optionally filter rows to import by semester with the given semesters list.
+    """
+    stats = dict()
+    stat = gen_stat(stats)
+    for row in tqdm(ratings, total=num_ratings, disable=(not show_progress_bar)):
+        if semesters is None or row["TERM"] in semesters:
+            import_ratings_row(row, stat)
+    return stats
 
 
-def import_description_rows(rows, semesters=None, show_progress_bar=True):
+def import_description_rows(num_rows, rows, semesters=None, show_progress_bar=True):
+    """
+    Imports description rows given an iterator rows and total number of rows num_rows.
+    Optionally filter courses for which to update descriptions by semester with the
+    given semesters list.
+    """
     descriptions = dict()
 
-    stats = dict()
-
-    def stat(key, amt=1):
-        """
-        Helper function to keep track of how many rows we are adding to the DB,
-        along with any errors in processing the incoming rows.
-        """
-        value = stats.get(key, 0)
-        stats[key] = value + amt
-
-    for row in tqdm(rows, disable=(not show_progress_bar)):
+    for row in tqdm(rows, total=num_rows, disable=(not show_progress_bar)):
         course_code = row.get("COURSE_ID")
         paragraph_num = row.get("PARAGRAPH_NUMBER")
         description_paragraph = row.get("COURSE_DESCRIPTION")

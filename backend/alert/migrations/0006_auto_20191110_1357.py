@@ -14,10 +14,14 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name="registration", name="auto_mute", field=models.BooleanField(default=True),
+            model_name="registration",
+            name="auto_mute",
+            field=models.BooleanField(default=True),
         ),
         migrations.AddField(
-            model_name="registration", name="deleted", field=models.BooleanField(default=False),
+            model_name="registration",
+            name="deleted",
+            field=models.BooleanField(default=False),
         ),
         migrations.AddField(
             model_name="registration",
@@ -25,7 +29,9 @@ class Migration(migrations.Migration):
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="registration", name="muted", field=models.BooleanField(default=False),
+            model_name="registration",
+            name="muted",
+            field=models.BooleanField(default=False),
         ),
         migrations.AddField(
             model_name="registration",

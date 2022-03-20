@@ -38,7 +38,9 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.AddField(
-            model_name="section", name="prereq_notes", field=models.TextField(blank=True),
+            model_name="section",
+            name="prereq_notes",
+            field=models.TextField(blank=True),
         ),
         migrations.AlterField(
             model_name="course",
