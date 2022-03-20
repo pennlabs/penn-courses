@@ -346,6 +346,7 @@ const AutoComplete = ({
                     autocomplete="off"
                     disabled={bulkMode}
                     value={bulkMode ? "" : backdrop}
+                    readOnly={true}
                 />
                 <ClearSelection
                     icon={faTimes}
@@ -369,6 +370,7 @@ const AutoComplete = ({
                             setTimeline={setTimeline}
                             setSelectedCourses={setSelectedCourses}
                             clearInputValue={clearInputValue}
+                            key={key}
                         />
                     ))}
                 </DropdownBox>

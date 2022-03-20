@@ -14,7 +14,7 @@ const AccountIndicator = ({
     user,
     login,
     logout,
-    onLeft,
+    leftAligned,
     backgroundColor,
     nameLength,
     pathname,
@@ -42,7 +42,7 @@ const AccountIndicator = ({
             onLogout={() => {
                 logout();
             }}
-            onLeft={onLeft}
+            leftAligned={leftAligned}
         />
     ) : (
         <LoginButton pathname={pathname} />
@@ -55,7 +55,7 @@ AccountIndicator.propTypes = {
     logout: PropTypes.func.isRequired,
     backgroundColor: PropTypes.string,
     nameLength: PropTypes.number,
-    onLeft: PropTypes.bool,
+    leftAligned: PropTypes.bool,
     pathname: PropTypes.string,
 };
 

@@ -296,6 +296,7 @@ const GroupSuggestion = ({
                         <ToggleButton
                             toggled={selectedAllActivity(key)}
                             onClick={() => toggleButton(key)}
+                            key={key}
                         >
                             All{" "}
                             {mapActivityToString(key).length > 0
