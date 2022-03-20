@@ -522,7 +522,7 @@ class Registration(models.Model):
             else:
                 self.original_created_at = self.get_original_registration_iter().created_at
         super().save()
-        if update_registration_volume and in_dev():
+        if update_registration_volume and not in_dev():
             is_now_active = self.is_active
             registration_update.delay(self.section.id, was_active, is_now_active, self.updated_at)
 
