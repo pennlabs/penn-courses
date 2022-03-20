@@ -222,13 +222,13 @@ class DescriptionImportTestCase(TestCase):
     def test_one_paragraph(self):
         get_or_create_course("CIS", "120", TEST_SEMESTER)
         rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
-        import_description_rows(rows, show_progress_bar=False)
+        import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(1, Course.objects.count())
         self.assertEqual("Hello", Course.objects.get().description)
 
     def test_no_course(self):
         rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
-        import_description_rows(rows, show_progress_bar=False)
+        import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(0, Course.objects.count())
 
     def test_two_paragraphs(self):
@@ -237,7 +237,7 @@ class DescriptionImportTestCase(TestCase):
             {"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "2", "COURSE_DESCRIPTION": "world!"},
             {"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"},
         ]
-        import_description_rows(rows, show_progress_bar=False)
+        import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(1, Course.objects.count())
         self.assertEqual("Hello\nworld!", Course.objects.get().description)
 
@@ -246,7 +246,7 @@ class DescriptionImportTestCase(TestCase):
         get_or_create_course("CIS", "120", "3008A")
 
         rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
-        import_description_rows(rows, show_progress_bar=False)
+        import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(2, Course.objects.count())
         c1 = Course.objects.get(semester=TEST_SEMESTER)
         c2 = Course.objects.get(semester="3008A")
@@ -261,7 +261,7 @@ class DescriptionImportTestCase(TestCase):
         c.save()
 
         rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
-        import_description_rows(rows, show_progress_bar=False)
+        import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(3, Course.objects.count())
         c1 = Course.objects.get(semester=TEST_SEMESTER)
         c2 = Course.objects.get(semester="3008A")
@@ -277,7 +277,7 @@ class DescriptionImportTestCase(TestCase):
             {"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "World"},
             {"COURSE_ID": "CIS121", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"},
         ]
-        import_description_rows(rows, show_progress_bar=False)
+        import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         c120 = Course.objects.get(code="120")
         c121 = Course.objects.get(code="121")
         self.assertEqual("World", c120.description)
