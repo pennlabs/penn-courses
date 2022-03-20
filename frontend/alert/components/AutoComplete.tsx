@@ -138,12 +138,15 @@ interface TSuggestion {
 }
 
 interface AutoCompleteProps {
-    defaultValue: string;
-    setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
+    defaultValue: string,
+    setTimeline: React.Dispatch<React.SetStateAction<string | null>>,
     selectedCourses: Set<Section>,
     setSelectedCourses: React.Dispatch<React.SetStateAction<Set<Section>>>,
+    value: string,
+    setValue: React.Dispatch<React.SetStateAction<string>>,
     inputRef: React.RefObject<HTMLInputElement>,
     clearSelections: () => void,
+    clearInputValue: () => void,
 }
 
 
@@ -152,12 +155,14 @@ const AutoComplete = ({
     setTimeline,
     selectedCourses,
     setSelectedCourses,
+    value,
+    setValue,
     inputRef,
     clearSelections,
+    clearInputValue,
 }: AutoCompleteProps) => {
     const initialRender = useRef(true);
 
-    const [value, setValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<Section[]>([]);
     const [
         suggestionsFromBackend,

@@ -120,6 +120,7 @@ const AlertForm = ({
     const [selectedCourses, setSelectedCourses] = useState<Set<Section>>(
         new Set()
     );
+    const [value, setValue] = useState(autofillSection);
 
     const [email, setEmail] = useState("");
 
@@ -165,26 +166,52 @@ const AlertForm = ({
         setSelectedCourses(new Set());
     };
 
+    /**
+     * Clear the input value and setValue
+     * @param newSelectedCourses - most up-to-date selected courses set
+     * @param suggestion - the section
+     */
+     const clearInputValue = () => {
+        if (autoCompleteInputRef.current) {
+            autoCompleteInputRef.current.value = "";
+            setValue("");
+        }
+    }
+
     const deselectCourse = (section: Section): boolean => {
         const newSelectedCourses = new Set(selectedCourses);
         const removed = newSelectedCourses.delete(section);
         removed && setSelectedCourses(newSelectedCourses);
+
+        if (newSelectedCourses.size === 0) {
+            clearInputValue();
+        }
+
         return removed;
     }
 
     const submitRegistration = () => {
         // if user has a auto fill section and didn't change the input value then register for section
+        // and support user manually entered a course (without checking checkbox)
         if (
             autoCompleteInputRef.current &&
-            autoCompleteInputRef.current.value === autofillSection
+            (autoCompleteInputRef.current.value === autofillSection || (autoCompleteInputRef.current.value !== "" && selectedCourses.size == 0))
         ) {
             doAPIRequest("/api/alert/registrations/", "POST", {
-                section: autofillSection,
+                section: autoCompleteInputRef.current.value,
                 auto_resubscribe: autoResub === "true",
                 close_notification: closedNotif,
             })
-                .then(setResponse)
+                .then((res) => {
+                    if (res.ok) {
+                        clearInputValue();
+                    }
+                    setResponse(res)
+                })
                 .catch(handleError);
+
+            return;
+            
         }
 
         // register all selected sections
@@ -203,10 +230,13 @@ const AlertForm = ({
         Promise.allSettled(promises)
             .then((responses) => responses.forEach(
                 (res: PromiseSettledResult<Response>, i) => {
+                    //fulfilled if response is returned, even if reg is unsuccessful.
                     if (res.status === "fulfilled") {
-                        console.log("fulfilled")
                         setResponse(res.value);
-                        deselectCourse(sections[i]);
+                        if (res.value.ok) {
+                            deselectCourse(sections[i]);
+                        } 
+                    //only if network error occurred
                     } else {
                         handleError(res.reason);
                     }
@@ -252,9 +282,12 @@ const AlertForm = ({
                 defaultValue={autofillSection}
                 selectedCourses={selectedCourses}
                 setSelectedCourses={setSelectedCourses}
+                value={value}
+                setValue={setValue}
                 setTimeline={setTimeline}
                 inputRef={autoCompleteInputRef}
                 clearSelections={clearSelections}
+                clearInputValue={clearInputValue}
             />
             <Input
                 placeholder="Email"
