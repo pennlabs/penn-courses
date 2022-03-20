@@ -231,7 +231,7 @@ def course_reviews(request, course_code):
         override_response_schema=course_plots_response_schema,
     )
 )
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.

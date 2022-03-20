@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 import * as Sentry from "@sentry/browser";
 
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
+import { Center } from "pcx-shared-components/src/common/layout";
 import { Input } from "../Input";
 import AutoComplete from "../AutoComplete";
-import { Center } from "pcx-shared-components/src/common/layout";
 import getCsrf from "../../csrf";
-import { User } from "../../types";
+import { User, Section } from "../../types";
 
 const SubmitButton = styled.button`
     border-radius: 5px;
@@ -101,13 +101,18 @@ const AlertForm = ({
     setTimeline,
     autofillSection = "",
 }: AlertFormProps) => {
-    const [section, setSection] = useState(autofillSection);
+    const [selectedCourses, setSelectedCourses] = useState<Set<Section>>(
+        new Set()
+    );
+
     const [email, setEmail] = useState("");
 
     const [phone, setPhone] = useState("");
     const [isPhoneDirty, setPhoneDirty] = useState(false);
 
     const [autoResub, setAutoResub] = useState("false");
+
+    const autoCompleteInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const phonenumber =
@@ -138,13 +143,55 @@ const AlertForm = ({
         );
     };
 
+    // Clear all sections the user selected
+    const clearSelections = () => {
+        setSelectedCourses(new Set());
+    };
+
+    const deselectCourse = (section: Section): boolean => {
+        const newSelectedCourses = new Set(selectedCourses);
+        const removed = newSelectedCourses.delete(section);
+        removed && setSelectedCourses(newSelectedCourses);
+        return removed;
+    }
+
     const submitRegistration = () => {
-        doAPIRequest("/api/alert/registrations/", "POST", {
-            section,
-            auto_resubscribe: autoResub === "true",
-        })
-            .then((res) => setResponse(res))
-            .catch(handleError);
+        // if user has a auto fill section and didn't change the input value then register for section
+        if (
+            autoCompleteInputRef.current &&
+            autoCompleteInputRef.current.value === autofillSection
+        ) {
+            doAPIRequest("/api/alert/registrations/", "POST", {
+                section: autofillSection,
+                auto_resubscribe: autoResub === "true",
+            })
+                .then(setResponse)
+                .catch(handleError);
+        }
+
+        // register all selected sections
+        const promises: Array<Promise<Response>> = [];
+        selectedCourses.forEach((section) => {
+            const promise = doAPIRequest("/api/alert/registrations/", "POST", {
+                section: section.section_id,
+                auto_resubscribe: autoResub === "true",
+            });
+            promises.push(promise);
+        });
+
+        const sections = Array.from(selectedCourses)
+
+        Promise.allSettled(promises)
+            .then((responses) => responses.forEach(
+                (res: PromiseSettledResult<Response>, i) => {
+                    if (res.status === "fulfilled") {
+                        console.log("fulfilled")
+                        setResponse(res.value);
+                        deselectCourse(sections[i]);
+                    } else {
+                        handleError(res.reason);
+                    }
+                }));
     };
 
     const onSubmit = () => {
@@ -184,8 +231,11 @@ const AlertForm = ({
         <Form>
             <AutoComplete
                 defaultValue={autofillSection}
-                onValueChange={setSection}
+                selectedCourses={selectedCourses}
+                setSelectedCourses={setSelectedCourses}
                 setTimeline={setTimeline}
+                inputRef={autoCompleteInputRef}
+                clearSelections={clearSelections}
             />
             <Input
                 placeholder="Email"
