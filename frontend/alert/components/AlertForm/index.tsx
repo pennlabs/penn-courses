@@ -136,7 +136,7 @@ const AlertForm = ({
         setResponse(new Response(blob, { status }));
     };
 
-    const isCourseOpen = (callback) => {
+    const isCourseOpen = (callback, section) => {
         fetch(`/api/base/current/sections/${section}/`).then((res) => 
             res.json().then((courseResult) => {
                 if (courseResult["status"] == "O") {
@@ -266,13 +266,11 @@ const AlertForm = ({
                     if (!res.ok) {
                         throw new Error(JSON.stringify(res));
                     } else {
-                        return isCourseOpen(submitRegistration);
+                        return;
                     }
                 })
                 .catch(handleError);
-        } else {
-            isCourseOpen(submitRegistration);
-        }
+        } 
     };
 
     return (
