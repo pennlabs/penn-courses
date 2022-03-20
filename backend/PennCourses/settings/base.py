@@ -103,10 +103,18 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 
@@ -199,12 +207,9 @@ S3_resource = boto3.resource("s3")
 
 STATUS_UPDATES_RECORDED_SINCE = "2019C"  # How far back does our valid Status Update data span?
 PCA_REGISTRATIONS_RECORDED_SINCE = "2020A"  # How far back does our valid Registration data span?
-WAITLIST_DEPARTMENT_CODES = (
-    "CIS",
-    "NETS",
-)  # Which departments (referenced by code) have a waitlist system
+WAITLIST_DEPARTMENT_CODES = []  # Which departments (referenced by code) have a waitlist system
 # or require permits for registration during the add/drop period?
-PERMIT_REGISTRATION_RESTRICTION_CODES = [
+PERMIT_REQ_RESTRICTION_CODES = [
     "PCG",
     "PAD",
     "PCW",

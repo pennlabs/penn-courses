@@ -16,6 +16,9 @@ export class MyStack extends Stack {
       projectName: "PennCourses",
       path: "backend",
       imageName: "penn-courses-backend",
+      checkProps: {
+        pythonVersion: "3.10-buster",
+      }
     });
 
     const plan = new ReactProject(workflow, {

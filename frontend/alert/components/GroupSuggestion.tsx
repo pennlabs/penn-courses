@@ -177,10 +177,10 @@ interface GroupSuggestionProps {
     courseCode: string;
     value: string;
     selectedCourses: Set<Section>;
-    inputRef: React.RefObject<HTMLInputElement>;
     setValue: (v: any) => void;
     setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
-    setSelectedCourses: any;
+    setSelectedCourses: React.Dispatch<React.SetStateAction<Set<Section>>>;
+    clearInputValue: () => void;
 }
 
 const GroupSuggestion = ({
@@ -188,10 +188,10 @@ const GroupSuggestion = ({
     courseCode,
     value,
     selectedCourses,
-    inputRef,
     setValue,
     setTimeline,
     setSelectedCourses,
+    clearInputValue,
 }: GroupSuggestionProps) => {
     const initializeButtonStates = () => {
         const states = {};
@@ -250,6 +250,10 @@ const GroupSuggestion = ({
         const newSelectedCourses = new Set(selectedCourses);
 
         sections[activity].forEach(section => checkedAll ? newSelectedCourses.add(section) : newSelectedCourses.delete(section));
+        
+        if (newSelectedCourses.size === 0) {
+            clearInputValue();
+        }
 
         setSelectedCourses(newSelectedCourses);
     
@@ -264,13 +268,17 @@ const GroupSuggestion = ({
         selectedCourses,
         suggestion
     ) => {
-        const newSelectedCourses = new Set(selectedCourses);
+        const newSelectedCourses: Set<Section> = new Set(selectedCourses);
         if (selectedCourses.has(suggestion)) {
             newSelectedCourses.delete(suggestion);
         } else {
             newSelectedCourses.add(suggestion);
         }
+
         setSelectedCourses(newSelectedCourses);
+
+        return newSelectedCourses
+
     };
 
     return (
@@ -284,7 +292,7 @@ const GroupSuggestion = ({
                     </SuggestionSubtitle>
                 </DropdownItemLeftCol>
                 <ButtonContainer>
-                    {Object.keys(sections).map((key, index) => (
+                    {Object.keys(sections).map((key) => (
                         <ToggleButton
                             toggled={selectedAllActivity(key)}
                             onClick={() => toggleButton(key)}
@@ -307,17 +315,19 @@ const GroupSuggestion = ({
                         }
                         courseCode={suggestion.section_id}
                         onClick={() => {
-                            updateSelectedCourses(
+                            const newSelectedCourses = updateSelectedCourses(
                                 selectedCourses,
                                 suggestion
                             );
-
-                            // show the selected course name only if not in bulk mode
-                            if (inputRef.current && selectedCourses.size <= 1) {
-                                inputRef.current.value = suggestion.section_id;
+                            
+                            //update suggestion value
+                            if (newSelectedCourses.size >= 1) {
+                                setValue(suggestion.section_id)
+                            } else {
+                                clearInputValue();
                             }
 
-                            setValue(suggestion.section_id);
+
                         }}
                         onChangeTimeline={() => {
                             setTimeline(suggestion.section_id);

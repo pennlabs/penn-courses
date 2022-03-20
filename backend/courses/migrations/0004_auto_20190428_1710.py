@@ -10,9 +10,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(model_name="room", old_name="roomnum", new_name="number",),
-        migrations.AlterField(
-            model_name="building", name="code", field=models.CharField(max_length=4, unique=True),
+        migrations.RenameField(
+            model_name="room",
+            old_name="roomnum",
+            new_name="number",
         ),
-        migrations.AlterUniqueTogether(name="room", unique_together={("building", "number")},),
+        migrations.AlterField(
+            model_name="building",
+            name="code",
+            field=models.CharField(max_length=4, unique=True),
+        ),
+        migrations.AlterUniqueTogether(
+            name="room",
+            unique_together={("building", "number")},
+        ),
     ]

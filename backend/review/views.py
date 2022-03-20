@@ -1,5 +1,5 @@
 from dateutil.tz import gettz
-from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -10,7 +10,7 @@ from courses.models import Course, Department, Instructor, Restriction, Section
 from courses.util import get_current_semester, get_or_create_add_drop_period
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from PennCourses.settings.base import (
-    PERMIT_REGISTRATION_RESTRICTION_CODES,
+    PERMIT_REQ_RESTRICTION_CODES,
     TIME_ZONE,
     WAITLIST_DEPARTMENT_CODES,
 )
@@ -59,9 +59,7 @@ extra_metrics_section_filters = (
     & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
     & ~Q(
         id__in=Subquery(
-            Restriction.objects.filter(code__in=PERMIT_REGISTRATION_RESTRICTION_CODES).values_list(
-                "sections__id", flat=True
-            )
+            Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values("sections__id")
         )
     )  # Filter out sections that require permit for registration
 )
@@ -120,9 +118,24 @@ def course_reviews(request, course_code):
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
-    if not Course.objects.filter(
-        course_filters_pcr, sections__review__isnull=False, full_code=course_code
-    ).exists():
+    try:
+        most_recent_section = (
+            Section.objects.filter(
+                course_id__in=Subquery(
+                    Course.objects.filter(course_filters_pcr, full_code=course_code).values("id")
+                ),
+            )
+            .annotate(
+                registration_metrics=Case(
+                    When(extra_metrics_section_filters, then=Value(True)),
+                    default=Value(False),
+                    output_field=BooleanField(),
+                )
+            )
+            .order_by("-course__semester")[:1]
+            .get()
+        )
+    except Section.DoesNotExist:
         raise Http404()
 
     reviews = (
@@ -178,6 +191,7 @@ def course_reviews(request, course_code):
             "recent_reviews": make_subdict("recent_", course),
             "num_semesters": course["average_semester_count"],
             "instructors": instructors,
+            "registration_metrics": most_recent_section.registration_metrics,
         }
     )
 
@@ -217,7 +231,7 @@ def course_reviews(request, course_code):
         override_response_schema=course_plots_response_schema,
     )
 )
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
@@ -232,7 +246,8 @@ def course_plots(request, course_code):
     # Compute set of sections to include in plot data
     filtered_sections = (
         Section.objects.filter(
-            extra_metrics_section_filters_pcr(current_semester), course__full_code=course_code,
+            extra_metrics_section_filters_pcr(current_semester),
+            course__full_code=course_code,
         )
         .annotate(efficient_semester=F("course__semester"))
         .distinct()
@@ -240,7 +255,9 @@ def course_plots(request, course_code):
     instructor_ids = request.GET.get("instructor_ids")
     if instructor_ids:
         instructor_ids = [int(id) for id in instructor_ids.split(",")]
-        filtered_sections = filtered_sections.filter(instructors__id__in=instructor_ids,)
+        filtered_sections = filtered_sections.filter(
+            instructors__id__in=instructor_ids,
+        )
 
     section_map = dict()  # a dict mapping semester to section id to section object
     for section in filtered_sections:
@@ -349,7 +366,8 @@ def instructor_reviews(request, instructor_id):
             sections__instructors__id=instructor_id,
         ).distinct(),
         match_on=Q(
-            section__course__full_code=OuterRef(OuterRef("full_code")), instructor_id=instructor_id,
+            section__course__full_code=OuterRef(OuterRef("full_code")),
+            instructor_id=instructor_id,
         ),
         extra_metrics=True,
         section_subfilters={
@@ -370,7 +388,9 @@ def instructor_reviews(request, instructor_id):
                 review__responses__gt=0,
             ).count(),
             "num_sections": Section.objects.filter(
-                instructors=instructor, review__isnull=False, review__responses__gt=0,
+                instructors=instructor,
+                review__isnull=False,
+                review__responses__gt=0,
             ).count(),
             "average_reviews": make_subdict("average_", inst),
             "recent_reviews": make_subdict("recent_", inst),
@@ -471,7 +491,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     Get the review history of an instructor teaching a course. No aggregations here.
     """
     instructor = get_object_or_404(Instructor, id=instructor_id)
-    print([str(r) for r in Review.objects.filter(instructor_id=instructor_id, responses__gt=0)])
     reviews = review_averages(
         Review.objects.filter(
             section__course__full_code=course_code, instructor_id=instructor_id, responses__gt=0
@@ -483,12 +502,16 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         section_subfilters={"id": OuterRef("section_id")},
     )
     reviews = reviews.annotate(
-        course_title=F("section__course__title"), semester=F("section__course__semester"),
+        course_title=F("section__course__title"),
+        semester=F("section__course__semester"),
     )
 
     return Response(
         {
-            "instructor": {"id": instructor_id, "name": instructor.name,},
+            "instructor": {
+                "id": instructor_id,
+                "name": instructor.name,
+            },
             "course_code": course_code,
             "sections": [
                 {
@@ -539,7 +562,11 @@ def autocomplete(request):
     ]
     departments = Department.objects.all().values("code", "name")
     department_set = [
-        {"title": dept["code"], "desc": dept["name"], "url": f"/department/{dept['code']}",}
+        {
+            "title": dept["code"],
+            "desc": dept["name"],
+            "url": f"/department/{dept['code']}",
+        }
         for dept in departments
     ]
 
@@ -563,7 +590,11 @@ def autocomplete(request):
             return ""
 
     instructor_set = [
-        {"title": v["title"], "desc": join_depts(v["desc"]), "url": v["url"],}
+        {
+            "title": v["title"],
+            "desc": join_depts(v["desc"]),
+            "url": v["url"],
+        }
         for k, v in instructor_set.items()
     ]
 

@@ -23,7 +23,12 @@ from alert.serializers import (
 )
 from alert.tasks import send_course_alerts
 from alert.util import pca_registration_open, should_send_pca_alert
-from courses.util import get_current_semester, record_update, update_course_from_record
+from courses.util import (
+    get_current_semester,
+    get_or_create_course_and_section,
+    record_update,
+    update_course_from_record,
+)
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 
@@ -90,23 +95,38 @@ def accept_webhook(request):
     if prev_status is None:
         return HttpResponse("Previous Status could not be extracted from response", status=400)
 
-    alert_for_course_called = False
-
-    if should_send_pca_alert(course_term, course_status):
-        try:
-            alert_for_course(
-                course_id, semester=course_term, sent_by="WEB", course_status=course_status
-            )
-            alert_for_course_called = True
-            response = JsonResponse({"message": "webhook recieved, alerts sent"})
-        except ValueError:
-            response = JsonResponse({"message": "course code could not be parsed"})
-    else:
-        response = JsonResponse({"message": "webhook recieved"})
-
     try:
+        _, section, _, _ = get_or_create_course_and_section(course_id, course_term)
+
+        # Ignore duplicate updates
+        last_status_update = section.last_status_update
+        if (
+            last_status_update
+            and last_status_update.old_status == prev_status
+            and last_status_update.new_status == course_status
+        ):
+            raise ValidationError(
+                f"Status update received changing section {section} from "
+                f"{prev_status} to {course_status}, "
+                f"after previous status update from {last_status_update.old_status} "
+                f"to {last_status_update.new_status} (duplicate)."
+            )
+
+        alert_for_course_called = False
+        if should_send_pca_alert(course_term, course_status):
+            try:
+                alert_for_course(
+                    course_id, semester=course_term, sent_by="WEB", course_status=course_status
+                )
+                alert_for_course_called = True
+                response = JsonResponse({"message": "webhook recieved, alerts sent"})
+            except ValueError:
+                response = JsonResponse({"message": "course code could not be parsed"})
+        else:
+            response = JsonResponse({"message": "webhook recieved"})
+
         u = record_update(
-            course_id,
+            section,
             course_term,
             prev_status,
             course_status,
@@ -116,7 +136,9 @@ def accept_webhook(request):
         update_course_from_record(u)
     except (ValidationError, ValueError) as e:
         logger.error(e)
-        return HttpResponse("We got an error but webhook should ignore it", status=200)
+        response = JsonResponse(
+            {"message": "We got an error but webhook should ignore it"}, status=200
+        )
 
     return response
 

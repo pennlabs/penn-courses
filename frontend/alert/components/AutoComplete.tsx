@@ -156,7 +156,6 @@ const AutoComplete = ({
     clearSelections,
 }: AutoCompleteProps) => {
     const initialRender = useRef(true);
-    const inputValDelete = useRef(false);
 
     const [value, setValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<Section[]>([]);
@@ -182,7 +181,7 @@ const AutoComplete = ({
             if (bulkMode) {
                 // display all sections selected
                 inputRef.current.value = generateCoursesValue();
-            } else if (selectedCourses.size == 1) {
+            } else if (selectedCourses.size === 1) {
                 // display the one selected section
                 setValue(
                     selectedCourses.values().next().value.section_id
@@ -190,14 +189,7 @@ const AutoComplete = ({
                 inputRef.current.value = selectedCourses
                     .values()
                     .next().value.section_id;
-            } else if (!inputValDelete.current) {
-                // No sections selected, clear input and suggestions
-                // Run when the only course that was selected is unselected
-                inputRef.current.value = "";
-                setValue("");
-            } else {
-                inputValDelete.current = false;
-            }
+            } 
         }
     }, [selectedCourses]);
 
@@ -220,8 +212,7 @@ const AutoComplete = ({
 
     // Create input text for bulk mode in the form of: [last selected section title] + [# selected courses - 1] more
     const generateCoursesValue = () => {
-        let lastElement;
-        for (lastElement of Array.from(selectedCourses));
+        const lastElement = Array.from(selectedCourses).pop()!;
         return `${lastElement.section_id} + ${selectedCourses.size - 1} more`;
     };
 
@@ -270,8 +261,18 @@ const AutoComplete = ({
 
             return res;
         }, {});
-
-    console.log(groupedSuggestions);
+    
+    /**
+     * Clear the input value and setValue
+     * @param newSelectedCourses - most up-to-date selected courses set
+     * @param suggestion - the section
+     */
+     const clearInputValue = () => {
+        if (inputRef.current) {
+            inputRef.current.value = "";
+            setValue("");
+        }
+    }
 
     return (
         <Container
@@ -329,9 +330,8 @@ const AutoComplete = ({
                             handleSuggestionSelect(newSelectedSuggestion);
                         } else if (
                             e.keyCode === DELETE_KEY &&
-                            selectedCourses.size == 1
+                            selectedCourses.size === 1
                         ) {
-                            inputValDelete.current = true;
                             clearSelections();
                         } else {
                             // @ts-ignore
@@ -358,7 +358,10 @@ const AutoComplete = ({
                     icon={faTimes}
                     hidden={!bulkMode}
                     parent={inputRef}
-                    onClick={() => clearSelections()}
+                    onClick={() => {
+                        clearSelections();
+                        clearInputValue();
+                    }}
                 />
             </AutoCompleteInputContainer>
             <DropdownContainer below={inputRef} hidden={!show}>
@@ -369,10 +372,10 @@ const AutoComplete = ({
                             courseCode={key}
                             value={value}
                             selectedCourses={selectedCourses}
-                            inputRef={inputRef}
                             setValue={setValue}
                             setTimeline={setTimeline}
                             setSelectedCourses={setSelectedCourses}
+                            clearInputValue={clearInputValue}
                         />
                     ))}
                 </DropdownBox>

@@ -78,7 +78,9 @@ class Migration(migrations.Migration):
                 ),
                 ("instructors", models.ManyToManyField(to="courses.Instructor")),
             ],
-            options={"unique_together": {("code", "course")},},
+            options={
+                "unique_together": {("code", "course")},
+            },
         ),
         migrations.CreateModel(
             name="StatusUpdate",

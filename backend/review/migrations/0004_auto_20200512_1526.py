@@ -10,17 +10,25 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(model_name="reviewbit", old_name="score", new_name="average",),
+        migrations.RenameField(
+            model_name="reviewbit",
+            old_name="score",
+            new_name="average",
+        ),
         migrations.AddField(
             model_name="review",
             name="enrollment",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="review", name="form_type", field=models.IntegerField(blank=True, null=True),
+            model_name="review",
+            name="form_type",
+            field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="review", name="responses", field=models.IntegerField(blank=True, null=True),
+            model_name="review",
+            name="responses",
+            field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name="reviewbit",

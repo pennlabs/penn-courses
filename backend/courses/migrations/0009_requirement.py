@@ -41,6 +41,8 @@ class Migration(migrations.Migration):
                     models.ManyToManyField(related_name="requirements", to="courses.Department"),
                 ),
             ],
-            options={"unique_together": {("semester", "code", "satisfies")},},
+            options={
+                "unique_together": {("semester", "code", "satisfies")},
+            },
         ),
     ]
