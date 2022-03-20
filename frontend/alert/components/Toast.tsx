@@ -135,7 +135,7 @@ Toast.propTypes = {
     children: PropTypes.oneOfType([
         PropTypes.arrayOf(PropTypes.node),
         PropTypes.node
-    ]).isRequired,
+    ]),
     onClose: PropTypes.func,
     type: PropTypes.number,
 };
