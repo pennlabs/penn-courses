@@ -53,7 +53,7 @@ app.prepare()
             if (err) {
                 throw err;
             }
-            console.log(`> Ready on port ${port}` + (env ? ` [${env}]` : ""));
+            console.log(`> Ready on port ${port}${env ? ` [${env}]` : ""}`);
         });
     })
     .catch((err) => {
