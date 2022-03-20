@@ -328,6 +328,11 @@ export const CourseHeader = ({
         ])}
       </div>
     )}
+    {/* {data.historical_codes && Boolean(data.historical_codes) && (
+      <div className="historical-list">
+        test
+      </div>
+    )} */}
     <p className="subtitle">{name}</p>
     {notes &&
       notes.map(note => (
