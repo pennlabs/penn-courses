@@ -241,6 +241,7 @@ def import_ratings_row(row, stat):
     field = CONTEXT_TO_SLUG.get(context)
     if field is None:
         stat(f"missing slug for '{context}'")
+        return
 
     ReviewBit.objects.update_or_create(
         review=review,
