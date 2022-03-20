@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 
 from lark import Lark, Transformer
+from tqdm import tqdm
 
 
 """
@@ -134,11 +135,13 @@ entry_regex = re.compile(
 )
 
 
-def load_sql_dump(fo, T=SQLDumpTransformer, lazy=True):
+def load_sql_dump(fo, T=SQLDumpTransformer, progress=True, lazy=True):
     """
     Read in and parse a SQL dump, with each row as a Python dictionary.
-    If lazy=True, returns (total number of rows, iterator of rows)
+    If `lazy=True`, returns (total number of rows, iterator of rows)
     Otherwise, returns a list of rows.
+    Set the `progess` option to False to disable the progress bar
+    (there is no progress bar in lazy mode regardless).
     """
 
     contents = fo.read()
@@ -147,4 +150,5 @@ def load_sql_dump(fo, T=SQLDumpTransformer, lazy=True):
         gc.collect()
         return total_rows, map(lambda x: parse_row(x.group(), T), entry_regex.finditer(contents))
     else:
-        return [parse_row(x.group(), T) for x in entry_regex.finditer(contents)]
+        matches = list(entry_regex.finditer(contents))
+        return [parse_row(x.group(), T) for x in tqdm(matches, disable=(not progress))]

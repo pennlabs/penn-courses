@@ -212,7 +212,8 @@ class Command(BaseCommand):
 
             summary_fo = files[0]
             self.display("Loading summary file...")
-            summary_rows = load_sql_dump(summary_fo, lazy=False)
+            summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
+            gc.collect()
             self.display("SQL parsed and loaded!")
 
             if not import_all:
