@@ -32,6 +32,10 @@ from review.util import titleize
 logger = logging.getLogger(__name__)
 
 
+def in_dev():
+    return "PennCourses.settings.development" in os.environ["DJANGO_SETTINGS_MODULE"]
+
+
 def get_current_semester(allow_not_found=False):
     """
     This function retrieves the string value of the current semester, either from
@@ -78,7 +82,7 @@ def invalidate_current_semester_cache(sender, instance, **kwargs):
         get_or_create_add_drop_period(instance.value)
         load_add_drop_dates()
 
-        if "PennCourses.settings.development" in os.environ["DJANGO_SETTINGS_MODULE"]:
+        if in_dev():
             registrar_import()
         else:
             registrar_import_async.delay()

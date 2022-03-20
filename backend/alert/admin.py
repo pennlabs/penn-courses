@@ -6,7 +6,7 @@ from alert.models import AddDropPeriod, PcaDemandDistributionEstimate, Registrat
 
 
 class RegistrationAdmin(admin.ModelAdmin):
-    readonly_fields = ("section_link", "resubscribed_from", "created_at")
+    readonly_fields = ("head_registration_id", "section_link", "resubscribed_from", "created_at")
     search_fields = (
         "email",
         "phone",
@@ -14,6 +14,8 @@ class RegistrationAdmin(admin.ModelAdmin):
         "section__course__department__code",
     )
     autocomplete_fields = ("section",)
+
+    exclude = ["head_registration"]
 
     ordering = ("-created_at",)
 
@@ -32,6 +34,10 @@ class RegistrationAdmin(admin.ModelAdmin):
     def section_link(self, instance):
         link = reverse("admin:courses_section_change", args=[instance.section.id])
         return format_html('<a href="{}">{}</a>', link, instance.section.__str__())
+
+    def head_registration_id(self, instance):
+        link = reverse("admin:alert_registration_change", args=[instance.head_registration_id])
+        return format_html('<a href="{}">{}</a>', link, str(instance.head_registration_id))
 
 
 class PcaDemandDistributionEstimateAdmin(admin.ModelAdmin):

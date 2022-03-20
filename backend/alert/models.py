@@ -21,6 +21,7 @@ from courses.util import (
     get_course_and_section,
     get_current_semester,
     get_or_create_add_drop_period,
+    in_dev,
 )
 from PennCourses.settings.base import TIME_ZONE
 
@@ -521,7 +522,7 @@ class Registration(models.Model):
             else:
                 self.original_created_at = self.get_original_registration_iter().created_at
         super().save()
-        if update_registration_volume:
+        if update_registration_volume and in_dev():
             is_now_active = self.is_active
             registration_update.delay(self.section.id, was_active, is_now_active, self.updated_at)
 
