@@ -85,7 +85,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--semesters",
             nargs="?",
-            default=None,
+            default="all",
             type=str,
             help=dedent(
                 """
@@ -111,7 +111,7 @@ class Command(BaseCommand):
         upload_to_s3 = kwargs["upload_to_s3"]
         path = kwargs["path"]
         assert path is None or (path.endswith(".json") and "/" not in path)
-        semesters = get_semesters(semesters=kwargs["semesters"] or "all")
+        semesters = get_semesters(semesters=kwargs["semesters"])
 
         if kwargs["fields"] is None:
             fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
