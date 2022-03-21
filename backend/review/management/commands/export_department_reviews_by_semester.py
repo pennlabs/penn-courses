@@ -11,13 +11,12 @@ from PennCourses.settings.base import S3_resource
 from review.annotations import review_averages
 
 
-def average_by_dept(fields, semesters="all", departments=None, path=None, verbose=False):
+def average_by_dept(fields, semesters, departments=None, path=None, verbose=False):
     """
     For each department and year, compute the average of given fields
     (see `alert.models.ReviewBit` for an enumeration of fields) across all (valid) sections.
     Note that fields should be a list of strings representing the review fields to be aggregated.
     """
-    semesters = get_semesters(semesters=semesters)
     dept_avgs = {}
 
     for i, semester in enumerate(semesters):
@@ -112,7 +111,7 @@ class Command(BaseCommand):
         upload_to_s3 = kwargs["upload_to_s3"]
         path = kwargs["path"]
         assert path is None or (path.endswith(".json") and "/" not in path)
-        semesters = kwargs["semesters"]
+        semesters = get_semesters(semesters=kwargs["semesters"])
 
         if kwargs["fields"] is None:
             fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
