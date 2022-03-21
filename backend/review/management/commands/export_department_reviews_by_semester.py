@@ -4,7 +4,6 @@ from textwrap import dedent
 
 from django.core.management.base import BaseCommand
 from django.db.models import OuterRef
-from tqdm import tqdm
 
 from alert.management.commands.recomputestats import get_semesters
 from courses.models import Department
@@ -12,15 +11,18 @@ from PennCourses.settings.base import S3_resource
 from review.annotations import review_averages
 
 
-def average_by_dept(fields, semesters="all", departments=None, path=None):
+def average_by_dept(fields, semesters="all", departments=None, path=None, verbose=False):
     """
     For each department and year, compute the average of given fields
     (see `alert.models.ReviewBit` for an enumeration of fields) across all (valid) sections.
     Note that fields should be a list of strings representing the review fields to be aggregated.
     """
+    semesters = get_semesters(semesters=semesters)
     dept_avgs = {}
 
-    for semester in tqdm(get_semesters(semesters=semesters)):
+    for i, semester in enumerate(semesters):
+        if verbose:
+            print(f"Processing semester {semester} ({i+1}/{len(semesters)})")
         if departments is None:
             depts_qs = Department.objects.all()
         else:
@@ -110,6 +112,7 @@ class Command(BaseCommand):
         upload_to_s3 = kwargs["upload_to_s3"]
         path = kwargs["path"]
         assert path is None or (path.endswith(".json") and "/" not in path)
+        semesters = kwargs["semesters"]
 
         if kwargs["fields"] is None:
             fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
@@ -120,7 +123,14 @@ class Command(BaseCommand):
         else:
             departments = kwargs["departments"].strip().split(",")
 
-        dept_avgs = average_by_dept(fields, semesters=kwargs["semesters"], departments=departments)
+        print(
+            f"Averaging department review data ({', '.join(fields)}) by semester "
+            f"for semester(s): {', '.join(semesters)}"
+        )
+
+        dept_avgs = average_by_dept(
+            fields, semesters=semesters, departments=departments, verbose=True
+        )
 
         if path is None:
             print(json.dumps(dept_avgs, indent=4))
