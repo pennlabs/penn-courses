@@ -109,7 +109,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         upload_to_s3 = kwargs["upload_to_s3"]
         path = kwargs["path"]
-        assert path is None or path.endswith(".json")
+        assert path is None or (path.endswith(".json") and "/" not in path)
 
         if kwargs["fields"] is None:
             fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
@@ -128,6 +128,7 @@ class Command(BaseCommand):
             output_file_path = (
                 "/tmp/review_semester_department_export.json" if upload_to_s3 else path
             )
+            os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
             with open(path, "w+") as f:
                 json.dump(dept_avgs, f, indent=4)
