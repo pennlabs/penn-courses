@@ -111,7 +111,7 @@ class Command(BaseCommand):
         upload_to_s3 = kwargs["upload_to_s3"]
         path = kwargs["path"]
         assert path is None or (path.endswith(".json") and "/" not in path)
-        semesters = get_semesters(semesters=kwargs["semesters"])
+        semesters = get_semesters(semesters=kwargs["semesters"] or "all")
 
         if kwargs["fields"] is None:
             fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
@@ -139,7 +139,7 @@ class Command(BaseCommand):
             )
             os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
-            with open(path, "w+") as f:
+            with open(output_file_path, "w") as f:
                 json.dump(dept_avgs, f, indent=4)
 
             if upload_to_s3:
