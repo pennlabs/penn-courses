@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import F, Max, OuterRef, Q, Subquery
 from tqdm import tqdm
 
+from django.db import transaction
 from alert.management.commands.export_anon_registrations import get_semesters
 from courses.management.commands.merge_topics import (
     ShouldLinkCoursesResponse,
@@ -15,6 +16,7 @@ from courses.management.commands.merge_topics import (
 )
 from courses.models import Course, Topic
 from PennCourses.settings.base import S3_client
+from alert.management.commands.recomputestats import all_semesters
 
 
 def get_branches_from_cross_walk(cross_walk):
@@ -138,24 +140,10 @@ class Command(BaseCommand):
         "optionally provided crosswalk, heuristics, and user input to merge courses with different "
         "codes into the same Topic when appropriate. This script is only intended to be run "
         "once, right after the Topic model is added to the codebase."
+        "NOTE: this script will delete any existing Topics before repopulating."
     )
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--semesters",
-            type=str,
-            help=dedent(
-                """
-                The semesters argument should be a comma-separated list of semesters
-            corresponding to the semesters from which you want to link courses with topics,
-            i.e. "2019C,2020A,2020B,2020C" for fall 2019, spring 2020, summer 2020, and fall 2020.
-            If you pass "all" to this argument, this script will export all status updates.
-            NOTE: you should only pass a set of consecutive semesters (or "all"), because
-            this script links courses to topics using the most recent course in a topic.
-                """
-            ),
-            default="",
-        )
         parser.add_argument(
             "--cross-walk",
             type=str,
@@ -173,24 +161,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        semesters = get_semesters(kwargs["semesters"], verbose=True)
-        if not semesters:
-            return "ERROR: no semesters provided for course/topic linking"
-        semesters = sorted(semesters)
+        semesters = sorted(list(all_semesters()))
         cross_walk_src = kwargs["cross_walk"]
         s3_bucket = kwargs["s3_bucket"]
-
-        # Check that no semesters are skipped in the ordering
-        if not all(
-            (ord(prev[4]) == ord(next[4]) - 1 and prev[:4] == next[:4])
-            or (
-                prev[4].lower() == "c"
-                and next[4].lower() == "a"
-                and int(prev[:4]) == int(next[:4]) - 1
-            )
-            for prev, next in zip(semesters[:-1], semesters[1:])
-        ):
-            return "ERROR: please specify a set of consecutive semesters, or 'all'"
 
         if cross_walk_src and s3_bucket:
             fp = "/tmp/" + cross_walk_src
@@ -206,10 +179,25 @@ class Command(BaseCommand):
             # Remove temporary file
             os.remove(cross_walk_src)
 
-        merge_topics(guaranteed_links=guaranteed_links, verbose=True)
+        print(
+            "This script is atomic, meaning either all Topic links will be added to the database, "
+            "or otherwise if an error is encountered, all changes will be rolled back and the "
+            "database will remain as it was before the script was run."
+        )
 
-        for i, semester in enumerate(semesters):
-            print(f"Processing semester {semester} ({i+1}/{len(semesters)})...")
-            link_courses_to_topics(semester, guaranteed_links=guaranteed_links, verbose=True)
+        with transaction.atomic():
+            to_delete = Topic.objects.all()
+            prompt = input(
+                f"This script will delete all Topic objects ({to_delete.count()} total). "
+                "Proceed? (y/N) "
+            )
+            print("\n\n")
+            if prompt.strip().upper() != "Y":
+                return
+            to_delete.delete()
+            print("Linking courses to topics.")
+            for i, semester in enumerate(semesters):
+                print(f"Processing semester {semester} ({i+1}/{len(semesters)})...")
+                link_courses_to_topics(semester, guaranteed_links=guaranteed_links, verbose=True)
 
         print(f"Finished linking courses to topics for semesters {semesters}.")

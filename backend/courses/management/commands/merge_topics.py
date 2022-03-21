@@ -64,7 +64,7 @@ def merge_topics(guaranteed_links=None, verbose=False):
             from an automated cron job like registrarimport).
     """
     if verbose:
-        print("Merging topics...")
+        print("Merging topics")
     guaranteed_links = guaranteed_links or dict()
     if verbose:
         print("Loading topics and courses from db (this may take a while)...")
@@ -86,6 +86,7 @@ def merge_topics(guaranteed_links=None, verbose=False):
                 for course in merged_courses[1:]:
                     if last.topic_id != course.topic_id:
                         course_links.append((last, course))
+                    last = course
                 if any(
                     course_a.semester == course_b.semester
                     and not (
@@ -98,18 +99,22 @@ def merge_topics(guaranteed_links=None, verbose=False):
                     for course_a, course_b in course_links
                 ):
                     continue
-                if (
-                    should_link_courses(last, course, verbose=verbose)
-                    != ShouldLinkCoursesResponse.DEFINITELY
-                ):
-                    continue
-                topics.remove(topic)
-                topics.remove(topic2)
-                topic = topic.merge_with(topic2)
-                topics.add(topic)
-                merge_count += 1
-                keep_linking = True
+                should_link = True
+                for last, course in course_links:
+                    if (
+                        should_link_courses(last, course, verbose=verbose)
+                        != ShouldLinkCoursesResponse.DEFINITELY
+                    ):
+                        should_link = False
+                        break
+                if should_link:
+                    topics.remove(topic)
+                    topics.remove(topic2)
+                    topic = topic.merge_with(topic2)
+                    topics.add(topic)
+                    merge_count += 1
+                    keep_linking = True
                 break
 
     if verbose:
-        print(f"Done merging topics (performed {merge_count} merges).")
+        print(f"Finished merging topics (performed {merge_count} merges).")
