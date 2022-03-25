@@ -453,6 +453,19 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
+            <DropdownButton
+                title="Fit Schedule"
+                filterData={filterData.course_quality}
+                defaultFilter={defaultFilters.filterData.course_quality}
+                clearFilter={clearFilterSearch("fit_schedule")}
+            >
+                <CheckboxFilter
+                    filterData={filterData}
+                    updateCheckboxFilter={updateCheckboxFilter}
+                    checkboxProperty="activity"
+                    startSearch={conditionalStartSearch}
+                />
+            </DropdownButton>
         </div>
     );
     if (mobileView) {
