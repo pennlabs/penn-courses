@@ -136,22 +136,25 @@ const AlertForm = ({
         setResponse(new Response(blob, { status }));
     };
 
-    const isCourseOpen = (callback, section) => {
-        fetch(`/api/base/current/sections/${section}/`).then((res) => 
+    const isCourseOpen = (section) => {
+        return fetch(`/api/base/current/sections/${section}/`).then((res) => 
             res.json().then((courseResult) => {
-                if (courseResult["status"] == "O") {
-                    sendError(
-                        400,
-                        "Course is currently open!"
-                    );
+                const blob = new Blob([JSON.stringify({message: "Course is currently open!", status: 400})], {
+                    type: "application/json",
+                });
 
-                    return;
-                } else {
-                    callback();
-                }
+                const isOpen = courseResult["status"] == "O";
+                if (isOpen) {
+                    setResponse(new Response(blob))
+                } 
+
+                return isOpen;
             }))
-            .catch(handleError)
-    }
+            .catch((err) => {
+                handleError(err);
+                return false;
+            })
+    } 
 
     const handleError = (e) => {
         console.log(e);
@@ -198,17 +201,22 @@ const AlertForm = ({
             autoCompleteInputRef.current &&
             (autoCompleteInputRef.current.value === autofillSection || (autoCompleteInputRef.current.value !== "" && selectedCourses.size == 0))
         ) {
-            doAPIRequest("/api/alert/registrations/", "POST", {
-                section: autoCompleteInputRef.current.value,
-                auto_resubscribe: autoResub === "true",
+            isCourseOpen(autoCompleteInputRef.current.value).then(isOpen => {
+                if (!isOpen && autoCompleteInputRef.current) {
+                    doAPIRequest("/api/alert/registrations/", "POST", {
+                        section: autoCompleteInputRef.current.value,
+                        auto_resubscribe: autoResub === "true",
+                    })
+                        .then((res) => {
+                            console.log("test")
+                            if (res.ok) {
+                                clearInputValue();
+                            }
+                            setResponse(res)
+                        })
+                        .catch(handleError);
+                } 
             })
-                .then((res) => {
-                    if (res.ok) {
-                        clearInputValue();
-                    }
-                    setResponse(res)
-                })
-                .catch(handleError);
 
             return;
             
@@ -217,11 +225,15 @@ const AlertForm = ({
         // register all selected sections
         const promises: Array<Promise<Response>> = [];
         selectedCourses.forEach((section) => {
-            const promise = doAPIRequest("/api/alert/registrations/", "POST", {
-                section: section.section_id,
-                auto_resubscribe: autoResub === "true",
-            });
-            promises.push(promise);
+            isCourseOpen(section.section_id).then(isOpen => {
+                if (!isOpen) {
+                    const promise = doAPIRequest("/api/alert/registrations/", "POST", {
+                        section: section.section_id,
+                        auto_resubscribe: autoResub === "true",
+                    });
+                    promises.push(promise);
+                }
+            })
         });
 
         const sections = Array.from(selectedCourses)
@@ -266,11 +278,13 @@ const AlertForm = ({
                     if (!res.ok) {
                         throw new Error(JSON.stringify(res));
                     } else {
-                        return;
+                        return submitRegistration();
                     }
                 })
                 .catch(handleError);
-        } 
+        } else {
+            submitRegistration();
+        }
     };
 
     return (
