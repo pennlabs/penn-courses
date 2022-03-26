@@ -208,7 +208,6 @@ const AlertForm = ({
                         auto_resubscribe: autoResub === "true",
                     })
                         .then((res) => {
-                            console.log("test")
                             if (res.ok) {
                                 clearInputValue();
                             }
