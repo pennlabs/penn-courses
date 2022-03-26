@@ -137,6 +137,25 @@ const AlertForm = ({
         setResponse(new Response(blob, { status }));
     };
 
+    const isCourseOpen = (section) => {
+        return fetch(`/api/base/current/sections/${section}/`).then((res) => 
+            res.json().then((courseResult) => {
+
+                const isOpen = courseResult["status"] === "O";
+                if (isOpen) {
+                    setResponse(new Response(new Blob([JSON.stringify({message: "Course is currently open!", status: 400})], {
+                        type: "application/json",
+                    })))
+                } 
+
+                return isOpen;
+            }))
+            .catch((err) => {
+                handleError(err);
+                return false;
+            })
+    } 
+
     const handleError = (e) => {
         Sentry.captureException(e);
         sendError(
@@ -181,41 +200,60 @@ const AlertForm = ({
             autoCompleteInputRef.current &&
             (autoCompleteInputRef.current.value === autofillSection || (autoCompleteInputRef.current.value !== "" && selectedCourses.size == 0))
         ) {
-            doAPIRequest("/api/alert/registrations/", "POST", {
-                section: autoCompleteInputRef.current.value,
-                auto_resubscribe: autoResub === "true",
+            const section = autoCompleteInputRef.current.value;
+            isCourseOpen(section).then(isOpen => {
+                if (!isOpen) {
+                    doAPIRequest("/api/alert/registrations/", "POST", {
+                        section: section,
+                        auto_resubscribe: autoResub === "true",
+                    })
+                        .then((res) => {
+                            if (res.ok) {
+                                clearInputValue();
+                            }
+                            setResponse(res)
+                        })
+                        .catch(handleError);
+                } 
             })
-                .then((res) => {
-                    if (res.ok) {
-                        clearInputValue();
-                    }
-                    setResponse(res)
-                })
-                .catch(handleError);
 
             return;
             
         }
 
         // register all selected sections
-        const promises: Array<Promise<Response>> = [];
+        const promises: Array<Promise<Response | undefined>> = [];
         selectedCourses.forEach((section) => {
-            const promise = doAPIRequest("/api/alert/registrations/", "POST", {
-                section: section.section_id,
-                auto_resubscribe: autoResub === "true",
-            });
-            promises.push(promise);
+
+            const promise = isCourseOpen(section.section_id).then(isOpen => {
+                 if (!isOpen) {
+                      return doAPIRequest("/api/alert/registrations/", "POST", {
+                        section: section.section_id,
+                        auto_resubscribe: autoResub === "true",
+                    })
+                }
+
+            })
+            
+           promises.push(promise)
         });
 
         const sections = Array.from(selectedCourses)
 
         Promise.allSettled(promises)
             .then((responses) => responses.forEach(
-                (res: PromiseSettledResult<Response>, i) => {
+                (res: PromiseSettledResult<Response | undefined>, i) => {
+                
                     //fulfilled if response is returned, even if reg is unsuccessful.
                     if (res.status === "fulfilled") {
-                        setResponse(res.value);
-                        if (res.value.ok) {
+                        if (res.value == undefined) {
+                            return;
+                        }
+
+                        const response: Response = res.value!
+
+                        setResponse(response);
+                        if (response.ok) {
                             deselectCourse(sections[i]);
                         } 
                     //only if network error occurred
