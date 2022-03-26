@@ -3,16 +3,16 @@ import os
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
-from django.db.models import OuterRef
-from tqdm import tqdm
+from django.db.models import F, OuterRef, Q, Sum
 
 from alert.management.commands.recomputestats import get_semesters
 from courses.models import Department
 from PennCourses.settings.base import S3_resource
 from review.annotations import review_averages
+from review.models import ALL_FIELD_SLUGS, Review
 
 
-def average_by_dept(fields, semesters="all", departments=None, path=None):
+def average_by_dept(fields, semesters, departments=None, path=None, verbose=False):
     """
     For each department and year, compute the average of given fields
     (see `alert.models.ReviewBit` for an enumeration of fields) across all (valid) sections.
@@ -20,7 +20,9 @@ def average_by_dept(fields, semesters="all", departments=None, path=None):
     """
     dept_avgs = {}
 
-    for semester in tqdm(get_semesters(semesters=semesters)):
+    for i, semester in enumerate(semesters):
+        if verbose:
+            print(f"Processing semester {semester} ({i+1}/{len(semesters)})")
         if departments is None:
             depts_qs = Department.objects.all()
         else:
@@ -36,6 +38,22 @@ def average_by_dept(fields, semesters="all", departments=None, path=None):
         ).values("code", *fields)
 
         dept_avgs[semester] = {dept_dict.pop("code"): dept_dict for dept_dict in semester_dept_avgs}
+
+        for code, enrollments_sum in (
+            Review.objects.filter(
+                (
+                    Q(section__course__primary_listing__isnull=True)
+                    | Q(section__course__primary_listing_id=F("section__course_id"))
+                )
+                & ~Q(section__activity__in=["LAB", "REC"])
+                & Q(section__course__semester=semester)
+            )
+            .annotate(code=F("section__course__department__code"))
+            .values("code")
+            .annotate(enrollments_sum=Sum("enrollment"))
+            .values_list("code", "enrollments_sum")
+        ):
+            dept_avgs[semester][code]["enrollments_sum"] = enrollments_sum
 
     return dept_avgs
 
@@ -56,8 +74,7 @@ class Command(BaseCommand):
             default=None,
             help=dedent(
                 """
-                fields as strings seperated by commas. If not provided, defaults to
-                ["course_quality", "difficulty", "instructor_quality", "work_required"].
+                fields as strings seperated by commas. If not provided, defaults to all fields.
                 """
             ),
         )
@@ -84,7 +101,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--semesters",
             nargs="?",
-            default=None,
+            default="all",
             type=str,
             help=dedent(
                 """
@@ -109,10 +126,11 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         upload_to_s3 = kwargs["upload_to_s3"]
         path = kwargs["path"]
-        assert path is None or path.endswith(".json")
+        assert path is None or (path.endswith(".json") and "/" not in path)
+        semesters = get_semesters(semesters=kwargs["semesters"])
 
         if kwargs["fields"] is None:
-            fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
+            fields = ALL_FIELD_SLUGS
         else:
             fields = kwargs["fields"].strip().split(",")
         if kwargs["departments"] is None:
@@ -120,7 +138,14 @@ class Command(BaseCommand):
         else:
             departments = kwargs["departments"].strip().split(",")
 
-        dept_avgs = average_by_dept(fields, semesters=kwargs["semesters"], departments=departments)
+        print(
+            f"Averaging department review data ({', '.join(fields)}) by semester "
+            f"for semester(s): {', '.join(semesters)}"
+        )
+
+        dept_avgs = average_by_dept(
+            fields, semesters=semesters, departments=departments, verbose=True
+        )
 
         if path is None:
             print(json.dumps(dept_avgs, indent=4))
@@ -128,8 +153,9 @@ class Command(BaseCommand):
             output_file_path = (
                 "/tmp/review_semester_department_export.json" if upload_to_s3 else path
             )
+            os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
-            with open(path, "w+") as f:
+            with open(output_file_path, "w") as f:
                 json.dump(dept_avgs, f, indent=4)
 
             if upload_to_s3:

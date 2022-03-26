@@ -1,3 +1,4 @@
+import gc
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -302,7 +303,9 @@ def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=
     """
     stats = dict()
     stat = gen_stat(stats)
-    for row in tqdm(ratings, total=num_ratings, disable=(not show_progress_bar)):
+    for i, row in tqdm(enumerate(ratings), total=num_ratings, disable=(not show_progress_bar)):
+        if i % 10000 == 0:
+            gc.collect()
         if semesters is None or row["TERM"] in semesters:
             import_ratings_row(row, stat)
     return stats

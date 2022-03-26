@@ -46,8 +46,7 @@ interface RadioSetProps {
 const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
     <span>
         {options.map(({ label, value }) => (
-            <>
-                <label htmlFor={value}>
+                <label htmlFor={value} key={label}>
                     <input
                         type="radio"
                         name="name"
@@ -58,14 +57,16 @@ const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
                     />
                     {label}
                 </label>
-            </>
         ))}
     </span>
 );
 
 RadioSet.propTypes = {
     selected: PropTypes.string,
-    options: PropTypes.arrayOf(PropTypes.string),
+    options: PropTypes.arrayOf(PropTypes.shape({
+        label: PropTypes.string,
+        value: PropTypes.string,
+      })),
     setSelected: PropTypes.func,
 };
 
