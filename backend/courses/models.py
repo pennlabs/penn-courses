@@ -353,6 +353,9 @@ class Topic(models.Model):
             course.save()
             course.crosslistings.update(topic=self)
 
+    def __str__(self):
+        return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
+
 
 class Restriction(models.Model):
     """

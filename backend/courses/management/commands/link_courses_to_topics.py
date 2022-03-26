@@ -4,19 +4,14 @@ from textwrap import dedent
 
 import pandas as pd
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.db.models import F, Max, OuterRef, Q, Subquery
 from tqdm import tqdm
 
-from django.db import transaction
-from alert.management.commands.export_anon_registrations import get_semesters
-from courses.management.commands.merge_topics import (
-    ShouldLinkCoursesResponse,
-    merge_topics,
-    should_link_courses,
-)
+from alert.management.commands.recomputestats import all_semesters
+from courses.management.commands.merge_topics import ShouldLinkCoursesResponse, should_link_courses
 from courses.models import Course, Topic
 from PennCourses.settings.base import S3_client
-from alert.management.commands.recomputestats import all_semesters
 
 
 def get_branches_from_cross_walk(cross_walk):
@@ -41,22 +36,18 @@ def get_direct_backlinks_from_cross_walk(cross_walk):
     From a given crosswalk csv path, generate a dict mapping new_full_code->old_full_code,
     ignoring branched links in the crosswalk (a course splitting into multiple new courses).
     """
-    guaranteed_links = dict()
+    links = defaultdict(list)
     cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
     for _, r in cross_walk.iterrows():
         old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
         new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
-        if old_full_code in guaranteed_links:
-            # Ignore branched links
-            del guaranteed_links[new_full_code]
-        else:
-            guaranteed_links[new_full_code] = old_full_code
-    return guaranteed_links
+        links[old_full_code].append(new_full_code)
+    return {old_code: new_codes[0] for old_code, new_codes in links.items() if len(new_codes) == 1}
 
 
 def get_topics_and_courses(semester):
     """
-    Returns a list of the form [(most_recent_course, topic), ... for each topic]
+    Returns a list of the form [(topic, most_recent_course), ... for each topic]
     where most_recent_course is the most recent primary course in that topic offered
     before or during the given semester.
     """
@@ -69,11 +60,13 @@ def get_topics_and_courses(semester):
         Course.objects.annotate(max_sem=max_sem_subq)
         .filter(
             Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
-            semester__eq=F("max_sem"),
+            semester=F("max_sem"),
         )
         .select_related("topic")
+        .select_related("primary_listing")
+        .prefetch_related("primary_listing__listing_set")
     )
-    return [(course, course.topic) for course in courses]
+    return list({course.topic_id: (course.topic, course) for course in courses}.values())
 
 
 def link_course_to_topics(course, topics=None, verbose=False):
@@ -88,9 +81,9 @@ def link_course_to_topics(course, topics=None, verbose=False):
             log found possible links to Sentry (more appropriate if this function is called
             from an automated cron job like registrarimport).
     """
-    if not topics:
+    if topics is None:
         topics = get_topics_and_courses(course.semester)
-    for most_recent, topic in topics:
+    for topic, most_recent in topics:
         if (
             should_link_courses(most_recent, course, verbose=verbose)
             == ShouldLinkCoursesResponse.DEFINITELY
@@ -115,19 +108,19 @@ def link_courses_to_topics(semester, guaranteed_links=None, verbose=False):
     """
     guaranteed_links = guaranteed_links or dict()
     topics = get_topics_and_courses(semester)
-    full_code_to_topic = {c.full_code: t for c, t in topics}
-    iterator_wrapper = tqdm if verbose else lambda i: i
-    for course in iterator_wrapper(
+    full_code_to_topic = {c.full_code: t for t, c in topics}
+    for course in tqdm(
         Course.objects.filter(
             Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
             semester=semester,
             topic__isnull=True,
-        ).prefetch_related("primary_listing__listing_set")
+        ).select_related("primary_listing"),
+        disable=(not verbose)
     ):
         if course.full_code in guaranteed_links:
             old_full_code = guaranteed_links[course.full_code]
             if old_full_code in full_code_to_topic:
-                full_code_to_topic[old_full_code][1].add_course(course)
+                full_code_to_topic[old_full_code].add_course(course)
             else:
                 Topic.from_course(course)
         else:
@@ -175,7 +168,7 @@ class Command(BaseCommand):
             get_direct_backlinks_from_cross_walk(cross_walk_src) if cross_walk_src else dict()
         )
 
-        if s3_bucket:
+        if cross_walk_src and s3_bucket:
             # Remove temporary file
             os.remove(cross_walk_src)
 
@@ -191,7 +184,6 @@ class Command(BaseCommand):
                 f"This script will delete all Topic objects ({to_delete.count()} total). "
                 "Proceed? (y/N) "
             )
-            print("\n\n")
             if prompt.strip().upper() != "Y":
                 return
             to_delete.delete()
@@ -200,4 +192,7 @@ class Command(BaseCommand):
                 print(f"Processing semester {semester} ({i+1}/{len(semesters)})...")
                 link_courses_to_topics(semester, guaranteed_links=guaranteed_links, verbose=True)
 
-        print(f"Finished linking courses to topics for semesters {semesters}.")
+        print(
+            f"Finished linking courses to topics for semesters {semesters}."
+            f"(created {Topic.objects.all().count()} topics)."
+        )

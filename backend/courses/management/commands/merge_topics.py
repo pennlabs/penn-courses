@@ -34,8 +34,8 @@ def should_link_courses(course_a, course_b, verbose=True):
     if in verbose mode (otherwise just logs possible links).
     Returns a response in the form of a ShouldLinkCoursesResponse enum.
     """
-    if course_a.full_code == course_b.full_code or any(
-        course_ac.full_code == course_b.full_code for course_ac in course_a.crosslistings
+    if course_a.full_code == course_b.full_code or course_a.primary_listing and any(
+        course_ac.full_code == course_b.full_code for course_ac in course_a.primary_listing.listing_set
     ):
         return ShouldLinkCoursesResponse.DEFINITELY
     elif course_a.semester == course_b.semester:

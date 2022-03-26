@@ -3,6 +3,8 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
+from django.template import loader, Context
+from django.urls import path
 
 from courses.models import (
     APIKey,
@@ -18,6 +20,7 @@ from courses.models import (
     Section,
     StatusUpdate,
     UserProfile,
+    Topic,
 )
 
 
@@ -68,6 +71,52 @@ class CourseAdmin(admin.ModelAdmin):
         )
 
 
+class TopicAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        "courses",
+        "branched_from",
+    )
+    search_fields = ("most_recent__full_code",)
+    list_select_related = ("most_recent",)
+    exclude = ("most_recent__topic",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("courses")
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path(
+                "topic_remove_course/<int:course_id>/",
+                self.remove_course,
+                name="admin_topic_remove_course",
+            ),
+        ]
+        return my_urls + urls
+
+    def remove_course(self, request, course_id):
+        course = Course.objects.get(id=course_id)
+        course.topic = None
+        course.save()
+
+    def courses(self, instance):
+        t = loader.get_template("topic_courses_admin.html")
+        courses = instance.courses.all()
+        for course in courses:
+            course.a_link = reverse("admin:courses_course_change", args=[course.id])
+            course.remove_link = reverse("admin:topic_remove_course", args=[course.id])
+        return t.render({"courses": instance.courses.all()})
+
+    def branched_from_id(self, instance):
+        """
+        The original topic from which this topic branched.
+        """
+        if instance.branched_from_id is None:
+            return "None"
+        link = reverse("admin:courses_topic_change", args=[instance.branched_from_id])
+        return format_html('<a href="{}">{}</a>', link, str(instance.branched_from_id))
+
+
 class SectionAdmin(admin.ModelAdmin):
     search_fields = (
         "full_code",
@@ -82,6 +131,7 @@ class SectionAdmin(admin.ModelAdmin):
         "course",
         "associated_sections",
     )
+    exclude = ("topic",)
     list_filter = ("course__semester",)
 
     list_display = ["full_code", "semester", "status"]
@@ -130,6 +180,7 @@ admin.site.register(APIKey)
 admin.site.register(APIPrivilege)
 admin.site.register(Department, DepartmentAdmin)
 admin.site.register(Course, CourseAdmin)
+admin.site.register(Topic, TopicAdmin)
 admin.site.register(Section, SectionAdmin)
 admin.site.register(Building)
 admin.site.register(Room)

@@ -35,6 +35,7 @@ from review.views import extra_metrics_section_filters
 def all_semesters():
     return set(Course.objects.values_list("semester", flat=True).distinct())
 
+
 def get_semesters(semesters=None, verbose=False):
     """
     Validate a given string semesters argument, and return a list of the individual string semesters

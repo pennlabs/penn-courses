@@ -5,21 +5,21 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from options.models import Option
 from rest_framework.test import APIClient
-from review.test_api import (
-    PCRTestMixin,
-    set_semester,
-    create_review,
-    ratings_dict,
-    average,
-    recent,
-    rating,
-    average_and_recent,
-)
 
 from alert.models import AddDropPeriod
 from courses.models import Instructor
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
+from review.test_api import (
+    PCRTestMixin,
+    average,
+    average_and_recent,
+    create_review,
+    rating,
+    ratings_dict,
+    recent,
+    set_semester,
+)
 
 
 TEST_SEMESTER = "2017C"
