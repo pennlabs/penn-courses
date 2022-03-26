@@ -139,13 +139,12 @@ const AlertForm = ({
     const isCourseOpen = (section) => {
         return fetch(`/api/base/current/sections/${section}/`).then((res) => 
             res.json().then((courseResult) => {
-                const blob = new Blob([JSON.stringify({message: "Course is currently open!", status: 400})], {
-                    type: "application/json",
-                });
 
-                const isOpen = courseResult["status"] == "O";
+                const isOpen = courseResult["status"] === "O";
                 if (isOpen) {
-                    setResponse(new Response(blob))
+                    setResponse(new Response(new Blob([JSON.stringify({message: "Course is currently open!", status: 400})], {
+                        type: "application/json",
+                    })))
                 } 
 
                 return isOpen;
@@ -157,7 +156,6 @@ const AlertForm = ({
     } 
 
     const handleError = (e) => {
-        console.log(e);
         Sentry.captureException(e);
         sendError(
             500,
@@ -201,10 +199,11 @@ const AlertForm = ({
             autoCompleteInputRef.current &&
             (autoCompleteInputRef.current.value === autofillSection || (autoCompleteInputRef.current.value !== "" && selectedCourses.size == 0))
         ) {
-            isCourseOpen(autoCompleteInputRef.current.value).then(isOpen => {
-                if (!isOpen && autoCompleteInputRef.current) {
+            const section = autoCompleteInputRef.current.value;
+            isCourseOpen(section).then(isOpen => {
+                if (!isOpen) {
                     doAPIRequest("/api/alert/registrations/", "POST", {
-                        section: autoCompleteInputRef.current.value,
+                        section: section,
                         auto_resubscribe: autoResub === "true",
                     })
                         .then((res) => {
@@ -222,28 +221,38 @@ const AlertForm = ({
         }
 
         // register all selected sections
-        const promises: Array<Promise<Response>> = [];
+        const promises: Array<Promise<Response | undefined>> = [];
         selectedCourses.forEach((section) => {
-            isCourseOpen(section.section_id).then(isOpen => {
-                if (!isOpen) {
-                    const promise = doAPIRequest("/api/alert/registrations/", "POST", {
+
+            const promise = isCourseOpen(section.section_id).then(isOpen => {
+                 if (!isOpen) {
+                      return doAPIRequest("/api/alert/registrations/", "POST", {
                         section: section.section_id,
                         auto_resubscribe: autoResub === "true",
-                    });
-                    promises.push(promise);
+                    })
                 }
+
             })
+            
+           promises.push(promise)
         });
 
         const sections = Array.from(selectedCourses)
 
         Promise.allSettled(promises)
             .then((responses) => responses.forEach(
-                (res: PromiseSettledResult<Response>, i) => {
+                (res: PromiseSettledResult<Response | undefined>, i) => {
+                
                     //fulfilled if response is returned, even if reg is unsuccessful.
                     if (res.status === "fulfilled") {
-                        setResponse(res.value);
-                        if (res.value.ok) {
+                        if (res.value == undefined) {
+                            return;
+                        }
+
+                        const response: Response = res.value!
+
+                        setResponse(response);
+                        if (response.ok) {
                             deselectCourse(sections[i]);
                         } 
                     //only if network error occurred
