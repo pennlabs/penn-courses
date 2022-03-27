@@ -13,7 +13,7 @@ import AutoComplete from "../AutoComplete";
 import getCsrf from "../../csrf";
 import { User, Section } from "../../types";
 
-const text = `Check this box to receive a follow-up email when a courses closes again after 
+const text = `Check this box to receive a follow-up email when a course closes again after 
 alerting you of an opening.`;
 
 const SubmitButton = styled.button`
@@ -202,17 +202,21 @@ const AlertForm = ({
     const submitRegistration = () => {
         // if user has a auto fill section and didn't change the input value then register for section
         // and support user manually entered a course (without checking checkbox)
+
+        const postRegistration = (section_id: string) => 
+            doAPIRequest("/api/alert/registrations/", "POST", {
+                section: section_id,
+                auto_resubscribe: autoResub === "true",
+                close_notification: email !== "" && closedNotif,
+            });
+
         if (
             autoCompleteInputRef.current &&
             (autoCompleteInputRef.current.value === autofillSection ||
                 (autoCompleteInputRef.current.value !== "" &&
                     selectedCourses.size == 0))
         ) {
-            doAPIRequest("/api/alert/registrations/", "POST", {
-                section: autoCompleteInputRef.current.value,
-                auto_resubscribe: autoResub === "true",
-                close_notification: closedNotif,
-            })
+            postRegistration(autoCompleteInputRef.current.value)
                 .then((res) => {
                     if (res.ok) {
                         clearInputValue();
@@ -227,11 +231,7 @@ const AlertForm = ({
         // register all selected sections
         const promises: Array<Promise<Response>> = [];
         selectedCourses.forEach((section) => {
-            const promise = doAPIRequest("/api/alert/registrations/", "POST", {
-                section: section.section_id,
-                auto_resubscribe: autoResub === "true",
-                close_notification: closedNotif,
-            });
+            const promise = postRegistration(section.section_id);
             promises.push(promise);
         });
 
@@ -325,21 +325,20 @@ const AlertForm = ({
                     />
                 </AlertText>
 
-                {email !== "" && 
+                {email !== "" && (
                     <ClosedText>
-                    Closed Notification
-                    <InfoTool text={text} />
-                    <Input
-                        type="checkbox"
-                        checked={closedNotif}
-                        onChange={(e) => {
-                            setClosedNotif(e.target.checked);
-                        }}
-                        style={spacer.container}
-                    />
+                        Closed Notification
+                        <InfoTool text={text} />
+                        <Input
+                            type="checkbox"
+                            checked={closedNotif}
+                            onChange={(e) => {
+                                setClosedNotif(e.target.checked);
+                            }}
+                            style={spacer.container}
+                        />
                     </ClosedText>
-                }        
-                
+                )}
 
                 <SubmitButton
                     onClick={(e) => {

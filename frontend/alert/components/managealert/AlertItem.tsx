@@ -105,13 +105,13 @@ export const AlertItem = ({
                     {alerttext}
                 </P>
             </GridItem>
-            <GridItem border column={7} row={rownum} valign>
-                
-
+            <GridItem border column={6} row={rownum} valign>
+                <ActionButton type={actions} onClick={actionButtonHandler} />
             </GridItem>
             <GridItem border column={7} row={rownum} valign>
                 <ActionButton type={actions} onClick={actionButtonHandler} />
             </GridItem>
+            
         </>
     );
 };

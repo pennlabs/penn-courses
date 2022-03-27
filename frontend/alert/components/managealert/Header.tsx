@@ -52,8 +52,8 @@ const Header = ({
         "COURSE ID",
         "STATUS",
         "REPEAT",
-        "CLOSE NOTIF",
-        "ACTIONS",
+        "OPEN",
+        "CLOSED",
     ];
     return (
         <>
