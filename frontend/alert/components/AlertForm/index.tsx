@@ -3,6 +3,8 @@ import PropTypes from "prop-types";
 import styled from "styled-components";
 import * as Sentry from "@sentry/browser";
 
+import InfoTool from "pcx-shared-components/src/common/InfoTool";
+
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
 import { Center } from "pcx-shared-components/src/common/layout";
@@ -10,6 +12,9 @@ import { Input } from "../Input";
 import AutoComplete from "../AutoComplete";
 import getCsrf from "../../csrf";
 import { User, Section } from "../../types";
+
+const text = `Check this box to receive a follow-up email when a courses closes again after 
+alerting you of an opening.`;
 
 const SubmitButton = styled.button`
     border-radius: 5px;
@@ -37,6 +42,8 @@ const ClosedText = styled.div`
     color: #555555;
     align-items: center;
     justify-content: center;
+    display: flex;
+    flex-direction: row;
 `;
 
 const Form = styled.form`
@@ -318,8 +325,10 @@ const AlertForm = ({
                     />
                 </AlertText>
 
-                <ClosedText>
-                    Closed Notification?
+                {email !== "" && 
+                    <ClosedText>
+                    Closed Notification
+                    <InfoTool text={text} />
                     <Input
                         type="checkbox"
                         checked={closedNotif}
@@ -328,7 +337,9 @@ const AlertForm = ({
                         }}
                         style={spacer.container}
                     />
-                </ClosedText>
+                    </ClosedText>
+                }        
+                
 
                 <SubmitButton
                     onClick={(e) => {

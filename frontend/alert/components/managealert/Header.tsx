@@ -52,6 +52,7 @@ const Header = ({
         "COURSE ID",
         "STATUS",
         "REPEAT",
+        "CLOSE NOTIF",
         "ACTIONS",
     ];
     return (
@@ -79,6 +80,8 @@ const Header = ({
                         <HeaderText>{heading}</HeaderText>
                     </GridItem>
                 ))}
+
+
 
             {selected !== 0 && (
                 <>
@@ -133,6 +136,7 @@ const Header = ({
                             </HeaderButtonsFlex>
                         </HeaderRightItem>
                     </GridItem>
+                    
                 </>
             )}
         </>
