@@ -1,48 +1,19 @@
 import os
-from collections import defaultdict
 from textwrap import dedent
 
-import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import F, Max, OuterRef, Q, Subquery
 from tqdm import tqdm
 
 from alert.management.commands.recomputestats import all_semesters
-from courses.management.commands.merge_topics import ShouldLinkCoursesResponse, should_link_courses
+from courses.management.commands.merge_topics import (
+    ShouldLinkCoursesResponse,
+    get_direct_backlinks_from_cross_walk,
+    should_link_courses,
+)
 from courses.models import Course, Topic
 from PennCourses.settings.base import S3_client
-
-
-def get_branches_from_cross_walk(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping old_full_code to
-    a list of the new codes originating from that source, if there are multiple
-    (i.e. only in the case of branches).
-    """
-    branched_links = defaultdict(list)
-    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
-    for _, r in cross_walk.iterrows():
-        old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
-        new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
-        branched_links[old_full_code].append(new_full_code)
-    return {
-        old_code: new_codes for old_code, new_codes in branched_links.items() if len(new_codes) > 1
-    }
-
-
-def get_direct_backlinks_from_cross_walk(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping new_full_code->old_full_code,
-    ignoring branched links in the crosswalk (a course splitting into multiple new courses).
-    """
-    links = defaultdict(list)
-    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
-    for _, r in cross_walk.iterrows():
-        old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
-        new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
-        links[old_full_code].append(new_full_code)
-    return {old_code: new_codes[0] for old_code, new_codes in links.items() if len(new_codes) == 1}
 
 
 def get_topics_and_courses(semester):
@@ -64,7 +35,7 @@ def get_topics_and_courses(semester):
         )
         .select_related("topic")
         .select_related("primary_listing")
-        .prefetch_related("primary_listing__listing_set")
+        .prefetch_related("listing_set", "primary_listing__listing_set")
     )
     return list({course.topic_id: (course.topic, course) for course in courses}.values())
 
@@ -115,7 +86,7 @@ def link_courses_to_topics(semester, guaranteed_links=None, verbose=False):
             semester=semester,
             topic__isnull=True,
         ).select_related("primary_listing"),
-        disable=(not verbose)
+        disable=(not verbose),
     ):
         if course.full_code in guaranteed_links:
             old_full_code = guaranteed_links[course.full_code]
@@ -132,7 +103,7 @@ class Command(BaseCommand):
         "This script populates the Topic table in the database, using a combination of an "
         "optionally provided crosswalk, heuristics, and user input to merge courses with different "
         "codes into the same Topic when appropriate. This script is only intended to be run "
-        "once, right after the Topic model is added to the codebase."
+        "once, right after the Topic model is added to the codebase. "
         "NOTE: this script will delete any existing Topics before repopulating."
     )
 

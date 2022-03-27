@@ -1,10 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
+from django.template import loader
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
-from django.template import loader, Context
-from django.urls import path
 
 from courses.models import (
     APIKey,
@@ -19,8 +18,8 @@ from courses.models import (
     Room,
     Section,
     StatusUpdate,
-    UserProfile,
     Topic,
+    UserProfile,
 )
 
 
@@ -52,10 +51,16 @@ class InstructorAdmin(admin.ModelAdmin):
 class CourseAdmin(admin.ModelAdmin):
     search_fields = ("full_code", "department__code", "code", "semester")
     autocomplete_fields = ("department", "primary_listing")
-    readonly_fields = ("crosslistings",)
+    readonly_fields = (
+        "topic",
+        "crosslistings",
+    )
     list_filter = ("semester",)
 
-    list_select_related = ("department",)
+    list_select_related = (
+        "department",
+        "topic",
+    )
 
     def crosslistings(self, instance):
         return format_html_join(
@@ -78,33 +83,15 @@ class TopicAdmin(admin.ModelAdmin):
     )
     search_fields = ("most_recent__full_code",)
     list_select_related = ("most_recent",)
-    exclude = ("most_recent__topic",)
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("courses")
-
-    def get_urls(self):
-        urls = super().get_urls()
-        my_urls = [
-            path(
-                "topic_remove_course/<int:course_id>/",
-                self.remove_course,
-                name="admin_topic_remove_course",
-            ),
-        ]
-        return my_urls + urls
-
-    def remove_course(self, request, course_id):
-        course = Course.objects.get(id=course_id)
-        course.topic = None
-        course.save()
 
     def courses(self, instance):
         t = loader.get_template("topic_courses_admin.html")
         courses = instance.courses.all()
         for course in courses:
             course.a_link = reverse("admin:courses_course_change", args=[course.id])
-            course.remove_link = reverse("admin:topic_remove_course", args=[course.id])
         return t.render({"courses": instance.courses.all()})
 
     def branched_from_id(self, instance):
@@ -131,7 +118,6 @@ class SectionAdmin(admin.ModelAdmin):
         "course",
         "associated_sections",
     )
-    exclude = ("topic",)
     list_filter = ("course__semester",)
 
     list_display = ["full_code", "semester", "status"]

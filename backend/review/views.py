@@ -125,7 +125,6 @@ def course_reviews(request, course_code):
             Course.objects.filter(course_filters_pcr, full_code=course_code)
             .order_by("-semester")[:1]
             .select_related(
-                "primary_listing",
                 "topic",
                 "topic__most_recent",
                 "topic__branched_from",
@@ -139,6 +138,7 @@ def course_reviews(request, course_code):
 
     topic = course.topic
     course = topic.most_recent
+    course_code = course.full_code
     aliases = course.crosslistings.values_list("full_code", flat=True)
 
     reviews = (
@@ -162,7 +162,7 @@ def course_reviews(request, course_code):
 
     course_qs = annotate_average_and_recent(
         Course.objects.filter(
-            Q(topic__most_recent_id=F("pk")), course_filters_pcr, topic=topic
+            Q(topic__most_recent_id=F("id")), course_filters_pcr, topic=topic
         ).order_by("-semester")[:1],
         match_on=Q(section__course__topic=topic),
         extra_metrics=True,

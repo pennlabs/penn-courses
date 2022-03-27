@@ -5,7 +5,6 @@
         <th>Title</th>
         <th>Description</th>
         <th>Prerequisites</th>
-        <th>Remove from Topic</th>
     </tr>
     {% for c in courses %}
     <tr>
@@ -14,7 +13,6 @@
         <td> {{ c.title }}</td>
         <td> {{ c.description }}</td>
         <td> {{ c.prerequisites }}</td>
-        <td><a style="color:red;" href="{{ c.remove_link }}">&#215;</a></td>
     </tr>
     {% endfor %}
 </table>

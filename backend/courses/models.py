@@ -287,8 +287,8 @@ class Topic(models.Model):
         be the `primary_listing` if it has crosslistings. These invariants are maintained
         by the `Topic.merge_with`, `Topic.add_course`, `Topic.from_course`, and `Course.save`
         methods. Defer to using these methods rather than setting this field manually.
-        You must change the corresponding `Topic` object's most_recent field before
-        deleting a `course` if it is the `most_recent` course (`on_delete=models.PROTECT`).
+        You must change the corresponding `Topic` object's `most_recent` field before
+        deleting a Course if it is the `most_recent` course (`on_delete=models.PROTECT`).
         """
         ),
     )
