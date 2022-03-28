@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.core.management.base import BaseCommand
 
 from courses.models import Course
-from courses.util import get_current_semester
+from courses.util import get_current_semester, in_dev
 from PennCourses.settings.base import S3_client
 from plan.management.commands.trainrecommender import train_recommender
 from plan.models import Schedule
@@ -162,8 +162,7 @@ dev_course_clusters = None  # a global variable used to "cache" the course clust
 
 def retrieve_course_clusters():
     global dev_course_clusters
-    dev_mode = "PennCourses.settings.development" in os.environ.get("DJANGO_SETTINGS_MODULE", "")
-    if dev_mode and os.environ.get("USE_PROD_MODEL", "false") != "true":
+    if in_dev() and os.environ.get("USE_PROD_MODEL", "false") != "true":
         if dev_course_clusters is None:
             print("TRAINING DEVELOPMENT MODEL... PLEASE WAIT")
             dev_course_clusters = train_recommender(

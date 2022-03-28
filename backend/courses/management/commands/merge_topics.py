@@ -83,6 +83,8 @@ def should_link_courses(course_a, course_b, verbose=True):
         return ShouldLinkCoursesResponse.DEFINITELY
     elif course_a.semester == course_b.semester:
         return ShouldLinkCoursesResponse.NO
+    elif (course_a.code < "5000") != (course_b.code < "5000"):
+        return ShouldLinkCoursesResponse.NO
     elif False:  # TODO
         # If title is same or (title is similar and description is similar
         # have a fairly low threshold for similarity)

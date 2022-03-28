@@ -1,3 +1,4 @@
+import gc
 import io
 import logging
 import os
@@ -7,7 +8,6 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from alert.management.commands.recomputestats import recompute_stats
-from courses.models import Course
 from courses.util import get_current_semester
 from PennCourses.settings.base import S3_client
 from review.import_utils.import_to_db import (
@@ -109,6 +109,12 @@ class Command(BaseCommand):
             "--force", action="store_true", help="Complete action in non-interactive mode."
         )
 
+        parser.add_argument(
+            "--skip-recompute-stats",
+            action="store_true",
+            help="Skip the recompute stats script after the review data import.",
+        )
+
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
 
     def get_files(self, src, is_zipfile, tables_to_get):
@@ -155,11 +161,12 @@ class Command(BaseCommand):
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
         force = kwargs["force"]
+        skip_recompute_stats = kwargs["skip_recompute_stats"]
 
         if src is None:
             raise CommandError("source directory or zip must be defined.")
 
-        if semesters is None and not kwargs["import_all"]:
+        if semesters is None and not import_all:
             raise CommandError(
                 "Must define semester with (-s) or explicitly import all semesters with (-a)."
             )
@@ -172,12 +179,12 @@ class Command(BaseCommand):
                         f"Did you forget to update the SEMESTER option in the Django admin console?"
                     )
 
-        if kwargs["s3_bucket"] is not None:
+        if s3_bucket is not None:
             fp = "/tmp/pcrdump.zip"
             # Make sure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
             # are loaded in as environment variables.
             self.display(f"downloading zip from s3 bucket: {src}")
-            S3_client.download_file(kwargs["s3_bucket"], src, fp)
+            S3_client.download_file(s3_bucket, src, fp)
             src = fp
 
         print(
@@ -205,20 +212,20 @@ class Command(BaseCommand):
 
             summary_fo = files[0]
             self.display("Loading summary file...")
-            summary_rows = load_sql_dump(
-                summary_fo, show_progress_bar
-            )  # This will show a progress bar.
+            summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
+            gc.collect()
             self.display("SQL parsed and loaded!")
 
             if not import_all:
                 full_len = len(summary_rows)
                 summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
+                gc.collect()
                 filtered_len = len(summary_rows)
                 self.display(f"Filtered {full_len} rows down to {filtered_len} rows.")
-                to_delete = Review.objects.filter(section__course__semester__in=semesters)
-            else:
-                to_delete = Review.objects.all()
 
+            semesters = sorted(list({r["TERM"] for r in summary_rows}))
+            gc.collect()
+            to_delete = Review.objects.filter(section__course__semester__in=semesters)
             delete_count = to_delete.count()
 
             if delete_count > 0:
@@ -236,30 +243,28 @@ class Command(BaseCommand):
                 )
                 to_delete.delete()
 
-            self.display(
-                "Importing reviews for semester(s)"
-                + f"{', '.join(semesters)if not kwargs['import_all'] else 'all'}"
-            )
+            self.display(f"Importing reviews for semester(s) {', '.join(semesters)}")
             stats = import_summary_rows(summary_rows, show_progress_bar)
             self.display(stats)
 
+            gc.collect()
+
             if import_details:
                 self.display("Loading details file...")
-                detail_rows = load_sql_dump(files[detail_idx], show_progress_bar)
-                self.display("SQL parsed and loaded!")
-                if not import_all:
-                    full_len = len(detail_rows)
-                    detail_rows = [r for r in detail_rows if r["TERM"] in semesters]
-                    filtered_len = len(detail_rows)
-                    self.display(f"Filtered {full_len} rows down to {filtered_len} rows.")
-                stats = import_ratings_rows(detail_rows, show_progress_bar)
+                stats = import_ratings_rows(
+                    *load_sql_dump(files[detail_idx]), semesters, show_progress_bar
+                )
                 self.display(stats)
+
+            gc.collect()
 
             if import_descriptions:
                 self.display("Loading descriptions file...")
-                description_rows = load_sql_dump(files[description_idx], show_progress_bar)
-                self.display("SQL parsed and loaded!")
-                stats = import_description_rows(description_rows, semesters, show_progress_bar)
+                stats = import_description_rows(
+                    *load_sql_dump(files[description_idx]),
+                    None if import_all else semesters,
+                    show_progress_bar,
+                )
                 self.display(stats)
 
             self.close_files(files)
@@ -268,14 +273,13 @@ class Command(BaseCommand):
             del_count = clear_cache()
             self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
 
-            # Recompute stats to ignore past courses without reviews
-            print(f"Recomputing stats for semesters {semesters if not import_all else '[all]'}...")
-            if import_all:
-                recompute_stats(semesters="all", semesters_precomputed=True, verbose=True)
-            else:
-                all_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
+            gc.collect()
+
+            # Recompute stats to take into past courses with reviews
+            if not skip_recompute_stats:
+                print(f"Recomputing stats for semester(s) {', '.join(semesters)}...")
                 recompute_stats(
-                    semesters=[sem for sem in semesters if sem in all_semesters],
+                    semesters=semesters,
                     semesters_precomputed=True,
                     verbose=True,
                 )

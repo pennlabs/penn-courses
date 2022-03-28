@@ -6,15 +6,19 @@ import * as Sentry from "@sentry/browser";
 import { useRouter } from "next/router";
 
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
+import {
+    Center,
+    Container,
+    Flex,
+} from "pcx-shared-components/src/common/layout";
+import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import ManageAlertWrapper from "../components/managealert";
 import { maxWidth, PHONE } from "../constants";
 import Footer from "../components/Footer";
 import AlertForm from "../components/AlertForm";
 import Timeline from "../components/Timeline";
 
-import { Center, Container, Flex } from "pcx-shared-components/src/common/layout";
 import MessageList from "../components/MessageList";
-import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import { User } from "../types";
 
 const Tagline = styled.h3`
@@ -70,7 +74,7 @@ const Nav = ({ login, logout, user, page, setPage }: NavProps) => (
     <NavContainer>
         <NavElt>
             <AccountIndicator
-                onLeft={true}
+                leftAligned={true}
                 user={user}
                 backgroundColor="dark"
                 nameLength={2}
@@ -182,7 +186,12 @@ function App() {
     return (
         <>
             <Container>
-                {showLoginModal && <LoginModal pathname={window.location.pathname} siteName="Penn Course Alert"/>}
+                {showLoginModal && (
+                    <LoginModal
+                        pathname={window.location.pathname}
+                        siteName="Penn Course Alert"
+                    />
+                )}
                 {showRecruiting && (
                     <RecruitingBanner>
                         <p>
@@ -233,7 +242,7 @@ function App() {
                     <ManageAlertWrapper />
                 )}
 
-                <Timeline courseCode={timeline} setTimeline={setTimeline}/>
+                <Timeline courseCode={timeline} setTimeline={setTimeline} />
 
                 <Footer />
             </Container>

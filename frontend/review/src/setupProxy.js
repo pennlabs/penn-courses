@@ -1,7 +1,7 @@
 const proxy = require("http-proxy-middleware");
 
 module.exports = function(app) {
-  const proxyUrl = process.env.PROXY_URL || "http://localhost:8000";
+  const proxyUrl = process.env.PROXY_URL || "http://127.0.0.1:8000";
   app.use(
     proxy("/api", {
       logLevel: "debug",

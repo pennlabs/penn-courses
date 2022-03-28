@@ -1,3 +1,4 @@
+import gc
 import re
 from datetime import datetime
 
@@ -134,28 +135,20 @@ entry_regex = re.compile(
 )
 
 
-def process_file(fo, process_row=None, T=SQLDumpTransformer, progress=True):
+def load_sql_dump(fo, T=SQLDumpTransformer, progress=True, lazy=True):
     """
     Read in and parse a SQL dump, with each row as a Python dictionary.
-    tqdm shows a progress bar in the shell, and the process_row callback
-    is used to collect the resulting Python objects from the parser.
-
-    The `progess` option ensures we're piping the progress bar to the right
-    place, and not just always polluting sys.stderr.
+    If `lazy=True`, returns (total number of rows, iterator of rows)
+    Otherwise, returns a list of rows.
+    Set the `progess` option to False to disable the progress bar
+    (there is no progress bar in lazy mode regardless).
     """
 
     contents = fo.read()
-    matches = list(entry_regex.finditer(contents))
-    for x in tqdm(matches, disable=(not progress)):
-        row = parse_row(x.group(), T)
-        if process_row is not None:
-            process_row(row)
-
-
-def load_sql_dump(fo, progress=True):
-    """
-    Synchronously return all the rows from the database, in dictionary format.
-    """
-    data = list()
-    process_file(fo, lambda row: data.append(row), progress=progress)
-    return data
+    if lazy:
+        total_rows = sum(1 for _ in entry_regex.finditer(contents))
+        gc.collect()
+        return total_rows, map(lambda x: parse_row(x.group(), T), entry_regex.finditer(contents))
+    else:
+        matches = list(entry_regex.finditer(contents))
+        return [parse_row(x.group(), T) for x in tqdm(matches, disable=(not progress))]

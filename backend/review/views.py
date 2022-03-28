@@ -1,5 +1,5 @@
 from dateutil.tz import gettz
-from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -10,7 +10,7 @@ from courses.models import Course, Department, Instructor, Restriction, Section
 from courses.util import get_current_semester, get_or_create_add_drop_period
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from PennCourses.settings.base import (
-    PERMIT_REGISTRATION_RESTRICTION_CODES,
+    PERMIT_REQ_RESTRICTION_CODES,
     TIME_ZONE,
     WAITLIST_DEPARTMENT_CODES,
 )
@@ -59,9 +59,7 @@ extra_metrics_section_filters = (
     & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
     & ~Q(
         id__in=Subquery(
-            Restriction.objects.filter(code__in=PERMIT_REGISTRATION_RESTRICTION_CODES).values_list(
-                "sections__id", flat=True
-            )
+            Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values("sections__id")
         )
     )  # Filter out sections that require permit for registration
 )
@@ -141,6 +139,23 @@ def course_reviews(request, course_code):
     course_code = course.full_code
     aliases = course.crosslistings.values_list("full_code", flat=True)
 
+    most_recent_section = (
+        Section.objects.filter(
+            course_id__in=Subquery(
+                Course.objects.filter(course_filters_pcr, topic=topic).values("id")
+            ),
+        )
+        .annotate(
+            registration_metrics=Case(
+                When(extra_metrics_section_filters, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+        )
+        .order_by("-course__semester")[:1]
+        .get()
+    )
+
     reviews = (
         review_averages(
             Review.objects.filter(section__course__topic=topic, responses__gt=0),
@@ -177,9 +192,14 @@ def course_reviews(request, course_code):
             "name": course["title"],
             "description": course["description"],
             "aliases": aliases,
-            "historical_codes": [
-                c for c in topic.courses.values_list("full_code", flat=True) if c not in aliases
-            ],
+            "historical_codes": list(
+                {
+                    c
+                    for c in topic.courses.values_list("full_code", flat=True)
+                    if c not in aliases
+                    if c != course["full_code"]
+                }
+            ),
             "branched_from": topic.branched_from.most_recent.full_code
             if topic.branched_from
             else None,
@@ -202,6 +222,7 @@ def course_reviews(request, course_code):
             "recent_reviews": make_subdict("recent_", course),
             "num_semesters": course["average_semester_count"],
             "instructors": instructors,
+            "registration_metrics": most_recent_section.registration_metrics,
         }
     )
 
@@ -241,6 +262,7 @@ def course_reviews(request, course_code):
         override_response_schema=course_plots_response_schema,
     )
 )
+@permission_classes([IsAuthenticated])
 def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
@@ -391,7 +413,7 @@ def instructor_reviews(request, instructor_id):
             "course__topic": OuterRef("topic"),
             "instructors__id": instructor_id,
         },
-    ).annotate(most_recent=F("topic__most_recent__full_code"))
+    ).annotate(most_recent_id=F("topic__most_recent_id"))
 
     inst = instructor_qs.values()[:1].get()
 
@@ -423,7 +445,7 @@ def instructor_reviews(request, instructor_id):
                     "name": r["title"],
                 }
                 for r in courses.values()
-                if r["full_code"] == r["most_recent"]
+                if r["id"] == r["most_recent_id"]
             },
         }
     )
@@ -469,12 +491,12 @@ def department_reviews(request, department_code):
         )
         .annotate(
             course_title=F("section__course__title"),
-            full_code=F("section__course__topic__most_recent__full_code"),
+            course_code=F("section__course__topic__most_recent__full_code"),
             semester=F("section__course__semester"),
         )
         .values()
     )
-    courses = aggregate_reviews(reviews, "full_code", code="full_code", name="course_title")
+    courses = aggregate_reviews(reviews, "course_code", code="course_code", name="course_title")
 
     return Response({"code": department.code, "name": department.name, "courses": courses})
 
@@ -520,11 +542,12 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
 
     instructor = get_object_or_404(Instructor, id=instructor_id)
 
+    topic = course.topic
     course = course.topic.most_recent
 
     reviews = review_averages(
         Review.objects.filter(
-            section__course__topic_id=course.topic_id, instructor_id=instructor_id, responses__gt=0
+            section__course__topic=topic, instructor_id=instructor_id, responses__gt=0
         ),
         {"review_id": OuterRef("id")},
         fields=ALL_FIELD_SLUGS,

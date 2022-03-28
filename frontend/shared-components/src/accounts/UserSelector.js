@@ -37,7 +37,7 @@ const InnerMenu = styled.div`
     padding: 0.32rem;
     font-size: 0.85rem;
     box-shadow: 0 0 5px 0 lightgrey;
-    right: ${(props) => (props.onLeft ? "0%" : "61%")};
+    right: ${(props) => (props.leftAligned ? "0%" : "61%")};
 `;
 
 const NameContainer = styled.p`
@@ -106,7 +106,7 @@ const Dropdown = styled.div`
 const UserSelector = ({
     user: { username, ...rest },
     onLogout,
-    onLeft,
+    leftAligned,
     backgroundColor,
     nameLength,
 }) => {
@@ -137,7 +137,7 @@ const UserSelector = ({
             <LogoutDropdownMenu selected={selected}>
                 <LogoutDropdownContainer className="dropdown-menu-container">
                     <TriangleUp />
-                    <InnerMenu onLeft={onLeft}>
+                    <InnerMenu leftAligned={leftAligned}>
                         <NameContainer>
                             {" "}
                             {firstName} {lastName}{" "}
@@ -167,7 +167,7 @@ const UserSelector = ({
 UserSelector.propTypes = {
     user: PropTypes.objectOf(PropTypes.any),
     onLogout: PropTypes.func,
-    onLeft: PropTypes.bool,
+    leftAligned: PropTypes.bool,
     backgroundColor: PropTypes.string,
     nameLength: PropTypes.number,
 };
