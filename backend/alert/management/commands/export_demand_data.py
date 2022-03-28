@@ -251,7 +251,7 @@ class Command(BaseCommand):
             f"Generating {script_print_path} with demand data data from "
             f"semesters {semesters}..."
         )
-        output_file_path = "/app/export_demand_data.json" if upload_to_s3 else path
+        output_file_path = "/tmp/export_demand_data.json" if upload_to_s3 else path
         with open(output_file_path, "w") as output_file:
             output_data = get_demand_data(
                 semesters, section_query=kwargs["section_query"], verbose=True

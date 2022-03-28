@@ -1,6 +1,7 @@
 import React from "react";
 import * as Sentry from "@sentry/browser";
 import { createGlobalStyle } from "styled-components";
+import Head from 'next/head'
 
 Sentry.init({
     dsn: "https://7c27d176a3984f8c931600ca1751d526@sentry.pennlabs.org/16",
@@ -25,6 +26,9 @@ body {
 function App({ Component, pageProps }) {
     return (
         <>
+            <Head>
+                <title>Penn Course Alert</title>
+            </Head>
             <GlobalStyles />
             <Component {...pageProps} />
         </>

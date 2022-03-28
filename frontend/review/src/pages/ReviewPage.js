@@ -35,7 +35,15 @@ export class ReviewPage extends Component {
     this.navigateToPage = this.navigateToPage.bind(this);
     this.getReviewData = this.getReviewData.bind(this);
     this.setIsAverage = this.setIsAverage.bind(this);
-    this.setIsCourseEval = this.setIsCourseEval.bind(this);
+    const setIsCourseEval = this.setIsCourseEval.bind(this);
+    this.setIsCourseEval = val => {
+      setIsCourseEval(val);
+      window.ga("send", "event", {
+        eventCategory: "Registration Metrics Mode",
+        eventAction: "Toggle",
+        eventValue: val
+      });
+    };
     this.showRowHistory = this.showRowHistory.bind(this);
     this.showDepartmentGraph = this.showDepartmentGraph.bind(this);
   }

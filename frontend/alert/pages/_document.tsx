@@ -40,7 +40,6 @@ export default class MyDocument extends Document {
                         href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
                     />
                     <link rel="icon" href="/favicon.ico" />
-                    <title>Penn Course Alert</title>
                 </Head>
                 <body>
                     <Main />

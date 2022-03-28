@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 import * as Sentry from "@sentry/browser";
 
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
+import { Center } from "pcx-shared-components/src/common/layout";
 import { Input } from "../Input";
 import AutoComplete from "../AutoComplete";
-import { Center } from "pcx-shared-components/src/common/layout";
 import getCsrf from "../../csrf";
-import { User } from "../../types";
+import { User, Section } from "../../types";
 
 const SubmitButton = styled.button`
     border-radius: 5px;
@@ -46,8 +46,7 @@ interface RadioSetProps {
 const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
     <span>
         {options.map(({ label, value }) => (
-            <>
-                <label htmlFor={value}>
+                <label htmlFor={value} key={label}>
                     <input
                         type="radio"
                         name="name"
@@ -58,14 +57,16 @@ const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
                     />
                     {label}
                 </label>
-            </>
         ))}
     </span>
 );
 
 RadioSet.propTypes = {
     selected: PropTypes.string,
-    options: PropTypes.arrayOf(PropTypes.string),
+    options: PropTypes.arrayOf(PropTypes.shape({
+        label: PropTypes.string,
+        value: PropTypes.string,
+      })),
     setSelected: PropTypes.func,
 };
 
@@ -101,13 +102,19 @@ const AlertForm = ({
     setTimeline,
     autofillSection = "",
 }: AlertFormProps) => {
-    const [section, setSection] = useState(autofillSection);
+    const [selectedCourses, setSelectedCourses] = useState<Set<Section>>(
+        new Set()
+    );
+    const [value, setValue] = useState(autofillSection);
+
     const [email, setEmail] = useState("");
 
     const [phone, setPhone] = useState("");
     const [isPhoneDirty, setPhoneDirty] = useState(false);
 
     const [autoResub, setAutoResub] = useState("false");
+
+    const autoCompleteInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const phonenumber =
@@ -130,6 +137,25 @@ const AlertForm = ({
         setResponse(new Response(blob, { status }));
     };
 
+    const isCourseOpen = (section) => {
+        return fetch(`/api/base/current/sections/${section}/`).then((res) => 
+            res.json().then((courseResult) => {
+
+                const isOpen = courseResult["status"] === "O";
+                if (isOpen) {
+                    setResponse(new Response(new Blob([JSON.stringify({message: "Course is currently open!", status: 400})], {
+                        type: "application/json",
+                    })))
+                } 
+
+                return isOpen;
+            }))
+            .catch((err) => {
+                handleError(err);
+                return false;
+            })
+    } 
+
     const handleError = (e) => {
         Sentry.captureException(e);
         sendError(
@@ -138,14 +164,103 @@ const AlertForm = ({
         );
     };
 
+    // Clear all sections the user selected
+    const clearSelections = () => {
+        setSelectedCourses(new Set());
+    };
+
+    /**
+     * Clear the input value and setValue
+     * @param newSelectedCourses - most up-to-date selected courses set
+     * @param suggestion - the section
+     */
+     const clearInputValue = () => {
+        if (autoCompleteInputRef.current) {
+            autoCompleteInputRef.current.value = "";
+            setValue("");
+        }
+    }
+
+    const deselectCourse = (section: Section): boolean => {
+        const newSelectedCourses = new Set(selectedCourses);
+        const removed = newSelectedCourses.delete(section);
+        removed && setSelectedCourses(newSelectedCourses);
+
+        if (newSelectedCourses.size === 0) {
+            clearInputValue();
+        }
+
+        return removed;
+    }
+
     const submitRegistration = () => {
-        const postRegistration = (section_id: string) => doAPIRequest("/api/alert/registrations/", "POST", {
-            section: section_id,
-            auto_resubscribe: autoResub === "true",
+        // if user has a auto fill section and didn't change the input value then register for section
+        // and support user manually entered a course (without checking checkbox)
+        if (
+            autoCompleteInputRef.current &&
+            (autoCompleteInputRef.current.value === autofillSection || (autoCompleteInputRef.current.value !== "" && selectedCourses.size == 0))
+        ) {
+            const section = autoCompleteInputRef.current.value;
+            isCourseOpen(section).then(isOpen => {
+                if (!isOpen) {
+                    doAPIRequest("/api/alert/registrations/", "POST", {
+                        section: section,
+                        auto_resubscribe: autoResub === "true",
+                    })
+                        .then((res) => {
+                            if (res.ok) {
+                                clearInputValue();
+                            }
+                            setResponse(res)
+                        })
+                        .catch(handleError);
+                } 
+            })
+
+            return;
+            
+        }
+
+        // register all selected sections
+        const promises: Array<Promise<Response | undefined>> = [];
+        selectedCourses.forEach((section) => {
+
+            const promise = isCourseOpen(section.section_id).then(isOpen => {
+                 if (!isOpen) {
+                      return doAPIRequest("/api/alert/registrations/", "POST", {
+                        section: section.section_id,
+                        auto_resubscribe: autoResub === "true",
+                    })
+                }
+
+            })
+            
+           promises.push(promise)
         });
-        postRegistration(section)
-            .then((res) => setResponse(res))
-            .catch(handleError);
+
+        const sections = Array.from(selectedCourses)
+
+        Promise.allSettled(promises)
+            .then((responses) => responses.forEach(
+                (res: PromiseSettledResult<Response | undefined>, i) => {
+                
+                    //fulfilled if response is returned, even if reg is unsuccessful.
+                    if (res.status === "fulfilled") {
+                        if (res.value == undefined) {
+                            return;
+                        }
+
+                        const response: Response = res.value!
+
+                        setResponse(response);
+                        if (response.ok) {
+                            deselectCourse(sections[i]);
+                        } 
+                    //only if network error occurred
+                    } else {
+                        handleError(res.reason);
+                    }
+                }));
     };
 
     const onSubmit = () => {
@@ -185,8 +300,14 @@ const AlertForm = ({
         <Form>
             <AutoComplete
                 defaultValue={autofillSection}
-                onValueChange={setSection}
+                selectedCourses={selectedCourses}
+                setSelectedCourses={setSelectedCourses}
+                value={value}
+                setValue={setValue}
                 setTimeline={setTimeline}
+                inputRef={autoCompleteInputRef}
+                clearSelections={clearSelections}
+                clearInputValue={clearInputValue}
             />
             <Input
                 placeholder="Email"

@@ -1,5 +1,5 @@
 from dateutil.tz import gettz
-from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -10,7 +10,7 @@ from courses.models import Course, Department, Instructor, Restriction, Section
 from courses.util import get_current_semester, get_or_create_add_drop_period
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from PennCourses.settings.base import (
-    PERMIT_REGISTRATION_RESTRICTION_CODES,
+    PERMIT_REQ_RESTRICTION_CODES,
     TIME_ZONE,
     WAITLIST_DEPARTMENT_CODES,
 )
@@ -59,9 +59,7 @@ extra_metrics_section_filters = (
     & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
     & ~Q(
         id__in=Subquery(
-            Restriction.objects.filter(code__in=PERMIT_REGISTRATION_RESTRICTION_CODES).values_list(
-                "sections__id", flat=True
-            )
+            Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values("sections__id")
         )
     )  # Filter out sections that require permit for registration
 )
@@ -141,6 +139,23 @@ def course_reviews(request, course_code):
     course_code = course.full_code
     aliases = course.crosslistings.values_list("full_code", flat=True)
 
+    most_recent_section = (
+        Section.objects.filter(
+            course_id__in=Subquery(
+                Course.objects.filter(course_filters_pcr, topic=topic).values("id")
+            ),
+        )
+        .annotate(
+            registration_metrics=Case(
+                When(extra_metrics_section_filters, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+        )
+        .order_by("-course__semester")[:1]
+        .get()
+    )
+
     reviews = (
         review_averages(
             Review.objects.filter(section__course__topic=topic, responses__gt=0),
@@ -202,6 +217,7 @@ def course_reviews(request, course_code):
             "recent_reviews": make_subdict("recent_", course),
             "num_semesters": course["average_semester_count"],
             "instructors": instructors,
+            "registration_metrics": most_recent_section.registration_metrics,
         }
     )
 
@@ -241,6 +257,7 @@ def course_reviews(request, course_code):
         override_response_schema=course_plots_response_schema,
     )
 )
+@permission_classes([IsAuthenticated])
 def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
