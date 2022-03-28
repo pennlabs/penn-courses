@@ -139,10 +139,11 @@ const AlertForm = ({
     };
 
     const submitRegistration = () => {
-        doAPIRequest("/api/alert/registrations/", "POST", {
-            section,
+        const postRegistration = (section_id: string) => doAPIRequest("/api/alert/registrations/", "POST", {
+            section: section_id,
             auto_resubscribe: autoResub === "true",
-        })
+        });
+        postRegistration(section)
             .then((res) => setResponse(res))
             .catch(handleError);
     };

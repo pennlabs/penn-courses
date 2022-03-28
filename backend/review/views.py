@@ -159,6 +159,7 @@ def course_reviews(request, course_code):
     )
 
     instructors = aggregate_reviews(reviews, "instructor_id", name="instructor_name")
+    live_instructors = Section.objects.filter(course__topic=topic).values("instructors__name")
 
     course_qs = annotate_average_and_recent(
         Course.objects.filter(
