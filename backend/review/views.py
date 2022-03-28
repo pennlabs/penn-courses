@@ -391,7 +391,7 @@ def instructor_reviews(request, instructor_id):
             "course__topic": OuterRef("topic"),
             "instructors__id": instructor_id,
         },
-    ).annotate(most_recent=F("topic__most_recent__full_code"))
+    ).annotate(most_recent_id=F("topic__most_recent_id"))
 
     inst = instructor_qs.values()[:1].get()
 
@@ -423,7 +423,7 @@ def instructor_reviews(request, instructor_id):
                     "name": r["title"],
                 }
                 for r in courses.values()
-                if r["full_code"] == r["most_recent"]
+                if r["id"] == r["most_recent_id"]
             },
         }
     )
@@ -469,12 +469,12 @@ def department_reviews(request, department_code):
         )
         .annotate(
             course_title=F("section__course__title"),
-            full_code=F("section__course__topic__most_recent__full_code"),
+            course_code=F("section__course__topic__most_recent__full_code"),
             semester=F("section__course__semester"),
         )
         .values()
     )
-    courses = aggregate_reviews(reviews, "full_code", code="full_code", name="course_title")
+    courses = aggregate_reviews(reviews, "course_code", code="course_code", name="course_title")
 
     return Response({"code": department.code, "name": department.name, "courses": courses})
 
@@ -520,11 +520,12 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
 
     instructor = get_object_or_404(Instructor, id=instructor_id)
 
+    topic = course.topic
     course = course.topic.most_recent
 
     reviews = review_averages(
         Review.objects.filter(
-            section__course__topic_id=course.topic_id, instructor_id=instructor_id, responses__gt=0
+            section__course__topic=topic, instructor_id=instructor_id, responses__gt=0
         ),
         {"review_id": OuterRef("id")},
         fields=ALL_FIELD_SLUGS,
