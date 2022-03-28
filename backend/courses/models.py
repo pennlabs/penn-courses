@@ -93,7 +93,7 @@ def sections_with_reviews(queryset):
     return review_averages(
         queryset,
         {
-            "review__section__course__full_code": OuterRef("course__full_code"),
+            "review__section__course__topic": OuterRef("course__topic"),
             # get all the reviews for instructors in the Section.instructors many-to-many
             "review__instructor__in": Subquery(
                 Instructor.objects.filter(section=OuterRef(OuterRef("id"))).values("id").order_by()
@@ -105,7 +105,7 @@ def sections_with_reviews(queryset):
 
 def course_reviews(queryset):
     return review_averages(
-        queryset, {"review__section__course__full_code": OuterRef("full_code")}, extra_metrics=False
+        queryset, {"review__section__course__topic": OuterRef("topic")}, extra_metrics=False
     )
 
 

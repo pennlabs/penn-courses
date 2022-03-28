@@ -33,7 +33,7 @@ class Review(models.Model):
             ReviewBit.objects.update_or_create(review=self, field=key, defaults={"average": value})
 
     @staticmethod
-    def get_averages(course_code, instructor_name=None, fields=None):
+    def get_averages(topic_id, instructor_name=None, fields=None):
         if fields is None:
             # Default fields (topline numbers on PCR)
             fields = [
@@ -46,7 +46,7 @@ class Review(models.Model):
         # https://docs.djangoproject.com/en/2.2/topics/db/aggregation/#cheat-sheet
 
         # Filter down a queryset to just include this course
-        qs = Review.objects.filter(section__course__full_code=course_code, responses__gt=0)
+        qs = Review.objects.filter(section__course__topic_id=topic_id, responses__gt=0)
         if (
             instructor_name is not None
         ):  # if an instructor is specified, filter down to just that instructor
