@@ -28,18 +28,35 @@ const TitleText = styled.p`
     }
 `;
 
+// const Grid = styled.div`
+//     display: grid;
+//     grid-template-columns: 1fr 2.75fr 2fr 2fr 2.5fr 1.75fr 2fr;
+//     grid-template-rows: 1.5rem;
+//     grid-auto-rows: 3rem;
+
+//     ${maxWidth(PHONE)} {
+//         grid-template-columns: 0fr 0fr 2fr 2fr 2.5fr 1.75fr 2fr;
+//         & > div:nth-child(7n + 1) {
+//             display: none;
+//         }
+//         & > div:nth-child(7n + 2) {
+//             display: none;
+//         }
+//     }
+// `;
+
 const Grid = styled.div`
     display: grid;
-    grid-template-columns: 1fr 2.75fr 2fr 2fr 2.5fr 1.75fr 2fr;
+    grid-template-columns: 1fr 3fr 2fr 2fr 3fr 2fr;
     grid-template-rows: 1.5rem;
     grid-auto-rows: 3rem;
 
     ${maxWidth(PHONE)} {
-        grid-template-columns: 0fr 0fr 2fr 2fr 2.5fr 1.75fr 2fr;
-        & > div:nth-child(7n + 1) {
+        grid-template-columns: 0fr 0fr 2fr 2fr 3fr 2fr;
+        & > div:nth-child(6n + 1) {
             display: none;
         }
-        & > div:nth-child(7n + 2) {
+        & > div:nth-child(6n + 2) {
             display: none;
         }
     }
