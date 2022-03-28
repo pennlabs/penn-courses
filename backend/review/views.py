@@ -192,9 +192,14 @@ def course_reviews(request, course_code):
             "name": course["title"],
             "description": course["description"],
             "aliases": aliases,
-            "historical_codes": [
-                c for c in topic.courses.values_list("full_code", flat=True) if c not in aliases
-            ],
+            "historical_codes": list(
+                {
+                    c
+                    for c in topic.courses.values_list("full_code", flat=True)
+                    if c not in aliases
+                    if c != course["full_code"]
+                }
+            ),
             "branched_from": topic.branched_from.most_recent.full_code
             if topic.branched_from
             else None,
