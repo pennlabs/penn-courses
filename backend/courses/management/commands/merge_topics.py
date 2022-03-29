@@ -50,19 +50,26 @@ class ShouldLinkCoursesResponse(Enum):
     NO = auto()
 
 
+def prompt_for_link_multiple(courses, extra_newlines=True):
+    """
+    Prompts the user to confirm or reject a possible link between multiple courses.
+    Returns a boolean representing whether the courses should be linked.
+    """
+    print("\n\n============>\n")
+    print("\n".join(course.full_str() for course in courses))
+    print("\n<============")
+    prompt = input(f"Should the above {len(courses)} courses be linked? (y/N) ")
+    if extra_newlines:
+        print("\n\n")
+    return prompt.strip().upper() == "Y"
+
+
 def prompt_for_link(course1, course2):
     """
     Prompts the user to confirm or reject a possible link between courses.
     Returns a boolean representing whether the courses should be linked.
     """
-    print("\n\n============>\n")
-    print(course1.full_str())
-    print("\n")
-    print(course2.full_str())
-    print("\n<============")
-    prompt = input("Should the above 2 courses be linked? (y/N) ")
-    print("\n\n")
-    return prompt.strip().upper() == "Y"
+    return prompt_for_link_multiple([course1, course2])
 
 
 def same_course(course_a, course_b):
@@ -169,6 +176,31 @@ def merge_topics(guaranteed_links=None, verbose=False):
         print(f"Finished merging topics (performed {merge_count} merges).")
 
 
+def manual_merge(topic_ids):
+    invalid_ids = [i for i in topic_ids if not i.isdigit()]
+    if invalid_ids:
+        print(
+            f"The following topic IDs are invalid (non-integer):\n{invalid_ids}\n" "Aborting merge."
+        )
+        return
+    topic_ids = [int(i) for i in topic_ids]
+    topics = Topic.objects.filter(id__in=topic_ids).prefetch_related("courses")
+    found_ids = topics.values_list("id", flat=True)
+    not_found_ids = list(set(topic_ids) - set(found_ids))
+    if not_found_ids:
+        print(f"The following topic IDs were not found:\n{not_found_ids}\nAborting merge.")
+        return
+    courses = [course for topic in topics for course in topic.courses.all()]
+    if not prompt_for_link_multiple(courses, extra_newlines=False):
+        print("Aborting merge.")
+        return
+    with transaction.atomic():
+        topic = topics[0]
+        for topic2 in topics[1:]:
+            topic = topic.merge_with(topic2)
+    print(f"Successfully merged {len(topics)} topics into: {topic}.")
+
+
 class Command(BaseCommand):
     help = (
         "This script uses a combination of an optionally provided crosswalk, heuristics, "
@@ -191,10 +223,36 @@ class Command(BaseCommand):
         parser.add_argument(
             "-s3", "--s3_bucket", help="download crosswalk from specified s3 bucket."
         )
+        parser.add_argument(
+            "-t",
+            "--topic_ids",
+            nargs="*",
+            help=dedent(
+                """
+            Optionally, specify a (space-separated) list of Topic IDs to merge into a single topic.
+            You can find Topic IDs from the django admin interface (either by searching through Topics
+            or by following the topic field from a course entry).
+            If this argument is omitted, the script will automatically detect merge opportunities
+            among all Topics, prompting the user for confirmation before merging in each case.
+            """
+            ),
+            required=False,
+        )
 
     def handle(self, *args, **kwargs):
         cross_walk_src = kwargs["cross_walk"]
         s3_bucket = kwargs["s3_bucket"]
+        topic_ids = set(kwargs["topic_ids"])
+
+        print(
+            "This script is atomic, meaning either all Topic merges will be comitted to the "
+            "database, or otherwise if an error is encountered, all changes will be rolled back "
+            "and the database will remain as it was before the script was run."
+        )
+
+        if topic_ids:
+            manual_merge(topic_ids)
+            return
 
         if cross_walk_src and s3_bucket:
             fp = "/tmp/" + cross_walk_src
@@ -209,12 +267,6 @@ class Command(BaseCommand):
         if cross_walk_src and s3_bucket:
             # Remove temporary file
             os.remove(cross_walk_src)
-
-        print(
-            "This script is atomic, meaning either all Topic merges will be comitted to the "
-            "database, or otherwise if an error is encountered, all changes will be rolled back "
-            "and the database will remain as it was before the script was run."
-        )
 
         with transaction.atomic():
             merge_topics(guaranteed_links=guaranteed_links, verbose=True)
