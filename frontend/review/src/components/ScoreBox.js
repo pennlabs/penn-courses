@@ -235,7 +235,7 @@ class ScoreBox extends Component {
             ) {
               const other =
                 infoMap[this.state.selected][
-                this.props.isAverage ? "average_reviews" : "recent_reviews"
+                  this.props.isAverage ? "average_reviews" : "recent_reviews"
                 ][id];
               if (Math.abs(val - other) > 0.01) {
                 if (val > other) {
@@ -318,12 +318,13 @@ class ScoreBox extends Component {
               }
             >
               <i
-                className={`ml-1 fa-star ${this.state.currentCourses[code].filter(
-                  a => !a.is_closed && !a.is_cancelled
-                ).length
-                  ? "fa"
-                  : "far"
-                  }`}
+                className={`ml-1 fa-star ${
+                  this.state.currentCourses[code].filter(
+                    a => !a.is_closed && !a.is_cancelled
+                  ).length
+                    ? "fa"
+                    : "far"
+                }`}
               />
             </PopoverTitle>
           )}
@@ -416,15 +417,17 @@ class ScoreBox extends Component {
           <div className="btn-group">
             <button
               onClick={() => setIsAverage(true)}
-              className={`btn btn-sm ${this.props.isAverage ? "btn-primary" : "btn-secondary"
-                }`}
+              className={`btn btn-sm ${
+                this.props.isAverage ? "btn-primary" : "btn-secondary"
+              }`}
             >
               Average
             </button>
             <button
               onClick={() => setIsAverage(false)}
-              className={`btn btn-sm ${this.props.isAverage ? "btn-secondary" : "btn-primary"
-                }`}
+              className={`btn btn-sm ${
+                this.props.isAverage ? "btn-secondary" : "btn-primary"
+              }`}
             >
               Most Recent
             </button>
