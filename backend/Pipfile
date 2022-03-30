@@ -3,6 +3,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[[source]]
+url = "https://download.pytorch.org/whl/cpu"
+verify_ssl = true
+name = "downloadpytorch"
+
 [dev-packages]
 codecov = "*"
 coverage = "*"
@@ -54,6 +59,12 @@ numpy = "*"
 scikit-learn = "*"
 pandas = "*"
 python-dateutil = "*"
+jellyfish = "*"
+matplotlib = "*"
+jupyter = "*"
+transformers = "*"
+sentence-transformers = "*"
+torch = "*"
 
 [requires]
 python_full_version = "3.10"
