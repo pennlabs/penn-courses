@@ -64,7 +64,6 @@ class ScoreBox extends Component {
 
       if (liveData && liveData.sections) {
         const instructorsThisSemester = {};
-        // const { instructors = [], courses } = liveData;
         const instructors = liveData.sections.flatMap(
           ({ instructors }) => instructors
         );
@@ -81,7 +80,6 @@ class ScoreBox extends Component {
                 .map(({ name }) => convertInstructorName(name))
                 .indexOf(key) !== -1
           );
-          // .filter((section) => !a.is_cancelled);
           data.open += coursesByInstructor.filter(
             section => section.status === "O"
           ).length;
@@ -106,22 +104,6 @@ class ScoreBox extends Component {
         }));
       }
     }
-    // TODO: semester data for instructors
-    // else if (type === "instructor") {
-    //   if (liveData) {
-    //     const courses = {};
-    //     Object.values(liveData.courses).forEach((a) => {
-    //       const key = `${a.course_department}-${a.course_number}`;
-    //       if (!(key in courses)) {
-    //         courses[key] = [];
-    //       }
-    //       courses[key].push(a);
-    //     });
-    //     this.setState({
-    //       currentCourses: courses,
-    //     });
-    //   }
-    // }
   }
 
   generateColumns() {

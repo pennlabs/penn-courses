@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
+from django.template import loader
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
@@ -17,6 +18,7 @@ from courses.models import (
     Room,
     Section,
     StatusUpdate,
+    Topic,
     UserProfile,
 )
 
@@ -49,10 +51,16 @@ class InstructorAdmin(admin.ModelAdmin):
 class CourseAdmin(admin.ModelAdmin):
     search_fields = ("full_code", "department__code", "code", "semester")
     autocomplete_fields = ("department", "primary_listing")
-    readonly_fields = ("crosslistings",)
+    readonly_fields = (
+        "topic",
+        "crosslistings",
+    )
     list_filter = ("semester",)
 
-    list_select_related = ("department",)
+    list_select_related = (
+        "department",
+        "topic",
+    )
 
     def crosslistings(self, instance):
         return format_html_join(
@@ -66,6 +74,44 @@ class CourseAdmin(admin.ModelAdmin):
                 for c in instance.crosslistings.all()
             ),
         )
+
+
+class TopicAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        "courses",
+        "branched_from",
+    )
+    search_fields = (
+        "id",
+        "most_recent__full_code",
+    )
+    list_select_related = ("most_recent",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("courses")
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Hack to limit most_recent choices to courses of the same Topic
+        if db_field.name == "most_recent":
+            topic_id = request.resolver_match.kwargs["object_id"]
+            kwargs["queryset"] = Course.objects.filter(topic_id=topic_id)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def courses(self, instance):
+        t = loader.get_template("topic_courses_admin.html")
+        courses = instance.courses.all()
+        for course in courses:
+            course.a_link = reverse("admin:courses_course_change", args=[course.id])
+        return t.render({"courses": instance.courses.all()})
+
+    def branched_from_id(self, instance):
+        """
+        The original topic from which this topic branched.
+        """
+        if instance.branched_from_id is None:
+            return "None"
+        link = reverse("admin:courses_topic_change", args=[instance.branched_from_id])
+        return format_html('<a href="{}">{}</a>', link, str(instance.branched_from_id))
 
 
 class SectionAdmin(admin.ModelAdmin):
@@ -130,6 +176,7 @@ admin.site.register(APIKey)
 admin.site.register(APIPrivilege)
 admin.site.register(Department, DepartmentAdmin)
 admin.site.register(Course, CourseAdmin)
+admin.site.register(Topic, TopicAdmin)
 admin.site.register(Section, SectionAdmin)
 admin.site.register(Building)
 admin.site.register(Room)

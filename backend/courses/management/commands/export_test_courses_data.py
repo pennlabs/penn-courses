@@ -147,7 +147,7 @@ class Command(BaseCommand):
             action="store_true",
             help=(
                 "Enable this argument to upload the output of this script to the penn.courses "
-                "S3 bucket, at the paths specified by the above path arguments. "
+                "S3 bucket, at the path specified by the path argument. "
             ),
         )
         parser.add_argument(
@@ -180,7 +180,7 @@ class Command(BaseCommand):
         data_types = fields.keys()
 
         rows = 0
-        output_file_path = "/app/export_test_data_output.csv" if upload_to_s3 else path
+        output_file_path = "/tmp/export_test_data_output.csv" if upload_to_s3 else path
         if output_file_path != os.devnull:
             with contextlib.suppress(FileNotFoundError):
                 os.remove(output_file_path)

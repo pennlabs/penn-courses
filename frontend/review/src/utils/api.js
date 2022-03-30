@@ -76,14 +76,6 @@ export function apiLive(code) {
   );
 }
 
-export function apiLiveInstructor(name) {
-  return apiFetch(
-    `https://api.pennlabs.org/registrar/search/instructor?q=${encodeURIComponent(
-      name
-    )}`
-  );
-}
-
 export function apiReviewData(type, code) {
   return apiFetch(
     `${API_DOMAIN}/api/review/${encodeURIComponent(type)}/${encodeURIComponent(

@@ -43,6 +43,7 @@ course_review_aggregation_schema = {
     },
     **course_review_aggregation_schema_no_extras,
 }
+
 plots_schema = {
     "pca_demand_plot": {
         "type": "array",
@@ -109,6 +110,7 @@ plots_schema = {
         ),
     },
 }
+
 instructor_review_aggregation_schema = {
     # This dict contains the schema of the "_reviews" fields returned in the
     # course-specific instructor review aggregation object within the response returned by
@@ -149,6 +151,10 @@ course_reviews_response_schema = {
                     "description": {
                         "type": "string",
                         "description": "The description of the course, e.g. 'A fast-paced introduction to the fundamental concepts of programming... [etc.]' for CIS-120.",  # noqa E501
+                    },
+                    "registration_metrics": {
+                        "type": "boolean",
+                        "description": "True if this course has registration metrics that you can access via the Retrieve Plots route.",  # noqa E501
                     },
                     "num_sections": {
                         "type": "integer",

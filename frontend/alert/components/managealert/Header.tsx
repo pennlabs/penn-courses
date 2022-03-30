@@ -1,6 +1,10 @@
 import React from "react";
 import styled from "styled-components";
-import { GridItem, Flex, RightItem } from "pcx-shared-components/src/common/layout";
+import {
+    GridItem,
+    Flex,
+    RightItem,
+} from "pcx-shared-components/src/common/layout";
 import { Img } from "../common/common";
 import { AlertAction } from "../../types";
 
@@ -56,7 +60,7 @@ const Header = ({
                 <input
                     type="checkbox"
                     checked={batchSelected}
-                    onClick={() => {
+                    onChange={() => {
                         batchSelectHandler(batchSelected);
                         setBatchSelected(!batchSelected);
                     }}

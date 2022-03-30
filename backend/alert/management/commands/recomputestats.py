@@ -32,12 +32,16 @@ from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATE
 from review.views import extra_metrics_section_filters
 
 
+def all_semesters():
+    return set(Course.objects.values_list("semester", flat=True).distinct())
+
+
 def get_semesters(semesters=None, verbose=False):
     """
     Validate a given string semesters argument, and return a list of the individual string semesters
     specified by the argument.
     """
-    possible_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
+    possible_semesters = all_semesters()
     if semesters is None:
         semesters = [get_current_semester()]
     elif semesters == "all":
@@ -129,8 +133,6 @@ def deduplicate_status_updates(semesters=None, verbose=False, semesters_precompu
     if verbose:
         print(f"Deduplicating status updates for semesters {str(semesters)}...")
 
-    iterator_wrapper = tqdm if verbose else (lambda x: x)
-
     for semester_num, semester in enumerate(semesters):
         with transaction.atomic():
             # We make this command an atomic transaction, so that the database will not
@@ -140,8 +142,9 @@ def deduplicate_status_updates(semesters=None, verbose=False, semesters_precompu
                 print(f"\nProcessing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.")
 
             num_removed = 0
-            for section_id in iterator_wrapper(
-                Section.objects.filter(course__semester=semester).values_list("id", flat=True)
+            for section_id in tqdm(
+                Section.objects.filter(course__semester=semester).values_list("id", flat=True),
+                disable=(not verbose),
             ):
                 last_update = None
                 ids_to_remove = []  # IDs of redundant status updates to remove

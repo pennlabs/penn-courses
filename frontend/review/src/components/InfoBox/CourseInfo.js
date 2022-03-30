@@ -43,7 +43,7 @@ const getPrereqData = courses => {
     .flat()
     .join(" ");
   const prereqs = [
-    ...new Set(prereqString.match(/[A-Z]{2,4}[ -]\d{3}/g))
+    ...new Set(prereqString.match(/[A-Z]{2,4}[ -]\d{3,4}/g))
   ].map(a => a.replace(" ", "-"));
   return prereqs;
 };
@@ -350,7 +350,7 @@ export const CourseHeader = ({
 export const CourseDescription = ({ description }) => {
   const content = reactStringReplace(
     description,
-    /([A-Z]{2,4}[ -]\d{3})/g,
+    /([A-Z]{2,4}[ -]\d{3,4})/g,
     (m, i) => (
       <Link to={`/course/${m.replace(" ", "-")}`} key={m + i}>
         {m}

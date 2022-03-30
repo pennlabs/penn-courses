@@ -7,7 +7,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Instructor
+from courses.models import Instructor, Restriction, Section, StatusUpdate
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
 
@@ -695,6 +695,63 @@ class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
             },
         )
         self.assertEqual(1, len(res["instructors"]))
+
+
+class RegistrationMetricsFlagTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+        pdp_restriction = Restriction(code="PDP", description="Permission required from dept.")
+        pdp_restriction.save()
+        cis_120_001 = Section.objects.get(full_code="CIS-120-001")
+        cis_120_001.restrictions.add(pdp_restriction)
+        cis_120_001.capacity = 100
+        cis_120_001.save()
+        StatusUpdate(
+            section=Section.objects.get(full_code="CIS-120-001"),
+            old_status="",
+            new_status="O",
+            alert_sent=False,
+            request_body="",
+        ).save()
+
+        create_review("CIS-105-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+        cis_105_001 = Section.objects.get(full_code="CIS-105-001")
+        cis_105_001.capacity = 20
+        cis_105_001.save()
+        StatusUpdate(
+            section=Section.objects.get(full_code="CIS-105-001"),
+            old_status="",
+            new_status="O",
+            alert_sent=False,
+            request_body="",
+        ).save()
+
+        create_review("OIDD-101-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
+
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+
+    def test_registration_metrics_pdp(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {"registration_metrics": False},
+        )
+
+    def test_registration_metrics_true(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-105",
+            {"registration_metrics": True},
+        )
+
+    def test_registration_metrics_no_status_updates(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "OIDD-101",
+            {"registration_metrics": False},
+        )
 
 
 class NotFoundTestCase(TestCase):

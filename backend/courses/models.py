@@ -93,7 +93,7 @@ def sections_with_reviews(queryset):
     return review_averages(
         queryset,
         {
-            "review__section__course__full_code": OuterRef("course__full_code"),
+            "review__section__course__topic": OuterRef("course__topic"),
             # get all the reviews for instructors in the Section.instructors many-to-many
             "review__instructor__in": Subquery(
                 Instructor.objects.filter(section=OuterRef(OuterRef("id"))).values("id").order_by()
@@ -105,7 +105,7 @@ def sections_with_reviews(queryset):
 
 def course_reviews(queryset):
     return review_averages(
-        queryset, {"review__section__course__full_code": OuterRef("full_code")}, extra_metrics=False
+        queryset, {"review__section__course__topic": OuterRef("topic")}, extra_metrics=False
     )
 
 
@@ -287,8 +287,8 @@ class Topic(models.Model):
         be the `primary_listing` if it has crosslistings. These invariants are maintained
         by the `Topic.merge_with`, `Topic.add_course`, `Topic.from_course`, and `Course.save`
         methods. Defer to using these methods rather than setting this field manually.
-        You must change the corresponding `Topic` object's most_recent field before
-        deleting a `course` if it is the `most_recent` course (`on_delete=models.PROTECT`).
+        You must change the corresponding `Topic` object's `most_recent` field before
+        deleting a Course if it is the `most_recent` course (`on_delete=models.PROTECT`).
         """
         ),
     )
@@ -352,6 +352,9 @@ class Topic(models.Model):
             course.topic = self
             course.save()
             course.crosslistings.update(topic=self)
+
+    def __str__(self):
+        return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
 
 
 class Restriction(models.Model):

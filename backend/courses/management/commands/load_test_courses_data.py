@@ -14,6 +14,7 @@ from courses.management.commands.export_test_courses_data import (
     unique_identifying_fields,
 )
 from courses.management.commands.load_add_drop_dates import fill_in_add_drop_periods
+from courses.util import in_dev
 
 
 class Command(BaseCommand):
@@ -36,7 +37,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        if "PennCourses.settings.development" not in os.environ["DJANGO_SETTINGS_MODULE"]:
+        if in_dev():
             raise ValueError("This script cannot be run in a non-development environment.")
         src = os.path.abspath(kwargs["src"])
         _, file_extension = os.path.splitext(kwargs["src"])

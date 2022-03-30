@@ -137,7 +137,7 @@ const TimelineContainer = styled.div`
 `;
 
 const getMonthDay = (timeString) => {
-    let d = new Date(timeString);
+    const d = new Date(timeString);
     return d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
 };
 
@@ -146,17 +146,16 @@ const formatData = (courseData) => {
      * length 3 arrays with the status data object, the current status at each created_at data point
      * and if the date is different
      */
-    let formattedData = courseData.reduce((ans, item, index) => {
+    const formattedData = courseData.reduce((ans, item, index) => {
         const sameDate =
             index == 0 ||
-            getMonthDay(courseData[index]["created_at"]) ==
-                getMonthDay(courseData[index - 1]["created_at"]);
+            getMonthDay(courseData[index].created_at) ==
+                getMonthDay(courseData[index - 1].created_at);
 
-        if (item["old_status"] == "C" && item["new_status"] == "O") {
+        if (item.old_status == "C" && item.new_status == "O") {
             return ans.concat([[item, "opened", sameDate]]);
-        } else {
-            return ans.concat([[item, "closed", sameDate]]);
         }
+        return ans.concat([[item, "closed", sameDate]]);
     }, []);
 
     return formattedData;
@@ -174,14 +173,14 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
 
     const close = !courseCode;
 
-    //There is data if its loaded & courseStatusData is not null & not empty
+    // There is data if its loaded & courseStatusData is not null & not empty
     const isDataNotEmpty =
         loaded && courseStatusData && courseStatusData.length > 0;
 
-    //hook that detects when a user is scrolling a component & when they stop scrolling
+    // hook that detects when a user is scrolling a component & when they stop scrolling
     const useOnScroll = (ref) => {
         useEffect(() => {
-            var timer;
+            let timer;
             const handleScroll = (e) => {
                 if (!scrollTimeline) {
                     setScrollTimeline(true);
@@ -198,7 +197,7 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
         return ref;
     };
 
-    //hook that detects if user click outside, but not history icon, of the alert pane
+    // hook that detects if user click outside, but not history icon, of the alert pane
     const onClickOutside = useOnClickOutside(
         () => {
             setTimeline(null);
@@ -215,12 +214,12 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
             return;
         }
 
-        //loading course status update data
+        // loading course status update data
         setLoaded(false);
 
         fetch(`/api/base/statusupdate/${courseCode}/`).then((res) =>
             res.json().then((courseResult) => {
-                //sort data by when it was created from earliest to latest
+                // sort data by when it was created from earliest to latest
                 courseResult.sort((a, b) =>
                     a.created_at < b.created_at ? 1 : -1
                 );
