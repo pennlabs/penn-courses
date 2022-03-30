@@ -230,8 +230,8 @@ class Command(BaseCommand):
             help=dedent(
                 """
             Optionally, specify a (space-separated) list of Topic IDs to merge into a single topic.
-            You can find Topic IDs from the django admin interface (either by searching through Topics
-            or by following the topic field from a course entry).
+            You can find Topic IDs from the django admin interface (either by searching through
+            Topics or by following the topic field from a course entry).
             If this argument is omitted, the script will automatically detect merge opportunities
             among all Topics, prompting the user for confirmation before merging in each case.
             """
