@@ -44,12 +44,6 @@ def get_direct_backlinks_from_cross_walk(cross_walk):
     return {old_code: new_codes[0] for old_code, new_codes in links.items() if len(new_codes) == 1}
 
 
-class ShouldLinkCoursesResponse(Enum):
-    DEFINITELY = auto()
-    MAYBE = auto()
-    NO = auto()
-
-
 def prompt_for_link_multiple(courses, extra_newlines=True):
     """
     Prompts the user to confirm or reject a possible link between multiple courses.
@@ -77,6 +71,12 @@ def same_course(course_a, course_b):
         course_ac.full_code == course_b.full_code
         for course_ac in (course_a.primary_listing or course_a).listing_set.all()
     )
+
+
+class ShouldLinkCoursesResponse(Enum):
+    DEFINITELY = auto()
+    MAYBE = auto()
+    NO = auto()
 
 
 def should_link_courses(course_a, course_b, verbose=True):
