@@ -413,7 +413,14 @@ def instructor_reviews(request, instructor_id):
             "course__topic": OuterRef("topic"),
             "instructors__id": instructor_id,
         },
-    ).annotate(most_recent_id=F("topic__most_recent_id"))
+    ).annotate(
+        most_recent_full_code=F("topic__most_recent__full_code"),
+        keep_id=Subquery(
+            Course.objects.filter(topic=OuterRef("topic"), sections__instructors__id=instructor_id)
+            .order_by("-semester")
+            .values("id")[:1]
+        ),
+    )
 
     inst = instructor_qs.values()[:1].get()
 
@@ -435,17 +442,17 @@ def instructor_reviews(request, instructor_id):
             "recent_reviews": make_subdict("recent_", inst),
             "num_semesters": inst["average_semester_count"],
             "courses": {
-                r["full_code"]: {
-                    "full_code": r["full_code"],
+                r["most_recent_full_code"]: {
+                    "full_code": r["most_recent_full_code"],
                     "average_reviews": make_subdict("average_", r),
                     "recent_reviews": make_subdict("recent_", r),
                     "latest_semester": r["recent_semester_calc"],
                     "num_semesters": r["average_semester_count"],
-                    "code": r["full_code"],
+                    "code": r["most_recent_full_code"],
                     "name": r["title"],
                 }
                 for r in courses.values()
-                if r["id"] == r["most_recent_id"]
+                if r["id"] == r["keep_id"]
             },
         }
     )

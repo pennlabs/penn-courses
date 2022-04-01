@@ -276,50 +276,52 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
 class SectionSearchTestCase(TestCase):
     def setUp(self):
         set_semester()
-        create_mock_data("CIS-120-001", TEST_SEMESTER)
-        create_mock_data("CIS-160-001", TEST_SEMESTER)
-        create_mock_data("CIS-120-201", TEST_SEMESTER)
-        create_mock_data("PSCI-181-001", TEST_SEMESTER)
+        create_mock_data("CIS-1200-001", TEST_SEMESTER)
+        create_mock_data("CIS-1600-001", TEST_SEMESTER)
+        create_mock_data("CIS-1200-201", TEST_SEMESTER)
+        create_mock_data("PSCI-1810-001", TEST_SEMESTER)
         self.client = APIClient()
 
     def test_match_exact(self):
         res = self.client.get(
-            reverse("section-search", args=["current"]), {"search": "CIS-120-001"}
+            reverse("section-search", args=["current"]), {"search": "CIS-1200-001"}
         )
         self.assertEqual(res.status_code, 200)
         self.assertEqual(1, len(res.data))
-        self.assertEqual("CIS-120-001", res.data[0]["section_id"])
+        self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_exact_spaces(self):
         res = self.client.get(
-            reverse("section-search", args=["current"]), {"search": "CIS 120 001"}
+            reverse("section-search", args=["current"]), {"search": "CIS 1200 001"}
         )
         self.assertEqual(res.status_code, 200)
 
         self.assertEqual(1, len(res.data))
-        self.assertEqual("CIS-120-001", res.data[0]["section_id"])
+        self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_exact_nosep(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "PSCI181001"})
+        res = self.client.get(
+            reverse("section-search", args=["current"]), {"search": "PSCI1810001"}
+        )
         self.assertEqual(res.status_code, 200)
 
         self.assertEqual(1, len(res.data))
-        self.assertEqual("PSCI-181-001", res.data[0]["section_id"])
+        self.assertEqual("PSCI-1810-001", res.data[0]["section_id"])
 
     def test_match_full_course_nosep(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS120"})
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS1200"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(2, len(res.data))
-        self.assertEqual("CIS-120-001", res.data[0]["section_id"])
+        self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_full_course_exact(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS-120"})
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS-1200"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(2, len(res.data))
-        self.assertEqual("CIS-120-001", res.data[0]["section_id"])
+        self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_full_course_space(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "PSCI 181"})
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "PSCI 1810"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(1, len(res.data))
 
@@ -329,7 +331,7 @@ class SectionSearchTestCase(TestCase):
         self.assertEqual(3, len(res.data))
 
     def test_match_lowercase(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "cis120"})
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "cis1200"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(2, len(res.data))
 

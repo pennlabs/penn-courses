@@ -61,7 +61,7 @@ class TypedCourseSearchBackend(filters.SearchFilter):
 
 
 class TypedSectionSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]+) *[ -]?(\d{3}|[A-Z]{1,3})?[ -]?(\d+)?$")
+    code_re = re.compile(r"^([A-Za-z]+) *[ -]?(\d{3,4}|[A-Z]{1,3})?[ -]?(\d+)?$")
 
     def get_search_terms(self, request):
         query = request.query_params.get(self.search_param, "")

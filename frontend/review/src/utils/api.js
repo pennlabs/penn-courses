@@ -28,7 +28,7 @@ export function apiAutocomplete() {
     apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data => {
       try {
         localStorage.setItem(key, JSON.stringify(data));
-      } catch (e) { }
+      } catch (e) {}
     });
     return new Promise((resolve, reject) =>
       resolve(JSON.parse(cached_autocomplete))
@@ -39,7 +39,7 @@ export function apiAutocomplete() {
       apiFetch(`${API_DOMAIN}/api/review/autocomplete`).then(data => {
         try {
           localStorage.setItem(key, JSON.stringify(data));
-        } catch (e) { }
+        } catch (e) {}
         resolve(data);
       });
     });

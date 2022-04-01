@@ -145,8 +145,8 @@ def get_or_create_add_drop_period(semester):
 def separate_course_code(course_code):
     """return (dept, course, section) ID tuple given a course code in any possible format"""
     course_regexes = [
-        re.compile(r"([A-Za-z]+) *(\d{3}|[A-Z]{3})(\d{3})"),
-        re.compile(r"([A-Za-z]+) *-(\d{3}|[A-Z]{3})-(\d{3})"),
+        re.compile(r"([A-Za-z]+) *(\d{3,4}|[A-Z]{3})(\d{3})"),
+        re.compile(r"([A-Za-z]+) *-(\d{3,4}|[A-Z]{3})-(\d{3})"),
     ]
 
     course_code = course_code.replace(" ", "").upper()
