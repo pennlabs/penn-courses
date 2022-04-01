@@ -159,9 +159,8 @@ PLATFORM_ACCOUNTS = {
 
 
 # Penn OpenData API
-API_KEY = os.environ.get("API_KEY", "")
+OPEN_DATA_CLIENT_ID = os.environ.get("OPEN_DATA_CLIENT_ID", "")
 API_SECRET = os.environ.get("API_SECRET", "")
-API_URL = "https://esb.isc-seo.upenn.edu/8091/open_data/course_section_search"
 
 # Penn OpenData Course Status Webhook Auth
 WEBHOOK_USERNAME = os.environ.get("WEBHOOK_USERNAME", "webhook")

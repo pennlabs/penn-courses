@@ -36,6 +36,46 @@ def in_dev():
     return "PennCourses.settings.development" in os.environ["DJANGO_SETTINGS_MODULE"]
 
 
+semester_suffix_map = {
+    "A": "10",
+    "B": "20",
+    "C": "30",
+}
+semester_suffix_map_inv = {v: k for k, v in semester_suffix_map.items()}
+
+
+def translate_semester(semester):
+    """
+    Translates a semester string (e.g. "2022C") to the format accepted by the new
+    OpenData API (e.g. "202230").
+    """
+    if semester is None:
+        return None
+    old_suffix = semester[-1].upper()
+    if old_suffix not in semester_suffix_map:
+        raise ValueError(
+            f"Invalid semester suffix {old_suffix} (semester must have "
+            "suffix A, B, or C; e.g. '2022C')"
+        )
+    return semester[:-1] + semester_suffix_map[old_suffix]
+
+
+def translate_semester_inv(semester):
+    """
+    Translates a semester string in the format of the new OpenData API (e.g. "202230")
+    to the format used by our backend (e.g. "2022C")
+    """
+    if semester is None:
+        return None
+    new_suffix = semester[-2]
+    if new_suffix not in semester_suffix_map_inv:
+        raise ValueError(
+            f"Invalid semester suffix {new_suffix} (semester must have "
+            "suffix '10', '20', or '30'; e.g. '202230')"
+        )
+    return semester[:-2] + semester_suffix_map_inv[new_suffix]
+
+
 def get_current_semester(allow_not_found=False):
     """
     This function retrieves the string value of the current semester, either from
@@ -268,16 +308,33 @@ def get_room(building_code, room_number):
     return room
 
 
+def extract_date(date_str):
+    if not date_str:
+        return None
+    date_str = date_str.split(" ")[0]
+    if len(date_str.split("-")) != 3:
+        return None
+    return date_str
+
+
 def set_meetings(section, meetings):
     section.meetings.all().delete()
     for meeting in meetings:
         room = get_room(meeting["building_code"], meeting["room_number"])
-        start_time = meeting["start_time_24"]
+        start_time = meeting["begin_time_24"]
         end_time = meeting["end_time_24"]
+        start_date = extract_date(meeting["start_date"])
+        end_date = extract_date(meeting["end_date"])
         for day in list(meeting["meeting_days"]):
-            m, _ = Meeting.objects.update_or_create(
-                section=section, day=day, start=start_time, end=end_time, defaults={"room": room}
-            )
+            Meeting(
+                section=section,
+                day=day,
+                start=start_time,
+                end=end_time,
+                room=room,
+                start_date=start_date,
+                end_date=end_date,
+            ).save()
 
 
 def add_associated_sections(section, info):
@@ -292,7 +349,7 @@ def add_associated_sections(section, info):
 
 
 def set_crosslistings(course, crosslist_primary):
-    if len(crosslist_primary) == 0:
+    if not crosslist_primary:
         course.primary_listing = course
     else:
         primary_course, _, _, _ = get_or_create_course_and_section(
@@ -347,7 +404,9 @@ CU_REGEX = re.compile(r"([0-9]*(\.[0-9]+)?)(\s*to\s*[0-9]*(\.[0-9]+)?)?\s*CU")
 
 
 def upsert_course_from_opendata(info, semester):
-    course_code = info["section_id_normalized"]
+    # TODO: load attributes
+    # TODO: maybe add grade modes?
+    course_code = info["section_id"]
     try:
         course, section, _, _ = get_or_create_course_and_section(course_code, semester)
     except ValueError:
@@ -356,7 +415,9 @@ def upsert_course_from_opendata(info, semester):
     # https://stackoverflow.com/questions/11159118/incorrect-string-value-xef-xbf-xbd-for-column
     course.title = info["course_title"].replace("\uFFFD", "")
     course.description = info["course_description"].replace("\uFFFD", "")
-    course.prerequisites = "\n".join(info["prerequisite_notes"])
+    if info.get("syllabus_url"):
+        course.syllabus_url = info["syllabus_url"].replace("\uFFFD", "")
+    # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: find a way to get prerequisites
     set_crosslistings(course, info["crosslist_primary"])
 
     m = CU_REGEX.match(info["credits"])
@@ -372,11 +433,12 @@ def upsert_course_from_opendata(info, semester):
     section.activity = info["activity"]
     section.meeting_times = json.dumps(
         [
-            meeting["meeting_days"] + " " + meeting["start_time"] + " - " + meeting["end_time"]
+            meeting["days"] + " " + meeting["begin_time"] + " - " + meeting["end_time"]
             for meeting in info["meetings"]
         ]
     )
 
+    # TODO: use instructor PennID
     set_instructors(section, [titleize(instructor["name"]) for instructor in info["instructors"]])
     set_meetings(section, info["meetings"])
     add_associated_sections(section, info)

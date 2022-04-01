@@ -28,6 +28,7 @@ from courses.util import (
     get_or_create_course_and_section,
     record_update,
     update_course_from_record,
+    translate_semester_inv,
 )
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
@@ -87,15 +88,17 @@ def accept_webhook(request):
     if course_status is None:
         return HttpResponse("Course Status could not be extracted from response", status=400)
 
-    course_term = data.get("term", None)
-    if course_term is None:
-        return HttpResponse("Course Term could not be extracted from response", status=400)
-
     prev_status = data.get("previous_status", None)
     if prev_status is None:
         return HttpResponse("Previous Status could not be extracted from response", status=400)
 
     try:
+        course_term = data.get("term", None)
+        if course_term is None:
+            return HttpResponse("Course Term could not be extracted from response", status=400)
+        if any(course_term.endswith(s) for s in ["10", "20", "30"]):
+            course_term = translate_semester_inv(course_term)
+
         _, section, _, _ = get_or_create_course_and_section(course_id, course_term)
 
         # Ignore duplicate updates

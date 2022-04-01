@@ -4,6 +4,7 @@ import logging
 import requests
 from django.conf import settings
 from tqdm import tqdm
+from courses.util import translate_semester
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,11 @@ def make_api_request(params, headers):
     if headers is None:
         headers = get_headers()
 
-    r = requests.get(settings.API_URL, params=params, headers=headers)
+    r = requests.get(
+        "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search",
+        params=params,
+        headers=headers,
+    )
 
     if r.status_code == requests.codes.ok:
         return r.json(), None
@@ -39,8 +44,9 @@ def report_api_error(err):
 
 
 def get_all_course_status(semester):
+    semester = translate_semester(semester)
     headers = get_headers()
-    url = f"https://esb.isc-seo.upenn.edu/8091/open_data/course_status/{semester}/all"
+    url = f"https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_status/{semester}/all"
     r = requests.get(url, headers=headers)
     if r.status_code == requests.codes.ok:
         return r.json().get("result_data", [])
@@ -54,12 +60,12 @@ def get_all_course_status(semester):
 
 def get_departments():
     headers = get_headers()
-    url = "https://esb.isc-seo.upenn.edu/8091/open_data/course_section_search_parameters/"
+    url = "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search_parameters"
     r = requests.get(url, headers=headers)
     if r.status_code == requests.codes.ok:
         result_data = r.json().get("result_data", [])
         if len(result_data) > 0:
-            return result_data[0]["departments_map"]
+            return result_data[0]["subjects_map"]
         else:
             raise ValueError("OpenData API returned data with no populated result_data field.")
     else:
@@ -67,13 +73,14 @@ def get_departments():
 
 
 def get_courses(query, semester):
+    semester = translate_semester(semester)
     headers = get_headers()
 
     params = {
-        "course_id": query,
+        "section_id": query,
         "term": semester,
         "page_number": 1,
-        "number_of_results_per_page": 200,
+        "number_of_results_per_page": 1000,
     }
 
     results = []
@@ -87,7 +94,7 @@ def get_courses(query, semester):
             pbar.update(1)
             next_page = data["service_meta"]["next_page_number"]
             results.extend(data["result_data"])
-            if int(next_page) <= params["page_number"]:
+            if not next_page or int(next_page) <= params["page_number"]:
                 break
             params["page_number"] = next_page
         else:
@@ -97,19 +104,3 @@ def get_courses(query, semester):
         pbar.close()
 
     return results
-
-
-def first(lst):
-    if len(lst) > 0:
-        return lst[0]
-
-
-def get_course(query, semester, primary=True):
-    params = {"course_id": query, "term": semester}
-    headers = get_headers(primary)
-    data, err = make_api_request(params, headers)
-    if err is None and data is not None:
-        return first(data["result_data"])
-    else:
-        report_api_error(err)
-        return None
