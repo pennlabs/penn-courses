@@ -1,31 +1,52 @@
 import React, { useMemo } from "react";
 import reactStringReplace from "react-string-replace";
 import { Link } from "react-router-dom";
+import styled from "styled-components";
 
 import { CourseDetails, Popover, PopoverTitle } from "../common";
 import {
   convertInstructorName,
   convertSemesterToInt,
-  toNormalizedSemester
+  toNormalizedSemester,
 } from "../../utils/helpers";
 import { act } from "react-dom/test-utils";
 
-const getSyllabusData = courses =>
+// font-family: 'Lato';
+//     font-style: normal;
+//     font-weight: 400;
+//     font-size: 15px;
+//     line-height: 97.19%;
+
+const Branched = styled.div`
+    display: flex;
+    flex-direction: row;
+    
+    color: #007BFF;
+`;
+
+const Historical = styled.div`
+    display: flex;
+    flex-direction: row;
+    
+    color: #B2B2B2;
+`;
+
+const getSyllabusData = (courses) =>
   Object.values(courses)
-    .map(course =>
+    .map((course) =>
       Object.values(course)
         .filter(({ syllabus_url: url }) => url)
         .map(
           ({
             syllabus_url: url,
             section_id_normalized: sectionId,
-            instructors = []
+            instructors = [],
           }) => {
             const instructedBy =
-              instructors.map(c => c.name).join(", ") || "Unknown";
+              instructors.map((c) => c.name).join(", ") || "Unknown";
             return {
               url,
-              name: `${sectionId} - ${instructedBy}`
+              name: `${sectionId} - ${instructedBy}`,
             };
           }
         )
@@ -33,18 +54,18 @@ const getSyllabusData = courses =>
     .flat()
     .sort((a, b) => a.name.localeCompare(b.name));
 
-const getPrereqData = courses => {
+const getPrereqData = (courses) => {
   const prereqString = Object.values(courses)
-    .map(a =>
+    .map((a) =>
       Object.values(a)
         .map(({ prerequisite_notes: notes = [] }) => notes.join(" "))
-        .filter(b => b)
+        .filter((b) => b)
     )
     .flat()
     .join(" ");
   const prereqs = [
-    ...new Set(prereqString.match(/[A-Z]{2,4}[ -]\d{3,4}/g))
-  ].map(a => a.replace(" ", "-"));
+    ...new Set(prereqString.match(/[A-Z]{2,4}[ -]\d{3,4}/g)),
+  ].map((a) => a.replace(" ", "-"));
   return prereqs;
 };
 
@@ -52,7 +73,7 @@ const activityMap = {
   REC: "Recitation",
   LEC: "Lecture",
   SEM: "Seminar",
-  LAB: "Laboratory"
+  LAB: "Laboratory",
 };
 const laterSemester = (a, b) => {
   if (!a.localeCompare) {
@@ -71,7 +92,7 @@ const TagsNotOffered = ({ data }) => {
   const { instructors: instructorData = {}, code = "" } = data;
   const courseName = code.replace("-", " ");
   let mostRecent = Object.values(instructorData)
-    .map(a => a.latest_semester)
+    .map((a) => a.latest_semester)
     .reduce(laterSemester);
 
   if (!mostRecent) {
@@ -97,7 +118,7 @@ const TagsNotOffered = ({ data }) => {
 const TagsWhenOffered = ({
   liveData = null,
   data = {},
-  existingInstructors
+  existingInstructors,
 }) => {
   const { instructors: instructorData = {}, code = "" } = data;
   const courseName = code.replace("-", " ");
@@ -115,7 +136,7 @@ const TagsWhenOffered = ({
 
   const activityTypes = [...new Set(sections.map(({ activity }) => activity))];
   const sectionsByActivity = {};
-  activityTypes.forEach(activity => {
+  activityTypes.forEach((activity) => {
     sectionsByActivity[activity] = sections.filter(
       ({ activity: sectionActivity }) => activity === sectionActivity
     );
@@ -125,7 +146,7 @@ const TagsWhenOffered = ({
   );
   const seenNewInstructorIds = new Set();
   const newInstructors = sections
-    .filter(section => section.activity !== "REC")
+    .filter((section) => section.activity !== "REC")
     .flatMap(({ instructors }) => instructors)
     .filter(({ id }) => {
       if (oldInstructorIds.has(id) || seenNewInstructorIds.has(id)) {
@@ -175,7 +196,7 @@ const TagsWhenOffered = ({
                   <b>{openSections.length}</b> out of <b>{sections.length}</b>{" "}
                   sections are open for {courseName}.
                   <ul style={{ marginBottom: 0 }}>
-                    {sections.map(data => (
+                    {sections.map((data) => (
                       <CourseDetails key={data.id} data={data} />
                     ))}
                   </ul>
@@ -220,7 +241,7 @@ const TagsWhenOffered = ({
             i > 0 && ", ",
             <span key={i}>
               <Link to={`/course/${a}`}>{a.replace("-", " ")}</Link>
-            </span>
+            </span>,
           ])}
         </div>
       )}
@@ -255,7 +276,7 @@ export const CourseHeader = ({
   handleAdd,
   handleRemove,
   liveData,
-  data
+  data,
 }) => (
   <div className="course">
     <div className="title">
@@ -294,7 +315,7 @@ export const CourseHeader = ({
                     .sort((a, b) =>
                       instructors[a].name.localeCompare(instructors[b].name)
                     )
-                    .map(key => (
+                    .map((key) => (
                       <li key={key}>
                         <button onClick={() => handleAdd(key)}>
                           {instructors[key].name}
@@ -324,19 +345,39 @@ export const CourseHeader = ({
           i > 0 && ", ",
           <Link key={cls} to={`/course/${cls}`}>
             {cls}
-          </Link>
+          </Link>,
         ])}
       </div>
     )}
-    {data.historical_codes &&
-      Boolean(data.historical_codes.length) &&
-      (<div className="previously">Previously: </div>) &&
-      data.historical_codes.map((code) => (
-        <div className="historical-list">{code}</div>
-      ))}
+    {data.branched_from && Boolean(data.branched_from.length) && (
+      <Branched>
+        Branched From:&nbsp;
+        {data.branched_from.map((code, i) => {
+          return (
+            <div className="branched-from">
+              <Link to={`/course/${code}`}>{code}</Link>
+              {i < data.branched_from.length - 1 && <> &#60;&nbsp;</>}
+            </div>
+          );
+        })}
+      </Branched>
+    )}
+    {data.historical_codes && Boolean(data.historical_codes.length) && (
+      <Historical>
+        Previously:&nbsp;
+        {data.historical_codes.map((code, i) => {
+          return (
+            <div className="historical-list">
+              {code}
+              {i < data.historical_codes.length - 1 && <> &#60;&nbsp;</>}
+            </div>
+          );
+        })}
+      </Historical>
+    )}
     <p className="subtitle">{name}</p>
     {notes &&
-      notes.map(note => (
+      notes.map((note) => (
         <div key={note} className="note">
           <i className="fa fa-thumbtack" /> {note}
         </div>
@@ -345,7 +386,7 @@ export const CourseHeader = ({
       <TagsWhenOffered
         liveData={liveData}
         data={data}
-        existingInstructors={Object.values(instructors).map(a => a.name)}
+        existingInstructors={Object.values(instructors).map((a) => a.name)}
       />
     ) : (
       <TagsNotOffered data={data} />
