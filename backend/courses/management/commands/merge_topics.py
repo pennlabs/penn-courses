@@ -100,10 +100,9 @@ def should_link_courses(course_a, course_b, verbose=True):
         return ShouldLinkCoursesResponse.NO
     elif (course_a.code < "5000") != (course_b.code < "5000"):
         return ShouldLinkCoursesResponse.NO
-    elif courses_similar(course_a, course_b):  # TODO
+    elif courses_similar(course_a, course_b):
         # If title is same or (title is similar and description is similar
         # have a fairly low threshold for similarity)
-        # TODO: search for "topics vary" in description, say no
         if verbose and prompt_for_link(course_a, course_b):
             return ShouldLinkCoursesResponse.DEFINITELY
         if not verbose:
@@ -238,12 +237,12 @@ def semantic_similarity(string_a, string_b):
     string_b = string_b.strip().lower()
     sentences_a = split_into_sentences(string_a)
     sentences_b = split_into_sentences(string_b)
-    emb_a = (MODEL.encode(sentences_a, convert_to_tensor=True),)
+    emb_a = MODEL.encode(sentences_a, convert_to_tensor=True)
     emb_b = MODEL.encode(sentences_b, convert_to_tensor=True)
     cosine_scores = util.cos_sim(emb_a, emb_b)
     nrows, ncols = cosine_scores.shape
-    # compute traces divided by diagonal length
-    # (only take diagonals that are of full length)
+    # compute traces divided by diagonal length for
+    # maximal length diagonals
     max_trace = 0.0
     for offset in range(0, ncols - nrows + 1):  # [0, cols - rows]
         diag = np.diagonal(cosine_scores, offset=offset)
