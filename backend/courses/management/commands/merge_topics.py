@@ -156,15 +156,16 @@ def similar_courses(course_a, course_b):
     title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
     if (
         not title_heuristics(title_a, title_b)
-        and lev_divided_by_avg_title_length(title_a, title_b) > 0.8
+        and lev_divided_by_avg_title_length(title_a, title_b) < 0.2
     ):
         return True
     desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
-    return (
+    if (
         not description_heuristics(desc_a, desc_b)
-        and semantic_similarity(desc_a, desc_b) > 0.6
-        and semantic_similarity(desc_a, desc_b) > 0.6
-    )
+        and semantic_similarity(desc_a, desc_b) > 0.7
+        and semantic_similarity(desc_a, desc_b) > 0.7
+    ):
+        return True
 
 
 def merge_topics(guaranteed_links=None, verbose=False, ignore_inexact=False):
