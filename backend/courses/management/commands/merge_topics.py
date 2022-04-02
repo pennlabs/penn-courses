@@ -19,9 +19,11 @@ from courses.models import Topic
 from PennCourses.settings.base import S3_client
 
 
-MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+MODEL = SentenceTransformer(
+    os.path.join(settings.BASE_DIR, "courses", "course_text_similarity", "all-MiniLM-L6-v2")
+)
 SENT_TOKENIZER = nltk.data.load(
-    os.path.join(settings.BASE_DIR, "courses", "course_text_similarity", "english.pickle")
+    "file:" + os.path.join(settings.BASE_DIR, "courses", "course_text_similarity", "english.pickle")
 )
 
 
@@ -121,31 +123,23 @@ def should_link_courses(course_a, course_b, verbose=True, ignore_inexact=False):
 def lev_divided_by_avg_title_length(title_a, title_b):
     """
     Compute levenshtein distance between 2 titles and then divide by avg title length.
+    Titles are lowercased and whitespace is stripped from ends prior to comparison.
+    Assumes that titles are not just whitespace.
     """
-    if (
-        title_a is np.NaN
-        or title_a is None
-        or title_a == ""
-        or title_b is np.NaN
-        or title_b is None
-        or title_b == ""
-    ):
-        return 0.0
-    return 2 * jellyfish.levenshtein_distance(title_a, title_b) / (len(title_a) + len(title_b))
+    print(len(title_a) + len(title_b))
+    lev_dist = jellyfish.levenshtein_distance(title_a, title_b) 
+    return 2 * lev_dist / (len(title_a) + len(title_b))
 
 
 def semantic_similarity(string_a, string_b):
     """
-    Compute the semantics similarity between two
-    strings. The strings are split into sentences, then
-    those sentences are turned into embeddings, and then
-    cosine similarity between matching sentences is computed.
-    If the two strings have different numbers of sentences,
-    take the maximum similarity matching that contains
-    as many sentences as possible.
+    Compute the semantics similarity between two strings. The strings are split
+    into sentences, then those sentences are turned into embeddings, and then
+    cosine similarity between matching sentences is computed. If the two strings
+    have different numbers of sentences, take the maximum similarity matching that
+    contains as many sentences as possible. Assumes both strings are not just
+    whitespace.
     """
-    string_a = string_a.strip().lower()
-    string_b = string_b.strip().lower()
     sentences_a = SENT_TOKENIZER.tokenize(string_a)
     sentences_b = SENT_TOKENIZER.tokenize(string_b)
     emb_a = MODEL.encode(sentences_a, convert_to_tensor=True)
@@ -160,15 +154,18 @@ def semantic_similarity(string_a, string_b):
     return max_trace
 
 
-def similar_courses(course_a, course_b):
-    if lev_divided_by_avg_title_length(
-        course_a.title, course_b.title
-    ) > 0.8 and not title_heuristics(course_a.title, course_b.title):
+def similar_courses(course_a, course_b): 
+    title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
+    if (
+        not title_heuristics(title_a, title_b)
+        and lev_divided_by_avg_title_length(title_a, title_b) > 0.8
+    ):
         return True
+    desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
     return (
-        semantic_similarity(course_a.description, course_b.description) > 0.6
-        and semantic_similarity(course_a.title, course_b.title) > 0.6
-        and not description_heuristics(course_a.description, course_b.description)
+        not description_heuristics(desc_a, desc_b)
+        and semantic_similarity(desc_a, desc_b) > 0.6
+        and semantic_similarity(desc_a, desc_b) > 0.6
     )
 
 
