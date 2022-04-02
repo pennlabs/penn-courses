@@ -18,6 +18,10 @@ from courses.models import Topic
 from PennCourses.settings.base import S3_client
 
 
+MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+nltk.download("punkt")
+
+
 def get_branches_from_cross_walk(cross_walk):
     """
     From a given crosswalk csv path, generate a dict mapping old_full_code to
@@ -328,8 +332,3 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             merge_topics(guaranteed_links=guaranteed_links, verbose=True)
-
-
-if __name__ == "__main__":
-    MODEL = SentenceTransformer("all-MiniLM-L6-v2")
-    nltk.download("punkt")
