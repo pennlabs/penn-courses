@@ -40,7 +40,7 @@ def get_topics_and_courses(semester):
     return list({course.topic_id: (course.topic, course) for course in courses}.values())
 
 
-def link_course_to_topics(course, topics=None, verbose=False):
+def link_course_to_topics(course, topics=None, verbose=False, ignore_inexact=False):
     """
     Links a given course to existing Topics when possible, creating a new Topic if necessary.
     Args:
@@ -51,12 +51,16 @@ def link_course_to_topics(course, topics=None, verbose=False):
             upon finding possible (but not definite) links. Otherwise it will run silently and
             log found possible links to Sentry (more appropriate if this function is called
             from an automated cron job like registrarimport).
+        ignore_inexact: If ignore_inexact=True, will only ever merge if two courses
+            are exactly matching as judged by `same_course`. `ignore_inexact` means
+            the user will not be prompted and that there will never be logging.
+            Corresponds to never checking the similarity of two courses using `similar_courses`.
     """
     if topics is None:
         topics = get_topics_and_courses(course.semester)
     for topic, most_recent in topics:
         if (
-            should_link_courses(most_recent, course, verbose=verbose)
+            should_link_courses(most_recent, course, verbose=verbose, ignore_inexact=ignore_inexact)
             == ShouldLinkCoursesResponse.DEFINITELY
         ):
             topic.add_course(course)
@@ -64,7 +68,7 @@ def link_course_to_topics(course, topics=None, verbose=False):
         Topic.from_course(course)
 
 
-def link_courses_to_topics(semester, guaranteed_links=None, verbose=False):
+def link_courses_to_topics(semester, guaranteed_links=None, verbose=False, ignore_inexact=False):
     """
     Links all courses *without Topics* in the given semester to existing Topics when possible,
     creating new Topics when necessary.
@@ -76,6 +80,10 @@ def link_courses_to_topics(semester, guaranteed_links=None, verbose=False):
             upon finding possible (but not definite) links. Otherwise it will run silently and
             log found possible links to Sentry (more appropriate if this function is called
             from an automated cron job like registrarimport).
+        ignore_inexact: If ignore_inexact=True, will only ever merge if two courses
+            are exactly matching as judged by `same_course`. `ignore_inexact` means
+            the user will not be prompted and that there will never be logging.
+            Corresponds to never checking the similarity of two courses using `similar_courses`.
     """
     guaranteed_links = guaranteed_links or dict()
     topics = get_topics_and_courses(semester)
@@ -95,7 +103,9 @@ def link_courses_to_topics(semester, guaranteed_links=None, verbose=False):
             else:
                 Topic.from_course(course)
         else:
-            link_course_to_topics(course, topics=topics, verbose=verbose)
+            link_course_to_topics(
+                course, topics=topics, verbose=verbose, ignore_inexact=ignore_inexact
+            )
 
 
 class Command(BaseCommand):
@@ -123,11 +133,24 @@ class Command(BaseCommand):
         parser.add_argument(
             "-s3", "--s3_bucket", help="download crosswalk from specified s3 bucket."
         )
+        parser.add_argument(
+            "--ignore-inexact",
+            action="store_true",
+            help=dedent(
+                """
+                Optionally, ignore inexact matches between courses (ie where there is no match
+                between course a's code and the codes of all cross listings of course b (including
+                course b) AND there is no cross walk entry. Corresponds to never checking
+                the similarity of two courses using `similar_courses`.
+                """
+            ),
+        )
 
     def handle(self, *args, **kwargs):
         semesters = sorted(list(all_semesters()))
         cross_walk_src = kwargs["cross_walk"]
         s3_bucket = kwargs["s3_bucket"]
+        ignore_inexact = kwargs["ignore_inexact"]
 
         if cross_walk_src and s3_bucket:
             fp = "/tmp/" + cross_walk_src
@@ -161,7 +184,12 @@ class Command(BaseCommand):
             print("Linking courses to topics.")
             for i, semester in enumerate(semesters):
                 print(f"Processing semester {semester} ({i+1}/{len(semesters)})...")
-                link_courses_to_topics(semester, guaranteed_links=guaranteed_links, verbose=True)
+                link_courses_to_topics(
+                    semester,
+                    guaranteed_links=guaranteed_links,
+                    verbose=True,
+                    ignore_inexact=ignore_inexact,
+                )
 
         print(
             f"Finished linking courses to topics for semesters {semesters}."
