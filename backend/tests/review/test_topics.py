@@ -4,7 +4,8 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Instructor, Topic
+from courses.models import Instructor, Section, Topic
+from tests.courses.util import create_mock_data
 from tests.review.test_api import (
     PCRTestMixin,
     average_and_recent,
@@ -41,14 +42,18 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
             {"instructor_quality": 0},
             responses=0,
         )
+
+        Section.objects.all().update(activity="LEC")
+
         topic_371 = Topic.objects.get(most_recent__full_code="CIS-371")
         topic_471 = Topic.objects.get(most_recent__full_code="CIS-471")
         topic_371.merge_with(topic_471)
 
         self.extra_course_data = {
             "code": "CIS-471",
-            "historical_codes": ["CIS-371"],
-            "branched_from": None,
+            "historical_codes": [
+                {"full_code": "CIS-371", "branched_from": False, "semester": "2012A"}
+            ],
         }
 
     def test_course(self):
@@ -56,7 +61,7 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
             "course-reviews",
             "CIS-471",
             {
-                "num_semesters": 2,
+                "num_semesters": 3,
                 **average_and_recent(3, 4),
                 **self.extra_course_data,
                 "instructors": {
@@ -73,7 +78,7 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
             "course-reviews",
             "CIS-371",
             {
-                "num_semesters": 2,
+                "num_semesters": 3,
                 **average_and_recent(3, 4),
                 **self.extra_course_data,
                 "instructors": {
@@ -129,8 +134,149 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
             ["CIS-471", Instructor.objects.get(name=self.instructor_name).pk],
             {
                 "sections": [
-                    {"section_code": "CIS-471-001", **rating(4)},
-                    {"section_code": "CIS-371-001", **rating(2)},
+                    {"course_code": "CIS-471", "activity": "LEC", **rating(4)},
+                    {"course_code": "CIS-371", "activity": "LEC", **rating(2)},
+                ]
+            },
+        )
+
+
+class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        AddDropPeriod(semester="2012A").save()
+        self.instructor_name = "Instructor One"
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+
+        _, section = create_mock_data("CIS-471-001", TEST_SEMESTER)
+        instructor, _ = Instructor.objects.get_or_create(name=self.instructor_name)
+        section.instructors.add(instructor)
+
+        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review(
+            "CIS-371-002",
+            "2007C",
+            self.instructor_name,
+            {"instructor_quality": 0},
+            responses=0,
+        )
+        create_review(
+            "CIS-471-001",
+            "2007C",
+            "No Responses Instructor",
+            {"instructor_quality": 0},
+            responses=0,
+        )
+        Section.objects.all().update(activity="LEC")
+        topic_371 = Topic.objects.get(most_recent__full_code="CIS-371")
+        topic_471 = Topic.objects.get(most_recent__full_code="CIS-471")
+        topic_371.merge_with(topic_471)
+
+        self.extra_course_data = {
+            "code": "CIS-471",
+            "historical_codes": [
+                {"full_code": "CIS-371", "branched_from": False, "semester": "2012A"}
+            ],
+        }
+
+    def test_course(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-471",
+            {
+                "num_semesters": 3,
+                **average_and_recent(2, 2),
+                **self.extra_course_data,
+                "instructors": {
+                    Instructor.objects.get(name=self.instructor_name).pk: {
+                        **average_and_recent(2, 2),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+        )
+
+    def test_course_old_code(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-371",
+            {
+                "num_semesters": 3,
+                **average_and_recent(2, 2),
+                **self.extra_course_data,
+                "instructors": {
+                    Instructor.objects.get(name=self.instructor_name).pk: {
+                        **average_and_recent(2, 2),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+        )
+
+    def test_instructor(self):
+        self.assertRequestContainsAppx(
+            "instructor-reviews",
+            Instructor.objects.get(name=self.instructor_name).pk,
+            {
+                **average_and_recent(2, 2),
+                "courses": {"CIS-471": average_and_recent(2, 2)},
+            },
+        )
+
+    def test_instructor_no_old_codes(self):
+        res = self.client.get(
+            reverse(
+                "instructor-reviews", args=[Instructor.objects.get(name=self.instructor_name).pk]
+            )
+        )
+        self.assertEqual(200, res.status_code)
+        self.assertFalse("CIS-371" in res.data["courses"])
+
+    def test_department(self):
+        self.assertRequestContainsAppx(
+            "department-reviews",
+            "CIS",
+            {
+                "courses": {"CIS-471": average_and_recent(2, 2)},
+            },
+        )
+
+    def test_department_no_old_codes(self):
+        res = self.client.get(reverse("department-reviews", args=["CIS"]))
+        self.assertEqual(200, res.status_code)
+        self.assertFalse("CIS-371" in res.data["courses"])
+
+    def test_history(self):
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-371", Instructor.objects.get(name=self.instructor_name).pk],
+            {
+                "sections": [
+                    {
+                        "course_code": "CIS-471",
+                        "activity": "LEC",
+                        "semester": TEST_SEMESTER,
+                        "forms_returned": None,
+                        "forms_produced": None,
+                    },
+                    {"course_code": "CIS-371", "semester": "2012A", "activity": "LEC", **rating(2)},
+                ]
+            },
+        )
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-471", Instructor.objects.get(name=self.instructor_name).pk],
+            {
+                "sections": [
+                    {
+                        "course_code": "CIS-471",
+                        "activity": "LEC",
+                        "semester": TEST_SEMESTER,
+                        "forms_returned": None,
+                        "forms_produced": None,
+                    },
+                    {"course_code": "CIS-371", "semester": "2012A", "activity": "LEC", **rating(2)},
                 ]
             },
         )
@@ -150,6 +296,9 @@ class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTest
 
         create_review("CIS-371-900", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review("CIS-371-003", "2012C", "Instructor Two", {"instructor_quality": 1})
+
+        Section.objects.all().update(activity="LEC")
+
         self.instructor1 = Instructor.objects.get(name=self.instructor_name)
         self.instructor1_pk = self.instructor1.pk
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
@@ -161,8 +310,9 @@ class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTest
 
         self.extra_course_data = {
             "code": "CIS-471",
-            "historical_codes": ["CIS-371"],
-            "branched_from": None,
+            "historical_codes": [
+                {"full_code": "CIS-371", "branched_from": False, "semester": "2012C"}
+            ],
         }
 
     def test_course(self):
@@ -262,8 +412,8 @@ class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTest
             ["CIS-471", self.instructor1_pk],
             {
                 "sections": [
-                    {"section_code": "CIS-471-001", **rating(4)},
-                    {"section_code": "CIS-371-900", **rating(2)},
+                    {"course_code": "CIS-471", "activity": "LEC", **rating(4)},
+                    {"course_code": "CIS-371", "activity": "LEC", **rating(2)},
                 ]
             },
         )
@@ -272,8 +422,8 @@ class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTest
             ["CIS-471", self.instructor2_pk],
             {
                 "sections": [
-                    {"section_code": "CIS-471-001", **rating(2)},
-                    {"section_code": "CIS-371-003", **rating(1)},
+                    {"course_code": "CIS-471", "activity": "LEC", **rating(2)},
+                    {"course_code": "CIS-371", "activity": "LEC", **rating(1)},
                 ]
             },
         )
@@ -303,18 +453,19 @@ class BranchedFromTestCase(TestCase, PCRTestMixin):
 
         self.extra_course_data_2220 = {
             "code": "ARTH-2220",
-            "historical_codes": [],
-            "branched_from": "ARTH-222",
+            "historical_codes": [
+                {"full_code": "ARTH-222", "branched_from": True, "semester": "2012A"}
+            ],
         }
         self.extra_course_data_2055 = {
             "code": "NELC-2055",
-            "historical_codes": [],
-            "branched_from": "ARTH-222",
+            "historical_codes": [
+                {"full_code": "ARTH-222", "branched_from": True, "semester": "2012A"}
+            ],
         }
         self.extra_course_data_222 = {
             "code": "ARTH-222",
             "historical_codes": [],
-            "branched_from": None,
         }
 
     def test_course(self):

@@ -22,6 +22,7 @@ django-debug-toolbar = "*"
 black = "==21.12b0"
 
 [packages]
+click = "==8.0.4"
 django = ">=3.2"
 psycopg2 = {version = "*", sys_platform = "== 'linux'"}
 requests = "*"

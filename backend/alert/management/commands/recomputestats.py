@@ -542,6 +542,15 @@ def recompute_demand_distribution_estimates(
         )
 
 
+def delete_cancelled_sections_empty_courses():
+    """
+    Deletes cancelled sections and courses without sections from before the current semester.
+    """
+    current_semester = get_current_semester()
+    Section.objects.filter(course__semester__lt=current_semester, status="X", review=None).delete()
+    Course.objects.filter(semester__lt=current_semester, sections=None).delete()
+
+
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
     Recomputes PCA demand distribution estimates, as well as the registration_volume
@@ -551,6 +560,7 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
     semesters = fill_in_add_drop_periods(verbose=verbose).intersection(semesters)
+    delete_cancelled_sections_empty_courses()
     load_add_drop_dates(verbose=verbose)
     deduplicate_status_updates(semesters=semesters, semesters_precomputed=True, verbose=verbose)
     recompute_demand_distribution_estimates(

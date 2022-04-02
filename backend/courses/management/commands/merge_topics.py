@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 from collections import defaultdict
 from enum import Enum, auto
@@ -15,7 +14,6 @@ from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
 
 from courses.models import Topic
-from PennCourses.settings.base import S3_client
 
 
 def get_branches_from_cross_walk(cross_walk):
@@ -195,8 +193,10 @@ def split_into_sentences(text):
     digits = "([0-9])"  # digits fix
     prefixes = "(Mr|St|Mrs|Ms|Dr)[.]"
     suffixes = "(Inc|Ltd|Jr|Sr|Co)"
-    starters = r"(Mr|Mrs|Ms|Dr|He\s|She\s|It\s|They\s|" \
-               r"Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
+    starters = (
+        r"(Mr|Mrs|Ms|Dr|He\s|She\s|It\s|They\s|"
+        r"Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
+    )
     acronyms = "([A-Z][.][A-Z][.](?:[A-Z][.])?)"
     websites = "[.](com|net|org|io|gov)"
     text = " " + text + "  "
@@ -262,12 +262,10 @@ def courses_similar(course_a, course_b):
     )
 
 
-def merge_topics(guaranteed_links=None, verbose=False):
+def merge_topics(verbose=False):
     """
     Finds and merges Topics that should be merged.
     Args:
-        guaranteed_links: Optionally, a `guaranteed_links` dict returned by
-            `get_direct_backlinks_from_cross_walk`.
         verbose: If verbose=True, this script will print its progress and prompt for user input
             upon finding possible (but not definite) links. Otherwise it will run silently and
             log found possible links to Sentry (more appropriate if this function is called
@@ -275,7 +273,6 @@ def merge_topics(guaranteed_links=None, verbose=False):
     """
     if verbose:
         print("Merging topics")
-    guaranteed_links = guaranteed_links or dict()
     if verbose:
         print("Loading topics and courses from db (this may take a while)...")
     topics = set(
@@ -360,26 +357,11 @@ def manual_merge(topic_ids):
 
 class Command(BaseCommand):
     help = (
-        "This script uses a combination of an optionally provided crosswalk, heuristics, "
-        "and user input to merge Topics in the database."
+        "This script uses a combination of heuristics and user input "
+        "to merge Topics in the database."
     )
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--cross-walk",
-            type=str,
-            help=dedent(
-                """
-                Optionally specify a path to a crosswalk specifying links between course codes
-                (in the format provided by Susan Collins [squant@isc.upenn.edu] from
-                the data warehouse team; https://bit.ly/3HtqPq3).
-                """
-            ),
-            default="",
-        )
-        parser.add_argument(
-            "-s3", "--s3_bucket", help="download crosswalk from specified s3 bucket."
-        )
         parser.add_argument(
             "-t",
             "--topic_ids",
@@ -397,8 +379,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        cross_walk_src = kwargs["cross_walk"]
-        s3_bucket = kwargs["s3_bucket"]
         topic_ids = set(kwargs["topic_ids"])
 
         print(
@@ -411,19 +391,5 @@ class Command(BaseCommand):
             manual_merge(topic_ids)
             return
 
-        if cross_walk_src and s3_bucket:
-            fp = "/tmp/" + cross_walk_src
-            print(f"downloading crosswalk from s3://{s3_bucket}/{cross_walk_src}")
-            S3_client.download_file(s3_bucket, cross_walk_src, fp)
-            cross_walk_src = fp
-
-        guaranteed_links = (
-            get_direct_backlinks_from_cross_walk(cross_walk_src) if cross_walk_src else dict()
-        )
-
-        if cross_walk_src and s3_bucket:
-            # Remove temporary file
-            os.remove(cross_walk_src)
-
         with transaction.atomic():
-            merge_topics(guaranteed_links=guaranteed_links, verbose=True)
+            merge_topics(verbose=True)
