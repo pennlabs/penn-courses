@@ -8,18 +8,21 @@ import jellyfish
 import nltk
 import numpy as np
 import pandas as pd
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
 
-from courses.course_text_heuristics import description_heuristics, title_heuristics
+from courses.course_text_similarity.heuristics import description_heuristics, title_heuristics
 from courses.models import Topic
 from PennCourses.settings.base import S3_client
 
 
 MODEL = SentenceTransformer("all-MiniLM-L6-v2")
-nltk.download("punkt")
+SENT_TOKENIZER = nltk.data.load(
+    os.path.join(settings.BASE_DIR, "courses", "course_text_similarity", "english.pickle")
+)
 
 
 def get_branches_from_cross_walk(cross_walk):
@@ -88,11 +91,13 @@ class ShouldLinkCoursesResponse(Enum):
     NO = auto()
 
 
-def should_link_courses(course_a, course_b, verbose=True):
+def should_link_courses(course_a, course_b, verbose=True, ignore_inexact=False):
     """
     Checks if the two courses should be linked, based on information about those
     courses stored in our database. Prompts for user input in the case of possible links,
-    if in verbose mode (otherwise just logs possible links).
+    if in verbose mode (otherwise just logs possible links). If in `ignore_inexact` mode,
+    completely skips any course merges that are inexact (ie, rely on `similar_courses`),
+    and therefore will neither prompt for user input nor log.
     Returns a response in the form of a ShouldLinkCoursesResponse enum.
     """
     if same_course(course_a, course_b):
@@ -101,7 +106,7 @@ def should_link_courses(course_a, course_b, verbose=True):
         return ShouldLinkCoursesResponse.NO
     elif (course_a.code < "5000") != (course_b.code < "5000"):
         return ShouldLinkCoursesResponse.NO
-    elif similar_courses(course_a, course_b):
+    elif (not ignore_inexact) and similar_courses(course_a, course_b):
         # If title is same or (title is similar and description is similar
         # have a fairly low threshold for similarity)
         if verbose and prompt_for_link(course_a, course_b):
@@ -141,8 +146,8 @@ def semantic_similarity(string_a, string_b):
     """
     string_a = string_a.strip().lower()
     string_b = string_b.strip().lower()
-    sentences_a = nltk.tokenize.sent_tokenize(string_a)
-    sentences_b = nltk.tokenize.sent_tokenize(string_b)
+    sentences_a = SENT_TOKENIZER.tokenize(string_a)
+    sentences_b = SENT_TOKENIZER.tokenize(string_b)
     emb_a = MODEL.encode(sentences_a, convert_to_tensor=True)
     emb_b = MODEL.encode(sentences_b, convert_to_tensor=True)
     cosine_scores = util.cos_sim(emb_a, emb_b)
@@ -167,7 +172,7 @@ def similar_courses(course_a, course_b):
     )
 
 
-def merge_topics(guaranteed_links=None, verbose=False):
+def merge_topics(guaranteed_links=None, verbose=False, ignore_inexact=False):
     """
     Finds and merges Topics that should be merged.
     Args:
@@ -177,6 +182,10 @@ def merge_topics(guaranteed_links=None, verbose=False):
             upon finding possible (but not definite) links. Otherwise it will run silently and
             log found possible links to Sentry (more appropriate if this function is called
             from an automated cron job like registrarimport).
+        ignore_inexact: If ignore_inexact=True, will only ever merge if two courses
+            are exactly matching as judged by `same_course`. `ignore_inexact` means
+            the user will not be prompted and that there will never be logging.
+            Corresponds to never checking the similarity of two courses using `similar_courses`.
     """
     if verbose:
         print("Merging topics")
@@ -219,7 +228,9 @@ def merge_topics(guaranteed_links=None, verbose=False):
                 should_link = True
                 for last, course in course_links:
                     if (last, course) in dont_link or (
-                        should_link_courses(last, course, verbose=verbose)
+                        should_link_courses(
+                            last, course, verbose=verbose, ignore_inexact=ignore_inexact
+                        )
                         != ShouldLinkCoursesResponse.DEFINITELY
                     ):
                         dont_link.add((last, course))
@@ -299,6 +310,18 @@ class Command(BaseCommand):
             """
             ),
             required=False,
+        )
+        parser.add_argument(
+            "--ignore-inexact",
+            action="store_true",
+            help=dedent(
+                """
+                Optionally, ignore inexact matches between courses (ie where there is no match
+                between course a's code and the codes of all cross listings of course b (including
+                course b) AND there is no cross walk entry. Corresponds to never checking
+                the similarity of two courses using `similar_courses`.
+                """
+            ),
         )
 
     def handle(self, *args, **kwargs):
