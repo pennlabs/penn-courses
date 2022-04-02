@@ -1,5 +1,5 @@
-from itertools import zip_longest
 import re
+from itertools import zip_longest
 
 
 def title_heuristics(title_a, title_b):

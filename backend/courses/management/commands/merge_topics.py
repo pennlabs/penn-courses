@@ -1,21 +1,19 @@
 import logging
 import os
-import re
 from collections import defaultdict
 from enum import Enum, auto
 from textwrap import dedent
 
 import jellyfish
+import nltk
 import numpy as np
 import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
-import nltk
 
-from courses.course_text_heuristics import title_heuristics, description_heuristics
-
+from courses.course_text_heuristics import description_heuristics, title_heuristics
 from courses.models import Topic
 from PennCourses.settings.base import S3_client
 
@@ -35,10 +33,6 @@ def get_branches_from_cross_walk(cross_walk):
     return {
         old_code: new_codes for old_code, new_codes in branched_links.items() if len(new_codes) > 1
     }
-
-
-MODEL = SentenceTransformer("all-MiniLM-L6-v2")
-nltk.download('punkt')
 
 
 def get_direct_backlinks_from_cross_walk(cross_walk):
@@ -115,13 +109,20 @@ def should_link_courses(course_a, course_b, verbose=True):
     return ShouldLinkCoursesResponse.NO
 
 
-def lev_divided_by_avg_title_length(title1, title2):
+def lev_divided_by_avg_title_length(title_a, title_b):
     """
     Compute levenshtein distance between 2 titles and then divide by avg title length.
     """
-    if title1 is np.NaN or title2 is np.NaN:
+    if (
+        title_a is np.NaN
+        or title_a is None
+        or title_a == ""
+        or title_b is np.NaN
+        or title_b is None
+        or title_b == ""
+    ):
         return 0.0
-    return 2 * jellyfish.levenshtein_distance(title1, title2) / (len(title1) + len(title2))
+    return 2 * jellyfish.levenshtein_distance(title_a, title_b) / (len(title_a) + len(title_b))
 
 
 def semantic_similarity(string_a, string_b):
@@ -327,3 +328,8 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             merge_topics(guaranteed_links=guaranteed_links, verbose=True)
+
+
+if __name__ == "__main__":
+    MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+    nltk.download("punkt")
