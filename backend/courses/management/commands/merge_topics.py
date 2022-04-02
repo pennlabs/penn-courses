@@ -126,9 +126,7 @@ def lev_divided_by_avg_title_length(title_a, title_b):
     Titles are lowercased and whitespace is stripped from ends prior to comparison.
     Assumes that titles are not just whitespace.
     """
-    print(len(title_a) + len(title_b))
-    lev_dist = jellyfish.levenshtein_distance(title_a, title_b) 
-    return 2 * lev_dist / (len(title_a) + len(title_b))
+    return 2 * jellyfish.levenshtein_distance(title_a, title_b) / (len(title_a) + len(title_b))
 
 
 def semantic_similarity(string_a, string_b):
@@ -154,7 +152,7 @@ def semantic_similarity(string_a, string_b):
     return max_trace
 
 
-def similar_courses(course_a, course_b): 
+def similar_courses(course_a, course_b):
     title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
     if (
         not title_heuristics(title_a, title_b)

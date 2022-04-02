@@ -1,6 +1,7 @@
 import re
 from itertools import zip_longest
 
+
 def title_heuristics(title_a, title_b):
     """
     Handle special cases and return True if they occur, False otherwise.
@@ -18,7 +19,7 @@ def title_heuristics(title_a, title_b):
     """
     # Case 0
     if title_a == "" or title_b == "":
-        return False 
+        return True
     # Case 1
     sequels_regex = re.compile(r"(\d|IX|IV|V?I{0,3})")
     splits = zip_longest(re.split(sequels_regex, title_a), re.split(sequels_regex, title_b))
