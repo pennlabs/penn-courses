@@ -61,16 +61,16 @@ class TypedCourseSearchBackend(filters.SearchFilter):
 
 
 class TypedSectionSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]+) *[ -]?(\d{3,4}|[A-Z]{1,3})?[ -]?(\d+)?$")
+    code_re = re.compile(r"^([A-Za-z]+)\s*-?(\d{3,4}|[A-Za-z]{1,4})?\s*-?(\d+)?$")
 
     def get_search_terms(self, request):
         query = request.query_params.get(self.search_param, "")
 
         match = self.code_re.match(query)
         if match:
-            query = match.group(1)
+            query = match.group(1).upper()
             if match.group(2) is not None:
-                query = query + f"-{match.group(2)}"
+                query = query + f"-{match.group(2).upper()}"
                 if match.group(3) is not None:
                     query = query + f"-{match.group(3)}"
         return [query]
