@@ -98,6 +98,7 @@ def similar_courses(course_a, course_b):
         and semantic_similarity(desc_a, desc_b) > 0.7
     ):
         return True
+    return False
 
 
 class ShouldLinkCoursesResponse(Enum):
@@ -150,7 +151,6 @@ def merge_topics(verbose=False, ignore_inexact=False):
     """
     if verbose:
         print("Merging topics")
-    if verbose:
         print("Loading topics and courses from db (this may take a while)...")
     topics = set(
         Topic.objects.prefetch_related(
