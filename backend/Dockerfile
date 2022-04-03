@@ -18,7 +18,7 @@ RUN python3 -m nltk.downloader punkt
 
 # Load embedder
 RUN python3 -c 'from sentence-transformers import SentenceTransformer; \
-    embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")'
+    SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")'
 
 # Copy project files
 COPY . /app/
