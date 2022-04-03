@@ -1,0 +1,18 @@
+<table>
+    <tr>
+        <th>Full Code</th>
+        <th>Semester</th>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Prerequisites</th>
+    </tr>
+    {% for c in courses %}
+    <tr>
+        <td><a href="{{ c.a_link }}">{{ c.full_code }}</a></td>
+        <td> {{ c.semester }}</td>
+        <td> {{ c.title }}</td>
+        <td> {{ c.description }}</td>
+        <td> {{ c.prerequisites }}</td>
+    </tr>
+    {% endfor %}
+</table>

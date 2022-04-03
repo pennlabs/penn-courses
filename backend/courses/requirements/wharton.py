@@ -89,7 +89,7 @@ def _get_curriculum_page(url):
     soup = BeautifulSoup(resp.content.decode("utf-8"), features="html.parser")
     for lst in soup.select(".wpb_wrapper ul.bullet-list"):
         for item in lst.select("li"):
-            match = re.match(r"([A-Z]{0,4})\s?(\d{3})\s?:", item.text, re.I)
+            match = re.match(r"([A-Z]{0,4})\s?(\d{3,4})\s?:", item.text, re.I)
             if match is not None:
                 res = match.groups()
                 reqs.append({"department": res[0], "course_id": res[1], "satisfies": True})

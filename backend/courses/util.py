@@ -53,15 +53,14 @@ def get_current_semester(allow_not_found=False):
         return cached_val
 
     retrieved_val = get_value("SEMESTER", None)
-    if not allow_not_found:
-        if retrieved_val is None:
-            raise APIException(
-                "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
-                "option by running the command "
-                "'python manage.py setoption SEMESTER 2020C', "
-                "replacing 2020C with the current semester, in the backend directory (remember "
-                "to run 'pipenv shell' before running this command, though)."
-            )
+    if not allow_not_found and retrieved_val is None:
+        raise APIException(
+            "The SEMESTER runtime option is not set.  If you are in dev, you can set this "
+            "option by running the command "
+            "'python manage.py setoption SEMESTER 2020C', "
+            "replacing 2020C with the current semester, in the backend directory (remember "
+            "to run 'pipenv shell' before running this command, though)."
+        )
     cache.set("SEMESTER", retrieved_val, timeout=90000)  # cache expires every 25 hours
     return retrieved_val
 
@@ -93,13 +92,10 @@ def get_semester(datetime):
     Given a datetime, estimate the semester of the period of course registration it occurred in.
     """
     if 3 <= datetime.month and datetime.month <= 9:
-        sem = str(datetime.year) + "C"
-    else:
-        if datetime.month < 3:
-            sem = str(datetime.year) + "A"
-        else:
-            sem = str(datetime.year + 1) + "A"
-    return sem
+        return str(datetime.year) + "C"
+    if datetime.month < 3:
+        return str(datetime.year) + "A"
+    return str(datetime.year + 1) + "A"
 
 
 def get_add_drop_period(semester):
@@ -111,17 +107,11 @@ def get_add_drop_period(semester):
     The add_drop_periods key in cache points to a dictionary mapping semester to add/drop period
     object.
     """
-    from alert.models import AddDropPeriod
+    from alert.models import AddDropPeriod  # imported here to avoid circular imports
 
-    changed = False
-    cached_adps = cache.get("add_drop_periods", None)
-    if cached_adps is None:
-        cached_adps = dict()
-        changed = True
+    cached_adps = cache.get("add_drop_periods", dict())
     if semester not in cached_adps:
         cached_adps[semester] = AddDropPeriod.objects.get(semester=semester)
-        changed = True
-    if changed:
         cache.set("add_drop_periods", cached_adps, timeout=90000)  # cache expires every 25 hours
     return cached_adps[semester]
 
@@ -142,30 +132,28 @@ def get_or_create_add_drop_period(semester):
     return add_drop
 
 
-def separate_course_code(course_code):
-    """return (dept, course, section) ID tuple given a course code in any possible format"""
-    course_regexes = [
-        re.compile(r"([A-Za-z]+) *(\d{3}|[A-Z]{3})(\d{3})"),
-        re.compile(r"([A-Za-z]+) *-(\d{3}|[A-Z]{3})-(\d{3})"),
-    ]
+section_code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{3,4}|[A-Z]{3,4})?\s*-?(\d{3,4})?$")
 
-    course_code = course_code.replace(" ", "").upper()
-    for regex in course_regexes:
-        m = regex.match(course_code)
-        if m is not None:
-            return m.group(1), m.group(2), m.group(3)
 
+def separate_course_code(course_code, allow_partial=False):
+    """
+    Parse and return a (dept, course, section) ID tuple
+    given a section full_code in any possible format.
+    If allow_partial is True, then missing components will be returned as None.
+    Otherwise, an incomplete match will raise a ValueError.
+    """
+    course_code = course_code.strip()
+    match = section_code_re.match(course_code)
+    if match:
+        components = (match.group(1).upper(), match.group(2), match.group(3))
+        if allow_partial or None not in components:
+            return components
     raise ValueError(f"Course code could not be parsed: {course_code}")
 
 
 def get_or_create_course(dept_code, course_id, semester):
     dept, _ = Department.objects.get_or_create(code=dept_code)
-    course, c = Course.objects.get_or_create(department=dept, code=course_id, semester=semester)
-    if c:
-        course.full_code = f"{dept}-{course_id}"
-        course.save()
-
-    return course, c
+    return Course.objects.get_or_create(department=dept, code=course_id, semester=semester)
 
 
 def get_or_create_course_and_section(course_code, semester, section_manager=None):

@@ -535,9 +535,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return self.update(request, request.data.get("id"))
         return self.handle_registration(request)
 
-    queryset = (
-        Registration.objects.none()
-    )  # used to help out the AutoSchema in generating documentation
+    queryset = Registration.objects.none()  # included redundantly for docs
 
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
@@ -597,9 +595,7 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
 
-    queryset = (
-        Registration.objects.none()
-    )  # used to help out the AutoSchema in generating documentation
+    queryset = Registration.objects.none()  # included redundantly for docs
 
     def get_queryset(self):
         return Registration.objects.filter(

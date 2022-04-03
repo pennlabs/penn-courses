@@ -229,6 +229,16 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
     return list(unsequenced_courses_by_user.values())
 
 
+def get_descriptions(courses, preloaded_descriptions):
+    descriptions = []
+    for course in courses:
+        if course in preloaded_descriptions:
+            descriptions.append(preloaded_descriptions[course])
+        else:
+            descriptions.append(get_description(course))
+    return descriptions
+
+
 def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_descriptions={}):
     """
     Generates a dict associating courses to vectors for those courses,
@@ -244,14 +254,9 @@ def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_
     courses, courses_vectorized_by_schedule_presence = zip(
         *vectorize_courses_by_schedule_presence(courses_by_user).items()
     )
-
-    descriptions = []
-    for course in courses:
-        if course in preloaded_descriptions:
-            descriptions.append(preloaded_descriptions[course])
-        else:
-            descriptions.append(get_description(course))
-    courses_vectorized_by_description = vectorize_courses_by_description(descriptions)
+    courses_vectorized_by_description = vectorize_courses_by_description(
+        get_descriptions(courses, preloaded_descriptions)
+    )
     copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
     copresence_vectors_past = [copresence_vectors_by_course_past[course] for course in courses]
     copresence_vectors = normalize(copresence_vectors)

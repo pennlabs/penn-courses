@@ -6,7 +6,7 @@ import phonenumbers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Case, Index, OuterRef, Q, Subquery, When
 from django.db.models.functions import Cast
 from django.db.models.signals import post_save
@@ -90,22 +90,42 @@ class Department(models.Model):
 
 
 def sections_with_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+    # get all the reviews for instructors in the Section.instructors many-to-many
+    instructors_subquery = Subquery(
+        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id")
+    )
+
     return review_averages(
         queryset,
-        {
-            "review__section__course__full_code": OuterRef("course__full_code"),
-            # get all the reviews for instructors in the Section.instructors many-to-many
-            "review__instructor__in": Subquery(
-                Instructor.objects.filter(section=OuterRef(OuterRef("id"))).values("id").order_by()
-            ),
-        },
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr
+            & Q(review__section__course__topic=OuterRef("course__topic"))
+            & Q(review__instructor__in=instructors_subquery)
+        ),
+        section_subfilters=(
+            section_filters_pcr
+            & Q(course__topic=OuterRef("course__topic"))
+            & Q(instructors__in=instructors_subquery)
+        ),
         extra_metrics=False,
     ).order_by("code")
 
 
 def course_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+
     return review_averages(
-        queryset, {"review__section__course__full_code": OuterRef("full_code")}, extra_metrics=False
+        queryset,
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr & Q(review__section__course__topic=OuterRef("topic"))
+        ),
+        section_subfilters=(section_filters_pcr & Q(course__topic=OuterRef("topic"))),
+        extra_metrics=False,
     )
 
 
@@ -179,6 +199,15 @@ class Course(models.Model):
         help_text="Text describing the prereqs for a course, e.g. 'CIS 120, 160' for CIS-121.",
     )
 
+    topic = models.ForeignKey(
+        "Topic",
+        related_name="courses",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The Topic of this course",
+    )
+
     primary_listing = models.ForeignKey(
         "Course",
         related_name="listing_set",
@@ -209,6 +238,16 @@ class Course(models.Model):
 
     def __str__(self):
         return "%s %s" % (self.full_code, self.semester)
+
+    def full_str(self):
+        return f"{self.full_code} ({self.semester}): {self.title}\n{self.description}"
+
+    @property
+    def is_primary(self):
+        """
+        Returns True iff this is the primary course among its crosslistings.
+        """
+        return self.primary_listing is None or self.primary_listing.id == self.id
 
     @property
     def crosslistings(self):
@@ -241,6 +280,108 @@ class Course(models.Model):
     def save(self, *args, **kwargs):
         self.full_code = f"{self.department.code}-{self.code}"
         super().save(*args, **kwargs)
+        if not self.topic:
+            with transaction.atomic():
+                try:
+                    self.topic = (
+                        Topic.objects.select_related("most_recent")
+                        .filter(courses__full_code=self.full_code)[:1]
+                        .get()
+                    )
+                    if self.topic.most_recent.semester < self.semester:
+                        self.topic.most_recent = self.primary_listing or self
+                        self.topic.save()
+                except Topic.DoesNotExist:
+                    topic = Topic(most_recent=self.primary_listing or self)
+                    topic.save()
+                    self.topic = topic
+                super().save()
+                self.crosslistings.update(topic=self.topic)
+
+
+class Topic(models.Model):
+    """
+    A grouping of courses of the same topic (to accomodate course code changes).
+    """
+
+    most_recent = models.ForeignKey(
+        "Course",
+        related_name="+",
+        on_delete=models.PROTECT,
+        help_text=dedent(
+            """
+        The most recent course (by semester) of this topic. The `most_recent` course should
+        be the `primary_listing` if it has crosslistings. These invariants are maintained
+        by the `Topic.merge_with`, `Topic.add_course`, `Topic.from_course`, and `Course.save`
+        methods. Defer to using these methods rather than setting this field manually.
+        You must change the corresponding `Topic` object's `most_recent` field before
+        deleting a Course if it is the `most_recent` course (`on_delete=models.PROTECT`).
+        """
+        ),
+    )
+
+    branched_from = models.ForeignKey(
+        "Topic",
+        related_name="branched_to",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+        When relevant, the Topic from which this Topic was branched (this will likely only be
+        useful for the spring 2022 NGSS course code changes, where some courses were split into
+        multiple new courses of different topics).
+        """
+        ),
+    )
+
+    @staticmethod
+    def from_course(course):
+        """
+        Creates a new topic from a given course.
+        """
+        if course.topic:
+            return course.topic
+        course.save()
+        return course.topic
+
+    def merge_with(self, topic):
+        """
+        Merges this topic with the specified topic. Returns the resulting topic.
+        """
+        with transaction.atomic():
+            if (
+                self.most_recent.semester == topic.most_recent.semester
+                and self.most_recent.full_code != topic.most_recent.full_code
+            ):
+                raise ValueError(
+                    "Cannot merge topics with most_recent courses in the same semester "
+                    "but different full codes."
+                )
+            elif self.most_recent.semester >= topic.most_recent.semester:
+                Course.objects.filter(topic=topic).update(topic=self)
+                topic.delete()
+                return self
+            else:
+                Course.objects.filter(topic=self).update(topic=topic)
+                self.delete()
+                return topic
+
+    def add_course(self, course):
+        """
+        Adds the specified course to this topic.
+        """
+        with transaction.atomic():
+            course = course.primary_listing or course
+            if course.semester > self.most_recent.semester:
+                self.most_recent = course
+                self.save()
+            course.topic = self
+            course.save()
+            course.crosslistings.update(topic=self)
+
+    def __str__(self):
+        return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
 
 
 class Restriction(models.Model):
