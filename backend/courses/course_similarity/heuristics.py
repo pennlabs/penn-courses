@@ -82,7 +82,7 @@ def description_rejection_heuristics(desc_a, desc_b):
         return True
 
     # Case 1
-    topics_vary_regex = re.compile("topics\s*.*vary")
+    topics_vary_regex = re.compile(r"topics\s*.*vary")
 
     # Case 2
     exclude_strings = [
