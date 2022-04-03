@@ -9,7 +9,7 @@ COPY Pipfile* /app/
 RUN pipenv install --system
 
 # Load NLTK data
-RUN python -m nltk.downloader punkt
+RUN python3 -m nltk.downloader punkt
 
 # Load embedder
 RUN python3 -c 'from sentence-transformers import SentenceTransformer; \
