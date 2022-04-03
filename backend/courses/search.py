@@ -5,7 +5,7 @@ from courses.util import separate_course_code
 
 
 class TypedCourseSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]{1,8})\s*-?(\d{3,4})$")
+    code_re = re.compile(r"^([A-Za-z]{1,8})\s*-?(\d{3,4})?$")
 
     def infer_search_type(self, query):
         if self.code_re.match(query.strip()):
@@ -36,15 +36,10 @@ class TypedCourseSearchBackend(filters.SearchFilter):
         match = self.code_re.match(query.strip())
         # If this is a course query, either by designation or by detection,
         if (
-            (
-                search_type == "course"
-                or (search_type == "auto" and self.infer_search_type(query) == "course")
-            )
-            and match
-            and match.group(1)
-            and match.group(2)
-        ):
-            query = f"{match.group(1)}-{match.group(2)}"
+            search_type == "course"
+            or (search_type == "auto" and self.infer_search_type(query) == "course")
+        ) and match:
+            query = f"{match.group(1)}-{match.group(2)}" if match.group(2) else match.group(1)
         return [query]
 
     def get_search_fields(self, view, request):
@@ -62,8 +57,7 @@ class TypedCourseSearchBackend(filters.SearchFilter):
 
 
 class TypedSectionSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]+)\s*-?(\d{3,4}|[A-Za-z]{1,4})?\s*-?(\d+)?$")
-
     def get_search_terms(self, request):
         query = request.query_params.get(self.search_param, "")
-        return ["-".join(separate_course_code(query.strip()))]
+        components = separate_course_code(query, allow_partial=True)
+        return ["-".join([c for c in components if c])]
