@@ -377,6 +377,13 @@ def course_plots(request, course_code):
     )
 
 
+def check_instructor_id(instructor_id):
+    if not isinstance(instructor_id, int) and not (
+        isinstance(instructor_id, str) and instructor_id.isdigit()
+    ):
+        raise Http404("Instructor with given instructor_id not found.")
+
+
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
@@ -405,6 +412,7 @@ def instructor_reviews(request, instructor_id):
     """
     Get all reviews for a given instructor, aggregated by course.
     """
+    check_instructor_id(instructor_id)
     instructor = get_object_or_404(Instructor, id=instructor_id)
     instructor_qs = annotate_average_and_recent(
         Instructor.objects.filter(id=instructor_id),
@@ -566,6 +574,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     except Course.DoesNotExist:
         raise Http404()
 
+    check_instructor_id(instructor_id)
     instructor = get_object_or_404(Instructor, id=instructor_id)
 
     topic = course.topic
