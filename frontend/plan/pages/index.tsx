@@ -266,8 +266,8 @@ function Index() {
                     </SwipeableViews>
                 </>
             ) : (
-                <div style={{ padding: "0px 2em 0px 2em" }}>
-                    <SearchBar
+                <>
+                <SearchBar
                         storeLoaded={storeLoaded}
                         store={store}
                         setView={setView}
@@ -275,7 +275,8 @@ function Index() {
                         mobileView={false}
                         isExpanded={isExpanded}
                         setShowLoginModal={setShowLoginModal}
-                    />
+                />
+                <div style={{ padding: "0px 2em 0px 2em" }}>
                     <div
                         className="App columns is-mobile main smooth-transition"
                         style={
@@ -368,6 +369,7 @@ function Index() {
                         </div>
                     </div>
                 </div>
+                </>
             )}
             <Footer />
             <ModalContainer />

@@ -120,16 +120,14 @@ const MobileFilterDropdowns = styled.div`
 `;
 
 const SearchBarContainer = styled.div`
-    margin: 1rem 1.5rem;
-    padding: 0.25rem;
+    padding: 0.50rem 0.25rem;
     background-color: white;
-    border-radius: 6px;
     box-shadow: 0 1px 3px 0 lightgrey;
     width: inherit;
     align-items: center;
     justify-content: space-between;
     height: auto;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
 
     @media screen and (min-width: 769px) {
         display: flex;
@@ -142,7 +140,7 @@ const SearchBarFilters = styled.div`
     flex-shrink: 0;
     align-items: center;
     justify-content: flex-start;
-    max-width: 80vw !important;
+    max-width: 87vw !important;
 
     @media screen and (min-width: 769px) {
         display: flex;
@@ -160,7 +158,7 @@ const LevelItem = styled.div`
 `;
 
 const SearchLevelItem = styled(LevelItem)`
-    padding-left: 2rem;
+    padding-left: 0.5rem;
 `;
 
 const FilterLevelItem = styled.div`
@@ -174,7 +172,7 @@ const FilterLevelItem = styled.div`
     max-width: calc(100% - 17rem);
     display: flex;
     margin-right: 0.75rem;
-    padding-left: 1rem;
+    padding-left: 0.5rem;
 
     > * {
         padding-right: 0.5rem;
@@ -244,6 +242,13 @@ const Icon = styled.span`
     width: 1.5rem;
     pointer-events: none;
 `;
+
+const DropdownContainer = styled.div`
+    max-width: 60vw !important;
+    overflow: scroll;
+    display: flex;
+    flex-direction: row;
+`
 
 function SearchBar({
     /* eslint-disable no-shadow */
@@ -339,7 +344,7 @@ SearchBarProps) {
     };
 
     const dropDowns = (
-        <div>
+        <DropdownContainer>
             <DropdownButton
                 title="Requirements"
                 filterData={filterData.selectedReq}
@@ -466,7 +471,7 @@ SearchBarProps) {
                     startSearch={conditionalStartSearch}
                 />
             </DropdownButton>
-        </div>
+        </DropdownContainer>
     );
     if (mobileView) {
         return (
