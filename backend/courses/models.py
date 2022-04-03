@@ -95,7 +95,7 @@ def sections_with_reviews(queryset):
     # ^ imported here to avoid circular imports
     # get all the reviews for instructors in the Section.instructors many-to-many
     instructors_subquery = Subquery(
-        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id").order_by()
+        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id")
     )
 
     return review_averages(
@@ -295,7 +295,7 @@ class Course(models.Model):
                     topic = Topic(most_recent=self.primary_listing or self)
                     topic.save()
                     self.topic = topic
-                super().save()
+                super().save(*args, **kwargs)
                 self.crosslistings.update(topic=self.topic)
 
 
