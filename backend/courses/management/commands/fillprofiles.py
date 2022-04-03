@@ -17,6 +17,6 @@ class Command(BaseCommand):
             if prof.email is None and prof.user.email != "":
                 prof.email = prof.user.email
                 prof.save()
-                ++num
+                num += 1
 
         print(f"filled in {num} email addresses.")
