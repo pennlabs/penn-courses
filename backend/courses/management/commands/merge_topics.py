@@ -20,6 +20,8 @@ from courses.util import in_dev
 
 
 if in_dev():
+    nltk.download("punkt")
+
     model_path = os.path.join(
         settings.BASE_DIR, "courses", "course_text_similarity", "all-MiniLM-L6-v2"
     )
@@ -29,9 +31,8 @@ if in_dev():
         embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
         embedder.save(model_path)
 
-SENT_TOKENIZER = nltk.data.load(
-    "file:" + os.path.join(settings.BASE_DIR, "courses", "course_text_similarity", "english.pickle")
-)
+
+SENT_TOKENIZER = nltk.data.load("nltk:tokenizers/punkt/english.pickle")
 
 
 def load_crosswalk_links(cross_walk):

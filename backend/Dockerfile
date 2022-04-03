@@ -8,9 +8,12 @@ COPY Pipfile* /app/
 # Install project dependencies
 RUN pipenv install --system
 
+# Load NLTK data
+RUN python -m nltk.downloader punkt
+
 # Load embedder
 RUN python3 -c 'from sentence-transformers import SentenceTransformer; \
-embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")'
+    embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")'
 
 # Copy project files
 COPY . /app/

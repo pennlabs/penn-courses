@@ -12,7 +12,8 @@ yarn-debug.log*
 yarn-error.log*
 frontend/*/build/
 frontend/*/.next
-PennCourses/settings/static/
+backend/PennCourses/settings/static/
+backend/courses/course_text_similarity/all-MiniLM-L6-v2
 *.sqlite3
 *-test.json
 celerybeat-schedule
