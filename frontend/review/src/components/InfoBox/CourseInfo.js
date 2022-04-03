@@ -6,16 +6,21 @@ import styled from "styled-components";
 import { CourseDetails, Popover, PopoverTitle } from "../common";
 import { toNormalizedSemester } from "../../utils/helpers";
 
+import InfoTool from "../common/PcrInfoTool";
+
+const text = <div>Historical courses are grouped on Penn Course Review using 
+a variety of approximate methods. Grouped courses should not necessarily 
+be seen as equivalent for the purposes of academic planning or fulfilling 
+requirements. If you have any concerns about groupings, please email us at
+<Link> contact@penncourses.org.</Link></div>
+;
+
 const Historical = styled.div`
   display: flex;
   flex-direction: row;
   color: black;
+  align-items: center;
 `;
-
-// let obj1 = { full_code: "CIS-370", branched_from: false, semester: "2020A" };
-// let obj2 = { full_code: "CIS-371", branched_from: true, semester: "2020A" };
-
-// let arr = [obj1, obj2];
 
 const getSyllabusData = (courses) =>
   Object.values(courses)
@@ -335,28 +340,17 @@ export const CourseHeader = ({
         ])}
       </div>
     )}
-    {/* {data.historical_codes && Boolean(data.historical_codes.length) && (
-      <Historical>
-        Previously:&nbsp;
-        {arr.map((obj, i) => [i > 0 && <div>&#44;&nbsp;</div>, obj.branched_from ? (
-                <Link to={`/course/${obj.full_code}`}>{obj.full_code} </Link>
-              ) : (
-                <div>{obj.full_code}</div>
-              )]
-          )
-        }
-      </Historical>
-    )} */}
     {data.historical_codes && Boolean(data.historical_codes.length) && (
       <Historical>
-        Previously:&nbsp;
-        {data.historical_codes.map((obj, i) => [i > 0 && <div>&#44;&nbsp;</div>, obj.branched_from ? (
-                <Link to={`/course/${obj.full_code}`}>{obj.full_code} </Link>
-              ) : (
-                <div>{obj.full_code}</div>
-              )]
-          )
-        }
+        Previously<InfoTool text={text} />:&nbsp;
+        {data.historical_codes.map((obj, i) => [
+          i > 0 && <div>&#44;&nbsp;</div>,
+          obj.branched_from ? (
+            <Link to={`/course/${obj.full_code}`}>{obj.full_code} </Link>
+          ) : (
+            <div>{obj.full_code}</div>
+          ),
+        ])}
       </Historical>
     )}
     <p className="subtitle">{name}</p>
