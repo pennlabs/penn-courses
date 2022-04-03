@@ -9,9 +9,9 @@ from django.db import transaction
 from tqdm import tqdm
 
 from courses.course_similarity.heuristics import (
+    description_heuristics,
     lev_divided_by_avg_title_length,
     semantic_similarity,
-    description_heuristics,
     title_heuristics,
 )
 from courses.models import Topic

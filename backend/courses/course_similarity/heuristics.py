@@ -1,11 +1,13 @@
+import os
 import re
 from itertools import zip_longest
+
 import jellyfish
-from sentence_transformers import SentenceTransformer, util
 import nltk
 import numpy as np
 from django.conf import settings
-import os
+from sentence_transformers import SentenceTransformer, util
+
 from courses.util import in_dev
 
 
