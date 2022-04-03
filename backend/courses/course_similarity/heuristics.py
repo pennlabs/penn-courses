@@ -25,9 +25,9 @@ if in_dev():
 SENT_TOKENIZER = nltk.data.load("nltk:tokenizers/punkt/english.pickle")
 
 
-def title_heuristics(title_a, title_b):
+def title_rejection_heuristics(title_a, title_b):
     """
-    Handle special cases and return True if they occur, False otherwise.
+    Handle special cases indicating dissimilarity and return True if they occur, False otherwise.
     0.  At least one string is only whitespace
     1.  Identify if a course title is different only by a single roman numeral or digit:
         ie CIS-120 is "Programming Languages and Techniques I" and CIS-121 is
@@ -46,7 +46,7 @@ def title_heuristics(title_a, title_b):
     # Case 1
     sequels_regex = re.compile(r"(\d|IX|IV|V?I{0,3})")
     splits = zip_longest(re.split(sequels_regex, title_a), re.split(sequels_regex, title_b))
-    previous_split_matches = None
+    previous_split_matches = False
     for i, (split_a, split_b) in enumerate(splits):
         if i % 2 == 0:
             previous_split_matches = split_a == split_b
@@ -56,6 +56,7 @@ def title_heuristics(title_a, title_b):
     # Case 2
     levels = {
         "introductory": 0,
+        "intruduction": 0,
         "beginner": 0,
         "elementary": 0,
         "intermediate": 1,
@@ -68,7 +69,7 @@ def title_heuristics(title_a, title_b):
     return False
 
 
-def description_heuristics(desc_a, desc_b):
+def description_rejection_heuristics(desc_a, desc_b):
     """
     Handle special cases (specifically when the description is non-informative because it does not
     contain course-specific content) and return True if they occur, False otherwise.
@@ -91,7 +92,7 @@ def description_heuristics(desc_a, desc_b):
         if exclude_string in desc_a or exclude_string in desc_b:
             return True
     for regex in [topics_vary_regex]:
-        if re.match(regex, desc_a) is not None or re.match(regex, desc_b) is not None:
+        if re.match(regex, desc_a) or re.match(regex, desc_b):
             return True
     return False
 
