@@ -4,7 +4,7 @@ from rest_framework import filters
 
 
 class TypedCourseSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4})?$")
+    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4}|[A-Z]{1,4})?$")
 
     def infer_search_type(self, query):
         if self.code_re.match(query.strip()):
@@ -56,7 +56,7 @@ class TypedCourseSearchBackend(filters.SearchFilter):
 
 
 class TypedSectionSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4})?\s*-?(\d{1,4})?$")
+    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4}|[A-Z]{1,4})?\s*-?(\d{1,4})?$")
 
     def get_search_terms(self, request):
         query = request.query_params.get(self.search_param, "").strip()
