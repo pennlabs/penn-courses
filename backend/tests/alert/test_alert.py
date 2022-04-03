@@ -56,8 +56,8 @@ def override_delay(modules_names, before_func, before_kwargs):
     (RTFM) before using to prevent unintended behavior or errors.
     See AlertRegistrationTestCase.simulate_alert for an example of how to use this function
 
-    :param modules_names: a list of 2-tuples of the form (module, name) where module is the module in
-        which the delay()ed function is located and name is its name.  Note that each 2-tuple
+    :param modules_names: a list of 2-tuples of the form (module, name) where module is the module
+        in which the delay()ed function is located and name is its name.  Note that each 2-tuple
         corresponds to exactly one delay()ed function.
         Make sure to order the delayed functions' 2-tuples in the
         modules_names list in the order that they will be executed.

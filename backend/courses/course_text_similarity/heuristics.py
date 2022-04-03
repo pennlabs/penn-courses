@@ -57,7 +57,7 @@ def description_heuristics(desc_a, desc_b):
     if desc_a == "" or desc_b == "":
         return True
     # Case 1
-    topics_vary_regex = re.compile("topics .{0,50} vary")
+    topics_vary_regex = re.compile("topics .{0,50}vary")
     # Case 2
     exclude_strings = [
         "department website for a current course description",
