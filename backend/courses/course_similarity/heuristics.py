@@ -13,16 +13,8 @@ from courses.util import in_dev
 
 if in_dev():
     nltk.download("punkt")
-
-    model_path = os.path.join(settings.BASE_DIR, "courses", "course_similarity", "all-MiniLM-L6-v2")
-    try:
-        embedder = SentenceTransformer(model_path)
-    except FileNotFoundError:
-        embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-        embedder.save(model_path)
-
-
 SENT_TOKENIZER = nltk.data.load("nltk:tokenizers/punkt/english.pickle")
+embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 
 def title_rejection_heuristics(title_a, title_b):

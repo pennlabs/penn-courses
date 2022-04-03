@@ -13,7 +13,6 @@ yarn-error.log*
 frontend/*/build/
 frontend/*/.next
 backend/PennCourses/settings/static/
-backend/courses/course_similarity/all-MiniLM-L6-v2
 *.sqlite3
 *-test.json
 celerybeat-schedule
