@@ -4,6 +4,7 @@ import { GridItem } from "pcx-shared-components/src/common/layout";
 import { P } from "../common/common";
 import { ActionButton } from "./ActionButton";
 import { AlertAction, AlertRepeat, SectionStatus } from "../../types";
+import ToggleSwitch from "../common/ToggleSwitch"
 
 const StatusInd = styled.div<{ background: string }>`
     border-radius: 1rem;
@@ -100,18 +101,15 @@ export const AlertItem = ({
                 <StatusInd background={statuscolor} />
                 <P size="0.7rem">{statustext}</P>
             </StatusGridItem>
-            <GridItem column={5} row={rownum} border valign>
-                <P size="0.7rem" color={alertcolor}>
-                    {alerttext}
-                </P>
+            <GridItem border column={5} row={rownum} valign>
+                <ActionButton type={actions} onClick={actionButtonHandler} />
             </GridItem>
             <GridItem border column={6} row={rownum} valign>
-                <ActionButton type={actions} onClick={actionButtonHandler} />
+                <ToggleSwitch />
             </GridItem>
             {/* <GridItem border column={7} row={rownum} valign>
                 <ActionButton type={actions} onClick={actionButtonHandler} />
             </GridItem> */}
-            
         </>
     );
 };

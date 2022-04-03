@@ -9,7 +9,7 @@ import { Alert, AlertAction, TAlertSel } from "../../types";
 
 const Container = styled.div`
     background: #ffffff;
-    width: 85%;
+    width: 80%;
     max-width: 80rem;
     box-shadow: 0 0.1rem 0.2rem 0 rgba(0, 0, 0, 0.08);
     flex-grow: 1;
@@ -27,23 +27,6 @@ const TitleText = styled.p`
         font-size: 0.75rem;
     }
 `;
-
-// const Grid = styled.div`
-//     display: grid;
-//     grid-template-columns: 1fr 2.75fr 2fr 2fr 2.5fr 1.75fr 2fr;
-//     grid-template-rows: 1.5rem;
-//     grid-auto-rows: 3rem;
-
-//     ${maxWidth(PHONE)} {
-//         grid-template-columns: 0fr 0fr 2fr 2fr 2.5fr 1.75fr 2fr;
-//         & > div:nth-child(7n + 1) {
-//             display: none;
-//         }
-//         & > div:nth-child(7n + 2) {
-//             display: none;
-//         }
-//     }
-// `;
 
 const Grid = styled.div`
     display: grid;

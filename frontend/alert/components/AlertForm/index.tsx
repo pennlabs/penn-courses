@@ -32,11 +32,6 @@ const SubmitButton = styled.button`
     }
 `;
 
-const AlertText = styled.div`
-    padding-top: 1rem;
-    color: #555555;
-`;
-
 const ClosedText = styled.div`
     padding-top: 0.5rem;
     color: #555555;
@@ -203,10 +198,10 @@ const AlertForm = ({
         // if user has a auto fill section and didn't change the input value then register for section
         // and support user manually entered a course (without checking checkbox)
 
-        const postRegistration = (section_id: string) => 
+        const postRegistration = (section_id: string) =>
             doAPIRequest("/api/alert/registrations/", "POST", {
                 section: section_id,
-                auto_resubscribe: autoResub === "true",
+                auto_resubscribe: true,
                 close_notification: email !== "" && closedNotif,
             });
 
@@ -254,10 +249,10 @@ const AlertForm = ({
     };
 
     const onSubmit = () => {
-        if (phone.length === 0 && email.length === 0) {
+        if (email.length === 0) {
             sendError(
                 400,
-                "Please add at least one contact method (either email or phone number)."
+                "Please enter your email address for alert purposes."
             );
             return;
         }
@@ -305,7 +300,7 @@ const AlertForm = ({
                 onChange={(e) => setEmail(e.target.value)}
             />
             <Input
-                placeholder="Phone"
+                placeholder="Phone (optional)"
                 value={phone}
                 onChange={(e) => {
                     setPhone(e.target.value);
@@ -313,32 +308,18 @@ const AlertForm = ({
                 }}
             />
             <Center>
-                <AlertText>
-                    Alert me
-                    <RadioSet
-                        options={[
-                            { label: "once", value: "false" },
-                            { label: "until I cancel", value: "true" },
-                        ]}
-                        setSelected={setAutoResub}
-                        selected={autoResub}
+                <ClosedText>
+                    Closed Notification
+                    <InfoTool text={text} />
+                    <Input
+                        type="checkbox"
+                        checked={closedNotif}
+                        onChange={(e) => {
+                            setClosedNotif(e.target.checked);
+                        }}
+                        style={spacer.container}
                     />
-                </AlertText>
-
-                {email !== "" && (
-                    <ClosedText>
-                        Closed Notification
-                        <InfoTool text={text} />
-                        <Input
-                            type="checkbox"
-                            checked={closedNotif}
-                            onChange={(e) => {
-                                setClosedNotif(e.target.checked);
-                            }}
-                            style={spacer.container}
-                        />
-                    </ClosedText>
-                )}
+                </ClosedText>
 
                 <SubmitButton
                     onClick={(e) => {

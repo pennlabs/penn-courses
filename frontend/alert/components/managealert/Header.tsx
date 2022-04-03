@@ -51,8 +51,8 @@ const Header = ({
         "LAST NOTIFIED",
         "COURSE ID",
         "STATUS",
-        "REPEAT",
-        "ACTIONS"
+        "SUBSCRIPTION",
+        "NOTIFY WHEN CLOSED"
     ];
     return (
         <>
