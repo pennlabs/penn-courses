@@ -19,7 +19,6 @@ const chartColorMap = {
 };
 
 const generateChartData = (courses, isCourseEval) => {
-  console.log(courses);
   return {
     labels: Object.values(courses).map(({ original: { code } }) => code),
     datasets: DEFAULT_COLUMNS.map(column => ({
