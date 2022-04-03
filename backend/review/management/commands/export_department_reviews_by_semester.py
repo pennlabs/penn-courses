@@ -10,9 +10,10 @@ from courses.models import Department
 from PennCourses.settings.base import S3_resource
 from review.annotations import review_averages
 from review.models import ALL_FIELD_SLUGS, Review
+from review.views import reviewbit_filters_pcr, section_filters_pcr
 
 
-def average_by_dept(fields, semesters, departments=None, path=None, verbose=False):
+def average_by_dept(fields, semesters, departments=None, verbose=False):
     """
     For each department and year, compute the average of given fields
     (see `alert.models.ReviewBit` for an enumeration of fields) across all (valid) sections.
@@ -30,10 +31,16 @@ def average_by_dept(fields, semesters, departments=None, path=None, verbose=Fals
         semester_dept_avgs = review_averages(
             depts_qs,
             fields=fields,
-            subfilters={
-                "review__section__course__semester": semester,
-                "review__section__course__department_id": OuterRef("id"),
-            },
+            reviewbit_subfilters=(
+                reviewbit_filters_pcr
+                & Q(review__section__course__semester=semester)
+                & Q(review__section__course__department_id=OuterRef("id"))
+            ),
+            section_subfilters=(
+                section_filters_pcr
+                & Q(course__semester=semester)
+                & Q(course__department_id=OuterRef("id"))
+            ),
             extra_metrics=False,
         ).values("code", *fields)
 

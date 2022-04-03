@@ -1,10 +1,9 @@
+import React from "react";
 import reactStringReplace from "react-string-replace";
 import { Link } from "react-router-dom";
 
 import { CourseDetails, Popover, PopoverTitle } from "../common";
-import {
-  toNormalizedSemester
-} from "../../utils/helpers";
+import { toNormalizedSemester } from "../../utils/helpers";
 
 const activityMap = {
   REC: "Recitation",
@@ -303,7 +302,7 @@ export const CourseHeader = ({
 export const CourseDescription = ({ description }) => {
   const content = reactStringReplace(
     description,
-    /([A-Z]{2,4}[ -]\d{3})/g,
+    /([A-Z]{2,4}[ -]\d{3,4})/g,
     (m, i) => (
       <Link to={`/course/${m.replace(" ", "-")}`} key={m + i}>
         {m}

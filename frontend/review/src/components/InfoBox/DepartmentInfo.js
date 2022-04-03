@@ -24,11 +24,7 @@ const generateChartData = (courses, isCourseEval) => {
     datasets: DEFAULT_COLUMNS.map(column => ({
       label: getColumnName(column),
       data: Object.values(courses).map(
-        ({
-          original: {
-            [column]: { average = 0 }
-          }
-        }) => average
+        ({ original }) => original[column] && original[column].average
       ),
       backgroundColor: chartColorMap[column]
     }))

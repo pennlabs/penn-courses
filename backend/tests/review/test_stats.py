@@ -553,22 +553,22 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             ),
         }
 
-        self.assertRequestContainsAppx(
-            "course-plots",
-            ["ESE-120"],
-            self.course_plots_subdict,
-        )
-
         instructor_ids = ",".join(
             [str(id) for id in [Instructor.objects.get().pk]],
         )
         self.assertRequestContainsAppx(
-            "course-reviews",
-            "ESE-120",
-            {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
+            "course-plots",
+            ["ESE-120"],
+            self.course_plots_subdict,
             query_params={
                 "instructor_ids": instructor_ids,
             },
+        )
+
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "ESE-120",
+            {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
         )
 
     def test_instructor(self):
