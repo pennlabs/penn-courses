@@ -5,11 +5,9 @@ from django.db.models import (
     BooleanField,
     Case,
     F,
-    IntegerField,
     OuterRef,
     Q,
     Subquery,
-    Sum,
     Value,
     When,
 )
@@ -95,11 +93,7 @@ section_is_primary = Q(course__primary_listing__isnull=True) | Q(
 )
 section_filters_pcr = section_is_primary & (
     Q(review__isnull=False)
-    | (
-        (~Q(course__title="") | ~Q(course__description=""))
-        & ~Q(activity="REC")
-        & ~Q(status="X")
-    )
+    | ((~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X"))
 )
 
 review_filters_pcr = Q(section__course__primary_listing__isnull=True) | Q(
@@ -184,7 +178,7 @@ def course_reviews(request, course_code):
                     "instructors__id"
                 )
             )
-        ).distinct(),
+        ),
         match_review_on=Q(
             section__course__topic=topic,
             instructor_id=OuterRef(OuterRef("id")),
@@ -206,21 +200,10 @@ def course_reviews(request, course_code):
     )
     course = get_single_dict_from_qs(course_qs)
 
-    num_registration_metrics = (
-        Section.objects.filter(
-            extra_metrics_section_filters_pcr(),
-            course__topic=topic,
-        )
-        .annotate(
-            has_registration_metrics=Case(
-                When(extra_metrics_section_filters, then=Value(1)),
-                default=Value(0),
-                output_field=IntegerField(),
-            )
-        )
-        .aggregate(num=Sum("has_registration_metrics"))["num"]
-        or 0
-    )
+    num_registration_metrics = Section.objects.filter(
+        extra_metrics_section_filters_pcr(),
+        course__topic=topic,
+    ).count()
 
     num_sections, num_sections_recent = get_num_sections(
         section_filters_pcr,
