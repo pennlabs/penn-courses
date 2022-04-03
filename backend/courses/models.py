@@ -295,7 +295,7 @@ class Course(models.Model):
                     topic = Topic(most_recent=self.primary_listing or self)
                     topic.save()
                     self.topic = topic
-                super().save(*args, **kwargs)
+                super().save()
                 self.crosslistings.update(topic=self.topic)
 
 

@@ -418,27 +418,28 @@ def instructor_reviews(request, instructor_id):
         most_recent_full_code=F("topic__most_recent__full_code"),
     )
 
+    num_sections, num_sections_recent = get_num_sections(
+        section_filters_pcr,
+        course_id__in=Subquery(
+            Course.objects.filter(
+                course_filters_pcr,
+                sections__instructors__id=instructor_id,
+            ).values("id")
+        ),
+    )
+
+    # Return the most recent course taught by this instructor, for each topic
     courses_res = dict()
     max_sem = dict()
     for r in courses.values():
+        if not r["average_semester_count"]:
+            continue
         full_code = r["most_recent_full_code"]
         if full_code not in max_sem or max_sem[full_code] < r["semester"]:
             max_sem[full_code] = r["semester"]
             courses_res[full_code] = get_average_and_recent_dict_single(
                 r, full_code="most_recent_full_code", code="most_recent_full_code", name="title"
             )
-
-    course_ids_subquery = Subquery(
-        Course.objects.filter(
-            course_filters_pcr,
-            sections__instructors__id=instructor_id,
-        ).values("id")
-    )
-
-    num_sections, num_sections_recent = get_num_sections(
-        section_filters_pcr,
-        course_id__in=course_ids_subquery,
-    )
 
     return Response(
         {

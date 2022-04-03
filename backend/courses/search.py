@@ -2,11 +2,9 @@ import re
 
 from rest_framework import filters
 
-from courses.util import separate_course_code
-
 
 class TypedCourseSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]{1,8})\s*-?(\d{3,4})?$")
+    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4})?$")
 
     def infer_search_type(self, query):
         if self.code_re.match(query.strip()):
@@ -58,7 +56,14 @@ class TypedCourseSearchBackend(filters.SearchFilter):
 
 
 class TypedSectionSearchBackend(filters.SearchFilter):
+    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4})?\s*-?(\d{1,4})?$")
+
     def get_search_terms(self, request):
-        query = request.query_params.get(self.search_param, "")
-        components = separate_course_code(query, allow_partial=True)
-        return ["-".join([c for c in components if c])]
+        query = request.query_params.get(self.search_param, "").strip()
+
+        match = self.code_re.match(query)
+        if match:
+            components = (match.group(1).upper(), match.group(2), match.group(3))
+            return ["-".join([c for c in components if c])]
+
+        return [query]

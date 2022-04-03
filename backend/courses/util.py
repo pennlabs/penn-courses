@@ -132,7 +132,7 @@ def get_or_create_add_drop_period(semester):
     return add_drop
 
 
-section_code_re = re.compile(r"^([A-Za-z]{1,8})\s*-?(\d{3,4})?\s*-?(\d{1,16})?$")
+section_code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{3,4}|[A-Z]{3,4})?\s*-?(\d{3,4})?$")
 
 
 def separate_course_code(course_code, allow_partial=False):
