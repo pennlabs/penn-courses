@@ -142,19 +142,22 @@ def get_or_create_add_drop_period(semester):
     return add_drop
 
 
+section_code_re = re.compile(r"^([A-Za-z]+)\s*-?(\d{3,4}|[A-Z]{1,4})?\s*-?(\d+)?$")
+
+
 def separate_course_code(course_code):
-    """return (dept, course, section) ID tuple given a course code in any possible format"""
-    course_regexes = [
-        re.compile(r"([A-Za-z]+) *(\d{3,4}|[A-Z]{3})(\d{3})"),
-        re.compile(r"([A-Za-z]+) *-(\d{3,4}|[A-Z]{3})-(\d{3})"),
-    ]
-
-    course_code = course_code.replace(" ", "").upper()
-    for regex in course_regexes:
-        m = regex.match(course_code)
-        if m is not None:
-            return m.group(1), m.group(2), m.group(3)
-
+    """
+    Parse and return a (dept, course, section) ID tuple
+    given a section full_code in any possible format.
+    """
+    match = section_code_re.match(course_code)
+    if match:
+        dept = match.group(1).upper()
+        if match.group(2) is not None:
+            course = match.group(2)
+            section = match.group(3)
+            if section is not None:
+                return (dept, course, section)
     raise ValueError(f"Course code could not be parsed: {course_code}")
 
 

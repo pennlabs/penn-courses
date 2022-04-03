@@ -1,13 +1,14 @@
 import re
 
 from rest_framework import filters
+from courses.util import separate_course_code
 
 
 class TypedCourseSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]{1,4})?[ |-]?(\d{1,5})?$")
+    code_re = re.compile(r"^([A-Za-z]+)\s*-?(\d{3,4}|[A-Z]{1,4})$")
 
     def infer_search_type(self, query):
-        if self.code_re.match(query):
+        if self.code_re.match(query.strip()):
             return "course"
         else:
             return "keyword"
@@ -32,7 +33,7 @@ class TypedCourseSearchBackend(filters.SearchFilter):
         search_type = self.get_search_type(request)
         query = request.query_params.get(self.search_param, "")
 
-        match = self.code_re.match(query)
+        match = self.code_re.match(query.strip())
         # If this is a course query, either by designation or by detection,
         if (
             (
@@ -65,12 +66,4 @@ class TypedSectionSearchBackend(filters.SearchFilter):
 
     def get_search_terms(self, request):
         query = request.query_params.get(self.search_param, "")
-
-        match = self.code_re.match(query)
-        if match:
-            query = match.group(1).upper()
-            if match.group(2) is not None:
-                query = query + f"-{match.group(2).upper()}"
-                if match.group(3) is not None:
-                    query = query + f"-{match.group(3)}"
-        return [query]
+        return ["-".join(separate_course_code(query.strip()))]
