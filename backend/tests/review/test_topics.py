@@ -134,8 +134,8 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
             ["CIS-471", Instructor.objects.get(name=self.instructor_name).pk],
             {
                 "sections": [
-                    {"course_code": "CIS-471", "activity": "LEC", **rating(4)},
-                    {"course_code": "CIS-371", "activity": "LEC", **rating(2)},
+                    {"course_code": "CIS-471", "activity": "Lecture", **rating(4)},
+                    {"course_code": "CIS-371", "activity": "Lecture", **rating(2)},
                 ]
             },
         )
@@ -255,12 +255,17 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
                 "sections": [
                     {
                         "course_code": "CIS-471",
-                        "activity": "LEC",
+                        "activity": "Lecture",
                         "semester": TEST_SEMESTER,
                         "forms_returned": None,
                         "forms_produced": None,
                     },
-                    {"course_code": "CIS-371", "semester": "2012A", "activity": "LEC", **rating(2)},
+                    {
+                        "course_code": "CIS-371",
+                        "semester": "2012A",
+                        "activity": "Lecture",
+                        **rating(2),
+                    },
                 ]
             },
         )
@@ -271,12 +276,17 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
                 "sections": [
                     {
                         "course_code": "CIS-471",
-                        "activity": "LEC",
+                        "activity": "Lecture",
                         "semester": TEST_SEMESTER,
                         "forms_returned": None,
                         "forms_produced": None,
                     },
-                    {"course_code": "CIS-371", "semester": "2012A", "activity": "LEC", **rating(2)},
+                    {
+                        "course_code": "CIS-371",
+                        "semester": "2012A",
+                        "activity": "Lecture",
+                        **rating(2),
+                    },
                 ]
             },
         )
@@ -412,8 +422,8 @@ class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTest
             ["CIS-471", self.instructor1_pk],
             {
                 "sections": [
-                    {"course_code": "CIS-471", "activity": "LEC", **rating(4)},
-                    {"course_code": "CIS-371", "activity": "LEC", **rating(2)},
+                    {"course_code": "CIS-471", "activity": "Lecture", **rating(4)},
+                    {"course_code": "CIS-371", "activity": "Lecture", **rating(2)},
                 ]
             },
         )
@@ -422,8 +432,8 @@ class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTest
             ["CIS-471", self.instructor2_pk],
             {
                 "sections": [
-                    {"course_code": "CIS-471", "activity": "LEC", **rating(2)},
-                    {"course_code": "CIS-371", "activity": "LEC", **rating(1)},
+                    {"course_code": "CIS-471", "activity": "Lecture", **rating(2)},
+                    {"course_code": "CIS-371", "activity": "Lecture", **rating(1)},
                 ]
             },
         )

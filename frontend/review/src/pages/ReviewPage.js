@@ -108,7 +108,7 @@ export class ReviewPage extends Component {
     if (type && code) {
       apiReviewData(type, code)
         .then(data => {
-          const { error, detail, name } = data;
+          const { error, detail } = data;
           if (error) {
             this.setState({
               error,

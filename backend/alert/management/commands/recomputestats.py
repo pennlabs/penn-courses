@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Count, F, OuterRef, Subquery, Value
+from django.db.models import Count, F, Max, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from tqdm import tqdm
@@ -22,7 +22,7 @@ from courses.management.commands.load_add_drop_dates import (
     fill_in_add_drop_periods,
     load_add_drop_dates,
 )
-from courses.models import Course, Meeting, StatusUpdate
+from courses.models import Course, Meeting, StatusUpdate, Topic
 from courses.util import (
     get_current_semester,
     get_or_create_add_drop_period,
@@ -547,8 +547,36 @@ def delete_cancelled_sections_empty_courses():
     Deletes cancelled sections and courses without sections from before the current semester.
     """
     current_semester = get_current_semester()
-    Section.objects.filter(course__semester__lt=current_semester, status="X", review=None).delete()
-    Course.objects.filter(semester__lt=current_semester, sections=None).delete()
+    with transaction.atomic():
+        Section.objects.filter(
+            course__semester__lt=current_semester, status="X", review=None
+        ).delete()
+        Topic.objects.filter(
+            ~Q(id__in=Subquery(Topic.objects.filter(courses__sections__isnull=False).values("id")))
+        ).delete()
+        Topic.objects.filter(
+            ~Q(
+                id__in=Subquery(
+                    Topic.objects.filter(most_recent__sections__isnull=False).values("id")
+                )
+            )
+        ).update(
+            most_recent_id=Subquery(
+                Course.objects.filter(
+                    Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
+                    topic_id=OuterRef("id"),
+                    sections__isnull=False,
+                    semester=Subquery(
+                        Course.objects.filter(topic=OuterRef("topic"), sections__isnull=False)
+                        .annotate(common=Value(1))
+                        .values("common")
+                        .annotate(max_sem=Max("semester"))
+                        .values("max_sem")
+                    ),
+                ).values("id")[:1]
+            )
+        )
+        Course.objects.filter(semester__lt=current_semester, sections=None).delete()
 
 
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):

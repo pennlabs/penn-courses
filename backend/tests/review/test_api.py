@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.models import Instructor, Restriction, Section, StatusUpdate
+from review.models import Review
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
 
@@ -193,6 +194,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             {"instructor_quality": 0},
             responses=0,
         )
+        Review.objects.all().update(enrollment=100)
         self.instructor_nores_pk = Instructor.objects.get(name="No Responses Instructor").pk
 
     def test_course(self):
@@ -243,9 +245,9 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                     {
                         "course_code": "CIS-120",
                         "semester": "2007C",
-                        "forms_returned": None,
-                        "forms_produced": None,
-                    }
+                        "forms_returned": 0,
+                        "forms_produced": 100,
+                    },
                 ]
             },
         )

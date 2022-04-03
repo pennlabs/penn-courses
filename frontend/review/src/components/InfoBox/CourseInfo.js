@@ -1,14 +1,9 @@
-import React, { useMemo } from "react";
+import React from "react";
 import reactStringReplace from "react-string-replace";
 import { Link } from "react-router-dom";
 
 import { CourseDetails, Popover, PopoverTitle } from "../common";
-import {
-  convertInstructorName,
-  convertSemesterToInt,
-  toNormalizedSemester
-} from "../../utils/helpers";
-import { act } from "react-dom/test-utils";
+import { toNormalizedSemester } from "../../utils/helpers";
 
 const getSyllabusData = courses =>
   Object.values(courses)

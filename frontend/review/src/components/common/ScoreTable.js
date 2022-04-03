@@ -2,22 +2,6 @@ import React, { useEffect, useState } from "react";
 import { PERCENTAGE_COLUMNS } from "../../constants/values";
 import ReactTable from "react-table";
 import ReactTooltip from "react-tooltip";
-import ReactDOMServer from "react-dom/server";
-
-function testComponent(props) {
-  const { style, className, children, html } = props;
-
-  if (html) {
-    return `<span style='${style}' class='${className}'>${children ||
-      ""}</span>`;
-  }
-
-  return (
-    <span style="${style}" class="${className}">
-      ${children || ""}
-    </span>
-  );
-}
 
 export const ScoreTable = props => {
   const {
@@ -101,17 +85,16 @@ export const ScoreTable = props => {
   });
 
   columns.forEach(col => {
-    col.width = 175;
     if (col.Header === "Final Enrollment") {
       col.Header = (
         <>
           Final Enrollment{" "}
-          <a data-tip data-for="final-enrollment">
+          <span data-tip data-for="final-enrollment">
             <i
               className="fa fa-question-circle"
               style={{ color: "#c6c6c6", fontSize: "13px" }}
             />
-          </a>
+          </span>
           <ReactTooltip
             id="final-enrollment"
             className="opaque"
@@ -218,7 +201,7 @@ export const ScoreTable = props => {
         className="mb-2"
         {...props}
         showPagination={false}
-        resizable={false}
+        resizable={true}
         style={{ maxHeight: 400 }}
         getTrProps={getTrProps}
         minRows={0}

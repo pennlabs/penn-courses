@@ -22,11 +22,6 @@ const NewLabel = styled.div`
   justify-self: start;
 `;
 
-const ButtonContainer = styled.div`
-  width: 100%;
-  margin-top: 5px;
-`;
-
 const StatsToggleContainer = styled.div`
   display: flex;
   justify-content: start;

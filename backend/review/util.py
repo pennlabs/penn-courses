@@ -1,9 +1,11 @@
 import re
+from collections import defaultdict
 from math import isclose
 
 import scipy.stats as stats
-from django.db.models import F
+from django.db.models import Count, F
 
+from courses.models import Section
 from PennCourses.settings.base import (
     PCA_REGISTRATIONS_RECORDED_SINCE,
     STATUS_UPDATES_RECORDED_SINCE,
@@ -118,6 +120,31 @@ def get_historical_codes(topic, exclude_codes):
         }
 
     return sorted(list(historical_codes.values()), key=lambda c: c["semester"], reverse=True)
+
+
+def get_num_sections(*args, **kwargs):
+    """
+    Returns num_sections, num_sections_recent
+    Sections are filtered by the given args and kwargs.
+    """
+    num_sections_by_semester = (
+        Section.objects.filter(
+            *args,
+            **kwargs,
+        )
+        .values("course__semester")
+        .annotate(num_sections=Count("id", distinct=True))
+        .values_list("course__semester", "num_sections")
+    )
+    num_sections = 0
+    max_sem = None
+    num_sections_recent = 0
+    for semester, num in num_sections_by_semester:
+        num_sections += num
+        if not max_sem or max_sem < semester:
+            max_sem = semester
+            num_sections_recent = num
+    return num_sections, num_sections_recent
 
 
 def average_given_plots(plots_dict, bin_size=0.000001):
@@ -242,33 +269,27 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
     # add_drop_periods_map: maps semester to that semester's add drop period object
     for adp in add_drop_periods:
         add_drop_periods_map[adp.semester] = adp
+
     demand_distribution_estimates = PcaDemandDistributionEstimate.objects.filter(
         semester__in=section_map.keys(), in_add_drop_period=True
     ).select_related("highest_demand_section", "lowest_demand_section")
-    demand_distribution_estimates_map = dict()
+    demand_distribution_estimates_map = defaultdict(list)
     # demand_distribution_estimates_map: maps semester
     # to a list of the demand distribution_estimates from that semester
     for ext in demand_distribution_estimates:
-        if ext.semester not in demand_distribution_estimates_map:
-            demand_distribution_estimates_map[ext.semester] = []
         demand_distribution_estimates_map[ext.semester].append(ext)
-    registrations_map = dict()
+
+    registrations_map = defaultdict(lambda: defaultdict(list))
     # registrations_map: maps semester to section id to a list of registrations from that section
-    for semester in section_map.keys():
-        registrations_map[semester] = dict()
-        for section_id in section_map[semester].keys():
-            registrations_map[semester][section_id] = []
     section_id_to_semester = {
-        section_id: semester
-        for semester in section_map.keys()
-        for section_id in section_map[semester].keys()
+        section_id: semester for semester in section_map for section_id in section_map[semester]
     }
     registrations = Registration.objects.filter(section_id__in=section_id_to_semester.keys())
     for registration in registrations:
         semester = section_id_to_semester[registration.section_id]
         registrations_map[semester][registration.section_id].append(registration)
 
-    demand_plots_map = dict()
+    demand_plots_map = defaultdict(dict)
     # demand_plots_map: maps semester to section id to the demand plot of that section
 
     # Now that all database work has been completed, let's iterate through
@@ -276,7 +297,6 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
     for semester in section_map.keys():
         if semester < PCA_REGISTRATIONS_RECORDED_SINCE:
             continue
-        demand_plots_map[semester] = dict()
         add_drop_period = add_drop_periods_map[semester]
         if semester not in demand_distribution_estimates_map:
             continue
@@ -381,6 +401,8 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                 else:
                     csrdv_frac_zero = latest_raw_demand_distribution_estimate["csrdv_frac_zero"]
                     raw_demand = registration_volume / section.capacity
+                    if csrdv_frac_zero is None:
+                        csrdv_frac_zero = int(raw_demand <= 0)
                     if raw_demand <= 0:
                         rel_demand = csrdv_frac_zero / 2
                     else:

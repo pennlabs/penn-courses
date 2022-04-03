@@ -1,8 +1,10 @@
-from courses.models import Section, string_dict_to_html
 from PennCourses.docs_settings import reverse_func
 from review.models import REVIEW_BIT_LABEL
 from review.util import to_r_camel
+from courses.models import Section
 
+ACTIVITY_CHOICES = dict(Section.ACTIVITY_CHOICES)
+ACTIVITY_CHOICES["***"] = None
 
 # Unless you are looking to modify documentation, it is probably easier to view this
 # documentation at localhost:8000/api/documentation/ in the PCR section, rather than
@@ -525,8 +527,7 @@ instructor_for_course_reviews_response_schema = {
                                 },
                                 "activity": {
                                     "type": "string",
-                                    "description": "The activity of the section. Options and meanings:\n"  # noqa E501
-                                    + string_dict_to_html(dict(Section.ACTIVITY_CHOICES)),
+                                    "description": f"The activity of the section. Options: `{str(list(dict(ACTIVITY_CHOICES).values()))}`",  # noqa E501
                                 },
                                 "semester": {
                                     "type": "string",
