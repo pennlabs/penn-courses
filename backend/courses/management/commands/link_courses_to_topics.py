@@ -72,7 +72,7 @@ def link_courses_to_topics(semester, guaranteed_links=None, verbose=False, ignor
     """
     guaranteed_links = guaranteed_links or dict()
     topics = get_topics_and_courses(semester)
-    full_code_to_topic = {c.full_code: t for t, c in topics}
+    full_code_to_topic = {c.full_code: t for t, c in topics if c.full_code}
     for course in tqdm(
         Course.objects.filter(
             Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
@@ -81,12 +81,9 @@ def link_courses_to_topics(semester, guaranteed_links=None, verbose=False, ignor
         ).select_related("primary_listing"),
         disable=(not verbose),
     ):
-        if course.full_code in guaranteed_links:
-            old_full_code = guaranteed_links[course.full_code]
-            if old_full_code in full_code_to_topic:
-                full_code_to_topic[old_full_code].add_course(course)
-            else:
-                Topic.from_course(course)
+        old_full_code = guaranteed_links.get(course.full_code)
+        if old_full_code in full_code_to_topic:
+            full_code_to_topic[old_full_code].add_course(course)
         else:
             link_course_to_topics(
                 course, topics=topics, verbose=verbose, ignore_inexact=ignore_inexact
