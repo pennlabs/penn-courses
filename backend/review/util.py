@@ -66,9 +66,9 @@ def get_average_and_recent_dict(values_dict, extra_fields=None, **extra_fields_c
     previously annotated by `annotate_average_and_recent`.
     Returns a dict with keys `["average_reviews", "recent_reviews",
     "num_semesters", "latest_semester"] + extra_fields` (these keys are documented in
-    the PCR API docs). You can specify any extra list of extra_fields, as long as those
-    keys show up in values_dict. You can also specify extra fields as kwargs of the form
-    `new_key=old_key`. The resulting dict will have entries of the form
+    the PCR API docs). You can specify any extra keys to include using the `extra_fields` list,
+    as long as those keys show up in `values_dict`. You can also specify extra keys to include
+    using kwargs of the form `new_key=old_key`. The resulting dict will have entries of the form
     `new_key: values_dict[old_key]`.
     """
     values_dict = dict(values_dict)
@@ -85,7 +85,7 @@ def get_average_and_recent_dict(values_dict, extra_fields=None, **extra_fields_c
 
 def get_average_and_recent_dict_list(values, key, extra_fields=None):
     """
-    Convenience function for mapping `get_average_and_recent_dict` over a .values() list,
+    Convenience function for mapping `get_average_and_recent_dict` over a `.values()` list,
     grouping by a key field.
     """
     return {
