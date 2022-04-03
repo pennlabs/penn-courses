@@ -10,29 +10,36 @@ from courses.util import translate_semester
 logger = logging.getLogger(__name__)
 
 
-def get_headers(primary=True):
-    """This will have a rotation of API keys eventually"""
+def get_token():
+    response = requests.post(
+        settings.OPEN_DATA_TOKEN_URL,
+        data={"grant_type": "client_credentials"},
+        auth=(settings.OPEN_DATA_CLIENT_ID, settings.OPEN_DATA_OIDC_SECRET),
+    )
+    if not response.ok:
+        raise ValueError(
+            "OpenData token URL responded with status code "
+            f"{response.status_code}: {response.json()}"
+        )
+    return response.json()["access_token"]
+
+
+def get_headers():
     return {
         "Content-Type": "application/json; charset=utf-8",
-        "Authorization-Bearer": settings.API_KEY if primary else settings.API_KEY_SECONDARY,
-        "Authorization-Token": settings.API_SECRET if primary else settings.API_SECRET_SECONDARY,
+        "Authorization-Bearer": get_token(),
     }
 
 
 def make_api_request(params, headers):
     if headers is None:
         headers = get_headers()
-
     r = requests.get(
         "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search",
         params=params,
         headers=headers,
     )
-
-    if r.status_code == requests.codes.ok:
-        return r.json(), None
-    else:
-        return None, r.text
+    return (r.json(), None) if r.ok else (None, r.text)
 
 
 def report_api_error(err):

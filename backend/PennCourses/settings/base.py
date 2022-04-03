@@ -160,7 +160,10 @@ PLATFORM_ACCOUNTS = {
 
 # Penn OpenData API
 OPEN_DATA_CLIENT_ID = os.environ.get("OPEN_DATA_CLIENT_ID", "")
-API_SECRET = os.environ.get("API_SECRET", "")
+OPEN_DATA_OIDC_SECRET = os.environ.get("OPEN_DATA_OIDC_SECRET", "")
+OPEN_DATA_TOKEN_URL = (
+    "https://sso.apps.k8s.upenn.edu/auth/realms/master/protocol/openid-connect/token"
+)
 
 # Penn OpenData Course Status Webhook Auth
 WEBHOOK_USERNAME = os.environ.get("WEBHOOK_USERNAME", "webhook")
