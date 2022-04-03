@@ -1,6 +1,7 @@
 import re
 
 from rest_framework import filters
+
 from courses.util import separate_course_code
 
 
