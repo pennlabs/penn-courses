@@ -124,12 +124,16 @@ def should_link_courses(course_a, course_b, verbose=True, ignore_inexact=False):
     elif (course_a.code < "5000") != (course_b.code < "5000"):
         return ShouldLinkCoursesResponse.NO
     elif (not ignore_inexact) and similar_courses(course_a, course_b):
-        if verbose and prompt_for_link(course_a, course_b):
-            return ShouldLinkCoursesResponse.DEFINITELY
-        if not verbose:
+        if verbose:
+            return (
+                ShouldLinkCoursesResponse.DEFINITELY
+                if prompt_for_link(course_a, course_b)
+                else ShouldLinkCoursesResponse.NO
+            )
+        else:
             # Log possible link
             logging.info(f"Found possible link between {course_a} and {course_b}")
-        return ShouldLinkCoursesResponse.MAYBE
+            return ShouldLinkCoursesResponse.MAYBE
     return ShouldLinkCoursesResponse.NO
 
 
