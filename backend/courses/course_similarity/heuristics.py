@@ -83,7 +83,7 @@ def description_rejection_heuristics(desc_a, desc_b):
         return True
 
     # Case 1
-    topics_vary_regex = re.compile("topics .{0,50}vary")
+    topics_vary_regex = re.compile("topics\s*.*vary")
 
     # Case 2
     exclude_strings = [
@@ -95,7 +95,7 @@ def description_rejection_heuristics(desc_a, desc_b):
         if exclude_string in desc_a or exclude_string in desc_b:
             return True
     for regex in [topics_vary_regex]:
-        if re.match(regex, desc_a) or re.match(regex, desc_b):
+        if regex.search(desc_a) or regex.search(regex, desc_b):
             return True
 
     return False
