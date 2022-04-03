@@ -6,25 +6,16 @@ import styled from "styled-components";
 import { CourseDetails, Popover, PopoverTitle } from "../common";
 import { toNormalizedSemester } from "../../utils/helpers";
 
-// font-family: 'Lato';
-//     font-style: normal;
-//     font-weight: 400;
-//     font-size: 15px;
-//     line-height: 97.19%;
-
-const Branched = styled.div`
-    display: flex;
-    flex-direction: row;
-    
-    color: #007BFF;
-`;
-
 const Historical = styled.div`
-    display: flex;
-    flex-direction: row;
-    
-    color: #B2B2B2;
+  display: flex;
+  flex-direction: row;
+  color: black;
 `;
+
+// let obj1 = { full_code: "CIS-370", branched_from: false, semester: "2020A" };
+// let obj2 = { full_code: "CIS-371", branched_from: true, semester: "2020A" };
+
+// let arr = [obj1, obj2];
 
 const getSyllabusData = (courses) =>
   Object.values(courses)
@@ -344,30 +335,28 @@ export const CourseHeader = ({
         ])}
       </div>
     )}
-    {data.branched_from && Boolean(data.branched_from.length) && (
-      <Branched>
-        Branched From:&nbsp;
-        {data.branched_from.map((code, i) => {
-          return (
-            <div className="branched-from">
-              <Link to={`/course/${code}`}>{code}</Link>
-              {i < data.branched_from.length - 1 && <> &#60;&nbsp;</>}
-            </div>
-          );
-        })}
-      </Branched>
-    )}
+    {/* {data.historical_codes && Boolean(data.historical_codes.length) && (
+      <Historical>
+        Previously:&nbsp;
+        {arr.map((obj, i) => [i > 0 && <div>&#44;&nbsp;</div>, obj.branched_from ? (
+                <Link to={`/course/${obj.full_code}`}>{obj.full_code} </Link>
+              ) : (
+                <div>{obj.full_code}</div>
+              )]
+          )
+        }
+      </Historical>
+    )} */}
     {data.historical_codes && Boolean(data.historical_codes.length) && (
       <Historical>
         Previously:&nbsp;
-        {data.historical_codes.map((code, i) => {
-          return (
-            <div className="historical-list">
-              {code}
-              {i < data.historical_codes.length - 1 && <> &#60;&nbsp;</>}
-            </div>
-          );
-        })}
+        {data.historical_codes.map((obj, i) => [i > 0 && <div>&#44;&nbsp;</div>, obj.branched_from ? (
+                <Link to={`/course/${obj.full_code}`}>{obj.full_code} </Link>
+              ) : (
+                <div>{obj.full_code}</div>
+              )]
+          )
+        }
       </Historical>
     )}
     <p className="subtitle">{name}</p>
