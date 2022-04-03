@@ -16,11 +16,19 @@ from tqdm import tqdm
 
 from courses.course_text_similarity.heuristics import description_heuristics, title_heuristics
 from courses.models import Topic
+from courses.util import in_dev
 
 
-MODEL = SentenceTransformer(
-    os.path.join(settings.BASE_DIR, "courses", "course_text_similarity", "all-MiniLM-L6-v2")
-)
+if in_dev():
+    model_path = os.path.join(
+        settings.BASE_DIR, "courses", "course_text_similarity", "all-MiniLM-L6-v2"
+    )
+    try:
+        embedder = SentenceTransformer(model_path)
+    except FileNotFoundError:
+        embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        embedder.save(model_path)
+
 SENT_TOKENIZER = nltk.data.load(
     "file:" + os.path.join(settings.BASE_DIR, "courses", "course_text_similarity", "english.pickle")
 )
@@ -139,8 +147,8 @@ def semantic_similarity(string_a, string_b):
     """
     sentences_a = SENT_TOKENIZER.tokenize(string_a)
     sentences_b = SENT_TOKENIZER.tokenize(string_b)
-    emb_a = MODEL.encode(sentences_a, convert_to_tensor=True)
-    emb_b = MODEL.encode(sentences_b, convert_to_tensor=True)
+    emb_a = embedder.encode(sentences_a, convert_to_tensor=True)
+    emb_b = embedder.encode(sentences_b, convert_to_tensor=True)
     cosine_scores = util.cos_sim(emb_a, emb_b)
     nrows, ncols = cosine_scores.shape
     # compute tr/len(diag) for maximal length diagonals
