@@ -90,22 +90,42 @@ class Department(models.Model):
 
 
 def sections_with_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+    # get all the reviews for instructors in the Section.instructors many-to-many
+    instructors_subquery = Subquery(
+        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id").order_by()
+    )
+
     return review_averages(
         queryset,
-        {
-            "review__section__course__topic": OuterRef("course__topic"),
-            # get all the reviews for instructors in the Section.instructors many-to-many
-            "review__instructor__in": Subquery(
-                Instructor.objects.filter(section=OuterRef(OuterRef("id"))).values("id").order_by()
-            ),
-        },
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr
+            & Q(review__section__course__topic=OuterRef("course__topic"))
+            & Q(review__instructor__in=instructors_subquery)
+        ),
+        section_subfilters=(
+            section_filters_pcr
+            & Q(course__topic=OuterRef("course__topic"))
+            & Q(instructors__in=instructors_subquery)
+        ),
         extra_metrics=False,
     ).order_by("code")
 
 
 def course_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+
     return review_averages(
-        queryset, {"review__section__course__topic": OuterRef("topic")}, extra_metrics=False
+        queryset,
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr & Q(review__section__course__topic=OuterRef("topic"))
+        ),
+        section_subfilters=(section_filters_pcr & Q(course__topic=OuterRef("topic"))),
+        extra_metrics=False,
     )
 
 
@@ -221,6 +241,13 @@ class Course(models.Model):
 
     def full_str(self):
         return f"{self.full_code} ({self.semester}): {self.title}\n{self.description}"
+
+    @property
+    def is_primary(self):
+        """
+        Returns True iff this is the primary course among its crosslistings.
+        """
+        return self.primary_listing is None or self.primary_listing.id == self.id
 
     @property
     def crosslistings(self):

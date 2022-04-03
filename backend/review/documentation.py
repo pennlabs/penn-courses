@@ -1,7 +1,11 @@
+from courses.models import Section
 from PennCourses.docs_settings import reverse_func
 from review.models import REVIEW_BIT_LABEL
 from review.util import to_r_camel
 
+
+ACTIVITY_CHOICES = dict(Section.ACTIVITY_CHOICES)
+ACTIVITY_CHOICES["***"] = None
 
 # Unless you are looking to modify documentation, it is probably easier to view this
 # documentation at localhost:8000/api/documentation/ in the PCR section, rather than
@@ -25,10 +29,6 @@ EXPANDED_REVIEW_BIT_LABEL = tuple(
     ]
 )
 
-course_review_aggregation_schema_no_extras = {
-    to_r_camel(bit_label[2]): {"type": "number", "description": f"Average {bit_label[1]}"}
-    for bit_label in EXPANDED_REVIEW_BIT_LABEL
-}
 course_review_aggregation_schema = {
     # This dict contains the schema of the "_reviews" fields returned in course review views
     **{
@@ -41,20 +41,24 @@ course_review_aggregation_schema = {
             "description": "The number of semesters included in these review aggregations. This field will not be missing.",  # noqa E501
         },
     },
-    **course_review_aggregation_schema_no_extras,
+    **{
+        to_r_camel(bit_label[2]): {"type": "number", "description": f"Average {bit_label[1]}"}
+        for bit_label in EXPANDED_REVIEW_BIT_LABEL
+    },
 }
 
 plots_schema = {
     "pca_demand_plot": {
         "type": "array",
         "description": (
-            "The plot of average relative pca demand for sections of this course over time "
-            "during historical add/drop periods. It is an array of pairs (2-length arrays), "
+            "The plot of average relative pca demand for sections (excluding non-primary "
+            "crosslisted sections) of this topic over time during historical add/drop periods. "
+            "It is an array of pairs (2-length arrays), "
             "with each pair of the form `[percent_through, relative_pca_demand]`. The "
             "`percent_through` value is a float in the range [0,1], and represents percentage "
             "through the add/drop period. The `relative_pca_demand` value is a float in the "
-            "range [0,1], and represents the average of the relative pca demands of all sections "
-            "of this course, at that point in time. The first item of each pair "
+            "range [0,1], and represents the average of the relative pca demands of all primary "
+            "sections of this topic, at that point in time. The first item of each pair "
             "should be plotted on the x-axis and the second item should be plotted on the "
             "y-axis. Note that floating point imprecision may cause "
             "some of the percent_through values to be slightly off (like 0.35000000000000003), "
@@ -80,13 +84,14 @@ plots_schema = {
     "percent_open_plot": {
         "type": "array",
         "description": (
-            "The plot of percentage of sections of this course that were open at each point in "
-            "time during historical add/drop periods. It is an array of pairs "
-            "(2-length arrays), with each pair of the form `[percent_through, "
-            "percent_open]`. The `percent_through` value is a float in the range [0,1], "
-            "and represents percentage through the add/drop period. The `percent_open` value "
-            "is a float in the range [0,1], and represents the percent of sections of this course "
-            "that were open, at that point in time. The first item of each pair "
+            "The plot of percentage of sections (excluding non-primary crosslisted sections) of "
+            "this topic that were open at each point in time during historical add/drop periods. "
+            "It is an array of pairs (2-length arrays), with each pair of the form "
+            "`[percent_through, percent_open]`. The `percent_through` value is a float in the "
+            "range [0,1], and represents percentage through the add/drop period. "
+            "The `percent_open` value is a float in the range [0,1], and represents "
+            "the percent of sections of this course that were open (excluding non-primary "
+            "crosslisted sections), at that point in time. The first item of each pair "
             "should be plotted on the 'x-axis' and the second item should be plotted on the "
             "'y-axis'. Note that floating point imprecision may cause "
             "some values to be slightly off (like 0.35000000000000003), "
@@ -126,23 +131,34 @@ course_reviews_response_schema = {
                 "properties": {
                     "code": {
                         "type": "string",
-                        "description": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                        "description": "The dash-joined department and most-recent code of this course, e.g. `CIS-1200`.",  # noqa E501
                     },
                     "aliases": {
                         "type": "array",
-                        "description": "A list of courses that are crosslisted with this course (each represented by its  dash-joined department and code).",  # noqa E501
+                        "description": "A list of courses that are crosslisted with this course (each represented by its dash-joined department and code).",  # noqa E501
                         "items": {
                             "type": "string",
                         },
                     },
                     "historical_codes": {
-                        "type": "array",
-                        "description": "A list of course codes (dash-joined department and code) that have historically represented this course (other than the most recent code).",  # noqa E501
-                        "items": {"type": "string"},
-                    },
-                    "branched_from": {
-                        "type": "string",
-                        "description": "The full code (dash-joined department and code) of the course this topic branched from (e.g. in 2022C, HIST-640 -> HIST-6420, HIST-6400, HIST-6410, HIST-6430). Null if this topic did not branch from a previous topic.",  # noqa E501
+                        "description": "The historical lineage of primary course codes that have represented this course (from most recent to oldest).",  # noqa E501
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "full_code": {
+                                    "type": "string",
+                                    "description": "The dash-joined department and course code.",
+                                },
+                                "branched_from": {
+                                    "type": "boolean",
+                                    "description": "A flag indicating whether this code was branched into multiple new codes (e.g. in fall 2022). In these cases we should link to the old course on PCR because its reviews will not be included on the same page (unlike linear links).",  # noqa E501
+                                },
+                                "semester": {
+                                    "type": "string",
+                                    "description": "The most recent semester this code was used (of the form YYYYx where x is A [for spring], B [summer], or C [fall]), e.g. `2022C` for fall 2022.",  # noqa E501
+                                },
+                            },
+                        },
                     },
                     "name": {
                         "type": "string",
@@ -158,40 +174,26 @@ course_reviews_response_schema = {
                     },
                     "num_sections": {
                         "type": "integer",
-                        "description": "The number of sections belonging to this course across all semesters.",  # noqa E501
+                        "description": "The number of sections belonging to this course (excluding non-primary crosslisted sections) across all semesters (that we have data for).",  # noqa E501
                     },
                     "num_sections_recent": {
                         "type": "integer",
-                        "description": "The number of sections belonging to this course in its most recent semester.",  # noqa E501
-                    },
-                    "current_add_drop_period": {
-                        "type": "object",
-                        "description": "The start and end dates of the upcoming/current semester's add/drop period",  # noqa E501
-                        "properties": {
-                            "start": {
-                                "type": "string",
-                                "description": "A string datetime representation of the start of the current/upcoming add/drop period.",  # noqa E501
-                            },
-                            "end": {
-                                "type": "string",
-                                "description": "A string datetime representation of the end of the current/upcoming add/drop period.",  # noqa E501
-                            },
-                        },
+                        "description": "The number of sections belonging to this course (excluding non-primary crosslisted sections) in its most recent semester.",  # noqa E501
                     },
                     "average_reviews": {
                         "type": "object",
-                        "description": "This course's average reviews across all of its sections from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
+                        "description": "This course's average reviews across all of its sections (excluding non-primary crosslisted sections) from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                         "properties": course_review_aggregation_schema,
                     },
                     "recent_reviews": {
                         "type": "object",
-                        "description": "This course's average reviews across all of its sections from the most recent semester. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
+                        "description": "This course's average reviews across all of its sections (excluding non-primary crosslisted sections) from the most recent semester. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                         "properties": course_review_aggregation_schema,
                     },
                     "num_semesters": {
                         "type": "integer",
-                        "description": "The number of semesters from which this course has reviews.",  # noqa E501
-                    },  # noqa E501
+                        "description": "The number of semesters for which this course has been taught (that we have data for).",  # noqa E501
+                    },
                     "instructors": {
                         "type": "object",
                         "description": "Reviews for this course broken down by instructor. Note that each key in this subdictionary is a stringified instructor id (indicated by `STRINGIFIED_INSTRUCTOR_ID`; this is not an actual key but a placeholder for potentially many keys).",  # noqa E501
@@ -211,7 +213,7 @@ course_reviews_response_schema = {
                                     },
                                     "recent_reviews": {
                                         "type": "object",
-                                        "description": "This instructor's average reviews across all of the sections of this course that he/she has taught in his/her most recent semester teaching this course. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
+                                        "description": "This instructor's average reviews across all of the sections of this course that he/she has taught in his/her most recent semester teaching this course that has review data. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                                         "properties": instructor_review_aggregation_schema,
                                     },
                                     "latest_semester": {
@@ -220,7 +222,7 @@ course_reviews_response_schema = {
                                     },
                                     "num_semesters": {
                                         "type": "integer",
-                                        "description": "The number of semesters that this instructor taught this course.",  # noqa E501
+                                        "description": "The number of semesters that this instructor has taught this course (that we have data for).",  # noqa E501
                                     },
                                     "name": {
                                         "type": "string",
@@ -266,7 +268,7 @@ course_plots_response_schema = {
                     },
                     "recent_plots": {
                         "type": "object",
-                        "description": "This course's plots (PCA demand, percent sections open), averaged across all of its sections from the most recent semester. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
+                        "description": "This course's plots (PCA demand, percent sections open), averaged across all of its sections from the most recent semester before the current semester. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                         "properties": course_review_aggregation_schema,
                     },
                 }
@@ -287,7 +289,7 @@ instructor_reviews_response_schema = {
                     },
                     "num_sections": {
                         "type": "integer",
-                        "description": "The number of sections this instructor has taught (that we have review data for).",  # noqa E501
+                        "description": "The number of sections this instructor has taught (that we have data for).",  # noqa E501
                     },
                     "average_reviews": {
                         "type": "object",
@@ -296,12 +298,12 @@ instructor_reviews_response_schema = {
                     },
                     "recent_reviews": {
                         "type": "object",
-                        "description": "This instructor's average reviews across all of his/her taught sections from only his/her most recent semester teaching. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
+                        "description": "This instructor's average reviews across all of his/her taught sections from only his/her most recent semester teaching that has review data. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
                         "properties": instructor_review_aggregation_schema,
                     },
                     "num_semesters": {
                         "type": "integer",
-                        "description": "The number of semesters this instructor has taught (that we have review data for).",  # noqa E501
+                        "description": "The number of semesters this instructor has taught (that we have data for).",  # noqa E501
                     },
                     "courses": {
                         "type": "object",
@@ -311,7 +313,10 @@ instructor_reviews_response_schema = {
                                 "type": "object",
                                 "description": "This key `COURSE_FULL_CODE` is a placeholder for potentially many course full code keys. Each full code is the dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                 "properties": {
-                                    "full_code": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                    "full_code": {
+                                        "type": "string",
+                                        "description": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                    },
                                     "average_reviews": {
                                         "type": "object",
                                         "description": "This course's average reviews across all of its sections taught by this instructor from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
@@ -328,9 +333,12 @@ instructor_reviews_response_schema = {
                                     },
                                     "num_semesters": {
                                         "type": "integer",
-                                        "description": "The number of semesters from which we have reviews for this course taught by this instructor.",  # noqa E501
+                                        "description": "The number of semesters in which this course was taught by this instructor (that we have data for).",  # noqa E501
                                     },
-                                    "code": "Same as `full_code`.",  # noqa E501
+                                    "code": {
+                                        "type": "string",
+                                        "description": "Same as `full_code`.",
+                                    },
                                     "name": {
                                         "type": "string",
                                         "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501
@@ -444,16 +452,19 @@ department_reviews_response_schema = {
                                 "type": "object",
                                 "description": "This key `COURSE_FULL_CODE` is a placeholder for potentially many course full code keys. Each full code is the dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                 "properties": {
-                                    "id": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                    "id": {
+                                        "type": "string",
+                                        "description": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
+                                    },
                                     "average_reviews": {
                                         "type": "object",
                                         "description": "This course's average reviews across all of its sections from all semesters. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
-                                        "properties": course_review_aggregation_schema_no_extras,
+                                        "properties": course_review_aggregation_schema,
                                     },
                                     "recent_reviews": {
                                         "type": "object",
                                         "description": "This course's average reviews across all of its sections from the most recent semester. Note that if any of these subfields are missing or null, that means the subfield is not applicable or missing from our data (you should check for null values).",  # noqa E501
-                                        "properties": course_review_aggregation_schema_no_extras,
+                                        "properties": course_review_aggregation_schema,
                                     },
                                     "latest_semester": {
                                         "type": "string",
@@ -461,9 +472,9 @@ department_reviews_response_schema = {
                                     },
                                     "num_semesters": {
                                         "type": "integer",
-                                        "description": "The number of semesters from which we have reviews for this course.",  # noqa E501
+                                        "description": "The number of semesters this class has been taught (that we have data for).",  # noqa E501
                                     },
-                                    "code": "Same as `id`.",
+                                    "code": {"type": "string", "description": "Same as `id`."},
                                     "name": {
                                         "type": "string",
                                         "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501
@@ -507,13 +518,17 @@ instructor_for_course_reviews_response_schema = {
                         "items": {
                             "type": "object",
                             "properties": {
-                                "section_code": {
+                                "course_code": {
                                     "type": "string",
-                                    "description": "The dash-joined department, course code, and section code of the course, e.g. `CIS-120-001` for CIS-120.",  # noqa E501
+                                    "description": "The dash-joined department and course code of the section, `CIS-120` for CIS-120-001.",  # noqa E501
                                 },
                                 "course_name": {
                                     "type": "string",
-                                    "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501
+                                    "description": "The title of the section's course, e.g. 'Programming Languages and Techniques I' for CIS-120-001.",  # noqa E501
+                                },
+                                "activity": {
+                                    "type": "string",
+                                    "description": f"The activity of the section. Options: `{str(list(dict(ACTIVITY_CHOICES).values()))}`",  # noqa E501
                                 },
                                 "semester": {
                                     "type": "string",
@@ -521,16 +536,16 @@ instructor_for_course_reviews_response_schema = {
                                 },
                                 "forms_returned": {
                                     "type": "integer",
-                                    "description": "The number of review responses collected for this section.",  # noqa E501
+                                    "description": "The number of review responses collected for this section (or null if this section does not have review data).",  # noqa E501
                                 },
                                 "forms_produced": {
                                     "type": "integer",
-                                    "description": "The final enrollment of this section.",
+                                    "description": "The final enrollment of this section (or null if this section does not have review data).",  # noqa E501
                                 },
                                 "ratings": {
                                     "type": "object",
                                     "description": "The reviews for this section.",
-                                    "properties": course_review_aggregation_schema_no_extras,
+                                    "properties": course_review_aggregation_schema,
                                 },
                                 "comments": {
                                     "type": "string",

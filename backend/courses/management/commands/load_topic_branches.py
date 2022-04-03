@@ -11,11 +11,11 @@ from PennCourses.settings.base import S3_client
 def load_topic_branches(branches, print_missing=False, verbose=False):
     """
     Loads specified topic branches into the branched_from field of the Topic model.
-    Args:
-        branches: A dict specifying topic branches, in the form returned by
-            `get_branches_from_cross_walk`
-        verbose: If verbose=True, this script will print its progress.
-            Otherwise it will run silently.
+
+    :param branches: A dict specifying topic branches, in the form returned by
+        `get_branches_from_cross_walk`
+    :param verbose: If verbose=True, this script will print its progress.
+        Otherwise it will run silently.
     """
     if verbose:
         print("Loading branches into the db.")

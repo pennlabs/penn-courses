@@ -61,7 +61,7 @@ export function apiIsAuthenticated(func) {
       PUBLIC_API_TOKEN
     )}`
   ).then(data => {
-    if (typeof data.authed === "undefined") {
+    if (data.authed == null) {
       window.Raven.captureMessage(`Auth check error: ${JSON.stringify(data)}`, {
         level: "error"
       });

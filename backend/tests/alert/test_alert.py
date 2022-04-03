@@ -56,29 +56,28 @@ def override_delay(modules_names, before_func, before_kwargs):
     (RTFM) before using to prevent unintended behavior or errors.
     See AlertRegistrationTestCase.simulate_alert for an example of how to use this function
 
-    Args:
-        modules_names: a list of 2-tuples of the form (module, name) where module is the module in
-            which the delay()ed function is located and name is its name.  Note that each 2-tuple
-            corresponds to exactly one delay()ed function.
-            Make sure to order the delayed functions' 2-tuples in the
-            modules_names list in the order that they will be executed.
-            Also, note that each delay()ed function after the first must be
-            triggered by the previous one (directly or indirectly).  Otherwise you could just
-            call this function multiple times.  If this condition is not met,
-            an error will be thrown.  For more complicated use-cases (like patching functions
-            between delay()ed functions), you will have to implement the functionality of this
-            function yourself, in a custom way tailored to your use-case.
-            Example of valid modules_names argument (from AlertRegistrationTestCase.simulate_alert):
-                [('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')]
-        before_func: a function (not its name, the actual function as a variable) which will be
-            executed to trigger the first delay()ed function in modules_names.
-            Note that this function MUST trigger the first delay()ed function in modules_names
-            or an error will be thrown.
-            Example of a valid before_func argument (from AlertRegistrationTestCase.simulate_alert):
-                a function simulating the webhook firing which causes send_course_alerts.delay()
-                to be called
-        before_kwargs: a dictionary of keyword-value arguments which will be
-            unpacked and passed into before_func
+    :param modules_names: a list of 2-tuples of the form (module, name) where module is the module in
+        which the delay()ed function is located and name is its name.  Note that each 2-tuple
+        corresponds to exactly one delay()ed function.
+        Make sure to order the delayed functions' 2-tuples in the
+        modules_names list in the order that they will be executed.
+        Also, note that each delay()ed function after the first must be
+        triggered by the previous one (directly or indirectly).  Otherwise you could just
+        call this function multiple times.  If this condition is not met,
+        an error will be thrown.  For more complicated use-cases (like patching functions
+        between delay()ed functions), you will have to implement the functionality of this
+        function yourself, in a custom way tailored to your use-case.
+        Example of valid modules_names argument (from AlertRegistrationTestCase.simulate_alert):
+            [('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')]
+    :param before_func: a function (not its name, the actual function as a variable) which will be
+        executed to trigger the first delay()ed function in modules_names.
+        Note that this function MUST trigger the first delay()ed function in modules_names
+        or an error will be thrown.
+        Example of a valid before_func argument (from AlertRegistrationTestCase.simulate_alert):
+            a function simulating the webhook firing which causes send_course_alerts.delay()
+            to be called
+    :param before_kwargs: a dictionary of keyword-value arguments which will be
+        unpacked and passed into before_func
     """
     if len(modules_names) > 0:
         mn = modules_names[-1]
