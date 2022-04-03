@@ -5,7 +5,7 @@ from courses.util import separate_course_code
 
 
 class TypedCourseSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]+)\s*-?(\d{3,4}|[A-Z]{1,4})$")
+    code_re = re.compile(r"^([A-Za-z]{1,8})\s*-?(\d{3,4})$")
 
     def infer_search_type(self, query):
         if self.code_re.match(query.strip()):
