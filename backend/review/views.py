@@ -93,11 +93,13 @@ course_filters_pcr = course_is_primary & course_filters_pcr_allow_xlist
 section_is_primary = Q(course__primary_listing__isnull=True) | Q(
     course__primary_listing_id=F("course_id")
 )
-section_filters_pcr = (
-    section_is_primary
-    & (~Q(course__title="") | ~Q(course__description="") | Q(review__isnull=False))
-    & ~Q(activity="REC")
-    & (~Q(status="X") | Q(review__isnull=False))
+section_filters_pcr = section_is_primary & (
+    Q(review__isnull=False)
+    | (
+        (~Q(course__title="") | ~Q(course__description=""))
+        & ~Q(activity="REC")
+        & ~Q(status="X")
+    )
 )
 
 review_filters_pcr = Q(section__course__primary_listing__isnull=True) | Q(
