@@ -1,16 +1,7 @@
 from collections import defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import (
-    BooleanField,
-    Case,
-    F,
-    OuterRef,
-    Q,
-    Subquery,
-    Value,
-    When,
-)
+from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -41,7 +32,7 @@ from review.util import (
     avg_and_recent_demand_plots,
     avg_and_recent_percent_open_plots,
     get_average_and_recent_dict,
-    get_average_and_recent_dict_list,
+    get_average_and_recent_dict_single,
     get_historical_codes,
     get_num_sections,
     get_single_dict_from_qs,
@@ -221,11 +212,11 @@ def course_reviews(request, course_code):
             ),
             "num_sections": num_sections,
             "num_sections_recent": num_sections_recent,
-            "instructors": get_average_and_recent_dict_list(
+            "instructors": get_average_and_recent_dict(
                 instructors_qs.values(), "id", extra_fields=["id", "name"]
             ),
             "registration_metrics": num_registration_metrics > 0,
-            **get_average_and_recent_dict(course),
+            **get_average_and_recent_dict_single(course),
         }
     )
 
@@ -433,7 +424,7 @@ def instructor_reviews(request, instructor_id):
         full_code = r["most_recent_full_code"]
         if full_code not in max_sem or max_sem[full_code] < r["semester"]:
             max_sem[full_code] = r["semester"]
-            courses_res[full_code] = get_average_and_recent_dict(
+            courses_res[full_code] = get_average_and_recent_dict_single(
                 r, full_code="most_recent_full_code", code="most_recent_full_code", name="title"
             )
 
@@ -455,7 +446,7 @@ def instructor_reviews(request, instructor_id):
             "num_sections_recent": num_sections_recent,
             "num_sections": num_sections,
             "courses": courses_res,
-            **get_average_and_recent_dict(inst),
+            **get_average_and_recent_dict_single(inst),
         }
     )
 
@@ -510,7 +501,7 @@ def department_reviews(request, department_code):
             "code": department.code,
             "name": department.name,
             "courses": {
-                r["full_code"]: get_average_and_recent_dict(
+                r["full_code"]: get_average_and_recent_dict_single(
                     r, full_code="full_code", code="full_code", name="title"
                 )
                 for r in courses.values()

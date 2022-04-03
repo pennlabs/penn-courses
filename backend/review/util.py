@@ -60,7 +60,7 @@ def get_single_dict_from_qs(qs):
     return dict(qs[:1].values()[0])
 
 
-def get_average_and_recent_dict(values_dict, extra_fields=None, **extra_fields_conv):
+def get_average_and_recent_dict_single(values_dict, extra_fields=None, **extra_fields_conv):
     """
     Accepts a dict taken from the `.values()` list of a queryset
     previously annotated by `annotate_average_and_recent`.
@@ -83,13 +83,13 @@ def get_average_and_recent_dict(values_dict, extra_fields=None, **extra_fields_c
     }
 
 
-def get_average_and_recent_dict_list(values, key, extra_fields=None):
+def get_average_and_recent_dict(values, key, extra_fields=None):
     """
     Convenience function for mapping `get_average_and_recent_dict` over a `.values()` list,
     grouping by a key field.
     """
     return {
-        values_dict[key]: get_average_and_recent_dict(values_dict, extra_fields=extra_fields)
+        values_dict[key]: get_average_and_recent_dict_single(values_dict, extra_fields=extra_fields)
         for values_dict in values
     }
 
