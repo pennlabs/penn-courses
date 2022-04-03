@@ -63,7 +63,7 @@ export const getCartCourses = () =>
         return null;
       }
       const typeDict = {};
-      if (typeof out.info !== "undefined") {
+      if (out.info != null) {
         out.info.forEach(v => {
           typeDict[v.category] = v;
         });

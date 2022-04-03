@@ -13,14 +13,13 @@ def set_all_status(semester=None):
         semester = get_current_semester()
     statuses = registrar.get_all_course_status(semester)
     for status in tqdm(statuses):
-        if "section_id_normalized" not in status:
+        section_code = status.get("section_id_normalized")
+        if section_code is None:
             continue
 
         try:
-            _, section = get_course_and_section(status["section_id_normalized"], semester)
-        except Section.DoesNotExist:
-            continue
-        except Course.DoesNotExist:
+            _, section = get_course_and_section(section_code, semester)
+        except (Section.DoesNotExist, Course.DoesNotExist):
             continue
         section.status = status["status"]
         section.save()

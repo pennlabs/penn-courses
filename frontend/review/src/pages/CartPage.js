@@ -44,11 +44,7 @@ class Cart extends Component {
       courses,
       boxValues: boxLabels.map(type => {
         const scoreList = courses
-          .filter(
-            a =>
-              typeof a !== "undefined" &&
-              excludedCourses.indexOf(a.course) === -1
-          )
+          .filter(a => a != null && excludedCourses.indexOf(a.course) === -1)
           .map(
             a =>
               ((a.info || { type: null })[type] || {

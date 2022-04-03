@@ -252,7 +252,7 @@ class ScoreBox extends Component {
               </center>
             );
           },
-          width: 140,
+          width: 150,
           show: true
         });
       });
@@ -261,7 +261,7 @@ class ScoreBox extends Component {
       id: "name",
       Header: isCourse ? "Instructor" : "Course",
       accessor: "name",
-      width: 270,
+      width: 250,
       show: true,
       required: true,
       Cell: ({ original: { code, key, star }, value }) => (
