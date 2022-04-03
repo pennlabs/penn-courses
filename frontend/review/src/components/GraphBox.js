@@ -333,30 +333,28 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
 
   defaults.global.defaultFontFamily = "Lato";
 
+  const handlePCAChartDataResponse = res => {
+    cachedPCAChartDataResponse = res;
+
+    const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
+    const demandSemester =
+      res[averageOrRecent]["pca_demand_plot_since_semester"];
+    const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
+    const percentSemester =
+      res[averageOrRecent]["percent_open_plot_since_semester"];
+    setChartData({
+      demandSemester: demandSemester && toNormalizedSemester(demandSemester),
+      demandNumSemesters: res[averageOrRecent]["pca_demand_plot_num_semesters"],
+      pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
+      percentSemester: percentSemester && toNormalizedSemester(percentSemester),
+      percentNumSemesters:
+        res[averageOrRecent]["percent_open_plot_num_semesters"],
+      percentSectionsChartData:
+        percentOpenPlot && genPercentChartData(percentOpenPlot)
+    });
+  };
+
   useEffect(() => {
-    const handlePCAChartDataResponse = res => {
-      cachedPCAChartDataResponse = res;
-
-      const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
-      const demandSemester =
-        res[averageOrRecent]["pca_demand_plot_since_semester"];
-      const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
-      const percentSemester =
-        res[averageOrRecent]["percent_open_plot_since_semester"];
-      setChartData({
-        demandSemester: demandSemester && toNormalizedSemester(demandSemester),
-        demandNumSemesters:
-          res[averageOrRecent]["pca_demand_plot_num_semesters"],
-        pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
-        percentSemester:
-          percentSemester && toNormalizedSemester(percentSemester),
-        percentNumSemesters:
-          res[averageOrRecent]["percent_open_plot_num_semesters"],
-        percentSectionsChartData:
-          percentOpenPlot && genPercentChartData(percentOpenPlot)
-      });
-    };
-
     if (!courseCode) {
       setLoaded(true);
       setChartData(null);
