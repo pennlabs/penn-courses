@@ -154,7 +154,7 @@ course_reviews_response_schema = {
                                 },
                                 "semester": {
                                     "type": "string",
-                                    "semester": "The most recent semester this code was used (of the form YYYYx where x is A [for spring], B [summer], or C [fall]), e.g. `2022C` for fall 2022.",  # noqa E501
+                                    "description": "The most recent semester this code was used (of the form YYYYx where x is A [for spring], B [summer], or C [fall]), e.g. `2022C` for fall 2022.",  # noqa E501
                                 },
                             },
                         },

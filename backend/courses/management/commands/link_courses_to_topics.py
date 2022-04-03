@@ -18,26 +18,11 @@ from PennCourses.settings.base import S3_client
 
 def get_topics_and_courses(semester):
     """
-    Returns a list of the form [(topic, most_recent_course), ... for each topic]
-    where most_recent_course is the most recent primary course in that topic offered
-    before or during the given semester.
+    Returns a list of the form [(topic, most_recent), ... for each topic]
     """
-    max_sem_subq = Subquery(
-        Course.objects.filter(topic=OuterRef("topic"), semester__lte=semester)
-        .annotate(max_sem=Max("semester"))
-        .values("max_sem")
-    )
-    courses = (
-        Course.objects.annotate(max_sem=max_sem_subq)
-        .filter(
-            Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
-            semester=F("max_sem"),
-        )
-        .select_related("topic")
-        .select_related("primary_listing")
-        .prefetch_related("listing_set", "primary_listing__listing_set")
-    )
-    return list({course.topic_id: (course.topic, course) for course in courses}.values())
+    return [
+        (topic, topic.most_recent) for topic in Topic.objects.prefetch_related("most_recent").all()
+    ]
 
 
 def link_course_to_topics(course, topics=None, verbose=False, ignore_inexact=False):
