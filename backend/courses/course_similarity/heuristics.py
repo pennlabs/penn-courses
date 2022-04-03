@@ -1,9 +1,8 @@
 import re
-from itertools import zip_longest
 
-from jellyfish import levenshtein_distance
 import nltk
 import numpy as np
+from jellyfish import levenshtein_distance
 from sentence_transformers import SentenceTransformer, util
 
 from courses.util import in_dev
