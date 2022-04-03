@@ -3,7 +3,7 @@ from textwrap import dedent
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import F, Max, OuterRef, Q, Subquery
+from django.db.models import F, Q
 from tqdm import tqdm
 
 from alert.management.commands.recomputestats import all_semesters
@@ -28,18 +28,18 @@ def get_topics_and_courses(semester):
 def link_course_to_topics(course, topics=None, verbose=False, ignore_inexact=False):
     """
     Links a given course to existing Topics when possible, creating a new Topic if necessary.
-    Args:
-        course: A course object to link
-        topics: You can precompute the Topics used by this script in case you are calling it
-            in a loop; the format should be the same as returned by `get_topics_and_courses`.
-        verbose: If verbose=True, this script will print its progress and prompt for user input
-            upon finding possible (but not definite) links. Otherwise it will run silently and
-            log found possible links to Sentry (more appropriate if this function is called
-            from an automated cron job like registrarimport).
-        ignore_inexact: If ignore_inexact=True, will only ever merge if two courses
-            are exactly matching as judged by `same_course`. `ignore_inexact` means
-            the user will not be prompted and that there will never be logging.
-            Corresponds to never checking the similarity of two courses using `similar_courses`.
+
+    :param course: A course object to link
+    :param topics: You can precompute the Topics used by this script in case you are calling it
+        in a loop; the format should be the same as returned by `get_topics_and_courses`.
+    :param verbose: If verbose=True, this script will print its progress and prompt for user input
+        upon finding possible (but not definite) links. Otherwise it will run silently and
+        log found possible links to Sentry (more appropriate if this function is called
+        from an automated cron job like registrarimport).
+    :param ignore_inexact: If ignore_inexact=True, will only ever merge if two courses
+        are exactly matching as judged by `same_course`. `ignore_inexact` means
+        the user will not be prompted and that there will never be logging.
+        Corresponds to never checking the similarity of two courses using `similar_courses`.
     """
     if topics is None:
         topics = get_topics_and_courses(course.semester)
@@ -57,18 +57,18 @@ def link_courses_to_topics(semester, guaranteed_links=None, verbose=False, ignor
     """
     Links all courses *without Topics* in the given semester to existing Topics when possible,
     creating new Topics when necessary.
-    Args:
-        semester: The semester for which to link courses to existing Topics
-        guaranteed_links: Optionally, a `guaranteed_links` dict returned by
-            `get_direct_backlinks_from_cross_walk`.
-        verbose: If verbose=True, this script will print its progress and prompt for user input
-            upon finding possible (but not definite) links. Otherwise it will run silently and
-            log found possible links to Sentry (more appropriate if this function is called
-            from an automated cron job like registrarimport).
-        ignore_inexact: If ignore_inexact=True, will only ever merge if two courses
-            are exactly matching as judged by `same_course`. `ignore_inexact` means
-            the user will not be prompted and that there will never be logging.
-            Corresponds to never checking the similarity of two courses using `similar_courses`.
+
+    :param semester: The semester for which to link courses to existing Topics
+    :param guaranteed_links: Optionally, a `guaranteed_links` dict returned by
+        `get_direct_backlinks_from_cross_walk`.
+    :param verbose: If verbose=True, this script will print its progress and prompt for user input
+        upon finding possible (but not definite) links. Otherwise it will run silently and
+        log found possible links to Sentry (more appropriate if this function is called
+        from an automated cron job like registrarimport).
+    :param ignore_inexact: If ignore_inexact=True, will only ever merge if two courses
+        are exactly matching as judged by `same_course`. `ignore_inexact` means
+        the user will not be prompted and that there will never be logging.
+        Corresponds to never checking the similarity of two courses using `similar_courses`.
     """
     guaranteed_links = guaranteed_links or dict()
     topics = get_topics_and_courses(semester)

@@ -30,13 +30,13 @@ from PennCourses.settings.base import (
 )
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
+    ACTIVITY_CHOICES,
     autocomplete_response_schema,
     course_plots_response_schema,
     course_reviews_response_schema,
     department_reviews_response_schema,
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
-    ACTIVITY_CHOICES,
 )
 from review.models import ALL_FIELD_SLUGS
 from review.util import (

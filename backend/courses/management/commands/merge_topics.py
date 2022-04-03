@@ -170,15 +170,15 @@ def similar_courses(course_a, course_b):
 def merge_topics(verbose=False, ignore_inexact=False):
     """
     Finds and merges Topics that should be merged.
-    Args:
-        verbose: If verbose=True, this script will print its progress and prompt for user input
-            upon finding possible (but not definite) links. Otherwise it will run silently and
-            log found possible links to Sentry (more appropriate if this function is called
-            from an automated cron job like registrarimport).
-        ignore_inexact: If ignore_inexact=True, will only ever merge if two courses
-            are exactly matching as judged by `same_course`. `ignore_inexact` means
-            the user will not be prompted and that there will never be logging.
-            Corresponds to never checking the similarity of two courses using `similar_courses`.
+
+    :param verbose: If verbose=True, this script will print its progress and prompt for user input
+        upon finding possible (but not definite) links. Otherwise it will run silently and
+        log found possible links to Sentry (more appropriate if this function is called
+        from an automated cron job like registrarimport).
+    :param ignore_inexact: If ignore_inexact=True, will only ever merge if two courses
+        are exactly matching as judged by `same_course`. `ignore_inexact` means
+        the user will not be prompted and that there will never be logging.
+        Corresponds to never checking the similarity of two courses using `similar_courses`.
     """
     if verbose:
         print("Merging topics")

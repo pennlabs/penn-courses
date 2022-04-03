@@ -1,7 +1,8 @@
+from courses.models import Section
 from PennCourses.docs_settings import reverse_func
 from review.models import REVIEW_BIT_LABEL
 from review.util import to_r_camel
-from courses.models import Section
+
 
 ACTIVITY_CHOICES = dict(Section.ACTIVITY_CHOICES)
 ACTIVITY_CHOICES["***"] = None

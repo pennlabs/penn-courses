@@ -8,9 +8,9 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.models import Instructor, Restriction, Section, StatusUpdate
-from review.models import Review
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
+from review.models import Review
 
 
 TEST_SEMESTER = "2022C"
