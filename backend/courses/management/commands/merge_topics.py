@@ -10,8 +10,7 @@ from tqdm import tqdm
 
 from courses.course_similarity.heuristics import (
     description_rejection_heuristics,
-    lev_divided_by_avg_title_length,
-    semantic_similarity,
+    lev_divided_by_avg_length,
     title_rejection_heuristics,
 )
 from courses.models import Topic
@@ -28,6 +27,7 @@ def load_crosswalk_links(cross_walk):
         old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
         new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
         links[old_full_code].append(new_full_code)
+    return links
 
 
 def get_branches_from_cross_walk(cross_walk):
@@ -88,14 +88,14 @@ def similar_courses(course_a, course_b):
     title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
     if (
         not title_rejection_heuristics(title_a, title_b)
-        and lev_divided_by_avg_title_length(title_a, title_b) < 0.2
+        and lev_divided_by_avg_length(title_a, title_b) < 0.2
     ):
         return True
     desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
     if (
         not description_rejection_heuristics(desc_a, desc_b)
-        and semantic_similarity(desc_a, desc_b) > 0.7
-        and semantic_similarity(desc_a, desc_b) > 0.7
+        and lev_divided_by_avg_length(desc_a, desc_b) < 0.2
+        # and semantic_similarity(desc_a, desc_b) > 0.7  # TODO: debug performance
     ):
         return True
     return False
@@ -151,7 +151,6 @@ def merge_topics(verbose=False, ignore_inexact=False):
     """
     if verbose:
         print("Merging topics")
-        print("Loading topics and courses from db (this may take a while)...")
     topics = set(
         Topic.objects.prefetch_related(
             "courses",
@@ -270,7 +269,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        topic_ids = set(kwargs["topic_ids"])
+        topic_ids = set(kwargs["topic_ids"] or [])
         ignore_inexact = kwargs["ignore_inexact"]
 
         print(

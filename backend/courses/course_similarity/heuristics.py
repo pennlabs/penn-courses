@@ -1,11 +1,9 @@
-import os
 import re
 from itertools import zip_longest
 
-import jellyfish
+from jellyfish import levenshtein_distance
 import nltk
 import numpy as np
-from django.conf import settings
 from sentence_transformers import SentenceTransformer, util
 
 from courses.util import in_dev
@@ -21,12 +19,13 @@ def title_rejection_heuristics(title_a, title_b):
     """
     Handle special cases indicating dissimilarity and return True if they occur, False otherwise.
     0.  At least one string is only whitespace
-    1.  Identify if a course title is different only by a single roman numeral or digit:
+    1.  The title equals "dissertation"
+    2.  Identify if a course title is different only by a single roman numeral or digit:
         ie CIS-120 is "Programming Languages and Techniques I" and CIS-121 is
         "Programming Languages and Techniques II". The specific means of doing
         this is to check if the segment directly preceding a roman numeral or
         number is identical. If it is then the title falls into this case.
-    2.  Identify if a course differs by "beginner, intermediate, or advanced" at
+    3.  Identify if a course differs by "beginner, intermediate, or advanced" at
         the start of the title (or synonyms for each respective word). Note
         additional levels like "Advanced intermediate" only have their first
         word (e.g., "Advanced") considered. Note also that if one title doesn't
@@ -35,17 +34,20 @@ def title_rejection_heuristics(title_a, title_b):
     # Case 0
     if title_a == "" or title_b == "":
         return True
+
     # Case 1
-    sequels_regex = re.compile(r"(\d|IX|IV|V?I{0,3})")
-    splits = zip_longest(re.split(sequels_regex, title_a), re.split(sequels_regex, title_b))
-    previous_split_matches = False
-    for i, (split_a, split_b) in enumerate(splits):
-        if i % 2 == 0:
-            previous_split_matches = split_a == split_b
-        else:  # odd splits are numbers/numerals
-            if split_a != split_b and previous_split_matches:
-                return True
+    if title_a == "dissertation" or title_b == "dissertation":
+        return True
+
     # Case 2
+    sequels_regex = re.compile(r"\s+(\d+|ix|iv|v?i{0,3})$")
+    match_a, match_b = sequels_regex.search(title_a), sequels_regex.search(title_b)
+    if (match_a is not None) != (match_b is not None):
+        return True
+    if match_a and match_b and match_a.group(1) != match_b.group(1):
+        return True
+
+    # Case 3
     levels = {
         "introductory": 0,
         "intruduction": 0,
@@ -54,10 +56,17 @@ def title_rejection_heuristics(title_a, title_b):
         "intermediate": 1,
         "advanced": 2,
     }
-    level_a = levels.get(title_a.split()[0].strip())
-    level_b = levels.get(title_b.split()[0].strip())
-    if level_a != level_b:
+
+    def get_level(title):
+        level = -1
+        for keyword, lev in levels.items():
+            if keyword in title:
+                level = lev
+        return level
+
+    if get_level(title_a) != get_level(title_b):
         return True
+
     return False
 
 
@@ -72,8 +81,10 @@ def description_rejection_heuristics(desc_a, desc_b):
     # Case 0
     if desc_a == "" or desc_b == "":
         return True
+
     # Case 1
     topics_vary_regex = re.compile("topics .{0,50}vary")
+
     # Case 2
     exclude_strings = [
         "department website for a current course description",
@@ -86,16 +97,15 @@ def description_rejection_heuristics(desc_a, desc_b):
     for regex in [topics_vary_regex]:
         if re.match(regex, desc_a) or re.match(regex, desc_b):
             return True
+
     return False
 
 
-def lev_divided_by_avg_title_length(title_a, title_b):
+def lev_divided_by_avg_length(a, b):
     """
-    Compute levenshtein distance between 2 titles and then divide by avg title length.
-    Titles are lowercased and whitespace is stripped from ends prior to comparison.
-    Assumes that titles are not just whitespace.
+    Compute levenshtein distance between 2 strings and then divide by avg length.
     """
-    return 2 * jellyfish.levenshtein_distance(title_a, title_b) / (len(title_a) + len(title_b))
+    return 2 * levenshtein_distance(a, b) / (len(a) + len(b))
 
 
 def semantic_similarity(string_a, string_b):
