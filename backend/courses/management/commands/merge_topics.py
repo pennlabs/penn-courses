@@ -1,38 +1,20 @@
 import logging
-import os
 from collections import defaultdict
 from enum import Enum, auto
 from textwrap import dedent
 
-import jellyfish
-import nltk
-import numpy as np
 import pandas as pd
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
 
-from courses.course_text_similarity.heuristics import description_heuristics, title_heuristics
+from courses.course_similarity.heuristics import (
+    lev_divided_by_avg_title_length,
+    semantic_similarity,
+    description_heuristics,
+    title_heuristics,
+)
 from courses.models import Topic
-from courses.util import in_dev
-
-
-if in_dev():
-    nltk.download("punkt")
-
-    model_path = os.path.join(
-        settings.BASE_DIR, "courses", "course_text_similarity", "all-MiniLM-L6-v2"
-    )
-    try:
-        embedder = SentenceTransformer(model_path)
-    except FileNotFoundError:
-        embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-        embedder.save(model_path)
-
-
-SENT_TOKENIZER = nltk.data.load("nltk:tokenizers/punkt/english.pickle")
 
 
 def load_crosswalk_links(cross_walk):
@@ -102,6 +84,22 @@ def same_course(course_a, course_b):
     )
 
 
+def similar_courses(course_a, course_b):
+    title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
+    if (
+        not title_heuristics(title_a, title_b)
+        and lev_divided_by_avg_title_length(title_a, title_b) < 0.2
+    ):
+        return True
+    desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
+    if (
+        not description_heuristics(desc_a, desc_b)
+        and semantic_similarity(desc_a, desc_b) > 0.7
+        and semantic_similarity(desc_a, desc_b) > 0.7
+    ):
+        return True
+
+
 class ShouldLinkCoursesResponse(Enum):
     DEFINITELY = auto()
     MAYBE = auto()
@@ -135,54 +133,6 @@ def should_link_courses(course_a, course_b, verbose=True, ignore_inexact=False):
             logging.info(f"Found possible link between {course_a} and {course_b}")
             return ShouldLinkCoursesResponse.MAYBE
     return ShouldLinkCoursesResponse.NO
-
-
-def lev_divided_by_avg_title_length(title_a, title_b):
-    """
-    Compute levenshtein distance between 2 titles and then divide by avg title length.
-    Titles are lowercased and whitespace is stripped from ends prior to comparison.
-    Assumes that titles are not just whitespace.
-    """
-    return 2 * jellyfish.levenshtein_distance(title_a, title_b) / (len(title_a) + len(title_b))
-
-
-def semantic_similarity(string_a, string_b):
-    """
-    Compute the semantics similarity between two strings. The strings are split
-    into sentences, then those sentences are turned into embeddings, and then
-    cosine similarity between matching sentences is computed. If the two strings
-    have different numbers of sentences, take the maximum similarity matching that
-    contains as many sentences as possible. Assumes both strings are not just
-    whitespace.
-    """
-    sentences_a = SENT_TOKENIZER.tokenize(string_a)
-    sentences_b = SENT_TOKENIZER.tokenize(string_b)
-    emb_a = embedder.encode(sentences_a, convert_to_tensor=True)
-    emb_b = embedder.encode(sentences_b, convert_to_tensor=True)
-    cosine_scores = util.cos_sim(emb_a, emb_b)
-    nrows, ncols = cosine_scores.shape
-    # compute tr/len(diag) for maximal length diagonals
-    max_trace = 0.0
-    for offset in range(0, ncols - nrows + 1):  # [0, cols - rows]
-        diag = np.diagonal(cosine_scores, offset=offset)
-        max_trace = max(max_trace, np.sum(diag) / len(diag))
-    return max_trace
-
-
-def similar_courses(course_a, course_b):
-    title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
-    if (
-        not title_heuristics(title_a, title_b)
-        and lev_divided_by_avg_title_length(title_a, title_b) < 0.2
-    ):
-        return True
-    desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
-    if (
-        not description_heuristics(desc_a, desc_b)
-        and semantic_similarity(desc_a, desc_b) > 0.7
-        and semantic_similarity(desc_a, desc_b) > 0.7
-    ):
-        return True
 
 
 def merge_topics(verbose=False, ignore_inexact=False):

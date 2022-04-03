@@ -1,5 +1,26 @@
 import re
 from itertools import zip_longest
+import jellyfish
+from sentence_transformers import SentenceTransformer, util
+import nltk
+import numpy as np
+from django.conf import settings
+import os
+from courses.util import in_dev
+
+
+if in_dev():
+    nltk.download("punkt")
+
+    model_path = os.path.join(settings.BASE_DIR, "courses", "course_similarity", "all-MiniLM-L6-v2")
+    try:
+        embedder = SentenceTransformer(model_path)
+    except FileNotFoundError:
+        embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        embedder.save(model_path)
+
+
+SENT_TOKENIZER = nltk.data.load("nltk:tokenizers/punkt/english.pickle")
 
 
 def title_heuristics(title_a, title_b):
@@ -71,3 +92,35 @@ def description_heuristics(desc_a, desc_b):
         if re.match(regex, desc_a) is not None or re.match(regex, desc_b) is not None:
             return True
     return False
+
+
+def lev_divided_by_avg_title_length(title_a, title_b):
+    """
+    Compute levenshtein distance between 2 titles and then divide by avg title length.
+    Titles are lowercased and whitespace is stripped from ends prior to comparison.
+    Assumes that titles are not just whitespace.
+    """
+    return 2 * jellyfish.levenshtein_distance(title_a, title_b) / (len(title_a) + len(title_b))
+
+
+def semantic_similarity(string_a, string_b):
+    """
+    Compute the semantics similarity between two strings. The strings are split
+    into sentences, then those sentences are turned into embeddings, and then
+    cosine similarity between matching sentences is computed. If the two strings
+    have different numbers of sentences, take the maximum similarity matching that
+    contains as many sentences as possible. Assumes both strings are not just
+    whitespace.
+    """
+    sentences_a = SENT_TOKENIZER.tokenize(string_a)
+    sentences_b = SENT_TOKENIZER.tokenize(string_b)
+    emb_a = embedder.encode(sentences_a, convert_to_tensor=True)
+    emb_b = embedder.encode(sentences_b, convert_to_tensor=True)
+    cosine_scores = util.cos_sim(emb_a, emb_b)
+    nrows, ncols = cosine_scores.shape
+    # compute tr/len(diag) for maximal length diagonals
+    max_trace = 0.0
+    for offset in range(0, ncols - nrows + 1):  # [0, cols - rows]
+        diag = np.diagonal(cosine_scores, offset=offset)
+        max_trace = max(max_trace, np.sum(diag) / len(diag))
+    return max_trace
