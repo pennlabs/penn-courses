@@ -243,7 +243,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "-t",
-            "--topic_ids",
+            "--topic-ids",
             nargs="*",
             help=dedent(
                 """
@@ -271,6 +271,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         topic_ids = set(kwargs["topic_ids"])
+        ignore_inexact = kwargs["ignore_inexact"]
 
         print(
             "This script is atomic, meaning either all Topic merges will be comitted to the "
@@ -283,4 +284,4 @@ class Command(BaseCommand):
             return
 
         with transaction.atomic():
-            merge_topics(verbose=True)
+            merge_topics(verbose=True, ignore_inexact=ignore_inexact)

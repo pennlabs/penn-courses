@@ -113,7 +113,7 @@ class Command(BaseCommand):
             default="",
         )
         parser.add_argument(
-            "-s3", "--s3_bucket", help="download crosswalk from specified s3 bucket."
+            "-s3", "--s3-bucket", help="download crosswalk from specified s3 bucket."
         )
         parser.add_argument(
             "--ignore-inexact",
