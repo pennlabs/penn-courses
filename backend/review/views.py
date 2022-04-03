@@ -632,24 +632,30 @@ def autocomplete(request):
         .values("full_code", "most_recent_full_code", "title")
         .distinct()
     )
-    course_set = [
-        {
-            "title": course["full_code"],
-            "most_recent_full_code": course["most_recent_full_code"],
-            "desc": [course["title"]],
-            "url": f"/course/{course['full_code']}",
-        }
-        for course in courses
-    ]
+    course_set = sorted(
+        [
+            {
+                "title": course["full_code"],
+                "most_recent_full_code": course["most_recent_full_code"],
+                "desc": [course["title"]],
+                "url": f"/course/{course['full_code']}",
+            }
+            for course in courses
+        ],
+        key=lambda x: x["title"],
+    )
     departments = Department.objects.all().values("code", "name")
-    department_set = [
-        {
-            "title": dept["code"],
-            "desc": dept["name"],
-            "url": f"/department/{dept['code']}",
-        }
-        for dept in departments
-    ]
+    department_set = sorted(
+        [
+            {
+                "title": dept["code"],
+                "desc": dept["name"],
+                "url": f"/department/{dept['code']}",
+            }
+            for dept in departments
+        ],
+        key=lambda d: d["title"],
+    )
 
     instructors = (
         Instructor.objects.filter(section__instructors__id=F("id"))
@@ -672,14 +678,17 @@ def autocomplete(request):
         except TypeError:
             return ""
 
-    instructor_set = [
-        {
-            "title": v["title"],
-            "desc": join_depts(v["desc"]),
-            "url": v["url"],
-        }
-        for k, v in instructor_set.items()
-    ]
+    instructor_set = sorted(
+        [
+            {
+                "title": v["title"],
+                "desc": join_depts(v["desc"]),
+                "url": v["url"],
+            }
+            for v in instructor_set.values()
+        ],
+        key=lambda x: x["title"],
+    )
 
     return Response(
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}

@@ -679,14 +679,14 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
                         "url": f"/instructor/{self.instructor1.pk}",
                     },
                     {
-                        "title": "No Responses Instructor",
-                        "desc": "CIS",
-                        "url": f"/instructor/{no_responses_instructor.pk}",
-                    },
-                    {
                         "title": "Instructor Two",
                         "desc": "ENM,MATH",
                         "url": f"/instructor/{self.instructor2.pk}",
+                    },
+                    {
+                        "title": "No Responses Instructor",
+                        "desc": "CIS",
+                        "url": f"/instructor/{no_responses_instructor.pk}",
                     },
                 ],
             },
