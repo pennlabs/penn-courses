@@ -124,8 +124,6 @@ def should_link_courses(course_a, course_b, verbose=True, ignore_inexact=False):
     elif (course_a.code < "5000") != (course_b.code < "5000"):
         return ShouldLinkCoursesResponse.NO
     elif (not ignore_inexact) and similar_courses(course_a, course_b):
-        # If title is same or (title is similar and description is similar
-        # have a fairly low threshold for similarity)
         if verbose and prompt_for_link(course_a, course_b):
             return ShouldLinkCoursesResponse.DEFINITELY
         if not verbose:
