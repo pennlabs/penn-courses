@@ -48,13 +48,13 @@ def translate_semester(semester):
     Translates a semester string (e.g. "2022C") to the format accepted by the new
     OpenData API (e.g. "202230").
     """
-    if semester is None:
+    if not semester:
         return None
     old_suffix = semester[-1].upper()
     if old_suffix not in semester_suffix_map:
         raise ValueError(
             f"Invalid semester suffix {old_suffix} (semester must have "
-            "suffix A, B, or C; e.g. '2022C')"
+            "suffix A, B, or C; e.g. '2022C')."
         )
     return semester[:-1] + semester_suffix_map[old_suffix]
 
@@ -64,13 +64,13 @@ def translate_semester_inv(semester):
     Translates a semester string in the format of the new OpenData API (e.g. "202230")
     to the format used by our backend (e.g. "2022C")
     """
-    if semester is None:
+    if not semester:
         return None
     new_suffix = semester[-2]
     if new_suffix not in semester_suffix_map_inv:
         raise ValueError(
             f"Invalid semester suffix {new_suffix} (semester must have "
-            "suffix '10', '20', or '30'; e.g. '202230')"
+            "suffix '10', '20', or '30'; e.g. '202230')."
         )
     return semester[:-2] + semester_suffix_map_inv[new_suffix]
 
