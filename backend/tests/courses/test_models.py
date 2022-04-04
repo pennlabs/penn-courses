@@ -33,13 +33,13 @@ def set_semester():
 
 class SepCourseCodeTest(TestCase):
     def test_four_letter_dept_code(self):
-        self.assertEqual(("ANTH", "361", "401"), separate_course_code("ANTH361401"))
+        self.assertEqual(("ANTH", "3610", "401"), separate_course_code("ANTH3610401"))
 
     def test_three_letter_dept_code(self):
-        self.assertEqual(("CIS", "120", "001"), separate_course_code("CIS 120001"))
+        self.assertEqual(("CIS", "1200", "001"), separate_course_code("CIS 1200001"))
 
     def test_two_letter_dept_code(self):
-        self.assertEqual(("WH", "110", "001"), separate_course_code("WH  110001"))
+        self.assertEqual(("WH", "1100", "001"), separate_course_code("WH  1100001"))
 
     def test_four_letter_with_dashes(self):
         self.assertEqual(("PSCI", "110", "001"), separate_course_code("PSCI-110-001"))

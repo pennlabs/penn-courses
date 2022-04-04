@@ -4,10 +4,10 @@ from rest_framework import filters
 
 
 class TypedCourseSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]{1,4})?[ |-]?(\d{1,5})?$")
+    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4}|[A-Z]{1,4})?$")
 
     def infer_search_type(self, query):
-        if self.code_re.match(query):
+        if self.code_re.match(query.strip()):
             return "course"
         else:
             return "keyword"
@@ -32,18 +32,13 @@ class TypedCourseSearchBackend(filters.SearchFilter):
         search_type = self.get_search_type(request)
         query = request.query_params.get(self.search_param, "")
 
-        match = self.code_re.match(query)
+        match = self.code_re.match(query.strip())
         # If this is a course query, either by designation or by detection,
         if (
-            (
-                search_type == "course"
-                or (search_type == "auto" and self.infer_search_type(query) == "course")
-            )
-            and match
-            and match.group(1)
-            and match.group(2)
-        ):
-            query = f"{match.group(1)}-{match.group(2)}"
+            search_type == "course"
+            or (search_type == "auto" and self.infer_search_type(query) == "course")
+        ) and match:
+            query = f"{match.group(1)}-{match.group(2)}" if match.group(2) else match.group(1)
         return [query]
 
     def get_search_fields(self, view, request):
@@ -61,16 +56,14 @@ class TypedCourseSearchBackend(filters.SearchFilter):
 
 
 class TypedSectionSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]+) *[ -]?(\d{3,4}|[A-Z]{1,3})?[ -]?(\d+)?$")
+    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4}|[A-Z]{1,4})?\s*-?(\d{1,4})?$")
 
     def get_search_terms(self, request):
-        query = request.query_params.get(self.search_param, "")
+        query = request.query_params.get(self.search_param, "").strip()
 
         match = self.code_re.match(query)
         if match:
-            query = match.group(1)
-            if match.group(2) is not None:
-                query = query + f"-{match.group(2)}"
-                if match.group(3) is not None:
-                    query = query + f"-{match.group(3)}"
+            components = (match.group(1).upper(), match.group(2), match.group(3))
+            return ["-".join([c for c in components if c])]
+
         return [query]

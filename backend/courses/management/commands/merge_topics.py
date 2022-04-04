@@ -1,29 +1,33 @@
 import logging
-import os
 from collections import defaultdict
 from enum import Enum, auto
 from textwrap import dedent
 
-import jellyfish
-import nltk
-import numpy as np
 import pandas as pd
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
 
-from courses.course_text_similarity.heuristics import description_heuristics, title_heuristics
+from courses.course_similarity.heuristics import (
+    description_rejection_heuristics,
+    lev_divided_by_avg_length,
+    title_rejection_heuristics,
+)
 from courses.models import Topic
 
 
-MODEL = SentenceTransformer(
-    os.path.join(settings.BASE_DIR, "courses", "course_text_similarity", "all-MiniLM-L6-v2")
-)
-SENT_TOKENIZER = nltk.data.load(
-    "file:" + os.path.join(settings.BASE_DIR, "courses", "course_text_similarity", "english.pickle")
-)
+def load_crosswalk_links(cross_walk):
+    """
+    From a given crosswalk csv path, generate a dict mapping old_full_code to
+    a list of the new codes originating from that source.
+    """
+    links = defaultdict(list)
+    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
+    for _, r in cross_walk.iterrows():
+        old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
+        new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
+        links[old_full_code].append(new_full_code)
+    return links
 
 
 def get_branches_from_cross_walk(cross_walk):
@@ -32,14 +36,10 @@ def get_branches_from_cross_walk(cross_walk):
     a list of the new codes originating from that source, if there are multiple
     (i.e. only in the case of branches).
     """
-    branched_links = defaultdict(list)
-    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
-    for _, r in cross_walk.iterrows():
-        old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
-        new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
-        branched_links[old_full_code].append(new_full_code)
     return {
-        old_code: new_codes for old_code, new_codes in branched_links.items() if len(new_codes) > 1
+        old_code: new_codes
+        for old_code, new_codes in load_crosswalk_links(cross_walk).items()
+        if len(new_codes) > 1
     }
 
 
@@ -48,13 +48,11 @@ def get_direct_backlinks_from_cross_walk(cross_walk):
     From a given crosswalk csv path, generate a dict mapping new_full_code->old_full_code,
     ignoring branched links in the crosswalk (a course splitting into multiple new courses).
     """
-    links = defaultdict(list)
-    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
-    for _, r in cross_walk.iterrows():
-        old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
-        new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
-        links[old_full_code].append(new_full_code)
-    return {old_code: new_codes[0] for old_code, new_codes in links.items() if len(new_codes) == 1}
+    return {
+        old_code: new_codes[0]
+        for old_code, new_codes in load_crosswalk_links(cross_walk).items()
+        if len(new_codes) == 1
+    }
 
 
 def prompt_for_link_multiple(courses, extra_newlines=True):
@@ -86,6 +84,23 @@ def same_course(course_a, course_b):
     )
 
 
+def similar_courses(course_a, course_b):
+    title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
+    if (
+        not title_rejection_heuristics(title_a, title_b)
+        and lev_divided_by_avg_length(title_a, title_b) < 0.2
+    ):
+        return True
+    desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
+    if (
+        not description_rejection_heuristics(desc_a, desc_b)
+        and lev_divided_by_avg_length(desc_a, desc_b) < 0.2
+        # and semantic_similarity(desc_a, desc_b) > 0.7  # TODO: debug performance
+    ):
+        return True
+    return False
+
+
 class ShouldLinkCoursesResponse(Enum):
     DEFINITELY = auto()
     MAYBE = auto()
@@ -108,63 +123,17 @@ def should_link_courses(course_a, course_b, verbose=True, ignore_inexact=False):
     elif (course_a.code < "5000") != (course_b.code < "5000"):
         return ShouldLinkCoursesResponse.NO
     elif (not ignore_inexact) and similar_courses(course_a, course_b):
-        # If title is same or (title is similar and description is similar
-        # have a fairly low threshold for similarity)
-        if verbose and prompt_for_link(course_a, course_b):
-            return ShouldLinkCoursesResponse.DEFINITELY
-        if not verbose:
+        if verbose:
+            return (
+                ShouldLinkCoursesResponse.DEFINITELY
+                if prompt_for_link(course_a, course_b)
+                else ShouldLinkCoursesResponse.NO
+            )
+        else:
             # Log possible link
             logging.info(f"Found possible link between {course_a} and {course_b}")
-        return ShouldLinkCoursesResponse.MAYBE
+            return ShouldLinkCoursesResponse.MAYBE
     return ShouldLinkCoursesResponse.NO
-
-
-def lev_divided_by_avg_title_length(title_a, title_b):
-    """
-    Compute levenshtein distance between 2 titles and then divide by avg title length.
-    Titles are lowercased and whitespace is stripped from ends prior to comparison.
-    Assumes that titles are not just whitespace.
-    """
-    return 2 * jellyfish.levenshtein_distance(title_a, title_b) / (len(title_a) + len(title_b))
-
-
-def semantic_similarity(string_a, string_b):
-    """
-    Compute the semantics similarity between two strings. The strings are split
-    into sentences, then those sentences are turned into embeddings, and then
-    cosine similarity between matching sentences is computed. If the two strings
-    have different numbers of sentences, take the maximum similarity matching that
-    contains as many sentences as possible. Assumes both strings are not just
-    whitespace.
-    """
-    sentences_a = SENT_TOKENIZER.tokenize(string_a)
-    sentences_b = SENT_TOKENIZER.tokenize(string_b)
-    emb_a = MODEL.encode(sentences_a, convert_to_tensor=True)
-    emb_b = MODEL.encode(sentences_b, convert_to_tensor=True)
-    cosine_scores = util.cos_sim(emb_a, emb_b)
-    nrows, ncols = cosine_scores.shape
-    # compute tr/len(diag) for maximal length diagonals
-    max_trace = 0.0
-    for offset in range(0, ncols - nrows + 1):  # [0, cols - rows]
-        diag = np.diagonal(cosine_scores, offset=offset)
-        max_trace = max(max_trace, np.sum(diag) / len(diag))
-    return max_trace
-
-
-def similar_courses(course_a, course_b):
-    title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
-    if (
-        not title_heuristics(title_a, title_b)
-        and lev_divided_by_avg_title_length(title_a, title_b) < 0.2
-    ):
-        return True
-    desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
-    if (
-        not description_heuristics(desc_a, desc_b)
-        and semantic_similarity(desc_a, desc_b) > 0.7
-        and semantic_similarity(desc_a, desc_b) > 0.7
-    ):
-        return True
 
 
 def merge_topics(verbose=False, ignore_inexact=False):
@@ -182,8 +151,6 @@ def merge_topics(verbose=False, ignore_inexact=False):
     """
     if verbose:
         print("Merging topics")
-    if verbose:
-        print("Loading topics and courses from db (this may take a while)...")
     topics = set(
         Topic.objects.prefetch_related(
             "courses",
@@ -275,7 +242,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "-t",
-            "--topic_ids",
+            "--topic-ids",
             nargs="*",
             help=dedent(
                 """
@@ -302,7 +269,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        topic_ids = set(kwargs["topic_ids"])
+        topic_ids = set(kwargs["topic_ids"] or [])
+        ignore_inexact = kwargs["ignore_inexact"]
 
         print(
             "This script is atomic, meaning either all Topic merges will be comitted to the "
@@ -315,4 +283,4 @@ class Command(BaseCommand):
             return
 
         with transaction.atomic():
-            merge_topics(verbose=True)
+            merge_topics(verbose=True, ignore_inexact=ignore_inexact)

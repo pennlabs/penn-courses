@@ -13,19 +13,20 @@ def load_topic_branches(branches, print_missing=False, verbose=False):
     Loads specified topic branches into the branched_from field of the Topic model.
 
     :param branches: A dict specifying topic branches, in the form returned by
-        `get_branches_from_cross_walk`
-    :param verbose: If verbose=True, this script will print its progress.
-        Otherwise it will run silently.
+        `get_branches_from_cross_walk`.
+    :param print_missing: If True, prints courses involved in branches that were
+        not found in the database.
+    :param verbose: A flag indicating whether this script should print its progress.
     """
     if verbose:
         print("Loading branches into the db.")
 
     roots = Course.objects.filter(full_code__in=branches.keys()).select_related("topic")
-    root_to_topic = {root.full_code: root.topic for root in roots if root.topic is not None}
+    root_to_topic = {root.full_code: root.topic for root in roots if root.topic}
     children = Course.objects.filter(
         full_code__in=[c for children in branches.values() for c in children]
-    )
-    child_to_topic = {child.full_code: child.topic for child in children if child.topic is not None}
+    ).select_related("topic")
+    child_to_topic = {child.full_code: child.topic for child in children if child.topic}
     topics_to_save = dict()
 
     num_missing_roots = 0
@@ -52,7 +53,7 @@ def load_topic_branches(branches, print_missing=False, verbose=False):
         Topic.objects.bulk_update(topics_to_save.values(), ["branched_from"])
 
     if verbose:
-        print(f"Loaded {len(topics_to_save)} branches into the db.")
+        print(f"Added branches, modifying {len(topics_to_save)} topics.")
         print(f"{num_missing_roots}/{len(branches)} roots not found in db")
         print(
             f"{num_missing_children}/{sum(len(c) for c in branches.values())} "
@@ -100,7 +101,7 @@ class Command(BaseCommand):
 
         branches = get_branches_from_cross_walk(cross_walk_src)
 
-        if s3_bucket:
+        if cross_walk_src and s3_bucket:
             # Remove temporary file
             os.remove(cross_walk_src)
 

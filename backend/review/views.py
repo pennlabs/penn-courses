@@ -1,18 +1,7 @@
 from collections import defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import (
-    BooleanField,
-    Case,
-    F,
-    IntegerField,
-    OuterRef,
-    Q,
-    Subquery,
-    Sum,
-    Value,
-    When,
-)
+from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -43,7 +32,7 @@ from review.util import (
     avg_and_recent_demand_plots,
     avg_and_recent_percent_open_plots,
     get_average_and_recent_dict,
-    get_average_and_recent_dict_list,
+    get_average_and_recent_dict_single,
     get_historical_codes,
     get_num_sections,
     get_single_dict_from_qs,
@@ -93,11 +82,9 @@ course_filters_pcr = course_is_primary & course_filters_pcr_allow_xlist
 section_is_primary = Q(course__primary_listing__isnull=True) | Q(
     course__primary_listing_id=F("course_id")
 )
-section_filters_pcr = (
-    section_is_primary
-    & (~Q(course__title="") | ~Q(course__description="") | Q(review__isnull=False))
-    & ~Q(activity="REC")
-    & (~Q(status="X") | Q(review__isnull=False))
+section_filters_pcr = section_is_primary & (
+    Q(review__isnull=False)
+    | ((~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X"))
 )
 
 review_filters_pcr = Q(section__course__primary_listing__isnull=True) | Q(
@@ -182,7 +169,7 @@ def course_reviews(request, course_code):
                     "instructors__id"
                 )
             )
-        ).distinct(),
+        ),
         match_review_on=Q(
             section__course__topic=topic,
             instructor_id=OuterRef(OuterRef("id")),
@@ -204,21 +191,10 @@ def course_reviews(request, course_code):
     )
     course = get_single_dict_from_qs(course_qs)
 
-    num_registration_metrics = (
-        Section.objects.filter(
-            extra_metrics_section_filters_pcr(),
-            course__topic=topic,
-        )
-        .annotate(
-            has_registration_metrics=Case(
-                When(extra_metrics_section_filters, then=Value(1)),
-                default=Value(0),
-                output_field=IntegerField(),
-            )
-        )
-        .aggregate(num=Sum("has_registration_metrics"))["num"]
-        or 0
-    )
+    num_registration_metrics = Section.objects.filter(
+        extra_metrics_section_filters_pcr(),
+        course__topic=topic,
+    ).count()
 
     num_sections, num_sections_recent = get_num_sections(
         section_filters_pcr,
@@ -236,11 +212,11 @@ def course_reviews(request, course_code):
             ),
             "num_sections": num_sections,
             "num_sections_recent": num_sections_recent,
-            "instructors": get_average_and_recent_dict_list(
+            "instructors": get_average_and_recent_dict(
                 instructors_qs.values(), "id", extra_fields=["id", "name"]
             ),
             "registration_metrics": num_registration_metrics > 0,
-            **get_average_and_recent_dict(course),
+            **get_average_and_recent_dict_single(course),
         }
     )
 
@@ -442,27 +418,28 @@ def instructor_reviews(request, instructor_id):
         most_recent_full_code=F("topic__most_recent__full_code"),
     )
 
+    num_sections, num_sections_recent = get_num_sections(
+        section_filters_pcr,
+        course_id__in=Subquery(
+            Course.objects.filter(
+                course_filters_pcr,
+                sections__instructors__id=instructor_id,
+            ).values("id")
+        ),
+    )
+
+    # Return the most recent course taught by this instructor, for each topic
     courses_res = dict()
     max_sem = dict()
     for r in courses.values():
+        if not r["average_semester_count"]:
+            continue
         full_code = r["most_recent_full_code"]
         if full_code not in max_sem or max_sem[full_code] < r["semester"]:
             max_sem[full_code] = r["semester"]
-            courses_res[full_code] = get_average_and_recent_dict(
+            courses_res[full_code] = get_average_and_recent_dict_single(
                 r, full_code="most_recent_full_code", code="most_recent_full_code", name="title"
             )
-
-    course_ids_subquery = Subquery(
-        Course.objects.filter(
-            course_filters_pcr,
-            sections__instructors__id=instructor_id,
-        ).values("id")
-    )
-
-    num_sections, num_sections_recent = get_num_sections(
-        section_filters_pcr,
-        course_id__in=course_ids_subquery,
-    )
 
     return Response(
         {
@@ -470,7 +447,7 @@ def instructor_reviews(request, instructor_id):
             "num_sections_recent": num_sections_recent,
             "num_sections": num_sections,
             "courses": courses_res,
-            **get_average_and_recent_dict(inst),
+            **get_average_and_recent_dict_single(inst),
         }
     )
 
@@ -525,7 +502,7 @@ def department_reviews(request, department_code):
             "code": department.code,
             "name": department.name,
             "courses": {
-                r["full_code"]: get_average_and_recent_dict(
+                r["full_code"]: get_average_and_recent_dict_single(
                     r, full_code="full_code", code="full_code", name="title"
                 )
                 for r in courses.values()
@@ -655,24 +632,30 @@ def autocomplete(request):
         .values("full_code", "most_recent_full_code", "title")
         .distinct()
     )
-    course_set = [
-        {
-            "title": course["full_code"],
-            "most_recent_full_code": course["most_recent_full_code"],
-            "desc": [course["title"]],
-            "url": f"/course/{course['full_code']}",
-        }
-        for course in courses
-    ]
+    course_set = sorted(
+        [
+            {
+                "title": course["full_code"],
+                "most_recent_full_code": course["most_recent_full_code"],
+                "desc": [course["title"]],
+                "url": f"/course/{course['full_code']}",
+            }
+            for course in courses
+        ],
+        key=lambda x: x["title"],
+    )
     departments = Department.objects.all().values("code", "name")
-    department_set = [
-        {
-            "title": dept["code"],
-            "desc": dept["name"],
-            "url": f"/department/{dept['code']}",
-        }
-        for dept in departments
-    ]
+    department_set = sorted(
+        [
+            {
+                "title": dept["code"],
+                "desc": dept["name"],
+                "url": f"/department/{dept['code']}",
+            }
+            for dept in departments
+        ],
+        key=lambda d: d["title"],
+    )
 
     instructors = (
         Instructor.objects.filter(section__instructors__id=F("id"))
@@ -695,14 +678,17 @@ def autocomplete(request):
         except TypeError:
             return ""
 
-    instructor_set = [
-        {
-            "title": v["title"],
-            "desc": join_depts(v["desc"]),
-            "url": v["url"],
-        }
-        for k, v in instructor_set.items()
-    ]
+    instructor_set = sorted(
+        [
+            {
+                "title": v["title"],
+                "desc": join_depts(v["desc"]),
+                "url": v["url"],
+            }
+            for v in instructor_set.values()
+        ],
+        key=lambda x: x["title"],
+    )
 
     return Response(
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}

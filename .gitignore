@@ -12,7 +12,7 @@ yarn-debug.log*
 yarn-error.log*
 frontend/*/build/
 frontend/*/.next
-PennCourses/settings/static/
+backend/PennCourses/settings/static/
 *.sqlite3
 *-test.json
 celerybeat-schedule

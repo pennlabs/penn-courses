@@ -95,7 +95,7 @@ def sections_with_reviews(queryset):
     # ^ imported here to avoid circular imports
     # get all the reviews for instructors in the Section.instructors many-to-many
     instructors_subquery = Subquery(
-        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id").order_by()
+        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id")
     )
 
     return review_averages(
