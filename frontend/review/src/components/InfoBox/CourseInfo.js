@@ -1,9 +1,12 @@
 import React from "react";
 import reactStringReplace from "react-string-replace";
 import { Link } from "react-router-dom";
+import styled from "styled-components";
 
 import { CourseDetails, Popover, PopoverTitle } from "../common";
 import { toNormalizedSemester } from "../../utils/helpers";
+
+import ReactTooltip from "react-tooltip";
 
 const activityMap = {
   REC: "Recitation",
@@ -197,6 +200,13 @@ const TagsWhenOffered = ({
   );
 };
 
+const HistoricalCodes = styled.div`
+  display: flex;
+  flex-direction: row;
+  color: #4a4a4a;
+  align-items: center;
+`;
+
 export const CourseHeader = ({
   aliases,
   code,
@@ -279,6 +289,51 @@ export const CourseHeader = ({
           </Link>
         ])}
       </div>
+    )}
+    {data.historical_codes && Boolean(data.historical_codes.length) && (
+      <HistoricalCodes>
+        Previously:&nbsp;
+        {data.historical_codes.map((obj, i) => [
+          i > 0 && <div>&#44;&nbsp;</div>,
+          obj.branched_from ? (
+            <Link to={`/course/${obj.full_code}`}>{obj.full_code} </Link>
+          ) : (
+            <div>{obj.full_code}</div>
+          )
+        ])}
+        &nbsp;
+        <span data-tip data-for="historical-tooltip">
+          <i
+            className="fa fa-question-circle"
+            style={{
+              color: "#c6c6c6",
+              fontSize: "13px",
+              marginBottom: "0.3rem"
+            }}
+          />
+        </span>
+        <ReactTooltip
+          id="historical-tooltip"
+          place="right"
+          className="opaque"
+          type="light"
+          effect="solid"
+          border={true}
+          borderColor="#ededed"
+          textColor="#4a4a4a"
+        >
+          <span className="tooltip-text">
+            Historical courses are grouped on PCR <br />
+            using a variety of approximate methods.
+            <br />
+            Grouped courses should not necessarily
+            <br />
+            be seen as equivalent for the purposes of
+            <br />
+            academic planning or fulfilling requirements.
+          </span>
+        </ReactTooltip>
+      </HistoricalCodes>
     )}
     <p className="subtitle">{name}</p>
     {notes &&
