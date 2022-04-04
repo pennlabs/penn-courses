@@ -3,11 +3,6 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
-[[source]]
-url = "https://download.pytorch.org/whl/cpu"
-verify_ssl = true
-name = "downloadpytorch"
-
 [dev-packages]
 codecov = "*"
 coverage = "*"
@@ -63,10 +58,6 @@ python-dateutil = "*"
 jellyfish = "*"
 matplotlib = "*"
 jupyter = "*"
-transformers = "*"
-sentence-transformers = {version = "*", sys_platform = "== 'linux'"}
-torch = "*"
-nltk = "*"
 
 [requires]
 python_full_version = "3.10"

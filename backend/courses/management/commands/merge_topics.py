@@ -95,7 +95,6 @@ def similar_courses(course_a, course_b):
     if (
         not description_rejection_heuristics(desc_a, desc_b)
         and lev_divided_by_avg_length(desc_a, desc_b) < 0.2
-        # and semantic_similarity(desc_a, desc_b) > 0.7  # TODO: debug performance
     ):
         return True
     return False
