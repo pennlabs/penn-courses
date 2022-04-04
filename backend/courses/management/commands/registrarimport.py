@@ -5,7 +5,6 @@ from tqdm import tqdm
 
 from alert.management.commands.recomputestats import recompute_stats
 from courses import registrar
-from courses.management.commands.loadrequirements import load_requirements
 from courses.management.commands.loadstatus import set_all_status
 from courses.models import Department
 from courses.util import get_current_semester, upsert_course_from_opendata
@@ -15,7 +14,7 @@ def registrar_import(semester=None, query=""):
     if semester is None:
         semester = get_current_semester()
 
-    print("loading in courses with prefix %s from %s..." % (query, semester))
+    print("Loading in courses with prefix %s from %s..." % (query, semester))
     results = registrar.get_courses(query, semester)
 
     for course in tqdm(results):
@@ -28,11 +27,7 @@ def registrar_import(semester=None, query=""):
         dept.name = dept_name
         dept.save()
 
-    print("loading requirements from SEAS...")
-    load_requirements(school="SEAS", semester=semester)
-    print("loading requirements from Wharton...")
-    load_requirements(school="WH", semester=semester)
-    print("loading course statuses from registrar...")
+    print("Loading course statuses from registrar...")
     set_all_status(semester=semester)
 
     recompute_stats(semesters=semester, verbose=True)

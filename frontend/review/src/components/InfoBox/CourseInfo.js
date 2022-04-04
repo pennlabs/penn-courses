@@ -8,44 +8,6 @@ import { toNormalizedSemester } from "../../utils/helpers";
 
 import ReactTooltip from "react-tooltip";
 
-const getSyllabusData = courses =>
-  Object.values(courses)
-    .map(course =>
-      Object.values(course)
-        .filter(({ syllabus_url: url }) => url)
-        .map(
-          ({
-            syllabus_url: url,
-            section_id_normalized: sectionId,
-            instructors = []
-          }) => {
-            const instructedBy =
-              instructors.map(c => c.name).join(", ") || "Unknown";
-            return {
-              url,
-              name: `${sectionId} - ${instructedBy}`
-            };
-          }
-        )
-    )
-    .flat()
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-const getPrereqData = courses => {
-  const prereqString = Object.values(courses)
-    .map(a =>
-      Object.values(a)
-        .map(({ prerequisite_notes: notes = [] }) => notes.join(" "))
-        .filter(b => b)
-    )
-    .flat()
-    .join(" ");
-  const prereqs = [
-    ...new Set(prereqString.match(/[A-Z]{2,4}[ -]\d{3,4}/g))
-  ].map(a => a.replace(" ", "-"));
-  return prereqs;
-};
-
 const activityMap = {
   REC: "Recitation",
   LEC: "Lecture",
@@ -99,11 +61,6 @@ const TagsWhenOffered = ({
 }) => {
   const { instructors: instructorData = {}, code = "" } = data;
   const courseName = code.replace("-", " ");
-  // TODO: Get syllabus data
-  // const [syllabi, prereqs] = useMemo(
-  //   () => [getSyllabusData(courses), getPrereqData(courses)],
-  //   [courses]
-  // );
   const { sections, semester } = liveData;
   const term = toNormalizedSemester(semester);
   const credits =

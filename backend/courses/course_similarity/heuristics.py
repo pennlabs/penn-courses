@@ -94,7 +94,7 @@ def description_rejection_heuristics(desc_a, desc_b):
         if exclude_string in desc_a or exclude_string in desc_b:
             return True
     for regex in [topics_vary_regex]:
-        if regex.search(desc_a) or regex.search(regex, desc_b):
+        if regex.search(desc_a) or regex.search(desc_b):
             return True
 
     return False

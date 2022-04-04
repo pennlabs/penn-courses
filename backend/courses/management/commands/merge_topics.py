@@ -49,7 +49,7 @@ def get_direct_backlinks_from_cross_walk(cross_walk):
     ignoring branched links in the crosswalk (a course splitting into multiple new courses).
     """
     return {
-        old_code: new_codes[0]
+        new_codes[0]: old_code
         for old_code, new_codes in load_crosswalk_links(cross_walk).items()
         if len(new_codes) == 1
     }

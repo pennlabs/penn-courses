@@ -1,18 +1,30 @@
+import operator
 import re
+from functools import reduce
 
+from django.db.models import Q
 from rest_framework import filters
 
 
-class TypedCourseSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4}|[A-Z]{1,4})?$")
+def filter_or_lookups_terms(queryset, orm_lookups, search_terms):
+    """
+    Filters the queryset by any of the given orm lookups matching any of the given search terms.
+    """
+    conditions = []
+    for search_term in search_terms:
+        queries = [Q(**{orm_lookup: search_term}) for orm_lookup in orm_lookups]
+        conditions.append(reduce(operator.or_, queries))
+    return queryset.filter(reduce(operator.or_, conditions))
 
-    def infer_search_type(self, query):
-        if self.code_re.match(query.strip()):
-            return "course"
-        else:
-            return "keyword"
+
+class TypedCourseSearchBackend(filters.SearchFilter):
+    code_res = [
+        re.compile(r"^([A-Za-z]{" + str(dept_len) + r"})\s*-?\s*(\d{1,4}[A-Za-z]?|[A-Za-z]{1,3})?$")
+        for dept_len in reversed(range(1, 5))
+    ]  # To avoid ambiguity (e.g. INTL-BUL as INTLBUL), try each dept code length separately
 
     def get_schema_operation_parameters(self, view):
+        """For autodocs."""
         return [
             {
                 "name": "search",
@@ -24,46 +36,98 @@ class TypedCourseSearchBackend(filters.SearchFilter):
             },
         ]
 
-    @staticmethod
-    def get_search_type(request):
-        return request.GET.get("type", "auto")
+    def infer_search_type(self, query):
+        if not any(r.match(query) for r in self.code_res):
+            return "keyword"
+        elif re.search(r"[A-Za-z]{5,}", query):
+            return "both"
+        else:
+            return "course"
+
+    def get_query(self, request):
+        return request.GET.get(self.search_param, "").strip()
+
+    def get_search_type(self, request):
+        search_type = request.GET.get("type", "auto")
+        if search_type == "auto":
+            # Cache regex results for performance
+            inferred_search_type = getattr(self, "inferred_search_type", None)
+            search_type = inferred_search_type or self.infer_search_type(self.get_query(request))
+            self.inferred_search_type = search_type
+        return search_type
 
     def get_search_terms(self, request):
         search_type = self.get_search_type(request)
-        query = request.query_params.get(self.search_param, "")
+        query = self.get_query(request)
 
-        match = self.code_re.match(query.strip())
-        # If this is a course query, either by designation or by detection,
-        if (
-            search_type == "course"
-            or (search_type == "auto" and self.infer_search_type(query) == "course")
-        ) and match:
-            query = f"{match.group(1)}-{match.group(2)}" if match.group(2) else match.group(1)
-        return [query]
+        if search_type == "keyword":
+            return [query]
+
+        def get_code_prefix(r):
+            match = r.match(query)
+            if match:
+                components = (match.group(1), match.group(2))
+                return "-".join([c for c in components if c])
+
+        terms = [get_code_prefix(r) for r in self.code_res]
+        if search_type == "both":
+            terms.append(query)
+
+        return [t for t in terms if t]
 
     def get_search_fields(self, view, request):
         search_type = self.get_search_type(request)
-
-        if search_type == "auto":
-            search_type = self.infer_search_type(request.GET.get("search", ""))
-
         if search_type == "course":
             return ["^full_code"]
         elif search_type == "keyword":
             return ["title", "sections__instructors__name"]
         else:
-            return super().get_search_fields(view, request)
+            return ["^full_code", "title", "sections__instructors__name"]
+
+    def filter_queryset(self, request, queryset, view):
+        if not self.get_query(request):
+            return queryset
+
+        search_fields = self.get_search_fields(view, request)
+        orm_lookups = [self.construct_search(str(search_field)) for search_field in search_fields]
+        search_terms = self.get_search_terms(request)
+        if not search_terms:
+            return queryset.none()
+
+        return filter_or_lookups_terms(queryset, orm_lookups, search_terms)
 
 
 class TypedSectionSearchBackend(filters.SearchFilter):
-    code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{1,4}|[A-Z]{1,4})?\s*-?(\d{1,4})?$")
+    code_res = [
+        re.compile(
+            r"^([A-Za-z]{" + str(dept_len) + r"})\s*-?\s*"
+            r"(\d{1,4}[A-Za-z]?|[A-Za-z]{1,3})?\s*-?\s*"
+            r"(\d{1,3}|[A-Za-z]{1,3})?$"
+        )  # To avoid ambiguity (e.g. INTL-BUL as INTLBUL), try each dept code length separately
+        for dept_len in reversed(range(1, 5))
+    ]
+
+    def get_query(self, request):
+        return request.GET.get(self.search_param, "").strip()
 
     def get_search_terms(self, request):
-        query = request.query_params.get(self.search_param, "").strip()
+        query = self.get_query(request)
 
-        match = self.code_re.match(query)
-        if match:
-            components = (match.group(1).upper(), match.group(2), match.group(3))
-            return ["-".join([c for c in components if c])]
+        def get_code_prefix(r):
+            match = r.match(query)
+            if match:
+                components = (match.group(1), match.group(2), match.group(3))
+                return "-".join([c for c in components if c])
 
-        return [query]
+        terms = [get_code_prefix(r) for r in self.code_res]
+        return [t for t in terms if t]
+
+    def filter_queryset(self, request, queryset, view):
+        if not self.get_query(request):
+            return queryset
+        orm_lookups = [self.construct_search("^full_code")]
+        search_terms = self.get_search_terms(request)
+        if not search_terms:
+            return queryset.none()
+
+        return filter_or_lookups_terms(queryset, orm_lookups, search_terms)

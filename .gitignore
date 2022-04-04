@@ -19,3 +19,4 @@ celerybeat-schedule
 pcr-backup*
 
 # frontend/*/src/components/shared
+*.sqlite3-journal
