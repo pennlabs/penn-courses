@@ -4,6 +4,7 @@ import logging
 import requests
 from django.conf import settings
 from tqdm import tqdm
+
 from courses.util import translate_semester
 
 
@@ -19,15 +20,14 @@ def get_token():
     if not response.ok:
         raise ValueError(
             "OpenData token URL responded with status code "
-            f"{response.status_code}: {response.json()}"
+            f"{response.status_code}: {response.text}"
         )
     return response.json()["access_token"]
 
 
 def get_headers():
     return {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization-Bearer": get_token(),
+        "Authorization": "Bearer " + get_token(),
     }
 
 
@@ -35,7 +35,7 @@ def make_api_request(params, headers):
     if headers is None:
         headers = get_headers()
     r = requests.get(
-        "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search",
+        f"{settings.OPEN_DATA_API_BASE}/v1/course_section_search",
         params=params,
         headers=headers,
     )
@@ -53,7 +53,7 @@ def report_api_error(err):
 def get_all_course_status(semester):
     semester = translate_semester(semester)
     headers = get_headers()
-    url = f"https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_status/{semester}/all"
+    url = f"{settings.OPEN_DATA_API_BASE}/v1/course_section_status/{semester}/all"
     r = requests.get(url, headers=headers)
     if r.status_code == requests.codes.ok:
         return r.json().get("result_data", [])
@@ -67,7 +67,7 @@ def get_all_course_status(semester):
 
 def get_departments():
     headers = get_headers()
-    url = "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search_parameters"
+    url = f"{settings.OPEN_DATA_API_BASE}/v1/course_section_search_parameters"
     r = requests.get(url, headers=headers)
     if r.status_code == requests.codes.ok:
         result_data = r.json().get("result_data", [])
@@ -76,7 +76,7 @@ def get_departments():
         else:
             raise ValueError("OpenData API returned data with no populated result_data field.")
     else:
-        raise ValueError(f"OpenData API responded with status code {r.status_code}: {r.json()}.")
+        raise ValueError(f"OpenData API responded with status code {r.status_code}: {r.text}.")
 
 
 def get_courses(query, semester):
@@ -110,4 +110,6 @@ def get_courses(query, semester):
     if pbar is not None:
         pbar.close()
 
-    return results
+    distinct_results = {r["section_id"]: r for r in results if r["section_id"]}.values()
+
+    return distinct_results

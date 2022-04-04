@@ -20,13 +20,12 @@ from courses.models import (
     Department,
     Instructor,
     Meeting,
-    Requirement,
     Restriction,
     Room,
     Section,
     StatusUpdate,
+    User,
 )
-from review.util import titleize
 
 
 logger = logging.getLogger(__name__)
@@ -172,7 +171,9 @@ def get_or_create_add_drop_period(semester):
     return add_drop
 
 
-section_code_re = re.compile(r"^([A-Za-z]{1,4})\s*-?(\d{3,4}|[A-Z]{3,4})?\s*-?(\d{3,4})?$")
+section_code_re = re.compile(
+    r"^([A-Za-z]{1,4})\s*-?(\d{3,4}[A-Za-z]?|[A-Z]{3,4})\s*-?(\d{3,4}|[A-Za-z]{3,4})?$"
+)
 
 
 def separate_course_code(course_code, allow_partial=False):
@@ -282,12 +283,34 @@ def record_update(section, semester, old_status, new_status, alerted, req, creat
     return u
 
 
-def set_instructors(section, names):
-    instructors = []
-    for instructor in names:
-        i, _ = Instructor.objects.get_or_create(name=instructor)
-        instructors.append(i)
-    section.instructors.set(instructors)
+def set_instructors(section, instructors):
+    instructor_obs = []
+    for instructor in instructors:
+        middle_initial = instructor["middle_initial"]
+        if middle_initial:
+            middle_initial += "."
+        name_components = (
+            instructor["first_name"],
+            middle_initial,
+            instructor["last_name"],
+        )
+        name = " ".join([c for c in name_components if c])
+        penn_id = int(instructor["penn_id"])
+        try:
+            instructor_ob = Instructor.objects.filter(user_id=penn_id)[:1].get()
+            if instructor_ob.name != name:
+                instructor_ob.name = name
+                instructor_ob.save()
+        except Instructor.DoesNotExist:
+            try:
+                user = User.objects.get(id=penn_id)
+            except User.DoesNotExist:
+                user = None
+            instructor_ob, _ = Instructor.objects.get_or_create(
+                name=name, defaults={"user": user}
+            )  # TODO: save Penn ID
+        instructor_obs.append(instructor_ob)
+    section.instructors.set(instructor_obs)
 
 
 def get_room(building_code, room_number):
@@ -305,15 +328,39 @@ def extract_date(date_str):
     return date_str
 
 
+def clean_meetings(meetings):
+    return {
+        (m["days"], m["begin_time"], m["end_time"], m["building_code"], m["room_code"]): m
+        for m in meetings
+        if m["days"] and m["begin_time"] and m["end_time"]
+    }.values()
+
+
 def set_meetings(section, meetings):
+    meetings = clean_meetings(meetings)
+
+    meeting_times = [
+        f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}" for meeting in meetings
+    ]
+    section.meeting_times = json.dumps(meeting_times)
+
     section.meetings.all().delete()
     for meeting in meetings:
-        room = get_room(meeting["building_code"], meeting["room_number"])
-        start_time = meeting["begin_time_24"]
-        end_time = meeting["end_time_24"]
+        online = (
+            not meeting["building_code"]
+            or not meeting["room_code"]
+            or meeting["building_desc"]
+            and (
+                meeting["building_desc"].lower() == "online"
+                or meeting["building_desc"].lower() == "no room needed"
+            )
+        )
+        room = None if online else get_room(meeting["building_code"], meeting["room_code"])
+        start_time = Decimal(meeting["begin_time_24"]) / 100
+        end_time = Decimal(meeting["end_time_24"]) / 100
         start_date = extract_date(meeting["start_date"])
         end_date = extract_date(meeting["end_date"])
-        for day in list(meeting["meeting_days"]):
+        for day in list(meeting["days"]):
             Meeting(
                 section=section,
                 day=day,
@@ -325,29 +372,30 @@ def set_meetings(section, meetings):
             ).save()
 
 
-def add_associated_sections(section, info):
+def add_associated_sections(section, linked_sections):
     semester = section.course.semester
-    associations = ["labs", "lectures", "recitations"]
-    for assoc in associations:
-        sections = info.get(assoc, [])
-        for sect in sections:
-            section_code = f"{sect['subject']}-{sect['course_id']}-{sect['section_id']}"
-            _, associated, _, _ = get_or_create_course_and_section(section_code, semester)
-            section.associated_sections.add(associated)
+    for s in linked_sections:
+        subject_code = s.get("subject_code") or s.get("subject_code ")
+        course_number = s.get("course_number") or s.get("course_number ")
+        section_number = s.get("section_number") or s.get("section_number ")
+        if not (subject_code and course_number and section_number):
+            continue
+        full_code = f"{subject_code}-{course_number}-{section_number}"
+        _, associated, _, _ = get_or_create_course_and_section(full_code, semester)
+        section.associated_sections.add(associated)
 
 
 def set_crosslistings(course, crosslist_primary):
     if not crosslist_primary:
         course.primary_listing = course
     else:
-        primary_course, _, _, _ = get_or_create_course_and_section(
-            crosslist_primary, course.semester
-        )
+        dept, course_code, _ = separate_course_code(crosslist_primary, allow_partial=True)
+        primary_course, _ = get_or_create_course(dept, course_code, course.semester)
         course.primary_listing = primary_course
 
 
-def add_restrictions(section, requirements):
-    for r in requirements:
+def add_restrictions(section, restrictions):
+    for r in restrictions:
         rest, _ = Restriction.objects.get_or_create(
             code=r["registration_control_code"],
             defaults={"description": r["requirement_description"]},
@@ -355,92 +403,34 @@ def add_restrictions(section, requirements):
         section.restrictions.add(rest)
 
 
-def add_college_requirements(course, college_reqs):
-    code_to_name = {
-        "MDS": "Society Sector",
-        "MDH": "History & Tradition Sector",
-        "MDA": "Arts & Letters Sector",
-        "MDO": "Humanities & Social Science Sector",
-        "MDL": "Living World Sector",
-        "MDP": "Physical World Sector",
-        "MDN": "Natural Science & Math Sector",
-        "MWC": "Writing Requirement",
-        "MQS": "College Quantitative Data Analysis Req.",
-        "MFR": "Formal Reasoning Course",
-        "MC1": "Cross Cultural Analysis",
-        "MC2": "Cultural Diversity in the US",
-        "MGH": "Benjamin Franklin Seminars",
-    }
-    name_to_code = dict([(v, k) for k, v in code_to_name.items()])
-    for req_name in college_reqs:
-        req = Requirement.objects.get_or_create(
-            semester=course.semester,
-            school="SAS",
-            code=name_to_code[req_name],
-            defaults={"name": req_name},
-        )[0]
-        req.courses.add(course)
-
-
-def relocate_reqs_from_restrictions(rests, reqs, travellers):
-    for t in travellers:
-        if any(r["requirement_description"] == t for r in rests):
-            reqs.append(t)
-
-
-CU_REGEX = re.compile(r"([0-9]*(\.[0-9]+)?)(\s*to\s*[0-9]*(\.[0-9]+)?)?\s*CU")
-
-
 def upsert_course_from_opendata(info, semester):
-    # TODO: load attributes
-    # TODO: maybe add grade modes?
-    course_code = info["section_id"]
-    try:
-        course, section, _, _ = get_or_create_course_and_section(course_code, semester)
-    except ValueError:
-        return  # if we can't parse the course code, skip this course.
+    course_code = f"{info['course_department']}-{info['course_number']}-{info['section_number']}"
+    course, section, _, _ = get_or_create_course_and_section(course_code, semester)
 
-    # https://stackoverflow.com/questions/11159118/incorrect-string-value-xef-xbf-xbd-for-column
-    course.title = info["course_title"].replace("\uFFFD", "")
-    course.description = info["course_description"].replace("\uFFFD", "")
-    if info.get("syllabus_url"):
-        course.syllabus_url = info["syllabus_url"].replace("\uFFFD", "")
-    # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: find a way to get prerequisites
+    course.title = info["course_title"] or ""
+    course.description = info["course_description"] or ""
+    # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite notes
+    course.syllabus_url = info.get("syllabus_url") or None
     set_crosslistings(course, info["crosslist_primary"])
 
-    m = CU_REGEX.match(info["credits"])
-    if info["credit_type"] == "CU" and m is not None:
-        try:
-            section.credits = float(m.group(1))
-        except ValueError:
-            section.credits = 0
-        except IndexError:
-            section.credits = 0
+    try:
+        min_cr = Decimal(info["minimum_credit"] or "0")
+        max_cr = Decimal(info["maximum_credit"] or "0")
+        section.credits = Decimal.max(min_cr, max_cr)
+    except ValueError:
+        section.credits = Decimal(0)
 
-    section.capacity = int(info["max_enrollment"])
-    section.activity = info["activity"]
-    section.meeting_times = json.dumps(
-        [
-            meeting["days"] + " " + meeting["begin_time"] + " - " + meeting["end_time"]
-            for meeting in info["meetings"]
-        ]
-    )
+    section.capacity = int(info["max_enrollment"] or 0)
+    section.activity = info["activity"] or "***"
 
-    # TODO: use instructor PennID
-    set_instructors(section, [titleize(instructor["name"]) for instructor in info["instructors"]])
     set_meetings(section, info["meetings"])
-    add_associated_sections(section, info)
-    add_restrictions(section, info["requirements"])
-    relocate_reqs_from_restrictions(
-        info["requirements"],
-        info["fulfills_college_requirements"],
-        [
-            "Humanities & Social Science Sector",
-            "Natural Science & Math Sector",
-            "Benjamin Franklin Seminars",
-        ],
-    )
-    add_college_requirements(section.course, info["fulfills_college_requirements"])
+
+    set_instructors(section, info["instructors"])
+    add_associated_sections(section, info["linked_courses"])
+
+    # add_attributes(section, info["attributes"])  # TODO: save attributes (course or section?)
+    # add_restrictions(section, info["restrictions"])  # TODO: add registration restrictions
+    # add_grade_modes(section, info["grade_modes"])  # TODO: save grade modes
 
     section.save()
     course.save()

@@ -594,7 +594,7 @@ class Section(models.Model):
     )
 
     credits = models.DecimalField(
-        max_digits=3,  # some course for 2019C is 14 CR...
+        max_digits=4,  # some course for 2019C is 14 CR...
         decimal_places=2,
         null=True,
         blank=True,
@@ -927,8 +927,15 @@ class Meeting(models.Model):
     )
     room = models.ForeignKey(
         Room,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
-        help_text="The Room object in which the meeting is taking place.",
+        help_text=dedent(
+            """
+        The Room object in which the meeting is taking place
+        (null if this is an online meeting).
+        """
+        ),
     )
 
     start_date = models.TextField(

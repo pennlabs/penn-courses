@@ -164,6 +164,7 @@ OPEN_DATA_OIDC_SECRET = os.environ.get("OPEN_DATA_OIDC_SECRET", "")
 OPEN_DATA_TOKEN_URL = (
     "https://sso.apps.k8s.upenn.edu/auth/realms/master/protocol/openid-connect/token"
 )
+OPEN_DATA_API_BASE = "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api"
 
 # Penn OpenData Course Status Webhook Auth
 WEBHOOK_USERNAME = os.environ.get("WEBHOOK_USERNAME", "webhook")

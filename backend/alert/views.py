@@ -27,8 +27,8 @@ from courses.util import (
     get_current_semester,
     get_or_create_course_and_section,
     record_update,
-    update_course_from_record,
     translate_semester_inv,
+    update_course_from_record,
 )
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
