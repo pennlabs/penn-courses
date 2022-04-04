@@ -14,7 +14,6 @@ def filter_or_lookups_terms(queryset, orm_lookups, search_terms):
     for search_term in search_terms:
         queries = [Q(**{orm_lookup: search_term}) for orm_lookup in orm_lookups]
         conditions.append(reduce(operator.or_, queries))
-
     return queryset.filter(reduce(operator.or_, conditions))
 
 
@@ -38,7 +37,6 @@ class TypedCourseSearchBackend(filters.SearchFilter):
         ]
 
     def infer_search_type(self, query):
-        query = query.strip()
         if not any(r.match(query) for r in self.code_res):
             return "keyword"
         elif re.search(r"[A-Za-z]{5,}", query):
@@ -52,6 +50,7 @@ class TypedCourseSearchBackend(filters.SearchFilter):
     def get_search_type(self, request):
         search_type = request.GET.get("type", "auto")
         if search_type == "auto":
+            # Cache regex results for performance
             inferred_search_type = getattr(self, "inferred_search_type", None)
             search_type = inferred_search_type or self.infer_search_type(self.get_query(request))
             self.inferred_search_type = search_type
@@ -61,7 +60,7 @@ class TypedCourseSearchBackend(filters.SearchFilter):
         search_type = self.get_search_type(request)
         query = self.get_query(request)
 
-        if search_type != "course" and search_type != "both":
+        if search_type == "keyword":
             return [query]
 
         def get_code_prefix(r):
