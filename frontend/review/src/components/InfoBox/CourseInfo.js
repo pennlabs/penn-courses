@@ -6,23 +6,7 @@ import styled from "styled-components";
 import { CourseDetails, Popover, PopoverTitle } from "../common";
 import { toNormalizedSemester } from "../../utils/helpers";
 
-import InfoTool from "../common/PcrInfoTool";
-
-const text = (
-  <div>
-    Historical courses are grouped on Penn Course Review using a variety of
-    approximate methods. Grouped courses should not necessarily be seen as
-    equivalent for the purposes of academic planning or fulfilling requirements.
-    If you have any concerns about groupings, please email us at
-    <Link> contact@penncourses.org.</Link>
-  </div>
-);
-const Historical = styled.div`
-  display: flex;
-  flex-direction: row;
-  color: black;
-  align-items: center;
-`;
+import ReactTooltip from "react-tooltip";
 
 const getSyllabusData = courses =>
   Object.values(courses)
@@ -259,6 +243,13 @@ const TagsWhenOffered = ({
   );
 };
 
+const HistoricalCodes = styled.div`
+  display: flex;
+  flex-direction: row;
+  color: #4a4a4a;
+  align-items: center;
+`;
+
 export const CourseHeader = ({
   aliases,
   code,
@@ -343,10 +334,8 @@ export const CourseHeader = ({
       </div>
     )}
     {data.historical_codes && Boolean(data.historical_codes.length) && (
-      <Historical>
-        Previously
-        <InfoTool text={text} />
-        :&nbsp;
+      <HistoricalCodes>
+        Previously:&nbsp;
         {data.historical_codes.map((obj, i) => [
           i > 0 && <div>&#44;&nbsp;</div>,
           obj.branched_from ? (
@@ -355,7 +344,39 @@ export const CourseHeader = ({
             <div>{obj.full_code}</div>
           )
         ])}
-      </Historical>
+        &nbsp;
+        <span data-tip data-for="historical-tooltip">
+          <i
+            className="fa fa-question-circle"
+            style={{
+              color: "#c6c6c6",
+              fontSize: "13px",
+              marginBottom: "0.3rem"
+            }}
+          />
+        </span>
+        <ReactTooltip
+          id="historical-tooltip"
+          place="right"
+          className="opaque"
+          type="light"
+          effect="solid"
+          border={true}
+          borderColor="#ededed"
+          textColor="#4a4a4a"
+        >
+          <span className="tooltip-text">
+            Historical courses are grouped on PCR <br />
+            using a variety of approximate methods.
+            <br />
+            Grouped courses should not necessarily
+            <br />
+            be seen as equivalent for the purposes of
+            <br />
+            academic planning or fulfilling requirements.
+          </span>
+        </ReactTooltip>
+      </HistoricalCodes>
     )}
     <p className="subtitle">{name}</p>
     {notes &&
