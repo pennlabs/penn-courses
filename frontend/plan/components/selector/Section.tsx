@@ -127,17 +127,17 @@ const HoverSwitch = styled.div`
 export default function Section({ section, cart, inCart }: SectionProps) {
     const { instructors, meetings, status } = section;
 
-    const {schedules, scheduleSelected} = useSelector((store: any) => store.schedule);
+    const { schedules, scheduleSelected } = useSelector((store: any) => store.schedule);
 
     const overlap = section.meetings
-    ? meetingSetsIntersect(
-        section.meetings,
-        schedules[scheduleSelected].meetings
-            .filter((s: SectionType) => s.id !== section.id)
-            .map((s: SectionType) => s.meetings)
-            .flat()
-    )
-    : false;
+        ? meetingSetsIntersect(
+            section.meetings,
+            schedules[scheduleSelected].meetings
+                .filter((s: SectionType) => s.id !== section.id)
+                .map((s: SectionType) => s.meetings)
+                .flat()
+        )
+        : false;
 
     const cartAdd = () => {
         cart.add();
@@ -179,18 +179,18 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                         </InstructorContainer>
                     </IdAndInstructorContainer>
                     <MiscellaneousInfoContainer>
-                        <div style={{ paddingRight: "5px"}}>
+                        <div style={{ paddingRight: "5px" }}>
                             {overlap && (
-                            <div className="popover is-popover-right">
-                                <i
-                                    style={{ paddingRight: "5px", color: "#c6c6c6" }}
-                                    className="fas fa-calendar-times"
-                                />
-                                 <span className="popover-content">
-                                    Conflicts with schedule!
-                                </span>
-                            </div>
-                            )} 
+                                <div className="popover is-popover-right">
+                                    <i
+                                        style={{ paddingRight: "5px", color: "#c6c6c6" }}
+                                        className="fas fa-calendar-times"
+                                    />
+                                    <span className="popover-content">
+                                        Conflicts with schedule!
+                                    </span>
+                                </div>
+                            )}
                             {meetings && getTimeString(meetings)}
                         </div>
                         <div>{`${section.credits} CU`}</div>
@@ -206,7 +206,7 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                                         // formats location names
                                         const ret = new Set();
                                         l.forEach(({ room }) =>
-                                            ret.add(room.trim())
+                                            ret.add(room && room.trim())
                                         );
                                         return Array.from(ret);
                                     })(meetings).join(", ")}
