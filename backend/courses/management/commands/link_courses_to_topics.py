@@ -177,5 +177,5 @@ class Command(BaseCommand):
 
         print(
             f"Finished linking courses to topics for semesters {semesters}.\n"
-            f"(Created {Topic.objects.all().count()} Topics)."
+            f"Created {Topic.objects.all().count()} Topics."
         )
