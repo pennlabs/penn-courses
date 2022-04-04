@@ -50,12 +50,18 @@ class SepCourseCodeTest(TestCase):
     def test_two_letter_with_dashes(self):
         self.assertEqual(("WH", "110", "001"), separate_course_code("WH  -110-001"))
 
+    def test_section_characters(self):
+        self.assertEqual(("INTL", "2980", "BKC"), separate_course_code("INTL2980BKC"))
+
+    def test_course_code_ends_in_character(self):
+        self.assertEqual(("CRIM", "6004A", "301"), separate_course_code("CRIM6004A301"))
+
+    def test_course_code_3_chars(self):
+        self.assertEqual(("INTL", "BUL", "001"), separate_course_code("INTLBUL001"))
+
     def test_invalid_course(self):
-        try:
+        with self.assertRaises(ValueError):
             separate_course_code("BLAH BLAH BLAH")
-            self.fail("Should throw exception")
-        except ValueError:
-            pass
 
 
 class GetCourseSectionTest(TestCase):

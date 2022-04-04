@@ -162,8 +162,17 @@ class TypedSearchBackendTestCase(TestCase):
             terms = self.search.get_search_fields(None, req)
             self.assertEqual(["^full_code"], terms, f"search:{course}")
 
-    def test_auto_keyword(self):
-        keywords = ["rajiv", "gandhi", "programming", "hello world"]
+    def test_auto_keyword_both(self):
+        keywords = ["rajiv", "gandhi"]
+        for kw in keywords:
+            req = self.factory.get("/", {"type": "auto", "search": kw})
+            terms = self.search.get_search_fields(None, req)
+            self.assertEqual(
+                ["^full_code", "title", "sections__instructors__name"], terms, f"search:{kw}"
+            )
+
+    def test_auto_keyword_only(self):
+        keywords = ["hello world", "discrete math", "programming"]
         for kw in keywords:
             req = self.factory.get("/", {"type": "auto", "search": kw})
             terms = self.search.get_search_fields(None, req)
@@ -340,6 +349,7 @@ class SectionSearchTestCase(TestCase):
             reverse("section-search", args=["current"]), {"search": "123bdfsh3wq!@#"}
         )
         self.assertEqual(res.status_code, 200)
+        print(res.data)
         self.assertEqual(0, len(res.data))
 
 

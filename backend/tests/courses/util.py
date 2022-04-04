@@ -3,7 +3,11 @@ from courses.util import get_or_create_course_and_section, set_meetings
 from review.models import Review
 
 
-def create_mock_data(code, semester, meeting_days="MWF", start=11.0, end=12.0):
+def time_str(time):
+    return f"{time // 100:2d}:{int(time % 100):02d} {'AM' if time < 1200 else 'PM'}"
+
+
+def create_mock_data(code, semester, meeting_days="MWF", start=1100, end=1200):
     course, section, _, _ = get_or_create_course_and_section(code, semester)
     course.description = "This is a fake class."
     course.save()
@@ -14,10 +18,12 @@ def create_mock_data(code, semester, meeting_days="MWF", start=11.0, end=12.0):
     m = [
         {
             "building_code": "LLAB",
-            "room_number": "10",
-            "meeting_days": meeting_days,
-            "start_time_24": start,
+            "room_code": "10",
+            "days": meeting_days,
+            "begin_time_24": start,
+            "begin_time": time_str(start),
             "end_time_24": end,
+            "end_time": time_str(end),
         }
     ]
     set_meetings(section, m)

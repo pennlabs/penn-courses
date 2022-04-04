@@ -12,17 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 def get_token():
-    response = requests.post(
+    r = requests.post(
         settings.OPEN_DATA_TOKEN_URL,
         data={"grant_type": "client_credentials"},
         auth=(settings.OPEN_DATA_CLIENT_ID, settings.OPEN_DATA_OIDC_SECRET),
     )
-    if not response.ok:
-        raise ValueError(
-            "OpenData token URL responded with status code "
-            f"{response.status_code}: {response.text}"
-        )
-    return response.json()["access_token"]
+    if not r.ok:
+        raise ValueError(f"OpenData token URL responded with status code {r.status_code}: {r.text}")
+    return r.json()["access_token"]
 
 
 def get_headers():
@@ -31,15 +28,16 @@ def get_headers():
     }
 
 
-def make_api_request(params, headers):
-    if headers is None:
-        headers = get_headers()
+def make_api_request(params):
+    headers = get_headers()
     r = requests.get(
         f"{settings.OPEN_DATA_API_BASE}/v1/course_section_search",
         params=params,
         headers=headers,
     )
-    return (r.json(), None) if r.ok else (None, r.text)
+    if not r.ok:
+        raise ValueError(f"OpenData API request failed with status code {r.status_code}: {r.text}")
+    return r.json()
 
 
 def report_api_error(err):
@@ -81,7 +79,6 @@ def get_departments():
 
 def get_courses(query, semester):
     semester = translate_semester(semester)
-    headers = get_headers()
 
     params = {
         "section_id": query,
@@ -94,19 +91,15 @@ def get_courses(query, semester):
     pbar = None
     while True:
         logger.info("making request for page #%d" % params["page_number"])
-        data, err = make_api_request(params, headers)
-        if data is not None:
-            if pbar is None:
-                pbar = tqdm(total=data["service_meta"]["number_of_pages"])
-            pbar.update(1)
-            next_page = data["service_meta"]["next_page_number"]
-            results.extend(data["result_data"])
-            if not next_page or int(next_page) <= params["page_number"]:
-                break
-            params["page_number"] = next_page
-        else:
-            report_api_error(err)
+        data = make_api_request(params)
+        if pbar is None:
+            pbar = tqdm(total=data["service_meta"]["number_of_pages"])
+        pbar.update(1)
+        next_page = data["service_meta"]["next_page_number"]
+        results.extend(data["result_data"])
+        if not next_page or int(next_page) <= params["page_number"]:
             break
+        params["page_number"] = next_page
     if pbar is not None:
         pbar.close()
 

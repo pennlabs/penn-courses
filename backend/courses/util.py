@@ -171,8 +171,14 @@ def get_or_create_add_drop_period(semester):
     return add_drop
 
 
+"""
+Assumptions of our course code parsing regex:
+    - Department code is 1-4 letters
+    - Course code is (4 digits with an optional trailing letter) or (3 digits) or (3 letters)
+    - Section code is 3 digits or 3 letters
+"""
 section_code_re = re.compile(
-    r"^([A-Za-z]{1,4})\s*-?(\d{3,4}[A-Za-z]?|[A-Z]{3,4})\s*-?(\d{3,4}|[A-Za-z]{3,4})?$"
+    r"^([A-Za-z]{1,4})\s*-?\s*(\d{4}[A-Za-z]?|\d{3}|[A-Za-z]{3})\s*-?\s*(\d{3}|[A-Za-z]{3})?$"
 )
 
 
@@ -349,7 +355,7 @@ def set_meetings(section, meetings):
         online = (
             not meeting["building_code"]
             or not meeting["room_code"]
-            or meeting["building_desc"]
+            or meeting.get("building_desc")
             and (
                 meeting["building_desc"].lower() == "online"
                 or meeting["building_desc"].lower() == "no room needed"
@@ -358,8 +364,8 @@ def set_meetings(section, meetings):
         room = None if online else get_room(meeting["building_code"], meeting["room_code"])
         start_time = Decimal(meeting["begin_time_24"]) / 100
         end_time = Decimal(meeting["end_time_24"]) / 100
-        start_date = extract_date(meeting["start_date"])
-        end_date = extract_date(meeting["end_date"])
+        start_date = extract_date(meeting.get("start_date"))
+        end_date = extract_date(meeting.get("end_date"))
         for day in list(meeting["days"]):
             Meeting(
                 section=section,
