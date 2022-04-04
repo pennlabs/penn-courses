@@ -1,17 +1,6 @@
 import re
 
-import nltk
-import numpy as np
 from jellyfish import levenshtein_distance
-from sentence_transformers import SentenceTransformer, util
-
-from courses.util import in_dev
-
-
-if in_dev():
-    nltk.download("punkt")
-SENT_TOKENIZER = nltk.data.load("nltk:tokenizers/punkt/english.pickle")
-embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 
 def title_rejection_heuristics(title_a, title_b):
@@ -105,26 +94,3 @@ def lev_divided_by_avg_length(a, b):
     Compute levenshtein distance between 2 strings and then divide by avg length.
     """
     return 2 * levenshtein_distance(a, b) / (len(a) + len(b))
-
-
-def semantic_similarity(string_a, string_b):
-    """
-    Compute the semantics similarity between two strings. The strings are split
-    into sentences, then those sentences are turned into embeddings, and then
-    cosine similarity between matching sentences is computed. If the two strings
-    have different numbers of sentences, take the maximum similarity matching that
-    contains as many sentences as possible. Assumes both strings are not just
-    whitespace.
-    """
-    sentences_a = SENT_TOKENIZER.tokenize(string_a)
-    sentences_b = SENT_TOKENIZER.tokenize(string_b)
-    emb_a = embedder.encode(sentences_a, convert_to_tensor=True)
-    emb_b = embedder.encode(sentences_b, convert_to_tensor=True)
-    cosine_scores = util.cos_sim(emb_a, emb_b)
-    nrows, ncols = cosine_scores.shape
-    # compute tr/len(diag) for maximal length diagonals
-    max_trace = 0.0
-    for offset in range(0, ncols - nrows + 1):  # [0, cols - rows]
-        diag = np.diagonal(cosine_scores, offset=offset)
-        max_trace = max(max_trace, np.sum(diag) / len(diag))
-    return max_trace
