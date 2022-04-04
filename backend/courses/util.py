@@ -373,6 +373,7 @@ def set_meetings(section, meetings):
 
 def add_associated_sections(section, linked_sections):
     semester = section.course.semester
+    section.associated_sections.clear()
     for s in linked_sections:
         subject_code = s.get("subject_code") or s.get("subject_code ")
         course_number = s.get("course_number") or s.get("course_number ")
