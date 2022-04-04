@@ -21,7 +21,7 @@ def get_topics_and_courses(semester):
     Returns a list of the form [(topic, most_recent), ... for each topic]
     """
     return [
-        (topic, topic.most_recent) for topic in Topic.objects.prefetch_related("most_recent").all()
+        (topic, topic.most_recent) for topic in Topic.objects.select_related("most_recent").all()
     ]
 
 
@@ -45,7 +45,7 @@ def link_course_to_topics(course, topics=None, verbose=False, ignore_inexact=Fal
         topics = get_topics_and_courses(course.semester)
     for topic, most_recent in topics:
         if (
-            should_link_courses(most_recent, course, verbose=verbose, ignore_inexact=ignore_inexact)
+            should_link_courses(course, most_recent, verbose=verbose, ignore_inexact=ignore_inexact)
             == ShouldLinkCoursesResponse.DEFINITELY
         ):
             topic.add_course(course)
@@ -78,7 +78,9 @@ def link_courses_to_topics(semester, guaranteed_links=None, verbose=False, ignor
             Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
             semester=semester,
             topic__isnull=True,
-        ).select_related("primary_listing"),
+        )
+        .select_related("primary_listing", "topic")
+        .prefetch_related("listing_set", "primary_listing__listing_set"),
         disable=(not verbose),
     ):
         old_full_code = guaranteed_links.get(course.full_code)
@@ -174,6 +176,6 @@ class Command(BaseCommand):
                 )
 
         print(
-            f"Finished linking courses to topics for semesters {semesters}."
-            f"(created {Topic.objects.all().count()} topics)."
+            f"Finished linking courses to topics for semesters {semesters}.\n"
+            f"(Created {Topic.objects.all().count()} Topics)."
         )
