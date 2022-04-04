@@ -304,9 +304,6 @@ def set_instructors(section, instructors):
         penn_id = int(instructor["penn_id"])
         try:
             instructor_ob = Instructor.objects.filter(user_id=penn_id)[:1].get()
-            if instructor_ob.name != name:
-                instructor_ob.name = name
-                instructor_ob.save()
         except Instructor.DoesNotExist:
             try:
                 user = User.objects.get(id=penn_id)
