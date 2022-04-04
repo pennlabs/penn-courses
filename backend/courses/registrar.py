@@ -30,8 +30,9 @@ def get_headers():
 
 def make_api_request(params):
     headers = get_headers()
+    url = f"{settings.OPEN_DATA_API_BASE}/v1/course_section_search"
     r = requests.get(
-        f"{settings.OPEN_DATA_API_BASE}/v1/course_section_search",
+        url,
         params=params,
         headers=headers,
     )
