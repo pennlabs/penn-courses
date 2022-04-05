@@ -1,8 +1,5 @@
-from collections import defaultdict
-
 from dateutil.tz import gettz
-from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
-from django.db.models.functions import Coalesce
+from django.db.models import F, OuterRef, Q, Subquery
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -19,7 +16,6 @@ from PennCourses.settings.base import (
 )
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
-    ACTIVITY_CHOICES,
     autocomplete_response_schema,
     course_plots_response_schema,
     course_reviews_response_schema,
@@ -27,15 +23,11 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS
+from review.models import ALL_FIELD_SLUGS, Review
 from review.util import (
+    aggregate_reviews,
     avg_and_recent_demand_plots,
     avg_and_recent_percent_open_plots,
-    get_average_and_recent_dict,
-    get_average_and_recent_dict_single,
-    get_historical_codes,
-    get_num_sections,
-    get_single_dict_from_qs,
     get_status_updates_map,
     make_subdict,
 )
@@ -45,12 +37,10 @@ from review.util import (
 You might be wondering why these API routes are using the @api_view function decorator
 from Django REST Framework rather than using any of the higher-level constructs that DRF
 gives us, like Generic APIViews or ViewSets.
-
 ViewSets define REST actions on a specific "resource" -- generally in our case, django models with
 defined serializers. With these aggregations, though, there isn't a good way to define a resource
 for a ViewSet to act upon. Each endpoint doesn't represent one resource, or a list of resources,
 but one aggregation of all resources (ReviewBits) that fit a certain filter.
-
 There probably is a way to fit everything into a serializer, but at the time of writing it felt like
 it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
 """
@@ -64,35 +54,14 @@ extra_metrics_section_filters = (
     )  # Manually filter out classes from depts with waitlist systems during add/drop
     & Q(capacity__isnull=False, capacity__gt=0)
     & ~Q(course__semester__icontains="b")  # Filter out summer classes
-    & Q(status_updates__isnull=False)  # Filter out sections with no status updates
+    & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
     & ~Q(
         id__in=Subquery(
-            Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values("sections__id")
+            Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values_list(
+                "sections__id", flat=True
+            )
         )
     )  # Filter out sections that require permit for registration
-)
-
-
-course_filters_pcr_allow_xlist = (
-    ~Q(title="") | ~Q(description="") | Q(sections__review__isnull=False)
-)
-course_is_primary = Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id"))
-course_filters_pcr = course_is_primary & course_filters_pcr_allow_xlist
-
-section_is_primary = Q(course__primary_listing__isnull=True) | Q(
-    course__primary_listing_id=F("course_id")
-)
-section_filters_pcr = section_is_primary & (
-    Q(review__isnull=False)
-    | ((~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X"))
-)
-
-review_filters_pcr = Q(section__course__primary_listing__isnull=True) | Q(
-    section__course__primary_listing_id=F("section__course_id")
-)
-
-reviewbit_filters_pcr = Q(review__section__course__primary_listing__isnull=True) | Q(
-    review__section__course__primary_listing_id=F("review__section__course_id")
 )
 
 
@@ -105,10 +74,18 @@ def extra_metrics_section_filters_pcr(current_semester=None):
         current_semester = get_current_semester()
     return (
         extra_metrics_section_filters
-        & section_is_primary
-        & Q(course__semester__lt=current_semester)
-        & (~Q(status="X") | Q(review__isnull=False))
+        & Q(course__semester__lt=current_semester)  # Filter our sections from the current semester
+        & (
+            Q(
+                id__in=Subquery(
+                    Review.objects.filter(responses__gt=0).values_list("section__id", flat=True)
+                )
+            )
+        )  # Filter out sections that do not have review data
     )
+
+
+course_filters_pcr = (~Q(title="")) | (~Q(description="")) | Q(sections__review__isnull=False)
 
 
 @api_view(["GET"])
@@ -137,86 +114,68 @@ def extra_metrics_section_filters_pcr(current_semester=None):
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code):
     """
-    Get all reviews for the topic of a given course and other relevant information.
+    Get all reviews for a given course and other relevant information.
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
-    try:
-        course = (
-            Course.objects.filter(course_filters_pcr, full_code=course_code)
-            .order_by("-semester")[:1]
-            .select_related(
-                "topic",
-                "topic__most_recent",
-                "topic__branched_from",
-                "topic__branched_from__most_recent",
-            )
-            .prefetch_related("topic__courses")
-            .get()
-        )
-    except Course.DoesNotExist:
+    if not Course.objects.filter(
+        course_filters_pcr, sections__review__isnull=False, full_code=course_code
+    ).exists():
         raise Http404()
 
-    topic = course.topic
-    course = topic.most_recent
-    course_code = course.full_code
-    aliases = course.crosslistings.values_list("full_code", flat=True)
-
-    instructors_qs = annotate_average_and_recent(
-        Instructor.objects.filter(
-            id__in=Subquery(
-                Section.objects.filter(section_filters_pcr, course__topic=topic).values(
-                    "instructors__id"
-                )
-            )
-        ),
-        match_review_on=Q(
-            section__course__topic=topic,
-            instructor_id=OuterRef(OuterRef("id")),
+    reviews = (
+        review_averages(
+            Review.objects.filter(section__course__full_code=course_code, responses__gt=0),
+            {"review_id": OuterRef("id")},
+            fields=ALL_FIELD_SLUGS,
+            prefix="bit_",
+            extra_metrics=True,
+            section_subfilters={"id": OuterRef("section_id")},
         )
-        & review_filters_pcr,
-        match_section_on=Q(
-            course__topic=topic,
-            instructors__id=OuterRef(OuterRef("id")),
+        .annotate(
+            course_title=F("section__course__title"),
+            semester=F("section__course__semester"),
+            instructor_name=F("instructor__name"),
         )
-        & section_filters_pcr,
-        extra_metrics=True,
+        .values()
     )
+
+    instructors = aggregate_reviews(reviews, "instructor_id", name="instructor_name")
 
     course_qs = annotate_average_and_recent(
-        Course.objects.filter(course_filters_pcr, topic=topic).order_by("-semester")[:1],
-        match_review_on=Q(section__course__topic=topic) & review_filters_pcr,
-        match_section_on=Q(course__topic=topic) & section_filters_pcr,
+        Course.objects.filter(course_filters_pcr, full_code=course_code).order_by("-semester")[:1],
+        match_on=Q(section__course__full_code=course_code),
         extra_metrics=True,
+        section_subfilters={"course__full_code": course_code},
     )
-    course = get_single_dict_from_qs(course_qs)
 
-    num_registration_metrics = Section.objects.filter(
-        extra_metrics_section_filters_pcr(),
-        course__topic=topic,
-    ).count()
-
-    num_sections, num_sections_recent = get_num_sections(
-        section_filters_pcr,
-        course__topic=topic,
-    )
+    course = dict(course_qs[:1].values()[0])
 
     return Response(
         {
             "code": course["full_code"],
             "name": course["title"],
             "description": course["description"],
-            "aliases": aliases,
-            "historical_codes": get_historical_codes(
-                topic, exclude_codes=set(aliases) | {course["full_code"]}
-            ),
-            "num_sections": num_sections,
-            "num_sections_recent": num_sections_recent,
-            "instructors": get_average_and_recent_dict(
-                instructors_qs.values(), "id", extra_fields=["id", "name"]
-            ),
-            "registration_metrics": num_registration_metrics > 0,
-            **get_average_and_recent_dict_single(course),
+            "aliases": [c["full_code"] for c in course_qs[0].crosslistings.values("full_code")],
+            "num_sections": Section.objects.filter(
+                course__full_code=course_code, review__isnull=False, review__responses__gt=0
+            )
+            .values("full_code", "course__semester")
+            .distinct()
+            .count(),
+            "num_sections_recent": Section.objects.filter(
+                course__full_code=course_code,
+                course__semester=course["recent_semester_calc"],
+                review__isnull=False,
+                review__responses__gt=0,
+            )
+            .values("full_code", "course__semester")
+            .distinct()
+            .count(),
+            "average_reviews": make_subdict("average_", course),
+            "recent_reviews": make_subdict("recent_", course),
+            "num_semesters": course["average_semester_count"],
+            "instructors": instructors,
         }
     )
 
@@ -256,22 +215,15 @@ def course_reviews(request, course_code):
         override_response_schema=course_plots_response_schema,
     )
 )
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
     """
-    try:
-        course = (
-            Course.objects.filter(course_filters_pcr, full_code=course_code)
-            .order_by("-semester")[:1]
-            .select_related("topic", "topic__most_recent")
-            .get()
-        )
-    except Course.DoesNotExist:
+    if not Course.objects.filter(
+        course_filters_pcr, sections__review__isnull=False, full_code=course_code
+    ).exists():
         raise Http404()
-
-    course = course.topic.most_recent
 
     current_semester = get_current_semester()
 
@@ -279,7 +231,7 @@ def course_plots(request, course_code):
     filtered_sections = (
         Section.objects.filter(
             extra_metrics_section_filters_pcr(current_semester),
-            course__topic_id=course.topic_id,
+            course__full_code=course_code,
         )
         .annotate(efficient_semester=F("course__semester"))
         .distinct()
@@ -289,10 +241,12 @@ def course_plots(request, course_code):
         instructor_ids = [int(id) for id in instructor_ids.split(",")]
         filtered_sections = filtered_sections.filter(
             instructors__id__in=instructor_ids,
-        ).distinct()
+        )
 
-    section_map = defaultdict(dict)  # a dict mapping semester to section id to section object
+    section_map = dict()  # a dict mapping semester to section id to section object
     for section in filtered_sections:
+        if section.efficient_semester not in section_map:
+            section_map[section.efficient_semester] = dict()
         section_map[section.efficient_semester][section.id] = section
 
     (
@@ -353,13 +307,6 @@ def course_plots(request, course_code):
     )
 
 
-def check_instructor_id(instructor_id):
-    if not isinstance(instructor_id, int) and not (
-        isinstance(instructor_id, str) and instructor_id.isdigit()
-    ):
-        raise Http404("Instructor with given instructor_id not found.")
-
-
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
@@ -388,66 +335,62 @@ def instructor_reviews(request, instructor_id):
     """
     Get all reviews for a given instructor, aggregated by course.
     """
-    check_instructor_id(instructor_id)
     instructor = get_object_or_404(Instructor, id=instructor_id)
     instructor_qs = annotate_average_and_recent(
         Instructor.objects.filter(id=instructor_id),
-        match_review_on=Q(instructor_id=instructor_id) & review_filters_pcr,
-        match_section_on=Q(instructors__id=instructor_id) & section_filters_pcr,
+        match_on=Q(instructor_id=instructor_id),
         extra_metrics=True,
+        section_subfilters={"instructors__id": instructor_id},
     )
-    inst = get_single_dict_from_qs(instructor_qs)
 
     courses = annotate_average_and_recent(
         Course.objects.filter(
             course_filters_pcr,
+            sections__review__isnull=False,
             sections__instructors__id=instructor_id,
         ).distinct(),
-        match_review_on=Q(
-            section__course__topic=OuterRef(OuterRef("topic")),
+        match_on=Q(
+            section__course__full_code=OuterRef(OuterRef("full_code")),
             instructor_id=instructor_id,
-        )
-        & review_filters_pcr,
-        match_section_on=Q(
-            course__topic=OuterRef(OuterRef("topic")),
-            instructors__id=instructor_id,
-        )
-        & section_filters_pcr,
-        extra_metrics=True,
-    ).annotate(
-        most_recent_full_code=F("topic__most_recent__full_code"),
-    )
-
-    num_sections, num_sections_recent = get_num_sections(
-        section_filters_pcr,
-        course_id__in=Subquery(
-            Course.objects.filter(
-                course_filters_pcr,
-                sections__instructors__id=instructor_id,
-            ).values("id")
         ),
+        extra_metrics=True,
+        section_subfilters={
+            "course__full_code": OuterRef("full_code"),
+            "instructors__id": instructor_id,
+        },
     )
 
-    # Return the most recent course taught by this instructor, for each topic
-    courses_res = dict()
-    max_sem = dict()
-    for r in courses.values():
-        if not r["average_semester_count"]:
-            continue
-        full_code = r["most_recent_full_code"]
-        if full_code not in max_sem or max_sem[full_code] < r["semester"]:
-            max_sem[full_code] = r["semester"]
-            courses_res[full_code] = get_average_and_recent_dict_single(
-                r, full_code="most_recent_full_code", code="most_recent_full_code", name="title"
-            )
+    inst = instructor_qs.values()[0]
 
     return Response(
         {
             "name": instructor.name,
-            "num_sections_recent": num_sections_recent,
-            "num_sections": num_sections,
-            "courses": courses_res,
-            **get_average_and_recent_dict_single(inst),
+            "num_sections_recent": Section.objects.filter(
+                instructors=instructor,
+                course__semester=inst["recent_semester_calc"],
+                review__isnull=False,
+                review__responses__gt=0,
+            ).count(),
+            "num_sections": Section.objects.filter(
+                instructors=instructor,
+                review__isnull=False,
+                review__responses__gt=0,
+            ).count(),
+            "average_reviews": make_subdict("average_", inst),
+            "recent_reviews": make_subdict("recent_", inst),
+            "num_semesters": inst["average_semester_count"],
+            "courses": {
+                r["full_code"]: {
+                    "full_code": r["full_code"],
+                    "average_reviews": make_subdict("average_", r),
+                    "recent_reviews": make_subdict("recent_", r),
+                    "latest_semester": r["recent_semester_calc"],
+                    "num_semesters": r["average_semester_count"],
+                    "code": r["full_code"],
+                    "name": r["title"],
+                }
+                for r in courses.values()
+            },
         }
     )
 
@@ -481,35 +424,25 @@ def department_reviews(request, department_code):
     Get reviews for all courses in a department.
     """
     department = get_object_or_404(Department, code=department_code)
-
-    courses = annotate_average_and_recent(
-        Course.objects.filter(
-            course_filters_pcr_allow_xlist, department=department, topic__most_recent_id=F("id")
-        ).distinct(),
-        match_review_on=Q(
-            section__course__topic=OuterRef(OuterRef("topic")),
+    reviews = (
+        review_averages(
+            Review.objects.filter(section__course__department=department, responses__gt=0),
+            {"review_id": OuterRef("id")},
+            fields=ALL_FIELD_SLUGS,
+            prefix="bit_",
+            extra_metrics=True,
+            section_subfilters={"id": OuterRef("section_id")},
         )
-        & review_filters_pcr,
-        match_section_on=Q(
-            course__topic=OuterRef(OuterRef("topic")),
+        .annotate(
+            course_title=F("section__course__title"),
+            course_code=F("section__course__full_code"),
+            semester=F("section__course__semester"),
         )
-        & section_filters_pcr,
-        extra_metrics=True,
+        .values()
     )
+    courses = aggregate_reviews(reviews, "course_code", code="course_code", name="course_title")
 
-    return Response(
-        {
-            "code": department.code,
-            "name": department.name,
-            "courses": {
-                r["full_code"]: get_average_and_recent_dict_single(
-                    r, full_code="full_code", code="full_code", name="title"
-                )
-                for r in courses.values()
-                if r["average_semester_count"] > 0
-            },
-        }
-    )
+    return Response({"code": department.code, "name": department.name, "courses": courses})
 
 
 @api_view(["GET"])
@@ -539,49 +472,24 @@ def department_reviews(request, department_code):
 @permission_classes([IsAuthenticated])
 def instructor_for_course_reviews(request, course_code, instructor_id):
     """
-    Get the review history of an instructor teaching a course.
+    Get the review history of an instructor teaching a course. No aggregations here.
     """
-    try:
-        course = (
-            Course.objects.filter(course_filters_pcr, full_code=course_code)
-            .order_by("-semester")[:1]
-            .select_related("topic", "topic__most_recent")
-            .get()
-        )
-    except Course.DoesNotExist:
-        raise Http404()
-
-    check_instructor_id(instructor_id)
     instructor = get_object_or_404(Instructor, id=instructor_id)
-
-    topic = course.topic
-    course = course.topic.most_recent
-
-    sections = review_averages(
-        Section.objects.filter(
-            section_filters_pcr,
-            course__topic=topic,
-            instructors__id=instructor_id,
-        ).distinct(),
-        reviewbit_subfilters=Q(review__section_id=OuterRef("id")),
-        section_subfilters=Q(id=OuterRef("id")),
+    print([str(r) for r in Review.objects.filter(instructor_id=instructor_id, responses__gt=0)])
+    reviews = review_averages(
+        Review.objects.filter(
+            section__course__full_code=course_code, instructor_id=instructor_id, responses__gt=0
+        ),
+        {"review_id": OuterRef("id")},
         fields=ALL_FIELD_SLUGS,
         prefix="bit_",
         extra_metrics=True,
+        section_subfilters={"id": OuterRef("section_id")},
     )
-    sections = sections.annotate(
-        course_code=F("course__full_code"),
-        course_title=F("course__title"),
-        efficient_semester=F("course__semester"),
-        has_reviews=Case(
-            When(Q(review__isnull=False), then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        ),
-        comments=Coalesce("review__comments", Value(None)),
-        responses=Coalesce("review__responses", Value(None)),
-        enrollment=Coalesce("review__enrollment", Value(None)),
-    ).distinct()
+    reviews = reviews.annotate(
+        course_title=F("section__course__title"),
+        semester=F("section__course__semester"),
+    )
 
     return Response(
         {
@@ -589,19 +497,17 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
                 "id": instructor_id,
                 "name": instructor.name,
             },
-            "course_code": course.full_code,
+            "course_code": course_code,
             "sections": [
                 {
-                    "course_code": section["course_code"],
-                    "course_name": section["course_title"],
-                    "activity": ACTIVITY_CHOICES.get(section["activity"]),
-                    "semester": section["efficient_semester"],
-                    "forms_returned": section["responses"] if section["has_reviews"] else None,
-                    "forms_produced": section["enrollment"] if section["has_reviews"] else None,
-                    "ratings": make_subdict("bit_", section),
-                    "comments": section["comments"],
+                    "course_name": review["course_title"],
+                    "semester": review["semester"],
+                    "forms_returned": review["responses"],
+                    "forms_produced": review["enrollment"],
+                    "ratings": make_subdict("bit_", review),
+                    "comments": review["comments"],
                 }
-                for section in sections.values()
+                for review in reviews.values()
             ],
         }
     )
@@ -626,41 +532,31 @@ def autocomplete(request):
     to improve performance.
     """
     courses = (
-        Course.objects.filter(course_filters_pcr)
+        Course.objects.filter(course_filters_pcr, sections__review__isnull=False)
         .order_by("semester")
-        .annotate(most_recent_full_code=F("topic__most_recent__full_code"))
-        .values("full_code", "most_recent_full_code", "title")
+        .values("full_code", "title")
         .distinct()
     )
-    course_set = sorted(
-        [
-            {
-                "title": course["full_code"],
-                "most_recent_full_code": course["most_recent_full_code"],
-                "desc": [course["title"]],
-                "url": f"/course/{course['full_code']}",
-            }
-            for course in courses
-        ],
-        key=lambda x: x["title"],
-    )
+    course_set = [
+        {
+            "title": course["full_code"],
+            "desc": [course["title"]],
+            "url": f"/course/{course['full_code']}",
+        }
+        for course in courses
+    ]
     departments = Department.objects.all().values("code", "name")
-    department_set = sorted(
-        [
-            {
-                "title": dept["code"],
-                "desc": dept["name"],
-                "url": f"/department/{dept['code']}",
-            }
-            for dept in departments
-        ],
-        key=lambda d: d["title"],
-    )
+    department_set = [
+        {
+            "title": dept["code"],
+            "desc": dept["name"],
+            "url": f"/department/{dept['code']}",
+        }
+        for dept in departments
+    ]
 
-    instructors = (
-        Instructor.objects.filter(section__instructors__id=F("id"))
-        .distinct()
-        .values("name", "id", "section__course__department__code")
+    instructors = Instructor.objects.filter(section__review__isnull=False).values(
+        "name", "id", "section__course__department__code"
     )
     instructor_set = {}
     for inst in instructors:
@@ -678,17 +574,14 @@ def autocomplete(request):
         except TypeError:
             return ""
 
-    instructor_set = sorted(
-        [
-            {
-                "title": v["title"],
-                "desc": join_depts(v["desc"]),
-                "url": v["url"],
-            }
-            for v in instructor_set.values()
-        ],
-        key=lambda x: x["title"],
-    )
+    instructor_set = [
+        {
+            "title": v["title"],
+            "desc": join_depts(v["desc"]),
+            "url": v["url"],
+        }
+        for k, v in instructor_set.items()
+    ]
 
     return Response(
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
