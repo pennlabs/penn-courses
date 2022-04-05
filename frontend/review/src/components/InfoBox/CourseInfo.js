@@ -209,7 +209,7 @@ const HistoricalCodes = styled.div`
 
 const Spacer = styled.div`
   height: 0.6rem;
-`
+`;
 
 export const CourseHeader = ({
   aliases,
@@ -285,7 +285,7 @@ export const CourseHeader = ({
     </div>
     {aliases && Boolean(aliases.length) && (
       <div className="crosslist">
-        <strong>Also:{" "}</strong>
+        <strong>Also:&nbsp;</strong>
         {aliases.map((cls, i) => [
           i > 0 && ", ",
           <Link key={cls} to={`/course/${cls}`}>
