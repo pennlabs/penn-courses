@@ -207,6 +207,10 @@ const HistoricalCodes = styled.div`
   align-items: center;
 `;
 
+const Spacer = styled.div`
+  height: 0.6rem;
+`
+
 export const CourseHeader = ({
   aliases,
   code,
@@ -281,7 +285,7 @@ export const CourseHeader = ({
     </div>
     {aliases && Boolean(aliases.length) && (
       <div className="crosslist">
-        Also:{" "}
+        <strong>Also:{" "}</strong>
         {aliases.map((cls, i) => [
           i > 0 && ", ",
           <Link key={cls} to={`/course/${cls}`}>
@@ -292,7 +296,7 @@ export const CourseHeader = ({
     )}
     {data.historical_codes && Boolean(data.historical_codes.length) && (
       <HistoricalCodes>
-        Previously:&nbsp;
+        <strong>Previously:&nbsp;</strong>
         {data.historical_codes.map((obj, i) => [
           i > 0 && <div>&#44;&nbsp;</div>,
           obj.branched_from ? (
@@ -335,6 +339,7 @@ export const CourseHeader = ({
         </ReactTooltip>
       </HistoricalCodes>
     )}
+    <Spacer />
     <p className="subtitle">{name}</p>
     {notes &&
       notes.map(note => (
