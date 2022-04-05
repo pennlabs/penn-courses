@@ -90,22 +90,42 @@ class Department(models.Model):
 
 
 def sections_with_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+    # get all the reviews for instructors in the Section.instructors many-to-many
+    instructors_subquery = Subquery(
+        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id")
+    )
+
     return review_averages(
         queryset,
-        {
-            "review__section__course__full_code": OuterRef("course__full_code"),
-            # get all the reviews for instructors in the Section.instructors many-to-many
-            "review__instructor__in": Subquery(
-                Instructor.objects.filter(section=OuterRef(OuterRef("id"))).values("id").order_by()
-            ),
-        },
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr
+            & Q(review__section__course__topic=OuterRef("course__topic"))
+            & Q(review__instructor__in=instructors_subquery)
+        ),
+        section_subfilters=(
+            section_filters_pcr
+            & Q(course__topic=OuterRef("course__topic"))
+            & Q(instructors__in=instructors_subquery)
+        ),
         extra_metrics=False,
     ).order_by("code")
 
 
 def course_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+
     return review_averages(
-        queryset, {"review__section__course__full_code": OuterRef("full_code")}, extra_metrics=False
+        queryset,
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr & Q(review__section__course__topic=OuterRef("topic"))
+        ),
+        section_subfilters=(section_filters_pcr & Q(course__topic=OuterRef("topic"))),
+        extra_metrics=False,
     )
 
 

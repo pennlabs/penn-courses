@@ -1,10 +1,11 @@
 import re
+from collections import defaultdict
 from math import isclose
-from typing import Dict, List
 
 import scipy.stats as stats
-from django.db.models import F
+from django.db.models import Count, F
 
+from courses.models import Section
 from PennCourses.settings.base import (
     PCA_REGISTRATIONS_RECORDED_SINCE,
     STATUS_UPDATES_RECORDED_SINCE,
@@ -52,65 +53,98 @@ def make_subdict(field_prefix, d):
     }
 
 
-def dict_average(entries: List[Dict[str, float]]) -> Dict[str, float]:
+def get_single_dict_from_qs(qs):
     """
-    Average a list of dicts into one dict with averages.
-    :param entries:
-    :return:
+    Returns the first object in a qs as a dict (as returned by `.values()`).
     """
-    keys = set()
-    for entry in entries:
-        keys.update(entry.keys())
-
-    averages = {k: (0, 0) for k in keys}
-    for entry in entries:
-        for k, v in entry.items():
-            sum_, count_ = averages[k]
-            averages[k] = (sum_ + v, count_ + 1)
-
-    return {k: v[0] / v[1] if v[1] > 0 else 0 for k, v in averages.items()}
+    return dict(qs[:1].values()[0])
 
 
-def aggregate_reviews(reviews, group_by, **extra_fields):
+def get_average_and_recent_dict_single(values_dict, extra_fields=None, **extra_fields_conv):
     """
-    Aggregate a list of reviews (as dictionaries), grouping by some field.
-    :param reviews: A list of dictionaries representing Review objects, with reviewbits inlined
-    using review.annotations.review_averages(). And dict-ified by calling .values() on a queryset.
-    :param group_by: Field to group by in the review.
-    :param extra_fields: Any extra fields from the dictionaries to carry through to the response.
-    :return: Average reviews, recent reviews, number of semesters taught, and other data needed
-    for the response to the frontend.
+    Accepts a dict taken from the `.values()` list of a queryset
+    previously annotated by `annotate_average_and_recent`.
+    Returns a dict with keys `["average_reviews", "recent_reviews",
+    "num_semesters", "latest_semester"] + extra_fields` (these keys are documented in
+    the PCR API docs). You can specify any extra keys to include using the `extra_fields` list,
+    as long as those keys show up in `values_dict`. You can also specify extra keys to include
+    using kwargs of the form `new_key=old_key`. The resulting dict will have entries of the form
+    `new_key: values_dict[old_key]`.
     """
-    grouped_reviews = dict()
-    # First pass: Group individual reviews by the provided key.
-    for review in reviews:
-        key = review[group_by]
-        grouped_reviews.setdefault(key, []).append(
-            {
-                "semester": review["semester"],
-                "scores": make_subdict("bit_", review),
-                **{
-                    response_prop: review[instance_prop]
-                    for response_prop, instance_prop in extra_fields.items()
-                },
+    values_dict = dict(values_dict)
+    extra_fields = extra_fields or []
+    return {
+        "average_reviews": make_subdict("average_", values_dict),
+        "recent_reviews": make_subdict("recent_", values_dict),
+        "num_semesters": values_dict["average_semester_count"],
+        "latest_semester": values_dict["average_semester_calc"],
+        **{k: values_dict[k] for k in extra_fields},
+        **{new_key: values_dict[old_key] for new_key, old_key in extra_fields_conv.items()},
+    }
+
+
+def get_average_and_recent_dict(values, key, extra_fields=None):
+    """
+    Convenience function for mapping `get_average_and_recent_dict` over a `.values()` list,
+    grouping by a key field.
+    """
+    return {
+        values_dict[key]: get_average_and_recent_dict_single(values_dict, extra_fields=extra_fields)
+        for values_dict in values
+    }
+
+
+def get_historical_codes(topic, exclude_codes):
+    historical_codes = dict()
+
+    for course in topic.courses.all():
+        if not course.is_primary:
+            continue
+        full_code = course.full_code
+        semester = course.semester
+        if full_code in exclude_codes:
+            continue
+        if full_code not in historical_codes or historical_codes[full_code]["semester"] < semester:
+            historical_codes[full_code] = {
+                "full_code": full_code,
+                "branched_from": False,
+                "semester": semester,
             }
-        )
-    aggregated = dict()
-    # Second pass: Aggregate grouped reviews by taking the average of all scores and recent scores.
-    for k, reviews in grouped_reviews.items():
-        latest_sem = max([r["semester"] for r in reviews])
-        all_scores = [r["scores"] for r in reviews]
-        recent_scores = [r["scores"] for r in reviews if r["semester"] == latest_sem]
-        aggregated[k] = {
-            "id": k,
-            "average_reviews": dict_average(all_scores),
-            "recent_reviews": dict_average(recent_scores),
-            "latest_semester": latest_sem,
-            "num_semesters": len(set([r["semester"] for r in reviews])),
-            **{extra_field: reviews[0][extra_field] for extra_field, _ in extra_fields.items()},
+
+    if topic.branched_from:
+        c = topic.branched_from.most_recent
+        historical_codes[c.full_code] = {
+            "full_code": c.full_code,
+            "branched_from": True,
+            "semester": c.semester,
         }
 
-    return aggregated
+    return sorted(list(historical_codes.values()), key=lambda c: c["semester"], reverse=True)
+
+
+def get_num_sections(*args, **kwargs):
+    """
+    Returns num_sections, num_sections_recent
+    Sections are filtered by the given args and kwargs.
+    """
+    num_sections_by_semester = (
+        Section.objects.filter(
+            *args,
+            **kwargs,
+        )
+        .values("course__semester")
+        .annotate(num_sections=Count("id", distinct=True))
+        .values_list("course__semester", "num_sections")
+    )
+    num_sections = 0
+    max_sem = None
+    num_sections_recent = 0
+    for semester, num in num_sections_by_semester:
+        num_sections += num
+        if not max_sem or max_sem < semester:
+            max_sem = semester
+            num_sections_recent = num
+    return num_sections, num_sections_recent
 
 
 def average_given_plots(plots_dict, bin_size=0.000001):
@@ -235,33 +269,27 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
     # add_drop_periods_map: maps semester to that semester's add drop period object
     for adp in add_drop_periods:
         add_drop_periods_map[adp.semester] = adp
+
     demand_distribution_estimates = PcaDemandDistributionEstimate.objects.filter(
         semester__in=section_map.keys(), in_add_drop_period=True
     ).select_related("highest_demand_section", "lowest_demand_section")
-    demand_distribution_estimates_map = dict()
+    demand_distribution_estimates_map = defaultdict(list)
     # demand_distribution_estimates_map: maps semester
     # to a list of the demand distribution_estimates from that semester
     for ext in demand_distribution_estimates:
-        if ext.semester not in demand_distribution_estimates_map:
-            demand_distribution_estimates_map[ext.semester] = []
         demand_distribution_estimates_map[ext.semester].append(ext)
-    registrations_map = dict()
+
+    registrations_map = defaultdict(lambda: defaultdict(list))
     # registrations_map: maps semester to section id to a list of registrations from that section
-    for semester in section_map.keys():
-        registrations_map[semester] = dict()
-        for section_id in section_map[semester].keys():
-            registrations_map[semester][section_id] = []
     section_id_to_semester = {
-        section_id: semester
-        for semester in section_map.keys()
-        for section_id in section_map[semester].keys()
+        section_id: semester for semester in section_map for section_id in section_map[semester]
     }
     registrations = Registration.objects.filter(section_id__in=section_id_to_semester.keys())
     for registration in registrations:
         semester = section_id_to_semester[registration.section_id]
         registrations_map[semester][registration.section_id].append(registration)
 
-    demand_plots_map = dict()
+    demand_plots_map = defaultdict(dict)
     # demand_plots_map: maps semester to section id to the demand plot of that section
 
     # Now that all database work has been completed, let's iterate through
@@ -269,7 +297,6 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
     for semester in section_map.keys():
         if semester < PCA_REGISTRATIONS_RECORDED_SINCE:
             continue
-        demand_plots_map[semester] = dict()
         add_drop_period = add_drop_periods_map[semester]
         if semester not in demand_distribution_estimates_map:
             continue
@@ -374,6 +401,8 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                 else:
                     csrdv_frac_zero = latest_raw_demand_distribution_estimate["csrdv_frac_zero"]
                     raw_demand = registration_volume / section.capacity
+                    if csrdv_frac_zero is None:
+                        csrdv_frac_zero = int(raw_demand <= 0)
                     if raw_demand <= 0:
                         rel_demand = csrdv_frac_zero / 2
                     else:
