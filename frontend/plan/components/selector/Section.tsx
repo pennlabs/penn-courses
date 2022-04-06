@@ -127,16 +127,18 @@ const HoverSwitch = styled.div`
 export default function Section({ section, cart, inCart }: SectionProps) {
     const { instructors, meetings, status } = section;
 
-    const { schedules, scheduleSelected } = useSelector((store: any) => store.schedule);
+    const { schedules, scheduleSelected } = useSelector(
+        (store: any) => store.schedule
+    );
 
-    const overlap = section.meetings
+    const overlap = meetings
         ? meetingSetsIntersect(
-            section.meetings,
-            schedules[scheduleSelected].meetings
-                .filter((s: SectionType) => s.id !== section.id)
-                .map((s: SectionType) => s.meetings)
-                .flat()
-        )
+              meetings,
+              schedules[scheduleSelected].meetings
+                  .filter((s: SectionType) => s.id !== section.id)
+                  .map((s: SectionType) => s.meetings)
+                  .flat()
+          )
         : false;
 
     const cartAdd = () => {
@@ -152,6 +154,15 @@ export default function Section({ section, cart, inCart }: SectionProps) {
             }
         }, 50);
     };
+    const cleanedRooms =
+        meetings &&
+        Array.from(
+            new Set(
+                meetings
+                    .filter(({ room }) => room)
+                    .map(({ room }) => room.trim())
+            )
+        );
     return (
         <SectionContainer>
             <SectionInfoContainer>
@@ -183,7 +194,10 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                             {overlap && (
                                 <div className="popover is-popover-right">
                                     <i
-                                        style={{ paddingRight: "5px", color: "#c6c6c6" }}
+                                        style={{
+                                            paddingRight: "5px",
+                                            color: "#c6c6c6",
+                                        }}
                                         className="fas fa-calendar-times"
                                     />
                                     <span className="popover-content">
@@ -195,21 +209,14 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                         </div>
                         <div>{`${section.credits} CU`}</div>
                         <div>
-                            {meetings && meetings.length > 0 ? (
+                            {cleanedRooms && cleanedRooms.length > 0 ? (
                                 <div>
                                     <i
                                         className="fas fa-map-marker-alt grey-text"
                                         style={{ color: "#c6c6c6" }}
                                     />
                                     &nbsp;
-                                    {((l) => {
-                                        // formats location names
-                                        const ret = new Set();
-                                        l.forEach(({ room }) =>
-                                            ret.add(room && room.trim())
-                                        );
-                                        return Array.from(ret);
-                                    })(meetings).join(", ")}
+                                    {cleanedRooms.join(", ")}
                                 </div>
                             ) : null}
                         </div>
