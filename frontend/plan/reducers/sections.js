@@ -78,7 +78,6 @@ export const sections = (state = initialState, { type, ...action }) => {
             };
         }
         case COURSE_SEARCH_ERROR:
-            // console.log(action.error);
             return state;
         default:
             return state;
