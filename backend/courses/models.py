@@ -7,8 +7,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Case, Index, OuterRef, Q, Subquery, When
-from django.db.models.functions import Cast
+from django.db.models import OuterRef, Q, Subquery
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -223,13 +222,14 @@ class Course(models.Model):
         "Course",
         related_name="listing_set",
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         help_text=dedent(
             """
-        The primary Course object with which this course is crosslisted (all crosslisted courses
-        have a primary listing). The set of crosslisted courses to which this course belongs can
-        thus be accessed with the related field listing_set on the primary_listing course.
+        The primary Course object with which this course is crosslisted. The set of crosslisted
+        courses to which this course belongs can thus be accessed with the related field
+        `listing_set` on the `primary_listing` course. If a course doesn't have any crosslistings,
+        its `primary_listing` foreign key will point to itself. If you call `.save()` on a course
+        without setting its `primary_listing` field, the overridden `Course.save()` method will
+        automatically set its `primary_listing` to a self-reference.
         """
         ),
     )
@@ -258,7 +258,7 @@ class Course(models.Model):
         """
         Returns True iff this is the primary course among its crosslistings.
         """
-        return self.primary_listing is None or self.primary_listing.id == self.id
+        return self.primary_listing.id == self.id
 
     @property
     def from_new_banner_api(self):
@@ -277,10 +277,7 @@ class Course(models.Model):
         A QuerySet (list on frontend) of the Course objects which are crosslisted with this
         course (not including this course).
         """
-        if self.primary_listing is not None:
-            return self.primary_listing.listing_set.exclude(id=self.id)
-        else:
-            return Course.objects.none()
+        return self.primary_listing.listing_set.exclude(id=self.id)
 
     @property
     def requirements(self):
@@ -300,25 +297,49 @@ class Course(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        self.full_code = f"{self.department.code}-{self.code}"
-        super().save(*args, **kwargs)
-        if not self.topic:
-            with transaction.atomic():
-                try:
-                    self.topic = (
-                        Topic.objects.select_related("most_recent")
-                        .filter(courses__full_code=self.full_code)[:1]
-                        .get()
-                    )
-                    if self.topic.most_recent.semester < self.semester:
-                        self.topic.most_recent = self.primary_listing or self
-                        self.topic.save()
-                except Topic.DoesNotExist:
-                    topic = Topic(most_recent=self.primary_listing or self)
+        """
+        This overridden `.save()` method enforces the following invariants on the course:
+          - The course's full code equals the dash-joined department and code
+          - If a course doesn't have crosslistings, its `primary_listing` is a self-reference
+          - If a course doesn't have a topic, by default it joins the topics of which any
+            of its crosslisted codes are members (if there are multiple such topics, they are
+            merged).
+          - All crosslisted courses have the same topic
+          - The `Topic.most_recent` invariant (see the help_text on that field)
+        """
+        from courses.util import get_next_id, is_fk_set  # avoid circular imports
+
+        with transaction.atomic():
+            self.full_code = f"{self.department.code}-{self.code}"
+
+            # Set primary_listing to self if not set
+            if not is_fk_set(self, "primary_listing"):
+                self.primary_listing_id = self.id or get_next_id(self)
+
+            super().save(*args, **kwargs)
+
+            # Give this course's listing set a topic if it doesn't already have one
+            # (merge topics if this course connects to multiple topics)
+            if not self.topic:
+                all_codes = self.primary_listing.listing_set.all().values("full_code")
+                topics = list(
+                    Topic.objects.select_related("most_recent")
+                    .filter(courses__full_code__in=all_codes)
+                    .distinct()
+                )
+
+                if topics:
+                    topic = Topic.merge_all(topics)
+                    if topic.most_recent.semester < self.primary_listing.semester:
+                        topic.most_recent = self.primary_listing
+                        topic.save()
+                else:
+                    topic = Topic(most_recent=self.primary_listing)
                     topic.save()
-                    self.topic = topic
-                super().save()
-                self.crosslistings.update(topic=self.topic)
+
+                self.topic = topic
+                # This update takes care of saving self.topic
+                self.primary_listing.listing_set.all().update(topic=topic)
 
 
 class Topic(models.Model):
@@ -367,10 +388,22 @@ class Topic(models.Model):
         course.save()
         return course.topic
 
+    @staticmethod
+    def merge_all(topics):
+        if not topics:
+            raise ValueError("Cannot merge an empty list of topics.")
+        with transaction.atomic():
+            topic = topics[0]
+            for topic2 in topics[1:]:
+                topic = topic.merge_with(topic2)
+            return topic
+
     def merge_with(self, topic):
         """
         Merges this topic with the specified topic. Returns the resulting topic.
         """
+        if self == topic:
+            return self
         with transaction.atomic():
             if (
                 self.most_recent.semester == topic.most_recent.semester
@@ -394,13 +427,12 @@ class Topic(models.Model):
         Adds the specified course to this topic.
         """
         with transaction.atomic():
-            course = course.primary_listing or course
+            course = course.primary_listing
             if course.semester > self.most_recent.semester:
                 self.most_recent = course
                 self.save()
             course.topic = self
-            course.save()
-            course.crosslistings.update(topic=self)
+            course.listing_set.all().update(topic=self)
 
     def __str__(self):
         return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
@@ -479,25 +511,6 @@ class Section(models.Model):
 
     class Meta:
         unique_together = (("code", "course"),)
-        indexes = [
-            Index(
-                Case(
-                    When(
-                        Q(capacity__isnull=False) & Q(capacity__gt=0),
-                        then=(
-                            Cast(
-                                "registration_volume",
-                                models.FloatField(),
-                            )
-                            / Cast("capacity", models.FloatField())
-                        ),
-                    ),
-                    default=None,
-                    output_field=models.FloatField(null=True, blank=True),
-                ),
-                name="raw_demand",
-            ),
-        ]
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

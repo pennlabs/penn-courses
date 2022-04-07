@@ -87,34 +87,30 @@ def import_course_and_section(full_course_code, semester, course_title, primary_
     """
     Given course and section info, update/create objects.
     """
+    primary_listing = None
+    if primary_section_code:
+        try:
+            dept, ccode, _ = separate_course_code(primary_section_code)
+        except ValueError:
+            stat("invalid_primary_section_id")
+            return
+        primary_listing, _ = get_or_create_course(dept, ccode, semester)
+
     try:
-        (course, section, course_created, section_created) = get_or_create_course_and_section(
-            full_course_code, semester
+        course, section, _, _ = get_or_create_course_and_section(
+            full_course_code,
+            semester,
+            course_defaults={"primary_listing": primary_listing, "title": course_title or ""},
         )
     except ValueError:
         stat("invalid_section_id")
         return None, None
 
     # Update course title if one isn't already set.
-    course_dirty = False
-    if course.title == "":
-        course_dirty = True
+    if course_title and not course.title:
         course.title = course_title
-
-    # If no primary listing is set, add one.
-    if primary_section_code is not None and course.primary_listing is None:
-        try:
-            dept, ccode, _ = separate_course_code(primary_section_code)
-        except ValueError:
-            stat("invalid_primary_section_id")
-            return
-
-        course.primary_listing, _ = get_or_create_course(dept, ccode, semester)
-        course_dirty = True
-
-    if course_dirty:
-        stat("courses_updated")
         course.save()
+        stat("courses_updated")
 
     return course, section
 

@@ -1,13 +1,14 @@
 <html>
+
 <head>
 	<!-- Global site tag (gtag.js) - Google Analytics -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-21029575-13"></script>
 	<script>
-	  window.dataLayer = window.dataLayer || [];
-	  function gtag(){dataLayer.push(arguments);}
-	  gtag('js', new Date());
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
 
-  	  gtag('config', 'UA-21029575-13');
+		gtag('config', 'UA-21029575-13');
 	</script>
 
 	<meta charset="UTF-8">
@@ -23,7 +24,7 @@
 		}
 
 		.float {
-	    animation: action 1.5s infinite ease-in-out;
+			animation: action 1.5s infinite ease-in-out;
 		}
 
 		.fadein {
@@ -59,20 +60,35 @@
 		}
 
 		@keyframes fadeIn {
-			0% {opacity: 0}
-			100% {opacity: 1}
+			0% {
+				opacity: 0
+			}
+
+			100% {
+				opacity: 1
+			}
 		}
 
 		@keyframes action {
-				0% { transform: translateY(0); }
-				50% { transform: translateY(-10px); }
-				100% {transform: translateY(0);}
+			0% {
+				transform: translateY(0);
+			}
+
+			50% {
+				transform: translateY(-10px);
+			}
+
+			100% {
+				transform: translateY(0);
+			}
 		}
+
 		@keyframes popUp {
 			0% {
 				opacity: 0;
 				transform: translateY(7em);
 			}
+
 			100% {
 				opacity: 1;
 				transform: translateY(0)
@@ -84,6 +100,7 @@
 				opacity: 0;
 				transform: translateY(-7em);
 			}
+
 			100% {
 				opacity: 1;
 				transform: translateY(0)
@@ -95,6 +112,7 @@
 				opacity: 0;
 				transform: translateY(14em);
 			}
+
 			100% {
 				opacity: 1;
 				transform: translateY(0)
@@ -106,17 +124,19 @@
 				opacity: 0;
 				transform: translateY(7em);
 			}
+
 			100% {
 				opacity: 1;
 				transform: translateY(0)
 			}
 		}
-			
+
 		.hero-text {
 			margin-top: auto;
 			margin-bottom: auto;
 			padding-right: 5em;
 		}
+
 		@media only screen and (max-width: 600px) {
 			.hero-text {
 				padding-right: 0em;
@@ -127,154 +147,160 @@
 			font-weight: bold;
 			text-decoration: underline;
 		}*/
-		
 	</style>
-	
+
 </head>
 
 <body>
-<section class="hero is-info is-fullheight is-bold">
-	<div class="hero-body">
-		<div class="container">
-			<div class="columns">
-				<div class="column is-two-thirds hero-text">
+	<section class="hero is-info is-fullheight is-bold">
+		<div class="hero-body">
+			<div class="container">
+				<div class="columns">
+					<div class="column is-two-thirds hero-text">
 						<h1 class="title is-size-2">
-								Penn Courses
-							</h1>
+							Penn Courses
+						</h1>
 						<h2 class="subtitle">
-							Everything you need to learn more about courses you're interested in, plan your next semester, 
-							and make sure you get to take the classes you want. 
+							Everything you need to learn more about courses you're interested in, plan your next
+							semester,
+							and make sure you get to take the classes you want.
 						</h2>
 						<div class="descriptions">
 							<div class="is-italic" id="clue">Click on each icon to learn more.</div>
 							<div class="prod-description" id="pcr-desc">
-									<h2 class="subtitle">
-											<b>Penn Course Review</b> provides quantitative data on professor and course ratings over the years, and is a trusted resource for choosing classes.
-											<br>
-											<a class="button is-info is-inverted is-rounded" style="margin-top:1rem" href="https://penncoursereview.com">Visit Penn Course Review</a>
-									</h2>
-								</div>
-								<div class="prod-description" id="pca-desc">
-									<h2 class="subtitle">
-											<b>Penn Course Alert</b> sends high quality, immediate alerts via text and email when full courses open up. Reduce the uncertainty and guesswork in registering for classes!	
-											<br>
-											<a class="button is-info is-inverted is-rounded" style="margin-top:1rem" href="https://penncoursealert.com">Visit Penn Course Alert</a>							
-									</h2>
-								</div>
-								<div class="prod-description" id="pcp-desc">
-									<h2 class="subtitle">
-											<b>Penn Course Plan</b> combines professor and course ratings with a convenient mock scheduling tool. Choose the best schedule for your semester, with at-a-glance metrics to easily compare schedules!
-											<br>
-											<a class="button is-info is-inverted is-rounded" style="margin-top:1rem" href="https://penncourseplan.com">Visit Penn Course Plan</a>
-									</h2>
-								</div>
+								<h2 class="subtitle">
+									<b>Penn Course Review</b> provides quantitative data on professor and course ratings
+									over the years, and is a trusted resource for choosing classes.
+									<br>
+									<a class="button is-info is-inverted is-rounded" style="margin-top:1rem"
+										href="https://penncoursereview.com">Visit Penn Course Review</a>
+								</h2>
+							</div>
+							<div class="prod-description" id="pca-desc">
+								<h2 class="subtitle">
+									<b>Penn Course Alert</b> sends high quality, immediate alerts via text and email
+									when full courses open up. Reduce the uncertainty and guesswork in registering for
+									classes!
+									<br>
+									<a class="button is-info is-inverted is-rounded" style="margin-top:1rem"
+										href="https://penncoursealert.com">Visit Penn Course Alert</a>
+								</h2>
+							</div>
+							<div class="prod-description" id="pcp-desc">
+								<h2 class="subtitle">
+									<b>Penn Course Plan</b> combines professor and course ratings with a convenient mock
+									scheduling tool. Choose the best schedule for your semester, with at-a-glance
+									metrics to easily compare schedules!
+									<br>
+									<a class="button is-info is-inverted is-rounded" style="margin-top:1rem"
+										href="https://penncourseplan.com">Visit Penn Course Plan</a>
+								</h2>
+							</div>
 						</div>
-					
-				</div>
-				<div class="column">
-					<div style="width: 85%; margin-left: 7.5%; margin-top:1rem">
-						<figure class="image product up2" id="pcr" style="z-index: 5">
-							<a href="https://penncoursereview.com">
-							<img src="pcr.png" />
-							</a>
-						</figure>
-						<figure class="image product up1" id="pca" style="z-index: 3">
-							<a href="https://penncoursealert.com">
-							<img src="pca.png" />
-							</a>
-						</figure>
-						
-						<figure class="image product fadeIn" id="pcp" style="z-index: 1">
-							<a href="https://penncourseplan.com">
-								<img src="pcp.png" />
-							</a>
-						</figure>
-						
+
+					</div>
+					<div class="column">
+						<div style="width: 85%; margin-left: 7.5%; margin-top:1rem">
+							<figure class="image product up2" id="pcr" style="z-index: 5">
+								<a href="https://penncoursereview.com">
+									<img src="pcr.png" />
+								</a>
+							</figure>
+							<figure class="image product up1" id="pca" style="z-index: 3">
+								<a href="https://penncoursealert.com">
+									<img src="pca.png" />
+								</a>
+							</figure>
+
+							<figure class="image product fadeIn" id="pcp" style="z-index: 1">
+								<a href="https://penncourseplan.com">
+									<img src="pcp.png" />
+								</a>
+							</figure>
+
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	</div>
-	<div class="hero-foot" style="background-color:rgba(255,255,255,0.2); margin-top:2rem">
-		<div class="content has-text-centered">
-			<p style="font-size:0.8rem; margin-top:1rem; margin-bottom:1rem">
-				Made with <span class="icon is-small" style="color:#F56F71"><i class="fa fa-heart"></i></span> by <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
-			</p>
+		<div class="hero-foot" style="background-color:rgba(255,255,255,0.2); margin-top:2rem">
+			<div class="content has-text-centered">
+				<p style="font-size:0.8rem; margin-top:1rem; margin-bottom:1rem">
+					Made with <span class="icon is-small" style="color:#F56F71"><i class="fa fa-heart"></i></span> by <a
+						href="http://pennlabs.org" target="_blank">Penn Labs</a>
+				</p>
+			</div>
 		</div>
-	</div>
-</section>
+	</section>
 
-<script
-			  src="https://code.jquery.com/jquery-3.3.1.min.js"
-			  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-			  crossorigin="anonymous"></script>
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+		integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 
-<script>
+	<script>
 
-$(document).ready(() => {
-	function stopFloat(icon) {
-		let product = icon.attr('id')
-		let desc = $('#' + product + '-desc')
-		console.log('product')
-		icon.one('animationiteration', e => {
-			icon.removeClass('float')
+		$(document).ready(() => {
+			function stopFloat(icon) {
+				let product = icon.attr('id')
+				let desc = $('#' + product + '-desc')
+				icon.one('animationiteration', e => {
+					icon.removeClass('float')
+				})
+			}
+
+			function toggleSlide(desc, icon) {
+				if (desc.is(':visible')) {
+					desc.slideUp()
+					// stopFloat(icon)
+				} else {
+					desc.slideDown()
+					// icon.addClass('float')
+				}
+			}
+
+			function fadeOut(e) {
+				e.addClass('hidden')
+				e.one('transitionend', e => {
+					e.hide()
+				})
+			}
+
+			setTimeout(() => {
+				$('.product').removeClass('fadeIn popDown popUp up1 up2')
+			}, 1500)
+
+			$('.product').click(e => {
+				e.preventDefault()
+				let icon = $(e.target).parent().parent()
+				let product = icon.attr('id')
+				let desc = $('#' + product + '-desc')
+
+				$('.prod-description').slideUp()
+
+				// $('.product').each((i, e) => {
+				// 	let elt = $(e)
+				// 	if (elt.attr('id') !== product) {
+				// 		stopFloat(elt)
+				// 	}
+				// })
+				toggleSlide(desc, icon)
+				$('#clue').slideUp()
+			})
+
+			$('.product').mouseenter(e => {
+				let i = $(e.target).parent().parent()
+				i.addClass('float')
+			})
+			$('.product').mouseleave(e => {
+				let icon = $(e.target).parent().parent()
+				let product = icon.attr('id')
+				let desc = $('#' + product + '-desc')
+
+				stopFloat(icon)
+			})
+
 		})
-	}
 
-	function toggleSlide(desc, icon) {
-		if (desc.is(':visible')) {
-			desc.slideUp()
-			// stopFloat(icon)
-		} else {
-			desc.slideDown()
-			// icon.addClass('float')
-		}
-	}
-
-	function fadeOut(e) {
-		e.addClass('hidden')
-		e.one('transitionend', e => {
-			e.hide()
-		})
-	}
-
-	setTimeout(() => {
-		$('.product').removeClass('fadeIn popDown popUp up1 up2')
-	}, 1500)
-
-	$('.product').click(e => {
-		e.preventDefault()
-		let icon = $(e.target).parent().parent()
-		let product = icon.attr('id')
-		let desc = $('#' + product + '-desc')
-		
-		$('.prod-description').slideUp()
-		
-		// $('.product').each((i, e) => {
-		// 	let elt = $(e)
-		// 	if (elt.attr('id') !== product) {
-		// 		stopFloat(elt)
-		// 	}
-		// })
-		toggleSlide(desc, icon)
-		$('#clue').slideUp()
-	})
-
-	$('.product').mouseenter(e => {
-		let i = $(e.target).parent().parent()
-		i.addClass('float')
-	})
-	$('.product').mouseleave(e => {
-		let icon = $(e.target).parent().parent()
-		let product = icon.attr('id')
-		let desc = $('#' + product + '-desc')
-		
-		stopFloat(icon)
-	})
-
-})
-
-</script>
+	</script>
 
 
 </body>

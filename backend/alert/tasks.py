@@ -6,8 +6,11 @@ import scipy.stats as stats
 from celery import shared_task
 from django.conf import settings
 from django.core.cache import cache
-from django.db import transaction
+from django.db import models, transaction
+from django.db.models import Case, Q, When
+from django.db.models.functions import Cast
 
+from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import PcaDemandDistributionEstimate, Registration
 from courses.models import Section, StatusUpdate
 from courses.util import (
@@ -62,6 +65,11 @@ def send_course_alerts(course_code, course_status, semester=None, sent_by=""):
         send_alert.delay(reg.id, close_notification=(course_status == "C"), sent_by=sent_by)
 
 
+@shared_task(name="pca.tasks.recompute_percent_open")
+def recompute_percent_open_async(semester):
+    recompute_percent_open(semesters=[semester], semesters_precomputed=True)
+
+
 @shared_task(name="pca.tasks.registration_update")
 def registration_update(section_id, was_active, is_now_active, updated_at):
     """
@@ -100,14 +108,29 @@ def registration_update(section_id, was_active, is_now_active, updated_at):
 
         sections_qs = (
             Section.objects.filter(extra_metrics_section_filters, course__semester=semester)
-            .distinct()
             .select_for_update()
+            .annotate(
+                raw_demand=Case(
+                    When(
+                        Q(capacity__gt=0),
+                        then=(
+                            Cast(
+                                "registration_volume",
+                                models.FloatField(),
+                            )
+                            / Cast("capacity", models.FloatField())
+                        ),
+                    ),
+                    default=None,
+                    output_field=models.FloatField(),
+                ),
+            )
             .order_by("raw_demand")
         )
 
         try:
-            highest_demand_section = sections_qs.last()
-            lowest_demand_section = sections_qs.first()
+            lowest_demand_section = sections_qs[:1].get()
+            highest_demand_section = sections_qs[-1:].get()
         except Section.DoesNotExist:
             return  # Don't add a PcaDemandDistributionEstimate -- there are no valid sections yet
 

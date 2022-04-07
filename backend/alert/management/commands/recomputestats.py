@@ -563,7 +563,7 @@ def delete_cancelled_sections_empty_courses():
         ).update(
             most_recent_id=Subquery(
                 Course.objects.filter(
-                    Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
+                    Q(primary_listing_id=F("id")),
                     topic_id=OuterRef("id"),
                     sections__isnull=False,
                     semester=Subquery(

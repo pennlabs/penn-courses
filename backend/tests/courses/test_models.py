@@ -5,7 +5,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Course, Department, Requirement, Section, UserProfile
+from courses.models import Course, Department, Requirement, Section, Topic, UserProfile
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
@@ -18,7 +18,7 @@ from courses.util import (
 from tests.courses.util import create_mock_data
 
 
-TEST_SEMESTER = "2019A"
+TEST_SEMESTER = "2022A"
 
 
 def set_semester():
@@ -101,6 +101,190 @@ class GetCourseSectionTest(TestCase):
         self.assertEqual(course.department.code, "CIS")
         self.assertEqual(course.code, "120")
         self.assertEqual(section.code, "001")
+
+
+class CourseSaveAutoPrimaryListingTest(TestCase):
+    def test_new(self):
+        a, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        a_db = Course.objects.get(full_code="CIS-120")
+        self.assertEqual(a.primary_listing, a)
+        self.assertEqual(a_db.primary_listing, a_db)
+
+    def test_delete_max_id(self):
+        get_or_create_course("CIS", "120", TEST_SEMESTER)
+        get_or_create_course("CIS", "160", TEST_SEMESTER)
+        c, _ = get_or_create_course("CIS", "121", TEST_SEMESTER)
+        c.topic.delete()
+        c.delete()
+        d, _ = get_or_create_course("CIS", "240", TEST_SEMESTER)
+        d_db = Course.objects.get(full_code="CIS-240")
+        self.assertEqual(d.primary_listing, d)
+        self.assertEqual(d_db.primary_listing, d_db)
+
+    def test_delete_min_id(self):
+        a, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        get_or_create_course("CIS", "160", TEST_SEMESTER)
+        get_or_create_course("CIS", "121", TEST_SEMESTER)
+        a.topic.delete()
+        a.delete()
+        d, _ = get_or_create_course("CIS", "240", TEST_SEMESTER)
+        d_db = Course.objects.get(full_code="CIS-240")
+        self.assertEqual(d.primary_listing, d)
+        self.assertEqual(d_db.primary_listing, d_db)
+
+    def test_delete_all(self):
+        a, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        b, _ = get_or_create_course("CIS", "160", TEST_SEMESTER)
+        c, _ = get_or_create_course("CIS", "121", TEST_SEMESTER)
+        a.topic.delete()
+        a.delete()
+        b.topic.delete()
+        b.delete()
+        c.topic.delete()
+        c.delete()
+        d, _ = get_or_create_course("CIS", "240", TEST_SEMESTER)
+        d_db = Course.objects.get(full_code="CIS-240")
+        self.assertEqual(d.primary_listing, d)
+        self.assertEqual(d_db.primary_listing, d_db)
+
+    def test_set_primary_listing(self):
+        get_or_create_course("CIS", "120", TEST_SEMESTER)
+        b, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
+        c, _ = get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b})
+        b_db = Course.objects.get(full_code="OIDD-291")
+        c_db = Course.objects.get(full_code="LGST-291")
+        self.assertEqual(b.primary_listing, b)
+        self.assertEqual(c.primary_listing, b)
+        self.assertEqual(b_db.primary_listing, b_db)
+        self.assertEqual(c_db.primary_listing, b_db)
+
+    def test_set_primary_listing_id(self):
+        get_or_create_course("CIS", "120", TEST_SEMESTER)
+        b, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
+        c, _ = get_or_create_course(
+            "LGST", "291", TEST_SEMESTER, defaults={"primary_listing_id": b.id}
+        )
+        b_db = Course.objects.get(full_code="OIDD-291")
+        c_db = Course.objects.get(full_code="LGST-291")
+        self.assertEqual(b.primary_listing, b)
+        self.assertEqual(c.primary_listing, b)
+        self.assertEqual(b_db.primary_listing, b_db)
+        self.assertEqual(c_db.primary_listing, b_db)
+
+
+class CourseTopicTestCase(TestCase):
+    def test_new(self):
+        a, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        a_db = Course.objects.get(full_code="CIS-120")
+        t = Topic.objects.get()
+        self.assertEqual(a.topic, t)
+        self.assertEqual(a_db.topic, t)
+        self.assertEqual(t.most_recent, a_db)
+
+    def test_existing_full_code(self):
+        a, _ = get_or_create_course("CIS", "120", "2020C")
+        b, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        a_db = Course.objects.get(full_code="CIS-120", semester="2020C")
+        b_db = Course.objects.get(full_code="CIS-120", semester=TEST_SEMESTER)
+        t = Topic.objects.get()
+        self.assertEqual(a.topic, t)
+        self.assertEqual(a_db.topic, t)
+        self.assertEqual(b.topic, t)
+        self.assertEqual(b_db.topic, t)
+        self.assertEqual(t.most_recent, b_db)
+
+    def test_add_course(self):
+        a, _ = get_or_create_course("CIS", "120", "2020C")
+        t = Topic.objects.get()
+        b, _ = get_or_create_course("CIS", "1200", TEST_SEMESTER)
+        t.add_course(b)
+        a_db = Course.objects.get(full_code="CIS-120")
+        b_db = Course.objects.get(full_code="CIS-1200")
+        t = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
+        self.assertEqual(a_db.topic, t)
+        self.assertEqual(b_db.topic, t)
+        self.assertEqual(t.most_recent, b_db)
+
+    def test_merge_with(self):
+        a, _ = get_or_create_course("CIS", "120", "2020C")
+        t = Topic.objects.get()
+        b, _ = get_or_create_course("CIS", "1200", "2021C")
+        t.add_course(b)
+        c, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
+        get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": c})
+        t1 = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
+        t2 = Topic.objects.filter(courses__full_code="OIDD-291")[:1].get()
+        t_merged = t1.merge_with(t2)
+        a_db = Course.objects.get(full_code="CIS-120")
+        b_db = Course.objects.get(full_code="CIS-1200")
+        c_db = Course.objects.get(full_code="OIDD-291")
+        d_db = Course.objects.get(full_code="LGST-291")
+        t_merged_db = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
+        self.assertEqual(t_merged, t_merged_db)
+        self.assertEqual(a_db.topic, t_merged_db)
+        self.assertEqual(b_db.topic, t_merged_db)
+        self.assertEqual(c_db.topic, t_merged_db)
+        self.assertEqual(d_db.topic, t_merged_db)
+        self.assertEqual(t_merged.most_recent, c)
+        self.assertEqual(t_merged_db.most_recent, c_db)
+
+    def test_merge_with_error(self):
+        with self.assertRaises(ValueError):
+            get_or_create_course("CIS", "120", "2020C")
+            t = Topic.objects.get()
+            b, _ = get_or_create_course("CIS", "1200", TEST_SEMESTER)
+            t.add_course(b)
+            c, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
+            get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": c})
+            Course.objects.get(full_code="CIS-120")
+            Course.objects.get(full_code="CIS-1200")
+            Course.objects.get(full_code="OIDD-291")
+            Course.objects.get(full_code="LGST-291")
+            t1 = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
+            t2 = Topic.objects.filter(courses__full_code="OIDD-291")[:1].get()
+            t1.merge_with(t2)
+
+    def test_crosslistings(self):
+        a, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        b, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
+        c, _ = get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b})
+        a_db = Course.objects.get(full_code="CIS-120")
+        b_db = Course.objects.get(full_code="OIDD-291")
+        c_db = Course.objects.get(full_code="LGST-291")
+        t1 = Topic.objects.get(courses__full_code="CIS-120")
+        t2 = Topic.objects.filter(courses__full_code="OIDD-291")[:1].get()
+        self.assertEqual(a.topic, t1)
+        self.assertEqual(b.topic, t2)
+        self.assertEqual(c.topic, t2)
+        self.assertEqual(a_db.topic, t1)
+        self.assertEqual(b_db.topic, t2)
+        self.assertEqual(c_db.topic, t2)
+        self.assertEqual(t1.most_recent, a_db)
+        self.assertEqual(t2.most_recent, b_db)
+
+    def test_crosslistings_exists_full_code(self):
+        get_or_create_course("CIS", "120", "2020C")
+        b, _ = get_or_create_course("OIDD", "291", "2020C")
+        get_or_create_course("LGST", "291", "2020C", defaults={"primary_listing": b})
+        d, _ = get_or_create_course("MGMT", "291", TEST_SEMESTER)
+        get_or_create_course("OPIM", "291", TEST_SEMESTER, defaults={"primary_listing": d})
+        get_or_create_course("OIDD", "291", TEST_SEMESTER, defaults={"primary_listing": d})
+        a_db = Course.objects.get(full_code="CIS-120")
+        b_db = Course.objects.get(full_code="OIDD-291", semester="2020C")
+        c_db = Course.objects.get(full_code="LGST-291")
+        d_db = Course.objects.get(full_code="MGMT-291")
+        e_db = Course.objects.get(full_code="OPIM-291")
+        f_db = Course.objects.get(full_code="OIDD-291", semester=TEST_SEMESTER)
+        t1 = Topic.objects.get(courses__full_code="CIS-120")
+        t2 = Topic.objects.filter(courses__full_code="OIDD-291")[:1].get()
+        self.assertEqual(a_db.topic, t1)
+        self.assertEqual(b_db.topic, t2)
+        self.assertEqual(c_db.topic, t2)
+        self.assertEqual(d_db.topic, t2)
+        self.assertEqual(e_db.topic, t2)
+        self.assertEqual(f_db.topic, t2)
+        self.assertEqual(t1.most_recent, a_db)
+        self.assertEqual(t2.most_recent, d_db)
 
 
 class CourseStatusUpdateTestCase(TestCase):

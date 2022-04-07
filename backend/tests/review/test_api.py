@@ -438,7 +438,12 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
         self.assertRequestContainsAppx(
             "department-reviews",
             "CIS",
-            {"courses": {"CIS-120": average_and_recent(3, 4), "CIS-160": average_and_recent(2, 2)}},
+            {
+                "courses": {
+                    "CIS-120": average_and_recent(3, 4),
+                    "CIS-160": average_and_recent(2, 2),
+                }
+            },
         )
 
 
@@ -590,7 +595,10 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
                         **average_and_recent(3, 4),
                         "latest_semester": TEST_SEMESTER,
                     },
-                    self.instructor2.pk: {**average_and_recent(1.5, 2), "latest_semester": "2017A"},
+                    self.instructor2.pk: {
+                        **average_and_recent(1.5, 2),
+                        "latest_semester": "2017A",
+                    },
                 },
             },
         )

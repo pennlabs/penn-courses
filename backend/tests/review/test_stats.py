@@ -8,7 +8,11 @@ from rest_framework.test import APIClient
 from alert.management.commands.recomputestats import recompute_demand_distribution_estimates
 from alert.models import AddDropPeriod, Registration
 from courses.models import Instructor, Section
-from courses.util import get_add_drop_period, invalidate_current_semester_cache, record_update
+from courses.util import (
+    get_or_create_add_drop_period,
+    invalidate_current_semester_cache,
+    record_update,
+)
 from PennCourses.settings.base import TIME_ZONE
 from review.models import Review
 from tests.courses.util import create_mock_data
@@ -120,10 +124,10 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         course, section = create_mock_data("ESE-120-001", TEST_CURRENT_SEMESTER)
         section.capacity = 100
         section.save()
-        cls.current_sem_adp = get_add_drop_period(TEST_CURRENT_SEMESTER)
-        cls.adp = get_add_drop_period(TEST_SEMESTER)
+        cls.current_sem_adp = get_or_create_add_drop_period(TEST_CURRENT_SEMESTER)
+        cls.adp = get_or_create_add_drop_period(TEST_SEMESTER)
         AddDropPeriod(semester="2020C").save()
-        cls.old_adp = get_add_drop_period("2020C")
+        cls.old_adp = get_or_create_add_drop_period("2020C")
         cls.average_instructor_quality = (2 + 3.5) / 2
         cls.recent_instructor_quality = 3.5
         cls.old_instructor_quality = 2
@@ -450,8 +454,8 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         )
         cls.ESE_120_001_id = Section.objects.get(full_code="ESE-120-001").id
         cls.instructor_quality = 3.5
-        cls.current_sem_adp = get_add_drop_period(TEST_CURRENT_SEMESTER)
-        cls.adp = get_add_drop_period(TEST_SEMESTER)
+        cls.current_sem_adp = get_or_create_add_drop_period(TEST_CURRENT_SEMESTER)
+        cls.adp = get_or_create_add_drop_period(TEST_SEMESTER)
         start = cls.adp.estimated_start
         end = cls.adp.estimated_end
         duration = end - start
@@ -670,8 +674,8 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         )
         cls.ESE_120_001_id = Section.objects.get(full_code="ESE-120-001").id
         cls.instructor_quality = 3.5
-        cls.current_sem_adp = get_add_drop_period(TEST_CURRENT_SEMESTER)
-        cls.adp = get_add_drop_period(TEST_SEMESTER)
+        cls.current_sem_adp = get_or_create_add_drop_period(TEST_CURRENT_SEMESTER)
+        cls.adp = get_or_create_add_drop_period(TEST_SEMESTER)
         start = cls.adp.estimated_start
         end = cls.adp.estimated_end
         duration = end - start
