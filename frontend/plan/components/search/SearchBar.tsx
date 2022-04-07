@@ -345,20 +345,14 @@ SearchBarProps) {
 
     const dropDowns = (
         <DropdownContainer>
-            <DropdownButton
+            {/*<DropdownButton
                 title="Requirements"
                 filterData={filterData.selectedReq}
                 defaultFilter={defaultReqs}
-                clearFilter={clearFilterSearch("selectedReq")}
-            >
-                <SchoolReq
-                    startSearch={conditionalStartSearch}
-                    schoolReq={schoolReq}
-                    filterData={filterData}
                     addSchoolReq={addSchoolReq}
                     remSchoolReq={remSchoolReq}
                 />
-            </DropdownButton>
+            </DropdownButton> // TODO: re-enable*/}
             <DropdownButton
                 title="Difficulty"
                 filterData={filterData.difficulty}

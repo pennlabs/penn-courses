@@ -320,6 +320,7 @@ class CourseDetailSerializer(CourseListSerializer):
             "id",
             "title",
             "description",
+            "syllabus_url",
             "semester",
             "prerequisites",
             "course_quality",

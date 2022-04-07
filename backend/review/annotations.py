@@ -18,19 +18,16 @@ from review.models import ALL_FIELD_SLUGS, Review, ReviewBit
 """
 Queryset annotations
 ====================
-
 Actual review data is stored in an Entity-Attribute-Value (EAV) format in the ReviewBit
 model. This means that getting associated review data for a queryset requires a few
 JOINs under the hood. Doing aggregations on these ReviewBits also requires the explicit
 use of subqueries. You can read about Subqueries here:
 https://docs.djangoproject.com/en/2.2/ref/models/expressions/#subquery-expressions.
-
 In short, however, subqueries allow us to query for review data from the ReviewBit table
 *inside* any other queryset to use in aggregations and annotations. We can filter down
 the ReviewBits that we want to aggregate based on their field name, along with any other
 Django filter query that can be different *per row* in the outer query. To match on fields
 from the outer query, we use the OuterRef() expressions.
-
 This allows us to have the database do all of the work of averaging PCR data. Were we to do
 this aggregation all in Python code, it would likely take many more queries (read: round-trips to
 the DB), be *much* slower, and require cacheing.
@@ -190,9 +187,9 @@ def review_averages(
                 ),
                 (prefix + "semester_count"): Subquery(
                     ReviewBit.objects.filter(review__responses__gt=0, **subfilters)
-                    .annotate(common=Value(1))
-                    .values("common")
-                    .annotate(count=Count("review__section__course__semester", distinct=True))
+                    .values("field")
+                    .order_by()
+                    .annotate(count=Count("review__section__course__semester"))
                     .values("count")[:1]
                 ),
             }

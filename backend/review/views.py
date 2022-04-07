@@ -1,5 +1,5 @@
 from dateutil.tz import gettz
-from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
+from django.db.models import F, OuterRef, Q, Subquery
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -37,12 +37,10 @@ from review.util import (
 You might be wondering why these API routes are using the @api_view function decorator
 from Django REST Framework rather than using any of the higher-level constructs that DRF
 gives us, like Generic APIViews or ViewSets.
-
 ViewSets define REST actions on a specific "resource" -- generally in our case, django models with
 defined serializers. With these aggregations, though, there isn't a good way to define a resource
 for a ViewSet to act upon. Each endpoint doesn't represent one resource, or a list of resources,
 but one aggregation of all resources (ReviewBits) that fit a certain filter.
-
 There probably is a way to fit everything into a serializer, but at the time of writing it felt like
 it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
 """
@@ -59,7 +57,9 @@ extra_metrics_section_filters = (
     & Q(status_updates__section_id=F("id"))  # Filter out sections with no status updates
     & ~Q(
         id__in=Subquery(
-            Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values("sections__id")
+            Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values_list(
+                "sections__id", flat=True
+            )
         )
     )  # Filter out sections that require permit for registration
 )
@@ -118,24 +118,9 @@ def course_reviews(request, course_code):
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
-    try:
-        most_recent_section = (
-            Section.objects.filter(
-                course_id__in=Subquery(
-                    Course.objects.filter(course_filters_pcr, full_code=course_code).values("id")
-                ),
-            )
-            .annotate(
-                registration_metrics=Case(
-                    When(extra_metrics_section_filters, then=Value(True)),
-                    default=Value(False),
-                    output_field=BooleanField(),
-                )
-            )
-            .order_by("-course__semester")[:1]
-            .get()
-        )
-    except Section.DoesNotExist:
+    if not Course.objects.filter(
+        course_filters_pcr, sections__review__isnull=False, full_code=course_code
+    ).exists():
         raise Http404()
 
     reviews = (
@@ -191,7 +176,6 @@ def course_reviews(request, course_code):
             "recent_reviews": make_subdict("recent_", course),
             "num_semesters": course["average_semester_count"],
             "instructors": instructors,
-            "registration_metrics": most_recent_section.registration_metrics,
         }
     )
 
@@ -231,7 +215,7 @@ def course_reviews(request, course_code):
         override_response_schema=course_plots_response_schema,
     )
 )
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
@@ -491,6 +475,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     Get the review history of an instructor teaching a course. No aggregations here.
     """
     instructor = get_object_or_404(Instructor, id=instructor_id)
+    print([str(r) for r in Review.objects.filter(instructor_id=instructor_id, responses__gt=0)])
     reviews = review_averages(
         Review.objects.filter(
             section__course__full_code=course_code, instructor_id=instructor_id, responses__gt=0

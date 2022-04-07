@@ -680,12 +680,8 @@ def register_for_course(
     ):
         return RegStatus.NO_CONTACT_INFO, None, None
     try:
-        course, section = get_course_and_section(course_code, get_current_semester())
-    except Course.DoesNotExist:
-        return RegStatus.COURSE_NOT_FOUND, None, None
-    except Section.DoesNotExist:
-        return RegStatus.COURSE_NOT_FOUND, None, None
-    except ValueError:
+        _, section = get_course_and_section(course_code, get_current_semester())
+    except (Course.DoesNotExist, Section.DoesNotExist, ValueError):
         return RegStatus.COURSE_NOT_FOUND, None, None
 
     if user is None:

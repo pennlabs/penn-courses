@@ -8,7 +8,7 @@ import DetailsBox from "../components/DetailsBox";
 import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
-import { apiReviewData, apiLive, apiLiveInstructor } from "../utils/api";
+import { apiReviewData, apiLive } from "../utils/api";
 
 /**
  * Represents a course, instructor, or department review page.
@@ -108,19 +108,14 @@ export class ReviewPage extends Component {
     if (type && code) {
       apiReviewData(type, code)
         .then(data => {
-          const { error, detail, name } = data;
+          const { error, detail } = data;
           if (error) {
             this.setState({
               error,
               error_detail: detail
             });
           } else {
-            this.setState({ data }, () => {
-              if (type === "instructor" && name)
-                apiLiveInstructor(
-                  name.replace(/[^A-Za-z0-9 ]/g, "")
-                ).then(liveData => this.setState({ liveData }));
-            });
+            this.setState({ data });
           }
         })
         .catch(() =>

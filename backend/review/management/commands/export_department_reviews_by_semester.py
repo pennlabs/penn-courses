@@ -3,15 +3,17 @@ import os
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
-from django.db.models import OuterRef
+from django.db.models import F, OuterRef, Q, Sum
 
 from alert.management.commands.recomputestats import get_semesters
 from courses.models import Department
 from PennCourses.settings.base import S3_resource
 from review.annotations import review_averages
+from review.models import ALL_FIELD_SLUGS, Review
+from review.views import reviewbit_filters_pcr, section_filters_pcr
 
 
-def average_by_dept(fields, semesters, departments=None, path=None, verbose=False):
+def average_by_dept(fields, semesters, departments=None, verbose=False):
     """
     For each department and year, compute the average of given fields
     (see `alert.models.ReviewBit` for an enumeration of fields) across all (valid) sections.
@@ -29,14 +31,36 @@ def average_by_dept(fields, semesters, departments=None, path=None, verbose=Fals
         semester_dept_avgs = review_averages(
             depts_qs,
             fields=fields,
-            subfilters={
-                "review__section__course__semester": semester,
-                "review__section__course__department_id": OuterRef("id"),
-            },
+            reviewbit_subfilters=(
+                reviewbit_filters_pcr
+                & Q(review__section__course__semester=semester)
+                & Q(review__section__course__department_id=OuterRef("id"))
+            ),
+            section_subfilters=(
+                section_filters_pcr
+                & Q(course__semester=semester)
+                & Q(course__department_id=OuterRef("id"))
+            ),
             extra_metrics=False,
         ).values("code", *fields)
 
         dept_avgs[semester] = {dept_dict.pop("code"): dept_dict for dept_dict in semester_dept_avgs}
+
+        for code, enrollments_sum in (
+            Review.objects.filter(
+                (
+                    Q(section__course__primary_listing__isnull=True)
+                    | Q(section__course__primary_listing_id=F("section__course_id"))
+                )
+                & ~Q(section__activity__in=["LAB", "REC"])
+                & Q(section__course__semester=semester)
+            )
+            .annotate(code=F("section__course__department__code"))
+            .values("code")
+            .annotate(enrollments_sum=Sum("enrollment"))
+            .values_list("code", "enrollments_sum")
+        ):
+            dept_avgs[semester][code]["enrollments_sum"] = enrollments_sum
 
     return dept_avgs
 
@@ -57,8 +81,7 @@ class Command(BaseCommand):
             default=None,
             help=dedent(
                 """
-                fields as strings seperated by commas. If not provided, defaults to
-                ["course_quality", "difficulty", "instructor_quality", "work_required"].
+                fields as strings seperated by commas. If not provided, defaults to all fields.
                 """
             ),
         )
@@ -114,7 +137,7 @@ class Command(BaseCommand):
         semesters = get_semesters(semesters=kwargs["semesters"])
 
         if kwargs["fields"] is None:
-            fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
+            fields = ALL_FIELD_SLUGS
         else:
             fields = kwargs["fields"].strip().split(",")
         if kwargs["departments"] is None:

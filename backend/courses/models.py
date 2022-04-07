@@ -6,7 +6,7 @@ import phonenumbers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Case, Index, OuterRef, Q, Subquery, When
 from django.db.models.functions import Cast
 from django.db.models.signals import post_save
@@ -167,6 +167,17 @@ class Course(models.Model):
         ),
     )
 
+    syllabus_url = models.TextField(
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+            A URL for the syllabus of the course, if available.
+            Not available for courses offered in or before spring 2022.
+            """
+        ),
+    )
+
     full_code = models.CharField(
         max_length=16,
         blank=True,
@@ -177,6 +188,15 @@ class Course(models.Model):
     prerequisites = models.TextField(
         blank=True,
         help_text="Text describing the prereqs for a course, e.g. 'CIS 120, 160' for CIS-121.",
+    )
+
+    topic = models.ForeignKey(
+        "Topic",
+        related_name="courses",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The Topic of this course",
     )
 
     primary_listing = models.ForeignKey(
@@ -210,6 +230,27 @@ class Course(models.Model):
     def __str__(self):
         return "%s %s" % (self.full_code, self.semester)
 
+    def full_str(self):
+        return f"{self.full_code} ({self.semester}): {self.title}\n{self.description}"
+
+    @property
+    def is_primary(self):
+        """
+        Returns True iff this is the primary course among its crosslistings.
+        """
+        return self.primary_listing is None or self.primary_listing.id == self.id
+
+    @property
+    def from_new_banner_api(self):
+        """
+        This property is used to determine whether the course was imported from the new
+        OpenData API based on Banner, the university's new course data management system
+        (docs: https://app.swaggerhub.com/apis-docs/UPennISC/open-data/prod),
+        as opposed to the old OpenData API
+        (docs: https://esb.isc-seo.upenn.edu/8091/documentation).
+        """
+        return self.semester > "2022A"
+
     @property
     def crosslistings(self):
         """
@@ -241,6 +282,108 @@ class Course(models.Model):
     def save(self, *args, **kwargs):
         self.full_code = f"{self.department.code}-{self.code}"
         super().save(*args, **kwargs)
+        if not self.topic:
+            with transaction.atomic():
+                try:
+                    self.topic = (
+                        Topic.objects.select_related("most_recent")
+                        .filter(courses__full_code=self.full_code)[:1]
+                        .get()
+                    )
+                    if self.topic.most_recent.semester < self.semester:
+                        self.topic.most_recent = self.primary_listing or self
+                        self.topic.save()
+                except Topic.DoesNotExist:
+                    topic = Topic(most_recent=self.primary_listing or self)
+                    topic.save()
+                    self.topic = topic
+                super().save()
+                self.crosslistings.update(topic=self.topic)
+
+
+class Topic(models.Model):
+    """
+    A grouping of courses of the same topic (to accomodate course code changes).
+    """
+
+    most_recent = models.ForeignKey(
+        "Course",
+        related_name="+",
+        on_delete=models.PROTECT,
+        help_text=dedent(
+            """
+        The most recent course (by semester) of this topic. The `most_recent` course should
+        be the `primary_listing` if it has crosslistings. These invariants are maintained
+        by the `Topic.merge_with`, `Topic.add_course`, `Topic.from_course`, and `Course.save`
+        methods. Defer to using these methods rather than setting this field manually.
+        You must change the corresponding `Topic` object's `most_recent` field before
+        deleting a Course if it is the `most_recent` course (`on_delete=models.PROTECT`).
+        """
+        ),
+    )
+
+    branched_from = models.ForeignKey(
+        "Topic",
+        related_name="branched_to",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+        When relevant, the Topic from which this Topic was branched (this will likely only be
+        useful for the spring 2022 NGSS course code changes, where some courses were split into
+        multiple new courses of different topics).
+        """
+        ),
+    )
+
+    @staticmethod
+    def from_course(course):
+        """
+        Creates a new topic from a given course.
+        """
+        if course.topic:
+            return course.topic
+        course.save()
+        return course.topic
+
+    def merge_with(self, topic):
+        """
+        Merges this topic with the specified topic. Returns the resulting topic.
+        """
+        with transaction.atomic():
+            if (
+                self.most_recent.semester == topic.most_recent.semester
+                and self.most_recent.full_code != topic.most_recent.full_code
+            ):
+                raise ValueError(
+                    "Cannot merge topics with most_recent courses in the same semester "
+                    "but different full codes."
+                )
+            elif self.most_recent.semester >= topic.most_recent.semester:
+                Course.objects.filter(topic=topic).update(topic=self)
+                topic.delete()
+                return self
+            else:
+                Course.objects.filter(topic=self).update(topic=topic)
+                self.delete()
+                return topic
+
+    def add_course(self, course):
+        """
+        Adds the specified course to this topic.
+        """
+        with transaction.atomic():
+            course = course.primary_listing or course
+            if course.semester > self.most_recent.semester:
+                self.most_recent = course
+                self.save()
+            course.topic = self
+            course.save()
+            course.crosslistings.update(topic=self)
+
+    def __str__(self):
+        return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
 
 
 class Restriction(models.Model):
@@ -431,7 +574,7 @@ class Section(models.Model):
     )
 
     credits = models.DecimalField(
-        max_digits=3,  # some course for 2019C is 14 CR...
+        max_digits=4,  # some course for 2019C is 14 CR...
         decimal_places=2,
         null=True,
         blank=True,
@@ -764,8 +907,38 @@ class Meeting(models.Model):
     )
     room = models.ForeignKey(
         Room,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
-        help_text="The Room object in which the meeting is taking place.",
+        help_text=dedent(
+            """
+        The Room object in which the meeting is taking place
+        (null if this is an online meeting).
+        """
+        ),
+    )
+
+    start_date = models.TextField(
+        blank=True,
+        null=True,
+        max_length=10,
+        help_text=dedent(
+            """
+        The first day this meeting takes place, in the form 'YYYY-MM-DD', e.g. '2022-08-30'.
+        Not available for sections offered in or before spring 2022.
+        """
+        ),
+    )
+    end_date = models.TextField(
+        blank=True,
+        null=True,
+        max_length=10,
+        help_text=dedent(
+            """
+        The last day this meeting takes place, in the form 'YYYY-MM-DD', e.g. '2022-12-12'.
+        Not available for sections offered in or before spring 2022.
+        """
+        ),
     )
 
     class Meta:

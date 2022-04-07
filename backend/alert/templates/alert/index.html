@@ -1,12 +1,13 @@
 {% load staticfiles %}
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <script src="https://use.fontawesome.com/d5a524b2fd.js"></script>
-    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAABYlAAAWJQFJUiTwAAAC
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <script src="https://use.fontawesome.com/d5a524b2fd.js"></script>
+  <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAABYlAAAWJQFJUiTwAAAC
 qUlEQVRYw+2Xz2sTQRTHvzO7/UH80ViD1KoYFZEehIJgix5aCfRYxUtJBNuL4kFoDmLEU/AieLH+
 A9IezK1YSw5aCKgQEQSpeGhrtbiS1lTzo12a3dpNZjy0jU0622Y3P05+j7Mz733evDczbwnnHFb1
 4KN6gVIySoAW3WDIMf4CwMDDDueSVVvUhnMXpWSCAC1bhi8DCMKGLAPMp6RAUqV7lIQEJSHhy08Z
@@ -19,114 +20,133 @@ MzsFswmGH8vcNriwCDkwX+opWMzwsnauYqfgP0DFALxh/ToBjogmawYwnWKYTjFohmVfbk9I83tC
 mlP4GvaOas37Gsl7qw3IDi2ZmZYBuCM+x1LBDhDgZpndT6lqAuDfngJCemuY+m5RDbytIcDYNgDO
 +SMOZGrg/BOAYWFL1jeuuySK2wCcZqv1VaOPcZ6/pn+pDKvGug2JEqVpb8NOrfhkxOcYs/VntKmu
 p7+fS/Rfe7WQzkJfy9sYUQKtA1W9iLI5fm+HVA1V/SaM3jg0s5blPRyIb32bAFxSAq2TVu39BS8W
-CJFblaXvAAAAAElFTkSuQmCC"/>
-    <title>Penn Course Alert</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
-    <!--<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>-->
-    <script type="text/javascript" src="{% static "pca/uri.js" %}"></script>
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-21029575-12"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+CJFblaXvAAAAAElFTkSuQmCC" />
+  <title>Penn Course Alert</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
+  <!--<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>-->
+  <script type="text/javascript" src="{% static " pca/uri.js" %}"></script>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-21029575-12"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
 
-      gtag('config', 'UA-21029575-12');
-    </script>
-    <style>
-      body {
-        background-color: #fafcff;
-        position: relative;
-        {#padding-bottom: 150px;#}
-      }
-      .tt-menu {
-        width: 100%;
-      }
-      .lmk-rec-element {
-        background-color: white;
-        cursor: pointer;
-        text-align: left;
-      }
-      .lmk-command-icon {
-        float: right;
-      }
-      .lmk-rec-element:hover {
-        color: #FAFCFF;
-        background-color: #2588c0;
-      }
-      .tt-dataset {
-        overflow: auto;
-        max-height: 15em;
-        box-shadow: 0px 2px 4px;
-      }
-      .twitter-typeahead {
-        width: 100%;
-      }
-      .input {
-        border-style: hidden;
-        border-radius: 0px;
-        box-shadow: 0px 0px 8px 3px #F1F3F6;
-      }
-      .field {
-        padding-bottom: 0.5rem;
-      }
-      /* STICKY FOOTER: Calculate min-height for the main content to match the height for the footer*/
-      .footer {
-        background-color: #ffffff;
-        box-shadow: 0px 0px 8px 1px #F1F3F6;
-        height: 9rem;
-      }
-      #main {
-          min-height: calc(100vh - 9rem);
-      }
+    gtag('config', 'UA-21029575-12');
+  </script>
+  <style>
+    body {
+      background-color: #fafcff;
+      position: relative;
 
-      .title, .subtitle, p, label {
-        color: #4a4a4a;
+        {
+        #padding-bottom: 150px;
+        #
       }
-      .field {
-        padding-bottom:0.7rem;
-      }
-      .wrapper {
-        max-width:360px;
-        margin: 0 auto;
-        padding: 0;
-      }
-      .notification {
+    }
 
-      }
-      .up-top {
-          border-radius: 0;
-          margin: 0 !important;
-      }
+    .tt-menu {
+      width: 100%;
+    }
 
-    </style>
-  </head>
-  <body>
+    .lmk-rec-element {
+      background-color: white;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .lmk-command-icon {
+      float: right;
+    }
+
+    .lmk-rec-element:hover {
+      color: #FAFCFF;
+      background-color: #2588c0;
+    }
+
+    .tt-dataset {
+      overflow: auto;
+      max-height: 15em;
+      box-shadow: 0px 2px 4px;
+    }
+
+    .twitter-typeahead {
+      width: 100%;
+    }
+
+    .input {
+      border-style: hidden;
+      border-radius: 0px;
+      box-shadow: 0px 0px 8px 3px #F1F3F6;
+    }
+
+    .field {
+      padding-bottom: 0.5rem;
+    }
+
+    /* STICKY FOOTER: Calculate min-height for the main content to match the height for the footer*/
+    .footer {
+      background-color: #ffffff;
+      box-shadow: 0px 0px 8px 1px #F1F3F6;
+      height: 9rem;
+    }
+
+    #main {
+      min-height: calc(100vh - 9rem);
+    }
+
+    .title,
+    .subtitle,
+    p,
+    label {
+      color: #4a4a4a;
+    }
+
+    .field {
+      padding-bottom: 0.7rem;
+    }
+
+    .wrapper {
+      max-width: 360px;
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    .notification {}
+
+    .up-top {
+      border-radius: 0;
+      margin: 0 !important;
+    }
+  </style>
+</head>
+
+<body>
   <div id="main">
-  {% if recruiting %}
-      <div class="has-text-centered notification is-info up-top">
+    {% if recruiting %}
+    <div class="has-text-centered notification is-info up-top">
       Want to be part of the team that makes products like this? Penn Labs is recruiting.
-          <a href="//pennlabs.org/apply">Apply here!</a>
+      <a href="//pennlabs.org/apply">Apply here!</a>
       <button class="delete dismiss"></button>
-      </div>
-  {% endif %}
-  {% for n in  notifications%}
+    </div>
+    {% endif %}
+    {% for n in notifications%}
     <div class="has-text-centered notification up-top {% if n.type == 'success' %} is-success
                                              {% elif n.type == 'danger' %} is-danger
                                              {% elif n.type == 'warning' %} is-warning {% else %} is-info {% endif %}"
-       id="notificationBar">
-        {% if n.closeable %}
-            <button class="delete dismiss"></button>
-        {% endif %}
+      id="notificationBar">
+      {% if n.closeable %}
+      <button class="delete dismiss"></button>
+      {% endif %}
       {{ n.text }}
     </div>
-  {% endfor %}
+    {% endfor %}
     <section class="section is-block-mobile">
       <div class="container has-text-centered">
         <div class="level" style="margin-bottom:0.5rem">
           <div class="level-item">
             <figure class="image is-64x64" style="padding-right:1rem">
-            <img src="{% static "pca/PCA_logo.svg" %}">
+              <img src="{% static " pca/PCA_logo.svg" %}">
             </figure>
             <h1 class="title">
               Penn Course Alert
@@ -134,7 +154,7 @@ CJFblaXvAAAAAElFTkSuQmCC"/>
           </div>
         </div>
         <p class="subtitle is-size-5">
-        Get alerted when a course opens up, by text and email
+          Get alerted when a course opens up, by text and email
         </p>
       </div>
 
@@ -142,7 +162,8 @@ CJFblaXvAAAAAElFTkSuQmCC"/>
         <form id="submit_form" action="/submitted" method="POST">
           <div class="field" class="input-wrapper">
             <div class="control" id="bloodhound">
-              <input class="input is-medium" id="courseTypeahead" type="text" placeholder="Course" name="course" required>
+              <input class="input is-medium" id="courseTypeahead" type="text" placeholder="Course" name="course"
+                required>
             </div>
           </div>
 
@@ -153,167 +174,171 @@ CJFblaXvAAAAAElFTkSuQmCC"/>
           </div>
           <div class="field">
             <div class="control">
-              <input class="input is-medium" type="tel" placeholder="Phone number (for text alerts)" id="phone" name="phone">
+              <input class="input is-medium" type="tel" placeholder="Phone number (for text alerts)" id="phone"
+                name="phone">
             </div>
           </div>
           {% csrf_token %}
           <div class="control has-text-centered">
             <button class="button is-info" id="signup" type="submit">Submit</button>
           </div>
-        <div class="notification is-warning" id="permit-warning" style="margin-top: 1em; display: none;">
-            <strong>Warning:</strong> After advanced registration, many CIS classes require you to sign up for the waitlist
-            if you would like a chance of getting into the class. <a href="//forms.cis.upenn.edu/waitlist/">Click here to sign up!</a>
-        </div>
+          <div class="notification is-warning" id="permit-warning" style="margin-top: 1em; display: none;">
+            <strong>Warning:</strong> After advanced registration, many CIS classes require you to sign up for the
+            waitlist
+            if you would like a chance of getting into the class. <a href="//forms.cis.upenn.edu/waitlist/">Click here
+              to sign up!</a>
+          </div>
         </form>
       </div>
     </section>
-        <!-- Resubscribe and unsubscribe modal -->
-        <div class="modal" id="modal" tabindex="-1" role="dialog">
-            <div class="modal-background"></div>
-            <div class="modal-card">
-                <header class="modal-card-head">
-                  <p class="modal-card-title">Penn Course Alert</p>
-                  <button class="delete" aria-label="close"></button>
-                </header>
-                <section class="modal-card-body">
-                  <p>Would you like to keep receiving notifications?</p>
-                </section>
-                <footer class="modal-card-foot">
-                    <button class="button is-success" onClick='resubmit()'>Resubscribe</button>
-                    <button class="button is-warning" id="unsubscribe"  onClick='resubscribe()'>Unsubscribe</button>
-                </footer>
-              </div>
-            <div class="modal-content">
-                <script>
-                function resubmit() {
-                  $('#submit_form').submit();
-                }
-                function resubscribe() {
-                  const info = parseURL(window.location.href);
-                  window.location.href = "/unsubscribe?email="+info.email+"&course="+info.course;
-                }
-                </script>
-            </div>
-        </div>
+    <!-- Resubscribe and unsubscribe modal -->
+    <div class="modal" id="modal" tabindex="-1" role="dialog">
+      <div class="modal-background"></div>
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Penn Course Alert</p>
+          <button class="delete" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+          <p>Would you like to keep receiving notifications?</p>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button is-success" onClick='resubmit()'>Resubscribe</button>
+          <button class="button is-warning" id="unsubscribe" onClick='resubscribe()'>Unsubscribe</button>
+        </footer>
+      </div>
+      <div class="modal-content">
+        <script>
+          function resubmit() {
+            $('#submit_form').submit();
+          }
+          function resubscribe() {
+            const info = parseURL(window.location.href);
+            window.location.href = "/unsubscribe?email=" + info.email + "&course=" + info.course;
+          }
+        </script>
+      </div>
+    </div>
   </div>
 
-    </body>
+</body>
 
-    <div class="footer has-text-centered">
-      <p style="font-size:0.8rem">
-      Made with <span class="icon is-small" style="color:#F56F71"><i class="fa fa-heart"></i></span> by <a href="http://pennlabs.org" target="_blank">Penn Labs</a>
-      </p>
-      <p style="font-size:0.8rem">
-          Have questions, comments or bugs? <a href="https://airtable.com/shrGtPbDUYkHxn5Nm">Leave us feedback here!</a>
-      </p>
-    </div>
+<div class="footer has-text-centered">
+  <p style="font-size:0.8rem">
+    Made with <span class="icon is-small" style="color:#F56F71"><i class="fa fa-heart"></i></span> by <a
+      href="http://pennlabs.org" target="_blank">Penn Labs</a>
+  </p>
+  <p style="font-size:0.8rem">
+    Have questions, comments or bugs? <a href="https://airtable.com/shrGtPbDUYkHxn5Nm">Leave us feedback here!</a>
+  </p>
+</div>
 
-    <script   src="https://code.jquery.com/jquery-1.12.4.min.js"
-			  integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
-			  crossorigin="anonymous"></script>
-    <script type="text/javascript" src="{% static "pca/typeahead.bundle.js"%}"></script>
-    <script type="text/javascript" src="{% static "pca/searchbar.js"%}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"
+  integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="{% static " pca/typeahead.bundle.js"%}"></script>
+<script type="text/javascript" src="{% static " pca/searchbar.js"%}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"
+  integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
 
 
-    <script>
-      $(document).ready(function() {
-          $('#permit-warning').hide()
+<script>
+  $(document).ready(function () {
+    $('#permit-warning').hide()
 
-          $('#courseTypeahead').on('input', e => {
-              if ($('#courseTypeahead').val().toLowerCase().indexOf('cis') !== -1) {
-                  $('#permit-warning').slideDown()
-              } else {
-                  $('#permit-warning').slideUp()
-              }
-          })
-      })
-
-      // on submission of form, update local storage to remember user's data
-      $('form').submit(e => {
-        /*
-        if ($('#courseTypeahead').val().toLowerCase().indexOf('cis') !== -1 && $('#permit-warning').is(":hidden")) {
-          $('#permit-warning').slideDown()
-          e.preventDefault();
-          return false;
-        }*/
-        localStorage.setItem('lmkEmail', e.target.email.value);
-        localStorage.setItem('lmkPhone', e.target.phone.value);
-        localStorage.setItem('lmkNotifications', e.target.notifications.checked);
-      });
-
-      // parses form info out of link
-      function parseURL(url) {
-        let formInfo = {};
-        const linkData = url.replace(/.*\?/, '').split('&');
-        for (let i = 0; i < linkData.length; i++) {
-            let split = linkData[i].split('=');
-            formInfo[split[0]] = split[1];
-        }
-        return formInfo;
+    $('#courseTypeahead').on('input', e => {
+      if ($('#courseTypeahead').val().toLowerCase().indexOf('cis') !== -1) {
+        $('#permit-warning').slideDown()
+      } else {
+        $('#permit-warning').slideUp()
       }
+    })
+  })
 
-      // first, pre-populate form from local storage
-      $('#email').val(localStorage.getItem('lmkEmail'));
-      $('#phone').val(localStorage.getItem('lmkPhone'));
-      if (localStorage.getItem('lmkCarrier')) {
-        $('#carrier').val(localStorage.getItem('lmkCarrier'));
+  // on submission of form, update local storage to remember user's data
+  $('form').submit(e => {
+    /*
+    if ($('#courseTypeahead').val().toLowerCase().indexOf('cis') !== -1 && $('#permit-warning').is(":hidden")) {
+      $('#permit-warning').slideDown()
+      e.preventDefault();
+      return false;
+    }*/
+    localStorage.setItem('lmkEmail', e.target.email.value);
+    localStorage.setItem('lmkPhone', e.target.phone.value);
+    localStorage.setItem('lmkNotifications', e.target.notifications.checked);
+  });
+
+  // parses form info out of link
+  function parseURL(url) {
+    let formInfo = {};
+    const linkData = url.replace(/.*\?/, '').split('&');
+    for (let i = 0; i < linkData.length; i++) {
+      let split = linkData[i].split('=');
+      formInfo[split[0]] = split[1];
+    }
+    return formInfo;
+  }
+
+  // first, pre-populate form from local storage
+  $('#email').val(localStorage.getItem('lmkEmail'));
+  $('#phone').val(localStorage.getItem('lmkPhone'));
+  if (localStorage.getItem('lmkCarrier')) {
+    $('#carrier').val(localStorage.getItem('lmkCarrier'));
+  }
+
+  if (localStorage.getItem('lmkNotifications') === 'true') {
+    $('#notifications').prop('checked', true);
+  }
+
+  // if URL contains '?', then only pre-populate form from parsed URL element
+  // if it exists (in order to not overwrite local storage populated fields
+  // with undefined)
+  if (window.location.href.includes('?')) {
+    const info = parseURL(window.location.href)
+
+    if ('email' in info) {
+      $('#email').val(decodeURIComponent(info.email));
+    }
+    if ('course' in info) {
+      $('#courseTypeahead').val(info.course)
+    }
+    if ('phone' in info) {
+      $('#phone').val(decodeURIComponent(info.phone));
+    }
+    if ('carrier' in info) {
+      $('#carrier').val(info.carrier);
+    }
+    if ('notifications' in info) {
+      $('#notifications').prop('checked', true);
+    }
+    if ('error' in info) {
+      if (info.error === 'courseIsOpen') {
+        $('#description').append("<div class='error-msg'>Error: Course already open</div>");
       }
-
-      if (localStorage.getItem('lmkNotifications') === 'true') {
-        $('#notifications').prop('checked', true);
+      else if (info.error === 'backend') {
+        $('#description').append("<div class='error-msg'>Error: The Penn registrar has returned an error. Please try again later. We're sorry for the inconvenience!</div>");
       }
-
-      // if URL contains '?', then only pre-populate form from parsed URL element
-      // if it exists (in order to not overwrite local storage populated fields
-      // with undefined)
-      if (window.location.href.includes('?')) {
-        const info = parseURL(window.location.href)
-
-        if ('email' in info) {
-          $('#email').val(decodeURIComponent(info.email));
-        }
-        if ('course' in info) {
-            console.log('course is here')
-          $('#courseTypeahead').val(info.course)
-        }
-        if ('phone' in info) {
-          $('#phone').val(decodeURIComponent(info.phone));
-        }
-        if ('carrier' in info) {
-          $('#carrier').val(info.carrier);
-        }
-        if ('notifications' in info) {
-          $('#notifications').prop('checked', true);
-        }
-        if ('error' in info) {
-        	if (info.error === 'courseIsOpen') {
-                $('#description').append("<div class='error-msg'>Error: Course already open</div>");
-            }
-            else if (info.error === 'backend') {
-              $('#description').append("<div class='error-msg'>Error: The Penn registrar has returned an error. Please try again later. We're sorry for the inconvenience!</div>");
-            }
-        }
-        if ('success' in info) {
-          $('#description').append("<div class='success-msg'>Registration Successful. Thank you for using Penn Course Alert!</div>");
-        }
-        if ('unsub' in info) {
-          $('#description').append('<div class="success-msg">Unsubscribe Successful. Thank you for using Penn Course Alert!</div>')
-        }
-        if ('action' in info) {
-          if (info.action === 'resubscribe') {
-            $('#modal').show()
-          }
-        }
+    }
+    if ('success' in info) {
+      $('#description').append("<div class='success-msg'>Registration Successful. Thank you for using Penn Course Alert!</div>");
+    }
+    if ('unsub' in info) {
+      $('#description').append('<div class="success-msg">Unsubscribe Successful. Thank you for using Penn Course Alert!</div>')
+    }
+    if ('action' in info) {
+      if (info.action === 'resubscribe') {
+        $('#modal').show()
       }
-      $('.modal-background').click(() => {
-          $('#modal').hide()
-      });
-      $('.dismiss').click((e) => {
-          $(e.target).parent().slideUp()
-      });
+    }
+  }
+  $('.modal-background').click(() => {
+    $('#modal').hide()
+  });
+  $('.dismiss').click((e) => {
+    $(e.target).parent().slideUp()
+  });
 
-    </script>
-  </body>
+</script>
+</body>
+
 </html>

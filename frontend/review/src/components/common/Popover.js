@@ -55,7 +55,7 @@ class Popover extends Component {
       this.refs.button
     ).getBoundingClientRect();
     this.setState(({ isShown }) => ({
-      isShown: typeof val === "undefined" ? !isShown : val,
+      isShown: val == null ? !isShown : val,
       position: [left, bottom]
     }));
   }

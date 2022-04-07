@@ -33,13 +33,13 @@ def set_semester():
 
 class SepCourseCodeTest(TestCase):
     def test_four_letter_dept_code(self):
-        self.assertEqual(("ANTH", "361", "401"), separate_course_code("ANTH361401"))
+        self.assertEqual(("ANTH", "3610", "401"), separate_course_code("ANTH3610401"))
 
     def test_three_letter_dept_code(self):
-        self.assertEqual(("CIS", "120", "001"), separate_course_code("CIS 120001"))
+        self.assertEqual(("CIS", "1200", "001"), separate_course_code("CIS 1200001"))
 
     def test_two_letter_dept_code(self):
-        self.assertEqual(("WH", "110", "001"), separate_course_code("WH  110001"))
+        self.assertEqual(("WH", "1100", "001"), separate_course_code("WH  1100001"))
 
     def test_four_letter_with_dashes(self):
         self.assertEqual(("PSCI", "110", "001"), separate_course_code("PSCI-110-001"))
@@ -50,12 +50,18 @@ class SepCourseCodeTest(TestCase):
     def test_two_letter_with_dashes(self):
         self.assertEqual(("WH", "110", "001"), separate_course_code("WH  -110-001"))
 
+    def test_section_characters(self):
+        self.assertEqual(("INTL", "2980", "BKC"), separate_course_code("INTL2980BKC"))
+
+    def test_course_code_ends_in_character(self):
+        self.assertEqual(("CRIM", "6004A", "301"), separate_course_code("CRIM6004A301"))
+
+    def test_course_code_3_chars(self):
+        self.assertEqual(("INTL", "BUL", "001"), separate_course_code("INTLBUL001"))
+
     def test_invalid_course(self):
-        try:
+        with self.assertRaises(ValueError):
             separate_course_code("BLAH BLAH BLAH")
-            self.fail("Should throw exception")
-        except ValueError:
-            pass
 
 
 class GetCourseSectionTest(TestCase):

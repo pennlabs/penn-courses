@@ -61,7 +61,7 @@ export function apiIsAuthenticated(func) {
       PUBLIC_API_TOKEN
     )}`
   ).then(data => {
-    if (typeof data.authed === "undefined") {
+    if (data.authed == null) {
       window.Raven.captureMessage(`Auth check error: ${JSON.stringify(data)}`, {
         level: "error"
       });
@@ -73,14 +73,6 @@ export function apiIsAuthenticated(func) {
 export function apiLive(code) {
   return apiFetch(
     `${API_DOMAIN}/api/base/current/courses/${encodeURIComponent(code)}/`
-  );
-}
-
-export function apiLiveInstructor(name) {
-  return apiFetch(
-    `https://api.pennlabs.org/registrar/search/instructor?q=${encodeURIComponent(
-      name
-    )}`
   );
 }
 

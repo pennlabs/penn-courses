@@ -4,7 +4,7 @@ import logging
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Max
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -27,6 +27,7 @@ from courses.util import (
     get_current_semester,
     get_or_create_course_and_section,
     record_update,
+    translate_semester_inv,
     update_course_from_record,
 )
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
@@ -87,29 +88,27 @@ def accept_webhook(request):
     if course_status is None:
         return HttpResponse("Course Status could not be extracted from response", status=400)
 
-    course_term = data.get("term", None)
-    if course_term is None:
-        return HttpResponse("Course Term could not be extracted from response", status=400)
-
     prev_status = data.get("previous_status", None)
     if prev_status is None:
         return HttpResponse("Previous Status could not be extracted from response", status=400)
 
     try:
+        course_term = data.get("term", None)
+        if course_term is None:
+            return HttpResponse("Course Term could not be extracted from response", status=400)
+        if any(course_term.endswith(s) for s in ["10", "20", "30"]):
+            course_term = translate_semester_inv(course_term)
+
         _, section, _, _ = get_or_create_course_and_section(course_id, course_term)
 
         # Ignore duplicate updates
         last_status_update = section.last_status_update
-        if (
-            last_status_update
-            and last_status_update.old_status == prev_status
-            and last_status_update.new_status == course_status
-        ):
+        if last_status_update and last_status_update.new_status == course_status:
             raise ValidationError(
                 f"Status update received changing section {section} from "
                 f"{prev_status} to {course_status}, "
                 f"after previous status update from {last_status_update.old_status} "
-                f"to {last_status_update.new_status} (duplicate)."
+                f"to {last_status_update.new_status} (duplicate or erroneous).",
             )
 
         alert_for_course_called = False
@@ -385,157 +384,161 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def update(self, request, pk=None):
         if not Registration.objects.filter(id=pk).exists():
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-        try:
-            registration = self.get_queryset().get(id=pk)
-        except Registration.DoesNotExist:
-            return Response(
-                {"detail": "You do not have access to the specified registration."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        registration = registration.get_most_current()
-
-        if registration.section.semester != get_current_semester():
-            return Response(
-                {"detail": "You can only update registrations from the current semester."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        try:
-            if request.data.get("resubscribe", False):
-                if not pca_registration_open():
-                    return Response(
-                        {"message": "Registration is not open."},
-                        status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    )
-                if registration.deleted:
-                    return Response(
-                        {"detail": "You cannot resubscribe to a deleted registration."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                if not registration.notification_sent and not registration.cancelled:
-                    return Response(
-                        {
-                            "detail": "You can only resubscribe to a registration that "
-                            "has already been sent or has been cancelled."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                if registration.section.registrations.filter(
-                    user=registration.user, **Registration.is_active_filter()
-                ).exists():
-                    # An active registration for this section already exists
-                    return Response(
-                        {
-                            "message": "You've already registered to get alerts for %s!"
-                            % registration.section.full_code
-                        },
-                        status=status.HTTP_409_CONFLICT,
-                    )
-                resub = registration.resubscribe()
+        with transaction.atomic():
+            try:
+                registration = self.get_queryset().select_for_update().get(id=pk)
+            except Registration.DoesNotExist:
                 return Response(
-                    {"detail": "Resubscribed successfully", "id": resub.id},
-                    status=status.HTTP_200_OK,
+                    {"detail": "You do not have access to the specified registration."},
+                    status=status.HTTP_403_FORBIDDEN,
                 )
-            elif request.data.get("deleted", False):
-                changed = not registration.deleted
-                registration.deleted = True
-                registration.save()
-                if changed:  # else taken care of in generic return statement
-                    registration.deleted_at = timezone.now()
-                    registration.save()
-                    return Response({"detail": "Registration deleted"}, status=status.HTTP_200_OK)
-            elif request.data.get("cancelled", False):
-                if registration.deleted:
-                    return Response(
-                        {"detail": "You cannot cancel a deleted registration."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                if registration.notification_sent:
-                    return Response(
-                        {"detail": "You cannot cancel a sent registration."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                changed = not registration.cancelled
-                registration.cancelled = True
-                registration.save()
-                if changed:  # else taken care of in generic return statement
-                    registration.cancelled_at = timezone.now()
-                    registration.save()
-                    return Response({"detail": "Registration cancelled"}, status=status.HTTP_200_OK)
-            elif "auto_resubscribe" in request.data or "close_notification" in request.data:
-                if registration.deleted:
-                    return Response(
-                        {"detail": "You cannot make changes to a deleted registration."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                auto_resubscribe_changed = registration.auto_resubscribe != request.data.get(
-                    "auto_resubscribe", registration.auto_resubscribe
+
+            registration = registration.get_most_current()
+
+            if registration.section.semester != get_current_semester():
+                return Response(
+                    {"detail": "You can only update registrations from the current semester."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-                close_notification_changed = registration.close_notification != request.data.get(
-                    "close_notification", registration.close_notification
-                )
-                if (
-                    request.data.get("close_notification", registration.close_notification)
-                    and not request.user.profile.email
-                    and not request.user.profile.push_notifications
-                ):
+            try:
+                if request.data.get("resubscribe", False):
+                    if not pca_registration_open():
+                        return Response(
+                            {"message": "Registration is not open."},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        )
+                    if registration.deleted:
+                        return Response(
+                            {"detail": "You cannot resubscribe to a deleted registration."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    if not registration.notification_sent and not registration.cancelled:
+                        return Response(
+                            {
+                                "detail": "You can only resubscribe to a registration that "
+                                "has already been sent or has been cancelled."
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    if registration.section.registrations.filter(
+                        user=registration.user, **Registration.is_active_filter()
+                    ).exists():
+                        # An active registration for this section already exists
+                        return Response(
+                            {
+                                "message": "You've already registered to get alerts for %s!"
+                                % registration.section.full_code
+                            },
+                            status=status.HTTP_409_CONFLICT,
+                        )
+                    resub = registration.resubscribe()
                     return Response(
-                        {
-                            "detail": "You cannot enable close_notifications with only your phone "
-                            "number saved in your user profile."
-                        },
-                        status=status.HTTP_406_NOT_ACCEPTABLE,
-                    )
-                changed = auto_resubscribe_changed or close_notification_changed
-                registration.auto_resubscribe = request.data.get(
-                    "auto_resubscribe", registration.auto_resubscribe
-                )
-                registration.close_notification = request.data.get(
-                    "close_notification", registration.close_notification
-                )
-                registration.save()
-                if changed:  # else taken care of in generic return statement
-                    return Response(
-                        {
-                            "detail": ", ".join(
-                                (
-                                    [
-                                        "auto_resubscribe updated to "
-                                        + str(registration.auto_resubscribe)
-                                    ]
-                                    if auto_resubscribe_changed
-                                    else []
-                                )
-                                + (
-                                    [
-                                        "close_notification updated to "
-                                        + str(registration.close_notification)
-                                    ]
-                                    if close_notification_changed
-                                    else []
-                                )
-                            )
-                        },
+                        {"detail": "Resubscribed successfully", "id": resub.id},
                         status=status.HTTP_200_OK,
                     )
-        except IntegrityError as e:
-            return Response(
-                {
-                    "detail": "IntegrityError encountered while trying to update: "
-                    + str(e.__cause__)
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return Response({"detail": "no changes made"}, status=status.HTTP_200_OK)
+                elif request.data.get("deleted", False):
+                    changed = not registration.deleted
+                    registration.deleted = True
+                    registration.save()
+                    if changed:  # else taken care of in generic return statement
+                        registration.deleted_at = timezone.now()
+                        registration.save()
+                        return Response(
+                            {"detail": "Registration deleted"}, status=status.HTTP_200_OK
+                        )
+                elif request.data.get("cancelled", False):
+                    if registration.deleted:
+                        return Response(
+                            {"detail": "You cannot cancel a deleted registration."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    if registration.notification_sent:
+                        return Response(
+                            {"detail": "You cannot cancel a sent registration."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    changed = not registration.cancelled
+                    registration.cancelled = True
+                    registration.save()
+                    if changed:  # else taken care of in generic return statement
+                        registration.cancelled_at = timezone.now()
+                        registration.save()
+                        return Response(
+                            {"detail": "Registration cancelled"}, status=status.HTTP_200_OK
+                        )
+                elif "auto_resubscribe" in request.data or "close_notification" in request.data:
+                    if registration.deleted:
+                        return Response(
+                            {"detail": "You cannot make changes to a deleted registration."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    auto_resubscribe_changed = registration.auto_resubscribe != request.data.get(
+                        "auto_resubscribe", registration.auto_resubscribe
+                    )
+                    close_notification_changed = (
+                        registration.close_notification
+                        != request.data.get("close_notification", registration.close_notification)
+                    )
+                    if (
+                        request.data.get("close_notification", registration.close_notification)
+                        and not request.user.profile.email
+                        and not request.user.profile.push_notifications
+                    ):
+                        return Response(
+                            {
+                                "detail": "You cannot enable close_notifications with only "
+                                "your phone number saved in your user profile."
+                            },
+                            status=status.HTTP_406_NOT_ACCEPTABLE,
+                        )
+                    changed = auto_resubscribe_changed or close_notification_changed
+                    registration.auto_resubscribe = request.data.get(
+                        "auto_resubscribe", registration.auto_resubscribe
+                    )
+                    registration.close_notification = request.data.get(
+                        "close_notification", registration.close_notification
+                    )
+                    registration.save()
+                    if changed:  # else taken care of in generic return statement
+                        return Response(
+                            {
+                                "detail": ", ".join(
+                                    (
+                                        [
+                                            "auto_resubscribe updated to "
+                                            + str(registration.auto_resubscribe)
+                                        ]
+                                        if auto_resubscribe_changed
+                                        else []
+                                    )
+                                    + (
+                                        [
+                                            "close_notification updated to "
+                                            + str(registration.close_notification)
+                                        ]
+                                        if close_notification_changed
+                                        else []
+                                    )
+                                )
+                            },
+                            status=status.HTTP_200_OK,
+                        )
+            except IntegrityError as e:
+                return Response(
+                    {
+                        "detail": "IntegrityError encountered while trying to update: "
+                        + str(e.__cause__)
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response({"detail": "no changes made"}, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         if Registration.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
         return self.handle_registration(request)
 
-    queryset = (
-        Registration.objects.none()
-    )  # used to help out the AutoSchema in generating documentation
+    queryset = Registration.objects.none()  # included redundantly for docs
 
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
@@ -595,9 +598,7 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
 
-    queryset = (
-        Registration.objects.none()
-    )  # used to help out the AutoSchema in generating documentation
+    queryset = Registration.objects.none()  # included redundantly for docs
 
     def get_queryset(self):
         return Registration.objects.filter(

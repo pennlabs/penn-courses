@@ -141,7 +141,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                 for something specific? Try using the filters!
             </EmptyResultsContainer>
 
-            {recPanel}
+            {/* recPanel // TODO: re-enable */}
         </>
     );
 
@@ -152,7 +152,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
             getCourse={getCourse}
             scrollPos={scrollPos}
             setScrollPos={setScrollPos}
-            recCoursesId={recCourses.map((a) => a.id)}
+            recCoursesId={recCourses.map(a => a.id)}
         />
     );
 
@@ -169,13 +169,13 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     }}
                 >
                     {courseList}
-                    {recPanel}
+                    {/* recPanel // TODO: re-enable */}
                 </div>
             </div>
         ) : (
             <>
                 {courseList}
-                {recPanel}
+                {/* recPanel // TODO: re-enable */}
             </>
         );
     }
@@ -193,7 +193,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     }}
                 >
                     {courseList}
-                    {recPanel}
+                    {/* recPanel // TODO: re-enable */}
                 </div>
                 <div
                     className="column is-two-thirds"
