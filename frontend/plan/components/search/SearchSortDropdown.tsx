@@ -164,11 +164,11 @@ const SearchSortDropdown = (obj: { updateSort: (s: SortByType) => void }) => {
 };
 
 const mapStateToProps = () => ({});
-//@ts-ignore
+// @ts-ignore
 const mapDispatchToProps = (dispatch) => ({
-    //@ts-ignore
+    // @ts-ignore
     updateSort: (sortMode) => dispatch(changeSortType(sortMode)),
 });
 
-//@ts-ignore
+// @ts-ignore
 export default connect(mapStateToProps, mapDispatchToProps)(SearchSortDropdown);

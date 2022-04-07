@@ -120,7 +120,7 @@ const MobileFilterDropdowns = styled.div`
 `;
 
 const SearchBarContainer = styled.div`
-    padding: 0.50rem 0.25rem;
+    padding: 0.5rem 0.25rem;
     background-color: white;
     box-shadow: 0 1px 3px 0 lightgrey;
     width: inherit;
@@ -245,7 +245,7 @@ const DropdownContainer = styled.div`
     max-width: 60vw !important;
     display: flex;
     flex-direction: row;
-`
+`;
 
 function SearchBar({
     /* eslint-disable no-shadow */
@@ -342,14 +342,14 @@ SearchBarProps) {
 
     const dropDowns = (
         <DropdownContainer>
-            {/*<DropdownButton
+            {/* <DropdownButton
                 title="Requirements"
                 filterData={filterData.selectedReq}
                 defaultFilter={defaultReqs}
                     addSchoolReq={addSchoolReq}
                     remSchoolReq={remSchoolReq}
                 />
-            </DropdownButton> // TODO: re-enable*/}
+            </DropdownButton> // TODO: re-enable */}
             <DropdownButton
                 title="Difficulty"
                 filterData={filterData.difficulty}
@@ -461,7 +461,7 @@ SearchBarProps) {
                     checkboxProperty="activity"
                     startSearch={conditionalStartSearch}
                 />
-            </DropdownButton> //TODO: Add Fit Schedule*/}
+            </DropdownButton> //TODO: Add Fit Schedule */}
         </DropdownContainer>
     );
     if (mobileView) {
