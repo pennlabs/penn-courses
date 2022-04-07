@@ -140,7 +140,6 @@ const SearchBarFilters = styled.div`
     flex-shrink: 0;
     align-items: center;
     justify-content: flex-start;
-    max-width: 87vw !important;
 
     @media screen and (min-width: 769px) {
         display: flex;
@@ -171,7 +170,6 @@ const FilterLevelItem = styled.div`
     justify-content: flex-start;
     max-width: calc(100% - 17rem);
     display: flex;
-    margin-right: 0.75rem;
     padding-left: 0.5rem;
 
     > * {
@@ -219,7 +217,7 @@ const ClearButton = styled.button`
     vertical-align: top;
     cursor: pointer;
     justify-content: center;
-    padding: calc(0.375em - 1px) 0.75em;
+    padding: calc(0.375em - 1px) 0em;
     text-align: center;
     white-space: nowrap;
     background-color: white;
@@ -245,7 +243,6 @@ const Icon = styled.span`
 
 const DropdownContainer = styled.div`
     max-width: 60vw !important;
-    overflow: scroll;
     display: flex;
     flex-direction: row;
 `
@@ -452,7 +449,7 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            <DropdownButton
+            {/* <DropdownButton
                 title="Fit Schedule"
                 filterData={filterData.course_quality}
                 defaultFilter={defaultFilters.filterData.course_quality}
@@ -464,7 +461,7 @@ SearchBarProps) {
                     checkboxProperty="activity"
                     startSearch={conditionalStartSearch}
                 />
-            </DropdownButton>
+            </DropdownButton> //TODO: Add Fit Schedule*/}
         </DropdownContainer>
     );
     if (mobileView) {
@@ -557,26 +554,26 @@ SearchBarProps) {
                     <p> Filter by</p>
                     {dropDowns}
                 </FilterLevelItem>
+                <LevelRight className="is-hidden-mobile">
+                    <LevelItem>
+                        <ClearButton
+                            type="button"
+                            onClick={() => {
+                                clearSearchResults();
+                                conditionalStartSearch({
+                                    // TODO: remove any cast when getting rid of redux
+                                    ...(defaultFilters.filterData as any),
+                                    searchString: filterData.searchString,
+                                    selectedReq: defaultReqs,
+                                });
+                                clearAll();
+                            }}
+                        >
+                            Clear all
+                        </ClearButton>
+                    </LevelItem>
+                </LevelRight>
             </SearchBarFilters>
-            <LevelRight className="is-hidden-mobile">
-                <LevelItem>
-                    <ClearButton
-                        type="button"
-                        onClick={() => {
-                            clearSearchResults();
-                            conditionalStartSearch({
-                                // TODO: remove any cast when getting rid of redux
-                                ...(defaultFilters.filterData as any),
-                                searchString: filterData.searchString,
-                                selectedReq: defaultReqs,
-                            });
-                            clearAll();
-                        }}
-                    >
-                        Clear all
-                    </ClearButton>
-                </LevelItem>
-            </LevelRight>
             <LevelRight>
                 <LevelItem>
                     <AccountIndicator
