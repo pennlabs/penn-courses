@@ -150,8 +150,8 @@ class CourseRecommendationsTestCase(TestCase):
                 for dept in Department.objects.all():
                     department_obs[dept.code] = dept.id
             elif i == 1:
-                Course.objects.bulk_create(courses_to_save)
-                for course in Course.objects.all():
+                for course in courses_to_save:
+                    course.save()
                     course_obs[course.full_code, course.semester] = course.id
             elif i == 2:
                 Section.objects.bulk_create(sections_to_save)

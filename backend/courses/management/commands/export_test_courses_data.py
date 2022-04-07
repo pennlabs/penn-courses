@@ -8,7 +8,7 @@ from django.db.models import Q, Subquery
 from tqdm import tqdm
 
 from alert.management.commands.export_anon_registrations import get_semesters
-from courses.models import Course, Department, Instructor, Section
+from courses.models import Course, Department, Instructor, Section, Topic
 from PennCourses.settings.base import S3_resource
 from review.models import Review, ReviewBit
 
@@ -81,6 +81,7 @@ cross_semester_data_types = ["departments", "instructors"]
 related_id_fields = {
     "courses": {
         "department_id": "departments",
+        "topic_id": "topics",
     },
     "sections": {"course_id": "courses"},
     "reviews": {
@@ -100,6 +101,7 @@ self_related_id_fields = {
 models = {
     "departments": Department,
     "courses": Course,
+    "topics": Topic,
     "sections": Section,
     "instructors": Instructor,
     "reviews": Review,
@@ -109,6 +111,7 @@ models = {
 unique_identifying_fields = {
     "departments": ["code"],
     "courses": ["full_code", "semester"],
+    "topics": [],
     "sections": ["course_id", "code"],
     "instructors": ["name"],
     "reviews": ["section_id", "instructor_id"],

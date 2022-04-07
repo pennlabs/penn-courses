@@ -29,7 +29,8 @@ class Migration(migrations.Migration):
             model_name="section",
             name="registration_volume",
             field=models.PositiveIntegerField(
-                default=0, help_text="The number of active PCA registrations watching this section."
+                default=0,
+                help_text="The number of active PCA registrations watching this section.",
             ),
         ),
         migrations.AddField(

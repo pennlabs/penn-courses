@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db import connection
 from django.db.models.aggregates import Count
 from django.db.models.expressions import Subquery, Value
 from django.db.models.functions.comparison import Coalesce
@@ -164,6 +165,35 @@ def get_or_create_add_drop_period(semester):
     return add_drop
 
 
+def get_next_id(obj):
+    """
+    Returns the next ID for the given object (which hasn't yet been created).
+    """
+    if obj.id:
+        return obj.id
+    # Source: https://djangosnippets.org/snippets/10474/
+    with connection.cursor() as cursor:
+        # NOTE: this relies on PostgreSQL-specific details for autoincrement
+        # https://www.postgresql.org/docs/9.4/functions-sequence.html
+        cursor.execute(
+            "SELECT nextval('{0}_{1}_{2}_seq'::regclass)".format(
+                obj._meta.app_label.lower(),
+                obj._meta.object_name.lower(),
+                obj._meta.pk.name,
+            )
+        )
+        obj.id = obj.pk = cursor.fetchone()[0]
+        return obj.pk
+
+
+def is_fk_set(obj, fk_field):
+    """
+    Returns true if the specified foreign key field has been
+    set on the given object, false otherwise.
+    """
+    return bool(getattr(obj, fk_field, None) or getattr(obj, fk_field + "_id", None))
+
+
 """
 Assumptions of our course code parsing regex:
     - Department code is 1-4 letters
@@ -191,18 +221,26 @@ def separate_course_code(course_code, allow_partial=False):
     raise ValueError(f"Course code could not be parsed: {course_code}")
 
 
-def get_or_create_course(dept_code, course_id, semester):
+def get_or_create_course(dept_code, course_id, semester, defaults=None):
     dept, _ = Department.objects.get_or_create(code=dept_code)
-    return Course.objects.get_or_create(department=dept, code=course_id, semester=semester)
+    return Course.objects.get_or_create(
+        department=dept, code=course_id, semester=semester, defaults=defaults
+    )
 
 
-def get_or_create_course_and_section(course_code, semester, section_manager=None):
+def get_or_create_course_and_section(
+    course_code, semester, section_manager=None, course_defaults=None, section_defaults=None
+):
     if section_manager is None:
         section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
 
-    course, course_c = get_or_create_course(dept_code, course_id, semester)
-    section, section_c = section_manager.get_or_create(course=course, code=section_id)
+    course, course_c = get_or_create_course(
+        dept_code, course_id, semester, defaults=course_defaults
+    )
+    section, section_c = section_manager.get_or_create(
+        course=course, code=section_id, defaults=section_defaults
+    )
 
     return course, section, course_c, section_c
 

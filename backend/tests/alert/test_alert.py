@@ -8,6 +8,7 @@ from unittest.mock import patch
 from dateutil.tz.tz import gettz
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.test import Client, TestCase
@@ -19,7 +20,7 @@ from rest_framework.test import APIClient
 
 from alert import tasks
 from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
-from alert.tasks import get_registrations_for_alerts, registration_update
+from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
 from courses.util import (
     get_add_drop_period,
@@ -89,15 +90,72 @@ def override_delay(modules_names, before_func, before_kwargs):
                 override_delay(modules_names[:-1], before_func, before_kwargs)
 
 
+class RegistrationSaveAutoHeadRegistrationTest(TestCase):
+    def setUp(self):
+        set_semester()
+        user = User.objects.create_user(username="jacob", password="top_secret")
+        user.save()
+        self.user = user
+
+    def create_reg(self, full_code, **kwargs):
+        _, section, _, _ = get_or_create_course_and_section(full_code, TEST_SEMESTER)
+        reg = Registration(section=section, user=self.user, **kwargs)
+        reg.save()
+        return reg
+
+    def test_new(self):
+        a = self.create_reg("CIS-120-001")
+        self.assertEqual(a.head_registration, a)
+
+    def test_delete_max_id(self):
+        self.create_reg("CIS-120-001")
+        self.create_reg("CIS-160-001")
+        c = self.create_reg("CIS-121-001")
+        c.delete()
+        d = self.create_reg("CIS-240-001")
+        self.assertEqual(d.head_registration, d)
+
+    def test_delete_min_id(self):
+        a = self.create_reg("CIS-120-001")
+        self.create_reg("CIS-160-001")
+        self.create_reg("CIS-121-001")
+        a.delete()
+        d = self.create_reg("CIS-240-001")
+        self.assertEqual(d.head_registration, d)
+
+    def test_delete_all(self):
+        a = self.create_reg("CIS-120-001")
+        b = self.create_reg("CIS-160-001")
+        c = self.create_reg("CIS-121-001")
+        a.delete()
+        b.delete()
+        c.delete()
+        d = self.create_reg("CIS-240-001")
+        self.assertEqual(d.head_registration, d)
+
+    def test_update_resub_group(self):
+        self.create_reg("CIS-120-001")
+        b = self.create_reg("CIS-121-001")
+        c = self.create_reg("CIS-121-001", resubscribed_from=b)
+        d = self.create_reg("CIS-121-001", resubscribed_from=c)
+        b_db = Registration.objects.get(id=b.id)
+        c_db = Registration.objects.get(id=c.id)
+        d_db = Registration.objects.get(id=d.id)
+        self.assertEqual(d.head_registration, d)
+        self.assertEqual(b_db.head_registration, d_db)
+        self.assertEqual(c_db.head_registration, d_db)
+        self.assertEqual(d_db.head_registration, d_db)
+
+
 @patch("alert.models.PushNotification.send_alert")
 @patch("alert.models.Text.send_alert")
 @patch("alert.models.Email.send_alert")
 class SendAlertTestCase(TestCase):
     def setUp(self):
-        registration_update.delay = registration_update.__wrapped__
-        celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)
         set_semester()
-        course, section, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
+        _, section, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
+        section.capacity = 30
+        section.save()
         self.r_legacy = Registration(email="yo@example.com", phone="+15555555555", section=section)
         self.r_legacy.save()
         user = User.objects.create_user(username="jacob", password="top_secret")
@@ -1385,6 +1443,7 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_semester_not_set(self):
         Option.objects.filter(key="SEMESTER").delete()
+        cache.delete("SEMESTER")
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(500, response.status_code)
         self.assertTrue("SEMESTER" in response.data["detail"])
