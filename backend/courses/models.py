@@ -615,6 +615,23 @@ class Section(models.Model):
         help_text="The number of credits this section is worth.",
     )
 
+    has_reviews = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+            A flag indicating whether this section has reviews (precomputed for efficiency).
+            """
+        ),
+    )
+    has_status_updates = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+            A flag indicating whether this section has Status Updates (precomputed for efficiency).
+            """
+        ),
+    )
+
     registration_volume = models.PositiveIntegerField(
         default=0, help_text="The number of active PCA registrations watching this section."
     )  # For the set of PCA registrations for this section, use the related field `registrations`.
@@ -823,6 +840,9 @@ class StatusUpdate(models.Model):
             self.in_add_drop_period = True
             self.percent_through_add_drop_period = (created_at - start) / (end - start)
         super().save()
+
+        self.section.has_status_updates = True
+        self.section.save()
 
 
 """

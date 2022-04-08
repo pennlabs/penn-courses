@@ -313,7 +313,7 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
             }
             for ext in demand_distribution_estimates_map[semester]
         ]
-        if len(demand_distribution_estimates_changes) == 0:
+        if not demand_distribution_estimates_changes:
             continue
         for section in section_map[semester].values():
             section_id = section.id
@@ -454,9 +454,7 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
     )
 
     avg_demand_plot = average_given_plots(demand_plots_map, bin_size=bin_size)
-    avg_demand_plot_min_semester = (
-        min(demand_plots_map.keys()) if len(demand_plots_map) > 0 else None
-    )
+    avg_demand_plot_min_semester = min(demand_plots_map.keys()) if demand_plots_map else None
     avg_percent_open_plot_num_semesters = len(demand_plots_map)
 
     return (

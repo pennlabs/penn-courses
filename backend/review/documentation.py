@@ -168,6 +168,10 @@ course_reviews_response_schema = {
                         "type": "string",
                         "description": "The description of the course, e.g. 'A fast-paced introduction to the fundamental concepts of programming... [etc.]' for CIS-120.",  # noqa E501
                     },
+                    "latest_semester": {
+                        "type": "string",
+                        "description": "The most recent semester this course was offered (of the form YYYYx where x is A [for spring], B [summer], or C [fall]), e.g. `2022C` for fall 2022.",  # noqa E501
+                    },
                     "registration_metrics": {
                         "type": "boolean",
                         "description": "True if this course has registration metrics that you can access via the Retrieve Plots route.",  # noqa E501

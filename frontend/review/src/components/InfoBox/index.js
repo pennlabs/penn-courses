@@ -68,6 +68,10 @@ const InfoBox = ({
     rCourseQuality: recentCourseQuality,
     rDifficulty: recentDifficulty
   } = recent;
+  const hasReviews =
+    avgInstructorQuality != null ||
+    avgCourseQuality != null ||
+    avgDifficulty != null;
 
   const isCourse = type === "course";
   const isInstructor = type === "instructor";
@@ -161,7 +165,7 @@ const InfoBox = ({
         </StatsToggleContainer>
       )}
 
-      {!isDepartment && (
+      {!isDepartment && hasReviews && (
         <div id="banner-score">
           <Ratings
             value="Average"

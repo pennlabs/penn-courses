@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
+from django.db.models import F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -62,37 +62,15 @@ extra_metrics_section_filters = (
     ~Q(
         course__department__code__in=WAITLIST_DEPARTMENT_CODES
     )  # Manually filter out classes from depts with waitlist systems during add/drop
-    & Q(capacity__isnull=False, capacity__gt=0)
+    & Q(capacity__gt=0)
     & ~Q(course__semester__icontains="b")  # Filter out summer classes
-    & Q(status_updates__isnull=False)  # Filter out sections with no status updates
+    & Q(has_status_updates=True)
     & ~Q(
         id__in=Subquery(
             Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values("sections__id")
         )
     )  # Filter out sections that require permit for registration
-)
-
-
-course_filters_pcr_allow_xlist = (
-    ~Q(title="") | ~Q(description="") | Q(sections__review__isnull=False)
-)
-course_is_primary = Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id"))
-course_filters_pcr = course_is_primary & course_filters_pcr_allow_xlist
-
-section_is_primary = Q(course__primary_listing__isnull=True) | Q(
-    course__primary_listing_id=F("course_id")
-)
-section_filters_pcr = section_is_primary & (
-    Q(review__isnull=False)
-    | ((~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X"))
-)
-
-review_filters_pcr = Q(section__course__primary_listing__isnull=True) | Q(
-    section__course__primary_listing_id=F("section__course_id")
-)
-
-reviewbit_filters_pcr = Q(review__section__course__primary_listing__isnull=True) | Q(
-    review__section__course__primary_listing_id=F("review__section__course_id")
+    # TODO: get permit information from new OpenData API
 )
 
 
@@ -105,10 +83,25 @@ def extra_metrics_section_filters_pcr(current_semester=None):
         current_semester = get_current_semester()
     return (
         extra_metrics_section_filters
-        & section_is_primary
+        & Q(course__primary_listing_id=F("course_id"))
         & Q(course__semester__lt=current_semester)
-        & (~Q(status="X") | Q(review__isnull=False))
+        & ~Q(status="X")
     )
+
+
+course_filters_pcr_allow_xlist = ~Q(title="") | ~Q(description="") | Q(sections__has_reviews=True)
+course_filters_pcr = Q(primary_listing_id=F("id")) & course_filters_pcr_allow_xlist
+
+section_filters_pcr = Q(course__primary_listing_id=F("course_id")) & (
+    Q(has_reviews=True)
+    | ((~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X"))
+)
+
+review_filters_pcr = Q(section__course__primary_listing_id=F("section__course_id"))
+
+reviewbit_filters_pcr = Q(
+    review__section__course__primary_listing_id=F("review__section__course_id")
+)
 
 
 @api_view(["GET"])
@@ -210,6 +203,7 @@ def course_reviews(request, course_code):
             "historical_codes": get_historical_codes(
                 topic, exclude_codes=set(aliases) | {course["full_code"]}
             ),
+            "latest_semester": course["semester"],
             "num_sections": num_sections,
             "num_sections_recent": num_sections_recent,
             "instructors": get_average_and_recent_dict(
@@ -306,7 +300,7 @@ def course_plots(request, course_code):
         recent_percent_open_plot_semester,
     ) = tuple([None] * 8)
     avg_demand_plot_num_semesters, avg_percent_open_plot_num_semesters = (0, 0)
-    if len(section_map.keys()) > 0:
+    if section_map:
         status_updates_map = get_status_updates_map(section_map)
         (
             avg_demand_plot,
@@ -573,11 +567,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         course_code=F("course__full_code"),
         course_title=F("course__title"),
         efficient_semester=F("course__semester"),
-        has_reviews=Case(
-            When(Q(review__isnull=False), then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        ),
         comments=Coalesce("review__comments", Value(None)),
         responses=Coalesce("review__responses", Value(None)),
         enrollment=Coalesce("review__enrollment", Value(None)),

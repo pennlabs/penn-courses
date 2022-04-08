@@ -118,30 +118,22 @@ def import_course_and_section(full_course_code, semester, course_title, primary_
 def import_review(section, instructor, enrollment, responses, form_type, bits, stat):
     # Assumption: that all review objects for the semesters in question were
     # deleted before this runs.
-    try:
-        review, created = Review.objects.get_or_create(
-            section=section,
-            instructor=instructor,
-            defaults={
-                "enrollment": enrollment,
-                "responses": responses,
-                "form_type": form_type,
-            },
-        )
-        if not created:
-            stat("duplicate_review")
-    except IntegrityError:
-        stat("review:integrity_error")
-        return
+    review, created = Review.objects.get_or_create(
+        section=section,
+        instructor=instructor,
+        defaults={
+            "enrollment": enrollment,
+            "responses": responses,
+            "form_type": form_type,
+        },
+    )
+    if not created:
+        stat("duplicate_review")
     review_bits = [ReviewBit(review=review, field=k, average=v) for k, v in bits.items()]
 
     # This saves us a bunch of database calls per row, since reviews have > 10 bits.
-    try:
-        ReviewBit.objects.bulk_create(review_bits, ignore_conflicts=True)
-        stat("reviewbit_created_count", len(review_bits))
-    except IntegrityError:
-        stat("review:integrity_error")
-        return
+    ReviewBit.objects.bulk_create(review_bits, ignore_conflicts=True)
+    stat("reviewbit_created_count", len(review_bits))
 
 
 def import_summary_row(row, stat):
