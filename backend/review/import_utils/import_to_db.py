@@ -53,34 +53,30 @@ def import_instructor(pennid, fullname, stat):
             user.set_unusable_password()
             user.save()
 
-        if Instructor.objects.filter(user=user).exists():
-            inst = Instructor.objects.get(user=user)
-            inst_created = False
-        elif Instructor.objects.filter(name=fullname).exists():
+        try:
+            return Instructor.objects.get(user=user)
+        except Instructor.DoesNotExist:
+            pass
+
+        try:
             inst = Instructor.objects.get(name=fullname)
             inst.user = user
             inst.save()
-            inst_created = False
-        else:
-            try:
-                inst = Instructor.objects.create(user=user, name=fullname)
-            except IntegrityError:
-                stat("instructor:integrity_error")
-                return
-            inst_created = True
+            return inst
+        except Instructor.DoesNotExist:
+            pass
 
-        if inst_created:
-            stat("instructors_created")
+        stat("instructors_created")
+        return Instructor.objects.create(user=user, name=fullname)
 
-    elif len(fullname) > 0:
+    if fullname:
         inst, inst_created = Instructor.objects.get_or_create(name=fullname)
         if inst_created:
             stat("instructors_created")
-    else:
-        stat("instructors_without_info")
-        inst = None
+        return inst
 
-    return inst
+    stat("instructors_without_info")
+    return None
 
 
 def import_course_and_section(full_course_code, semester, course_title, primary_section_code, stat):

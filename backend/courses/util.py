@@ -14,6 +14,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from options.models import Option, get_value
 from rest_framework.exceptions import APIException
+import uuid
 
 from courses.models import (
     Building,
@@ -335,14 +336,18 @@ def set_instructors(section, instructors):
         penn_id = int(instructor["penn_id"])
         try:
             instructor_ob = Instructor.objects.filter(user_id=penn_id)[:1].get()
+            instructor_ob.name = name
+            instructor_ob.save()
         except Instructor.DoesNotExist:
-            try:
-                user = User.objects.get(id=penn_id)
-            except User.DoesNotExist:
-                user = None
-            instructor_ob, _ = Instructor.objects.get_or_create(
-                name=name, defaults={"user": user}
-            )  # TODO: save Penn ID
+            user, user_created = User.objects.get_or_create(
+                id=penn_id, defaults={"username": uuid.uuid4()}
+            )
+            if user_created:
+                user.set_unusable_password()
+                user.save()
+            instructor_ob, _ = Instructor.objects.get_or_create(name=name)
+            instructor_ob.user = user
+            instructor_ob.save()
         instructor_obs.append(instructor_ob)
     section.instructors.set(instructor_obs)
 
