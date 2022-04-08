@@ -45,7 +45,7 @@ First, navigate to the `backend` directory in your terminal.
     - TODO
 
 4. (Running the backend)
-    - Run `docker-compose up` in a separate terminal window before running any manage.py commands (this will spin up Docker containers running Postgres and Redis).
+    - Run `docker-compose up` in a separate terminal window before running any manage.py commands (this will spin up a Docker container running Postgres).
     - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
     - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`.
     - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
