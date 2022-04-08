@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import uuid
 from decimal import Decimal
 
 from django.core.cache import cache
@@ -14,7 +15,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from options.models import Option, get_value
 from rest_framework.exceptions import APIException
-import uuid
 
 from courses.models import (
     Building,
