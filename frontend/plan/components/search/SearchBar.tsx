@@ -451,16 +451,10 @@ SearchBarProps) {
             )}
             {/* <DropdownButton
                 title="Fit Schedule"
-                filterData={filterData.course_quality}
-                defaultFilter={defaultFilters.filterData.course_quality}
+                filterData={filterData.fit_schedule}
+                defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
             >
-                <CheckboxFilter
-                    filterData={filterData}
-                    updateCheckboxFilter={updateCheckboxFilter}
-                    checkboxProperty="activity"
-                    startSearch={conditionalStartSearch}
-                />
             </DropdownButton> //TODO: Add Fit Schedule */}
         </DropdownContainer>
     );

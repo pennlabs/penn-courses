@@ -44,8 +44,8 @@ export const initialState = {
             U: true,
         },
         time: [1.5, 17],
+        fit_schedule: false,
     },
-    fit_schedule: false,
     defaultReqs: null,
 };
 
@@ -131,8 +131,7 @@ export const filters = (state = initialState, action) => {
                 ...state,
                 filterData: {
                     ...state.filterData,
-                    [action.propertyName]:
-                        initialState.filterData[action.propertyName],
+                    [action.propertyName]: initialState.filterData[action.propertyName],
                 },
             };
 
