@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from typing import Callable, Dict, List, Optional
 
 from django.core.management import BaseCommand
