@@ -480,8 +480,8 @@ class Registration(models.Model):
           - The `original_created_at` field is set to the `created_at` of the tail of the
             resubscribe chain.
 
-        If `load_script` is set to False (indicating this registration is being loaded from an
-        external data source rather than being actively created by a PCA user),
+        If `load_script` is set to False (indicating this registration is being actively
+        created by a PCA user, rather than being loaded in from an external data source),
         and the registration's semester is the current semester, and the registration
         has just been created or deactivated, then the `PcaDemandDistributionEstimate` model
         and `current_demand_distribution_estimate` cache are asynchronously updated
