@@ -91,7 +91,9 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
-    "default": dj_database_url.config(default="sqlite:///" + os.path.join(BASE_DIR, "db.sqlite3"))
+    "default": dj_database_url.config(
+        default="postgres://penn-courses:postgres@localhost:5432/postgres"
+    )
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
@@ -185,7 +187,7 @@ TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12153984277")
 PCR_TOKEN = os.environ.get("PCR_TOKEN", "")
 
 # Redis
-REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
 
 # Celery
 MESSAGE_BROKER_URL = REDIS_URL

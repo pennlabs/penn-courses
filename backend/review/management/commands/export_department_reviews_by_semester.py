@@ -48,10 +48,7 @@ def average_by_dept(fields, semesters, departments=None, verbose=False):
 
         for code, enrollments_sum in (
             Review.objects.filter(
-                (
-                    Q(section__course__primary_listing__isnull=True)
-                    | Q(section__course__primary_listing_id=F("section__course_id"))
-                )
+                Q(section__course__primary_listing_id=F("section__course_id"))
                 & ~Q(section__activity__in=["LAB", "REC"])
                 & Q(section__course__semester=semester)
             )

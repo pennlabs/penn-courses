@@ -78,9 +78,9 @@ def prompt_for_link(course1, course2):
 
 
 def same_course(course_a, course_b):
-    return course_a.full_code == course_b.full_code or any(
+    return any(
         course_ac.full_code == course_b.full_code
-        for course_ac in (course_a.primary_listing or course_a).listing_set.all()
+        for course_ac in course_a.primary_listing.listing_set.all()
     )
 
 
@@ -153,7 +153,6 @@ def merge_topics(verbose=False, ignore_inexact=False):
     topics = set(
         Topic.objects.prefetch_related(
             "courses",
-            "courses__listing_set",
             "courses__primary_listing",
             "courses__primary_listing__listing_set",
         ).all()
@@ -215,7 +214,11 @@ def manual_merge(topic_ids):
         )
         return
     topic_ids = [int(i) for i in topic_ids]
-    topics = Topic.objects.filter(id__in=topic_ids).prefetch_related("courses")
+    topics = (
+        Topic.objects.filter(id__in=topic_ids)
+        .select_related("most_recent")
+        .prefetch_related("courses")
+    )
     found_ids = topics.values_list("id", flat=True)
     not_found_ids = list(set(topic_ids) - set(found_ids))
     if not_found_ids:
@@ -225,10 +228,7 @@ def manual_merge(topic_ids):
     if not prompt_for_link_multiple(courses, extra_newlines=False):
         print("Aborting merge.")
         return
-    with transaction.atomic():
-        topic = topics[0]
-        for topic2 in topics[1:]:
-            topic = topic.merge_with(topic2)
+    topic = Topic.merge_all(topics)
     print(f"Successfully merged {len(topics)} topics into: {topic}.")
 
 

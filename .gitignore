@@ -14,9 +14,8 @@ frontend/*/build/
 frontend/*/.next
 backend/PennCourses/settings/static/
 *.sqlite3
+*.sqlite3-journal
+postgres
 *-test.json
 celerybeat-schedule
 pcr-backup*
-
-# frontend/*/src/components/shared
-*.sqlite3-journal

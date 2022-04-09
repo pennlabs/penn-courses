@@ -75,12 +75,12 @@ def link_courses_to_topics(semester, guaranteed_links=None, verbose=False, ignor
     full_code_to_topic = {c.full_code: t for t, c in topics if c.full_code}
     for course in tqdm(
         Course.objects.filter(
-            Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
+            Q(primary_listing_id=F("id")),
             semester=semester,
             topic__isnull=True,
         )
         .select_related("primary_listing", "topic")
-        .prefetch_related("listing_set", "primary_listing__listing_set"),
+        .prefetch_related("primary_listing__listing_set"),
         disable=(not verbose),
     ):
         old_full_code = guaranteed_links.get(course.full_code)

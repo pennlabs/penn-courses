@@ -885,7 +885,6 @@ class ScheduleFilterTestCase(TestCase):
             {"schedule-fit": str(self.only_120_262_available_schedule.id)},
         )
         self.assertEqual(response.status_code, 200)
-        print(response.data)
         self.assertEqual(len(response.data), 2)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
 

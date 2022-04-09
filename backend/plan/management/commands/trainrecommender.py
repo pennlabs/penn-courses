@@ -305,10 +305,7 @@ def normalize_class_name(class_name):
     course_obj: Course = lookup_course(class_name)
     if course_obj is None:
         return class_name
-    class_name = (
-        class_name if course_obj.primary_listing is None else course_obj.primary_listing.full_code
-    )
-    return class_name
+    return course_obj.primary_listing.full_code
 
 
 def generate_course_clusters(courses_data, n_per_cluster=100, preloaded_descriptions={}):
