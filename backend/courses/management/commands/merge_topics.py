@@ -55,17 +55,16 @@ def get_direct_backlinks_from_cross_walk(cross_walk):
     }
 
 
-def prompt_for_link_multiple(courses, extra_newlines=True):
+def prompt_for_link_topics(topics):
     """
-    Prompts the user to confirm or reject a possible link between multiple courses.
-    Returns a boolean representing whether the courses should be linked.
+    Prompts the user to confirm or reject a merge of topics.
+    Returns a boolean representing whether the topics should be merged.
     """
-    print("\n\n============>\n")
-    print("\n".join(course.full_str() for course in courses))
-    print("\n<============")
-    prompt = input(f"Should the above {len(courses)} courses be linked? (y/N) ")
-    if extra_newlines:
-        print("\n\n")
+    for topic in topics:
+        print(f"\n============> {topic}:\n")
+        print("\n------\n".join(course.full_str() for course in topics.courses.all()))
+        print("\n<============")
+    prompt = input(f"Should the above {len(topics)} topics be merged? (y/N) ")
     return prompt.strip().upper() == "Y"
 
 
@@ -74,7 +73,14 @@ def prompt_for_link(course1, course2):
     Prompts the user to confirm or reject a possible link between courses.
     Returns a boolean representing whether the courses should be linked.
     """
-    return prompt_for_link_multiple([course1, course2])
+    print("\n\n============>\n")
+    course1.full_str()
+    print("------")
+    course2.full_str()
+    print("\n<============")
+    prompt = input("Should the above 2 courses be linked? (y/N) ")
+    print("\n\n")
+    return prompt.strip().upper() == "Y"
 
 
 def same_course(course_a, course_b):
@@ -224,8 +230,7 @@ def manual_merge(topic_ids):
     if not_found_ids:
         print(f"The following topic IDs were not found:\n{not_found_ids}\nAborting merge.")
         return
-    courses = [course for topic in topics for course in topic.courses.all()]
-    if not prompt_for_link_multiple(courses, extra_newlines=False):
+    if not prompt_for_link_topics(topics):
         print("Aborting merge.")
         return
     topic = Topic.merge_all(topics)

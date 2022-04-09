@@ -387,15 +387,7 @@ class Topic(models.Model):
         if self == topic:
             return self
         with transaction.atomic():
-            if (
-                self.most_recent.semester == topic.most_recent.semester
-                and self.most_recent.full_code != topic.most_recent.full_code
-            ):
-                raise ValueError(
-                    "Cannot merge topics with most_recent courses in the same semester "
-                    "but different full codes."
-                )
-            elif self.most_recent.semester >= topic.most_recent.semester:
+            if self.most_recent.semester >= topic.most_recent.semester:
                 Course.objects.filter(topic=topic).update(topic=self)
                 topic.delete()
                 return self
