@@ -18,9 +18,10 @@ import { REGISTRATION_METRICS_COLUMNS } from "../constants";
 
 const semesterCol = {
   id: "semester",
-  width: 150,
+  width: 125,
   Header: "Semester",
   accessor: "semester",
+  Cell: ({ value, original }) => <center>{value}</center>,
   sortMethod: compareSemesters,
   show: true,
   required: true
@@ -28,15 +29,33 @@ const semesterCol = {
 
 const nameCol = {
   id: "name",
-  width: 300,
+  width: 250,
   Header: "Name",
   accessor: "name",
+  Cell: ({ value, original }) => <center>{value}</center>,
   show: true,
-  required: true,
   filterMethod: ({ value }, { name, semester }) =>
     value === "" || // If the filter value is blank, all
     name.toLowerCase().includes(value.toLowerCase()) ||
     semester.toLowerCase().includes(value.toLowerCase())
+};
+
+const codeCol = {
+  id: "course_code",
+  width: 125,
+  Header: "Course Code",
+  accessor: "course_code",
+  Cell: ({ value, original }) => <center>{value}</center>,
+  show: true
+};
+
+const activityCol = {
+  id: "activity",
+  Header: "Activity",
+  accessor: "activity",
+  width: 150,
+  Cell: ({ value, original }) => <center>{value}</center>,
+  show: true
 };
 
 const formsCol = {
@@ -47,7 +66,7 @@ const formsCol = {
   show: true,
   required: true,
   Cell: ({ value, original }) =>
-    typeof value === "undefined" ? (
+    value == null ? (
       <center className="empty">N/A</center>
     ) : (
       <center>
@@ -83,13 +102,13 @@ export const DetailsBox = forwardRef(
       }
       return {
         id: info,
-        width: 150,
+        width: 175,
         Header: getColumnName(info),
         accessor: info,
         show: true,
         Cell: ({ value }) => (
-          <center className={!value ? "empty" : ""}>
-            {!value
+          <center className={value == null ? "empty" : ""}>
+            {value == null
               ? "N/A"
               : isNaN(value) && value.slice(-1) === "%"
               ? value
@@ -110,19 +129,31 @@ export const DetailsBox = forwardRef(
       if (instructor !== null && course !== null) {
         apiHistory(course, instructor)
           .then(res => {
-            const [firstSection, ...sections] = Object.values(res.sections);
-            const ratingCols = orderColumns(Object.keys(firstSection.ratings))
+            const sections = Object.values(res.sections);
+            const fields = [
+              ...new Set(
+                sections.reduce((r, s) => [...r, ...Object.keys(s.ratings)], [])
+              )
+            ]; // union of all keys of objects in sections
+            const ratingCols = orderColumns(fields)
               .map(generateCol)
               .filter(col => col);
             const semesterSet = new Set(
-              [firstSection, ...sections]
+              sections
                 .filter(a => a.comments)
                 .map(a => a.semester)
                 .sort(compareSemesters)
             );
             const semesters = [...semesterSet];
             setData(res);
-            setColumns([semesterCol, nameCol, formsCol, ...ratingCols]);
+            setColumns([
+              semesterCol,
+              nameCol,
+              codeCol,
+              activityCol,
+              formsCol,
+              ...ratingCols
+            ]);
             setSemesterList(semesters);
             setSelectedSemester(() => {
               if (!semesters.length) return null;
@@ -268,14 +299,18 @@ export const DetailsBox = forwardRef(
                     ratings,
                     semester,
                     course_name: name,
-                    forms_produced: produced,
-                    forms_returned: returned
+                    course_code,
+                    activity,
+                    forms_produced,
+                    forms_returned
                   }) => ({
                     ...ratings,
                     semester: toNormalizedSemester(semester),
                     name,
-                    forms_produced: produced,
-                    forms_returned: returned
+                    course_code,
+                    activity,
+                    forms_produced,
+                    forms_returned
                   })
                 )}
                 columns={columns}

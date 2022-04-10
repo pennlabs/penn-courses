@@ -12,10 +12,10 @@ yarn-debug.log*
 yarn-error.log*
 frontend/*/build/
 frontend/*/.next
-PennCourses/settings/static/
+backend/PennCourses/settings/static/
 *.sqlite3
+*.sqlite3-journal
+postgres
 *-test.json
 celerybeat-schedule
 pcr-backup*
-
-# frontend/*/src/components/shared

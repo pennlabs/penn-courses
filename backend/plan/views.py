@@ -388,9 +388,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-    queryset = (
-        Schedule.objects.none()
-    )  # used to help out the AutoSchema in generating documentation
+    queryset = Schedule.objects.none()  # included redundantly for docs
 
     def get_queryset(self):
         sem = get_current_semester()

@@ -8,6 +8,7 @@ from django.db.models.signals import post_save
 from django.test import TestCase
 from options.models import Option
 
+from alert.models import AddDropPeriod
 from courses.models import Course, Instructor, Section
 from courses.util import (
     get_or_create_course,
@@ -35,6 +36,7 @@ def set_semester():
         dispatch_uid="invalidate_current_semester_cache",
     )
     Option(key="SEMESTER", value=TEST_CURRENT_SEMESTER, value_type="TXT").save()
+    AddDropPeriod(semester=TEST_CURRENT_SEMESTER).save()
 
 
 raw_summary = f"""
