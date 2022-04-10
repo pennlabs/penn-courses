@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from typing import Callable, Dict, List, Optional
 
 from django.core.management import BaseCommand
@@ -28,12 +29,15 @@ def batch_duplicates(qs, get_prop=None, union_find=None) -> List[List[Instructor
         This kwarg accepts a function mapping `qs` to a union find dictionary.
     :return: List of instructor groups of size > 1.
     """
+    rows_by_prop = defaultdict(set)
     if union_find:
         union_find = union_find(qs)
-        rows_by_prop = {union_find[row.id]: row for row in qs}
+        for row in qs:
+            rows_by_prop[union_find[row.id]].add(row)
     else:
         assert get_prop
-        rows_by_prop = {get_prop(row): row for row in qs}
+        for row in qs:
+            rows_by_prop[get_prop(row)].add(row)
     return [rows for prop, rows in rows_by_prop.items() if prop and len(rows) > 1]
 
 
@@ -80,7 +84,7 @@ def resolve_duplicates(
                 continue
 
         # Filter for all instructors that aren't the primary.
-        duplicate_instructors = [inst for inst in instructor_set if inst != primary_instructor]
+        duplicate_instructors = instructor_set - {primary_instructor}
         # Transfer the sections and reviews of all non-primary instances to the primary instance.
         for duplicate_instructor in duplicate_instructors:
             for section in duplicate_instructor.section_set.all():
@@ -140,15 +144,17 @@ def first_last_name_sections_uf(instructors):
 
 strategies: Dict[str, Callable[[], List[List[Instructor]]]] = {
     "case-insensitive": lambda: batch_duplicates(
-        Instructor.objects.all().prefetch_related("section", "review"),
+        Instructor.objects.all().prefetch_related("section_set", "review_set"),
         lambda row: row.name.lower(),
     ),
     "pennid": lambda: batch_duplicates(
-        Instructor.objects.all().prefetch_related("section", "review"),
+        Instructor.objects.all().prefetch_related("section_set", "review_set"),
         lambda row: row.user_id,
     ),
     "first-last-name-sections": lambda: batch_duplicates(
-        Instructor.objects.all().prefetch_related("section", "review", "section__instructors"),
+        Instructor.objects.all().prefetch_related(
+            "section_set", "review_set", "section_set__instructors"
+        ),
         union_find=lambda rows: first_last_name_sections_uf(rows),
     ),
 }
