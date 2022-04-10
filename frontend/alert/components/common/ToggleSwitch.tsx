@@ -10,7 +10,7 @@ const Label = styled.label`
 
 const Switch = styled.div`
   position: relative;
-  width: 35px;
+  width: 38px;
   height: 14px;
   background: #b3b3b3;
   border-radius: 16px;
@@ -21,8 +21,8 @@ const Switch = styled.div`
     transition: 300ms all;
     content: "";
     position: absolute;
-    width: 17px;
-    height: 17px;
+    width: 18px;
+    height: 18px;
     border-radius: 35px;
     top: 50%;
     left: 4px;
@@ -38,7 +38,7 @@ const Input = styled.input`
     background: #5CB85C;
 
     &:before {
-      transform: translate(19px, -50%);
+      transform: translate(21px, -50%);
     }
   }
 `;

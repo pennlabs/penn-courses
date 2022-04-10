@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { shallowEqual } from "react-redux";
 import styled from "styled-components";
-import { AlertAction } from "../../types";
+import { Img } from "./common";
 
 interface Props {
     show?: boolean;
@@ -13,6 +12,17 @@ const DropdownContainer = styled.div<Props>`
     flex-direction: column;
     justify-content: center;
     width: ${(props) => props.width}rem;
+    margin-right: 0.5rem;
+`;
+
+const Icon = styled(Img)`
+    padding-top: 0.05rem;
+    margin-right: 0.3rem;
+`;
+
+const Arrow = styled(Img)`
+    padding-top: 0.1rem;
+    margin-left: 0.25rem;
 `;
 
 const DropdownMenu = styled.div<Props>`
@@ -56,10 +66,17 @@ interface DropdownToolProps {
     actionsText: String[];
     functions: (() => void)[];
     width: string;
+    img: string;
 }
 
-const DropdownTool = ({ actionsText, functions, width }: DropdownToolProps) => {
+const DropdownTool = ({
+    actionsText,
+    functions,
+    width,
+    img,
+}: DropdownToolProps) => {
     const [show, setShow] = useState(false);
+    const [arrow, setArrow] = useState("/svg/down-arrow.svg");
 
     const showDropdown = () => {
         return actionsText.slice(1).map((action, i) => (
@@ -74,13 +91,19 @@ const DropdownTool = ({ actionsText, functions, width }: DropdownToolProps) => {
             <DropdownContainer
                 onMouseEnter={() => {
                     setShow(true);
+                    setArrow("/svg/up-arrow.svg");
                 }}
                 onMouseLeave={() => {
                     setShow(false);
+                    setArrow("/svg/down-arrow.svg");
                 }}
                 width={width}
             >
-                <DropdownTitle>{actionsText[0]}</DropdownTitle>
+                <DropdownTitle>
+                    <Icon src={img} width="0.75rem" height="0.75rem" />
+                    {actionsText[0]}
+                    <Arrow src={arrow} width="0.5rem" height="0.5rem" />
+                </DropdownTitle>
                 <div
                     style={{
                         position: "relative",

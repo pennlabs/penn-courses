@@ -93,7 +93,7 @@ const getActionPromise = (id, actionenum, alert) => {
             body = { cancelled: true };
             break;
         case AlertAction.ONCLOSED:
-            if (alert.actions == AlertAction.ONALERT) {
+            if (alert && alert.actions == AlertAction.ONALERT) {
                 return Promise.reject();
             }
             body = { close_notification: true };
@@ -259,7 +259,7 @@ const ManageAlertWrapper = ({ setResponse }: ManageAlertWrapperProps) => {
                     () =>
                         sendError(
                             400,
-                            "Please toggle on the alert first to be notified when closed."
+                            "Please toggle on the alert first to enable this action."
                         )
                 )}
                 batchSelectHandler={batchSelectHandler(
@@ -272,7 +272,7 @@ const ManageAlertWrapper = ({ setResponse }: ManageAlertWrapperProps) => {
                     () =>
                         sendError(
                             400,
-                            "Please toggle on all selected alerts first to be notified when closed."
+                            "Please toggle on all selected alerts first to enable this action."
                         ),
                     Object.keys(alertSel).filter((id) => alertSel[id]),
                     alerts

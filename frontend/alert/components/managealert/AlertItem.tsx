@@ -4,6 +4,7 @@ import { GridItem } from "pcx-shared-components/src/common/layout";
 import { P } from "../common/common";
 import { ToggleManager } from "./ToggleManager";
 import { AlertAction, SectionStatus } from "../../types";
+import { Img } from "../common/common";
 
 const StatusInd = styled.div<{ background: string }>`
     border-radius: 1rem;
@@ -18,6 +19,14 @@ const StatusGridItem = styled(GridItem)`
         margin: 0.2rem;
     }
 `;
+
+const TrashImg = styled(Img)`
+    cursor: pointer;
+    &:active {
+        transform: translateY(0.1rem);
+    }
+    
+`
 
 // Component for an alert entry (renders as a row in CSS grid)
 interface AlertItemProps {
@@ -94,7 +103,12 @@ export const AlertItem = ({
                 <ToggleManager type={closed} handleChange={closedHandler} />
             </GridItem>
             <GridItem border column={8} row={rownum} halign valign>
-                <button onClick={deleteHandler}>Trash</button>
+                <TrashImg
+                    src="/svg/trash.svg"
+                    width="1.5rem"
+                    height="1.5rem"
+                    onClick={deleteHandler}
+                />
             </GridItem>
         </>
     );

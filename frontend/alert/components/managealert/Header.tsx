@@ -8,16 +8,16 @@ import {
 import { Img } from "../common/common";
 import { AlertAction } from "../../types";
 import { maxWidth, PHONE } from "../../constants";
-import DropdownTool from "./DropdownTool";
+import DropdownTool from "../common/DropdownTool";
 
 const Grid = styled.div<{ selected: boolean }>`
     display: grid;
     grid-template-columns: ${({ selected }) =>
-        selected ? "1fr 10.5fr" : "1fr 1fr 3fr 1fr 1fr 1fr 2.5fr 1fr"};
+        selected ? "1fr 10.5fr" : "1fr 1fr 3fr 1fr 1.75fr 1fr 2fr 1fr"};
     grid-template-rows: 1.5rem;
 
     ${maxWidth(PHONE)} {
-        grid-template-columns: 0fr 0fr 2.5fr 2fr 0.5fr 3.5fr 0fr 1fr;
+        grid-template-columns: 0fr 0fr 2.5fr 2fr 0.5fr 3.5fr 0fr 1.5fr;
         & > div:nth-child(0) {
             display: none;
         }
@@ -42,13 +42,15 @@ const HeaderText = styled.p`
 
 const HeaderAction = styled(HeaderText)`
     margin-right: 1rem;
-    cursor: pointer;
     color: #489be8;
 `;
 
 const HeaderButtonsFlex = styled(Flex)`
+    margin-left: 0.5rem;
+    cursor: pointer;
     & > * {
         display: block;
+
         margin-right: 0.4rem;
     }
 `;
@@ -64,7 +66,7 @@ const HeaderContainer = styled.div`
 `;
 
 const Separator = styled.div`
-    margin: 0rem 1rem 0rem 1rem;
+    margin: 0rem 0.8rem 0rem 1.35rem;
 `;
 
 interface HeaderProps {
@@ -91,7 +93,7 @@ const Header = ({
         "",
         "SUBSCRIPTION",
         "NOTIFY WHEN CLOSED",
-        ""
+        "",
     ];
 
     return (
@@ -131,7 +133,7 @@ const Header = ({
                             </Separator>
                             <DropdownTool
                                 actionsText={[
-                                    "Alerts",
+                                    "ALERTS",
                                     "Toggle On",
                                     "Toggle Off",
                                 ]}
@@ -143,12 +145,13 @@ const Header = ({
                                             AlertAction.OFFALERT
                                         ),
                                 ]}
-                                width={"5"}
+                                width={"5.5"}
+                                img={"/svg/bell.svg"}
                             />
 
                             <DropdownTool
                                 actionsText={[
-                                    "Notify when Closed",
+                                    "NOTIFY WHEN CLOSED",
                                     "Toggle On",
                                     "Toggle Off",
                                 ]}
@@ -162,21 +165,21 @@ const Header = ({
                                             AlertAction.OFFCLOSED
                                         ),
                                 ]}
-                                width={"8"}
+                                width={"10.5"}
+                                img={"/svg/bell.svg"}
                             />
-                            <HeaderButtonsFlex valign>
+                            <HeaderButtonsFlex
+                                valign
+                                onClick={() =>
+                                    batchActionHandler(AlertAction.DELETE)
+                                }
+                            >
                                 <Img
-                                    src="/svg/trash.svg"
-                                    width="0.5rem"
-                                    height="0.5rem"
+                                    src="/svg/blue-trash.svg"
+                                    width="0.75rem"
+                                    height="0.75rem"
                                 />
-                                <HeaderAction
-                                    onClick={() =>
-                                        batchActionHandler(AlertAction.DELETE)
-                                    }
-                                >
-                                    DELETE
-                                </HeaderAction>
+                                <HeaderAction>DELETE</HeaderAction>
                             </HeaderButtonsFlex>
                         </HeaderContainer>
                     </GridItem>
