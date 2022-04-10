@@ -505,7 +505,7 @@ def department_reviews(request, department_code):
         .distinct()
         .values("semester", course_title=F("title"), course_code=F("full_code"))
     ):
-        key = (c.full_code, c.semester)
+        key = (c["course_code"], c["semester"])
         if key not in unique_courses:
             unique_courses[key] = c
 
