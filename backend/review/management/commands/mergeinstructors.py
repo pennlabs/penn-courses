@@ -83,13 +83,13 @@ def resolve_duplicates(
         duplicate_instructors = [inst for inst in instructor_set if inst != primary_instructor]
         # Transfer the sections and reviews of all non-primary instances to the primary instance.
         for duplicate_instructor in duplicate_instructors:
-            for section in duplicate_instructor.sections.all():
+            for section in duplicate_instructor.section_set.all():
                 stat(SECTIONS_MODIFIED, 1)
                 if not dry_run:
                     section.instructors.remove(duplicate_instructor)
                     section.instructors.add(primary_instructor)
 
-            for review in duplicate_instructor.reviews.all():
+            for review in duplicate_instructor.review_set.all():
                 stat(REVIEWS_MODIFIED, 1)
                 if not dry_run:
                     review.instructor = primary_instructor
@@ -122,7 +122,7 @@ def first_last_name_sections_uf(instructors):
 
     for inst in tqdm(instructors):
         inst_first_last = get_first_last(inst.name)
-        for section in inst.sections.all():
+        for section in inst.section_set.all():
             for other_inst in section.instructors.all():
                 if inst_first_last == get_first_last(other_inst.name):
                     union_find[inst.id] = union_find[other_inst.id]
@@ -140,15 +140,15 @@ def first_last_name_sections_uf(instructors):
 
 strategies: Dict[str, Callable[[], List[List[Instructor]]]] = {
     "case-insensitive": lambda: batch_duplicates(
-        Instructor.objects.all().prefetch_related("sections", "reviews"),
+        Instructor.objects.all().prefetch_related("section", "review"),
         lambda row: row.name.lower(),
     ),
     "pennid": lambda: batch_duplicates(
-        Instructor.objects.all().prefetch_related("sections", "reviews"),
+        Instructor.objects.all().prefetch_related("section", "review"),
         lambda row: row.user_id,
     ),
     "first-last-name-sections": lambda: batch_duplicates(
-        Instructor.objects.all().prefetch_related("sections", "reviews", "sections__instructors"),
+        Instructor.objects.all().prefetch_related("section", "review", "section__instructors"),
         union_find=lambda rows: first_last_name_sections_uf(rows),
     ),
 }

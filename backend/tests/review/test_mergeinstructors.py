@@ -74,9 +74,9 @@ class ResolveDuplicatesTestCase(TestCase):
     def test_basic_merge(self):
         resolve_duplicates([[self.inst_A, self.inst_a]], False, self.stat)
         self.assertEqual(2, Instructor.objects.count())
-        self.assertFalse(Instructor.objects.filter(name="a").exists())
-        self.assertEqual(2, Review.objects.filter(instructor=self.inst_A).count())
-        self.assertEqual(2, Section.objects.filter(instructors=self.inst_A).count())
+        self.assertFalse(Instructor.objects.filter(name="A").exists())
+        self.assertEqual(2, Review.objects.filter(instructor=self.inst_a).count())
+        self.assertEqual(2, Section.objects.filter(instructors=self.inst_a).count())
 
     def test_basic_merge_dryrun_doesnt_modify(self):
         resolve_duplicates([[self.inst_A, self.inst_a]], True, self.stat)
@@ -87,13 +87,13 @@ class ResolveDuplicatesTestCase(TestCase):
         self.assertEqual(1, Section.objects.filter(instructors=self.inst_a).count())
 
     def test_merge_with_user(self):
-        self.inst_a.user = self.user1
-        self.inst_a.save()
+        self.inst_A.user = self.user1
+        self.inst_A.save()
         resolve_duplicates([[self.inst_A, self.inst_a]], False, self.stat)
         self.assertEqual(2, Instructor.objects.count())
-        self.assertFalse(Instructor.objects.filter(name="A").exists())
-        self.assertEqual(2, Review.objects.filter(instructor=self.inst_a).count())
-        self.assertEqual(2, Section.objects.filter(instructors=self.inst_a).count())
+        self.assertFalse(Instructor.objects.filter(name="a").exists())
+        self.assertEqual(2, Review.objects.filter(instructor=self.inst_A).count())
+        self.assertEqual(2, Section.objects.filter(instructors=self.inst_A).count())
 
     def test_merge_with_both_having_same_user(self):
         self.inst_a.user = self.user1
@@ -102,9 +102,9 @@ class ResolveDuplicatesTestCase(TestCase):
         self.inst_A.save()
         resolve_duplicates([[self.inst_A, self.inst_a]], False, self.stat)
         self.assertEqual(2, Instructor.objects.count())
-        self.assertFalse(Instructor.objects.filter(name="a").exists())
-        self.assertEqual(2, Review.objects.filter(instructor=self.inst_A).count())
-        self.assertEqual(2, Section.objects.filter(instructors=self.inst_A).count())
+        self.assertFalse(Instructor.objects.filter(name="A").exists())
+        self.assertEqual(2, Review.objects.filter(instructor=self.inst_a).count())
+        self.assertEqual(2, Section.objects.filter(instructors=self.inst_a).count())
 
     def test_merge_aborts_with_different_users(self):
         self.inst_a.user = self.user1
