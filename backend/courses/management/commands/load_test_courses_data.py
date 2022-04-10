@@ -9,7 +9,6 @@ from tqdm import tqdm
 from alert.management.commands.recomputestats import recompute_stats
 from backend.courses.util import get_next_id
 from courses.management.commands.export_test_courses_data import (
-    load_manually,
     models,
     related_id_fields,
     self_related_id_fields,
@@ -51,7 +50,7 @@ class Command(BaseCommand):
             return "File is not a csv."
 
         fields = test_data_fields
-        data_types = [d for d in fields.keys() if d not in load_manually]
+        data_types = fields.keys()
 
         row_count = 0
         rows_map = {data_type: [] for data_type in data_types}
@@ -128,7 +127,6 @@ class Command(BaseCommand):
                 ).delete()
             for i, data_type in enumerate(data_types):
                 print(f"Loading {data_type} data ({i+1}/{len(data_types)})...")
-                next_id = None  # the id of the next object of this datatype to be created
                 for row in tqdm(rows_map[data_type]):
                     if data_type.endswith("_m2mfield"):
                         dtype = row[1]
@@ -172,13 +170,12 @@ class Command(BaseCommand):
                         else:
                             to_save_dict[field] = row[field_to_index[field]]
                     to_save[data_type].append(models[data_type](**to_save_dict))
-                    if not next_id:
-                        next_id = get_next_id(to_save[-1])
+                    ob = to_save[data_type][-1]
+                    self_id = get_next_id(ob)
                     if data_type in self_related_id_fields:
                         for field in self_related_id_fields[data_type]:
-                            # Set the self-related id to some arbitrary id that will be
-                            # changed later (to satisfy any potential not-null constraints)
-                            setattr(to_save[data_type][-1], field, next_id)
+                            # This self-related id will be changed later to the correct value
+                            setattr(ob, field, self_id)
 
                 if data_type not in semester_filter.keys() and data_type in models:
                     existing_objects = set(
@@ -227,10 +224,11 @@ class Command(BaseCommand):
             for data_type in deferred_related_ids.keys():
                 print(f"Loading deferred related fields for {data_type}...")
                 for field in deferred_related_ids[data_type].keys():
+                    related_data_type = related_id_fields[data_type][field]
                     to_update = []
                     for obj_id, related_id in deferred_related_ids[data_type][field].items():
                         obj_new_id = id_change_map[data_type][obj_id]
-                        related_new_id = id_change_map[data_type][related_id]
+                        related_new_id = id_change_map[related_data_type][related_id]
                         obj = objects[data_type][obj_new_id]
                         setattr(obj, field, related_new_id)
                         to_update.append(obj)
