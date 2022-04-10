@@ -27,7 +27,7 @@ export class MyChart extends PennLabsChart {
         image: backendImage,
         secret: secret,
         cmd: ['celery', 'worker', '-A', 'PennCourses', '-Q', 'alerts,celery', '-linfo'],
-        replicas: 3,
+        replicas: 8,
         env: [{ name: 'PORT', value: '80' }],
       },
       djangoSettingsModule: 'PennCourses.settings.production',
