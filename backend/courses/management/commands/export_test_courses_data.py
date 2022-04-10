@@ -19,6 +19,7 @@ test_data_fields = {
         "id",
         "semester",
         "department_id",
+        "topic_id",
         "code",
         "title",
         "description",

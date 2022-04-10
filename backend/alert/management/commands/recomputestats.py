@@ -6,8 +6,8 @@ import scipy.stats as stats
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
-from django.db import transaction
-from django.db.models import Count, F, Max, OuterRef, Q, Subquery, Value
+from django.db import connection, transaction
+from django.db.models import Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from tqdm import tqdm
@@ -69,43 +69,79 @@ def get_semesters(semesters=None, verbose=False):
     return semesters
 
 
-def recompute_precomputed_fields(semesters=None, verbose=False, semesters_precomputed=False):
-    """
-    Recomputes Course.num_activities and Section.num_meetings fields for the given semesters.
-
-    :param semesters: The semesters argument should be a comma-separated list of string semesters
-        corresponding to the semesters for which you want to recompute precomputed fields,
-        i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
-        It defaults to None, in which case only the current semester is used. If you supply
-        the string "all", this function will run for all semesters found in Courses in the db.
-        If semesters_precomputed is set to True (non-default), then this argument should
-        instead be a list of single string semesters.
-    :param semesters_precomputed: If False (default), the semesters argument will expect a raw
-        comma-separated string input. If True, the semesters argument will expect a list of
-        individual string semesters.
-    :param verbose: Set to True if you want this script to print its status as it goes,
-        or keep as False (default) if you want the script to work silently.
-    """
-    semesters = (
-        semesters if semesters_precomputed else get_semesters(semesters=semesters, verbose=verbose)
-    )
-
-    if verbose:
-        print(f"Recomputing precomputed fields for semesters {str(semesters)}...")
-
-    Course.objects.filter(semester__in=semesters).annotate(
+def recompute_num_activities():
+    Course.objects.all().annotate(
         activity_count=subquery_count_distinct(
             Section.objects.filter(course_id=OuterRef("id")), column="activity"
         )
     ).update(num_activities=F("activity_count"))
-    Section.objects.filter(course__semester__in=semesters).annotate(
+
+
+def recompute_meeting_count():
+    Section.objects.all().annotate(
         meeting_count=subquery_count_distinct(
             Meeting.objects.filter(section_id=OuterRef("id")), column="id"
         )
     ).update(num_meetings=F("meeting_count"))
 
+
+def recompute_has_reviews():
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+        UPDATE "courses_section" U0
+        SET "has_reviews" = CASE WHEN
+            EXISTS (SELECT id FROM "review_review" U1
+                WHERE U0."id" = U1."section_id")
+            THEN true ELSE false
+        END
+        """
+        )
+
+
+def recompute_has_status_updates():
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+        UPDATE "courses_section" U0
+        SET "has_status_updates" = CASE WHEN
+            EXISTS (SELECT id FROM "courses_statusupdate" U1
+                WHERE U0."id" = U1."section_id")
+            THEN true ELSE false
+        END
+        """
+        )
+
+
+def recompute_precomputed_fields(verbose=False):
+    """
+    Recomputes the following precomputed fields:
+        - Course.num_activities
+        - Section.num_meetings
+        - Section.has_reviews
+        - Section.has_status_updates
+
+    :param verbose: Set to True if you want this script to print its status as it goes,
+        or keep as False (default) if you want the script to work silently.
+    """
     if verbose:
-        print("done.")
+        print("Recomputing precomputed fields...")
+
+    if verbose:
+        print("\tRecomputing Course.num_activities")
+    recompute_num_activities()
+    if verbose:
+        print("\tRecomputing Section.num_meetings")
+    recompute_meeting_count()
+    if verbose:
+        print("\tRecomputing Section.has_reviews")
+    recompute_has_reviews()
+    if verbose:
+        print("\tRecomputing Section.has_status_updates")
+    recompute_has_status_updates()
+
+    if verbose:
+        print("Done recomputing precomputed fields.")
 
 
 def deduplicate_status_updates(semesters=None, verbose=False, semesters_precomputed=False):
@@ -330,7 +366,7 @@ def recompute_demand_distribution_estimates(
         semesters if semesters_precomputed else get_semesters(semesters=semesters, verbose=verbose)
     )
 
-    # Recompute most recent registration volumes and open percentages
+    recompute_precomputed_fields(verbose=verbose)
     recompute_registration_volumes(semesters=semesters, semesters_precomputed=True, verbose=verbose)
     recompute_percent_open(semesters=semesters, semesters_precomputed=True, verbose=verbose)
 
@@ -542,41 +578,13 @@ def recompute_demand_distribution_estimates(
         )
 
 
-def delete_cancelled_sections_empty_courses():
+def garbage_collect_topics():
     """
-    Deletes cancelled sections and courses without sections from before the current semester.
+    Deletes topics with no courses.
     """
-    current_semester = get_current_semester()
-    with transaction.atomic():
-        Section.objects.filter(
-            course__semester__lt=current_semester, status="X", review=None
-        ).delete()
-        Topic.objects.filter(
-            ~Q(id__in=Subquery(Topic.objects.filter(courses__sections__isnull=False).values("id")))
-        ).delete()
-        Topic.objects.filter(
-            ~Q(
-                id__in=Subquery(
-                    Topic.objects.filter(most_recent__sections__isnull=False).values("id")
-                )
-            )
-        ).update(
-            most_recent_id=Subquery(
-                Course.objects.filter(
-                    Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id")),
-                    topic_id=OuterRef("id"),
-                    sections__isnull=False,
-                    semester=Subquery(
-                        Course.objects.filter(topic=OuterRef("topic"), sections__isnull=False)
-                        .annotate(common=Value(1))
-                        .values("common")
-                        .annotate(max_sem=Max("semester"))
-                        .values("max_sem")
-                    ),
-                ).values("id")[:1]
-            )
-        )
-        Course.objects.filter(semester__lt=current_semester, sections=None).delete()
+    Topic.objects.filter(
+        ~Q(id__in=Subquery(Topic.objects.filter(courses__isnull=False).values("id"))),
+    ).delete()
 
 
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
@@ -588,13 +596,12 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
     semesters = fill_in_add_drop_periods(verbose=verbose).intersection(semesters)
-    delete_cancelled_sections_empty_courses()
+    garbage_collect_topics()
     load_add_drop_dates(verbose=verbose)
     deduplicate_status_updates(semesters=semesters, semesters_precomputed=True, verbose=verbose)
     recompute_demand_distribution_estimates(
         semesters=semesters, semesters_precomputed=True, verbose=verbose
     )
-    recompute_precomputed_fields(semesters=semesters, semesters_precomputed=True, verbose=verbose)
 
 
 class Command(BaseCommand):
