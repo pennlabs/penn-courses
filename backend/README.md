@@ -34,19 +34,23 @@ First, navigate to the `backend` directory in your terminal.
     - Windows (WSL) or Linux:
         - `apt-get install gcc python3-dev libpq-dev`
 
-2. Setting up your Penn Courses development environment
+2. Running Docker
+
+    - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres).
+
+3. Setting up your Penn Courses development environment
 
     - `pipenv install --dev`
     - `pipenv shell`
     - `python manage.py migrate`
     - Make sure everything works by running `python manage.py test --parallel` and ensuring all tests pass.
 
-3. Loading test data
+4. Loading test data
 
     - TODO
 
-4. (Running the backend)
-    - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres).
+5. (Running the backend)
+
     - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
     - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`
     - Note: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
