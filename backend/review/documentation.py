@@ -372,10 +372,6 @@ autocomplete_response_schema = {
                                     "type": "string",
                                     "description": "The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
                                 },
-                                "most_recent_full_code": {
-                                    "type": "string",
-                                    "description": "The dash-joined department and most-recent (across all codes representing the topic) code of the course, e.g. `CIS-120` for CIS-120.",  # noqa E501
-                                },
                                 "desc": {
                                     "type": "string",
                                     "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501

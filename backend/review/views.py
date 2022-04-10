@@ -617,7 +617,6 @@ def autocomplete(request):
     courses = (
         Course.objects.filter(course_filters_pcr)
         .order_by("semester")
-        .annotate(most_recent_full_code=F("topic__most_recent__full_code"))
         .values("full_code", "most_recent_full_code", "title")
         .distinct()
     )
@@ -625,7 +624,6 @@ def autocomplete(request):
         [
             {
                 "title": course["full_code"],
-                "most_recent_full_code": course["most_recent_full_code"],
                 "desc": [course["title"]],
                 "url": f"/course/{course['full_code']}",
             }
