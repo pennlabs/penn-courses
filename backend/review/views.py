@@ -617,7 +617,7 @@ def autocomplete(request):
     courses = (
         Course.objects.filter(course_filters_pcr)
         .order_by("semester")
-        .values("full_code", "most_recent_full_code", "title")
+        .values("full_code", "title")
         .distinct()
     )
     course_set = sorted(
