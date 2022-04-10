@@ -13,8 +13,7 @@ import AutoComplete from "../AutoComplete";
 import getCsrf from "../../csrf";
 import { User, Section } from "../../types";
 
-const text = `Check this box to receive a follow-up email when a course closes again after 
-alerting you of an opening.`;
+import ReactTooltip from "react-tooltip";
 
 const SubmitButton = styled.button`
     border-radius: 5px;
@@ -310,8 +309,34 @@ const AlertForm = ({
             />
             <Center>
                 <ClosedText>
-                    Notify when Closed?
-                    <InfoTool text={text} />
+                    Notify when Closed?&nbsp;
+                    <span data-tip data-for="historical-tooltip">
+                        <i
+                            className="fa fa-question-circle"
+                            style={{
+                                color: "#c6c6c6",
+                                fontSize: "13px",
+                                marginBottom: "0.3rem",
+                            }}
+                        />
+                    </span>
+                    <ReactTooltip
+                        id="historical-tooltip"
+                        place="right"
+                        className="opaque"
+                        type="light"
+                        effect="solid"
+                        border={true}
+                        borderColor="#ededed"
+                        textColor="#4a4a4a"
+                    >
+                        <span className="tooltip-text">
+                            Check this box to receive a <br /> 
+                            follow-up email when a course <br />
+                            closes again after alerting you <br />
+                            of an opening.
+                        </span>
+                    </ReactTooltip>
                     <Input
                         type="checkbox"
                         checked={closedNotif}
