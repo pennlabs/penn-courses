@@ -39,7 +39,6 @@ First, navigate to the `backend` directory in your terminal.
     - `pipenv install --dev`
     - `pipenv shell`
     - `python manage.py migrate`
-    - Make sure everything works by running `python manage.py test --parallel` and ensuring all tests pass.
 
 3. Loading test data
 
@@ -51,6 +50,10 @@ First, navigate to the `backend` directory in your terminal.
     - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`
     - Note: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
     - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
+
+5. Running tests
+    - Run `python manage.py test --parallel` to run our test suite.
+    - To run a specific test, you can use the format `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` (also note that in this example, you can use any prefix of that path to run a larger set of tests).
 
 ## Loading Course Data on Demand
 
