@@ -2,9 +2,8 @@ import React from "react";
 import styled from "styled-components";
 import { GridItem } from "pcx-shared-components/src/common/layout";
 import { P } from "../common/common";
-import { ActionButton } from "./ActionButton";
-import { AlertAction, AlertRepeat, SectionStatus } from "../../types";
-import ToggleSwitch from "../common/ToggleSwitch"
+import { ToggleManager } from "./ToggleManager";
+import { AlertAction, SectionStatus } from "../../types";
 
 const StatusInd = styled.div<{ background: string }>`
     border-radius: 1rem;
@@ -15,7 +14,7 @@ const StatusInd = styled.div<{ background: string }>`
 
 const StatusGridItem = styled(GridItem)`
     & > * {
-        display: block;
+        display: flex;
         margin: 0.2rem;
     }
 `;
@@ -25,28 +24,30 @@ interface AlertItemProps {
     alertLastSent: string;
     course: string;
     status: SectionStatus;
-    repeat: AlertRepeat;
     actions: AlertAction;
+    closed: AlertAction;
     rownum: number;
     checked: boolean;
     toggleAlert: () => void;
-    actionButtonHandler: () => void;
+    alertHandler: () => void;
+    closedHandler: () => void;
+    deleteHandler: () => void;
 }
 export const AlertItem = ({
     alertLastSent,
     course,
     status,
-    repeat,
     actions,
+    closed,
     rownum,
     checked,
     toggleAlert,
-    actionButtonHandler,
+    alertHandler,
+    closedHandler,
+    deleteHandler,
 }: AlertItemProps) => {
     let statustext;
     let statuscolor;
-    let alerttext;
-    let alertcolor;
 
     switch (status) {
         case SectionStatus.CLOSED:
@@ -60,22 +61,6 @@ export const AlertItem = ({
         default:
     }
 
-    switch (repeat) {
-        case AlertRepeat.INACTIVE:
-            alerttext = "Inactive";
-            alertcolor = "#b2b2b2";
-            break;
-        case AlertRepeat.EOS:
-            alerttext = "Until end of semester";
-            alertcolor = "#333333";
-            break;
-        case AlertRepeat.ONCE:
-            alerttext = "Once";
-            alertcolor = "#333333";
-            break;
-        default:
-    }
-
     return (
         <>
             <GridItem column={1} row={rownum} border halign valign>
@@ -85,7 +70,7 @@ export const AlertItem = ({
                     onChange={toggleAlert}
                 />
             </GridItem>
-            <GridItem column={2} row={rownum} border valign>
+            <GridItem column={2} row={rownum} border halign valign talign>
                 {alertLastSent ? (
                     <P size="0.7rem">{alertLastSent}</P>
                 ) : (
@@ -94,22 +79,23 @@ export const AlertItem = ({
                     </P>
                 )}
             </GridItem>
-            <GridItem column={3} row={rownum} border valign>
+            <GridItem column={3} row={rownum} border halign valign talign>
                 <P size="0.7rem">{course}</P>
             </GridItem>
-            <StatusGridItem column={4} row={rownum} border valign>
+            <StatusGridItem column={4} row={rownum} border halign valign>
                 <StatusInd background={statuscolor} />
                 <P size="0.7rem">{statustext}</P>
             </StatusGridItem>
-            <GridItem border column={5} row={rownum} valign>
-                <ActionButton type={actions} onClick={actionButtonHandler} />
+            <GridItem border column={5} row={rownum} halign valign></GridItem>
+            <GridItem border column={6} row={rownum} halign valign>
+                <ToggleManager type={actions} handleChange={alertHandler} />
             </GridItem>
-            <GridItem border column={6} row={rownum} valign>
-                <ToggleSwitch />
+            <GridItem border column={7} row={rownum} halign valign>
+                <ToggleManager type={closed} handleChange={closedHandler} />
             </GridItem>
-            {/* <GridItem border column={7} row={rownum} valign>
-                <ActionButton type={actions} onClick={actionButtonHandler} />
-            </GridItem> */}
+            <GridItem border column={8} row={rownum} halign valign>
+                <button onClick={deleteHandler}>Trash</button>
+            </GridItem>
         </>
     );
 };

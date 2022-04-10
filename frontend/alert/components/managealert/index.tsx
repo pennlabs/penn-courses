@@ -3,13 +3,7 @@ import ReactGA from "react-ga";
 import useSWR from "swr";
 import { ManageAlert } from "./ManageAlertUI";
 import getCsrf from "../../csrf";
-import {
-    Alert,
-    AlertAction,
-    AlertRepeat,
-    SectionStatus,
-    TAlertSel,
-} from "../../types";
+import { Alert, AlertAction, SectionStatus, TAlertSel } from "../../types";
 
 const REGISTRATIONS_API_ROUTE = "/api/alert/registrations/";
 
@@ -37,15 +31,20 @@ const useAlerts = () => {
 
                 const status = registration.section_status;
 
-                let repeat;
+                let actions;
+                let closedNotif;
                 if (registration.is_active) {
-                    if (registration.auto_resubscribe) {
-                        repeat = AlertRepeat.EOS;
+                    if (registration.close_notification) {
+                        closedNotif = AlertAction.OFFCLOSED;
                     } else {
-                        repeat = AlertRepeat.ONCE;
+                        closedNotif = AlertAction.ONCLOSED;
+                    }
+                    if (registration.auto_resubscribe) {
+                        actions = AlertAction.OFFALERT;
                     }
                 } else {
-                    repeat = AlertRepeat.INACTIVE;
+                    actions = AlertAction.ONALERT;
+                    closedNotif = AlertAction.NOEFFECT;
                 }
 
                 return {
@@ -54,12 +53,8 @@ const useAlerts = () => {
                     section: registration.section,
                     alertLastSent: datetime,
                     status,
-                    repeat,
-                    actions:
-                        repeat === AlertRepeat.ONCE ||
-                        repeat === AlertRepeat.EOS
-                            ? AlertAction.CANCEL
-                            : AlertAction.RESUBSCRIBE,
+                    actions,
+                    closedNotif,
                 };
             }),
         [data]
@@ -87,18 +82,30 @@ const filterAlerts = (alerts, filter) => {
     });
 };
 
-const getActionPromise = (id, actionenum) => {
+const getActionPromise = (id, actionenum, alert) => {
     let body;
+
     switch (actionenum) {
-        case AlertAction.RESUBSCRIBE:
+        case AlertAction.ONALERT:
             body = { resubscribe: true };
             break;
-        case AlertAction.CANCEL:
+        case AlertAction.OFFALERT:
             body = { cancelled: true };
+            break;
+        case AlertAction.ONCLOSED:
+            if (alert.actions == AlertAction.ONALERT) {
+                return Promise.reject();
+            }
+            body = { close_notification: true };
+            break;
+        case AlertAction.OFFCLOSED:
+            body = { close_notification: false };
             break;
         case AlertAction.DELETE:
             body = { deleted: true };
             break;
+        case AlertAction.NOEFFECT:
+            return Promise.reject();
         default:
     }
 
@@ -125,8 +132,11 @@ const getActionPromise = (id, actionenum) => {
  * id {number} and actionenum {AlertAction}
  *
  */
-const actionHandler = (callback) => (id, actionenum) => {
-    getActionPromise(id, actionenum).then((res) => callback());
+const actionHandler = (callback, errorCallback) => (id, actionenum) => {
+    getActionPromise(id, actionenum, null).then(
+        (res) => callback(),
+        (err) => errorCallback()
+    );
 };
 
 /**
@@ -140,10 +150,24 @@ const actionHandler = (callback) => (id, actionenum) => {
  * @returns {func} - The function which expects the actionenum and
  * executes the action on idList
  */
-const batchActionHandler = (callback, idList) => (actionenum) => {
+const batchActionHandler = (callback, errorCallback, idList, alertsList) => (
+    actionenum
+) => {
+    let parsedIds = [...idList];
+    parsedIds.forEach((id, i) => (parsedIds[i] = parseInt(id)));
+
+    let filteredAlerts = alertsList.filter((alert) =>
+        parsedIds.includes(parseInt(alert.id))
+    );
+
     Promise.all(
-        idList.map((id) => getActionPromise(id, actionenum))
-    ).then((res) => callback());
+        idList.map((id, i) =>
+            getActionPromise(id, actionenum, filteredAlerts[i])
+        )
+    ).then(
+        (res) => callback(),
+        (err) => errorCallback()
+    );
 };
 
 const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
@@ -159,10 +183,15 @@ const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
             selMap[alert.id] = true;
         });
     }
+
     setAlertSel(selMap);
 };
 
-const ManageAlertWrapper = () => {
+interface ManageAlertWrapperProps {
+    setResponse: (res: Response) => void;
+}
+
+const ManageAlertWrapper = ({ setResponse }: ManageAlertWrapperProps) => {
     // alerts processed directly from registrationhistory
     const { alerts, mutateAlerts, alertsError } = useAlerts();
     // TODO: handle alertsError
@@ -173,6 +202,13 @@ const ManageAlertWrapper = () => {
     // alerts after passing through frontend filters
     const [currAlerts, setCurrAlerts] = useState<Alert[]>([]);
     const [filter, setFilter] = useState({ search: "" });
+
+    const sendError = (status, message) => {
+        const blob = new Blob([JSON.stringify({ message })], {
+            type: "application/json",
+        });
+        setResponse(new Response(blob, { status }));
+    };
 
     useEffect(() => {
         setCurrAlerts(filterAlerts(alerts, filter));
@@ -218,7 +254,14 @@ const ManageAlertWrapper = () => {
                 setAlertSel={setAlertSel}
                 batchSelected={batchSelected}
                 setBatchSelected={setBatchSelected}
-                actionButtonHandler={actionHandler(() => mutateAlerts())}
+                actionHandler={actionHandler(
+                    () => mutateAlerts(),
+                    () =>
+                        sendError(
+                            400,
+                            "Please toggle on the alert first to be notified when closed."
+                        )
+                )}
                 batchSelectHandler={batchSelectHandler(
                     setAlertSel,
                     currAlerts,
@@ -226,7 +269,13 @@ const ManageAlertWrapper = () => {
                 )}
                 batchActionHandler={batchActionHandler(
                     () => mutateAlerts(),
-                    Object.keys(alertSel).filter((id) => alertSel[id])
+                    () =>
+                        sendError(
+                            400,
+                            "Please toggle on all selected alerts first to be notified when closed."
+                        ),
+                    Object.keys(alertSel).filter((id) => alertSel[id]),
+                    alerts
                 )}
             />
         </>

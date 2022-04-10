@@ -131,7 +131,6 @@ const AlertForm = ({
     const [phone, setPhone] = useState("");
     const [isPhoneDirty, setPhoneDirty] = useState(false);
 
-    const [autoResub, setAutoResub] = useState("false");
     const [closedNotif, setClosedNotif] = useState(false);
 
     const autoCompleteInputRef = useRef<HTMLInputElement>(null);
@@ -215,6 +214,7 @@ const AlertForm = ({
                 .then((res) => {
                     if (res.ok) {
                         clearInputValue();
+                        setClosedNotif(false);
                     }
                     setResponse(res);
                 })
@@ -239,6 +239,7 @@ const AlertForm = ({
                     setResponse(res.value);
                     if (res.value.ok) {
                         deselectCourse(sections[i]);
+                        setClosedNotif(false);
                     }
                     //only if network error occurred
                 } else {
@@ -309,7 +310,7 @@ const AlertForm = ({
             />
             <Center>
                 <ClosedText>
-                    Closed Notification
+                    Notify when Closed?
                     <InfoTool text={text} />
                     <Input
                         type="checkbox"

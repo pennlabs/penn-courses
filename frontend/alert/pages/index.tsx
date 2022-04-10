@@ -239,7 +239,7 @@ function App() {
                         ) : null}
                     </Flex>
                 ) : (
-                    <ManageAlertWrapper />
+                    <ManageAlertWrapper setResponse={setResponse}/>
                 )}
 
                 <Timeline courseCode={timeline} setTimeline={setTimeline} />

@@ -43,10 +43,15 @@ const Input = styled.input`
   }
 `;
 
-const ToggleSwitch = () => {
+interface ToggleSwitchProps {
+  handleChange: () => void;
+  isChecked?: boolean;
+}
+
+const ToggleSwitch = ({ handleChange, isChecked } : ToggleSwitchProps ) => {
   return (
     <Label>
-      <Input type="checkbox" />
+      <Input type="checkbox" onChange={handleChange} checked={isChecked || false}/>
       <Switch />
     </Label>
   );

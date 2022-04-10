@@ -7,16 +7,43 @@ import {
 } from "pcx-shared-components/src/common/layout";
 import { Img } from "../common/common";
 import { AlertAction } from "../../types";
+import { maxWidth, PHONE } from "../../constants";
+import DropdownTool from "./DropdownTool";
+
+const Grid = styled.div<{ selected: boolean }>`
+    display: grid;
+    grid-template-columns: ${({ selected }) =>
+        selected ? "1fr 10.5fr" : "1fr 1fr 3fr 1fr 1fr 1fr 2.5fr 1fr"};
+    grid-template-rows: 1.5rem;
+
+    ${maxWidth(PHONE)} {
+        grid-template-columns: 0fr 0fr 2.5fr 2fr 0.5fr 3.5fr 0fr 1fr;
+        & > div:nth-child(0) {
+            display: none;
+        }
+        & > div:nth-child(8n + 1) {
+            display: none;
+        }
+        & > div:nth-child(8n + 2) {
+            display: none;
+        }
+        & > div:nth-child(8n + 7) {
+            display: none;
+        }
+    }
+`;
 
 const HeaderText = styled.p`
     font-size: 0.7rem;
     font-weight: bold;
     color: ${(props) => (props.color ? props.color : "#9ea0a7")};
+    text-align: center;
 `;
 
 const HeaderAction = styled(HeaderText)`
     margin-right: 1rem;
     cursor: pointer;
+    color: #489be8;
 `;
 
 const HeaderButtonsFlex = styled(Flex)`
@@ -26,8 +53,18 @@ const HeaderButtonsFlex = styled(Flex)`
     }
 `;
 
-const HeaderRightItem = styled(RightItem)`
-    margin-right: 0.5rem;
+const HeaderContainer = styled.div`
+    display: flex;
+    align-items: center;
+
+    ${maxWidth(PHONE)} {
+        display: flex;
+        align-items: center;
+    }
+`;
+
+const Separator = styled.div`
+    margin: 0rem 1rem 0rem 1rem;
 `;
 
 interface HeaderProps {
@@ -51,12 +88,15 @@ const Header = ({
         "LAST NOTIFIED",
         "COURSE ID",
         "STATUS",
+        "",
         "SUBSCRIPTION",
-        "NOTIFY WHEN CLOSED"
+        "NOTIFY WHEN CLOSED",
+        ""
     ];
+
     return (
-        <>
-            <GridItem column={1} row={1} color="#f8f8f8" halign valign>
+        <Grid selected={selected !== 0}>
+            <GridItem column={1} row={1} color="#f8f8f8" halign valign border>
                 <input
                     type="checkbox"
                     checked={batchSelected}
@@ -75,50 +115,55 @@ const Header = ({
                         row={1}
                         color="#f8f8f8"
                         valign
+                        halign
+                        border
                     >
                         <HeaderText>{heading}</HeaderText>
                     </GridItem>
                 ))}
-
-
-
             {selected !== 0 && (
                 <>
                     <GridItem column={2} row={1} color="#f8f8f8" valign>
-                        <HeaderText color="#489be8">{`${selected} SELECTED`}</HeaderText>
-                    </GridItem>
-                    <GridItem column="3/7" row={1} color="#f8f8f8" valign>
-                        <HeaderRightItem>
-                            <HeaderButtonsFlex valign>
-                                <Img
-                                    src="/svg/abell.svg"
-                                    width="0.5rem"
-                                    height="0.5rem"
-                                />
-                                <HeaderAction
-                                    onClick={() =>
+                        <HeaderContainer>
+                            <HeaderText color="#489be8">{`${selected} SELECTED`}</HeaderText>
+                            <Separator style={{ color: "#878787" }}>
+                                |
+                            </Separator>
+                            <DropdownTool
+                                actionsText={[
+                                    "Alerts",
+                                    "Toggle On",
+                                    "Toggle Off",
+                                ]}
+                                functions={[
+                                    () =>
+                                        batchActionHandler(AlertAction.ONALERT),
+                                    () =>
                                         batchActionHandler(
-                                            AlertAction.RESUBSCRIBE
-                                        )
-                                    }
-                                >
-                                    RESUBSCRIBE
-                                </HeaderAction>
-                            </HeaderButtonsFlex>
-                            <HeaderButtonsFlex valign>
-                                <Img
-                                    src="/svg/bell-off.svg"
-                                    width="0.5rem"
-                                    height="0.5rem"
-                                />
-                                <HeaderAction
-                                    onClick={() =>
-                                        batchActionHandler(AlertAction.CANCEL)
-                                    }
-                                >
-                                    CANCEL
-                                </HeaderAction>
-                            </HeaderButtonsFlex>
+                                            AlertAction.OFFALERT
+                                        ),
+                                ]}
+                                width={"5"}
+                            />
+
+                            <DropdownTool
+                                actionsText={[
+                                    "Notify when Closed",
+                                    "Toggle On",
+                                    "Toggle Off",
+                                ]}
+                                functions={[
+                                    () =>
+                                        batchActionHandler(
+                                            AlertAction.ONCLOSED
+                                        ),
+                                    () =>
+                                        batchActionHandler(
+                                            AlertAction.OFFCLOSED
+                                        ),
+                                ]}
+                                width={"8"}
+                            />
                             <HeaderButtonsFlex valign>
                                 <Img
                                     src="/svg/trash.svg"
@@ -133,12 +178,11 @@ const Header = ({
                                     DELETE
                                 </HeaderAction>
                             </HeaderButtonsFlex>
-                        </HeaderRightItem>
+                        </HeaderContainer>
                     </GridItem>
-                    
                 </>
             )}
-        </>
+        </Grid>
     );
 };
 
