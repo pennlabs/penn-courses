@@ -24,8 +24,9 @@ First, navigate to the `backend` directory in your terminal.
 1. Initial setup for compiling `psycopg2`
 
     - Mac:
-        - `brew install postgresql`
-        - `brew install openssl`
+        - For new ARM Silicon (M1 chip), use `arch -x86_64 brew install <package>`
+            - `brew install postgresql`
+            - `brew install openssl`
         - `brew unlink openssl && brew link openssl --force`
         - Follow the instructions printed by the previous command to add openssl to your PATH and export flags for compilers, e.g.:
             - ` echo 'export PATH="/usr/local/opt/openssl@3/bin:$PATH"' >> ~/.zshrc`
