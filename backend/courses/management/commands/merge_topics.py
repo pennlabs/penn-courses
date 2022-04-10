@@ -62,7 +62,7 @@ def prompt_for_link_topics(topics):
     """
     for topic in topics:
         print(f"\n============> {topic}:\n")
-        print("\n------\n".join(course.full_str() for course in topics.courses.all()))
+        print("\n------\n".join(course.full_str() for course in topic.courses.all()))
         print("\n<============")
     prompt = input(f"Should the above {len(topics)} topics be merged? (y/N) ")
     return prompt.strip().upper() == "Y"

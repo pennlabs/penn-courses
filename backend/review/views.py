@@ -27,8 +27,9 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS
+from review.models import ALL_FIELD_SLUGS, Review
 from review.util import (
+    aggregate_reviews,
     avg_and_recent_demand_plots,
     avg_and_recent_percent_open_plots,
     get_average_and_recent_dict,
@@ -476,34 +477,41 @@ def department_reviews(request, department_code):
     """
     department = get_object_or_404(Department, code=department_code)
 
-    courses = annotate_average_and_recent(
-        Course.objects.filter(
-            course_filters_pcr_allow_xlist, department=department, topic__most_recent_id=F("id")
-        ).distinct(),
-        match_review_on=Q(
-            section__course__topic=OuterRef(OuterRef("topic")),
+    reviews = (
+        review_averages(
+            Review.objects.filter(section__course__department=department, responses__gt=0),
+            reviewbit_subfilters=Q(review_id=OuterRef("id")),
+            section_subfilters=Q(id=OuterRef("section_id")),
+            fields=ALL_FIELD_SLUGS,
+            prefix="bit_",
+            extra_metrics=True,
         )
-        & review_filters_pcr,
-        match_section_on=Q(
-            course__topic=OuterRef(OuterRef("topic")),
+        .annotate(
+            course_title=F("section__course__title"),
+            course_code=F("section__course__full_code"),
+            semester=F("section__course__semester"),
         )
-        & section_filters_pcr,
-        extra_metrics=True,
+        .values()
     )
 
-    return Response(
-        {
-            "code": department.code,
-            "name": department.name,
-            "courses": {
-                r["full_code"]: get_average_and_recent_dict_single(
-                    r, full_code="full_code", code="full_code", name="title"
-                )
-                for r in courses.values()
-                if r["average_semester_count"] > 0
-            },
-        }
-    )
+    unique_courses = {(r["course_code"], r["semester"]): r for r in reviews}
+
+    for c in (
+        Course.objects.filter(
+            course_filters_pcr_allow_xlist,
+            department=department,
+            topic__most_recent__semester=F("semester"),
+        )
+        .distinct()
+        .values(course_title="title", course_code="full_code", semester="semester")
+    ):
+        key = (c.full_code, c.semester)
+        if key not in unique_courses:
+            unique_courses[key] = c
+
+    courses = aggregate_reviews(reviews, "course_code", code="course_code", name="course_title")
+
+    return Response({"code": department.code, "name": department.name, "courses": courses})
 
 
 @api_view(["GET"])
