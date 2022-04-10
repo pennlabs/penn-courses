@@ -552,14 +552,22 @@ def delete_cancelled_sections_empty_courses():
             course__semester__lt=current_semester, status="X", review=None
         ).delete()
         Topic.objects.filter(
-            ~Q(id__in=Subquery(Topic.objects.filter(courses__sections__isnull=False).values("id")))
+            ~Q(
+                id__in=Subquery(
+                    Topic.objects.filter(courses__primary_listing__sections__isnull=False).values(
+                        "id"
+                    )
+                )
+            ),
+            most_recent__semester__lt=current_semester,
         ).delete()
         Topic.objects.filter(
             ~Q(
                 id__in=Subquery(
                     Topic.objects.filter(most_recent__sections__isnull=False).values("id")
                 )
-            )
+            ),
+            most_recent__semester__lt=current_semester,
         ).update(
             most_recent_id=Subquery(
                 Course.objects.filter(
@@ -576,7 +584,9 @@ def delete_cancelled_sections_empty_courses():
                 ).values("id")[:1]
             )
         )
-        Course.objects.filter(semester__lt=current_semester, sections=None).delete()
+        Course.objects.filter(
+            semester__lt=current_semester, primary_listing__sections=None
+        ).delete()
 
 
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
