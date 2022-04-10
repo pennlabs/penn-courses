@@ -4,6 +4,7 @@ from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
+from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
 from courses.models import Course, Department, Requirement, Section, Topic, UserProfile
 from courses.util import (
@@ -284,6 +285,30 @@ class CourseStatusUpdateTestCase(TestCase):
         update_course_from_record(up)
         _, section = create_mock_data(self.section.full_code, TEST_SEMESTER)
         self.assertEqual("O", section.status)
+
+
+class SectionHasStatusUpdateTestCase(TestCase):
+    def setUp(self):
+        set_semester()
+        self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
+
+    def test_no_updates(self):
+        recompute_precomputed_fields()
+        self.assertFalse(Section.objects.get(full_code="CIS-120-001").has_status_updates)
+
+    def test_one_update(self):
+        up = record_update(self.section, TEST_SEMESTER, "C", "O", True, "JSON")
+        up.save()
+        recompute_precomputed_fields()
+        self.assertTrue(Section.objects.get(full_code="CIS-120-001").has_status_updates)
+
+    def test_two_updates(self):
+        up = record_update(self.section, TEST_SEMESTER, "C", "O", True, "JSON")
+        up.save()
+        up = record_update(self.section, TEST_SEMESTER, "O", "C", True, "JSON")
+        up.save()
+        recompute_precomputed_fields()
+        self.assertTrue(Section.objects.get(full_code="CIS-120-001").has_status_updates)
 
 
 class CrosslistingTestCase(TestCase):

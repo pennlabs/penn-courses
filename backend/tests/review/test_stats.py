@@ -5,7 +5,10 @@ from django.test import TestCase
 from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.management.commands.recomputestats import recompute_demand_distribution_estimates
+from alert.management.commands.recomputestats import (
+    recompute_demand_distribution_estimates,
+    recompute_precomputed_fields,
+)
 from alert.models import AddDropPeriod, Registration
 from courses.models import Instructor, Section
 from courses.util import (
@@ -230,6 +233,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         cls.average_enrollment = (80 + 99) / 2
         cls.old_enrollment = 99
 
+        recompute_precomputed_fields()
         recompute_demand_distribution_estimates(
             semesters=TEST_CURRENT_SEMESTER + "," + TEST_SEMESTER + "," + "2020C"
         )
@@ -505,7 +509,8 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         sec.save()
         cls.enrollment = 80
 
-        recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
+        recompute_precomputed_fields()
+        recompute_demand_distribution_estimates(semesters=TEST_SEMESTER, verbose=True)
 
         plots = {
             "pca_demand_plot_since_semester": TEST_SEMESTER,
@@ -725,6 +730,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         sec.save()
         cls.enrollment = 80
 
+        recompute_precomputed_fields()
         recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
 
         plots = {

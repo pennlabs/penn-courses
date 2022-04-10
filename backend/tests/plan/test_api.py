@@ -146,7 +146,7 @@ class IsOpenFilterTestCase(TestCase):
             status[0] for status in Section.STATUS_CHOICES if status[0] not in ["O"]
         ]
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.client = APIClient()
         set_semester()
@@ -352,7 +352,7 @@ class DayFilterTestCase(TestCase):
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 
@@ -487,7 +487,7 @@ class TimeFilterTestCase(TestCase):
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 
@@ -671,7 +671,7 @@ class DayTimeFilterTestCase(TestCase):
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 
@@ -781,7 +781,7 @@ class ScheduleFilterTestCase(TestCase):
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 

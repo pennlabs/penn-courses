@@ -89,23 +89,41 @@ class Department(models.Model):
 
 
 def sections_with_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+    # get all the reviews for instructors in the Section.instructors many-to-many
+    instructors_subquery = Subquery(
+        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id")
+    )
+
     return review_averages(
         queryset,
-        {
-            "review__section__course__full_code": OuterRef("course__full_code"),
-            # get all the reviews for instructors in the Section.instructors many-to-many
-            "review__instructor__in": Subquery(
-                Instructor.objects.filter(section=OuterRef(OuterRef("id"))).values("id").order_by()
-            ),
-        },
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr
+            & Q(review__section__course__topic=OuterRef("course__topic"))
+            & Q(review__instructor__in=instructors_subquery)
+        ),
+        section_subfilters=(
+            section_filters_pcr
+            & Q(course__topic=OuterRef("course__topic"))
+            & Q(instructors__in=instructors_subquery)
+        ),
         extra_metrics=False,
     ).order_by("code")
 
 
 def course_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+
     return review_averages(
         queryset,
-        {"review__section__course__full_code": OuterRef("full_code")},
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr & Q(review__section__course__topic=OuterRef("topic"))
+        ),
+        section_subfilters=(section_filters_pcr & Q(course__topic=OuterRef("topic"))),
         extra_metrics=False,
     )
 
@@ -589,6 +607,23 @@ class Section(models.Model):
         help_text="The number of credits this section is worth.",
     )
 
+    has_reviews = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+            A flag indicating whether this section has reviews (precomputed for efficiency).
+            """
+        ),
+    )
+    has_status_updates = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+            A flag indicating whether this section has Status Updates (precomputed for efficiency).
+            """
+        ),
+    )
+
     registration_volume = models.PositiveIntegerField(
         default=0, help_text="The number of active PCA registrations watching this section."
     )  # For the set of PCA registrations for this section, use the related field `registrations`.
@@ -797,6 +832,9 @@ class StatusUpdate(models.Model):
             self.in_add_drop_period = True
             self.percent_through_add_drop_period = (created_at - start) / (end - start)
         super().save()
+
+        self.section.has_status_updates = True
+        self.section.save()
 
 
 """
