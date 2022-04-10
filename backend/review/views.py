@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
+from django.db.models import F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -27,8 +27,9 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS
+from review.models import ALL_FIELD_SLUGS, Review
 from review.util import (
+    aggregate_reviews,
     avg_and_recent_demand_plots,
     avg_and_recent_percent_open_plots,
     get_average_and_recent_dict,
@@ -62,37 +63,15 @@ extra_metrics_section_filters = (
     ~Q(
         course__department__code__in=WAITLIST_DEPARTMENT_CODES
     )  # Manually filter out classes from depts with waitlist systems during add/drop
-    & Q(capacity__isnull=False, capacity__gt=0)
+    & Q(capacity__gt=0)
     & ~Q(course__semester__icontains="b")  # Filter out summer classes
-    & Q(status_updates__isnull=False)  # Filter out sections with no status updates
+    & Q(has_status_updates=True)
     & ~Q(
         id__in=Subquery(
             Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values("sections__id")
         )
     )  # Filter out sections that require permit for registration
-)
-
-
-course_filters_pcr_allow_xlist = (
-    ~Q(title="") | ~Q(description="") | Q(sections__review__isnull=False)
-)
-course_is_primary = Q(primary_listing__isnull=True) | Q(primary_listing_id=F("id"))
-course_filters_pcr = course_is_primary & course_filters_pcr_allow_xlist
-
-section_is_primary = Q(course__primary_listing__isnull=True) | Q(
-    course__primary_listing_id=F("course_id")
-)
-section_filters_pcr = section_is_primary & (
-    Q(review__isnull=False)
-    | ((~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X"))
-)
-
-review_filters_pcr = Q(section__course__primary_listing__isnull=True) | Q(
-    section__course__primary_listing_id=F("section__course_id")
-)
-
-reviewbit_filters_pcr = Q(review__section__course__primary_listing__isnull=True) | Q(
-    review__section__course__primary_listing_id=F("review__section__course_id")
+    # TODO: get permit information from new OpenData API
 )
 
 
@@ -105,10 +84,25 @@ def extra_metrics_section_filters_pcr(current_semester=None):
         current_semester = get_current_semester()
     return (
         extra_metrics_section_filters
-        & section_is_primary
+        & Q(course__primary_listing_id=F("course_id"))
         & Q(course__semester__lt=current_semester)
-        & (~Q(status="X") | Q(review__isnull=False))
+        & ~Q(status="X")
     )
+
+
+course_filters_pcr_allow_xlist = ~Q(title="") | ~Q(description="") | Q(sections__has_reviews=True)
+course_filters_pcr = Q(primary_listing_id=F("id")) & course_filters_pcr_allow_xlist
+
+section_filters_pcr = Q(course__primary_listing_id=F("course_id")) & (
+    Q(has_reviews=True)
+    | ((~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X"))
+)
+
+review_filters_pcr = Q(section__course__primary_listing_id=F("section__course_id"))
+
+reviewbit_filters_pcr = Q(
+    review__section__course__primary_listing_id=F("review__section__course_id")
+)
 
 
 @api_view(["GET"])
@@ -210,6 +204,7 @@ def course_reviews(request, course_code):
             "historical_codes": get_historical_codes(
                 topic, exclude_codes=set(aliases) | {course["full_code"]}
             ),
+            "latest_semester": course["semester"],
             "num_sections": num_sections,
             "num_sections_recent": num_sections_recent,
             "instructors": get_average_and_recent_dict(
@@ -306,7 +301,7 @@ def course_plots(request, course_code):
         recent_percent_open_plot_semester,
     ) = tuple([None] * 8)
     avg_demand_plot_num_semesters, avg_percent_open_plot_num_semesters = (0, 0)
-    if len(section_map.keys()) > 0:
+    if section_map:
         status_updates_map = get_status_updates_map(section_map)
         (
             avg_demand_plot,
@@ -482,34 +477,41 @@ def department_reviews(request, department_code):
     """
     department = get_object_or_404(Department, code=department_code)
 
-    courses = annotate_average_and_recent(
-        Course.objects.filter(
-            course_filters_pcr_allow_xlist, department=department, topic__most_recent_id=F("id")
-        ).distinct(),
-        match_review_on=Q(
-            section__course__topic=OuterRef(OuterRef("topic")),
+    reviews = (
+        review_averages(
+            Review.objects.filter(section__course__department=department, responses__gt=0),
+            reviewbit_subfilters=Q(review_id=OuterRef("id")),
+            section_subfilters=Q(id=OuterRef("section_id")),
+            fields=ALL_FIELD_SLUGS,
+            prefix="bit_",
+            extra_metrics=True,
         )
-        & review_filters_pcr,
-        match_section_on=Q(
-            course__topic=OuterRef(OuterRef("topic")),
+        .annotate(
+            course_title=F("section__course__title"),
+            course_code=F("section__course__full_code"),
+            semester=F("section__course__semester"),
         )
-        & section_filters_pcr,
-        extra_metrics=True,
+        .values()
     )
 
-    return Response(
-        {
-            "code": department.code,
-            "name": department.name,
-            "courses": {
-                r["full_code"]: get_average_and_recent_dict_single(
-                    r, full_code="full_code", code="full_code", name="title"
-                )
-                for r in courses.values()
-                if r["average_semester_count"] > 0
-            },
-        }
-    )
+    unique_courses = {(r["course_code"], r["semester"]): r for r in reviews}
+
+    for c in (
+        Course.objects.filter(
+            course_filters_pcr_allow_xlist,
+            department=department,
+            topic__most_recent__semester=F("semester"),
+        )
+        .distinct()
+        .values("semester", course_title=F("title"), course_code=F("full_code"))
+    ):
+        key = (c["course_code"], c["semester"])
+        if key not in unique_courses:
+            unique_courses[key] = c
+
+    courses = aggregate_reviews(reviews, "course_code", code="course_code", name="course_title")
+
+    return Response({"code": department.code, "name": department.name, "courses": courses})
 
 
 @api_view(["GET"])
@@ -573,11 +575,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         course_code=F("course__full_code"),
         course_title=F("course__title"),
         efficient_semester=F("course__semester"),
-        has_reviews=Case(
-            When(Q(review__isnull=False), then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        ),
         comments=Coalesce("review__comments", Value(None)),
         responses=Coalesce("review__responses", Value(None)),
         enrollment=Coalesce("review__enrollment", Value(None)),
@@ -628,15 +625,13 @@ def autocomplete(request):
     courses = (
         Course.objects.filter(course_filters_pcr)
         .order_by("semester")
-        .annotate(most_recent_full_code=F("topic__most_recent__full_code"))
-        .values("full_code", "most_recent_full_code", "title")
+        .values("full_code", "title")
         .distinct()
     )
     course_set = sorted(
         [
             {
                 "title": course["full_code"],
-                "most_recent_full_code": course["most_recent_full_code"],
                 "desc": [course["title"]],
                 "url": f"/course/{course['full_code']}",
             }

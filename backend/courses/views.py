@@ -329,4 +329,4 @@ class StatusUpdateView(generics.ListAPIView):
             section__full_code=self.kwargs["full_code"],
             section__course__semester=get_current_semester(),
             in_add_drop_period=True,
-        )
+        ).order_by("created_at")

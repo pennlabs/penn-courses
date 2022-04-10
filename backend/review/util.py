@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 from math import isclose
+from typing import Dict, List
 
 import scipy.stats as stats
 from django.db.models import Count, F
@@ -145,6 +146,68 @@ def get_num_sections(*args, **kwargs):
             max_sem = semester
             num_sections_recent = num
     return num_sections, num_sections_recent
+
+
+def dict_average(entries: List[Dict[str, float]]) -> Dict[str, float]:
+    """
+    Average a list of dicts into one dict with averages.
+    :param entries:
+    :return:
+    """
+    keys = set()
+    for entry in entries:
+        keys.update(entry.keys())
+
+    averages = {k: (0, 0) for k in keys}
+    for entry in entries:
+        for k, v in entry.items():
+            sum_, count_ = averages[k]
+            if averages.get(k) is not None:
+                averages[k] = (sum_ + v, count_ + 1)
+
+    return {k: v[0] / v[1] if v[1] > 0 else None for k, v in averages.items()}
+
+
+def aggregate_reviews(reviews, group_by, **extra_fields):
+    """
+    Aggregate a list of reviews (as dictionaries), grouping by some field.
+    :param reviews: A list of dictionaries representing Review objects, with reviewbits inlined
+    using review.annotations.review_averages(). And dict-ified by calling .values() on a queryset.
+    :param group_by: Field to group by in the review.
+    :param extra_fields: Any extra fields from the dictionaries to carry through to the response.
+    :return: Average reviews, recent reviews, number of semesters taught, and other data needed
+    for the response to the frontend.
+    """
+    grouped_reviews = dict()
+    # First pass: Group individual reviews by the provided key.
+    for review in reviews:
+        key = review[group_by]
+        grouped_reviews.setdefault(key, []).append(
+            {
+                "semester": review["semester"],
+                "scores": make_subdict("bit_", review),
+                **{
+                    response_prop: review[instance_prop]
+                    for response_prop, instance_prop in extra_fields.items()
+                },
+            }
+        )
+    aggregated = dict()
+    # Second pass: Aggregate grouped reviews by taking the average of all scores and recent scores.
+    for k, reviews in grouped_reviews.items():
+        latest_sem = max([r["semester"] for r in reviews])
+        all_scores = [r["scores"] for r in reviews]
+        recent_scores = [r["scores"] for r in reviews if r["semester"] == latest_sem]
+        aggregated[k] = {
+            "id": k,
+            "average_reviews": dict_average(all_scores),
+            "recent_reviews": dict_average(recent_scores),
+            "latest_semester": latest_sem,
+            "num_semesters": len(set([r["semester"] for r in reviews])),
+            **{extra_field: reviews[0][extra_field] for extra_field, _ in extra_fields.items()},
+        }
+
+    return aggregated
 
 
 def average_given_plots(plots_dict, bin_size=0.000001):
@@ -313,7 +376,7 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
             }
             for ext in demand_distribution_estimates_map[semester]
         ]
-        if len(demand_distribution_estimates_changes) == 0:
+        if not demand_distribution_estimates_changes:
             continue
         for section in section_map[semester].values():
             section_id = section.id
@@ -454,9 +517,7 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
     )
 
     avg_demand_plot = average_given_plots(demand_plots_map, bin_size=bin_size)
-    avg_demand_plot_min_semester = (
-        min(demand_plots_map.keys()) if len(demand_plots_map) > 0 else None
-    )
+    avg_demand_plot_min_semester = min(demand_plots_map.keys()) if demand_plots_map else None
     avg_percent_open_plot_num_semesters = len(demand_plots_map)
 
     return (

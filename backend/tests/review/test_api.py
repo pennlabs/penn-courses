@@ -6,6 +6,7 @@ from django.utils.http import urlencode
 from options.models import Option
 from rest_framework.test import APIClient
 
+from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
 from courses.models import Instructor, Restriction, Section, StatusUpdate
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
@@ -31,7 +32,8 @@ def create_review(section_code, semester, instructor_name, bits, responses=100):
     _, section, _, _ = get_or_create_course_and_section(section_code, semester)
     instructor, _ = Instructor.objects.get_or_create(name=instructor_name)
     section.instructors.add(instructor)
-    import_review(section, instructor, None, responses, None, bits, lambda x, y: None)
+    import_review(section, instructor, None, responses, None, bits, lambda x, y=None: None)
+    recompute_precomputed_fields()
 
 
 class PCRTestMixin(object):
@@ -170,6 +172,48 @@ def no_reviews_avg_recent(num_semesters, recent_semester):
         "average_reviews": {"rSemesterCount": num_semesters, "rSemesterCalc": recent_semester},
         "recent_reviews": {"rSemesterCount": 0},
     }
+
+
+class TestHasReview(TestCase):
+    def test_has_none(self):
+        _, section, _, _ = get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        instructor, _ = Instructor.objects.get_or_create(name="Rajiv Gandhi")
+        section.instructors.add(instructor)
+        recompute_precomputed_fields()
+        self.assertFalse(Section.objects.get(id=section.id).has_reviews)
+
+    def test_has_no_responses(self):
+        _, section, _, _ = get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        instructor, _ = Instructor.objects.get_or_create(name="Rajiv Gandhi")
+        section.instructors.add(instructor)
+        import_review(
+            section, instructor, None, 0, None, {"instructor_quality": 4}, lambda x, y=None: None
+        )
+        recompute_precomputed_fields()
+        self.assertTrue(Section.objects.get(id=section.id).has_reviews)
+
+    def test_has_one(self):
+        _, section, _, _ = get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        instructor, _ = Instructor.objects.get_or_create(name="Rajiv Gandhi")
+        section.instructors.add(instructor)
+        import_review(
+            section, instructor, None, 10, None, {"instructor_quality": 4}, lambda x, y=None: None
+        )
+        recompute_precomputed_fields()
+        self.assertTrue(Section.objects.get(id=section.id).has_reviews)
+
+    def test_has_multiple(self):
+        _, section, _, _ = get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        instructor, _ = Instructor.objects.get_or_create(name="Rajiv Gandhi")
+        section.instructors.add(instructor)
+        import_review(
+            section, instructor, None, 10, None, {"instructor_quality": 4}, lambda x, y: None
+        )
+        import_review(
+            section, instructor, None, 10, None, {"course_quality": 4}, lambda x, y=None: None
+        )
+        recompute_precomputed_fields()
+        self.assertTrue(Section.objects.get(id=section.id).has_reviews)
 
 
 class OneReviewTestCase(TestCase, PCRTestMixin):
@@ -438,7 +482,12 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
         self.assertRequestContainsAppx(
             "department-reviews",
             "CIS",
-            {"courses": {"CIS-120": average_and_recent(3, 4), "CIS-160": average_and_recent(2, 2)}},
+            {
+                "courses": {
+                    "CIS-120": average_and_recent(3, 4),
+                    "CIS-160": average_and_recent(2, 2),
+                }
+            },
         )
 
 
@@ -590,7 +639,10 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
                         **average_and_recent(3, 4),
                         "latest_semester": TEST_SEMESTER,
                     },
-                    self.instructor2.pk: {**average_and_recent(1.5, 2), "latest_semester": "2017A"},
+                    self.instructor2.pk: {
+                        **average_and_recent(1.5, 2),
+                        "latest_semester": "2017A",
+                    },
                 },
             },
         )
