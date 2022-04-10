@@ -84,17 +84,6 @@ def get_average_and_recent_dict_single(values_dict, extra_fields=None, **extra_f
     }
 
 
-def get_average_and_recent_dict(values, key, extra_fields=None):
-    """
-    Convenience function for mapping `get_average_and_recent_dict` over a `.values()` list,
-    grouping by a key field.
-    """
-    return {
-        values_dict[key]: get_average_and_recent_dict_single(values_dict, extra_fields=extra_fields)
-        for values_dict in values
-    }
-
-
 def get_historical_codes(topic, exclude_codes):
     historical_codes = dict()
 
