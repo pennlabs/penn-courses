@@ -228,22 +228,6 @@ class CourseTopicTestCase(TestCase):
         self.assertEqual(t_merged.most_recent, c)
         self.assertEqual(t_merged_db.most_recent, c_db)
 
-    def test_merge_with_error(self):
-        with self.assertRaises(ValueError):
-            get_or_create_course("CIS", "120", "2020C")
-            t = Topic.objects.get()
-            b, _ = get_or_create_course("CIS", "1200", TEST_SEMESTER)
-            t.add_course(b)
-            c, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
-            get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": c})
-            Course.objects.get(full_code="CIS-120")
-            Course.objects.get(full_code="CIS-1200")
-            Course.objects.get(full_code="OIDD-291")
-            Course.objects.get(full_code="LGST-291")
-            t1 = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
-            t2 = Topic.objects.filter(courses__full_code="OIDD-291")[:1].get()
-            t1.merge_with(t2)
-
     def test_crosslistings(self):
         a, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
         b, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)

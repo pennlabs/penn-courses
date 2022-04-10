@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Count, F, Max, OuterRef, Q, Subquery, Value
+from django.db.models import Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from tqdm import tqdm
@@ -542,41 +542,13 @@ def recompute_demand_distribution_estimates(
         )
 
 
-def delete_cancelled_sections_empty_courses():
+def garbage_collect_topics():
     """
-    Deletes cancelled sections and courses without sections from before the current semester.
+    Deletes topics with no courses.
     """
-    current_semester = get_current_semester()
-    with transaction.atomic():
-        Section.objects.filter(
-            course__semester__lt=current_semester, status="X", review=None
-        ).delete()
-        Topic.objects.filter(
-            ~Q(id__in=Subquery(Topic.objects.filter(courses__sections__isnull=False).values("id")))
-        ).delete()
-        Topic.objects.filter(
-            ~Q(
-                id__in=Subquery(
-                    Topic.objects.filter(most_recent__sections__isnull=False).values("id")
-                )
-            )
-        ).update(
-            most_recent_id=Subquery(
-                Course.objects.filter(
-                    Q(primary_listing_id=F("id")),
-                    topic_id=OuterRef("id"),
-                    sections__isnull=False,
-                    semester=Subquery(
-                        Course.objects.filter(topic=OuterRef("topic"), sections__isnull=False)
-                        .annotate(common=Value(1))
-                        .values("common")
-                        .annotate(max_sem=Max("semester"))
-                        .values("max_sem")
-                    ),
-                ).values("id")[:1]
-            )
-        )
-        Course.objects.filter(semester__lt=current_semester, sections=None).delete()
+    Topic.objects.filter(
+        ~Q(id__in=Subquery(Topic.objects.filter(courses__isnull=False).values("id"))),
+    ).delete()
 
 
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
@@ -588,7 +560,7 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
     semesters = fill_in_add_drop_periods(verbose=verbose).intersection(semesters)
-    delete_cancelled_sections_empty_courses()
+    garbage_collect_topics()
     load_add_drop_dates(verbose=verbose)
     deduplicate_status_updates(semesters=semesters, semesters_precomputed=True, verbose=verbose)
     recompute_demand_distribution_estimates(

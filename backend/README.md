@@ -24,7 +24,8 @@ First, navigate to the `backend` directory in your terminal.
 1. Initial setup for compiling `psycopg2`
 
     - Mac:
-        - `brew install openssl` (if you don't have it installed already)
+        - `brew install postgresql`
+        - `brew install openssl`
         - `brew unlink openssl && brew link openssl --force`
         - Follow the instructions printed by the previous command to add openssl to your PATH and export flags for compilers, e.g.:
             - ` echo 'export PATH="/usr/local/opt/openssl@3/bin:$PATH"' >> ~/.zshrc`
@@ -45,9 +46,10 @@ First, navigate to the `backend` directory in your terminal.
     - TODO
 
 4. (Running the backend)
-    - Run `docker-compose up` in a separate terminal window before running any manage.py commands (this will spin up a Docker container running Postgres).
+    - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres).
     - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
-    - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`.
+    - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`
+    - Note: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
     - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
 
 ## Loading Course Data on Demand
@@ -66,7 +68,7 @@ After your environment variables have been set (remember to refresh your pipenv 
 `python manage.py registrarimport --semester=<semester> --query=<query>`
 
 Let `semester` be the desired semester (for example, `2022C` represents
-Fall 2022), and let query be the prefix of all courses you would like to
+Fall 2022), and let `query` be the prefix of all courses you would like to
 load in (no dashes). If you're just interested in the CIS department, put `CIS`. If
 you'd like to load in **ALL** courses, omit the query parameter. Note
 that this will take a long time, as all sections in Penn's course catalog,
