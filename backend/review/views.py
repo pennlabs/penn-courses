@@ -135,7 +135,7 @@ def course_reviews(request, course_code):
     """
     try:
         course = (
-            Course.objects.filter(course_filters_pcr, full_code=course_code)
+            Course.objects.filter(course_filters_pcr_allow_xlist, full_code=course_code)
             .order_by("-semester")[:1]
             .select_related(
                 "topic",
@@ -560,7 +560,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     """
     try:
         course = (
-            Course.objects.filter(course_filters_pcr, full_code=course_code)
+            Course.objects.filter(course_filters_pcr_allow_xlist, full_code=course_code)
             .order_by("-semester")[:1]
             .select_related("topic", "topic__most_recent")
             .get()
@@ -653,7 +653,7 @@ def autocomplete(request):
     to improve performance.
     """
     courses = (
-        Course.objects.filter(course_filters_pcr)
+        Course.objects.filter(course_filters_pcr_allow_xlist)
         .order_by("semester")
         .values("full_code", "title")
         .distinct()
