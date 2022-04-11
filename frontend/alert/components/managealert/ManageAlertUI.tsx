@@ -30,7 +30,7 @@ const TitleText = styled.p`
 
 const AlertGrid = styled.div`
     display: grid;
-    grid-template-columns: 1fr 1fr 3fr 1fr 1.75fr 1fr 2fr 1fr;
+    grid-template-columns: 1fr 1fr 3fr 1fr 1.5fr 1.25fr 2fr 1fr;
     grid-auto-rows: 3rem;
 
     ${maxWidth(PHONE)} {

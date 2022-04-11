@@ -7,14 +7,14 @@ import {
 } from "pcx-shared-components/src/common/layout";
 import { Img } from "../common/common";
 import { AlertAction } from "../../types";
-import { maxWidth, PHONE } from "../../constants";
+import { maxWidth, PHONE, DESKTOP, between } from "../../constants";
 import DropdownTool from "../common/DropdownTool";
 
 const Grid = styled.div<{ selected: boolean }>`
     display: grid;
     grid-template-columns: ${({ selected }) =>
-        selected ? "1fr 10.5fr" : "1fr 1fr 3fr 1fr 1.75fr 1fr 2fr 1fr"};
-    grid-template-rows: 1.5rem;
+        selected ? "1fr 10.5fr" : "1fr 1fr 3fr 1fr 1.5fr 1.25fr 2fr 1fr"};
+    grid-template-rows: 1.75rem;
 
     ${maxWidth(PHONE)} {
         grid-template-columns: 0fr 0fr 2.5fr 2fr 0.5fr 3.5fr 0fr 1.5fr;
@@ -38,6 +38,11 @@ const HeaderText = styled.p`
     font-weight: bold;
     color: ${(props) => (props.color ? props.color : "#9ea0a7")};
     text-align: center;
+    margin: 0.25rem;
+
+    ${between(PHONE, DESKTOP)} {
+        font-size: 0.6rem;
+    }
 `;
 
 const HeaderAction = styled(HeaderText)`
