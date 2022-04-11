@@ -189,7 +189,7 @@ const TagsWhenOffered = ({
   );
 };
 
-const HistoricalCodes = styled.div`
+const RelatedCodes = styled.div`
   display: flex;
   flex-direction: row;
   color: #4a4a4a;
@@ -273,18 +273,16 @@ export const CourseHeader = ({
       </span>
     </div>
     {aliases && Boolean(aliases.length) && (
-      <div className="crosslist">
+      <RelatedCodes>
         <strong>Also:&nbsp;</strong>
         {aliases.map((cls, i) => [
-          i > 0 && ", ",
-          <Link key={cls} to={`/course/${cls}`}>
-            {cls}
-          </Link>
+          i > 0 && <div>&#44;&nbsp;</div>,
+          <div>{cls}</div>
         ])}
-      </div>
+      </RelatedCodes>
     )}
     {data.historical_codes && Boolean(data.historical_codes.length) && (
-      <HistoricalCodes>
+      <RelatedCodes>
         <strong>Previously:&nbsp;</strong>
         {data.historical_codes.map((obj, i) => [
           i > 0 && <div>&#44;&nbsp;</div>,
@@ -326,7 +324,7 @@ export const CourseHeader = ({
             academic planning or fulfilling requirements.
           </span>
         </ReactTooltip>
-      </HistoricalCodes>
+      </RelatedCodes>
     )}
     <Spacer />
     <p className="subtitle">{name}</p>
