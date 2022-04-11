@@ -737,7 +737,7 @@ class WebhookViewTestCase(TestCase):
 
         self.assertEqual(200, res.status_code)
         self.assertTrue(mock_alert.called)
-        self.assertEqual("INTLBUL001", mock_alert.call_args[0][0])
+        self.assertEqual("INTL-BUL-001", mock_alert.call_args[0][0])
         self.assertEqual("2019A", mock_alert.call_args[1]["semester"])
         self.assertEqual("O", mock_alert.call_args[1]["course_status"])
         self.assertTrue("sent" in json.loads(res.content)["message"])
@@ -755,7 +755,7 @@ class WebhookViewTestCase(TestCase):
 
         self.assertEqual(200, res.status_code)
         self.assertTrue(mock_alert.called)
-        self.assertEqual("ANTH3610401", mock_alert.call_args[0][0])
+        self.assertEqual("ANTH-3610-401", mock_alert.call_args[0][0])
         self.assertEqual("2019A", mock_alert.call_args[1]["semester"])
         self.assertEqual("O", mock_alert.call_args[1]["course_status"])
         self.assertTrue("sent" in json.loads(res.content)["message"])
