@@ -24,8 +24,9 @@ First, navigate to the `backend` directory in your terminal.
 1. Initial setup for compiling `psycopg2`
 
     - Mac:
-        - `brew install postgresql`
-        - `brew install openssl`
+        - (For Apple ARM chips, if you use Rosetta, run `arch -x86_64 brew install <package>` for the following packages.)
+            - `brew install postgresql`
+            - `brew install openssl`
         - `brew unlink openssl && brew link openssl --force`
         - Follow the instructions printed by the previous command to add openssl to your PATH and export flags for compilers, e.g.:
             - ` echo 'export PATH="/usr/local/opt/openssl@3/bin:$PATH"' >> ~/.zshrc`
@@ -34,25 +35,29 @@ First, navigate to the `backend` directory in your terminal.
     - Windows (WSL) or Linux:
         - `apt-get install gcc python3-dev libpq-dev`
 
-2. Setting up your Penn Courses development environment
+2. Running Docker
+
+    - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres and Redis).
+
+3. Setting up your Penn Courses development environment
 
     - `pipenv install --dev`
     - `pipenv shell`
     - `python manage.py migrate`
 
-3. Loading test data
+4. Loading test data
 
     - TODO
 
-4. (Running the backend)
-    - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres).
+5. Running the backend
+
     - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
     - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`
     - Note: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
     - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
 
-5. Running tests
-    - Run `python manage.py test --parallel` to run our test suite.
+6. Running tests
+    - Run `python manage.py test` to run our test suite.
     - To run a specific test, you can use the format `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` (also note that in this example, you can use any prefix of that path to run a larger set of tests).
 
 ## Loading Course Data on Demand
