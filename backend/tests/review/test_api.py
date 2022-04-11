@@ -12,6 +12,7 @@ from courses.models import Instructor, Restriction, Section, StatusUpdate
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
 from review.models import Review
+from tests.courses.util import create_mock_data
 
 
 TEST_SEMESTER = "2022C"
@@ -296,8 +297,6 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         )
 
     def test_autocomplete(self):
-        default_instructor = Instructor.objects.get(name=self.instructor_name)
-        no_responses_instructor = Instructor.objects.get(name="No Responses Instructor")
         self.assertRequestContainsAppx(
             "review-autocomplete",
             [],
@@ -306,12 +305,12 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                     {
                         "title": self.instructor_name,
                         "desc": "CIS",
-                        "url": f"/instructor/{default_instructor.pk}",
+                        "url": f"/instructor/{self.instructor_pk}",
                     },
                     {
                         "title": "No Responses Instructor",
                         "desc": "CIS",
-                        "url": f"/instructor/{no_responses_instructor.pk}",
+                        "url": f"/instructor/{self.instructor_nores_pk}",
                     },
                 ],
                 "courses": [
@@ -784,7 +783,7 @@ class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
                 },
             },
         )
-        self.assertEqual(3, len(res["instructors"]))
+        self.assertEqual(2, len(res["instructors"]))
 
 
 class RegistrationMetricsFlagTestCase(TestCase, PCRTestMixin):
@@ -891,3 +890,67 @@ class NoAuthTestCase(TestCase):
         self.assertEqual(
             403, self.client.get(reverse("course-history", args=["BLAH", 0])).status_code
         )
+
+
+class RecitationInstructorTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        self.instructor_name = "Instructor One"
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        self.instructor_pk = Instructor.objects.get(name=self.instructor_name).pk
+
+        rec_instructor = Instructor(name="Recitation Instructor")
+        rec_instructor.save()
+        self.rec_instructor_pk = rec_instructor.pk
+        _, rec_section = create_mock_data("CIS-120-201", TEST_SEMESTER)
+        rec_section.activity = "REC"
+        rec_section.save()
+        rec_section.instructors.add(rec_instructor)
+
+        create_review(
+            "CIS-120-002",
+            "2007C",
+            self.instructor_name,
+            {"instructor_quality": 0},
+            responses=0,
+        )
+        Review.objects.all().update(enrollment=100)
+
+    def test_course(self):
+        res = self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {
+                **average_and_recent(4, 4),
+                "instructors": {
+                    self.instructor_pk: {**average_and_recent(4, 4)},
+                },
+            },
+        )
+        self.assertEqual(len(res["instructors"]), 1)
+
+    def test_autocomplete(self):
+        res = self.assertRequestContainsAppx(
+            "review-autocomplete",
+            [],
+            {
+                "instructors": [
+                    {
+                        "title": self.instructor_name,
+                        "desc": "CIS",
+                        "url": f"/instructor/{self.instructor_pk}",
+                    },
+                ],
+                "courses": [
+                    {
+                        "title": "CIS-120",
+                        "desc": [""],
+                        "url": "/course/CIS-120",
+                    }
+                ],
+                "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
+            },
+        )
+        self.assertEqual(len(res["instructors"]), 1)

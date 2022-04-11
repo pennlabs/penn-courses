@@ -164,7 +164,11 @@ def course_reviews(request, course_code):
     ).annotate(instructor_name=F("instructor__name"), semester=F("section__course__semester"))
     recent_instructors = list(
         Instructor.objects.filter(
-            section__course__topic=topic,
+            id__in=Subquery(
+                Section.objects.filter(section_filters_pcr, course__topic=topic).values(
+                    "instructors__id"
+                )
+            )
         )
         .distinct()
         .annotate(
@@ -679,7 +683,9 @@ def autocomplete(request):
     )
 
     instructors = (
-        Instructor.objects.filter(section__instructors__id=F("id"))
+        Instructor.objects.filter(
+            id__in=Subquery(Section.objects.filter(section_filters_pcr).values("instructors__id"))
+        )
         .distinct()
         .values("name", "id", "section__course__department__code")
     )
