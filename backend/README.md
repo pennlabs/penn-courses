@@ -24,7 +24,7 @@ First, navigate to the `backend` directory in your terminal.
 1. Initial setup for compiling `psycopg2`
 
     - Mac:
-        - (For Apple ARM chips, if you use Rosetta, run `arch -x86_64 brew install <package>` for the following packages.)
+        - (If your computer runs on Apple silicon and you use Rosetta to run Python as an x86 program, use `arch -x86_64 brew install <package>` to install the following packages. Otherwise, run the commands as listed.)
             - `brew install postgresql`
             - `brew install openssl`
         - `brew unlink openssl && brew link openssl --force`
