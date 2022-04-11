@@ -84,17 +84,6 @@ def get_average_and_recent_dict_single(values_dict, extra_fields=None, **extra_f
     }
 
 
-def get_average_and_recent_dict(values, key, extra_fields=None):
-    """
-    Convenience function for mapping `get_average_and_recent_dict` over a `.values()` list,
-    grouping by a key field.
-    """
-    return {
-        values_dict[key]: get_average_and_recent_dict_single(values_dict, extra_fields=extra_fields)
-        for values_dict in values
-    }
-
-
 def get_historical_codes(topic, exclude_codes):
     historical_codes = dict()
 
@@ -185,6 +174,7 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
         grouped_reviews.setdefault(key, []).append(
             {
                 "semester": review["semester"],
+                "exclude_from_recent": review.get("exclude_from_recent", False),
                 "scores": make_subdict("bit_", review),
                 **{
                     response_prop: review[instance_prop]
@@ -195,9 +185,12 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
     aggregated = dict()
     # Second pass: Aggregate grouped reviews by taking the average of all scores and recent scores.
     for k, reviews in grouped_reviews.items():
-        latest_sem = max([r["semester"] for r in reviews])
+        latest_sem_with_reviews = max(
+            [r["semester"] for r in reviews if not r.get("exclude_from_recent")], default=None
+        )
+        latest_sem = max([r["semester"] for r in reviews], default=None)
         all_scores = [r["scores"] for r in reviews]
-        recent_scores = [r["scores"] for r in reviews if r["semester"] == latest_sem]
+        recent_scores = [r["scores"] for r in reviews if r["semester"] == latest_sem_with_reviews]
         aggregated[k] = {
             "id": k,
             "average_reviews": dict_average(all_scores),

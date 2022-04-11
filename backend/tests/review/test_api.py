@@ -249,7 +249,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                 **average_and_recent(4, 4),
                 "instructors": {
                     self.instructor_pk: {**average_and_recent(4, 4)},
-                    self.instructor_nores_pk: {**no_reviews_avg_recent(1, "2007C")},
+                    self.instructor_nores_pk: {},
                 },
             },
         )
@@ -265,7 +265,6 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             "instructor-reviews",
             self.instructor_nores_pk,
             {
-                **no_reviews_avg_recent(1, "2007C"),
                 "courses": {"CIS-120": {**no_reviews_avg_recent(1, "2007C")}},
             },
         )
@@ -781,11 +780,11 @@ class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
                 **average_and_recent(4, 4),
                 "instructors": {
                     self.instructor1.pk: average_and_recent(4, 4),
-                    self.instructor_nores.pk: no_reviews_avg_recent(1, "2007C"),
+                    self.instructor_nores.pk: {},
                 },
             },
         )
-        self.assertEqual(2, len(res["instructors"]))
+        self.assertEqual(3, len(res["instructors"]))
 
 
 class RegistrationMetricsFlagTestCase(TestCase, PCRTestMixin):

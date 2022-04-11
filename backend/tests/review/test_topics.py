@@ -292,6 +292,183 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
         )
 
 
+class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        AddDropPeriod(semester="2012A").save()
+        self.instructor_name = "Instructor One"
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+
+        _, section = create_mock_data("CIS-471-001", TEST_SEMESTER)
+        instructor, _ = Instructor.objects.get_or_create(name="Instructor Two")
+        section.instructors.add(instructor)
+
+        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review(
+            "CIS-371-002",
+            "2007C",
+            self.instructor_name,
+            {"instructor_quality": 0},
+            responses=0,
+        )
+        create_review(
+            "CIS-471-001",
+            "2007C",
+            "No Responses Instructor",
+            {"instructor_quality": 0},
+            responses=0,
+        )
+        Section.objects.all().update(activity="LEC")
+        topic_371 = Topic.objects.get(most_recent__full_code="CIS-371")
+        topic_471 = Topic.objects.get(most_recent__full_code="CIS-471")
+        topic_371.merge_with(topic_471)
+
+        self.extra_course_data = {
+            "code": "CIS-471",
+            "historical_codes": [
+                {"full_code": "CIS-371", "branched_from": False, "semester": "2012A"}
+            ],
+        }
+
+    def test_course(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-471",
+            {
+                "num_semesters": 3,
+                **average_and_recent(2, 2),
+                **self.extra_course_data,
+                "instructors": {
+                    Instructor.objects.get(name=self.instructor_name).pk: {
+                        **average_and_recent(2, 2),
+                        "latest_semester": "2012A",
+                    },
+                    Instructor.objects.get(name="Instructor Two").pk: {
+                        "average_reviews": {},
+                        "recent_reviews": {},
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+        )
+
+    def test_course_old_code(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-371",
+            {
+                "num_semesters": 3,
+                **average_and_recent(2, 2),
+                **self.extra_course_data,
+                "instructors": {
+                    Instructor.objects.get(name=self.instructor_name).pk: {
+                        **average_and_recent(2, 2),
+                        "latest_semester": "2012A",
+                    },
+                    Instructor.objects.get(name="Instructor Two").pk: {
+                        "average_reviews": {},
+                        "recent_reviews": {},
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+        )
+
+    def test_instructor(self):
+        self.assertRequestContainsAppx(
+            "instructor-reviews",
+            Instructor.objects.get(name=self.instructor_name).pk,
+            {
+                **average_and_recent(2, 2),
+                "courses": {"CIS-471": average_and_recent(2, 2)},
+            },
+        )
+
+    def test_instructor_no_old_codes(self):
+        res = self.client.get(
+            reverse(
+                "instructor-reviews", args=[Instructor.objects.get(name=self.instructor_name).pk]
+            )
+        )
+        self.assertEqual(200, res.status_code)
+        self.assertFalse("CIS-371" in res.data["courses"])
+
+    def test_department(self):
+        self.assertRequestContainsAppx(
+            "department-reviews",
+            "CIS",
+            {
+                "courses": {"CIS-471": average_and_recent(2, 2)},
+            },
+        )
+
+    def test_department_no_old_codes(self):
+        res = self.client.get(reverse("department-reviews", args=["CIS"]))
+        self.assertEqual(200, res.status_code)
+        self.assertFalse("CIS-371" in res.data["courses"])
+
+    def test_history(self):
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-371", Instructor.objects.get(name=self.instructor_name).pk],
+            {
+                "sections": [
+                    {
+                        "course_code": "CIS-371",
+                        "semester": "2012A",
+                        "activity": "Lecture",
+                        **rating(2),
+                    },
+                ]
+            },
+        )
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-471", Instructor.objects.get(name=self.instructor_name).pk],
+            {
+                "sections": [
+                    {
+                        "course_code": "CIS-371",
+                        "semester": "2012A",
+                        "activity": "Lecture",
+                        **rating(2),
+                    },
+                ]
+            },
+        )
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-371", Instructor.objects.get(name="Instructor Two").pk],
+            {
+                "sections": [
+                    {
+                        "course_code": "CIS-471",
+                        "activity": "Lecture",
+                        "semester": TEST_SEMESTER,
+                        "forms_returned": None,
+                        "forms_produced": None,
+                    },
+                ]
+            },
+        )
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-471", Instructor.objects.get(name="Instructor Two").pk],
+            {
+                "sections": [
+                    {
+                        "course_code": "CIS-471",
+                        "activity": "Lecture",
+                        "semester": TEST_SEMESTER,
+                        "forms_returned": None,
+                        "forms_produced": None,
+                    },
+                ]
+            },
+        )
+
+
 class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         set_semester()
