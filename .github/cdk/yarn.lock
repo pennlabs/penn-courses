@@ -79,11 +79,6 @@ constructs@^3.2.109, constructs@^3.2.80:
   resolved "https://registry.yarnpkg.com/constructs/-/constructs-3.3.133.tgz#06355ebc30ad02b46ec1434bb581aeca9b82c0ff"
   integrity sha512-f0HgM9tmmR66A9XrzDXS7kXRbB9Gazb+KPldP9RRIkrFGhHuGeII+2YyTxxzY15cDgU58NrLrac+gynhrLy6Uw==
 
-constructs@^3.3.263:
-  version "3.3.263"
-  resolved "https://registry.yarnpkg.com/constructs/-/constructs-3.3.263.tgz#d1c0391155d28e34534d2ab4266199f260258ba6"
-  integrity sha512-PZFnpaTjn7lHSk1+D4B6/pu1M0l+IRHt/lMIk2kkUMgsuhCSu2iFEh0uSw/PsDO4oZ1WaT9FZpvOoRJpC5jcJA==
-
 emoji-regex@^8.0.0:
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-8.0.0.tgz#e818fd69ce5ccfcb404594f842963bf53164cc37"
