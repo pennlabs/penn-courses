@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import ReactGA from "react-ga";
 import useSWR from "swr";
 import { ManageAlert } from "./ManageAlertUI";
@@ -12,6 +12,8 @@ const useAlerts = () => {
         REGISTRATIONS_API_ROUTE,
         (url, init) => fetch(url, init).then((res) => res.json())
     );
+
+    const stickyAlerts = useRef<any>();
 
     const alerts = useMemo(
         () =>
@@ -60,7 +62,16 @@ const useAlerts = () => {
         [data]
     );
 
-    return { alerts, alertsError: error, mutateAlerts: mutate };
+    if (alerts !== undefined && stickyAlerts) {
+        stickyAlerts.current = alerts;
+    }
+
+    return {
+        alerts: stickyAlerts.current,
+        alertsError: error,
+        mutateAlerts: mutate,
+        data: data,
+    };
 };
 
 const filterAlerts = (alerts, filter) => {
@@ -122,6 +133,57 @@ const getActionPromise = (id, actionenum, alert) => {
     });
 };
 
+const handleAllAlreadyToggled = (idList, alerts) => {
+    let toggleState = true;
+
+    idList.forEach((id) => {
+        const parsedId = parseInt(id);
+        const foundAlert = alerts.find((alert) => alert.id == parsedId);
+
+        toggleState = toggleState && foundAlert.actions == 1;
+    });
+
+    return toggleState;
+};
+
+const handleAllPromises = (idList, actionenum, callback) => {
+    Promise.all(idList.map((id, i) => getActionPromise(id, actionenum, null)))
+        .then((res) => callback())
+        .then(() =>
+            Promise.all(
+                idList.map((id) =>
+                    getActionPromise(id, AlertAction.OFFCLOSED, null)
+                )
+            )
+        );
+};
+
+const handleChangeLocalData = (idList, data) => {
+    let modifiedAlerts = [...data];
+    idList.forEach((id) => {
+        const parsedId = parseInt(id);
+        const alertToModify = modifiedAlerts.find(
+            (alert) => alert.id == parsedId
+        );
+        const alertModified = {
+            ...alertToModify,
+            resubscribe: true,
+            close_notification: false,
+            cancelled: false,
+        };
+        modifiedAlerts = modifiedAlerts.map((alert) =>
+            alert.id === parsedId ? alertModified : alert
+        );
+    });
+
+    return modifiedAlerts;
+};
+
+const handleLocalMutation = (idList, data, mutate, callback, actionenum) => {
+    const modifiedData = handleChangeLocalData(idList, data);
+
+    mutate(handleAllPromises(idList, actionenum, callback), modifiedData);
+};
 /**
  * A generic alert item action handler that takes in a
  * callback, executes the alert item action (ex. AlertAction.Resubscribe)
@@ -132,11 +194,27 @@ const getActionPromise = (id, actionenum, alert) => {
  * id {number} and actionenum {AlertAction}
  *
  */
-const actionHandler = (callback, errorCallback) => (id, actionenum) => {
-    getActionPromise(id, actionenum, null).then(
-        (res) => callback(),
-        (err) => errorCallback()
-    );
+const actionHandler = (callback, errorCallback, data, mutate) => (
+    id,
+    actionenum
+) => {
+    if (actionenum == AlertAction.ONALERT) {
+        handleLocalMutation([id], data, mutate, callback, actionenum);
+    } else if (actionenum == AlertAction.OFFALERT) {
+        handleAllPromises([id], actionenum, callback);
+    } else {
+        getActionPromise(id, actionenum, null).then(
+            (res) => callback(),
+            (err) => errorCallback()
+        );
+    }
+};
+
+const handleBatchNoEffect = (idList, alerts) => {
+    const parsedIds = [...idList];
+    parsedIds.forEach((id, i) => (parsedIds[i] = parseInt(id)));
+
+    return alerts.filter((alert) => parsedIds.includes(parseInt(alert.id)));
 };
 
 /**
@@ -150,24 +228,31 @@ const actionHandler = (callback, errorCallback) => (id, actionenum) => {
  * @returns {func} - The function which expects the actionenum and
  * executes the action on idList
  */
-const batchActionHandler = (callback, errorCallback, idList, alertsList) => (
-    actionenum
-) => {
-    let parsedIds = [...idList];
-    parsedIds.forEach((id, i) => (parsedIds[i] = parseInt(id)));
+const batchActionHandler = (
+    callback,
+    errorCallback,
+    idList,
+    alerts,
+    data,
+    mutate
+) => (actionenum) => {
+    const filteredAlerts = handleBatchNoEffect(idList, alerts);
+    const allToggled = handleAllAlreadyToggled(idList, alerts);
 
-    let filteredAlerts = alertsList.filter((alert) =>
-        parsedIds.includes(parseInt(alert.id))
-    );
-
-    Promise.all(
-        idList.map((id, i) =>
-            getActionPromise(id, actionenum, filteredAlerts[i])
-        )
-    ).then(
-        (res) => callback(),
-        (err) => errorCallback()
-    );
+    if (actionenum == AlertAction.ONALERT && !allToggled) {
+        handleLocalMutation(idList, data, mutate, callback, actionenum);
+    } else if (actionenum == AlertAction.OFFALERT) {
+        handleAllPromises(idList, actionenum, callback);
+    } else {
+        Promise.all(
+            idList.map((id, i) =>
+                getActionPromise(id, actionenum, filteredAlerts[i])
+            )
+        ).then(
+            (res) => callback(),
+            (err) => errorCallback()
+        );
+    }
 };
 
 const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
@@ -193,7 +278,7 @@ interface ManageAlertWrapperProps {
 
 const ManageAlertWrapper = ({ setResponse }: ManageAlertWrapperProps) => {
     // alerts processed directly from registrationhistory
-    const { alerts, mutateAlerts, alertsError } = useAlerts();
+    const { alerts, mutateAlerts, alertsError, data } = useAlerts();
     // TODO: handle alertsError
     // state tracking the batch select button
     const [batchSelected, setBatchSelected] = useState(false);
@@ -260,7 +345,9 @@ const ManageAlertWrapper = ({ setResponse }: ManageAlertWrapperProps) => {
                         sendError(
                             400,
                             "Please toggle on the alert first to enable this action."
-                        )
+                        ),
+                    data,
+                    mutateAlerts
                 )}
                 batchSelectHandler={batchSelectHandler(
                     setAlertSel,
@@ -275,7 +362,9 @@ const ManageAlertWrapper = ({ setResponse }: ManageAlertWrapperProps) => {
                             "Please toggle on all selected alerts first to enable this action."
                         ),
                     Object.keys(alertSel).filter((id) => alertSel[id]),
-                    alerts
+                    alerts,
+                    data,
+                    mutateAlerts
                 )}
             />
         </>
