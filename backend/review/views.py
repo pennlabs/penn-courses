@@ -486,14 +486,18 @@ def department_reviews(request, department_code):
         Course.objects.filter(
             course_filters_pcr_allow_xlist,
             department=department,
-            topic__most_recent__semester=F("semester"),
         )
         .distinct()
         .values("semester", "topic_id", course_title=F("title"), course_code=F("full_code"))
     )
     for c in recent_courses:
         c["exclude_from_recent"] = True
-        topic_id_to_course[c["topic_id"]] = c
+        topic_id = c["topic_id"]
+        if (
+            topic_id not in topic_id_to_course
+            or topic_id_to_course[topic_id]["semester"] < c["semester"]
+        ):
+            topic_id_to_course[topic_id] = c
 
     reviews = list(
         review_averages(
@@ -515,7 +519,7 @@ def department_reviews(request, department_code):
         review["course_code"] = course["course_code"]
         review["course_title"] = course["course_title"]
 
-    all_courses = reviews + recent_courses
+    all_courses = reviews + list(topic_id_to_course.values())
     courses = aggregate_reviews(all_courses, "course_code", code="course_code", name="course_title")
 
     return Response({"code": department.code, "name": department.name, "courses": courses})
