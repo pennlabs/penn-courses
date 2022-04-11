@@ -3,6 +3,7 @@ version: "3"
 services:
   db:
     image: postgres
+    command: postgres -c stats_temp_directory=/tmp
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=penn-courses

@@ -155,7 +155,7 @@ def course_reviews(request, course_code):
     aliases = course.crosslistings.values_list("full_code", flat=True)
 
     instructor_reviews = review_averages(
-        Review.objects.filter(review_filters_pcr, section__course__topic=topic, responses__gt=0),
+        Review.objects.filter(review_filters_pcr, section__course__topic=topic),
         reviewbit_subfilters=Q(review_id=OuterRef("id")),
         section_subfilters=Q(id=OuterRef("section_id")),
         fields=ALL_FIELD_SLUGS,
@@ -497,7 +497,7 @@ def department_reviews(request, department_code):
 
     reviews = list(
         review_averages(
-            Review.objects.filter(section__course__department=department, responses__gt=0),
+            Review.objects.filter(section__course__department=department),
             reviewbit_subfilters=Q(review_id=OuterRef("id")),
             section_subfilters=Q(id=OuterRef("section_id")),
             fields=ALL_FIELD_SLUGS,
@@ -567,9 +567,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     course = course.topic.most_recent
 
     reviews = review_averages(
-        Review.objects.filter(
-            section__course__topic=topic, instructor_id=instructor_id, responses__gt=0
-        ),
+        Review.objects.filter(section__course__topic=topic, instructor_id=instructor_id),
         reviewbit_subfilters=Q(review_id=OuterRef("id")),
         section_subfilters=Q(id=OuterRef("section_id")),
         fields=ALL_FIELD_SLUGS,
