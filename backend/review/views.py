@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models import F, Max, OuterRef, Q, Subquery, Value
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -161,16 +161,26 @@ def course_reviews(request, course_code):
         fields=ALL_FIELD_SLUGS,
         prefix="bit_",
         extra_metrics=True,
-    ).annotate(
-        instructor_name=F("instructor__name"),
-    )
-    all_instructors = list(instructor_reviews.values()) + list(
+    ).annotate(instructor_name=F("instructor__name"), semester=F("section__course__semester"))
+    recent_instructors = list(
         Instructor.objects.filter(
-            section_set__course__topic=topic,
+            section__course__topic=topic,
         )
         .distinct()
-        .values(instructor_id=F("id"), instructor_name=F("name"))
+        .annotate(
+            most_recent_sem=Subquery(
+                Section.objects.filter(instructors__id=OuterRef("id"), course__topic=topic)
+                .annotate(common=Value(1))
+                .values("common")
+                .annotate(max_sem=Max("course__semester"))
+                .values("max_sem")
+            )
+        )
+        .values(instructor_id=F("id"), instructor_name=F("name"), semester=F("most_recent_sem"))
     )
+    for instructor in recent_instructors:
+        instructor["exclude_from_recent"] = True
+    all_instructors = list(instructor_reviews.values()) + recent_instructors
     instructors = aggregate_reviews(all_instructors, "instructor_id", name="instructor_name")
 
     course_qs = annotate_average_and_recent(
@@ -471,27 +481,41 @@ def department_reviews(request, department_code):
     """
     department = get_object_or_404(Department, code=department_code)
 
-    reviews = review_averages(
-        Review.objects.filter(section__course__department=department, responses__gt=0),
-        reviewbit_subfilters=Q(review_id=OuterRef("id")),
-        section_subfilters=Q(id=OuterRef("section_id")),
-        fields=ALL_FIELD_SLUGS,
-        prefix="bit_",
-        extra_metrics=True,
-    ).annotate(
-        course_title=F("section__course__title"),
-        course_code=F("section__course__full_code"),
-        semester=F("section__course__semester"),
-    )
-    all_courses = list(reviews.values()) + list(
+    topic_id_to_course = dict()
+    recent_courses = list(
         Course.objects.filter(
             course_filters_pcr_allow_xlist,
             department=department,
             topic__most_recent__semester=F("semester"),
         )
         .distinct()
-        .values("semester", course_title=F("title"), course_code=F("full_code"))
+        .values("semester", "topic_id", course_title=F("title"), course_code=F("full_code"))
     )
+    for c in recent_courses:
+        c["exclude_from_recent"] = True
+        topic_id_to_course[c["topic_id"]] = c
+
+    reviews = list(
+        review_averages(
+            Review.objects.filter(section__course__department=department, responses__gt=0),
+            reviewbit_subfilters=Q(review_id=OuterRef("id")),
+            section_subfilters=Q(id=OuterRef("section_id")),
+            fields=ALL_FIELD_SLUGS,
+            prefix="bit_",
+            extra_metrics=True,
+        )
+        .annotate(
+            topic_id=F("section__course__topic_id"),
+            semester=F("section__course__semester"),
+        )
+        .values()
+    )
+    for review in reviews:
+        course = topic_id_to_course[review["topic_id"]]
+        review["course_code"] = course["course_code"]
+        review["course_title"] = course["course_title"]
+
+    all_courses = reviews + recent_courses
     courses = aggregate_reviews(all_courses, "course_code", code="course_code", name="course_title")
 
     return Response({"code": department.code, "name": department.name, "courses": courses})
@@ -552,26 +576,33 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         prefix="bit_",
         extra_metrics=True,
     )
-    reviews = reviews.annotate(
-        course_code=F("section__course__full_code"),
-        course_title=F("section__course__title"),
-        activity=F("section__activity"),
-        efficient_semester=F("section__course__semester"),
+    reviews = list(
+        reviews.annotate(
+            course_code=F("section__course__full_code"),
+            course_title=F("section__course__title"),
+            activity=F("section__activity"),
+            efficient_semester=F("section__course__semester"),
+        ).values()
     )
-    all_sections = list(reviews.values()) + list(
-        Section.objects.filter(
+    existing_sections = {r["section_id"] for r in reviews}
+    all_sections = reviews + [
+        s
+        for s in Section.objects.filter(
             section_filters_pcr,
             course__topic=topic,
             instructors__id=instructor_id,
         )
         .distinct()
         .values(
+            "id",
             "activity",
             course_code=F("course__full_code"),
             course_title=F("course__title"),
             efficient_semester=F("course__semester"),
         )
-    )
+        if s["id"] not in existing_sections
+    ]
+    all_sections.sort(key=lambda s: s["efficient_semester"], reverse=True)
 
     return Response(
         {
