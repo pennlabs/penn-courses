@@ -6,6 +6,7 @@ from django.core.management import BaseCommand
 from tqdm import tqdm
 
 from courses.models import Instructor
+from review.management.commands.clearcache import clear_cache
 
 
 # Statistic keys
@@ -224,5 +225,8 @@ class Command(BaseCommand):
                     run_merge(strategies[strategy])
                 else:
                     print(f"***Could not find strategy <{strategy}>***")
+
+        print("Clearing cache")
+        clear_cache()
 
         print(stats)

@@ -72,6 +72,7 @@ export class ReviewPage extends Component {
           type: this.props.match.params.type,
           code: this.props.match.params.code,
           data: null,
+          liveData: null,
           rowCode: null,
           error: null,
           isCourseEval: false
@@ -116,6 +117,11 @@ export class ReviewPage extends Component {
             });
           } else {
             this.setState({ data });
+            if (type === "course") {
+              apiLive(data.code)
+                .then(result => this.setState({ liveData: result }))
+                .catch(() => undefined);
+            }
           }
         })
         .catch(() =>
@@ -124,18 +130,6 @@ export class ReviewPage extends Component {
               "Could not retrieve review information at this time. Please try again later!"
           })
         );
-    }
-
-    if (type === "course") {
-      apiLive(code)
-        .then(result => {
-          this.setState({ liveData: result });
-        })
-        .catch(() => {
-          this.setState({ liveData: null });
-        });
-    } else {
-      this.setState({ liveData: null });
     }
   }
 
