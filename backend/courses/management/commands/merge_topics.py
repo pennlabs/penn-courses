@@ -14,6 +14,7 @@ from courses.course_similarity.heuristics import (
     title_rejection_heuristics,
 )
 from courses.models import Topic
+from review.management.commands.clearcache import clear_cache
 
 
 def load_crosswalk_links(cross_walk):
@@ -84,9 +85,12 @@ def prompt_for_link(course1, course2):
 
 
 def same_course(course_a, course_b):
-    return any(
-        course_ac.full_code == course_b.full_code
-        for course_ac in course_a.primary_listing.listing_set.all()
+    return (
+        any(
+            course_ac.full_code == course_b.full_code
+            for course_ac in course_a.primary_listing.listing_set.all()
+        )
+        and course_a.title.lower() == course_b.title.lower()
     )
 
 
@@ -288,3 +292,6 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             merge_topics(verbose=True, ignore_inexact=ignore_inexact)
+
+        print("Clearing cache")
+        clear_cache()

@@ -80,7 +80,7 @@ def accept_webhook(request):
     except json.JSONDecodeError:
         return HttpResponse("Error decoding JSON body", status=400)
 
-    course_id = data.get("course_section", None)
+    course_id = data.get("section_id_normalized", None)
     if course_id is None:
         return HttpResponse("Course ID could not be extracted from response", status=400)
 

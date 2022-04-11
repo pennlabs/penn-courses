@@ -1,11 +1,12 @@
 import logging
 from collections import defaultdict
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Set
 
 from django.core.management import BaseCommand
 from tqdm import tqdm
 
 from courses.models import Instructor
+from review.management.commands.clearcache import clear_cache
 
 
 # Statistic keys
@@ -16,7 +17,7 @@ REVIEWS_MODIFIED = "reviews modified"
 INSTRUCTORS_UNMERGED = "instructors unmerged"
 
 
-def batch_duplicates(qs, get_prop=None, union_find=None) -> List[List[Instructor]]:
+def batch_duplicates(qs, get_prop=None, union_find=None) -> List[Set[Instructor]]:
     """
     Group queryset rows by a property defined in `get_prop()` (or alternatively
     specify groups with a union find dictionary). Return a list of groups of size > 1.
@@ -42,14 +43,14 @@ def batch_duplicates(qs, get_prop=None, union_find=None) -> List[List[Instructor
 
 
 def resolve_duplicates(
-    duplicate_instructor_groups: List[List[Instructor]], dry_run: bool, stat, force=False
+    duplicate_instructor_groups: List[Set[Instructor]], dry_run: bool, stat, force=False
 ):
     """
     Given a list of list of duplicate instructor groups, resolve the foreign key and many-to-many
     relationships among duplicates to all point to the same instance.
 
-    :param duplicate_instructor_groups: List of lists of duplicate instructors
-    e.g. [[a, a, a], [b, b]]
+    :param duplicate_instructor_groups: List of sets of duplicate instructors
+    e.g. [{a1, a2, a3}, {b1, b2}]
     :param dry_run: If true, just calculate stats without actually modifying the database.
     :param stat: Function to collect statistics.
     :param force: Manually override conflicting user information.
@@ -142,7 +143,7 @@ def first_last_name_sections_uf(instructors):
     return union_find
 
 
-strategies: Dict[str, Callable[[], List[List[Instructor]]]] = {
+strategies: Dict[str, Callable[[], List[Set[Instructor]]]] = {
     "case-insensitive": lambda: batch_duplicates(
         Instructor.objects.all().prefetch_related("section_set", "review_set"),
         lambda row: row.name.lower(),
@@ -203,7 +204,7 @@ class Command(BaseCommand):
             else:
                 stats.setdefault(key, []).append(element)
 
-        def run_merge(strat: Callable[[], List[List[Instructor]]], force=False):
+        def run_merge(strat: Callable[[], List[Set[Instructor]]], force=False):
             """
             Run a merge pass, printing out helpful messages along the way.
             """
@@ -224,5 +225,8 @@ class Command(BaseCommand):
                     run_merge(strategies[strategy])
                 else:
                     print(f"***Could not find strategy <{strategy}>***")
+
+        print("Clearing cache")
+        clear_cache()
 
         print(stats)
