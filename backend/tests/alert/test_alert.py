@@ -709,7 +709,7 @@ class WebhookViewTestCase(TestCase):
             "Authorization": f"Basic {auth.decode()}",
         }
         self.body = {
-            "course_section": "ANTH3610401",
+            "section_id_normalized": "ANTH-3610-401",
             "previous_status": "X",
             "status": "O",
             "status_code_normalized": "Open",
@@ -724,7 +724,7 @@ class WebhookViewTestCase(TestCase):
             reverse("webhook", urlconf="alert.urls"),
             data=json.dumps(
                 {
-                    "course_section": "INTLBUL001",
+                    "section_id_normalized": "INTL-BUL-001",
                     "previous_status": "X",
                     "status": "O",
                     "status_code_normalized": "Open",
@@ -880,7 +880,7 @@ class WebhookViewTestCase(TestCase):
             reverse("webhook", urlconf="alert.urls"),
             data=json.dumps(
                 {
-                    "course_section": "ANTH3610401",
+                    "section_id_normalized": "ANTH-3610-401",
                     "previous_status": "X",
                     "status_code_normalized": "Open",
                     "term": "2019A",
@@ -1081,7 +1081,7 @@ class AlertRegistrationTestCase(TestCase):
             "Authorization": f"Basic {auth.decode()}",
         }
         body = {
-            "course_section": section.full_code.replace("-", ""),
+            "section_id_normalized": section.full_code,
             "previous_status": from_status,
             "status": to_status,
             "status_code_normalized": "Open",
