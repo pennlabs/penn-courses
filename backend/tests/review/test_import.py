@@ -212,7 +212,7 @@ class ReviewImportTestCase(TestCase):
         user.set_unusable_password()
         user.save()
         Instructor.objects.create(name="Old McDonald")
-        inst2 = Instructor.objects.create(name="blah", user=user)
+        Instructor.objects.create(name="blah", user=user)
         inst3 = import_instructor("10000000", "Old McDonald", self.stat)
         self.assertEqual(1, Instructor.objects.count())
         self.assertEqual(1, User.objects.count())
