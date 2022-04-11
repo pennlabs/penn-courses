@@ -14,6 +14,7 @@ from courses.course_similarity.heuristics import (
     title_rejection_heuristics,
 )
 from courses.models import Topic
+from review.management.commands.clearcache import clear_cache
 
 
 def load_crosswalk_links(cross_walk):
@@ -288,3 +289,6 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             merge_topics(verbose=True, ignore_inexact=ignore_inexact)
+
+        print("Clearing cache")
+        clear_cache()
