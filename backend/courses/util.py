@@ -321,6 +321,27 @@ def record_update(section, semester, old_status, new_status, alerted, req, creat
     return u
 
 
+def merge_instructors(user, name):
+    """
+    Merge the instructor corresponding to the given user into the
+    instructor with the given name, if both exist.
+    """
+    from review.management.commands.mergeinstructors import resolve_duplicates
+
+    def stat(key, amt=1, element=None):
+        return
+
+    try:
+        user_instructor = Instructor.objects.get(user=user)
+        name_instructor = Instructor.objects.get(name=name)
+        duplicates = {user_instructor, name_instructor}
+        if len(duplicates) == 1:
+            return
+        resolve_duplicates([duplicates], dry_run=False, stat=stat)
+    except Instructor.DoesNotExist:
+        pass
+
+
 def set_instructors(section, instructors):
     instructor_obs = []
     for instructor in instructors:
@@ -335,10 +356,11 @@ def set_instructors(section, instructors):
         name = " ".join([c for c in name_components if c])
         penn_id = int(instructor["penn_id"])
         try:
-            instructor_ob = Instructor.objects.filter(user_id=penn_id)[:1].get()
+            merge_instructors(User.objects.get(id=penn_id), name)
+            instructor_ob = Instructor.objects.get(user_id=penn_id)
             instructor_ob.name = name
             instructor_ob.save()
-        except Instructor.DoesNotExist:
+        except (Instructor.DoesNotExist, User.DoesNotExist):
             user, user_created = User.objects.get_or_create(
                 id=penn_id, defaults={"username": uuid.uuid4()}
             )

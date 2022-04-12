@@ -8,6 +8,7 @@ from courses.models import Course, Instructor
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
+    merge_instructors,
     separate_course_code,
 )
 from review.models import COLUMN_TO_SLUG, CONTEXT_TO_SLUG, Review, ReviewBit
@@ -53,6 +54,7 @@ def import_instructor(pennid, fullname, stat):
             user.save()
 
         try:
+            merge_instructors(user, fullname)
             return Instructor.objects.get(user=user)
         except Instructor.DoesNotExist:
             pass

@@ -324,7 +324,9 @@ class Course(models.Model):
                 all_codes = self.primary_listing.listing_set.all().values("full_code")
                 topics = list(
                     Topic.objects.select_related("most_recent")
-                    .filter(courses__full_code__in=all_codes)
+                    .filter(
+                        most_recent__full_code__in=all_codes, most_recent__title__iexact=self.title
+                    )
                     .distinct()
                 )
 
