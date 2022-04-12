@@ -307,20 +307,20 @@ class Course(models.Model):
           - All crosslisted courses have the same topic
           - The `Topic.most_recent` invariant (see the help_text on that field)
         """
-        from courses.util import get_next_id, is_fk_set  # avoid circular imports
+        from courses.util import get_set_id, is_fk_set  # avoid circular imports
 
-        with transaction.atomic():
-            self.full_code = f"{self.department.code}-{self.code}"
+        self.full_code = f"{self.department.code}-{self.code}"
 
-            # Set primary_listing to self if not set
-            if not is_fk_set(self, "primary_listing"):
-                self.primary_listing_id = self.id or get_next_id(self)
+        # Set primary_listing to self if not set
+        if not is_fk_set(self, "primary_listing"):
+            self.primary_listing_id = self.id or get_set_id(self)
 
-            super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
-            # Give this course's listing set a topic if it doesn't already have one
-            # (merge topics if this course connects to multiple topics)
-            if not self.topic:
+        # Give this course's listing set a topic if it doesn't already have one
+        # (merge topics if this course connects to multiple topics)
+        if not self.topic:
+            with transaction.atomic():
                 all_codes = self.primary_listing.listing_set.all().values("full_code")
                 topics = list(
                     Topic.objects.select_related("most_recent")
@@ -357,10 +357,10 @@ class Topic(models.Model):
             """
         The most recent course (by semester) of this topic. The `most_recent` course should
         be the `primary_listing` if it has crosslistings. These invariants are maintained
-        by the `Topic.merge_with`, `Topic.add_course`, `Topic.from_course`, and `Course.save`
-        methods. Defer to using these methods rather than setting this field manually.
-        You must change the corresponding `Topic` object's `most_recent` field before
-        deleting a Course if it is the `most_recent` course (`on_delete=models.PROTECT`).
+        by the `Course.save()` and `Topic.merge_with()` methods. Defer to using these methods
+        rather than setting this field manually. You must change the corresponding
+        `Topic` object's `most_recent` field before deleting a Course if it is the
+        `most_recent` course (`on_delete=models.PROTECT`).
         """
         ),
     )
@@ -381,16 +381,6 @@ class Topic(models.Model):
     )
 
     @staticmethod
-    def from_course(course):
-        """
-        Creates a new topic from a given course.
-        """
-        if course.topic:
-            return course.topic
-        course.save()
-        return course.topic
-
-    @staticmethod
     def merge_all(topics):
         if not topics:
             raise ValueError("Cannot merge an empty list of topics.")
@@ -404,11 +394,11 @@ class Topic(models.Model):
         """
         Merges this topic with the specified topic. Returns the resulting topic.
         """
-        if self == topic:
-            return self
-        if self.branched_from != topic.branched_from:
-            raise ValueError("Cannot merge topics with different branched_from topics.")
         with transaction.atomic():
+            if self == topic:
+                return self
+            if self.branched_from != topic.branched_from:
+                raise ValueError("Cannot merge topics with different branched_from topics.")
             if self.most_recent.semester >= topic.most_recent.semester:
                 Course.objects.filter(topic=topic).update(topic=self)
                 if topic.branched_from and not self.branched_from:
@@ -423,18 +413,6 @@ class Topic(models.Model):
                     topic.save()
                 self.delete()
                 return topic
-
-    def add_course(self, course):
-        """
-        Adds the specified course to this topic.
-        """
-        with transaction.atomic():
-            course = course.primary_listing
-            if course.semester > self.most_recent.semester:
-                self.most_recent = course
-                self.save()
-            course.topic = self
-            course.listing_set.all().update(topic=self)
 
     def __str__(self):
         return f"Topic {self.id} ({self.most_recent.full_code} most recently)"

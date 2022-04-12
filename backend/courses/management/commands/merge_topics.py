@@ -1,9 +1,7 @@
 import logging
-from collections import defaultdict
 from enum import Enum, auto
 from textwrap import dedent
 
-import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
@@ -13,47 +11,10 @@ from courses.course_similarity.heuristics import (
     lev_divided_by_avg_length,
     title_rejection_heuristics,
 )
+from courses.management.commands.load_crosswalk import load_crosswalk
+from courses.management.commands.reset_topics import fill_topics
 from courses.models import Topic
 from review.management.commands.clearcache import clear_cache
-
-
-def load_crosswalk_links(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping old_full_code to
-    a list of the new codes originating from that source.
-    """
-    links = defaultdict(list)
-    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
-    for _, r in cross_walk.iterrows():
-        old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
-        new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
-        links[old_full_code].append(new_full_code)
-    return links
-
-
-def get_branches_from_cross_walk(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping old_full_code to
-    a list of the new codes originating from that source, if there are multiple
-    (i.e. only in the case of branches).
-    """
-    return {
-        old_code: new_codes
-        for old_code, new_codes in load_crosswalk_links(cross_walk).items()
-        if len(new_codes) > 1
-    }
-
-
-def get_direct_backlinks_from_cross_walk(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping new_full_code->old_full_code,
-    ignoring branched links in the crosswalk (a course splitting into multiple new courses).
-    """
-    return {
-        new_codes[0]: old_code
-        for old_code, new_codes in load_crosswalk_links(cross_walk).items()
-        if len(new_codes) == 1
-    }
 
 
 def prompt_for_link_topics(topics):
@@ -291,7 +252,9 @@ class Command(BaseCommand):
             return
 
         with transaction.atomic():
+            fill_topics(verbose=True)
             merge_topics(verbose=True, ignore_inexact=ignore_inexact)
+            load_crosswalk(verbose=True)
 
         print("Clearing cache")
         clear_cache()

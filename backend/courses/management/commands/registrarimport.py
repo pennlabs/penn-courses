@@ -5,11 +5,11 @@ from tqdm import tqdm
 
 from alert.management.commands.recomputestats import recompute_stats
 from courses import registrar
-from courses.management.commands.load_topic_branches import load_topic_branches_s3
+from courses.management.commands.load_crosswalk import load_crosswalk
 from courses.management.commands.loadstatus import set_all_status
+from courses.management.commands.reset_topics import fill_topics
 from courses.models import Department
 from courses.util import get_current_semester, upsert_course_from_opendata
-from PennCourses.settings.base import XWALK_S3_BUCKET, XWALK_SRC
 from review.management.commands.clearcache import clear_cache
 
 
@@ -35,8 +35,11 @@ def registrar_import(semester=None, query=""):
 
     recompute_stats(semesters=semester, verbose=True)
 
-    print("Loading topic branches...")
-    load_topic_branches_s3(XWALK_S3_BUCKET, XWALK_SRC, print_missing=False, verbose=True)
+    fill_topics(verbose=True)
+    load_crosswalk(print_missing=False, verbose=True)
+
+    print("Clearing cache")
+    clear_cache()
 
 
 class Command(BaseCommand):

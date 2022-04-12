@@ -166,7 +166,7 @@ def get_or_create_add_drop_period(semester):
     return add_drop
 
 
-def get_next_id(obj):
+def get_set_id(obj):
     """
     Returns the next ID for the given object (which hasn't yet been created).
     """

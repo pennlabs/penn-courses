@@ -194,23 +194,11 @@ class CourseTopicTestCase(TestCase):
         self.assertEqual(b_db.topic, t)
         self.assertEqual(t.most_recent, b_db)
 
-    def test_add_course(self):
-        a, _ = get_or_create_course("CIS", "120", "2020C")
-        t = Topic.objects.get()
-        b, _ = get_or_create_course("CIS", "1200", TEST_SEMESTER)
-        t.add_course(b)
-        a_db = Course.objects.get(full_code="CIS-120")
-        b_db = Course.objects.get(full_code="CIS-1200")
-        t = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
-        self.assertEqual(a_db.topic, t)
-        self.assertEqual(b_db.topic, t)
-        self.assertEqual(t.most_recent, b_db)
-
     def test_merge_with(self):
         a, _ = get_or_create_course("CIS", "120", "2020C")
         t = Topic.objects.get()
         b, _ = get_or_create_course("CIS", "1200", "2021C")
-        t.add_course(b)
+        t.merge_with(b.topic)
         c, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
         get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": c})
         t1 = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
