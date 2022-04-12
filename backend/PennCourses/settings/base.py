@@ -208,6 +208,10 @@ STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
 S3_client = boto3.client("s3")
 S3_resource = boto3.resource("s3")
 
+# NGSS course code crosswalk stored in S3
+XWALK_S3_BUCKET = "penn.courses"
+XWALK_SRC = "xwalk_csre_number.txt"
+
 # Registration Metrics Settings
 
 STATUS_UPDATES_RECORDED_SINCE = "2019C"  # How far back does our valid Status Update data span?

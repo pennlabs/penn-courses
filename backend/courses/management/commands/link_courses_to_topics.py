@@ -7,13 +7,16 @@ from django.db.models import F, Q
 from tqdm import tqdm
 
 from alert.management.commands.recomputestats import all_semesters
+from courses.management.commands.load_topic_branches import load_topic_branches
 from courses.management.commands.merge_topics import (
     ShouldLinkCoursesResponse,
+    get_branches_from_cross_walk,
     get_direct_backlinks_from_cross_walk,
     should_link_courses,
 )
 from courses.models import Course, Topic
 from PennCourses.settings.base import S3_client
+from review.management.commands.clearcache import clear_cache
 
 
 def get_topics_and_courses(semester):
@@ -145,6 +148,7 @@ class Command(BaseCommand):
         guaranteed_links = (
             get_direct_backlinks_from_cross_walk(cross_walk_src) if cross_walk_src else dict()
         )
+        branches = get_branches_from_cross_walk(cross_walk_src)
 
         if cross_walk_src and s3_bucket:
             # Remove temporary file
@@ -175,7 +179,13 @@ class Command(BaseCommand):
                     ignore_inexact=ignore_inexact,
                 )
 
+            print("Loading branches.")
+            load_topic_branches(branches, print_missing=False, verbose=True)
+
         print(
             f"Finished linking courses to topics for semesters {semesters}.\n"
             f"Created {Topic.objects.all().count()} Topics."
         )
+
+        print("Clearing cache")
+        clear_cache()

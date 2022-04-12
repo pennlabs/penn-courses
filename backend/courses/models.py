@@ -406,13 +406,21 @@ class Topic(models.Model):
         """
         if self == topic:
             return self
+        if self.branched_from != topic.branched_from:
+            raise ValueError("Cannot merge topics with different branched_from topics.")
         with transaction.atomic():
             if self.most_recent.semester >= topic.most_recent.semester:
                 Course.objects.filter(topic=topic).update(topic=self)
+                if topic.branched_from and not self.branched_from:
+                    self.branched_from = topic.branched_from
+                    self.save()
                 topic.delete()
                 return self
             else:
                 Course.objects.filter(topic=self).update(topic=topic)
+                if self.branched_from and not topic.branched_from:
+                    topic.branched_from = self.branched_from
+                    topic.save()
                 self.delete()
                 return topic
 
