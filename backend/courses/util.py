@@ -469,15 +469,7 @@ def upsert_course_from_opendata(info, semester):
     course.syllabus_url = info.get("syllabus_url") or None
     set_crosslistings(course, info["crosslist_primary"])
 
-    section.credits = Decimal(info["credits"] or "0")
-    if not section.credits:
-        try:
-            min_cr = Decimal(info["minimum_credit"] or "0")
-            max_cr = Decimal(info["maximum_credit"] or "0")
-            section.credits = Decimal.max(min_cr, max_cr)
-        except ValueError:
-            section.credits = Decimal(0)
-
+    section.credits = Decimal(info["credits"] or "0") if "credits" in info else None
     section.capacity = int(info["max_enrollment"] or 0)
     section.activity = info["activity"] or "***"
 
