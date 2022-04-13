@@ -4,14 +4,20 @@ import nltk
 import numpy as np
 from jellyfish import levenshtein_distance
 from sentence_transformers import SentenceTransformer, util
+import os
 
 from courses.util import in_dev
 
 
 if in_dev():
     nltk.download("punkt")
+    embedder_path = "courses/course_similarity/all-MiniLM-L6-v2" 
+    if not os.path.isdir(embedder_path):
+        embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        embedder.save(embedder_path)
+    else:
+        embedder = SentenceTransformer(embedder_path)
 SENT_TOKENIZER = nltk.data.load("nltk:tokenizers/punkt/english.pickle")
-embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 
 def title_rejection_heuristics(title_a, title_b):
@@ -94,7 +100,7 @@ def description_rejection_heuristics(desc_a, desc_b):
         if exclude_string in desc_a or exclude_string in desc_b:
             return True
     for regex in [topics_vary_regex]:
-        if regex.search(desc_a) or regex.search(regex, desc_b):
+        if regex.search(desc_a) or regex.search(desc_b):
             return True
 
     return False
