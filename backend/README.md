@@ -38,6 +38,9 @@ First, navigate to the `backend` directory in your terminal.
 2. Running Docker
 
     - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres and Redis).
+        - Windows (WSL) or Linux:
+            - `docker` needs to be running and accessible in order for `docker-compose up` to work. Manually start/restart docker with `sudo service docker start` or `sudo service docker restart`.
+            - If `docker-compose` is still not working, try changing the permissions on the `docker.sock` socket that docker uses to communicate with outside services like `docker-compose`. You can typically find `docker.sock` at `/var/run/docker.sock`, and one way to change permissions to both read and write is to use `chmod 666 <path to docker.sock>`, though you should be careful using `chmod`.
 
 3. Setting up your Penn Courses development environment
 
