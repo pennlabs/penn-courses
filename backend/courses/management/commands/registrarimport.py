@@ -38,9 +38,6 @@ def registrar_import(semester=None, query=""):
     fill_topics(verbose=True)
     load_crosswalk(print_missing=False, verbose=True)
 
-    print("Clearing cache")
-    clear_cache()
-
 
 class Command(BaseCommand):
     help = "Load in courses, sections and associated models from the Penn registrar and requirements data sources."  # noqa: E501

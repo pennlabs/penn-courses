@@ -88,8 +88,6 @@ def get_historical_codes(topic, exclude_codes):
     historical_codes = dict()
 
     for course in topic.courses.all():
-        if not course.is_primary:
-            continue
         full_code = course.full_code
         semester = course.semester
         if full_code in exclude_codes:

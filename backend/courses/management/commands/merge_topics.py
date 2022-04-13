@@ -249,12 +249,11 @@ class Command(BaseCommand):
 
         if topic_ids:
             manual_merge(topic_ids)
-            return
-
-        with transaction.atomic():
-            fill_topics(verbose=True)
-            merge_topics(verbose=True, ignore_inexact=ignore_inexact)
-            load_crosswalk(verbose=True)
+        else:
+            with transaction.atomic():
+                fill_topics(verbose=True)
+                merge_topics(verbose=True, ignore_inexact=ignore_inexact)
+                load_crosswalk(verbose=True)
 
         print("Clearing cache")
         clear_cache()
