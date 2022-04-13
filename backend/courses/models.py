@@ -280,19 +280,20 @@ class Course(models.Model):
         return self.primary_listing.listing_set.exclude(id=self.id)
 
     @property
-    def requirements(self):
+    def pre_ngss_requirements(self):
         """
-        A QuerySet (list on frontend) of all the Requirement objects this course fulfills. Note that
-        a course fulfills a requirement if and only if it is not in the requirement's
+        A QuerySet (list on frontend) of all the PreNGSSRequirement objects this course fulfills.
+        Note that a course fulfills a requirement if and only if it is not in the requirement's
         overrides set (related name nonrequirements_set), and is in the requirement's
         courses set (related name requirement_set) or its department is in the requirement's
         departments set (related name requirements).
         """
         return (
-            Requirement.objects.exclude(id__in=self.nonrequirement_set.all())
+            PreNGSSRequirement.objects.exclude(id__in=self.pre_ngss_nonrequirement_set.all())
             .filter(semester=self.semester)
             .filter(
-                Q(id__in=self.requirement_set.all()) | Q(id__in=self.department.requirements.all())
+                Q(id__in=self.pre_ngss_requirement_set.all())
+                | Q(id__in=self.department.pre_ngss_requirements.all())
             )
         )
 
@@ -397,7 +398,11 @@ class Topic(models.Model):
         with transaction.atomic():
             if self == topic:
                 return self
-            if self.branched_from != topic.branched_from:
+            if (
+                self.branched_from
+                and topic.branched_from
+                and self.branched_from != topic.branched_from
+            ):
                 raise ValueError("Cannot merge topics with different branched_from topics.")
             if self.most_recent.semester >= topic.most_recent.semester:
                 Course.objects.filter(topic=topic).update(topic=self)
@@ -418,9 +423,10 @@ class Topic(models.Model):
         return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
 
 
-class Restriction(models.Model):
+class PreNGSSRestriction(models.Model):
     """
-    A registration restriction, e.g. PDP (permission needed from department)
+    A pre-NGSS (deprecated since 2022C) registration restriction,
+    e.g. PDP (permission needed from department)
     """
 
     code = models.CharField(
@@ -579,11 +585,15 @@ class Section(models.Model):
         """
         ),
     )
-    restrictions = models.ManyToManyField(
-        Restriction,
+    pre_ngss_restrictions = models.ManyToManyField(
+        PreNGSSRestriction,
         related_name="sections",
         blank=True,
-        help_text="All registration Restriction objects to which this section is subject.",
+        help_text=(
+            "All pre-NGSS (deprecated since 2022C) registration Restriction objects to which "
+            "this section is subject. This field will be empty for sections "
+            "in 2022C or later."
+        ),
     )
 
     credits = models.DecimalField(
@@ -1013,14 +1023,15 @@ class Meeting(models.Model):
 
 
 """
-Requirements
+PreNGSSRequirement
 """
 
 
-class Requirement(models.Model):
+class PreNGSSRequirement(models.Model):
     """
-    An academic requirement which the specified course(s) fulfill(s). Not to be confused with
-    Restriction objects, which are restrictions on registration for certain course section(s).
+    A pre-NGSS (deprecated since 2022C) academic requirement which the specified course(s)
+    fulfill(s). Not to be confused with PreNGSSRestriction objects, which were restrictions
+    on registration for certain course section(s).
     """
 
     SCHOOL_CHOICES = (("SEAS", "Engineering"), ("WH", "Wharton"), ("SAS", "College"))
@@ -1076,7 +1087,7 @@ class Requirement(models.Model):
     )
     departments = models.ManyToManyField(
         Department,
-        related_name="requirements",
+        related_name="pre_ngss_requirements",
         blank=True,
         help_text=dedent(
             """
@@ -1094,7 +1105,7 @@ class Requirement(models.Model):
     )
     courses = models.ManyToManyField(
         Course,
-        related_name="requirement_set",
+        related_name="pre_ngss_requirement_set",
         blank=True,
         help_text=dedent(
             """
@@ -1109,7 +1120,7 @@ class Requirement(models.Model):
     )
     overrides = models.ManyToManyField(
         Course,
-        related_name="nonrequirement_set",
+        related_name="pre_ngss_nonrequirement_set",
         blank=True,
         help_text=dedent(
             """

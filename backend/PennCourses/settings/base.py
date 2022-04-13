@@ -218,7 +218,7 @@ STATUS_UPDATES_RECORDED_SINCE = "2019C"  # How far back does our valid Status Up
 PCA_REGISTRATIONS_RECORDED_SINCE = "2020A"  # How far back does our valid Registration data span?
 WAITLIST_DEPARTMENT_CODES = []  # Which departments (referenced by code) have a waitlist system
 # or require permits for registration during the add/drop period?
-PERMIT_REQ_RESTRICTION_CODES = [
+PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES = [  # TODO: add post-NGSS list
     "PCG",
     "PAD",
     "PCW",
@@ -226,7 +226,7 @@ PERMIT_REQ_RESTRICTION_CODES = [
     "PLC",
     "PIN",
     "PDP",
-]  # Which permission-required restrictions indicate registration is handled by permit issuance?
+]  # Which pre-NGSS restriction codes indicate registration was handled by permit issuance?
 ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = (
     200  # Aim for at least 200 demand distribution estimates over the course of a semester
 )

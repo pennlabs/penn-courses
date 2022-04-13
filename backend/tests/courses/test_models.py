@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
-from courses.models import Course, Department, Requirement, Section, Topic, UserProfile
+from courses.models import Course, Department, PreNGSSRequirement, Section, Topic, UserProfile
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
@@ -341,9 +341,13 @@ class RequirementTestCase(TestCase):
         self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
         self.department = Department.objects.get(code="CIS")
 
-        self.req1 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1")
-        self.req2 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2")
-        self.req3 = Requirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
+        self.req1 = PreNGSSRequirement(
+            semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1"
+        )
+        self.req2 = PreNGSSRequirement(
+            semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2"
+        )
+        self.req3 = PreNGSSRequirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
 
         self.req1.save()
         self.req2.save()
@@ -364,11 +368,11 @@ class RequirementTestCase(TestCase):
         self.assertEqual(get_codes(expected), get_codes(actual))
 
     def test_requirements_nooverride(self):
-        reqs = self.course.requirements
+        reqs = self.course.pre_ngss_requirements
         self.assertTrue(2, len(reqs))
 
     def test_requirements_override(self):
-        reqs = self.course2.requirements
+        reqs = self.course2.pre_ngss_requirements
         self.assertEqual(1, len(reqs))
         self.assertEqual(self.req2, reqs[0])
 
@@ -389,7 +393,7 @@ class RequirementTestCase(TestCase):
         courses = self.req1.satisfying_courses.all()
         self.assertEqual(1, len(courses))
         self.assertCoursesEqual([self.course], courses)
-        reqs = self.course2.requirements
+        reqs = self.course2.pre_ngss_requirements
         self.assertEqual(1, len(reqs))
         self.assertEqual(self.req2, reqs[0])
 

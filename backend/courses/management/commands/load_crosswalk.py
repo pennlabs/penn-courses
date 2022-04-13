@@ -57,48 +57,47 @@ def load_crosswalk(print_missing=False, verbose=False):
     if verbose:
         print("Loading crosswalk.")
 
+    num_merges = 0
+    num_branch_updates = 0
+    num_missing_roots = 0
+    num_missing_children = 0
+
     with transaction.atomic():
-        roots = (
-            Course.objects.filter(full_code__in=crosswalk.keys())
-            .order_by("semester")
-            .select_related("topic")
-        )
-        # Take maximum semester course matching child code
-        root_to_topic = {root.full_code: root.topic for root in roots if root.topic}
-
-        children = (
-            Course.objects.filter(
-                full_code__in=[c for children in crosswalk.values() for c in children]
+        for root_course_code, children_codes in tqdm(crosswalk.items()):
+            root_course = (
+                Course.objects.filter(full_code=root_course_code)
+                .order_by("-semester")
+                .select_related("topic")
+                .first()
             )
-            .order_by("-semester")
-            .select_related("topic")
-        )
-        # Take minimum semester course matching child code
-        child_to_topic = {child.full_code: child.topic for child in children if child.topic}
-
-        num_merges = 0
-        num_branch_updates = 0
-        num_missing_roots = 0
-        num_missing_children = 0
-
-        for root_course, children in tqdm(crosswalk.items()):
-            if root_course not in root_to_topic:
+            if not root_course:
                 num_missing_roots += 1
                 if print_missing:
                     print(f"Root course {root_course} not found in db")
                 continue
-            root_topic = root_to_topic[root_course]
-            child_topics = set()
-            force_branch = False
-            for child_code in children:
-                if child_code not in child_to_topic:
-                    num_missing_children += 1
-                    if print_missing:
-                        print(f"Child course {child_code} not found in db")
-                    force_branch = True  # unknown future course
-                else:
-                    child_topics.add(child_to_topic[child_code])
-            if len(child_topics) == 1 and not force_branch:
+            root_topic = root_course.topic
+            assert root_topic, f"Root course {root_course} has no topic"
+
+            children = (
+                Course.objects.filter(
+                    full_code__in=children_codes, semester__gt=root_course.semester
+                )
+                .order_by("-semester")
+                .select_related("topic")
+            )
+            # Take minimum semester course (after root course semester) matching child code
+            child_to_topic = {child.full_code: child.topic for child in children}
+            for child in {child.full_code: child for child in children}.values():
+                assert child.topic, f"Child course {child} of root {root_course} has no topic"
+            child_topics = set(child_to_topic.values())
+            missing_codes = set(children_codes) - set(child_to_topic.keys())
+
+            for child_code in missing_codes:
+                num_missing_children += 1
+                if print_missing:
+                    print(f"Child course {child_code} not found in db")
+
+            if len(child_topics) == 1 and not missing_codes:
                 child_topic = child_topics.pop()
                 if child_topic.branched_from:
                     child_topic.branched_from = None
