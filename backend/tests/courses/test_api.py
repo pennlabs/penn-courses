@@ -11,7 +11,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Course, Department, Instructor, Requirement
+from courses.models import Course, Department, Instructor, PreNGSSRequirement
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course, invalidate_current_semester_cache
 from plan.models import Schedule
@@ -162,8 +162,17 @@ class TypedSearchBackendTestCase(TestCase):
             terms = self.search.get_search_fields(None, req)
             self.assertEqual(["^full_code"], terms, f"search:{course}")
 
-    def test_auto_keyword(self):
-        keywords = ["rajiv", "gandhi", "programming", "hello world"]
+    def test_auto_keyword_both(self):
+        keywords = ["rajiv", "gandhi"]
+        for kw in keywords:
+            req = self.factory.get("/", {"type": "auto", "search": kw})
+            terms = self.search.get_search_fields(None, req)
+            self.assertEqual(
+                ["^full_code", "title", "sections__instructors__name"], terms, f"search:{kw}"
+            )
+
+    def test_auto_keyword_only(self):
+        keywords = ["hello world", "discrete math", "programming"]
         for kw in keywords:
             req = self.factory.get("/", {"type": "auto", "search": kw})
             terms = self.search.get_search_fields(None, req)
@@ -340,10 +349,11 @@ class SectionSearchTestCase(TestCase):
             reverse("section-search", args=["current"]), {"search": "123bdfsh3wq!@#"}
         )
         self.assertEqual(res.status_code, 200)
+        print(res.data)
         self.assertEqual(0, len(res.data))
 
 
-class RequirementListTestCase(TestCase):
+class PreNGSSRequirementListTestCase(TestCase):
     def setUp(self):
         set_semester()
         get_or_create_course(
@@ -353,9 +363,13 @@ class RequirementListTestCase(TestCase):
         self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
         self.department = Department.objects.get(code="CIS")
 
-        self.req1 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1")
-        self.req2 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2")
-        self.req3 = Requirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
+        self.req1 = PreNGSSRequirement(
+            semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1"
+        )
+        self.req2 = PreNGSSRequirement(
+            semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2"
+        )
+        self.req3 = PreNGSSRequirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
 
         self.req1.save()
         self.req2.save()

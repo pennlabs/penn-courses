@@ -5,17 +5,19 @@ from tqdm import tqdm
 
 from alert.management.commands.recomputestats import recompute_stats
 from courses import registrar
-from courses.management.commands.loadrequirements import load_requirements
+from courses.management.commands.load_crosswalk import load_crosswalk
 from courses.management.commands.loadstatus import set_all_status
+from courses.management.commands.reset_topics import fill_topics
 from courses.models import Department
 from courses.util import get_current_semester, upsert_course_from_opendata
+from review.management.commands.clearcache import clear_cache
 
 
 def registrar_import(semester=None, query=""):
     if semester is None:
         semester = get_current_semester()
 
-    print("loading in courses with prefix %s from %s..." % (query, semester))
+    print("Loading in courses with prefix %s from %s..." % (query, semester))
     results = registrar.get_courses(query, semester)
 
     for course in tqdm(results):
@@ -28,14 +30,13 @@ def registrar_import(semester=None, query=""):
         dept.name = dept_name
         dept.save()
 
-    print("loading requirements from SEAS...")
-    load_requirements(school="SEAS", semester=semester)
-    print("loading requirements from Wharton...")
-    load_requirements(school="WH", semester=semester)
-    print("loading course statuses from registrar...")
+    print("Loading course statuses from registrar...")
     set_all_status(semester=semester)
 
     recompute_stats(semesters=semester, verbose=True)
+
+    fill_topics(verbose=True)
+    load_crosswalk(print_missing=False, verbose=True)
 
 
 class Command(BaseCommand):
@@ -53,3 +54,6 @@ class Command(BaseCommand):
         query = kwargs.get("query")
 
         registrar_import(semester, query)
+
+        print("Clearing cache")
+        clear_cache()

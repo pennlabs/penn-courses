@@ -13,8 +13,8 @@ from courses.models import (
     Department,
     Instructor,
     Meeting,
-    Requirement,
-    Restriction,
+    PreNGSSRequirement,
+    PreNGSSRestriction,
     Room,
     Section,
     StatusUpdate,
@@ -141,8 +141,8 @@ class SectionAdmin(admin.ModelAdmin):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         # Filter displayed restrictions by whether this section has that restriction
-        if db_field.name == "restrictions":
-            kwargs["queryset"] = Restriction.objects.filter(sections__id=self.obj.id)
+        if db_field.name == "pre_ngss_restrictions":
+            kwargs["queryset"] = PreNGSSRestriction.objects.filter(sections__id=self.obj.id)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def course_link(self, instance):
@@ -160,7 +160,7 @@ class MeetingAdmin(admin.ModelAdmin):
     )
 
 
-class RequirementAdmin(admin.ModelAdmin):
+class PreNGSSRequirementAdmin(admin.ModelAdmin):
     autocomplete_fields = ("departments", "courses", "overrides")
 
 
@@ -180,8 +180,8 @@ admin.site.register(Topic, TopicAdmin)
 admin.site.register(Section, SectionAdmin)
 admin.site.register(Building)
 admin.site.register(Room)
-admin.site.register(Requirement, RequirementAdmin)
-admin.site.register(Restriction)
+admin.site.register(PreNGSSRequirement, PreNGSSRequirementAdmin)
+admin.site.register(PreNGSSRestriction)
 admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Meeting, MeetingAdmin)
 admin.site.register(StatusUpdate, StatusUpdateAdmin)

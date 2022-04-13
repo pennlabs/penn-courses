@@ -91,7 +91,9 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
-    "default": dj_database_url.config(default="sqlite:///" + os.path.join(BASE_DIR, "db.sqlite3"))
+    "default": dj_database_url.config(
+        default="postgres://penn-courses:postgres@localhost:5432/postgres"
+    )
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
@@ -159,9 +161,12 @@ PLATFORM_ACCOUNTS = {
 
 
 # Penn OpenData API
-API_KEY = os.environ.get("API_KEY", "")
-API_SECRET = os.environ.get("API_SECRET", "")
-API_URL = "https://esb.isc-seo.upenn.edu/8091/open_data/course_section_search"
+OPEN_DATA_CLIENT_ID = os.environ.get("OPEN_DATA_CLIENT_ID", "")
+OPEN_DATA_OIDC_SECRET = os.environ.get("OPEN_DATA_OIDC_SECRET", "")
+OPEN_DATA_TOKEN_URL = (
+    "https://sso.apps.k8s.upenn.edu/auth/realms/master/protocol/openid-connect/token"
+)
+OPEN_DATA_API_BASE = "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api"
 
 # Penn OpenData Course Status Webhook Auth
 WEBHOOK_USERNAME = os.environ.get("WEBHOOK_USERNAME", "webhook")
@@ -182,7 +187,7 @@ TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12153984277")
 PCR_TOKEN = os.environ.get("PCR_TOKEN", "")
 
 # Redis
-REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
 
 # Celery
 MESSAGE_BROKER_URL = REDIS_URL
@@ -203,13 +208,17 @@ STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
 S3_client = boto3.client("s3")
 S3_resource = boto3.resource("s3")
 
+# NGSS course code crosswalk stored in S3
+XWALK_S3_BUCKET = "penn.courses"
+XWALK_SRC = "xwalk_csre_number.txt"
+
 # Registration Metrics Settings
 
 STATUS_UPDATES_RECORDED_SINCE = "2019C"  # How far back does our valid Status Update data span?
 PCA_REGISTRATIONS_RECORDED_SINCE = "2020A"  # How far back does our valid Registration data span?
 WAITLIST_DEPARTMENT_CODES = []  # Which departments (referenced by code) have a waitlist system
 # or require permits for registration during the add/drop period?
-PERMIT_REQ_RESTRICTION_CODES = [
+PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES = [  # TODO: add post-NGSS list
     "PCG",
     "PAD",
     "PCW",
@@ -217,7 +226,7 @@ PERMIT_REQ_RESTRICTION_CODES = [
     "PLC",
     "PIN",
     "PDP",
-]  # Which permission-required restrictions indicate registration is handled by permit issuance?
+]  # Which pre-NGSS restriction codes indicate registration was handled by permit issuance?
 ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = (
     200  # Aim for at least 200 demand distribution estimates over the course of a semester
 )

@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 
 from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
-from courses.models import Instructor, Requirement, Section
+from courses.models import Instructor, PreNGSSRequirement, Section
 from courses.util import invalidate_current_semester_cache, set_meetings
 from plan.models import Schedule
 from review.models import Review
@@ -55,14 +55,14 @@ class CreditUnitFilterTestCase(TestCase):
         self.assertEqual(0, len(response.data))
 
 
-class RequirementFilterTestCase(TestCase):
+class PreNGSSRequirementFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
         self.different_math, self.different_math1 = create_mock_data(
             "MATH-116-001", ("2019A" if TEST_SEMESTER == "2019C" else "2019C")
         )
-        self.req = Requirement(semester=TEST_SEMESTER, code="REQ", school="SAS")
+        self.req = PreNGSSRequirement(semester=TEST_SEMESTER, code="REQ", school="SAS")
         self.req.save()
         self.req.courses.add(self.math)
         self.client = APIClient()
@@ -82,7 +82,7 @@ class RequirementFilterTestCase(TestCase):
         self.assertEqual("MATH-114", response.data[0]["id"])
 
     def test_filter_for_req_dif_sem(self):
-        req2 = Requirement(
+        req2 = PreNGSSRequirement(
             semester=("2019A" if TEST_SEMESTER == "2019C" else "2019C"), code="REQ", school="SAS"
         )
         req2.save()
@@ -97,7 +97,7 @@ class RequirementFilterTestCase(TestCase):
 
     def test_multi_req(self):
         course3, section3 = create_mock_data("CIS-240-001", TEST_SEMESTER)
-        req2 = Requirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
+        req2 = PreNGSSRequirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
         req2.save()
         req2.courses.add(course3)
 
@@ -107,7 +107,7 @@ class RequirementFilterTestCase(TestCase):
         self.assertEqual(0, len(response.data))
 
     def test_double_count_req(self):
-        req2 = Requirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
+        req2 = PreNGSSRequirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
         req2.save()
         req2.courses.add(self.math)
         response = self.client.get(
@@ -146,7 +146,7 @@ class IsOpenFilterTestCase(TestCase):
             status[0] for status in Section.STATUS_CHOICES if status[0] not in ["O"]
         ]
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.client = APIClient()
         set_semester()
@@ -331,24 +331,28 @@ class DayFilterTestCase(TestCase):
             [
                 {
                     "building_code": "LLAB",
-                    "room_number": "10",
-                    "meeting_days": "MT",
-                    "start_time_24": 9.00,
-                    "end_time_24": 10.0,
+                    "room_code": "10",
+                    "days": "MT",
+                    "begin_time_24": 900,
+                    "begin_time": "9:00 AM",
+                    "end_time_24": 1000,
+                    "end_time": "10:00 AM",
                 },
                 {
                     "building_code": "LLAB",
-                    "room_number": "10",
-                    "meeting_days": "WR",
-                    "start_time_24": 13.30,
-                    "end_time_24": 14.30,
+                    "room_code": "10",
+                    "days": "WR",
+                    "begin_time_24": 1330,
+                    "begin_time": "1:30 PM",
+                    "end_time_24": 1430,
+                    "end_time": "2:30 PM",
                 },
             ],
         )
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 
@@ -437,21 +441,21 @@ class TimeFilterTestCase(TestCase):
         _, self.cis_120_001 = create_mock_data("CIS-120-001", TEST_SEMESTER)  # time 11.0-12.0
 
         _, self.cis_120_002 = create_mock_data(
-            code="CIS-120-002", semester=TEST_SEMESTER, start=12.0, end=13.30
+            code="CIS-120-002", semester=TEST_SEMESTER, start=1200, end=1330
         )
 
         _, self.cis_160_001 = create_mock_data(
-            code="CIS-160-001", semester=TEST_SEMESTER, start=5.0, end=6.30
+            code="CIS-160-001", semester=TEST_SEMESTER, start=500, end=630
         )
 
         _, self.cis_160_201 = create_mock_data(
-            code="CIS-160-201", semester=TEST_SEMESTER, start=11.0, end=12.0
+            code="CIS-160-201", semester=TEST_SEMESTER, start=1100, end=1200
         )
         self.cis_160_201.activity = "REC"
         self.cis_160_201.save()
 
         _, self.cis_160_202 = create_mock_data(
-            code="CIS-160-202", semester=TEST_SEMESTER, start=14.0, end=15.0
+            code="CIS-160-202", semester=TEST_SEMESTER, start=1400, end=1500
         )
         self.cis_160_202.activity = "REC"
         self.cis_160_202.save()
@@ -462,24 +466,28 @@ class TimeFilterTestCase(TestCase):
             [
                 {
                     "building_code": "LLAB",
-                    "room_number": "10",
-                    "meeting_days": "MT",
-                    "start_time_24": 9.00,
-                    "end_time_24": 10.0,
+                    "room_code": "10",
+                    "days": "MT",
+                    "begin_time_24": 900,
+                    "begin_time": "9:00 AM",
+                    "end_time_24": 1000,
+                    "end_time": "10:00 AM",
                 },
                 {
                     "building_code": "LLAB",
-                    "room_number": "10",
-                    "meeting_days": "WR",
-                    "start_time_24": 13.30,
-                    "end_time_24": 14.30,
+                    "room_code": "10",
+                    "days": "WR",
+                    "begin_time_24": 1330,
+                    "begin_time": "1:30 PM",
+                    "end_time_24": 1430,
+                    "end_time": "2:30 PM",
                 },
             ],
         )
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 
@@ -617,21 +625,21 @@ class DayTimeFilterTestCase(TestCase):
         )  # time 11.0-12.0, days MWF
 
         _, self.cis_120_002 = create_mock_data(
-            code="CIS-120-002", semester=TEST_SEMESTER, start=12.0, end=13.30, meeting_days="TR"
+            code="CIS-120-002", semester=TEST_SEMESTER, start=1200, end=1330, meeting_days="TR"
         )
 
         _, self.cis_160_001 = create_mock_data(
-            code="CIS-160-001", semester=TEST_SEMESTER, start=5.0, end=6.30, meeting_days="TR"
+            code="CIS-160-001", semester=TEST_SEMESTER, start=500, end=630, meeting_days="TR"
         )
 
         _, self.cis_160_201 = create_mock_data(
-            code="CIS-160-201", semester=TEST_SEMESTER, start=11.0, end=12.0, meeting_days="M"
+            code="CIS-160-201", semester=TEST_SEMESTER, start=1100, end=1200, meeting_days="M"
         )
         self.cis_160_201.activity = "REC"
         self.cis_160_201.save()
 
         _, self.cis_160_202 = create_mock_data(
-            code="CIS-160-202", semester=TEST_SEMESTER, start=14.0, end=15.0, meeting_days="W"
+            code="CIS-160-202", semester=TEST_SEMESTER, start=1400, end=1500, meeting_days="W"
         )
         self.cis_160_202.activity = "REC"
         self.cis_160_202.save()
@@ -642,24 +650,28 @@ class DayTimeFilterTestCase(TestCase):
             [
                 {
                     "building_code": "LLAB",
-                    "room_number": "10",
-                    "meeting_days": "MT",
-                    "start_time_24": 9.00,
-                    "end_time_24": 10.0,
+                    "room_code": "10",
+                    "days": "MT",
+                    "begin_time_24": 900,
+                    "begin_time": "9:00 AM",
+                    "end_time_24": 1000,
+                    "end_time": "10:00 AM",
                 },
                 {
                     "building_code": "LLAB",
-                    "room_number": "10",
-                    "meeting_days": "WR",
-                    "start_time_24": 13.30,
-                    "end_time_24": 14.30,
+                    "room_code": "10",
+                    "days": "WR",
+                    "begin_time_24": 1330,
+                    "begin_time": "1:30 PM",
+                    "end_time_24": 1430,
+                    "end_time": "2:30 PM",
                 },
             ],
         )
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 
@@ -723,21 +735,21 @@ class ScheduleFilterTestCase(TestCase):
         )  # time 11.0-12.0, days MWF
 
         _, self.cis_120_002 = create_mock_data(
-            code="CIS-120-002", semester=TEST_SEMESTER, start=12.0, end=13.30, meeting_days="TR"
+            code="CIS-120-002", semester=TEST_SEMESTER, start=1200, end=1330, meeting_days="TR"
         )
 
         _, self.cis_160_001 = create_mock_data(
-            code="CIS-160-001", semester=TEST_SEMESTER, start=5.0, end=6.30, meeting_days="TR"
+            code="CIS-160-001", semester=TEST_SEMESTER, start=500, end=630, meeting_days="TR"
         )
 
         _, self.cis_160_201 = create_mock_data(
-            code="CIS-160-201", semester=TEST_SEMESTER, start=11.0, end=12.0, meeting_days="M"
+            code="CIS-160-201", semester=TEST_SEMESTER, start=1100, end=1200, meeting_days="M"
         )
         self.cis_160_201.activity = "REC"
         self.cis_160_201.save()
 
         _, self.cis_160_202 = create_mock_data(
-            code="CIS-160-202", semester=TEST_SEMESTER, start=14.0, end=15.0, meeting_days="W"
+            code="CIS-160-202", semester=TEST_SEMESTER, start=1400, end=1500, meeting_days="W"
         )
         self.cis_160_202.activity = "REC"
         self.cis_160_202.save()
@@ -748,24 +760,28 @@ class ScheduleFilterTestCase(TestCase):
             [
                 {
                     "building_code": "LLAB",
-                    "room_number": "10",
-                    "meeting_days": "MT",
-                    "start_time_24": 9.00,
-                    "end_time_24": 10.0,
+                    "room_code": "10",
+                    "days": "MT",
+                    "begin_time_24": 900,
+                    "begin_time": "9:00 AM",
+                    "end_time_24": 1000,
+                    "end_time": "10:00 AM",
                 },
                 {
                     "building_code": "LLAB",
-                    "room_number": "10",
-                    "meeting_days": "WR",
-                    "start_time_24": 13.30,
-                    "end_time_24": 14.30,
+                    "room_code": "10",
+                    "days": "WR",
+                    "begin_time_24": 1330,
+                    "begin_time": "1:30 PM",
+                    "end_time_24": 1430,
+                    "end_time": "2:30 PM",
                 },
             ],
         )
 
         _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
 
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
 
         self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
 

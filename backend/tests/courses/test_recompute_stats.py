@@ -136,7 +136,7 @@ class RecomputePrecomputedFieldsTestCase(TestCase):
         self.cis_120_old, self.cis_120_001_old = create_mock_data("CIS-120-001", "2017C")
 
     def test_all_semesters(self):
-        recompute_precomputed_fields("all")
+        recompute_precomputed_fields()
         self.assertEquals(Course.objects.get(id=self.cis_160.id).num_activities, 2)
         self.assertEquals(Section.objects.get(id=self.cis_160_001.id).num_meetings, 4)
         self.assertEquals(Section.objects.get(id=self.cis_160_201.id).num_meetings, 3)
@@ -147,16 +147,3 @@ class RecomputePrecomputedFieldsTestCase(TestCase):
 
         self.assertEquals(Course.objects.get(id=self.cis_120_old.id).num_activities, 1)
         self.assertEquals(Section.objects.get(id=self.cis_120_001_old.id).num_meetings, 3)
-
-    def test_most_recent_semester(self):
-        recompute_precomputed_fields(TEST_SEMESTER)
-        self.assertEquals(Course.objects.get(id=self.cis_160.id).num_activities, 2)
-        self.assertEquals(Section.objects.get(id=self.cis_160_001.id).num_meetings, 4)
-        self.assertEquals(Section.objects.get(id=self.cis_160_201.id).num_meetings, 3)
-        self.assertEquals(Section.objects.get(id=self.cis_160_002.id).num_meetings, 3)
-
-        self.assertEquals(Course.objects.get(id=self.cis_120.id).num_activities, 1)
-        self.assertEquals(Section.objects.get(id=self.cis_120_001.id).num_meetings, 3)
-
-        self.assertEquals(Course.objects.get(id=self.cis_120_old.id).num_activities, 0)
-        self.assertEquals(Section.objects.get(id=self.cis_120_001_old.id).num_meetings, 0)

@@ -6,13 +6,13 @@ from rest_framework.permissions import IsAuthenticated
 
 import courses.examples as examples
 from courses.filters import CourseSearchFilterBackend
-from courses.models import Course, Requirement, Section, StatusUpdate
+from courses.models import Course, PreNGSSRequirement, Section, StatusUpdate
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
     CourseDetailSerializer,
     CourseListSerializer,
     MiniSectionSerializer,
-    RequirementListSerializer,
+    PreNGSSRequirementListSerializer,
     SectionDetailSerializer,
     StatusUpdateSerializer,
     UserSerializer,
@@ -256,13 +256,14 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
         return queryset
 
 
-class RequirementList(generics.ListAPIView, BaseCourseMixin):
+class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
     """
-    Retrieve a list of all academic requirements in the database for this semester.
+    Retrieve a list of all pre-NGSS (deprecated since 2022C) academic requirements
+    in the database for this semester.
     """
 
     schema = PcxAutoSchema(
-        examples=examples.RequirementList_examples,
+        examples=examples.PreNGSSRequirementList_examples,
         response_codes={
             reverse_func("requirements-list", args=["semester"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
@@ -275,8 +276,8 @@ class RequirementList(generics.ListAPIView, BaseCourseMixin):
         },
     )
 
-    serializer_class = RequirementListSerializer
-    queryset = Requirement.objects.all()
+    serializer_class = PreNGSSRequirementListSerializer
+    queryset = PreNGSSRequirement.objects.all()
 
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
@@ -329,4 +330,4 @@ class StatusUpdateView(generics.ListAPIView):
             section__full_code=self.kwargs["full_code"],
             section__course__semester=get_current_semester(),
             in_add_drop_period=True,
-        )
+        ).order_by("created_at")

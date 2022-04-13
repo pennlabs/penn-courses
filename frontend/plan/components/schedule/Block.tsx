@@ -99,7 +99,9 @@ const InnerBlock = styled.div`
 export default function Block(props: BlockProps) {
     const days = ["M", "T", "W", "R", "F", "S", "U"];
     const { offsets, meeting, course, remove, style, focusSection } = props;
-    const { day, start, end } = meeting;
+    let { day, start, end } = meeting;
+    start = Math.round(start * 4) / 4; // round to nearest grid location
+    end = Math.round(end * 4) / 4;
     const { id, color, coreqFulfilled } = course;
     const pos = {
         gridRowStart: (start - offsets.time) * 4 + offsets.row + 1,

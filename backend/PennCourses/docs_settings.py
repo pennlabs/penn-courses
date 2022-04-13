@@ -467,6 +467,7 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
         reverse_func("course-history", args=["course_code", "instructor_id"]),
         "GET",
     ): "Section-Specific Reviews",
+    (reverse_func("requirements-list", args=["semester"]), "GET"): "Pre-NGSS Requirement",
 }
 assert all(
     [isinstance(k, tuple) and len(k) == 2 and isinstance(k[1], str) for k in custom_name.keys()]
@@ -515,10 +516,10 @@ custom_tag_descriptions = {
         our backend (rather than local storage).
         """
     ),
-    "[PCP] Requirements": dedent(
+    "[PCP] Pre-NGSS Requirements": dedent(
         """
-        These routes expose the academic requirements for the current semester which are stored on
-        our backend (hopefully comprehensive).
+        These routes expose the pre-NGSS (deprecated since 2022C) academic requirements for the
+        current semester which are stored on our backend (hopefully comprehensive).
         """
     ),
     "[PCP] Course": dedent(

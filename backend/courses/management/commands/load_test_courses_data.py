@@ -1,10 +1,13 @@
 import csv
 import os
+from collections import defaultdict
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
+from alert.management.commands.recomputestats import recompute_stats
+from backend.courses.util import get_set_id
 from courses.management.commands.export_test_courses_data import (
     models,
     related_id_fields,
@@ -13,7 +16,7 @@ from courses.management.commands.export_test_courses_data import (
     test_data_fields,
     unique_identifying_fields,
 )
-from courses.management.commands.load_add_drop_dates import fill_in_add_drop_periods
+from courses.models import Course, Topic
 from courses.util import in_dev
 
 
@@ -79,8 +82,12 @@ class Command(BaseCommand):
         # identify_id_map: maps datatype to unique identification str to old id
         id_change_map = {data_type: dict() for data_type in data_types}
         # id_change_map: maps datatype to old id to new id
-        self_related_ids = {data_type: dict() for data_type in data_types}
+        self_related_ids = {data_type: defaultdict(dict) for data_type in data_types}
         # self_related_ids: maps datatype to field to object id to self-related object id
+        deferred_related_ids = {data_type: defaultdict(dict) for data_type in data_types}
+        # deferred_related_ids: maps datatype to field to object id to deferred related object id
+        topic_id_to_course_uid_strs = defaultdict(set)
+        # topic_id_to_course_uid_strs: maps old topic id to a set of course unique id strs
 
         def generate_unique_id_str_from_row(data_type, row):
             """
@@ -128,9 +135,8 @@ class Command(BaseCommand):
                         related_dtype = row[5]
                         getattr(object, row[3]).add(id_change_map[related_dtype][row[4]])
                         continue
-                    identify_id_map[data_type][
-                        generate_unique_id_str_from_row(data_type, row)
-                    ] = row[1]
+                    unique_str = generate_unique_id_str_from_row(data_type, row)
+                    identify_id_map[data_type][unique_str] = row[1]
                     field_to_index = {field: (1 + i) for i, field in enumerate(fields[data_type])}
                     to_save_dict = dict()  # this will be unpacked into the model initialization
                     for field in fields[data_type]:
@@ -142,22 +148,34 @@ class Command(BaseCommand):
                         if field == "id":
                             continue
                         if data_type in related_id_fields and field in related_id_fields[data_type]:
-                            to_save_dict[field] = id_change_map[
-                                related_id_fields[data_type][field]
-                            ][row[field_to_index[field]]]
+                            related_data_type = related_id_fields[data_type][field]
+                            if related_data_type in id_change_map:
+                                # Related object has already been loaded
+                                to_save_dict[field] = id_change_map[related_data_type][
+                                    row[field_to_index[field]]
+                                ]
+                            else:
+                                deferred_related_ids[data_type][field][
+                                    row[field_to_index["id"]]
+                                ] = row[field_to_index[field]]
                         elif (
                             data_type in self_related_id_fields
                             and field in self_related_id_fields[data_type]
                         ):
-                            to_save_dict[field] = None
-                            if field not in self_related_ids[data_type]:
-                                self_related_ids[data_type][field] = dict()
                             self_related_ids[data_type][field][row[field_to_index["id"]]] = row[
                                 field_to_index[field]
                             ]
+                        elif data_type == "courses" and field == "topic_id":
+                            topic_id_to_course_uid_strs[row[field_to_index[field]]].add(unique_str)
                         else:
                             to_save_dict[field] = row[field_to_index[field]]
                     to_save[data_type].append(models[data_type](**to_save_dict))
+                    ob = to_save[data_type][-1]
+                    self_id = get_set_id(ob)
+                    if data_type in self_related_id_fields:
+                        for field in self_related_id_fields[data_type]:
+                            # This self-related id will be changed later to the correct value
+                            setattr(ob, field, self_id)
 
                 if data_type not in semester_filter.keys() and data_type in models:
                     existing_objects = set(
@@ -171,33 +189,83 @@ class Command(BaseCommand):
                     ]
                 if data_type.endswith("_m2mfield"):
                     continue
-                models[data_type].objects.bulk_create(to_save[data_type])
+
                 objects[data_type] = dict()
+                models[data_type].objects.bulk_create(to_save[data_type])
                 if data_type not in semester_filter.keys():
                     queryset = models[data_type].objects.all()
                 else:
                     queryset = models[data_type].objects.filter(
                         **{semester_filter[data_type] + "__in": list(semesters)}
                     )
-                for object in queryset:
+                for obj in queryset:
                     if (
-                        generate_unique_id_str_from_object(data_type, object)
+                        generate_unique_id_str_from_object(data_type, obj)
                         not in identify_id_map[data_type]
                     ):
                         continue
-                    objects[data_type][object.id] = object
+                    objects[data_type][obj.id] = obj
                     id_change_map[data_type][
                         identify_id_map[data_type][
-                            generate_unique_id_str_from_object(data_type, object)
+                            generate_unique_id_str_from_object(data_type, obj)
                         ]
-                    ] = object.id
+                    ] = obj.id
                 if data_type in self_related_ids.keys():
                     for field in self_related_ids[data_type].keys():
+                        to_update = []
                         for self_id, other_id in self_related_ids[data_type][field].items():
                             self_new_id = id_change_map[data_type][self_id]
                             self_other_id = id_change_map[data_type][other_id]
-                            setattr(objects[data_type][self_new_id], field, self_other_id)
+                            obj = objects[data_type][self_new_id]
+                            setattr(obj, field, self_other_id)
+                            to_update.append(obj)
+                        models[data_type].objects.bulk_update(to_update, [field])
 
-            fill_in_add_drop_periods(verbose=True)
+            for data_type in deferred_related_ids.keys():
+                print(f"Loading deferred related fields for {data_type}...")
+                for field in deferred_related_ids[data_type].keys():
+                    related_data_type = related_id_fields[data_type][field]
+                    to_update = []
+                    for obj_id, related_id in deferred_related_ids[data_type][field].items():
+                        obj_new_id = id_change_map[data_type][obj_id]
+                        related_new_id = id_change_map[related_data_type][related_id]
+                        obj = objects[data_type][obj_new_id]
+                        setattr(obj, field, related_new_id)
+                        to_update.append(obj)
+                    models[data_type].objects.bulk_update(to_update, [field])
+
+            print("Manually loading Topics...")
+            # Assumes topics are only ever merged, not split
+            for course_uid_strs in tqdm(topic_id_to_course_uid_strs.values()):
+                course_ids = {identify_id_map["courses"][uid_str] for uid_str in course_uid_strs}
+                topics = list(
+                    Topic.objects.filter(courses__id__in=course_ids)
+                    .select_related("most_recent")
+                    .distinct()
+                )
+
+                courses = Course.objects.filter(id__in=course_ids).select_related("primary_listing")
+                most_recent = None
+                for course in courses:
+                    course = course.primary_listing
+                    if not most_recent or course.semester > most_recent.semester:
+                        most_recent = course
+
+                if not topics:
+                    topic = Topic(most_recent=most_recent)
+                    topic.save()
+                    Course.objects.filter(id__in=course_ids).update(topic=topic)
+                    continue
+
+                topic = Topic.merge_all(topics)
+
+                Course.objects.filter(id__in=course_ids).update(topic=topic)
+                if topic.most_recent != most_recent:
+                    topic.most_recent = most_recent
+                    topic.save()
+
+            recompute_stats(
+                semesters=sorted(list(semesters)), semesters_precomputed=True, verbose=True
+            )
 
         print(f"Finished loading test data {src}... processed {row_count} rows. ")

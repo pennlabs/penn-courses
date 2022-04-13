@@ -3,11 +3,6 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
-[[source]]
-url = "https://download.pytorch.org/whl/cpu"
-verify_ssl = true
-name = "downloadpytorch"
-
 [dev-packages]
 codecov = "*"
 coverage = "*"
@@ -24,7 +19,7 @@ black = "==21.12b0"
 [packages]
 click = "==8.0.4"
 django = ">=3.2"
-psycopg2 = {version = "*", sys_platform = "== 'linux'"}
+psycopg2 = "*"
 requests = "*"
 twilio = "*"
 phonenumbers = "*"
@@ -63,10 +58,6 @@ python-dateutil = "*"
 jellyfish = "*"
 matplotlib = "*"
 jupyter = "*"
-transformers = "*"
-sentence-transformers = {version = "*", sys_platform = "== 'linux'"}
-torch = "*"
-nltk = "*"
 
 [requires]
 python_full_version = "3.10"

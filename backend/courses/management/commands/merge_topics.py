@@ -1,9 +1,7 @@
 import logging
-from collections import defaultdict
 from enum import Enum, auto
 from textwrap import dedent
 
-import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
@@ -13,59 +11,22 @@ from courses.course_similarity.heuristics import (
     lev_divided_by_avg_length,
     title_rejection_heuristics,
 )
+from courses.management.commands.load_crosswalk import load_crosswalk
+from courses.management.commands.reset_topics import fill_topics
 from courses.models import Topic
+from review.management.commands.clearcache import clear_cache
 
 
-def load_crosswalk_links(cross_walk):
+def prompt_for_link_topics(topics):
     """
-    From a given crosswalk csv path, generate a dict mapping old_full_code to
-    a list of the new codes originating from that source.
+    Prompts the user to confirm or reject a merge of topics.
+    Returns a boolean representing whether the topics should be merged.
     """
-    links = defaultdict(list)
-    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
-    for _, r in cross_walk.iterrows():
-        old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
-        new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
-        links[old_full_code].append(new_full_code)
-    return links
-
-
-def get_branches_from_cross_walk(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping old_full_code to
-    a list of the new codes originating from that source, if there are multiple
-    (i.e. only in the case of branches).
-    """
-    return {
-        old_code: new_codes
-        for old_code, new_codes in load_crosswalk_links(cross_walk).items()
-        if len(new_codes) > 1
-    }
-
-
-def get_direct_backlinks_from_cross_walk(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping new_full_code->old_full_code,
-    ignoring branched links in the crosswalk (a course splitting into multiple new courses).
-    """
-    return {
-        old_code: new_codes[0]
-        for old_code, new_codes in load_crosswalk_links(cross_walk).items()
-        if len(new_codes) == 1
-    }
-
-
-def prompt_for_link_multiple(courses, extra_newlines=True):
-    """
-    Prompts the user to confirm or reject a possible link between multiple courses.
-    Returns a boolean representing whether the courses should be linked.
-    """
-    print("\n\n============>\n")
-    print("\n".join(course.full_str() for course in courses))
-    print("\n<============")
-    prompt = input(f"Should the above {len(courses)} courses be linked? (y/N) ")
-    if extra_newlines:
-        print("\n\n")
+    for topic in topics:
+        print(f"\n============> {topic}:\n")
+        print("\n------\n".join(course.full_str() for course in topic.courses.all()))
+        print("\n<============")
+    prompt = input(f"Should the above {len(topics)} topics be merged? (y/N) ")
     return prompt.strip().upper() == "Y"
 
 
@@ -74,13 +35,23 @@ def prompt_for_link(course1, course2):
     Prompts the user to confirm or reject a possible link between courses.
     Returns a boolean representing whether the courses should be linked.
     """
-    return prompt_for_link_multiple([course1, course2])
+    print("\n\n============>\n")
+    course1.full_str()
+    print("------")
+    course2.full_str()
+    print("\n<============")
+    prompt = input("Should the above 2 courses be linked? (y/N) ")
+    print("\n\n")
+    return prompt.strip().upper() == "Y"
 
 
 def same_course(course_a, course_b):
-    return course_a.full_code == course_b.full_code or any(
-        course_ac.full_code == course_b.full_code
-        for course_ac in (course_a.primary_listing or course_a).listing_set.all()
+    return (
+        any(
+            course_ac.full_code == course_b.full_code
+            for course_ac in course_a.primary_listing.listing_set.all()
+        )
+        and course_a.title.lower() == course_b.title.lower()
     )
 
 
@@ -95,7 +66,6 @@ def similar_courses(course_a, course_b):
     if (
         not description_rejection_heuristics(desc_a, desc_b)
         and lev_divided_by_avg_length(desc_a, desc_b) < 0.2
-        # and semantic_similarity(desc_a, desc_b) > 0.7  # TODO: debug performance
     ):
         return True
     return False
@@ -154,7 +124,6 @@ def merge_topics(verbose=False, ignore_inexact=False):
     topics = set(
         Topic.objects.prefetch_related(
             "courses",
-            "courses__listing_set",
             "courses__primary_listing",
             "courses__primary_listing__listing_set",
         ).all()
@@ -216,20 +185,20 @@ def manual_merge(topic_ids):
         )
         return
     topic_ids = [int(i) for i in topic_ids]
-    topics = Topic.objects.filter(id__in=topic_ids).prefetch_related("courses")
+    topics = (
+        Topic.objects.filter(id__in=topic_ids)
+        .select_related("most_recent")
+        .prefetch_related("courses")
+    )
     found_ids = topics.values_list("id", flat=True)
     not_found_ids = list(set(topic_ids) - set(found_ids))
     if not_found_ids:
         print(f"The following topic IDs were not found:\n{not_found_ids}\nAborting merge.")
         return
-    courses = [course for topic in topics for course in topic.courses.all()]
-    if not prompt_for_link_multiple(courses, extra_newlines=False):
+    if not prompt_for_link_topics(topics):
         print("Aborting merge.")
         return
-    with transaction.atomic():
-        topic = topics[0]
-        for topic2 in topics[1:]:
-            topic = topic.merge_with(topic2)
+    topic = Topic.merge_all(topics)
     print(f"Successfully merged {len(topics)} topics into: {topic}.")
 
 
@@ -280,7 +249,11 @@ class Command(BaseCommand):
 
         if topic_ids:
             manual_merge(topic_ids)
-            return
+        else:
+            with transaction.atomic():
+                fill_topics(verbose=True)
+                merge_topics(verbose=True, ignore_inexact=ignore_inexact)
+                load_crosswalk(verbose=True)
 
-        with transaction.atomic():
-            merge_topics(verbose=True, ignore_inexact=ignore_inexact)
+        print("Clearing cache")
+        clear_cache()

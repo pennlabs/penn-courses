@@ -8,7 +8,7 @@ from django.db.models import F
 from django.utils import timezone
 from tqdm import tqdm
 
-from alert.management.commands.recomputestats import get_semesters
+from alert.management.commands.recomputestats import get_semesters, recompute_precomputed_fields
 from alert.models import Registration, Section, validate_add_drop_semester
 from courses.models import StatusUpdate
 from courses.util import get_current_semester, get_or_create_add_drop_period
@@ -18,8 +18,9 @@ from review.views import extra_metrics_section_filters
 
 def get_demand_data(semesters, section_query="", verbose=False):
     current_semester = get_current_semester()
-
     output_dict = dict()
+
+    recompute_precomputed_fields(verbose=True)
 
     if verbose:
         print(f"Computing demand data for semesters {str(semesters)}...")
