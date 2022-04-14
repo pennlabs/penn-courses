@@ -175,30 +175,30 @@ export const clearSchedule = () => ({
 export const loadRequirements = () => (dispatch) =>
     doAPIRequest("/base/current/requirements/").then(
         (response) =>
-        response.json().then(
-            (data) => {
-                const obj = {
-                    SAS: [],
-                    SEAS: [],
-                    WH: [],
-                    NURS: [],
-                };
-                const selObj = {};
-                data.forEach((element) => {
-                    obj[element.school].push(element);
-                    selObj[element.id] = 0;
-                });
-                dispatch({
-                    type: LOAD_REQUIREMENTS,
-                    obj,
-                    selObj,
-                });
-            },
-            (error) => {
-                // eslint-disable-next-line no-console
-                console.log(error);
-            }
-        ),
+            response.json().then(
+                (data) => {
+                    const obj = {
+                        SAS: [],
+                        SEAS: [],
+                        WH: [],
+                        NURS: [],
+                    };
+                    const selObj = {};
+                    data.forEach((element) => {
+                        obj[element.school].push(element);
+                        selObj[element.id] = 0;
+                    });
+                    dispatch({
+                        type: LOAD_REQUIREMENTS,
+                        obj,
+                        selObj,
+                    });
+                },
+                (error) => {
+                    // eslint-disable-next-line no-console
+                    console.log(error);
+                }
+            ),
         (error) => {
             // eslint-disable-next-line no-console
             console.log(error);
@@ -247,7 +247,7 @@ function buildCourseSearchUrl(filterData) {
         if (
             filterData[filterFields[i]] &&
             JSON.stringify(filterData[filterFields[i]]) !==
-            JSON.stringify(defaultFilters[i])
+                JSON.stringify(defaultFilters[i])
         ) {
             const filterRange = filterData[filterFields[i]];
             if (filterFields[i] === "time") {
@@ -264,7 +264,8 @@ function buildCourseSearchUrl(filterData) {
 
     // Checkbox Filters
     const checkboxFields = ["cu", "activity", "days"];
-    const checkboxDefaultFields = [{
+    const checkboxDefaultFields = [
+        {
             0.5: 0,
             1: 0,
             1.5: 0,
@@ -289,7 +290,7 @@ function buildCourseSearchUrl(filterData) {
         if (
             filterData[checkboxFields[i]] &&
             JSON.stringify(filterData[checkboxFields[i]]) !==
-            JSON.stringify(checkboxDefaultFields[i])
+                JSON.stringify(checkboxDefaultFields[i])
         ) {
             const applied = [];
             Object.keys(filterData[checkboxFields[i]]).forEach((item) => {
@@ -539,16 +540,16 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         sections: schedule.meetings,
     };
     doAPIRequest(`/plan/schedules/${id}/`, {
-            method: "PUT",
-            credentials: "include",
-            mode: "same-origin",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCsrf(),
-            },
-            body: JSON.stringify(updatedScheduleObj),
-        })
+        method: "PUT",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(updatedScheduleObj),
+    })
         .then(() => {
             if (name === "cart") {
                 dispatch(markCartSynced());
@@ -563,18 +564,18 @@ export function fetchSectionInfo(searchData) {
     return (dispatch) =>
         doAPIRequest(buildSectionInfoSearchUrl(searchData)).then(
             (response) =>
-            response.json().then(
-                (json) => {
-                    const info = {
-                        id: json.id,
-                        description: json.description,
-                        crosslistings: json.crosslistings,
-                    };
-                    const { sections } = json;
-                    dispatch(updateCourseInfo(sections, info));
-                },
-                (error) => dispatch(sectionInfoSearchError(error))
-            ),
+                response.json().then(
+                    (json) => {
+                        const info = {
+                            id: json.id,
+                            description: json.description,
+                            crosslistings: json.crosslistings,
+                        };
+                        const { sections } = json;
+                        dispatch(updateCourseInfo(sections, info));
+                    },
+                    (error) => dispatch(sectionInfoSearchError(error))
+                ),
             (error) => dispatch(sectionInfoSearchError(error))
         );
 }
@@ -588,19 +589,19 @@ export function fetchSectionInfo(searchData) {
 export const createScheduleOnBackend = (name, sections) => (dispatch) => {
     dispatch(creationAttempted(name));
     rateLimitedFetch("/plan/schedules/", {
-            method: "POST",
-            credentials: "include",
-            mode: "same-origin",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCsrf(),
-            },
-            body: JSON.stringify({
-                name,
-                sections,
-            }),
-        })
+        method: "POST",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify({
+            name,
+            sections,
+        }),
+    })
         .then((response) => response.json())
         .then(({ id }) => {
             if (id) {
@@ -617,15 +618,15 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
 export const deleteScheduleOnBackend = (deletedScheduleId) => (dispatch) => {
     dispatch(attemptDeletion(deletedScheduleId));
     rateLimitedFetch(`/plan/schedules/${deletedScheduleId}/`, {
-            method: "DELETE",
-            credentials: "include",
-            mode: "same-origin",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCsrf(),
-            },
-        })
+        method: "DELETE",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    })
         .then(() => {
             dispatch(deletionSuccessful(deletedScheduleId));
         })

@@ -131,7 +131,8 @@ export const filters = (state = initialState, action) => {
                 ...state,
                 filterData: {
                     ...state.filterData,
-                    [action.propertyName]: initialState.filterData[action.propertyName],
+                    [action.propertyName]:
+                        initialState.filterData[action.propertyName],
                 },
             };
 
