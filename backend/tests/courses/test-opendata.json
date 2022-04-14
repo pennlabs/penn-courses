@@ -1,333 +1,338 @@
 {
-   "result_data":[
-      {
-         "activity":"LEC",
-         "activity_description":"Lecture",
-         "course_level":null,
-         "course_level_desc":null,
-         "corequisite_activity":null,
-         "corequisite_activity_description":null,
-         "course_department":"CIS",
-         "course_description":"A fast-paced introduction to the fundamental concepts of programming and software design. This course assumes some previous programming experience, at the level of a high school computer science class or CIS110. (If you got at least 4 in the AP Computer Science A or AB exam, you will do great.) No specific programming language background is assumed: basic experience with any language (for instance Java, C, C++, VB, Python, Perl, or Scheme) is fine. If you have never programmed before, you should take CIS 110 first.",
-         "course_number":"1200",
-         "crn":"61696",
-         "xlist_group":null,
-         "course_terms_offered":"1 term: Either",
-         "course_title":"Prog Lang & Tech I",
-         "credit_connector":"OR",
-         "credit_type":"CU",
-         "credits":"0",
-         "crosslist_primary":null,
-         "end_date":"2022-12-12 00:00:00.0",
-         "first_meeting_days":"MWF10:15 AMSTITB6",
-         "is_cancelled":false,
-         "is_closed":false,
-         "is_crosslist_primary":null,
-         "is_not_scheduled":false,
-         "max_enrollment":"240",
-         "max_enrollment_crosslist":null,
-         "maximum_credit":"1",
-         "minimum_credit":"0",
-         "primary_instructor":"Stephan A Zdancewic",
-         "section_id":"CIS1200001",
-         "section_number":"001",
-         "section_title":"Prog Lang & Tech I",
-         "start_date":"2022-08-30 00:00:00.0",
-         "syllabus_url":null,
-         "term":"202230",
-         "term_session":"14W",
-         "crosslistings":[
-            
-         ],
-         "attributes":[
-            {
-               "attribute_code":"NURS",
-               "attribute_desc":"NUR-SECTOR-ReaSys&Relationship"
-            },
-            {
-               "attribute_code":"EUMS",
-               "attribute_desc":"EAS-COURSE-Math/Science/Engrng"
-            },
-            {
-               "attribute_code":"AUFR",
-               "attribute_desc":"COL-FND-Formal Reason&Analysis"
-            },
-            {
-               "attribute_code":"QP",
-               "attribute_desc":"Grade Mode: Pass/Fail"
-            },
-            {
-               "attribute_code":"QS",
-               "attribute_desc":"Grade Mode: Standard Lettr Grd"
-            },
-            {
-               "attribute_code":"QU",
-               "attribute_desc":"Grade Mode: Stsfctry/Unstsftry"
-            },
-            {
-               "attribute_code":"ACGC",
-               "attribute_desc":"COGS M Computation Cogni"
-            },
-            {
-               "attribute_code":"ACGL",
-               "attribute_desc":"COGS M Language Min"
-            },
-            {
-               "attribute_code":"ACGN",
-               "attribute_desc":"COGS M Cog Neuroscienc"
-            },
-            {
-               "attribute_code":"AU16",
-               "attribute_desc":"College 16 CU Requiremen"
-            },
-            {
-               "attribute_code":"ALCN",
-               "attribute_desc":"LGIC N Minor Electiv"
-            },
-            {
-               "attribute_code":"ALNR",
-               "attribute_desc":"ASLD Related Course"
-            }
-         ],
-         "instructors":[
-            {
-               "primary_ind":"Y",
-               "penn_id":"10218938",
-               "last_name":"Zdancewic",
-               "first_name":"Stephan",
-               "middle_initial":"A"
-            },
-            {
-               "primary_ind":null,
-               "penn_id":"69952305",
-               "last_name":"Sheth",
-               "first_name":"Swapneel",
-               "middle_initial":null
-            }
-         ],
-         "linked_courses":[
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"218",
-               "section_id ":"CIS1200218",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"217",
-               "section_id ":"CIS1200217",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"216",
-               "section_id ":"CIS1200216",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"215",
-               "section_id ":"CIS1200215",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"214",
-               "section_id ":"CIS1200214",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"213",
-               "section_id ":"CIS1200213",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"212",
-               "section_id ":"CIS1200212",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"211",
-               "section_id ":"CIS1200211",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"210",
-               "section_id ":"CIS1200210",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"209",
-               "section_id ":"CIS1200209",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"208",
-               "section_id ":"CIS1200208",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"207",
-               "section_id ":"CIS1200207",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"206",
-               "section_id ":"CIS1200206",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"205",
-               "section_id ":"CIS1200205",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"204",
-               "section_id ":"CIS1200204",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"203",
-               "section_id ":"CIS1200203",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"202",
-               "section_id ":"CIS1200202",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"201",
-               "section_id ":"CIS1200201",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"219",
-               "section_id ":"CIS1200219",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"220",
-               "section_id ":"CIS1200220",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"221",
-               "section_id ":"CIS1200221",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            },
-            {
-               "subject_code ":"CIS",
-               "course_number ":"1200",
-               "section_number ":"222",
-               "section_id ":"CIS1200222",
-               "schedule_code ":"REC",
-               "schedule_description":"Recitation"
-            }
-         ],
-         "meetings":[
-            {
-               "building_code":"STIT",
-               "building_desc":"Stiteler Hall",
-               "room_code":"B6",
-               "begin_time_24":"1015",
-               "end_time_24":"1114",
-               "begin_time":"10:15 AM",
-               "end_time":"11:14 AM",
-               "sunday":null,
-               "monday":"M",
-               "tuesday":null,
-               "wednesday":"W",
-               "thursday":null,
-               "friday":"F",
-               "saturday":null,
-               "days":"MWF",
-               "start_date":"2022-08-30 00:00:00.0",
-               "end_date":"2022-12-12 00:00:00.0"
-            }
-         ],
-         "grade_modes":[
-            {
-               "code":"QP",
-               "description":"Grade Mode: Pass/Fail"
-            },
-            {
-               "code":"QS",
-               "description":"Grade Mode: Standard Lettr Grd"
-            },
-            {
-               "code":"QU",
-               "description":"Grade Mode: Stsfctry/Unstsftry"
-            }
-         ]
-      }
-   ],
-   "service_meta":{
-      "number_of_pages":1,
-      "results_per_page":1000,
-      "current_page_number":1,
-      "next_page_number":null,
-      "previous_page_number":null,
-      "error_text":null,
-      "rest_code":null,
-      "error":false
-   }
+    "result_data":[
+        {
+            "activity":"LEC",
+            "activity_description":"Lecture",
+            "additional_section_narrative":null,
+            "course_level":null,
+            "subject":"CIS",
+            "course_level_desc":null,
+            "corequisite_activity":null,
+            "corequisite_activity_description":null,
+            "course_department":"CIS",
+            "course_description":"A fast-paced introduction to the fundamental concepts of programming and software design. This course assumes some previous programming experience, at the level of a high school computer science class or CIS110. (If you got at least 4 in the AP Computer Science A or AB exam, you will do great.) No specific programming language background is assumed: basic experience with any language (for instance Java, C, C++, VB, Python, Perl, or Scheme) is fine. If you have never programmed before, you should take CIS 110 first. ",
+            "course_number":"1200",
+            "crn":"61696",
+            "xlist_group":null,
+            "course_terms_offered":"1 term: Either",
+            "course_title":"Prog Lang & Tech I",
+            "credit_connector":"OR",
+            "credit_type":"CU",
+            "credits":"1",
+            "crosslist_primary":null,
+            "end_date":"2022-12-12 00:00:00.0",
+            "first_meeting_days":"MWF10:15 AMSTITB6",
+            "is_cancelled":false,
+            "is_closed":false,
+            "is_crosslist_primary":null,
+            "is_not_scheduled":false,
+            "max_enrollment":"240",
+            "max_enrollment_crosslist":null,
+            "maximum_credit":"1",
+            "minimum_credit":"0",
+            "primary_instructor":"Stephan A Zdancewic",
+            "section_id":"CIS1200001",
+            "section_number":"001",
+            "section_title":"Prog Lang & Tech I",
+            "start_date":"2022-08-30 00:00:00.0",
+            "syllabus_url":null,
+            "term":"202230",
+            "term_session":"14W",
+            "crosslistings":[
+                
+            ],
+            "attributes":[
+                {
+                    "attribute_code":"ACGC",
+                    "attribute_desc":"COGS M Computation Cogni"
+                },
+                {
+                    "attribute_code":"ACGL",
+                    "attribute_desc":"COGS M Language Min"
+                },
+                {
+                    "attribute_code":"ACGN",
+                    "attribute_desc":"COGS M Cog Neuroscienc"
+                },
+                {
+                    "attribute_code":"ALCN",
+                    "attribute_desc":"LGIC N Minor Electiv"
+                },
+                {
+                    "attribute_code":"ALNR",
+                    "attribute_desc":"ASLD Related Course"
+                },
+                {
+                    "attribute_code":"AU16",
+                    "attribute_desc":"College 16 CU Requiremen"
+                },
+                {
+                    "attribute_code":"AUFR",
+                    "attribute_desc":"COL-FND-Formal Reason&Analysis"
+                },
+                {
+                    "attribute_code":"EUMS",
+                    "attribute_desc":"EAS-COURSE-Math/Science/Engrng"
+                },
+                {
+                    "attribute_code":"NURS",
+                    "attribute_desc":"NUR-SECTOR-ReaSys&Relationship"
+                },
+                {
+                    "attribute_code":"QP",
+                    "attribute_desc":"Grade Mode: Pass/Fail"
+                },
+                {
+                    "attribute_code":"QS",
+                    "attribute_desc":"Grade Mode: Standard Lettr Grd"
+                },
+                {
+                    "attribute_code":"QU",
+                    "attribute_desc":"Grade Mode: Stsfctry/Unstsftry"
+                }
+            ],
+            "instructors":[
+                {
+                    "primary_ind":"Y",
+                    "penn_id":"10218938",
+                    "last_name":"Zdancewic",
+                    "first_name":"Stephan",
+                    "middle_initial":"A"
+                },
+                {
+                    "primary_ind":null,
+                    "penn_id":"69952305",
+                    "last_name":"Sheth",
+                    "first_name":"Swapneel",
+                    "middle_initial":null
+                }
+            ],
+            "linked_courses":[
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"218",
+                    "section_id ":"CIS1200218",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"217",
+                    "section_id ":"CIS1200217",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"216",
+                    "section_id ":"CIS1200216",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"215",
+                    "section_id ":"CIS1200215",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"214",
+                    "section_id ":"CIS1200214",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"213",
+                    "section_id ":"CIS1200213",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"212",
+                    "section_id ":"CIS1200212",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"211",
+                    "section_id ":"CIS1200211",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"210",
+                    "section_id ":"CIS1200210",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"209",
+                    "section_id ":"CIS1200209",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"208",
+                    "section_id ":"CIS1200208",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"207",
+                    "section_id ":"CIS1200207",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"206",
+                    "section_id ":"CIS1200206",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"205",
+                    "section_id ":"CIS1200205",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"204",
+                    "section_id ":"CIS1200204",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"203",
+                    "section_id ":"CIS1200203",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"202",
+                    "section_id ":"CIS1200202",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"201",
+                    "section_id ":"CIS1200201",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"219",
+                    "section_id ":"CIS1200219",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"220",
+                    "section_id ":"CIS1200220",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"221",
+                    "section_id ":"CIS1200221",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                },
+                {
+                    "subject_code ":"CIS",
+                    "course_number ":"1200",
+                    "section_number ":"222",
+                    "section_id ":"CIS1200222",
+                    "schedule_code ":"REC",
+                    "schedule_description":"Recitation"
+                }
+            ],
+            "meetings":[
+                {
+                    "building_code":"STIT",
+                    "building_desc":"Stiteler Hall",
+                    "room_code":"B6",
+                    "begin_time_24":"1015",
+                    "end_time_24":"1114",
+                    "begin_time":"10:15 AM",
+                    "end_time":"11:14 AM",
+                    "sunday":null,
+                    "monday":"M",
+                    "tuesday":null,
+                    "wednesday":"W",
+                    "thursday":null,
+                    "friday":"F",
+                    "saturday":null,
+                    "days":"MWF",
+                    "start_date":"2022-08-30 00:00:00.0",
+                    "end_date":"2022-12-12 00:00:00.0"
+                }
+            ],
+            "grade_modes":[
+                {
+                    "code":"QP",
+                    "description":"Grade Mode: Pass/Fail"
+                },
+                {
+                    "code":"QS",
+                    "description":"Grade Mode: Standard Lettr Grd"
+                },
+                {
+                    "code":"QU",
+                    "description":"Grade Mode: Stsfctry/Unstsftry"
+                }
+            ],
+            "course_restrictions":[
+                
+            ]
+        }
+    ],
+    "service_meta":{
+        "number_of_pages":1,
+        "results_per_page":1000,
+        "current_page_number":1,
+        "next_page_number":null,
+        "previous_page_number":null,
+        "error_text":null,
+        "rest_code":null,
+        "error":false
+    }
 }

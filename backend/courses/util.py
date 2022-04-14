@@ -22,7 +22,6 @@ from courses.models import (
     Department,
     Instructor,
     Meeting,
-    Restriction,
     Room,
     Section,
     StatusUpdate,
@@ -166,7 +165,7 @@ def get_or_create_add_drop_period(semester):
     return add_drop
 
 
-def get_next_id(obj):
+def get_set_id(obj):
     """
     Returns the next ID for the given object (which hasn't yet been created).
     """
@@ -456,32 +455,21 @@ def set_crosslistings(course, crosslist_primary):
         course.primary_listing = primary_course
 
 
-def add_restrictions(section, restrictions):
-    for r in restrictions:
-        rest, _ = Restriction.objects.get_or_create(
-            code=r["registration_control_code"],
-            defaults={"description": r["requirement_description"]},
-        )
-        section.restrictions.add(rest)
-
-
 def upsert_course_from_opendata(info, semester):
-    course_code = f"{info['course_department']}-{info['course_number']}-{info['section_number']}"
+    dept_code = info.get("subject") or info.get("course_department")
+    assert dept_code, json.dumps(info, indent=2)
+    course_code = f"{dept_code}-{info['course_number']}-{info['section_number']}"
     course, section, _, _ = get_or_create_course_and_section(course_code, semester)
 
     course.title = info["course_title"] or ""
-    course.description = info["course_description"] or ""
-    # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite notes
+    course.description = (info["course_description"] or "").strip()
+    if info.get("additional_section_narrative"):
+        course.description += (course.description and "\n") + info["additional_section_narrative"]
+    # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite info
     course.syllabus_url = info.get("syllabus_url") or None
     set_crosslistings(course, info["crosslist_primary"])
 
-    try:
-        min_cr = Decimal(info["minimum_credit"] or "0")
-        max_cr = Decimal(info["maximum_credit"] or "0")
-        section.credits = Decimal.max(min_cr, max_cr)
-    except ValueError:
-        section.credits = Decimal(0)
-
+    section.credits = Decimal(info["credits"] or "0") if "credits" in info else None
     section.capacity = int(info["max_enrollment"] or 0)
     section.activity = info["activity"] or "***"
 

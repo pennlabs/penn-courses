@@ -7,7 +7,7 @@ from django.db import transaction
 from tqdm import tqdm
 
 from alert.management.commands.recomputestats import recompute_stats
-from backend.courses.util import get_next_id
+from backend.courses.util import get_set_id
 from courses.management.commands.export_test_courses_data import (
     models,
     related_id_fields,
@@ -171,7 +171,7 @@ class Command(BaseCommand):
                             to_save_dict[field] = row[field_to_index[field]]
                     to_save[data_type].append(models[data_type](**to_save_dict))
                     ob = to_save[data_type][-1]
-                    self_id = get_next_id(ob)
+                    self_id = get_set_id(ob)
                     if data_type in self_related_id_fields:
                         for field in self_related_id_fields[data_type]:
                             # This self-related id will be changed later to the correct value

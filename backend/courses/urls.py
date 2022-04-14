@@ -19,7 +19,9 @@ urlpatterns = [
         name="sections-detail",
     ),
     path(
-        "<slug:semester>/requirements/", views.RequirementList.as_view(), name="requirements-list"
+        "<slug:semester>/requirements/",
+        views.PreNGSSRequirementList.as_view(),
+        name="requirements-list",
     ),
     path("statusupdate/<slug:full_code>/", views.StatusUpdateView.as_view(), name="statusupdate"),
 ]

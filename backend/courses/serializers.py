@@ -7,7 +7,7 @@ from courses.models import (
     Course,
     Instructor,
     Meeting,
-    Requirement,
+    PreNGSSRequirement,
     Section,
     StatusUpdate,
     UserProfile,
@@ -181,7 +181,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class RequirementListSerializer(serializers.ModelSerializer):
+class PreNGSSRequirementListSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField(
         read_only=True,
         help_text="A string representation of the requirement, in the form '{code}@{school}'",
@@ -192,7 +192,7 @@ class RequirementListSerializer(serializers.ModelSerializer):
         return f"{obj.code}@{obj.school}"
 
     class Meta:
-        model = Requirement
+        model = PreNGSSRequirement
         fields = ["id", "code", "school", "semester", "name"]
         read_only_fields = fields
 
@@ -295,10 +295,15 @@ class CourseDetailSerializer(CourseListSerializer):
     sections = SectionDetailSerializer(
         many=True, read_only=True, help_text="A list of the sections of this course."
     )
-    requirements = RequirementListSerializer(
+    pre_ngss_requirements = PreNGSSRequirementListSerializer(
         many=True,
         read_only=True,
-        help_text="A list of the academic requirements this course fulfills.",
+        help_text=dedent(
+            """
+        A list of the pre-NGSS (deprecated since 2022C) academic requirements
+        this course fulfills.
+        """
+        ),
     )
 
     course_quality = serializers.DecimalField(
@@ -329,7 +334,7 @@ class CourseDetailSerializer(CourseListSerializer):
             "work_required",
         ] + [
             "crosslistings",
-            "requirements",
+            "pre_ngss_requirements",
             "sections",
         ]
         read_only_fields = fields
