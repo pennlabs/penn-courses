@@ -120,16 +120,14 @@ const MobileFilterDropdowns = styled.div`
 `;
 
 const SearchBarContainer = styled.div`
-    margin: 1rem 1.5rem;
-    padding: 0.25rem;
+    padding: 0.5rem 0.25rem;
     background-color: white;
-    border-radius: 6px;
     box-shadow: 0 1px 3px 0 lightgrey;
     width: inherit;
     align-items: center;
     justify-content: space-between;
     height: auto;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
 
     @media screen and (min-width: 769px) {
         display: flex;
@@ -142,7 +140,6 @@ const SearchBarFilters = styled.div`
     flex-shrink: 0;
     align-items: center;
     justify-content: flex-start;
-    max-width: 80vw !important;
 
     @media screen and (min-width: 769px) {
         display: flex;
@@ -160,7 +157,7 @@ const LevelItem = styled.div`
 `;
 
 const SearchLevelItem = styled(LevelItem)`
-    padding-left: 2rem;
+    padding-left: 0.5rem;
 `;
 
 const FilterLevelItem = styled.div`
@@ -173,8 +170,7 @@ const FilterLevelItem = styled.div`
     justify-content: flex-start;
     max-width: calc(100% - 17rem);
     display: flex;
-    margin-right: 0.75rem;
-    padding-left: 1rem;
+    padding-left: 0.5rem;
 
     > * {
         padding-right: 0.5rem;
@@ -221,7 +217,7 @@ const ClearButton = styled.button`
     vertical-align: top;
     cursor: pointer;
     justify-content: center;
-    padding: calc(0.375em - 1px) 0.75em;
+    padding: calc(0.375em - 1px) 0em;
     text-align: center;
     white-space: nowrap;
     background-color: white;
@@ -243,6 +239,12 @@ const Icon = styled.span`
     height: 1.5rem;
     width: 1.5rem;
     pointer-events: none;
+`;
+
+const DropdownContainer = styled.div`
+    max-width: 60vw !important;
+    display: flex;
+    flex-direction: row;
 `;
 
 function SearchBar({
@@ -339,15 +341,15 @@ SearchBarProps) {
     };
 
     const dropDowns = (
-        <div>
-            {/*<DropdownButton
+        <DropdownContainer>
+            {/* <DropdownButton
                 title="Requirements"
                 filterData={filterData.selectedReq}
                 defaultFilter={defaultReqs}
                     addSchoolReq={addSchoolReq}
                     remSchoolReq={remSchoolReq}
                 />
-            </DropdownButton> // TODO: re-enable*/}
+            </DropdownButton> // TODO: re-enable */}
             <DropdownButton
                 title="Difficulty"
                 filterData={filterData.difficulty}
@@ -447,7 +449,14 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-        </div>
+            {/* <DropdownButton
+                title="Fit Schedule"
+                filterData={filterData.fit_schedule}
+                defaultFilter={defaultFilters.filterData.fit_schedule}
+                clearFilter={clearFilterSearch("fit_schedule")}
+            >
+            </DropdownButton> //TODO: Add Fit Schedule */}
+        </DropdownContainer>
     );
     if (mobileView) {
         return (
@@ -539,26 +548,26 @@ SearchBarProps) {
                     <p> Filter by</p>
                     {dropDowns}
                 </FilterLevelItem>
+                <LevelRight className="is-hidden-mobile">
+                    <LevelItem>
+                        <ClearButton
+                            type="button"
+                            onClick={() => {
+                                clearSearchResults();
+                                conditionalStartSearch({
+                                    // TODO: remove any cast when getting rid of redux
+                                    ...(defaultFilters.filterData as any),
+                                    searchString: filterData.searchString,
+                                    selectedReq: defaultReqs,
+                                });
+                                clearAll();
+                            }}
+                        >
+                            Clear all
+                        </ClearButton>
+                    </LevelItem>
+                </LevelRight>
             </SearchBarFilters>
-            <LevelRight className="is-hidden-mobile">
-                <LevelItem>
-                    <ClearButton
-                        type="button"
-                        onClick={() => {
-                            clearSearchResults();
-                            conditionalStartSearch({
-                                // TODO: remove any cast when getting rid of redux
-                                ...(defaultFilters.filterData as any),
-                                searchString: filterData.searchString,
-                                selectedReq: defaultReqs,
-                            });
-                            clearAll();
-                        }}
-                    >
-                        Clear all
-                    </ClearButton>
-                </LevelItem>
-            </LevelRight>
             <LevelRight>
                 <LevelItem>
                     <AccountIndicator

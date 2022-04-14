@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { FilterData } from "../../../plan/types";
+import { FilterData } from "../../types";
 import { Icon } from "../bulma_derived_components";
 
 interface SearchFieldProps {

@@ -1,11 +1,11 @@
 import React from "react";
 import styled from "styled-components";
+import { Range } from "rc-slider";
 import {
     Column,
     CheckboxInput,
     CheckboxLabel,
 } from "../bulma_derived_components";
-import { Range } from "rc-slider";
 
 type CheckboxFilterData<D> = {
     [K in keyof D]: boolean;
