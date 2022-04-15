@@ -3,6 +3,8 @@ import PropTypes from "prop-types";
 import styled from "styled-components";
 import * as Sentry from "@sentry/browser";
 
+import InfoTool from "pcx-shared-components/src/common/InfoTool";
+
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
 import { Center } from "pcx-shared-components/src/common/layout";
@@ -10,6 +12,8 @@ import { Input } from "../Input";
 import AutoComplete from "../AutoComplete";
 import getCsrf from "../../csrf";
 import { User, Section } from "../../types";
+
+import ReactTooltip from "react-tooltip";
 
 const SubmitButton = styled.button`
     border-radius: 5px;
@@ -27,15 +31,27 @@ const SubmitButton = styled.button`
     }
 `;
 
-const AlertText = styled.div`
-    padding-top: 1rem;
+const ClosedText = styled.div`
+    padding-top: 0.5rem;
     color: #555555;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    flex-direction: row;
 `;
 
 const Form = styled.form`
     display: flex;
     flex-direction: column;
 `;
+
+const spacer = {
+    container: {
+        width: "auto",
+        height: "auto",
+        marginLeft: "0.25rem",
+    },
+} as const;
 
 interface RadioSetProps {
     selected: string;
@@ -46,27 +62,29 @@ interface RadioSetProps {
 const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
     <span>
         {options.map(({ label, value }) => (
-                <label htmlFor={value} key={label}>
-                    <input
-                        type="radio"
-                        name="name"
-                        id={value}
-                        value={value}
-                        onChange={(e) => setSelected(e.target.value)}
-                        checked={value === selected}
-                    />
-                    {label}
-                </label>
+            <label htmlFor={value} style={spacer.container}>
+                <input
+                    type="radio"
+                    name="name"
+                    id={value}
+                    value={value}
+                    onChange={(e) => setSelected(e.target.value)}
+                    checked={value === selected}
+                />
+                {label}
+            </label>
         ))}
     </span>
 );
 
 RadioSet.propTypes = {
     selected: PropTypes.string,
-    options: PropTypes.arrayOf(PropTypes.shape({
-        label: PropTypes.string,
-        value: PropTypes.string,
-      })),
+    options: PropTypes.arrayOf(
+        PropTypes.shape({
+            label: PropTypes.string,
+            value: PropTypes.string,
+        })
+    ),
     setSelected: PropTypes.func,
 };
 
@@ -112,7 +130,7 @@ const AlertForm = ({
     const [phone, setPhone] = useState("");
     const [isPhoneDirty, setPhoneDirty] = useState(false);
 
-    const [autoResub, setAutoResub] = useState("false");
+    const [closedNotif, setClosedNotif] = useState(false);
 
     const autoCompleteInputRef = useRef<HTMLInputElement>(null);
 
@@ -174,12 +192,12 @@ const AlertForm = ({
      * @param newSelectedCourses - most up-to-date selected courses set
      * @param suggestion - the section
      */
-     const clearInputValue = () => {
+    const clearInputValue = () => {
         if (autoCompleteInputRef.current) {
             autoCompleteInputRef.current.value = "";
             setValue("");
         }
-    }
+    };
 
     const deselectCourse = (section: Section): boolean => {
         const newSelectedCourses = new Set(selectedCourses);
@@ -191,54 +209,46 @@ const AlertForm = ({
         }
 
         return removed;
-    }
+    };
 
     const submitRegistration = () => {
         // if user has a auto fill section and didn't change the input value then register for section
         // and support user manually entered a course (without checking checkbox)
+
+        const postRegistration = (section_id: string) =>
+            doAPIRequest("/api/alert/registrations/", "POST", {
+                section: section_id,
+                auto_resubscribe: true,
+                close_notification: email !== "" && closedNotif,
+            });
+
         if (
             autoCompleteInputRef.current &&
-            (autoCompleteInputRef.current.value === autofillSection || (autoCompleteInputRef.current.value !== "" && selectedCourses.size == 0))
+            (autoCompleteInputRef.current.value === autofillSection ||
+                (autoCompleteInputRef.current.value !== "" &&
+                    selectedCourses.size == 0))
         ) {
-            const section = autoCompleteInputRef.current.value;
-            isCourseOpen(section).then(isOpen => {
-                if (!isOpen) {
-                    doAPIRequest("/api/alert/registrations/", "POST", {
-                        section: section,
-                        auto_resubscribe: autoResub === "true",
-                    })
-                        .then((res) => {
-                            if (res.ok) {
-                                clearInputValue();
-                            }
-                            setResponse(res)
-                        })
-                        .catch(handleError);
-                } 
-            })
+            postRegistration(autoCompleteInputRef.current.value)
+                .then((res) => {
+                    if (res.ok) {
+                        clearInputValue();
+                        setClosedNotif(false);
+                    }
+                    setResponse(res);
+                })
+                .catch(handleError);
 
             return;
-            
         }
 
         // register all selected sections
         const promises: Array<Promise<Response | undefined>> = [];
         selectedCourses.forEach((section) => {
-
-            const promise = isCourseOpen(section.section_id).then(isOpen => {
-                 if (!isOpen) {
-                      return doAPIRequest("/api/alert/registrations/", "POST", {
-                        section: section.section_id,
-                        auto_resubscribe: autoResub === "true",
-                    })
-                }
-
-            })
-            
-           promises.push(promise)
+            const promise = postRegistration(section.section_id);
+            promises.push(promise);
         });
 
-        const sections = Array.from(selectedCourses)
+        const sections = Array.from(selectedCourses);
 
         Promise.allSettled(promises)
             .then((responses) => responses.forEach(
@@ -255,19 +265,22 @@ const AlertForm = ({
                         setResponse(response);
                         if (response.ok) {
                             deselectCourse(sections[i]);
+                            setClosedNotif(false);
                         } 
+                    
                     //only if network error occurred
                     } else {
                         handleError(res.reason);
                     }
-                }));
+            })
+        );
     };
 
     const onSubmit = () => {
-        if (phone.length === 0 && email.length === 0) {
+        if (email.length === 0) {
             sendError(
                 400,
-                "Please add at least one contact method (either email or phone number)."
+                "Please enter your email address for alert purposes."
             );
             return;
         }
@@ -315,7 +328,7 @@ const AlertForm = ({
                 onChange={(e) => setEmail(e.target.value)}
             />
             <Input
-                placeholder="Phone"
+                placeholder="Phone (optional)"
                 value={phone}
                 onChange={(e) => {
                     setPhone(e.target.value);
@@ -323,17 +336,45 @@ const AlertForm = ({
                 }}
             />
             <Center>
-                <AlertText>
-                    Alert me
-                    <RadioSet
-                        options={[
-                            { label: "once", value: "false" },
-                            { label: "until I cancel", value: "true" },
-                        ]}
-                        setSelected={setAutoResub}
-                        selected={autoResub}
+                <ClosedText>
+                    Notify when Closed?&nbsp;
+                    <span data-tip data-for="historical-tooltip">
+                        <i
+                            className="fa fa-question-circle"
+                            style={{
+                                color: "#c6c6c6",
+                                fontSize: "13px",
+                                marginBottom: "0.3rem",
+                            }}
+                        />
+                    </span>
+                    <ReactTooltip
+                        id="historical-tooltip"
+                        place="right"
+                        className="opaque"
+                        type="light"
+                        effect="solid"
+                        border={true}
+                        borderColor="#ededed"
+                        textColor="#4a4a4a"
+                    >
+                        <span className="tooltip-text">
+                            Check this box to receive a <br /> 
+                            follow-up email when a course <br />
+                            closes again after alerting you <br />
+                            of an opening.
+                        </span>
+                    </ReactTooltip>
+                    <Input
+                        type="checkbox"
+                        checked={closedNotif}
+                        onChange={(e) => {
+                            setClosedNotif(e.target.checked);
+                        }}
+                        style={spacer.container}
                     />
-                </AlertText>
+                </ClosedText>
+
                 <SubmitButton
                     onClick={(e) => {
                         e.preventDefault();
