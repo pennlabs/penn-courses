@@ -88,9 +88,7 @@ def accept_webhook(request):
     if course_status is None:
         return HttpResponse("Course Status could not be extracted from response", status=400)
 
-    prev_status = data.get("previous_status", None)
-    if prev_status is None:
-        return HttpResponse("Previous Status could not be extracted from response", status=400)
+    prev_status = data.get("previous_status", None) or ""
 
     try:
         course_term = data.get("term", None)
