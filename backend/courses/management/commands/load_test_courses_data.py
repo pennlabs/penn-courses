@@ -40,7 +40,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        if in_dev():
+        if not in_dev():
             raise ValueError("This script cannot be run in a non-development environment.")
         src = os.path.abspath(kwargs["src"])
         _, file_extension = os.path.splitext(kwargs["src"])
@@ -191,6 +191,7 @@ class Command(BaseCommand):
                     continue
 
                 objects[data_type] = dict()
+                print(f"Saving {data_type} (this might take a while)...")
                 models[data_type].objects.bulk_create(to_save[data_type])
                 if data_type not in semester_filter.keys():
                     queryset = models[data_type].objects.all()
@@ -219,6 +220,7 @@ class Command(BaseCommand):
                             obj = objects[data_type][self_new_id]
                             setattr(obj, field, self_other_id)
                             to_update.append(obj)
+                        print(f"Updating {data_type} (this might take a while)...")
                         models[data_type].objects.bulk_update(to_update, [field])
 
             for data_type in deferred_related_ids.keys():
@@ -232,12 +234,16 @@ class Command(BaseCommand):
                         obj = objects[data_type][obj_new_id]
                         setattr(obj, field, related_new_id)
                         to_update.append(obj)
+                    print(f"Updating {data_type} (this might take a while)...")
                     models[data_type].objects.bulk_update(to_update, [field])
 
             print("Manually loading Topics...")
             # Assumes topics are only ever merged, not split
             for course_uid_strs in tqdm(topic_id_to_course_uid_strs.values()):
-                course_ids = {identify_id_map["courses"][uid_str] for uid_str in course_uid_strs}
+                course_ids = {
+                    id_change_map["courses"][identify_id_map["courses"][uid_str]]
+                    for uid_str in course_uid_strs
+                }
                 topics = list(
                     Topic.objects.filter(courses__id__in=course_ids)
                     .select_related("most_recent")
