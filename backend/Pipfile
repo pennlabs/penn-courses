@@ -58,6 +58,7 @@ python-dateutil = "*"
 jellyfish = "*"
 matplotlib = "*"
 jupyter = "*"
+docutils = "*"
 
 [requires]
 python_full_version = "3.10"
