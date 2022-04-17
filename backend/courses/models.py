@@ -322,27 +322,21 @@ class Course(models.Model):
         # (merge topics if this course connects to multiple topics)
         if not self.topic:
             with transaction.atomic():
-                all_codes = self.primary_listing.listing_set.all().values("full_code")
-                topics = list(
-                    Topic.objects.select_related("most_recent")
-                    .filter(
-                        most_recent__full_code__in=all_codes, most_recent__title__iexact=self.title
+                primary = self.primary_listing
+                try:
+                    topic = Topic.objects.select_related("most_recent").get(
+                        most_recent__full_code=primary.full_code,
                     )
-                    .distinct()
-                )
-
-                if topics:
-                    topic = Topic.merge_all(topics)
-                    if topic.most_recent.semester < self.primary_listing.semester:
-                        topic.most_recent = self.primary_listing
+                    if topic.most_recent.semester < primary.semester:
+                        topic.most_recent = primary
                         topic.save()
-                else:
-                    topic = Topic(most_recent=self.primary_listing)
+                except Topic.DoesNotExist:
+                    topic = Topic(most_recent=primary)
                     topic.save()
 
                 self.topic = topic
                 # This update takes care of saving self.topic
-                self.primary_listing.listing_set.all().update(topic=topic)
+                primary.listing_set.all().update(topic=topic)
 
 
 class Topic(models.Model):
@@ -398,6 +392,8 @@ class Topic(models.Model):
         with transaction.atomic():
             if self == topic:
                 return self
+            if self.most_recent.semester == topic.most_recent.semester:
+                raise ValueError("Cannot merge different topics with same most_recent semester.")
             if (
                 self.branched_from
                 and topic.branched_from
