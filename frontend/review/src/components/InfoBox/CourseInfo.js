@@ -194,6 +194,7 @@ const RelatedCodes = styled.div`
   flex-direction: row;
   color: #4a4a4a;
   align-items: center;
+  flex-wrap: wrap;
 `;
 
 const Spacer = styled.div`
