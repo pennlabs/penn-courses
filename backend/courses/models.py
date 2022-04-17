@@ -392,8 +392,6 @@ class Topic(models.Model):
         with transaction.atomic():
             if self == topic:
                 return self
-            if self.most_recent.semester == topic.most_recent.semester:
-                raise ValueError("Cannot merge different topics with same most_recent semester.")
             if (
                 self.branched_from
                 and topic.branched_from
