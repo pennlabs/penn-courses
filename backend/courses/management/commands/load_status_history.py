@@ -11,8 +11,8 @@ from tqdm import tqdm
 
 from alert.management.commands.recomputestats import recompute_stats
 from alert.models import AddDropPeriod
-from courses.util import get_or_create_add_drop_period
 from courses.models import Section, StatusUpdate
+from courses.util import get_or_create_add_drop_period
 from PennCourses.settings.base import TIME_ZONE
 
 

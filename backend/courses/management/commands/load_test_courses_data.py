@@ -16,7 +16,7 @@ from courses.management.commands.export_test_courses_data import (
     unique_identifying_fields,
 )
 from courses.models import Course, Topic
-from courses.util import in_dev, get_set_id
+from courses.util import get_set_id, in_dev
 
 
 class Command(BaseCommand):
