@@ -390,7 +390,13 @@ def extract_date(date_str):
 
 def clean_meetings(meetings):
     return {
-        (m["days"], m["begin_time"], m["end_time"], m["building_code"], m["room_code"]): m
+        (
+            tuple(sorted(list(set(m["days"])))),
+            m["begin_time"],
+            m["end_time"],
+            m["building_code"],
+            m["room_code"],
+        ): m
         for m in meetings
         if m["days"] and m["begin_time"] and m["end_time"]
     }.values()
@@ -399,6 +405,8 @@ def clean_meetings(meetings):
 def set_meetings(section, meetings):
     meetings = clean_meetings(meetings)
 
+    for meeting in meetings:
+        meeting["days"] = "".join(sorted(list(set(meeting["days"]))))
     meeting_times = [
         f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}" for meeting in meetings
     ]
@@ -421,15 +429,17 @@ def set_meetings(section, meetings):
         start_date = extract_date(meeting.get("start_date"))
         end_date = extract_date(meeting.get("end_date"))
         for day in list(meeting["days"]):
-            Meeting(
+            Meeting.objects.get_or_create(
                 section=section,
                 day=day,
                 start=start_time,
                 end=end_time,
                 room=room,
-                start_date=start_date,
-                end_date=end_date,
-            ).save()
+                defaults={
+                    "start_date": start_date,
+                    "end_date": end_date,
+                },
+            )
 
 
 def add_associated_sections(section, linked_sections):
