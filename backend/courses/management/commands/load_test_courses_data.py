@@ -7,7 +7,6 @@ from django.db import transaction
 from tqdm import tqdm
 
 from alert.management.commands.recomputestats import recompute_stats
-from backend.courses.util import get_set_id
 from courses.management.commands.export_test_courses_data import (
     models,
     related_id_fields,
@@ -17,7 +16,7 @@ from courses.management.commands.export_test_courses_data import (
     unique_identifying_fields,
 )
 from courses.models import Course, Topic
-from courses.util import in_dev
+from courses.util import in_dev, get_set_id
 
 
 class Command(BaseCommand):
@@ -224,6 +223,8 @@ class Command(BaseCommand):
                         models[data_type].objects.bulk_update(to_update, [field])
 
             for data_type in deferred_related_ids.keys():
+                if not deferred_related_ids[data_type]:
+                    continue
                 print(f"Loading deferred related fields for {data_type}...")
                 for field in deferred_related_ids[data_type].keys():
                     related_data_type = related_id_fields[data_type][field]
