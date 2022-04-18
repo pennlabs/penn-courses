@@ -1,4 +1,3 @@
-import logging
 import os
 
 import sentry_sdk
@@ -23,13 +22,7 @@ ALLOWED_HOSTS = [
 
 # Sentry settings
 SENTRY_URL = os.environ.get("SENTRY_URL", "")
-sentry_logging = LoggingIntegration(
-    level=logging.INFO,  # Capture info and above as breadcrumbs
-    event_level=logging.ERROR,  # Send errors as events
-)
-sentry_sdk.init(
-    dsn=SENTRY_URL, integrations=[sentry_logging, CeleryIntegration(), DjangoIntegration()]
-)
+sentry_sdk.init(dsn=SENTRY_URL, integrations=[CeleryIntegration(), DjangoIntegration()])
 
 # DLA settings
 PLATFORM_ACCOUNTS = {"ADMIN_PERMISSION": "penn_courses_admin"}

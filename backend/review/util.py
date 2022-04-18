@@ -5,6 +5,7 @@ from typing import Dict, List
 
 import scipy.stats as stats
 from django.db.models import Count, F
+from django.http import Http404
 
 from courses.models import Section
 from PennCourses.settings.base import (
@@ -58,7 +59,10 @@ def get_single_dict_from_qs(qs):
     """
     Returns the first object in a qs as a dict (as returned by `.values()`).
     """
-    return dict(qs[:1].values()[0])
+    vals = qs[:1].values()
+    if not vals:
+        raise Http404()
+    return dict(vals[0])
 
 
 def get_average_and_recent_dict_single(values_dict, extra_fields=None, **extra_fields_conv):

@@ -96,6 +96,8 @@ def accept_webhook(request):
             return HttpResponse("Course Term could not be extracted from response", status=400)
         if any(course_term.endswith(s) for s in ["10", "20", "30"]):
             course_term = translate_semester_inv(course_term)
+        if course_term.upper().endswith("B"):
+            return JsonResponse({"message": "webhook ignored (summer class)"})
 
         _, section, _, _ = get_or_create_course_and_section(course_id, course_term)
 
