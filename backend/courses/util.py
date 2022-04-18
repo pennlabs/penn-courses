@@ -67,7 +67,7 @@ def translate_semester_inv(semester):
     """
     if not semester:
         return None
-    new_suffix = semester[-2]
+    new_suffix = semester[-2:]
     if new_suffix not in semester_suffix_map_inv:
         raise ValueError(
             f"Invalid semester suffix {new_suffix} (semester must have "

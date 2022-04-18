@@ -26,6 +26,7 @@ from courses.util import (
     get_add_drop_period,
     get_or_create_course_and_section,
     invalidate_current_semester_cache,
+    translate_semester,
 )
 from PennCourses.celery import app as celeryapp
 from PennCourses.settings.base import TIME_ZONE
@@ -713,7 +714,7 @@ class WebhookViewTestCase(TestCase):
             "previous_status": "X",
             "status": "O",
             "status_code_normalized": "Open",
-            "term": TEST_SEMESTER,
+            "term": translate_semester(TEST_SEMESTER),
         }
         Option.objects.update_or_create(
             key="SEND_FROM_WEBHOOK", value_type="BOOL", defaults={"value": "TRUE"}
@@ -728,7 +729,7 @@ class WebhookViewTestCase(TestCase):
                     "previous_status": "X",
                     "status": "O",
                     "status_code_normalized": "Open",
-                    "term": TEST_SEMESTER,
+                    "term": translate_semester(TEST_SEMESTER),
                 }
             ),
             content_type="application/json",
@@ -883,7 +884,7 @@ class WebhookViewTestCase(TestCase):
                     "section_id_normalized": "ANTH-3610-401",
                     "previous_status": "X",
                     "status_code_normalized": "Open",
-                    "term": "2019A",
+                    "term": translate_semester("2019A"),
                 }
             ),
             content_type="application/json",
@@ -1085,7 +1086,7 @@ class AlertRegistrationTestCase(TestCase):
             "previous_status": from_status,
             "status": to_status,
             "status_code_normalized": "Open",
-            "term": section.semester,
+            "term": translate_semester(section.semester),
         }
         res = self.client.post(
             reverse("webhook", urlconf="alert.urls"),
