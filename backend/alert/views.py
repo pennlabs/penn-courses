@@ -88,9 +88,7 @@ def accept_webhook(request):
     if course_status is None:
         return HttpResponse("Course Status could not be extracted from response", status=400)
 
-    prev_status = data.get("previous_status", None)
-    if prev_status is None:
-        return HttpResponse("Previous Status could not be extracted from response", status=400)
+    prev_status = data.get("previous_status", None) or ""
 
     try:
         course_term = data.get("term", None)
@@ -98,6 +96,8 @@ def accept_webhook(request):
             return HttpResponse("Course Term could not be extracted from response", status=400)
         if any(course_term.endswith(s) for s in ["10", "20", "30"]):
             course_term = translate_semester_inv(course_term)
+        if course_term.upper().endswith("B"):
+            return JsonResponse({"message": "webhook ignored (summer class)"})
 
         _, section, _, _ = get_or_create_course_and_section(course_id, course_term)
 
@@ -134,7 +134,7 @@ def accept_webhook(request):
         )
         update_course_from_record(u)
     except (ValidationError, ValueError) as e:
-        logger.error(e)
+        logger.error(e, extra={"request": request})
         response = JsonResponse(
             {"message": "We got an error but webhook should ignore it"}, status=200
         )

@@ -122,11 +122,13 @@ def merge_topics(verbose=False, ignore_inexact=False):
     if verbose:
         print("Merging topics")
     topics = set(
-        Topic.objects.prefetch_related(
+        Topic.objects.select_related("most_recent")
+        .prefetch_related(
             "courses",
             "courses__primary_listing",
             "courses__primary_listing__listing_set",
-        ).all()
+        )
+        .all()
     )
     dont_link = set()
     merge_count = 0
@@ -139,6 +141,8 @@ def merge_topics(verbose=False, ignore_inexact=False):
             keep_linking = False
             for topic2 in topics:
                 if topic == topic2:
+                    continue
+                if topic.most_recent.semester == topic2.most_recent.semester:
                     continue
                 merged_courses = list(topic.courses.all()) + list(topic2.courses.all())
                 merged_courses.sort(key=lambda c: (c.semester, c.topic_id))

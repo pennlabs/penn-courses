@@ -13,6 +13,7 @@ yarn-error.log*
 frontend/*/build/
 frontend/*/.next
 backend/PennCourses/settings/static/
+*.sql
 *.sqlite3
 *.sqlite3-journal
 postgres
