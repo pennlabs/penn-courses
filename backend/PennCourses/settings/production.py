@@ -3,6 +3,8 @@ import os
 import sentry_sdk
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
+import logging
 
 from PennCourses.settings.base import *  # noqa: F401, F403
 
@@ -21,7 +23,13 @@ ALLOWED_HOSTS = [
 
 # Sentry settings
 SENTRY_URL = os.environ.get("SENTRY_URL", "")
-sentry_sdk.init(dsn=SENTRY_URL, integrations=[CeleryIntegration(), DjangoIntegration()])
+sentry_logging = LoggingIntegration(
+    level=logging.INFO,  # Capture info and above as breadcrumbs
+    event_level=logging.ERROR,  # Send errors as events
+)
+sentry_sdk.init(
+    dsn=SENTRY_URL, integrations=[sentry_logging, CeleryIntegration(), DjangoIntegration()]
+)
 
 # DLA settings
 PLATFORM_ACCOUNTS = {"ADMIN_PERMISSION": "penn_courses_admin"}

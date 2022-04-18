@@ -132,7 +132,7 @@ def accept_webhook(request):
         )
         update_course_from_record(u)
     except (ValidationError, ValueError) as e:
-        logger.error(e)
+        logger.error(e, extra={"request": request})
         response = JsonResponse(
             {"message": "We got an error but webhook should ignore it"}, status=200
         )
