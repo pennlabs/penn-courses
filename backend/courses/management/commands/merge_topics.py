@@ -260,4 +260,5 @@ class Command(BaseCommand):
                 load_crosswalk(verbose=True)
 
         print("Clearing cache")
-        clear_cache()
+        del_count = clear_cache()
+        self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
