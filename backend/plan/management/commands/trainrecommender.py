@@ -435,7 +435,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--course_data_path",
+            "--course-data-path",
             type=str,
             default=None,
             help=(
@@ -450,7 +450,7 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--preloaded_descriptions_path",
+            "--preloaded-descriptions-path",
             type=str,
             default=None,
             help=(
@@ -473,7 +473,7 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--train_from_s3",
+            "--train-from-s3",
             default=False,
             action="store_true",
             help=(
@@ -482,13 +482,13 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--output_path",
+            "--output-path",
             default=None,
             type=str,
             help="The local path where the model pkl should be saved.",
         )
         parser.add_argument(
-            "--upload_to_s3",
+            "--upload-to-s3",
             default=False,
             action="store_true",
             help=(
@@ -498,7 +498,7 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--n_per_cluster",
+            "--n-per-cluster",
             type=int,
             default=100,
             help="The number of courses to include in each cluster (a hyperparameter). "

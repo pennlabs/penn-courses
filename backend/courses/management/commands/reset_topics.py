@@ -64,4 +64,4 @@ class Command(BaseCommand):
 
         print("Clearing cache")
         del_count = clear_cache()
-        self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
+        print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")

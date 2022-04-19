@@ -31,4 +31,4 @@ class Command(BaseCommand):
         root_logger.setLevel(logging.DEBUG)
 
         del_count = clear_cache()
-        self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
+        print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")

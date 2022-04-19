@@ -129,7 +129,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--courses_query",
+            "--courses-query",
             default="",
             type=str,
             help=(
@@ -143,7 +143,7 @@ class Command(BaseCommand):
             help="The path (local or in S3) you want to export test data to (must be a .csv file).",
         )
         parser.add_argument(
-            "--upload_to_s3",
+            "--upload-to-s3",
             default=False,
             action="store_true",
             help=(
