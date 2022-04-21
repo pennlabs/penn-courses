@@ -56,4 +56,5 @@ class Command(BaseCommand):
         registrar_import(semester, query)
 
         print("Clearing cache")
-        clear_cache()
+        del_count = clear_cache()
+        print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")

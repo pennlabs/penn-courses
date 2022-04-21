@@ -94,7 +94,7 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--upload_to_s3",
+            "--upload-to-s3",
             default=False,
             action="store_true",
             help=(

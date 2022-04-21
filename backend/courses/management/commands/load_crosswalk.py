@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
-from courses.models import Course
+from courses.models import Course, Topic
 from PennCourses.settings.base import XWALK_S3_BUCKET, XWALK_SRC, S3_client
 from review.management.commands.clearcache import clear_cache
 
@@ -63,6 +63,7 @@ def load_crosswalk(print_missing=False, verbose=False):
     num_missing_children = 0
 
     with transaction.atomic():
+        Topic.objects.all().update(branched_from=None)
         for root_course_code, children_codes in tqdm(crosswalk.items()):
             root_course = (
                 Course.objects.filter(full_code=root_course_code)
@@ -107,7 +108,7 @@ def load_crosswalk(print_missing=False, verbose=False):
                     num_merges += 1
             else:
                 for child_topic in child_topics:
-                    if child_topic.branched_from != root_topic:
+                    if root_topic not in [child_topic, child_topic.branched_from]:
                         num_branch_updates += 1
                         child_topic.branched_from = root_topic
                         child_topic.save()
@@ -139,4 +140,5 @@ class Command(BaseCommand):
         load_crosswalk(print_missing=kwargs["print_missing"], verbose=True)
 
         print("Clearing cache")
-        clear_cache()
+        del_count = clear_cache()
+        print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
