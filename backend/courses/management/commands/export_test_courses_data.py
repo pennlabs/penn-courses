@@ -24,6 +24,7 @@ test_data_fields = {
         "title",
         "description",
         "full_code",
+        "crn",
         "prerequisites",
         "primary_listing_id",
     ],
