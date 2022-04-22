@@ -456,26 +456,27 @@ def add_associated_sections(section, linked_sections):
         section.associated_sections.add(associated)
 
 
-def set_crosslistings(course, semester, crosslist_primary):
-    if crosslist_primary and crosslist_primary != course.crn:
-        course.primary_listing = Course.objects.get(semester=semester, crn=crosslist_primary)
-
-
 def upsert_course_from_opendata(info, semester):
     dept_code = info.get("subject") or info.get("course_department")
     assert dept_code, json.dumps(info, indent=2)
     course_code = f"{dept_code}-{info['course_number']}-{info['section_number']}"
     course, section, _, _ = get_or_create_course_and_section(course_code, semester)
 
-    course.crn = info["crn"]
     course.title = info["course_title"] or ""
     course.description = (info["course_description"] or "").strip()
     if info.get("additional_section_narrative"):
         course.description += (course.description and "\n") + info["additional_section_narrative"]
     # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite info
     course.syllabus_url = info.get("syllabus_url") or None
-    set_crosslistings(course, semester, info["crosslist_primary"])
 
+    # set course primary listing
+    crosslist_primary_crn = info["crosslist_primary"]
+    if crosslist_primary_crn and crosslist_primary_crn != info["crn"]:
+        course.primary_listing = Section.objects.get(
+            course__semester=semester, crn=crosslist_primary_crn
+        ).course
+
+    section.crn = info["crn"]
     section.credits = Decimal(info["credits"] or "0") if "credits" in info else None
     section.capacity = int(info["max_enrollment"] or 0)
     section.activity = info["activity"] or "***"

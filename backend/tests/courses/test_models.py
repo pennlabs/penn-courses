@@ -13,7 +13,6 @@ from courses.util import (
     invalidate_current_semester_cache,
     record_update,
     separate_course_code,
-    set_crosslistings,
     update_course_from_record,
 )
 from tests.courses.util import create_mock_data
@@ -297,38 +296,6 @@ class SectionHasStatusUpdateTestCase(TestCase):
         up.save()
         recompute_precomputed_fields()
         self.assertTrue(Section.objects.get(full_code="CIS-120-001").has_status_updates)
-
-
-class CrosslistingTestCase(TestCase):
-    def setUp(self):
-        self.anch, _ = create_mock_data("ANCH-027-401", TEST_SEMESTER)
-        self.clst, _ = create_mock_data("CLST-027-401", TEST_SEMESTER)
-
-    def test_add_primary_listing(self):
-        set_crosslistings(self.anch, "")
-        self.anch.save()
-        self.assertEqual(self.anch, self.anch.primary_listing)
-
-    def test_add_existing_class(self):
-        set_crosslistings(self.clst, "ANCH-027-401")
-        self.clst.save()
-        clst, _ = create_mock_data("CLST-027-401", TEST_SEMESTER)
-        anch, _ = create_mock_data("ANCH-027-401", TEST_SEMESTER)
-        self.assertEqual(self.anch, clst.primary_listing)
-        self.assertEqual(2, Course.objects.count())
-
-    def test_crosslisting_set(self):
-        set_crosslistings(self.clst, "ANCH-027-401")
-        set_crosslistings(self.anch, "")
-        self.clst.save()
-        self.anch.save()
-        self.assertTrue(self.anch in self.clst.crosslistings.all())
-        self.assertTrue(self.clst in self.anch.crosslistings.all())
-
-    def test_crosslisting_newsection(self):
-        set_crosslistings(self.anch, "HIST-027-401")
-        self.anch.save()
-        self.assertEqual(3, Course.objects.count())
 
 
 class RequirementTestCase(TestCase):

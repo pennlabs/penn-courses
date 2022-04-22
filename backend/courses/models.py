@@ -8,7 +8,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import OuterRef, Q, Subquery
-from django.db.models.constraints import UniqueConstraint
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -169,18 +168,6 @@ class Course(models.Model):
         """
         ),
     )
-    crn = models.CharField(
-        max_length=8,
-        db_index=True,
-        blank=True,
-        null=True,
-        help_text=dedent(
-            """
-        The CRN ID of the course (unique by course/semester if non-null).
-        Only available on courses after spring 2022 (i.e. after the NGSS transition).
-        """
-        ),
-    )
 
     title = models.TextField(
         help_text=dedent(
@@ -262,13 +249,6 @@ class Course(models.Model):
             ("department", "code", "semester"),
             ("full_code", "semester"),
         )
-        constraints = [
-            UniqueConstraint(
-                fields=["crn", "semester"],
-                condition=Q(crn__isnull=False),
-                name="non_null_crn_semester_unique",
-            ),
-        ]
 
     def __str__(self):
         return "%s %s" % (self.full_code, self.semester)
@@ -542,6 +522,18 @@ class Section(models.Model):
             """
         The full code of the section, in the form '{dept code}-{course code}-{section code}',
         e.g. `CIS-120-001` for the 001 section of CIS-120.
+        """
+        ),
+    )
+    crn = models.CharField(
+        max_length=8,
+        db_index=True,
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        The CRN ID of the section.
+        Only available on sections after spring 2022 (i.e. after the NGSS transition).
         """
         ),
     )
