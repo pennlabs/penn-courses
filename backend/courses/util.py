@@ -483,7 +483,7 @@ def upsert_course_from_opendata(info, semester):
     course.syllabus_url = info.get("syllabus_url") or None
 
     # set course primary listing
-    set_crosslistings(course, info["crosslistings"], semester)
+    set_crosslistings(course, info["crosslistings"])
 
     section.crn = info["crn"]
     section.credits = Decimal(info["credits"] or "0") if "credits" in info else None
