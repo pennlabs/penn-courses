@@ -456,6 +456,19 @@ def add_associated_sections(section, linked_sections):
         section.associated_sections.add(associated)
 
 
+def set_crosslistings(course, crosslistings):
+    if not crosslistings:
+        course.primary_listing = course
+        return
+    for crosslisting in crosslistings:
+        if crosslisting["is_primary_section"]:
+            primary_course, _ = get_or_create_course(
+                crosslisting["subject_code"], crosslisting["course_number"], course.semester
+            )
+            course.primary_listing = primary_course
+            return
+
+
 def upsert_course_from_opendata(info, semester):
     dept_code = info.get("subject") or info.get("course_department")
     assert dept_code, json.dumps(info, indent=2)
@@ -470,11 +483,7 @@ def upsert_course_from_opendata(info, semester):
     course.syllabus_url = info.get("syllabus_url") or None
 
     # set course primary listing
-    crosslist_primary_crn = info["crosslist_primary"]
-    if crosslist_primary_crn and crosslist_primary_crn != info["crn"]:
-        course.primary_listing = Section.objects.get(
-            course__semester=semester, crn=crosslist_primary_crn
-        ).course
+    set_crosslistings(course, info["crosslistings"], semester)
 
     section.crn = info["crn"]
     section.credits = Decimal(info["credits"] or "0") if "credits" in info else None

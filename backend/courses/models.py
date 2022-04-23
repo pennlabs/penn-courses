@@ -326,14 +326,26 @@ class Course(models.Model):
         if not self.topic:
             with transaction.atomic():
                 primary = self.primary_listing
-                try:
-                    topic = Topic.objects.select_related("most_recent").get(
-                        most_recent__full_code=primary.full_code,
+                topics = list(
+                    Topic.objects.select_related("most_recent")
+                    .filter(
+                        Q(most_recent__full_code=primary.full_code)
+                        | Q(most_recent__full_code__in=primary.listing_set.values("full_code")),
+                    )
+                    .select_related("most_recent")
+                )
+                if topics:
+                    topic = max(
+                        topics,
+                        key=lambda t: (
+                            int(t.most_recent.full_code == primary.full_code),
+                            t.most_recent.semester,
+                        ),
                     )
                     if topic.most_recent.semester < primary.semester:
                         topic.most_recent = primary
                         topic.save()
-                except Topic.DoesNotExist:
+                else:
                     topic = Topic(most_recent=primary)
                     topic.save()
 

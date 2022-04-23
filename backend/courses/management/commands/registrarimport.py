@@ -20,11 +20,6 @@ def registrar_import(semester=None, query=""):
     print("Loading in courses with prefix %s from %s..." % (query, semester))
     results = registrar.get_courses(query, semester)
 
-    # Put primary courses first so we can easily populate the primary_listing field
-    results = [
-        r for r in results if not r["crosslist_primary"] or r["crosslist_primary"] == r["crn"]
-    ] + [r for r in results if r["crosslist_primary"] != r["crn"]]
-
     for course in tqdm(results):
         upsert_course_from_opendata(course, semester)
 
