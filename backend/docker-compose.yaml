@@ -16,3 +16,14 @@ services:
     image: redis:4.0
     ports:
       - "6379:6379"
+  development:
+    network_mode: "host"
+    profiles:
+      - dev
+    depends_on:
+      - db
+      - redis
+    build:
+      context: ./
+      dockerfile: ./Dockerfile.dev
+    command: tail -f /dev/null

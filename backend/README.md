@@ -38,6 +38,8 @@ First, navigate to the `backend` directory in your terminal.
 2. Running Docker
 
     - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres and Redis).
+    - If (and only if) you are having trouble installing packages on your computer (e.g. issues installing on M1 architecture), run `docker-compose up --profile=dev` instead of just `docker-compose up`. This will spin up a container that you can ssh into to run the backend server (with all required packages preinstalled). Then in a separate terminal, you can run `docker exec -it backend_development_1 /bin/bash` (if this says no such container, try `... backend-development-1...`, and if that doesn't work then run `docker container ls` and use the name of whatever container most closely matches the `backend_development` image). You can think of this as "SSHing" into the running Docker container. Once you are in the container, you can continue running the rest of the commands in this README (skip the `pipenv install --dev` step, start with `pipenv shell`, etc.).
+
 
 3. Setting up your Penn Courses development environment
 
