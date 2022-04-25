@@ -46,12 +46,9 @@ def prompt_for_link(course1, course2):
 
 
 def same_course(course_a, course_b):
-    return (
-        any(
-            course_ac.full_code == course_b.full_code
-            for course_ac in course_a.primary_listing.listing_set.all()
-        )
-        and course_a.title.lower() == course_b.title.lower()
+    return any(
+        course_bc.full_code == course_a.full_code
+        for course_bc in course_b.primary_listing.listing_set.all()
     )
 
 

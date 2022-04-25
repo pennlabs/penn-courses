@@ -32,6 +32,7 @@ test_data_fields = {
         "code",
         "course_id",
         "full_code",
+        "crn",
         "status",
         "capacity",
         "activity",
