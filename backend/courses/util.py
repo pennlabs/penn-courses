@@ -26,6 +26,7 @@ from courses.models import (
     Section,
     StatusUpdate,
     User,
+    Attribute
 )
 
 
@@ -495,12 +496,47 @@ def upsert_course_from_opendata(info, semester):
     set_instructors(section, info["instructors"])
     add_associated_sections(section, info["linked_courses"])
 
-    # add_attributes(section, info["attributes"])  # TODO: save attributes (course or section?)
+    add_attributes(section, info["attributes"])
     # add_restrictions(section, info["restrictions"])  # TODO: add registration restrictions
     # add_grade_modes(section, info["grade_modes"])  # TODO: save grade modes
 
     section.save()
     course.save()
+
+def add_attributes(section, attributes):
+    """
+    Add attributes to course of section. 
+    Create attribute if it does not exist (for
+    this semester)
+    """
+    for attribute in attributes:
+        try:
+            attr = Attribute.objects.get(
+                code=attribute.get("attribute_code"),
+            )
+        except ObjectDoesNotExist:
+            school = re.split("[\s-]", attribute.get("attribute_desc"))[0].strip().upper()
+            SCHOOL_CHOICES_REVERSE = dict((desc.upper(), code.upper()) for (code, desc) in Attribute.SCHOOL_CHOICES) 
+            if school in SCHOOL_CHOICES_REVERSE.values():
+                pass
+            elif school == "COL" or school == "COLLEGE":
+                school = "SAS"
+            elif school == "EAS":
+                school = "SEAS"
+            elif school in SCHOOL_CHOICES_REVERSE:
+                school = SCHOOL_CHOICES_REVERSE.get(school)
+            elif Department.objects.filter(
+                    code=school.strip().upper()
+                ).exists():
+                school = "SAS"
+            else:
+                school = "OTHER"
+            attr = Attribute.objects.create(
+                code=attribute.get("attribute_code"),
+                description=attribute.get("attribute_desc"),
+                school=school
+            )
+        attr.courses.add(section.course)
 
 
 def update_course_from_record(update):
