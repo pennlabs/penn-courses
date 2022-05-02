@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import Case, OuterRef, Q, Subquery, Value, When
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -326,26 +326,27 @@ class Course(models.Model):
         if not self.topic:
             with transaction.atomic():
                 primary = self.primary_listing
-                topics = list(
-                    Topic.objects.select_related("most_recent")
-                    .filter(
-                        Q(most_recent__full_code=primary.full_code)
-                        | Q(most_recent__full_code__in=primary.listing_set.values("full_code")),
-                    )
-                    .select_related("most_recent")
-                )
-                if topics:
-                    topic = max(
-                        topics,
-                        key=lambda t: (
-                            int(t.most_recent.full_code == primary.full_code),
-                            t.most_recent.semester,
-                        ),
+                try:
+                    topic = (
+                        Topic.objects.filter(
+                            Q(most_recent__full_code=primary.full_code)
+                            | Q(most_recent__full_code__in=primary.listing_set.values("full_code")),
+                        )
+                        .annotate(
+                            most_recent_match=Case(
+                                When(most_recent__full_code=primary.full_code, then=Value(1)),
+                                default=Value(0),
+                                output_field=models.IntegerField(),
+                            )
+                        )
+                        .order_by("-most_recent_match", "-most_recent__semester")
+                        .select_related("most_recent")[:1]
+                        .get()
                     )
                     if topic.most_recent.semester < primary.semester:
                         topic.most_recent = primary
                         topic.save()
-                else:
+                except Topic.DoesNotExist:
                     topic = Topic(most_recent=primary)
                     topic.save()
 
@@ -818,6 +819,7 @@ class StatusUpdate(models.Model):
         it sets the percent_through_add_drop_period field.
         """
         from alert.models import validate_add_drop_semester
+        from alert.tasks import section_demand_change
         from courses.util import get_or_create_add_drop_period
 
         # ^ imported here to avoid circular imports
@@ -854,6 +856,8 @@ class StatusUpdate(models.Model):
 
         self.section.has_status_updates = True
         self.section.save()
+
+        section_demand_change.delay(self.section.id, self.created_at)
 
 
 """

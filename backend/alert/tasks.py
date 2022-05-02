@@ -71,28 +71,20 @@ def recompute_percent_open_async(semester):
 
 
 @shared_task(name="pca.tasks.registration_update")
-def registration_update(section_id, was_active, is_now_active, updated_at):
+def section_demand_change(section_id, updated_at):
     """
-    This method should only be called on sections from the current semester. It updates the
-    registration_volume of the registration's section, it updates the PcaDemandDistributionEstimate
-    models and current_demand_distribution_estimate cache to reflect the demand change.
+    This function should be called when a section's demand changes (i.e. the number of
+    active registrations changes, or the section's status is updated). It updates the
+    `PcaDemandDistributionEstimate` model and `current_demand_distribution_estimate`
+    cache to reflect the demand change.
+
+    :param: section_id: the id of the section involved in the demand change
+    :param: updated_at: the datetime at which the demand change occurred
     """
     section = Section.objects.get(id=section_id)
     semester = section.semester
-    assert (
-        semester == get_current_semester()
-    ), "Error: PCA registration from past semester cannot be updated."
-    if was_active == is_now_active:
-        # No change to registration volume
+    if semester != get_current_semester():
         return
-    volume_change = int(is_now_active) - int(was_active)
-    if volume_change < 0:
-        if section.registration_volume >= 1:
-            section.registration_volume += volume_change
-            section.save()
-    else:  # volume_change > 0
-        section.registration_volume += volume_change
-        section.save()
 
     with transaction.atomic():
         create_new_distribution_estimate = False
