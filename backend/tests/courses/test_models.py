@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
-from courses.models import Course, Department, Requirement, Section, Topic, UserProfile
+from courses.models import Course, Department, PreNGSSRequirement, Section, Topic, UserProfile
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
@@ -194,23 +194,11 @@ class CourseTopicTestCase(TestCase):
         self.assertEqual(b_db.topic, t)
         self.assertEqual(t.most_recent, b_db)
 
-    def test_add_course(self):
-        a, _ = get_or_create_course("CIS", "120", "2020C")
-        t = Topic.objects.get()
-        b, _ = get_or_create_course("CIS", "1200", TEST_SEMESTER)
-        t.add_course(b)
-        a_db = Course.objects.get(full_code="CIS-120")
-        b_db = Course.objects.get(full_code="CIS-1200")
-        t = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
-        self.assertEqual(a_db.topic, t)
-        self.assertEqual(b_db.topic, t)
-        self.assertEqual(t.most_recent, b_db)
-
     def test_merge_with(self):
         a, _ = get_or_create_course("CIS", "120", "2020C")
         t = Topic.objects.get()
         b, _ = get_or_create_course("CIS", "1200", "2021C")
-        t.add_course(b)
+        t.merge_with(b.topic)
         c, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
         get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": c})
         t1 = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
@@ -251,15 +239,15 @@ class CourseTopicTestCase(TestCase):
         get_or_create_course("CIS", "120", "2020C")
         b, _ = get_or_create_course("OIDD", "291", "2020C")
         get_or_create_course("LGST", "291", "2020C", defaults={"primary_listing": b})
-        d, _ = get_or_create_course("MGMT", "291", TEST_SEMESTER)
+        d, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
+        get_or_create_course("MGMT", "291", TEST_SEMESTER, defaults={"primary_listing": d})
         get_or_create_course("OPIM", "291", TEST_SEMESTER, defaults={"primary_listing": d})
-        get_or_create_course("OIDD", "291", TEST_SEMESTER, defaults={"primary_listing": d})
         a_db = Course.objects.get(full_code="CIS-120")
         b_db = Course.objects.get(full_code="OIDD-291", semester="2020C")
         c_db = Course.objects.get(full_code="LGST-291")
-        d_db = Course.objects.get(full_code="MGMT-291")
+        d_db = Course.objects.get(full_code="OIDD-291", semester=TEST_SEMESTER)
         e_db = Course.objects.get(full_code="OPIM-291")
-        f_db = Course.objects.get(full_code="OIDD-291", semester=TEST_SEMESTER)
+        f_db = Course.objects.get(full_code="MGMT-291")
         t1 = Topic.objects.get(courses__full_code="CIS-120")
         t2 = Topic.objects.filter(courses__full_code="OIDD-291")[:1].get()
         self.assertEqual(a_db.topic, t1)
@@ -317,28 +305,45 @@ class CrosslistingTestCase(TestCase):
         self.clst, _ = create_mock_data("CLST-027-401", TEST_SEMESTER)
 
     def test_add_primary_listing(self):
-        set_crosslistings(self.anch, "")
+        set_crosslistings(self.anch, [])
         self.anch.save()
         self.assertEqual(self.anch, self.anch.primary_listing)
 
     def test_add_existing_class(self):
-        set_crosslistings(self.clst, "ANCH-027-401")
+        set_crosslistings(
+            self.clst,
+            [
+                {"subject_code": "CLST", "course_number": "027", "is_primary_section": False},
+                {"subject_code": "ANCH", "course_number": "027", "is_primary_section": True},
+            ],
+        )
         self.clst.save()
-        clst, _ = create_mock_data("CLST-027-401", TEST_SEMESTER)
-        anch, _ = create_mock_data("ANCH-027-401", TEST_SEMESTER)
-        self.assertEqual(self.anch, clst.primary_listing)
+        self.assertEqual(self.anch, self.clst.primary_listing)
         self.assertEqual(2, Course.objects.count())
 
     def test_crosslisting_set(self):
-        set_crosslistings(self.clst, "ANCH-027-401")
-        set_crosslistings(self.anch, "")
+        set_crosslistings(
+            self.clst,
+            [
+                {"subject_code": "CLST", "course_number": "027", "is_primary_section": False},
+                {"subject_code": "ANCH", "course_number": "027", "is_primary_section": True},
+            ],
+        )
+        set_crosslistings(self.anch, [])
         self.clst.save()
         self.anch.save()
         self.assertTrue(self.anch in self.clst.crosslistings.all())
         self.assertTrue(self.clst in self.anch.crosslistings.all())
 
     def test_crosslisting_newsection(self):
-        set_crosslistings(self.anch, "HIST-027-401")
+        set_crosslistings(
+            self.anch,
+            [
+                {"subject_code": "CLST", "course_number": "027", "is_primary_section": False},
+                {"subject_code": "ANCH", "course_number": "027", "is_primary_section": False},
+                {"subject_code": "HIST", "course_number": "027", "is_primary_section": True},
+            ],
+        )
         self.anch.save()
         self.assertEqual(3, Course.objects.count())
 
@@ -353,9 +358,13 @@ class RequirementTestCase(TestCase):
         self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
         self.department = Department.objects.get(code="CIS")
 
-        self.req1 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1")
-        self.req2 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2")
-        self.req3 = Requirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
+        self.req1 = PreNGSSRequirement(
+            semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1"
+        )
+        self.req2 = PreNGSSRequirement(
+            semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2"
+        )
+        self.req3 = PreNGSSRequirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
 
         self.req1.save()
         self.req2.save()
@@ -376,11 +385,11 @@ class RequirementTestCase(TestCase):
         self.assertEqual(get_codes(expected), get_codes(actual))
 
     def test_requirements_nooverride(self):
-        reqs = self.course.requirements
+        reqs = self.course.pre_ngss_requirements
         self.assertTrue(2, len(reqs))
 
     def test_requirements_override(self):
-        reqs = self.course2.requirements
+        reqs = self.course2.pre_ngss_requirements
         self.assertEqual(1, len(reqs))
         self.assertEqual(self.req2, reqs[0])
 
@@ -401,7 +410,7 @@ class RequirementTestCase(TestCase):
         courses = self.req1.satisfying_courses.all()
         self.assertEqual(1, len(courses))
         self.assertCoursesEqual([self.course], courses)
-        reqs = self.course2.requirements
+        reqs = self.course2.pre_ngss_requirements
         self.assertEqual(1, len(reqs))
         self.assertEqual(self.req2, reqs[0])
 

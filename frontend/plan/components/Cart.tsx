@@ -1,12 +1,12 @@
 import React from "react";
 import { connect } from "react-redux";
+import { ThunkDispatch } from "redux-thunk";
+import styled from "styled-components";
 import CartSection from "./CartSection";
 import { meetingsContainSection, meetingSetsIntersect } from "./meetUtil";
 import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
 
-import { ThunkDispatch } from "redux-thunk";
 import { Section, CartCourse } from "../types";
-import styled from "styled-components";
 
 const Box = styled.section<{ length: number }>`
     height: calc(100vh - 9em - 3em);
@@ -101,11 +101,10 @@ const Cart = ({
                             code={code}
                             lastAdded={lastAdded && code === lastAdded.id}
                             checked={checked}
-                            meetings={meetings ? meetings : []}
+                            meetings={meetings || []}
                             remove={(event) => {
                                 event.stopPropagation();
                                 removeItem(code);
-
                             }}
                             overlaps={overlaps}
                             courseInfo={(event) => {
@@ -140,12 +139,12 @@ const mapStateToProps = ({
         ),
         overlaps: course.meetings
             ? meetingSetsIntersect(
-                course.meetings,
-                schedules[scheduleSelected].meetings
-                    .filter((s: Section) => s.id !== course.id)
-                    .map((s: Section) => s.meetings)
-                    .flat()
-            )
+                  course.meetings,
+                  schedules[scheduleSelected].meetings
+                      .filter((s: Section) => s.id !== course.id)
+                      .map((s: Section) => s.meetings)
+                      .flat()
+              )
             : false,
     })),
     lastAdded,

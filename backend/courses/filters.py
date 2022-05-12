@@ -4,7 +4,7 @@ from django.db.models import Count, Q
 from django.db.models.expressions import F, Subquery
 from rest_framework import filters
 
-from courses.models import Meeting, Requirement, Section
+from courses.models import Meeting, PreNGSSRequirement, Section
 from courses.util import get_current_semester
 from plan.models import Schedule
 
@@ -147,10 +147,10 @@ def requirement_filter(queryset, req_ids):
     for req_id in req_ids.split(","):
         code, school = req_id.split("@")
         try:
-            requirement = Requirement.objects.get(
+            requirement = PreNGSSRequirement.objects.get(
                 code=code, school=school, semester=get_current_semester()
             )
-        except Requirement.DoesNotExist:
+        except PreNGSSRequirement.DoesNotExist:
             continue
         query &= Q(id__in=requirement.satisfying_courses.all())
 

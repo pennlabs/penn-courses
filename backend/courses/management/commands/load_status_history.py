@@ -12,6 +12,7 @@ from tqdm import tqdm
 from alert.management.commands.recomputestats import recompute_stats
 from alert.models import AddDropPeriod
 from courses.models import Section, StatusUpdate
+from courses.util import get_or_create_add_drop_period
 from PennCourses.settings.base import TIME_ZONE
 
 
@@ -90,6 +91,8 @@ class Command(BaseCommand):
                         created_at=created_at,
                         alert_sent=alert_sent,
                     )
+                    if semester not in add_drop_periods:
+                        add_drop_periods[semester] = get_or_create_add_drop_period(semester)
                     status_update.save(add_drop_period=add_drop_periods[semester])
 
                 print(f"Finished loading status history from {src}... processed {row_count} rows. ")

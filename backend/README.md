@@ -38,6 +38,8 @@ First, navigate to the `backend` directory in your terminal.
 2. Running Docker
 
     - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres and Redis).
+    - If (and only if) you are having trouble installing packages on your computer (e.g. issues installing on M1 architecture), run `docker-compose --profile=dev up` instead of just `docker-compose up`. This will spin up a container that you can ssh into to run the backend server (with all required packages preinstalled). Then in a separate terminal, you can run `docker exec -it backend_development_1 /bin/bash` (if this says no such container, try `... backend-development-1...`, and if that doesn't work then run `docker container ls` and use the name of whatever container most closely matches the `backend_development` image). You can think of this as "SSHing" into the running Docker container. Once you are in the container, you can continue running the rest of the commands in this README (skip the `pipenv install --dev` and `pipenv shell` steps; the packages are already installed globally in your container, so there's no need for a virtual environment).
+
 
 3. Setting up your Penn Courses development environment
 
@@ -45,9 +47,17 @@ First, navigate to the `backend` directory in your terminal.
     - `pipenv shell`
     - `python manage.py migrate`
 
-4. Loading test data
+4. Loading test data (if you are a member of Penn Labs)
 
-    - TODO
+    - To get going quickly with a local database loaded with lots of test data,
+      you can download this [pcx_test.sql](https://penn-labs.slack.com/archives/CDDK7CB53/p1650211990189289)
+      SQL dump file.
+      This file is only accessible to Penn Labs members (anyone else should skip this step and load in course data from the registrar, as explained below).
+    - Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
+    - Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
+    - Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` (replacing `pcx_test.sql` with the full path to that file on your computer) to load
+      the contents of the test database (this might take a while).
+    - For accessing the Django admin site, the admin username is `admin` and the password is `admin` if you use this test db.
 
 5. Running the backend
 

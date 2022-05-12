@@ -7,7 +7,6 @@ from django.db import transaction
 from tqdm import tqdm
 
 from alert.management.commands.recomputestats import recompute_stats
-from backend.courses.util import get_next_id
 from courses.management.commands.export_test_courses_data import (
     models,
     related_id_fields,
@@ -17,7 +16,7 @@ from courses.management.commands.export_test_courses_data import (
     unique_identifying_fields,
 )
 from courses.models import Course, Topic
-from courses.util import in_dev
+from courses.util import get_set_id, in_dev
 
 
 class Command(BaseCommand):
@@ -40,7 +39,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        if in_dev():
+        if not in_dev():
             raise ValueError("This script cannot be run in a non-development environment.")
         src = os.path.abspath(kwargs["src"])
         _, file_extension = os.path.splitext(kwargs["src"])
@@ -171,7 +170,7 @@ class Command(BaseCommand):
                             to_save_dict[field] = row[field_to_index[field]]
                     to_save[data_type].append(models[data_type](**to_save_dict))
                     ob = to_save[data_type][-1]
-                    self_id = get_next_id(ob)
+                    self_id = get_set_id(ob)
                     if data_type in self_related_id_fields:
                         for field in self_related_id_fields[data_type]:
                             # This self-related id will be changed later to the correct value
@@ -191,6 +190,7 @@ class Command(BaseCommand):
                     continue
 
                 objects[data_type] = dict()
+                print(f"Saving {data_type} (this might take a while)...")
                 models[data_type].objects.bulk_create(to_save[data_type])
                 if data_type not in semester_filter.keys():
                     queryset = models[data_type].objects.all()
@@ -219,9 +219,12 @@ class Command(BaseCommand):
                             obj = objects[data_type][self_new_id]
                             setattr(obj, field, self_other_id)
                             to_update.append(obj)
+                        print(f"Updating {data_type} (this might take a while)...")
                         models[data_type].objects.bulk_update(to_update, [field])
 
             for data_type in deferred_related_ids.keys():
+                if not deferred_related_ids[data_type]:
+                    continue
                 print(f"Loading deferred related fields for {data_type}...")
                 for field in deferred_related_ids[data_type].keys():
                     related_data_type = related_id_fields[data_type][field]
@@ -232,12 +235,16 @@ class Command(BaseCommand):
                         obj = objects[data_type][obj_new_id]
                         setattr(obj, field, related_new_id)
                         to_update.append(obj)
+                    print(f"Updating {data_type} (this might take a while)...")
                     models[data_type].objects.bulk_update(to_update, [field])
 
             print("Manually loading Topics...")
             # Assumes topics are only ever merged, not split
             for course_uid_strs in tqdm(topic_id_to_course_uid_strs.values()):
-                course_ids = {identify_id_map["courses"][uid_str] for uid_str in course_uid_strs}
+                course_ids = {
+                    id_change_map["courses"][identify_id_map["courses"][uid_str]]
+                    for uid_str in course_uid_strs
+                }
                 topics = list(
                     Topic.objects.filter(courses__id__in=course_ids)
                     .select_related("most_recent")

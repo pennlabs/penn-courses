@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import Case, OuterRef, Q, Subquery, Value, When
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -245,7 +245,10 @@ class Course(models.Model):
     )
 
     class Meta:
-        unique_together = (("department", "code", "semester"), ("full_code", "semester"))
+        unique_together = (
+            ("department", "code", "semester"),
+            ("full_code", "semester"),
+        )
 
     def __str__(self):
         return "%s %s" % (self.full_code, self.semester)
@@ -280,19 +283,20 @@ class Course(models.Model):
         return self.primary_listing.listing_set.exclude(id=self.id)
 
     @property
-    def requirements(self):
+    def pre_ngss_requirements(self):
         """
-        A QuerySet (list on frontend) of all the Requirement objects this course fulfills. Note that
-        a course fulfills a requirement if and only if it is not in the requirement's
+        A QuerySet (list on frontend) of all the PreNGSSRequirement objects this course fulfills.
+        Note that a course fulfills a requirement if and only if it is not in the requirement's
         overrides set (related name nonrequirements_set), and is in the requirement's
         courses set (related name requirement_set) or its department is in the requirement's
         departments set (related name requirements).
         """
         return (
-            Requirement.objects.exclude(id__in=self.nonrequirement_set.all())
+            PreNGSSRequirement.objects.exclude(id__in=self.pre_ngss_nonrequirement_set.all())
             .filter(semester=self.semester)
             .filter(
-                Q(id__in=self.requirement_set.all()) | Q(id__in=self.department.requirements.all())
+                Q(id__in=self.pre_ngss_requirement_set.all())
+                | Q(id__in=self.department.pre_ngss_requirements.all())
             )
         )
 
@@ -307,41 +311,48 @@ class Course(models.Model):
           - All crosslisted courses have the same topic
           - The `Topic.most_recent` invariant (see the help_text on that field)
         """
-        from courses.util import get_next_id, is_fk_set  # avoid circular imports
+        from courses.util import get_set_id, is_fk_set  # avoid circular imports
 
-        with transaction.atomic():
-            self.full_code = f"{self.department.code}-{self.code}"
+        self.full_code = f"{self.department.code}-{self.code}"
 
-            # Set primary_listing to self if not set
-            if not is_fk_set(self, "primary_listing"):
-                self.primary_listing_id = self.id or get_next_id(self)
+        # Set primary_listing to self if not set
+        if not is_fk_set(self, "primary_listing"):
+            self.primary_listing_id = self.id or get_set_id(self)
 
-            super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
-            # Give this course's listing set a topic if it doesn't already have one
-            # (merge topics if this course connects to multiple topics)
-            if not self.topic:
-                all_codes = self.primary_listing.listing_set.all().values("full_code")
-                topics = list(
-                    Topic.objects.select_related("most_recent")
-                    .filter(
-                        most_recent__full_code__in=all_codes, most_recent__title__iexact=self.title
+        # Give this course's listing set a topic if it doesn't already have one
+        # (merge topics if this course connects to multiple topics)
+        if not self.topic:
+            with transaction.atomic():
+                primary = self.primary_listing
+                try:
+                    topic = (
+                        Topic.objects.filter(
+                            Q(most_recent__full_code=primary.full_code)
+                            | Q(most_recent__full_code__in=primary.listing_set.values("full_code")),
+                        )
+                        .annotate(
+                            most_recent_match=Case(
+                                When(most_recent__full_code=primary.full_code, then=Value(1)),
+                                default=Value(0),
+                                output_field=models.IntegerField(),
+                            )
+                        )
+                        .order_by("-most_recent_match", "-most_recent__semester")
+                        .select_related("most_recent")[:1]
+                        .get()
                     )
-                    .distinct()
-                )
-
-                if topics:
-                    topic = Topic.merge_all(topics)
-                    if topic.most_recent.semester < self.primary_listing.semester:
-                        topic.most_recent = self.primary_listing
+                    if topic.most_recent.semester < primary.semester:
+                        topic.most_recent = primary
                         topic.save()
-                else:
-                    topic = Topic(most_recent=self.primary_listing)
+                except Topic.DoesNotExist:
+                    topic = Topic(most_recent=primary)
                     topic.save()
 
                 self.topic = topic
                 # This update takes care of saving self.topic
-                self.primary_listing.listing_set.all().update(topic=topic)
+                primary.listing_set.all().update(topic=topic)
 
 
 class Topic(models.Model):
@@ -357,10 +368,10 @@ class Topic(models.Model):
             """
         The most recent course (by semester) of this topic. The `most_recent` course should
         be the `primary_listing` if it has crosslistings. These invariants are maintained
-        by the `Topic.merge_with`, `Topic.add_course`, `Topic.from_course`, and `Course.save`
-        methods. Defer to using these methods rather than setting this field manually.
-        You must change the corresponding `Topic` object's `most_recent` field before
-        deleting a Course if it is the `most_recent` course (`on_delete=models.PROTECT`).
+        by the `Course.save()` and `Topic.merge_with()` methods. Defer to using these methods
+        rather than setting this field manually. You must change the corresponding
+        `Topic` object's `most_recent` field before deleting a Course if it is the
+        `most_recent` course (`on_delete=models.PROTECT`).
         """
         ),
     )
@@ -381,16 +392,6 @@ class Topic(models.Model):
     )
 
     @staticmethod
-    def from_course(course):
-        """
-        Creates a new topic from a given course.
-        """
-        if course.topic:
-            return course.topic
-        course.save()
-        return course.topic
-
-    @staticmethod
     def merge_all(topics):
         if not topics:
             raise ValueError("Cannot merge an empty list of topics.")
@@ -404,37 +405,38 @@ class Topic(models.Model):
         """
         Merges this topic with the specified topic. Returns the resulting topic.
         """
-        if self == topic:
-            return self
         with transaction.atomic():
+            if self == topic:
+                return self
+            if (
+                self.branched_from
+                and topic.branched_from
+                and self.branched_from != topic.branched_from
+            ):
+                raise ValueError("Cannot merge topics with different branched_from topics.")
             if self.most_recent.semester >= topic.most_recent.semester:
                 Course.objects.filter(topic=topic).update(topic=self)
+                if topic.branched_from and not self.branched_from:
+                    self.branched_from = topic.branched_from
+                    self.save()
                 topic.delete()
                 return self
             else:
                 Course.objects.filter(topic=self).update(topic=topic)
+                if self.branched_from and not topic.branched_from:
+                    topic.branched_from = self.branched_from
+                    topic.save()
                 self.delete()
                 return topic
-
-    def add_course(self, course):
-        """
-        Adds the specified course to this topic.
-        """
-        with transaction.atomic():
-            course = course.primary_listing
-            if course.semester > self.most_recent.semester:
-                self.most_recent = course
-                self.save()
-            course.topic = self
-            course.listing_set.all().update(topic=self)
 
     def __str__(self):
         return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
 
 
-class Restriction(models.Model):
+class PreNGSSRestriction(models.Model):
     """
-    A registration restriction, e.g. PDP (permission needed from department)
+    A pre-NGSS (deprecated since 2022C) registration restriction,
+    e.g. PDP (permission needed from department)
     """
 
     code = models.CharField(
@@ -536,6 +538,18 @@ class Section(models.Model):
         """
         ),
     )
+    crn = models.CharField(
+        max_length=8,
+        db_index=True,
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        The CRN ID of the section.
+        Only available on sections after spring 2022 (i.e. after the NGSS transition).
+        """
+        ),
+    )
 
     status = models.CharField(
         max_length=4,
@@ -593,11 +607,15 @@ class Section(models.Model):
         """
         ),
     )
-    restrictions = models.ManyToManyField(
-        Restriction,
+    pre_ngss_restrictions = models.ManyToManyField(
+        PreNGSSRestriction,
         related_name="sections",
         blank=True,
-        help_text="All registration Restriction objects to which this section is subject.",
+        help_text=(
+            "All pre-NGSS (deprecated since 2022C) registration Restriction objects to which "
+            "this section is subject. This field will be empty for sections "
+            "in 2022C or later."
+        ),
     )
 
     credits = models.DecimalField(
@@ -801,6 +819,7 @@ class StatusUpdate(models.Model):
         it sets the percent_through_add_drop_period field.
         """
         from alert.models import validate_add_drop_semester
+        from alert.tasks import section_demand_change
         from courses.util import get_or_create_add_drop_period
 
         # ^ imported here to avoid circular imports
@@ -837,6 +856,8 @@ class StatusUpdate(models.Model):
 
         self.section.has_status_updates = True
         self.section.save()
+
+        section_demand_change.delay(self.section.id, self.created_at)
 
 
 """
@@ -1027,14 +1048,15 @@ class Meeting(models.Model):
 
 
 """
-Requirements
+PreNGSSRequirement
 """
 
 
-class Requirement(models.Model):
+class PreNGSSRequirement(models.Model):
     """
-    An academic requirement which the specified course(s) fulfill(s). Not to be confused with
-    Restriction objects, which are restrictions on registration for certain course section(s).
+    A pre-NGSS (deprecated since 2022C) academic requirement which the specified course(s)
+    fulfill(s). Not to be confused with PreNGSSRestriction objects, which were restrictions
+    on registration for certain course section(s).
     """
 
     SCHOOL_CHOICES = (("SEAS", "Engineering"), ("WH", "Wharton"), ("SAS", "College"))
@@ -1090,7 +1112,7 @@ class Requirement(models.Model):
     )
     departments = models.ManyToManyField(
         Department,
-        related_name="requirements",
+        related_name="pre_ngss_requirements",
         blank=True,
         help_text=dedent(
             """
@@ -1108,7 +1130,7 @@ class Requirement(models.Model):
     )
     courses = models.ManyToManyField(
         Course,
-        related_name="requirement_set",
+        related_name="pre_ngss_requirement_set",
         blank=True,
         help_text=dedent(
             """
@@ -1123,7 +1145,7 @@ class Requirement(models.Model):
     )
     overrides = models.ManyToManyField(
         Course,
-        related_name="nonrequirement_set",
+        related_name="pre_ngss_nonrequirement_set",
         blank=True,
         help_text=dedent(
             """

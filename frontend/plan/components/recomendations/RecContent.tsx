@@ -107,7 +107,7 @@ const RecContent = ({
             <RecContentContainer collapse={!show}>
                 {/* Only create list if there is recommended course(s) */}
                 {fetchStatus == 0 ? (
-                    <RecLoading></RecLoading>
+                    <RecLoading />
                 ) : recCourses && recCourses.length > 0 ? (
                     <CoursesContainer>
                         {recCourses.map((recCourse) => (

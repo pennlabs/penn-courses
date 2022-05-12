@@ -176,7 +176,7 @@ class Command(BaseCommand):
             fp = "/tmp/pcrdump.zip"
             # Make sure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
             # are loaded in as environment variables.
-            self.display(f"downloading zip from s3 bucket: {src}")
+            print(f"downloading zip from s3 bucket: {src}")
             S3_client.download_file(s3_bucket, src, fp)
             src = fp
 
@@ -204,17 +204,17 @@ class Command(BaseCommand):
             files = self.get_files(src, is_zip_file, tables_to_get)
 
             summary_fo = files[0]
-            self.display("Loading summary file...")
+            print("Loading summary file...")
             summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
             gc.collect()
-            self.display("SQL parsed and loaded!")
+            print("SQL parsed and loaded!")
 
             if not import_all:
                 full_len = len(summary_rows)
                 summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
                 gc.collect()
                 filtered_len = len(summary_rows)
-                self.display(f"Filtered {full_len} rows down to {filtered_len} rows.")
+                print(f"Filtered {full_len} rows down to {filtered_len} rows.")
 
             semesters = sorted(list({r["TERM"] for r in summary_rows}))
             gc.collect()
@@ -228,43 +228,43 @@ class Command(BaseCommand):
                         + "imported. Continue? (y/N) "
                     )
                     if prompt.strip().upper() != "Y":
-                        self.display("Aborting...")
+                        print("Aborting...")
                         return 0
 
-                self.display(
+                print(
                     f"Deleting {delete_count} existing reviews for semesters from the database..."
                 )
                 to_delete.delete()
 
-            self.display(f"Importing reviews for semester(s) {', '.join(semesters)}")
+            print(f"Importing reviews for semester(s) {', '.join(semesters)}")
             stats = import_summary_rows(summary_rows, show_progress_bar)
-            self.display(stats)
+            print(stats)
 
             gc.collect()
 
             if import_details:
-                self.display("Loading details file...")
+                print("Loading details file...")
                 stats = import_ratings_rows(
                     *load_sql_dump(files[detail_idx]), semesters, show_progress_bar
                 )
-                self.display(stats)
+                print(stats)
 
             gc.collect()
 
             if import_descriptions:
-                self.display("Loading descriptions file...")
+                print("Loading descriptions file...")
                 stats = import_description_rows(
                     *load_sql_dump(files[description_idx]),
                     None if import_all else semesters,
                     show_progress_bar,
                 )
-                self.display(stats)
+                print(stats)
 
             self.close_files(files)
             # invalidate cached views
-            self.display("Invalidating cache...")
+            print("Invalidating cache...")
             del_count = clear_cache()
-            self.display(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
+            print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
 
             gc.collect()
 

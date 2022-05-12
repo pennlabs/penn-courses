@@ -22,7 +22,6 @@ from courses.models import (
     Department,
     Instructor,
     Meeting,
-    Restriction,
     Room,
     Section,
     StatusUpdate,
@@ -68,7 +67,7 @@ def translate_semester_inv(semester):
     """
     if not semester:
         return None
-    new_suffix = semester[-2]
+    new_suffix = semester[-2:]
     if new_suffix not in semester_suffix_map_inv:
         raise ValueError(
             f"Invalid semester suffix {new_suffix} (semester must have "
@@ -166,7 +165,7 @@ def get_or_create_add_drop_period(semester):
     return add_drop
 
 
-def get_next_id(obj):
+def get_set_id(obj):
     """
     Returns the next ID for the given object (which hasn't yet been created).
     """
@@ -391,7 +390,13 @@ def extract_date(date_str):
 
 def clean_meetings(meetings):
     return {
-        (m["days"], m["begin_time"], m["end_time"], m["building_code"], m["room_code"]): m
+        (
+            tuple(sorted(list(set(m["days"])))),
+            m["begin_time"],
+            m["end_time"],
+            m["building_code"],
+            m["room_code"],
+        ): m
         for m in meetings
         if m["days"] and m["begin_time"] and m["end_time"]
     }.values()
@@ -400,6 +405,8 @@ def clean_meetings(meetings):
 def set_meetings(section, meetings):
     meetings = clean_meetings(meetings)
 
+    for meeting in meetings:
+        meeting["days"] = "".join(sorted(list(set(meeting["days"]))))
     meeting_times = [
         f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}" for meeting in meetings
     ]
@@ -422,15 +429,17 @@ def set_meetings(section, meetings):
         start_date = extract_date(meeting.get("start_date"))
         end_date = extract_date(meeting.get("end_date"))
         for day in list(meeting["days"]):
-            Meeting(
+            Meeting.objects.get_or_create(
                 section=section,
                 day=day,
                 start=start_time,
                 end=end_time,
                 room=room,
-                start_date=start_date,
-                end_date=end_date,
-            ).save()
+                defaults={
+                    "start_date": start_date,
+                    "end_date": end_date,
+                },
+            )
 
 
 def add_associated_sections(section, linked_sections):
@@ -447,41 +456,37 @@ def add_associated_sections(section, linked_sections):
         section.associated_sections.add(associated)
 
 
-def set_crosslistings(course, crosslist_primary):
-    if not crosslist_primary:
+def set_crosslistings(course, crosslistings):
+    if not crosslistings:
         course.primary_listing = course
-    else:
-        dept, course_code, _ = separate_course_code(crosslist_primary, allow_partial=True)
-        primary_course, _ = get_or_create_course(dept, course_code, course.semester)
-        course.primary_listing = primary_course
-
-
-def add_restrictions(section, restrictions):
-    for r in restrictions:
-        rest, _ = Restriction.objects.get_or_create(
-            code=r["registration_control_code"],
-            defaults={"description": r["requirement_description"]},
-        )
-        section.restrictions.add(rest)
+        return
+    for crosslisting in crosslistings:
+        if crosslisting["is_primary_section"]:
+            primary_course, _ = get_or_create_course(
+                crosslisting["subject_code"], crosslisting["course_number"], course.semester
+            )
+            course.primary_listing = primary_course
+            return
 
 
 def upsert_course_from_opendata(info, semester):
-    course_code = f"{info['course_department']}-{info['course_number']}-{info['section_number']}"
+    dept_code = info.get("subject") or info.get("course_department")
+    assert dept_code, json.dumps(info, indent=2)
+    course_code = f"{dept_code}-{info['course_number']}-{info['section_number']}"
     course, section, _, _ = get_or_create_course_and_section(course_code, semester)
 
     course.title = info["course_title"] or ""
-    course.description = info["course_description"] or ""
-    # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite notes
+    course.description = (info["course_description"] or "").strip()
+    if info.get("additional_section_narrative"):
+        course.description += (course.description and "\n") + info["additional_section_narrative"]
+    # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite info
     course.syllabus_url = info.get("syllabus_url") or None
-    set_crosslistings(course, info["crosslist_primary"])
 
-    try:
-        min_cr = Decimal(info["minimum_credit"] or "0")
-        max_cr = Decimal(info["maximum_credit"] or "0")
-        section.credits = Decimal.max(min_cr, max_cr)
-    except ValueError:
-        section.credits = Decimal(0)
+    # set course primary listing
+    set_crosslistings(course, info["crosslistings"])
 
+    section.crn = info["crn"]
+    section.credits = Decimal(info["credits"] or "0") if "credits" in info else None
     section.capacity = int(info["max_enrollment"] or 0)
     section.activity = info["activity"] or "***"
 

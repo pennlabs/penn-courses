@@ -1,9 +1,7 @@
 import logging
-from collections import defaultdict
 from enum import Enum, auto
 from textwrap import dedent
 
-import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
@@ -13,47 +11,10 @@ from courses.course_similarity.heuristics import (
     lev_divided_by_avg_length,
     title_rejection_heuristics,
 )
+from courses.management.commands.load_crosswalk import load_crosswalk
+from courses.management.commands.reset_topics import fill_topics
 from courses.models import Topic
 from review.management.commands.clearcache import clear_cache
-
-
-def load_crosswalk_links(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping old_full_code to
-    a list of the new codes originating from that source.
-    """
-    links = defaultdict(list)
-    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
-    for _, r in cross_walk.iterrows():
-        old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
-        new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
-        links[old_full_code].append(new_full_code)
-    return links
-
-
-def get_branches_from_cross_walk(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping old_full_code to
-    a list of the new codes originating from that source, if there are multiple
-    (i.e. only in the case of branches).
-    """
-    return {
-        old_code: new_codes
-        for old_code, new_codes in load_crosswalk_links(cross_walk).items()
-        if len(new_codes) > 1
-    }
-
-
-def get_direct_backlinks_from_cross_walk(cross_walk):
-    """
-    From a given crosswalk csv path, generate a dict mapping new_full_code->old_full_code,
-    ignoring branched links in the crosswalk (a course splitting into multiple new courses).
-    """
-    return {
-        new_codes[0]: old_code
-        for old_code, new_codes in load_crosswalk_links(cross_walk).items()
-        if len(new_codes) == 1
-    }
 
 
 def prompt_for_link_topics(topics):
@@ -85,12 +46,9 @@ def prompt_for_link(course1, course2):
 
 
 def same_course(course_a, course_b):
-    return (
-        any(
-            course_ac.full_code == course_b.full_code
-            for course_ac in course_a.primary_listing.listing_set.all()
-        )
-        and course_a.title.lower() == course_b.title.lower()
+    return any(
+        course_bc.full_code == course_a.primary_listing.full_code
+        for course_bc in course_b.primary_listing.listing_set.all()
     )
 
 
@@ -161,11 +119,13 @@ def merge_topics(verbose=False, ignore_inexact=False):
     if verbose:
         print("Merging topics")
     topics = set(
-        Topic.objects.prefetch_related(
+        Topic.objects.select_related("most_recent")
+        .prefetch_related(
             "courses",
             "courses__primary_listing",
             "courses__primary_listing__listing_set",
-        ).all()
+        )
+        .all()
     )
     dont_link = set()
     merge_count = 0
@@ -178,6 +138,8 @@ def merge_topics(verbose=False, ignore_inexact=False):
             keep_linking = False
             for topic2 in topics:
                 if topic == topic2:
+                    continue
+                if topic.most_recent.semester == topic2.most_recent.semester:
                     continue
                 merged_courses = list(topic.courses.all()) + list(topic2.courses.all())
                 merged_courses.sort(key=lambda c: (c.semester, c.topic_id))
@@ -288,10 +250,12 @@ class Command(BaseCommand):
 
         if topic_ids:
             manual_merge(topic_ids)
-            return
-
-        with transaction.atomic():
-            merge_topics(verbose=True, ignore_inexact=ignore_inexact)
+        else:
+            with transaction.atomic():
+                fill_topics(verbose=True)
+                merge_topics(verbose=True, ignore_inexact=ignore_inexact)
+                load_crosswalk(verbose=True)
 
         print("Clearing cache")
-        clear_cache()
+        del_count = clear_cache()
+        print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")

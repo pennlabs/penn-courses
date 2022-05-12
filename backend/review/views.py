@@ -8,11 +8,11 @@ from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course, Department, Instructor, Restriction, Section
+from courses.models import Course, Department, Instructor, PreNGSSRestriction, Section
 from courses.util import get_current_semester, get_or_create_add_drop_period
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from PennCourses.settings.base import (
-    PERMIT_REQ_RESTRICTION_CODES,
+    PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES,
     TIME_ZONE,
     WAITLIST_DEPARTMENT_CODES,
 )
@@ -66,7 +66,9 @@ extra_metrics_section_filters = (
     & Q(has_status_updates=True)
     & ~Q(
         id__in=Subquery(
-            Restriction.objects.filter(code__in=PERMIT_REQ_RESTRICTION_CODES).values("sections__id")
+            PreNGSSRestriction.objects.filter(
+                code__in=PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES
+            ).values("sections__id")
         )
     )  # Filter out sections that require permit for registration
     # TODO: get permit information from new OpenData API
@@ -575,7 +577,9 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     course = course.topic.most_recent
 
     reviews = review_averages(
-        Review.objects.filter(section__course__topic=topic, instructor_id=instructor_id),
+        Review.objects.filter(
+            review_filters_pcr, section__course__topic=topic, instructor_id=instructor_id
+        ),
         reviewbit_subfilters=Q(review_id=OuterRef("id")),
         section_subfilters=Q(id=OuterRef("section_id")),
         fields=ALL_FIELD_SLUGS,

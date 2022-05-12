@@ -34,7 +34,7 @@ const RecHide = ({ show, setShow }: RecHideProps) => {
             <Chevron>
                 <i
                     className={show ? "fa fa-chevron-down" : "fa fa-chevron-up"}
-                ></i>
+                />
             </Chevron>
         </div>
     );

@@ -266,7 +266,7 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
                             .new_status
                         )
                     except StatusUpdate.DoesNotExist:
-                        guess_status = "C"
+                        guess_status = section.status
                     section.percent_open = float(guess_status == "O")
                 else:
                     last_dt = add_drop_start

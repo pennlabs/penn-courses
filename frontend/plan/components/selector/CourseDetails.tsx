@@ -168,18 +168,16 @@ export default function CourseDetails({
                     </ShowMore>
                 </ShowMoreContainer>
             )}
-            {
-                <ShowMoreContainer>
-                    <ShowMore
-                        disabled={isExpandedView}
-                        lines={2}
-                        more="See more"
-                        less="See less"
-                    >
-                        {description}
-                    </ShowMore>
-                </ShowMoreContainer>
-            }
+            <ShowMoreContainer>
+                <ShowMore
+                    disabled={isExpandedView}
+                    lines={2}
+                    more="See more"
+                    less="See less"
+                >
+                    {description}
+                </ShowMore>
+            </ShowMoreContainer>
         </CourseDetailsContainer>
     );
 }

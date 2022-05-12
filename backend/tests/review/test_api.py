@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 
 from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
-from courses.models import Instructor, Restriction, Section, StatusUpdate
+from courses.models import Instructor, PreNGSSRestriction, Section, StatusUpdate
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
 from review.models import Review
@@ -790,10 +790,12 @@ class RegistrationMetricsFlagTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         set_semester()
         create_review("CIS-120-001", "2020A", "Instructor One", {"instructor_quality": 4})
-        pdp_restriction = Restriction(code="PDP", description="Permission required from dept.")
+        pdp_restriction = PreNGSSRestriction(
+            code="PDP", description="Permission required from dept."
+        )
         pdp_restriction.save()
         cis_120_001 = Section.objects.get(full_code="CIS-120-001")
-        cis_120_001.restrictions.add(pdp_restriction)
+        cis_120_001.pre_ngss_restrictions.add(pdp_restriction)
         cis_120_001.capacity = 100
         cis_120_001.save()
         StatusUpdate(

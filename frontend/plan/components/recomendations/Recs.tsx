@@ -1,7 +1,7 @@
 import React, { useState } from "react";
+import styled from "styled-components";
 import RecBanner from "./RecBanner";
 import RecContent from "./RecContent";
-import styled from "styled-components";
 import { Course as CourseType } from "../../types";
 
 const RecContainer = styled.div`

@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 
 from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
-from courses.models import Instructor, Requirement, Section
+from courses.models import Instructor, PreNGSSRequirement, Section
 from courses.util import invalidate_current_semester_cache, set_meetings
 from plan.models import Schedule
 from review.models import Review
@@ -55,14 +55,14 @@ class CreditUnitFilterTestCase(TestCase):
         self.assertEqual(0, len(response.data))
 
 
-class RequirementFilterTestCase(TestCase):
+class PreNGSSRequirementFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
         self.different_math, self.different_math1 = create_mock_data(
             "MATH-116-001", ("2019A" if TEST_SEMESTER == "2019C" else "2019C")
         )
-        self.req = Requirement(semester=TEST_SEMESTER, code="REQ", school="SAS")
+        self.req = PreNGSSRequirement(semester=TEST_SEMESTER, code="REQ", school="SAS")
         self.req.save()
         self.req.courses.add(self.math)
         self.client = APIClient()
@@ -82,7 +82,7 @@ class RequirementFilterTestCase(TestCase):
         self.assertEqual("MATH-114", response.data[0]["id"])
 
     def test_filter_for_req_dif_sem(self):
-        req2 = Requirement(
+        req2 = PreNGSSRequirement(
             semester=("2019A" if TEST_SEMESTER == "2019C" else "2019C"), code="REQ", school="SAS"
         )
         req2.save()
@@ -97,7 +97,7 @@ class RequirementFilterTestCase(TestCase):
 
     def test_multi_req(self):
         course3, section3 = create_mock_data("CIS-240-001", TEST_SEMESTER)
-        req2 = Requirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
+        req2 = PreNGSSRequirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
         req2.save()
         req2.courses.add(course3)
 
@@ -107,7 +107,7 @@ class RequirementFilterTestCase(TestCase):
         self.assertEqual(0, len(response.data))
 
     def test_double_count_req(self):
-        req2 = Requirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
+        req2 = PreNGSSRequirement(semester=TEST_SEMESTER, code="REQ2", school="SEAS")
         req2.save()
         req2.courses.add(self.math)
         response = self.client.get(

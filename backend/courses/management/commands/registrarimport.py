@@ -5,9 +5,12 @@ from tqdm import tqdm
 
 from alert.management.commands.recomputestats import recompute_stats
 from courses import registrar
+from courses.management.commands.load_crosswalk import load_crosswalk
 from courses.management.commands.loadstatus import set_all_status
+from courses.management.commands.reset_topics import fill_topics
 from courses.models import Department
 from courses.util import get_current_semester, upsert_course_from_opendata
+from review.management.commands.clearcache import clear_cache
 
 
 def registrar_import(semester=None, query=""):
@@ -32,6 +35,9 @@ def registrar_import(semester=None, query=""):
 
     recompute_stats(semesters=semester, verbose=True)
 
+    fill_topics(verbose=True)
+    load_crosswalk(print_missing=False, verbose=True)
+
 
 class Command(BaseCommand):
     help = "Load in courses, sections and associated models from the Penn registrar and requirements data sources."  # noqa: E501
@@ -48,3 +54,7 @@ class Command(BaseCommand):
         query = kwargs.get("query")
 
         registrar_import(semester, query)
+
+        print("Clearing cache")
+        del_count = clear_cache()
+        print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
