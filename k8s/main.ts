@@ -50,21 +50,21 @@ export class MyChart extends PennLabsChart {
       deployment: {
         image: 'pennlabs/pcp-frontend',
       },
-      domain: { host: 'penncourseplan.org', paths: ['/'] },
+      domain: { host: 'penncourseplan.com', paths: ['/'] },
     });
 
     new ReactApplication(this, 'alert', {
       deployment: {
         image: 'pennlabs/pca-frontend',
       },
-      domain: { host: 'penncoursealert.org', paths: ['/'] },
+      domain: { host: 'penncoursealert.com', paths: ['/'] },
     });
 
     new ReactApplication(this, 'review', {
       deployment: {
         image: 'pennlabs/pcr-frontend',
       },
-      domain: { host: 'penncoursereview.org', paths: ['/'] },
+      domain: { host: 'penncoursereview.com', paths: ['/'] },
     });
 
     new CronJob(this, 'load-courses', {
