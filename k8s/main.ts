@@ -16,7 +16,7 @@ export class MyChart extends PennLabsChart {
     new DjangoApplication(this, 'celery', {
       deployment: {
         image: backendImage,
-        secret: secret,
+        secret,
         cmd: ['celery', 'worker', '-A', 'PennCourses', '-Q', 'alerts,celery', '-linfo'],
       },
       djangoSettingsModule: 'PennCourses.settings.production',
@@ -25,10 +25,8 @@ export class MyChart extends PennLabsChart {
     new DjangoApplication(this, 'backend', {
       deployment: {
         image: backendImage,
-        secret: secret,
-        cmd: ['celery', 'worker', '-A', 'PennCourses', '-Q', 'alerts,celery', '-linfo'],
+        secret,
         replicas: 3,
-        env: [{ name: 'PORT', value: '80' }],
       },
       djangoSettingsModule: 'PennCourses.settings.production',
       ingressProps: {
@@ -70,14 +68,14 @@ export class MyChart extends PennLabsChart {
     new CronJob(this, 'load-courses', {
       schedule: cronTime.everyDayAt(3),
       image: backendImage,
-      secret: secret,
+      secret,
       cmd: ['python', 'manage.py', 'registrarimport'],
     });
 
     new CronJob(this, 'report-stats', {
       schedule: cronTime.everyDayAt(20),
       image: backendImage,
-      secret: secret,
+      secret,
       cmd: ['python', 'manage.py', 'alertstats', '1', '--slack'],
     });
 
