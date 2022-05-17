@@ -4,7 +4,7 @@ from django.db.models import Count, Q
 from django.db.models.expressions import F, Subquery
 from rest_framework import filters
 
-from courses.models import Meeting, PreNGSSRequirement, Section
+from courses.models import Attribute, Meeting, PreNGSSRequirement, Section
 from courses.util import get_current_semester
 from plan.models import Schedule
 
@@ -140,7 +140,7 @@ def gen_schedule_filter(request):
     return schedule_filter
 
 
-def requirement_filter(queryset, req_ids):
+def pre_ngss_requirement_filter(queryset, req_ids):
     if not req_ids:
         return queryset
     query = Q()
@@ -153,6 +153,25 @@ def requirement_filter(queryset, req_ids):
         except PreNGSSRequirement.DoesNotExist:
             continue
         query &= Q(id__in=requirement.satisfying_courses.all())
+
+    return queryset.filter(query)
+
+
+def attribute_filter(queryset, attr_ids):
+    """
+    :param queryset: initial Course object queryset
+    :param attr_ids: the attribute codes (ex: WUOM)
+    :return: filtered queryset
+    """
+    if not attr_ids:
+        return queryset
+    query = Q()
+    for attr_id in attr_ids.split(","):
+        try:
+            attribute = Attribute.objects.get(code=attr_id)
+        except PreNGSSRequirement.DoesNotExist:
+            continue
+        query |= Q(id__in=attribute.courses.all())
 
     return queryset.filter(query)
 
@@ -201,7 +220,7 @@ def choice_filter(field):
 class CourseSearchFilterBackend(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         filters = {
-            "requirements": requirement_filter,
+            "attributes": attribute_filter,
             "cu": choice_filter("sections__credits"),
             "activity": choice_filter("sections__activity"),
             "course_quality": bound_filter("course_quality"),
@@ -245,13 +264,13 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 },
             },
             {
-                "name": "requirements",
+                "name": "attributes",
                 "required": False,
                 "in": "query",
-                "description": "Filter courses by comma-separated requirements, ANDed together. "
-                "Use `/requirements` endpoint to get requirement IDs.",
+                "description": "Filter courses by comma-separated attributes, ORed together."
+                "Use `/attributes` endpoint to get attribute IDs.",
                 "schema": {"type": "string"},
-                "example": "SS@SEAS,H@SEAS",
+                "example": "WUOM@WH, WUGA@WH",
             },
             {
                 "name": "cu",

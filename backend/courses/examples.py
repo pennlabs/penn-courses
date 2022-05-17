@@ -47,6 +47,95 @@ PreNGSSRequirementList_examples = {
     },
 }
 
+
+AttributeList_examples = {
+    reverse_func("attributes-list"): {
+        "GET": {
+            "requests": [],
+            "responses": [
+                {
+                    "code": 200,
+                    "summary": "List Requirements",
+                    "value": [
+                        {
+                            "id": "MC2@SAS",
+                            "code": "MC2",
+                            "school": "SAS",
+                            "semester": "2020C",
+                            "name": "Cultural Diversity in the US",
+                        },
+                        {
+                            "id": "H@SEAS",
+                            "code": "H",
+                            "school": "SEAS",
+                            "semester": "2020C",
+                            "name": "Humanities",
+                        },
+                        {
+                            "id": "SS@WH",
+                            "code": "SS",
+                            "school": "WH",
+                            "semester": "2020C",
+                            "name": "Social Science",
+                        },
+                        {
+                            "id": "example@school",
+                            "code": "example",
+                            "school": "school",
+                            "semester": "2020C",
+                            "name": "Example Requirement",
+                        },
+                    ],
+                }
+            ],
+        }
+    },
+}
+
+RestrictionList_examples = {
+    reverse_func("restrictions-list"): {
+        "GET": {
+            "requests": [],
+            "responses": [
+                {
+                    "code": 200,
+                    "summary": "List Requirements",
+                    "value": [
+                        {
+                            "id": "MC2@SAS",
+                            "code": "MC2",
+                            "school": "SAS",
+                            "semester": "2020C",
+                            "name": "Cultural Diversity in the US",
+                        },
+                        {
+                            "id": "H@SEAS",
+                            "code": "H",
+                            "school": "SEAS",
+                            "semester": "2020C",
+                            "name": "Humanities",
+                        },
+                        {
+                            "id": "SS@WH",
+                            "code": "SS",
+                            "school": "WH",
+                            "semester": "2020C",
+                            "name": "Social Science",
+                        },
+                        {
+                            "id": "example@school",
+                            "code": "example",
+                            "school": "school",
+                            "semester": "2020C",
+                            "name": "Example Requirement",
+                        },
+                    ],
+                }
+            ],
+        }
+    },
+}
+
 SectionList_examples = {
     reverse_func("section-search", args=["semester"]): {
         "GET": {

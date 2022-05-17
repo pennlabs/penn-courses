@@ -17,16 +17,17 @@ from options.models import Option, get_value
 from rest_framework.exceptions import APIException
 
 from courses.models import (
+    Attribute,
     Building,
     Course,
     Department,
     Instructor,
     Meeting,
+    Restriction,
     Room,
     Section,
     StatusUpdate,
     User,
-    Attribute
 )
 
 
@@ -496,18 +497,22 @@ def upsert_course_from_opendata(info, semester):
     set_instructors(section, info["instructors"])
     add_associated_sections(section, info["linked_courses"])
 
+    # delete all attributes and restrictions
+    Attribute.objects.all().delete()
+    Restriction.objects.all().delete()
+
     add_attributes(section, info["attributes"])
-    # add_restrictions(section, info["restrictions"])  # TODO: add registration restrictions
+    add_restrictions(section, info["course_restrictions"])
     # add_grade_modes(section, info["grade_modes"])  # TODO: save grade modes
 
     section.save()
     course.save()
 
+
 def add_attributes(section, attributes):
     """
-    Add attributes to course of section. 
-    Create attribute if it does not exist (for
-    this semester)
+    Add attributes to course of section.
+    Create attribute if it does not exist
     """
     for attribute in attributes:
         try:
@@ -515,8 +520,10 @@ def add_attributes(section, attributes):
                 code=attribute.get("attribute_code"),
             )
         except ObjectDoesNotExist:
-            school = re.split("[\s-]", attribute.get("attribute_desc"))[0].strip().upper()
-            SCHOOL_CHOICES_REVERSE = dict((desc.upper(), code.upper()) for (code, desc) in Attribute.SCHOOL_CHOICES) 
+            school = re.split(r"[\s-]", attribute.get("attribute_desc"))[0].strip().upper()
+            SCHOOL_CHOICES_REVERSE = dict(
+                (desc.upper(), code.upper()) for (code, desc) in Attribute.SCHOOL_CHOICES
+            )
             if school in SCHOOL_CHOICES_REVERSE.values():
                 pass
             elif school == "COL" or school == "COLLEGE":
@@ -525,18 +532,36 @@ def add_attributes(section, attributes):
                 school = "SEAS"
             elif school in SCHOOL_CHOICES_REVERSE:
                 school = SCHOOL_CHOICES_REVERSE.get(school)
-            elif Department.objects.filter(
-                    code=school.strip().upper()
-                ).exists():
+            elif Department.objects.filter(code=school.strip().upper()).exists():
                 school = "SAS"
             else:
                 school = "OTHER"
             attr = Attribute.objects.create(
                 code=attribute.get("attribute_code"),
                 description=attribute.get("attribute_desc"),
-                school=school
+                school=school,
             )
         attr.courses.add(section.course)
+
+
+def add_restrictions(section, restrictions):
+    """
+    Add restrictions to course of section.
+    Create restriction if it does not exist.
+    """
+    for restriction in restrictions:
+        try:
+            res = Attribute.objects.get(
+                code=restriction.get("restriction_code"),
+            )
+        except ObjectDoesNotExist:
+            res = Restriction.objects.create(
+                code=restriction.get("restriction_code"),
+                description=restriction.get("restriction_desc"),
+                restriction_type=restriction.get("restriction_type"),
+                include_or_exclude=restriction.get("incl_excl_ind") == "E",
+            )
+        res.courses.add(section.course)
 
 
 def update_course_from_record(update):

@@ -4,10 +4,12 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from courses.models import (
+    Attribute,
     Course,
     Instructor,
     Meeting,
     PreNGSSRequirement,
+    Restriction,
     Section,
     StatusUpdate,
     UserProfile,
@@ -197,6 +199,38 @@ class PreNGSSRequirementListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class AttributeListSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField(
+        read_only=True,
+        help_text="The code of the attribute (ex: WUOM)",
+    )
+
+    @staticmethod
+    def get_id(obj):
+        return obj.code
+
+    class Meta:
+        model = Attribute
+        fields = ["id", "school", "description"]
+        read_only_fields = fields
+
+
+class RestrictionListSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField(
+        read_only=True,
+        help_text="The code of the restriction (ex: WUOM)",
+    )
+
+    @staticmethod
+    def get_id(obj):
+        return obj.code
+
+    class Meta:
+        model = Restriction
+        fields = ["id", "restriction_type", "include_or_exclude", "description"]
+        read_only_fields = fields
+
+
 class CourseListSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(
         source="full_code",
@@ -306,6 +340,18 @@ class CourseDetailSerializer(CourseListSerializer):
         ),
     )
 
+    attributes = AttributeListSerializer(
+        many=True,
+        read_only=True,
+        help_text=dedent(
+            """
+        A list of attributes this course has. Attributes are typically
+        used to mark courses which students in a program/major should
+        take.
+        """
+        ),
+    )
+
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
     )
@@ -334,7 +380,7 @@ class CourseDetailSerializer(CourseListSerializer):
             "work_required",
         ] + [
             "crosslistings",
-            "pre_ngss_requirements",
+            "attributes",
             "sections",
         ]
         read_only_fields = fields

@@ -468,6 +468,8 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
         "GET",
     ): "Section-Specific Reviews",
     (reverse_func("requirements-list", args=["semester"]), "GET"): "Pre-NGSS Requirement",
+    (reverse_func("attributes-list"), "GET"): "Attributes",
+    (reverse_func("restrictions-list"), "GET"): "Restrictions",
 }
 assert all(
     [isinstance(k, tuple) and len(k) == 2 and isinstance(k[1], str) for k in custom_name.keys()]

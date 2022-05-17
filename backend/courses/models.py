@@ -431,22 +431,19 @@ class Topic(models.Model):
     def __str__(self):
         return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
 
+
 class Attribute(models.Model):
     """
     A post-NGSS registration attribute, which is used to
     mark courses which students in a program/major should take.
     e.g. WUOM for the "Wharton OIDD Operation" track
+
+    Note that Attributes (like Restrictions) do not have an associated
+    semester. This is because only the Attribute/Restriction set used in the
+    current semester is maintained. Specifically, Attribute and Restriction
+    objects are regenerated at every upsert from OpenData such that every
+    attribute and restriction is associated with at least one course.
     """
-    SCHOOL_CHOICES = (
-            ("SEAS", "Engineering"),
-            ("WH", "Wharton"),
-            ("SAS", "College"),
-            ("NURS", "Nursing"),
-            ("VIPER", "VIPER"),
-            ("GSE", "GSE"),
-            ("OTHER", "Other")
-    )
- 
 
     code = models.CharField(
         max_length=10,
@@ -464,10 +461,20 @@ class Attribute(models.Model):
         help_text=dedent(
             """
         The registration attribute description, e.g. 'Wharton OIDD Operation'
-        for the WUOM attribute 
+        for the WUOM attribute.
         See [https://bit.ly/3L8bQDA](https://bit.ly/3L8bQDA) for all options.
         """
         )
+    )
+
+    SCHOOL_CHOICES = (
+        ("SEAS", "Engineering"),
+        ("WH", "Wharton"),
+        ("SAS", "School of Arts and Sciences"),
+        ("NURS", "Nursing"),
+        ("VIPER", "VIPER"),
+        ("GSE", "GSE"),
+        ("OTHER", "Other"),
     )
 
     school = models.CharField(
@@ -493,7 +500,7 @@ class Attribute(models.Model):
             """
         ),
     )
-    
+
     def __str__(self):
         return f"{self.code} @ {self.school} - {self.description}"
 
@@ -501,6 +508,9 @@ class Attribute(models.Model):
 class Restriction(models.Model):
     """
     A restriction on who can register for this course.
+
+    Note that Restrictions (like Attributes) do not have an associated
+    semester. See Attribute above for an explanation why.
     """
 
     code = models.CharField(
@@ -508,26 +518,27 @@ class Restriction(models.Model):
         unique=True,
         help_text=dedent(
             """
-        The code of the restriction. 
+        The code of the restriction.
         """
         ),
     )
 
     RESTRICTION_TYPE_CHOICES = (
-            ("ATTR","Attribute"),
-            ("CAMP", "Campus", "Campus"),
-            ("CLASI", "Classification"),
-            ("COHO", "Cohort"),
-            ("DEGR", "Degree"),
-            ("DIVI", "Division"),
-            ("LVL", "Level"),
-            ("MAJ", "Major"),
-            ("MIN", "Minor"),
-            ("PROG", "Program"),
-            ("SPEC", "Special Approval")
+        ("ATTR", "Attribute"),
+        ("CAMP", "Campus"),
+        ("CLASI", "Classification"),
+        ("COHO", "Cohort"),
+        ("DEGR", "Degree"),
+        ("DIVI", "Division"),
+        ("LVL", "Level"),
+        ("MAJ", "Major"),
+        ("MIN", "Minor"),
+        ("PROG", "Program"),
+        ("SPEC", "Special Approval"),
     )
 
-    restriction_type = models.CharField(max_length=5,
+    restriction_type = models.CharField(
+        max_length=5,
         choices=RESTRICTION_TYPE_CHOICES,
         db_index=True,
         help_text=dedent(
@@ -535,13 +546,14 @@ class Restriction(models.Model):
         What the restriction is based on (e.g., campus).
         """
             + string_dict_to_html(dict(RESTRICTION_TYPE_CHOICES))
-        )
+        ),
     )
 
     include_or_exclude = models.BooleanField(
         help_text=dedent(
             """
-        Whether this is an include or exclude restriction. Corresponds to the incl_excl_ind response field. True if include (ie, incl_excl_ind is "I") and false if exclude ("E").
+        Whether this is an include or exclude restriction. Corresponds to the incl_excl_ind
+        response field. True if include (ie, incl_excl_ind is "I") and false if exclude ("E").
         """
         )
     )
@@ -565,14 +577,13 @@ class Restriction(models.Model):
         ),
     )
 
-
     def __str__(self):
         return f"{self.code} - {self.restriction_type} - {self.description}"
+
 
 class SectionManager(models.Manager):
     def get_queryset(self):
         return sections_with_reviews(super().get_queryset()).distinct()
-
 
 
 class PreNGSSRestriction(models.Model):
@@ -611,11 +622,6 @@ class PreNGSSRestriction(models.Model):
 
     def __str__(self):
         return f"{self.code} - {self.description}"
-
-
-class SectionManager(models.Manager):
-    def get_queryset(self):
-        return sections_with_reviews(super().get_queryset()).distinct()
 
 
 class Section(models.Model):

@@ -19,9 +19,19 @@ urlpatterns = [
         name="sections-detail",
     ),
     path(
-        "<slug:semester>/requirements/",
+        "<slug:semester>/pre-ngss-requirements/",
         views.PreNGSSRequirementList.as_view(),
         name="requirements-list",
+    ),
+    path(
+        "/attributes/",
+        views.AttributeList.as_view(),
+        name="attributes-list",
+    ),
+    path(
+        "/restrictions/",
+        views.RestrictionList.as_view(),
+        name="restrictions-list",
     ),
     path("statusupdate/<slug:full_code>/", views.StatusUpdateView.as_view(), name="statusupdate"),
 ]

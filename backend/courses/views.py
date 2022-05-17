@@ -6,13 +6,15 @@ from rest_framework.permissions import IsAuthenticated
 
 import courses.examples as examples
 from courses.filters import CourseSearchFilterBackend
-from courses.models import Course, PreNGSSRequirement, Section, StatusUpdate
+from courses.models import Attribute, Course, PreNGSSRequirement, Restriction, Section, StatusUpdate
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
+    AttributeListSerializer,
     CourseDetailSerializer,
     CourseListSerializer,
     MiniSectionSerializer,
     PreNGSSRequirementListSerializer,
+    RestrictionListSerializer,
     SectionDetailSerializer,
     StatusUpdateSerializer,
     UserSerializer,
@@ -278,6 +280,42 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
 
     serializer_class = PreNGSSRequirementListSerializer
     queryset = PreNGSSRequirement.objects.all()
+
+
+class AttributeList(generics.ListAPIView, BaseCourseMixin):
+    """
+    Retrieve a list of unique attributes (introduced post-NGSS)
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.AttributeList_examples,
+        response_codes={
+            reverse_func("attributes-list"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."}
+            },
+        },
+    )
+
+    serializer_class = AttributeListSerializer
+    queryset = Attribute.objects.all()
+
+
+class RestrictionList(generics.ListAPIView, BaseCourseMixin):
+    """
+    Retrieve a list of unique attributes (introduced post-NGSS)
+    """
+
+    schema = PcxAutoSchema(
+        examples=examples.RestrictionList_examples,
+        response_codes={
+            reverse_func("restrictions-list"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."}
+            },
+        },
+    )
+
+    serializer_class = RestrictionListSerializer
+    queryset = Restriction.objects.all()
 
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
