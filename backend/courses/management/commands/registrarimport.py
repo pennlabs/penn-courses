@@ -8,7 +8,7 @@ from courses import registrar
 from courses.management.commands.load_crosswalk import load_crosswalk
 from courses.management.commands.loadstatus import set_all_status
 from courses.management.commands.reset_topics import fill_topics
-from courses.models import Department
+from courses.models import Department, Section
 from courses.util import get_current_semester, upsert_course_from_opendata
 from review.management.commands.clearcache import clear_cache
 
@@ -20,8 +20,12 @@ def registrar_import(semester=None, query=""):
     print("Loading in courses with prefix %s from %s..." % (query, semester))
     results = registrar.get_courses(query, semester)
 
-    for course in tqdm(results):
-        upsert_course_from_opendata(course, semester)
+    missing_sections = set(
+        Section.objects.filter(course__semester=semester).values_list("full_code", flat=True)
+    )
+    for info in tqdm(results):
+        upsert_course_from_opendata(info, semester, missing_sections)
+    Section.objects.filter(full_code__in=missing_sections).update(status="X")
 
     print("Updating department names...")
     departments = registrar.get_departments()
