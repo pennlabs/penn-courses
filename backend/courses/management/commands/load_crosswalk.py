@@ -17,7 +17,7 @@ def get_crosswalk(cross_walk):
     a list of the new codes originating from that source.
     """
     links = defaultdict(list)
-    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape")
+    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape", dtype=str)
     for _, r in cross_walk.iterrows():
         old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
         new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
