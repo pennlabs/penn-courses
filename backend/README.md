@@ -36,8 +36,10 @@ First, navigate to the `backend` directory in your terminal.
         - `apt-get install gcc python3-dev libpq-dev`
 
 2. Running Docker
-
     - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres and Redis).
+    - Depending on your system configuration, you may have to start docker manually. If this is the case (ie, if you cannot get `docker-compose up` to work due to a docker connection error) try to manually start docker before running `docker-compose up`
+        - (linux) `systemctl start docker` (potentially `sudo`)
+        - (WSL) `service docker start` (potentially `sudo`)
     - If (and only if) you are having trouble installing packages on your computer (e.g. issues installing on M1 architecture), run `docker-compose --profile=dev up` instead of just `docker-compose up`. This will spin up a container that you can ssh into to run the backend server (with all required packages preinstalled). Then in a separate terminal, you can run `docker exec -it backend_development_1 /bin/bash` (if this says no such container, try `... backend-development-1...`, and if that doesn't work then run `docker container ls` and use the name of whatever container most closely matches the `backend_development` image). You can think of this as "SSHing" into the running Docker container. Once you are in the container, you can continue running the rest of the commands in this README (skip the `pipenv install --dev` and `pipenv shell` steps; the packages are already installed globally in your container, so there's no need for a virtual environment).
 
 
