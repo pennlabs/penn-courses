@@ -487,7 +487,7 @@ class Registration(models.Model):
         and `current_demand_distribution_estimate` cache are asynchronously updated
         (via a celery task) to reflect the resulting section demand change.
         """
-        from alert.tasks import registration_update
+        from alert.tasks import section_demand_change
         from courses.util import get_set_id, is_fk_set
 
         # ^ imported here to avoid circular imports
@@ -534,9 +534,12 @@ class Registration(models.Model):
                 and self.section.semester == get_current_semester()
                 and was_active != self.is_active
             ):
-                registration_update.delay(
-                    self.section.id, was_active, self.is_active, self.updated_at
-                )
+                section = self.section
+                volume_change = int(self.is_active) - int(was_active)
+                if volume_change > 0 or section.registration_volume >= 1:
+                    section.registration_volume += volume_change
+                    section.save()
+                section_demand_change.delay(section.id, self.updated_at)
 
     def alert(self, forced=False, sent_by="", close_notification=False):
         """
@@ -1013,67 +1016,73 @@ class AddDropPeriod(models.Model):
 
     def estimate_start(self):
         """
-        The start of the add/drop period for this semester, if it is explicitly set, otherwise
-        the most recent non-null start to an add/drop period, otherwise (if none exist),
+        The start of the add/drop period for this semester, if it is explicitly set in the
+        `start` field, otherwise the `estimated_start` field, if it is already set,
+        otherwise the most recent non-null start to an add/drop period, otherwise (if none exist),
         estimate as April 5 @ 7:00am ET of the same year (for a fall semester),
         or November 16 @ 7:00am ET of the previous year (for a spring semester).
         """
-        if self.start is None:
-            last_start = (
-                AddDropPeriod.objects.filter(
-                    start__isnull=False, semester__endswith=str(self.semester)[4]
-                )
-                .order_by("-semester")
-                .first()
+        if self.start is not None:
+            return self.start
+        if self.estimated_start is not None:
+            return self.estimated_start
+        last_start = (
+            AddDropPeriod.objects.filter(
+                start__isnull=False, semester__endswith=str(self.semester)[4]
             )
-            if str(self.semester)[4] == "C":  # fall semester
-                s_year = int(str(self.semester)[:4])
-                s_month = 4
-                s_day = 5
-            else:  # spring semester
-                s_year = int(str(self.semester)[:4]) - 1
-                s_month = 11
-                s_day = 16
-            if last_start is None:
-                tz = gettz(TIME_ZONE)
-                return make_aware(
-                    datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M"),
-                    timezone=tz,
-                )
-            return last_start.start.replace(year=s_year)
-        return self.start
+            .order_by("-semester")
+            .first()
+        )
+        if str(self.semester)[4] == "C":  # fall semester
+            s_year = int(str(self.semester)[:4])
+            s_month = 4
+            s_day = 5
+        else:  # spring semester
+            s_year = int(str(self.semester)[:4]) - 1
+            s_month = 11
+            s_day = 16
+        if last_start is None:
+            tz = gettz(TIME_ZONE)
+            return make_aware(
+                datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M"),
+                timezone=tz,
+            )
+        return last_start.start.replace(year=s_year)
 
     def estimate_end(self):
         """
-        The end of the add/drop period for this semester, if it is explicitly set, otherwise
+        The end of the add/drop period for this semester, if it is explicitly set in the
+        `end` field, otherwise the `estimated_end` field, if it is already set, otherwise
         the most recent non-null end to an add/drop period, otherwise (if none exist),
         estimate as October 12 @ 11:59pm ET (for a fall semester),
         or February 22 @ 11:59pm ET (for a spring semester),
         of the same year.
         """
-        if self.end is None:
-            last_end = (
-                AddDropPeriod.objects.filter(
-                    end__isnull=False, semester__endswith=str(self.semester)[4]
-                )
-                .order_by("-semester")
-                .first()
+        if self.end is not None:
+            return self.end
+        if self.estimated_end is not None:
+            return self.estimated_end
+        last_end = (
+            AddDropPeriod.objects.filter(
+                end__isnull=False, semester__endswith=str(self.semester)[4]
             )
-            e_year = int(str(self.semester)[:4])
-            if last_end is None:
-                if str(self.semester)[4] == "C":  # fall semester
-                    e_month = 10
-                    e_day = 12
-                else:  # spring semester
-                    e_month = 2
-                    e_day = 22
-                tz = gettz(TIME_ZONE)
-                return make_aware(
-                    datetime.strptime(f"{e_year}-{e_month}-{e_day} 23:59", "%Y-%m-%d %H:%M"),
-                    timezone=tz,
-                )
-            return last_end.end.replace(year=e_year)
-        return self.end
+            .order_by("-semester")
+            .first()
+        )
+        e_year = int(str(self.semester)[:4])
+        if last_end is None:
+            if str(self.semester)[4] == "C":  # fall semester
+                e_month = 10
+                e_day = 12
+            else:  # spring semester
+                e_month = 2
+                e_day = 22
+            tz = gettz(TIME_ZONE)
+            return make_aware(
+                datetime.strptime(f"{e_year}-{e_month}-{e_day} 23:59", "%Y-%m-%d %H:%M"),
+                timezone=tz,
+            )
+        return last_end.end.replace(year=e_year)
 
     def __str__(self):
         return f"AddDropPeriod {self.semester}"

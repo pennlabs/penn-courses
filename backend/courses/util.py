@@ -471,7 +471,7 @@ def set_crosslistings(course, crosslistings):
             return
 
 
-def upsert_course_from_opendata(info, semester):
+def upsert_course_from_opendata(info, semester, missing_sections=None):
     dept_code = info.get("subject") or info.get("course_department")
     assert dept_code, json.dumps(info, indent=2)
     course_code = f"{dept_code}-{info['course_number']}-{info['section_number']}"
@@ -507,6 +507,9 @@ def upsert_course_from_opendata(info, semester):
 
     section.save()
     course.save()
+
+    if missing_sections:
+        missing_sections.discard(section.full_code)
 
 
 def add_attributes(section, attributes):
