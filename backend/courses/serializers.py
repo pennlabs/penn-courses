@@ -380,6 +380,7 @@ class CourseDetailSerializer(CourseListSerializer):
             "work_required",
         ] + [
             "crosslistings",
+            "pre_ngss_requirements"
             "attributes",
             "sections",
         ]

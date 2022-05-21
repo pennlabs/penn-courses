@@ -24,12 +24,12 @@ urlpatterns = [
         name="requirements-list",
     ),
     path(
-        "/attributes/",
+        "attributes/",
         views.AttributeList.as_view(),
         name="attributes-list",
     ),
     path(
-        "/restrictions/",
+        "restrictions/",
         views.RestrictionList.as_view(),
         name="restrictions-list",
     ),
