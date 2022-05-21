@@ -160,7 +160,7 @@ def pre_ngss_requirement_filter(queryset, req_ids):
 def attribute_filter(queryset, attr_ids):
     """
     :param queryset: initial Course object queryset
-    :param attr_ids: the attribute codes (ex: WUOM)
+    :param attr_ids: the attribute codes (ex: WUOM) comma seperated
     :return: filtered queryset
     """
     if not attr_ids:

@@ -470,9 +470,11 @@ class Attribute(models.Model):
     SCHOOL_CHOICES = (
         ("SEAS", "Engineering"),
         ("WH", "Wharton"),
+        ("DSGN", "Design"),
         ("SAS", "School of Arts and Sciences"),
         ("NURS", "Nursing"),
         ("VIPER", "VIPER"),
+        ("VET", "Veterinary"),
         ("GSE", "GSE"),
         ("OTHER", "Other"),
     )

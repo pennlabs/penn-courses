@@ -514,34 +514,59 @@ def add_attributes(section, attributes):
     Add attributes to course of section.
     Create attribute if it does not exist
     """
+    SCHOOL_CHOICES_REVERSE = dict(
+        (desc.upper(), code.upper()) for (code, desc) in Attribute.SCHOOL_CHOICES
+    )
     for attribute in attributes:
         try:
             attr = Attribute.objects.get(
                 code=attribute.get("attribute_code"),
             )
         except ObjectDoesNotExist:
-            school = re.split(r"[\s-]", attribute.get("attribute_desc"))[0].strip().upper()
-            SCHOOL_CHOICES_REVERSE = dict(
-                (desc.upper(), code.upper()) for (code, desc) in Attribute.SCHOOL_CHOICES
-            )
-            if school in SCHOOL_CHOICES_REVERSE.values():
-                pass
-            elif school == "COL" or school == "COLLEGE":
-                school = "SAS"
-            elif school == "EAS":
-                school = "SEAS"
-            elif school in SCHOOL_CHOICES_REVERSE:
-                school = SCHOOL_CHOICES_REVERSE.get(school)
-            elif Department.objects.filter(code=school.strip().upper()).exists():
-                school = "SAS"
-            else:
-                school = "OTHER"
+            school = identify_school(attribute.get("attribute_desc"), SCHOOL_CHOICES_REVERSE)
             attr = Attribute.objects.create(
                 code=attribute.get("attribute_code"),
                 description=attribute.get("attribute_desc"),
                 school=school,
             )
         attr.courses.add(section.course)
+
+
+def identify_school(attribute_desc, long_to_short_school_code):
+    """
+    Determine the school short code (defined in the Attribute model's SCHOOL_CHOICES attribute)
+    based on the first part of the attribute_desc. The first part is the first item after splitting
+    attribute_desc by whitespace AND "-" (dash). Note also that this is case-insensitive.
+    For example, the first part of "Wharton Bus Eco & Pub Po" would be "Wharton",
+    which would map to "WH" (assuming there is such a mapping defined so in
+    long_to_short_school_code); another example is "WH-COURSE-Joseph Whartn Schlrs"
+    where the first part is "WH" which is already a short code, so it is returned.
+
+    :param attribute_desc: the attribute's attribute_desc property which is a
+        string describing the attribute
+    :param long_to_short_school_code: a mapping from long (ie Wharton) to short
+        versions of the school's name. The short versions are defined in the Attribute
+        model's SCHOOL_CHOICES attribute.
+    :return: the short code representing the school this attribute fits in (may be "OTHER"
+        if none of these heuristics apply)
+
+    """
+    long_to_short_school_code = {}
+    school = re.split(r"[\s-]", attribute_desc)[0].strip().upper()
+    if school in long_to_short_school_code.values():
+        return school
+    elif school == "COL" or school == "COLLEGE":
+        return "SAS"
+    elif school == "NUR":
+        return "NURS"
+    elif school == "EAS":
+        return "SEAS"
+    elif school in long_to_short_school_code:
+        return long_to_short_school_code.get(school)
+    elif Department.objects.filter(code=school.strip().upper()).exists():
+        return "SAS"
+    else:
+        return "OTHER"
 
 
 def add_restrictions(section, restrictions):
