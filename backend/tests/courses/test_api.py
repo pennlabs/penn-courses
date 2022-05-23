@@ -17,7 +17,7 @@ from courses.models import (
     Department,
     Instructor,
     PreNGSSRequirement,
-    Restriction,
+    NGSSRestriction,
 )
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course, invalidate_current_semester_cache
@@ -408,14 +408,14 @@ class RestrictionListTestCase(TestCase):
         self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
         self.department = Department.objects.get(code="CIS")
 
-        self.restriction1 = Restriction.objects.create(
+        self.restriction1 = NGSSRestriction.objects.create(
             restriction_type="ATTR",
             code="EMCI",
             description="SEAS CIS NonCIS Elective",
             include_or_exclude=True,
         )
         # Fake restriction
-        self.restriction2 = Restriction.objects.create(
+        self.restriction2 = NGSSRestriction.objects.create(
             restriction_type="CAMP",
             code="PHILA",
             description="Philadelphia Campus",
@@ -445,8 +445,7 @@ class AttributeListTestCase(TestCase):
             description="SEAS CIS NonCIS Elective",
             school="SEAS",
         )
-        # Fake restriction
-        self.attr2 = Restriction.objects.create(
+        self.attr2 = Attribute.objects.create(
             code="WUFN",
             description="Wharton Finance Majo",
             school="WH",
@@ -460,6 +459,7 @@ class AttributeListTestCase(TestCase):
         response = self.client.get(reverse("attributes-list"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(2, len(response.data))
+        self.assertEqual({res["code"] for res in response.data}, {"EMCI", "WUFN"})
 
 
 class AttributeFilterTestCase(TestCase):
@@ -517,6 +517,7 @@ class AttributeFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "WUOM,EMCI"}
         )
         self.assertEqual(response.status_code, 200)
+        print(response.data)
         self.assertEqual(len(response.data), 3)
         self.assertEqual({res["id"] for res in response.data}, {"MGMT-117", "ECON-001", "CIS-120"})
 

@@ -29,56 +29,6 @@ def set_semester():
     AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
-class IdentifySchoolTestCase(TestCase):
-    def check_attribute_desc_to_school(self, desc_to_school):
-        # TODO: DRY
-        SCHOOL_CHOICES_REVERSE = dict(
-            (desc.upper(), code.upper()) for (code, desc) in Attribute.SCHOOL_CHOICES
-        )
-        for attribute_desc in desc_to_school:
-            self.assertEquals(
-                identify_school(attribute_desc, SCHOOL_CHOICES_REVERSE),
-                desc_to_school[attribute_desc],
-            )
-
-    def test_direct_school_mapping(self):
-        self.check_attribute_desc_to_school(
-            {
-                "Wharton eCommerce Mj": "WH",
-                "WH-COURSE-Joseph Whartn Schlrs": "WH",
-                "Wharton MGMT Entre & Inno": "WH",
-                "VET Clinical Rotation El": "VET",
-                "SEAS MBIOT BTP AdvElect": "SEAS",
-                "EAS-COURSE-DMD Elective": "SEAS",
-                "GSE PHD EdLing LingCourse": "GSE",
-                "COL-COURSE-Advanced Language": "SAS",
-                "DSGN M Art Histor": "DSGN",
-                "Design CERT IPD Bus El": "DSGN",
-                "GSE-ADMIN-TFA Masters": "GSE",
-                "NUR-SECTOR-ReaSys&Relationship": "NURS",
-                "NURS MSN HCA Business Ele": "NURS",
-            }
-        )
-
-    def test_sas_department(self):
-        # Create EALC and HIST but not HSOC
-        Department.objects.get_or_create(code="EALC")
-        Department.objects.get_or_create(code="HIST")
-        assert not Department.objects.filter(code="").exists("HSOC")
-        self.check_attribute_desc_to_school(
-            {"HIST M Pre 180": "SAS", "EALC M East Asian Are": "EALC", "HSOC M Regiona": "OTHER"}
-        )
-
-    def test_other(self):
-        self.check_attribute_desc_to_school(
-            {
-                "UNV-SCHED-First of MultTrmCrse": "OTHER",
-                "First Year": "OTHER",
-                "2 Addl Mechan of Dis Crse": "OTHER",
-            }
-        )
-
-
 class AddAttributesTestCase(TestCase):
     def setUp(self):
         self.ANTH_0020, self.ANTH_0020_001, _, _ = get_or_create_course_and_section(
@@ -91,25 +41,27 @@ class AddAttributesTestCase(TestCase):
         self.NUFC = {"attribute_code": "NUFC", "attribute_desc": "NUR-ADMIN-FCH Department"}
 
     def test_add_attribute(self):
-        add_attributes([self.AMTH], self.MUSC_0050_001)
+        add_attributes(self.MUSC_0050_001, [self.AMTH])
         self.assertTrue(self.MUSC_0050.attributes.all().filter(code="AMTH").exists())
         AMTH_obj = Attribute.objects.get(code="AMTH")
+        self.assertEqual("SAS", AMTH_obj.school)
         self.assertEqual(self.AMTH["attribute_desc"], AMTH_obj.description)
         self.assertEqual("SAS", AMTH_obj.school)
 
     def test_add_multiple_attribute(self):
-        add_attributes([self.AMTH, self.NUFC], self.MUSC_0050_001)
+        add_attributes(self.MUSC_0050_001, [self.AMTH, self.NUFC])
         AMTH_obj = Attribute.objects.get(code="AMTH")
         NUFC_obj = Attribute.objects.get(code="NUFC")
-        self.assertContains(AMTH_obj, self.MUSC_0050.attributes)
-        self.assertContains(NUFC_obj, self.MUSC_0050.attributes)
+        self.assertEqual("NUR", NUFC_obj.school)
+        self.assertIn(AMTH_obj, self.MUSC_0050.attributes.all())
+        self.assertIn(NUFC_obj, self.MUSC_0050.attributes.all())
 
     def test_add_attribute_multiple_times(self):
-        add_attributes([self.AMTH], self.MUSC_0050_001)
-        add_attributes([self.AMTH], self.ANTH_0020_001)
+        add_attributes(self.MUSC_0050_001, [self.AMTH])
+        add_attributes(self.ANTH_0020_001, [self.AMTH])
         AMTH_obj = Attribute.objects.get(code="AMTH")
-        self.assertContains(self.MUSC_0050, AMTH_obj.courses)
-        self.assertContains(self.ANTH_0020, AMTH_obj.courses)
+        self.assertIn(self.MUSC_0050, AMTH_obj.courses.all())
+        self.assertIn(self.ANTH_0020, AMTH_obj.courses.all())
 
 
 class ParseOpendataResponseTestCase(TestCase):
