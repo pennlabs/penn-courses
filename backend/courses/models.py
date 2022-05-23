@@ -440,8 +440,8 @@ class Attribute(models.Model):
     e.g. WUOM for the "Wharton OIDD Operation" track
 
     Note that Attributes (like Restrictions) do not have an associated
-    semester. This is because only the Attribute/Restriction set used in the
-    current semester is maintained. Specifically, Attribute and Restriction
+    semester. This is because only the Attribute/NGSSRestriction set used in the
+    current semester is maintained. Specifically, Attribute and NGSSRestriction
     objects are regenerated at every upsert from OpenData such that every
     attribute and restriction is associated with at least one course.
     """
@@ -469,14 +469,17 @@ class Attribute(models.Model):
     )
 
     SCHOOL_CHOICES = (
-        ("SEAS", "Engineering"),
-        ("WH", "Wharton"),
-        ("DSGN", "Design"),
         ("SAS", "School of Arts and Sciences"),
-        ("NURS", "Nursing"),
-        ("VIPER", "VIPER"),
-        ("VET", "Veterinary"),
-        ("GSE", "GSE"),
+        ("LPS", "College of Liberal and Professional Studies"),
+        ("SEAS", "Engineering"),
+        ("DSGN", "Design"),
+        ("GSE", "Graduate School of Education"),
+        ("LAW", "Law School"),
+        ("MED", "School of Medicine"),
+        ("MODE", "Grade Mode"),
+        ("VET", "School of Veterinary Medicine"),
+        ("NUR", "Nursing"),
+        ("WH", "Wharton"),
         ("OTHER", "Other"),
     )
 
@@ -486,8 +489,8 @@ class Attribute(models.Model):
         db_index=True,
         help_text=dedent(
             """
-        What school this requirement belongs to, e.g. `SAS` for the SAS 'Formal Reasoning Course'
-        requirement satisfied by CIS-120. Options and meanings:
+        What school/program this attribute belongs to, e.g. `SAS` for `ASOC` restriction
+        or `WH` for `WUOM` or `MODE` for `QP` 
         """
             + string_dict_to_html(dict(SCHOOL_CHOICES))
         ),
@@ -499,7 +502,7 @@ class Attribute(models.Model):
         blank=True,
         help_text=dedent(
             """
-            Individual Course objects which have this attribute
+            Course objects which have this attribute
             """
         ),
     )
@@ -508,7 +511,7 @@ class Attribute(models.Model):
         return f"{self.code} @ {self.school} - {self.description}"
 
 
-class Restriction(models.Model):
+class NGSSRestriction(models.Model):
     """
     A restriction on who can register for this course.
 
@@ -556,7 +559,7 @@ class Restriction(models.Model):
         help_text=dedent(
             """
         Whether this is an include or exclude restriction. Corresponds to the incl_excl_ind
-        response field. True if include (ie, incl_excl_ind is "I") and false if exclude ("E").
+        response field. True if include (ie, incl_excl_ind is "I") and False if exclude ("E").
         """
         )
     )
@@ -571,7 +574,7 @@ class Restriction(models.Model):
 
     courses = models.ManyToManyField(
         Course,
-        related_name="restrictions",
+        related_name="ngss_restrictions",
         blank=True,
         help_text=dedent(
             """
@@ -763,7 +766,7 @@ class Section(models.Model):
         related_name="sections",
         blank=True,
         help_text=(
-            "All pre-NGSS (deprecated since 2022C) registration Restriction objects to which "
+            "All pre-NGSS (deprecated since 2022C) registration NGSSRestriction objects to which "
             "this section is subject. This field will be empty for sections "
             "in 2022C or later."
         ),
