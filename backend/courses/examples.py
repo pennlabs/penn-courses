@@ -55,35 +55,27 @@ AttributeList_examples = {
             "responses": [
                 {
                     "code": 200,
-                    "summary": "List Requirements",
+                    "summary": "List Attributes",
                     "value": [
                         {
-                            "id": "MC2@SAS",
-                            "code": "MC2",
-                            "school": "SAS",
-                            "semester": "2020C",
-                            "name": "Cultural Diversity in the US",
-                        },
-                        {
-                            "id": "H@SEAS",
-                            "code": "H",
+                            "code": "EMCI",
                             "school": "SEAS",
-                            "semester": "2020C",
-                            "name": "Humanities",
+                            "description": "SEAS CIS NonCIS Elective",
                         },
                         {
-                            "id": "SS@WH",
-                            "code": "SS",
+                            "code": "ASOC",
+                            "school": "SAS",
+                            "description": "SOCI M Soc of Cultur",
+                        },
+                        {
+                            "code": "UNVE",
+                            "school": "VIPER",
+                            "description": "VIPER Energy Course",
+                        },
+                        {
+                            "code": "WUOM",
                             "school": "WH",
-                            "semester": "2020C",
-                            "name": "Social Science",
-                        },
-                        {
-                            "id": "example@school",
-                            "code": "example",
-                            "school": "school",
-                            "semester": "2020C",
-                            "name": "Example Requirement",
+                            "description": "Wharton OIDD Operation",
                         },
                     ],
                 }
@@ -92,42 +84,27 @@ AttributeList_examples = {
     },
 }
 
-RestrictionList_examples = {
+
+NGSSRestrictionList_examples = {
     reverse_func("restrictions-list"): {
         "GET": {
             "requests": [],
             "responses": [
                 {
                     "code": 200,
-                    "summary": "List Requirements",
+                    "summary": "List NGSSRestrictions",
                     "value": [
                         {
-                            "id": "MC2@SAS",
-                            "code": "MC2",
-                            "school": "SAS",
-                            "semester": "2020C",
-                            "name": "Cultural Diversity in the US",
+                            "code": "PHL",
+                            "type": "CAMP",
+                            "include_or_exclude": True,
+                            "description": "Philly Campus",
                         },
                         {
-                            "id": "H@SEAS",
-                            "code": "H",
-                            "school": "SEAS",
-                            "semester": "2020C",
-                            "name": "Humanities",
-                        },
-                        {
-                            "id": "SS@WH",
-                            "code": "SS",
-                            "school": "WH",
-                            "semester": "2020C",
-                            "name": "Social Science",
-                        },
-                        {
-                            "id": "example@school",
-                            "code": "example",
-                            "school": "school",
-                            "semester": "2020C",
-                            "name": "Example Requirement",
+                            "code": "WUOM",
+                            "type": "ATTR",
+                            "include_or_exclude": True,
+                            "description": "Wharton OIDD Operation",
                         },
                     ],
                 }
