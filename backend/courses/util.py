@@ -551,7 +551,7 @@ def identify_school(attribute_code):
         "Q": "MODE",
         "V": "VET",
         "N": "NUR",
-        "W": "WH"
+        "W": "WH",
     }
     for prefix, school in prefix_to_school.items():
         if attribute_code.startswith(prefix):

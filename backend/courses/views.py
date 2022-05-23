@@ -6,15 +6,22 @@ from rest_framework.permissions import IsAuthenticated
 
 import courses.examples as examples
 from courses.filters import CourseSearchFilterBackend
-from courses.models import Attribute, Course, PreNGSSRequirement, NGSSRestriction, Section, StatusUpdate
+from courses.models import (
+    Attribute,
+    Course,
+    NGSSRestriction,
+    PreNGSSRequirement,
+    Section,
+    StatusUpdate,
+)
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
     AttributeListSerializer,
     CourseDetailSerializer,
     CourseListSerializer,
     MiniSectionSerializer,
-    PreNGSSRequirementListSerializer,
     NGSSRestrictionListSerializer,
+    PreNGSSRequirementListSerializer,
     SectionDetailSerializer,
     StatusUpdateSerializer,
     UserSerializer,

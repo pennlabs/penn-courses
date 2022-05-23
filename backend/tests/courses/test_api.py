@@ -16,8 +16,8 @@ from courses.models import (
     Course,
     Department,
     Instructor,
-    PreNGSSRequirement,
     NGSSRestriction,
+    PreNGSSRequirement,
 )
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course, invalidate_current_semester_cache

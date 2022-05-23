@@ -6,11 +6,10 @@ from django.test import TestCase
 from options.models import Option
 
 from alert.models import AddDropPeriod
-from courses.models import Attribute, Course, Department, Instructor, Meeting, Section
+from courses.models import Attribute, Course, Instructor, Meeting, Section
 from courses.util import (
     add_attributes,
     get_or_create_course_and_section,
-    identify_school,
     invalidate_current_semester_cache,
     upsert_course_from_opendata,
 )

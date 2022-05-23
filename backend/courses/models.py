@@ -490,7 +490,7 @@ class Attribute(models.Model):
         help_text=dedent(
             """
         What school/program this attribute belongs to, e.g. `SAS` for `ASOC` restriction
-        or `WH` for `WUOM` or `MODE` for `QP` 
+        or `WH` for `WUOM` or `MODE` for `QP`
         """
             + string_dict_to_html(dict(SCHOOL_CHOICES))
         ),
