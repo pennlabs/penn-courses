@@ -464,11 +464,12 @@ class AttributeListTestCase(TestCase):
 
 class AttributeFilterTestCase(TestCase):
     def setUp(self):
-        # Courses
-        self.cis_120, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
-        self.mgmt_117, _ = get_or_create_course("MGMT", "117", TEST_SEMESTER)
-        self.econ_001, _ = get_or_create_course("ECON", "001", TEST_SEMESTER)
-        self.anth_001, _ = get_or_create_course("ANTH", "001", TEST_SEMESTER)
+        set_semester()
+        # Courses (4)
+        self.cis_120, _ = create_mock_data("CIS-120-001", TEST_SEMESTER)
+        self.mgmt_117, _ = create_mock_data("MGMT-117-001", TEST_SEMESTER)
+        self.econ_001, _ = create_mock_data("ECON-001-001", TEST_SEMESTER)
+        self.anth_001, _ = create_mock_data("ANTH-001-001", TEST_SEMESTER)
 
         # Attributes
         self.wuom = Attribute.objects.create(
@@ -487,7 +488,6 @@ class AttributeFilterTestCase(TestCase):
         self.all_codes = {"CIS-120", "MGMT-117", "ECON-001", "ANTH-001"}
 
         self.client = APIClient()
-        set_semester()
 
     def test_no_attributes(self):
         response = self.client.get(
@@ -517,7 +517,6 @@ class AttributeFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "WUOM,EMCI"}
         )
         self.assertEqual(response.status_code, 200)
-        print(response.data)
         self.assertEqual(len(response.data), 3)
         self.assertEqual({res["id"] for res in response.data}, {"MGMT-117", "ECON-001", "CIS-120"})
 
@@ -526,7 +525,7 @@ class AttributeFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "LLLL"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 3)
+        self.assertEqual(len(response.data), 4)
         self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_existent_and_nonexistent_attributes(self):
