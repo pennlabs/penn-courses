@@ -169,10 +169,9 @@ def attribute_filter(queryset, attr_ids):
     for attr_id in attr_ids.split(","):
         try:
             attribute = Attribute.objects.get(code=attr_id)
-        except PreNGSSRequirement.DoesNotExist:
+        except Attribute.DoesNotExist:
             continue
         query |= Q(id__in=attribute.courses.all())
-
     return queryset.filter(query)
 
 
@@ -268,9 +267,9 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "required": False,
                 "in": "query",
                 "description": "Filter courses by comma-separated attributes, ORed together."
-                "Use `/attributes` endpoint to get attribute IDs.",
+                "Use `/attributes` endpoint to get attribute codes.",
                 "schema": {"type": "string"},
-                "example": "WUOM@WH, WUGA@WH",
+                "example": "WUOM,WUGA",
             },
             {
                 "name": "cu",

@@ -9,7 +9,7 @@ from courses.models import (
     Instructor,
     Meeting,
     PreNGSSRequirement,
-    Restriction,
+    NGSSRestriction,
     Section,
     StatusUpdate,
     UserProfile,
@@ -200,34 +200,16 @@ class PreNGSSRequirementListSerializer(serializers.ModelSerializer):
 
 
 class AttributeListSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField(
-        read_only=True,
-        help_text="The code of the attribute (ex: WUOM)",
-    )
-
-    @staticmethod
-    def get_id(obj):
-        return obj.code
-
     class Meta:
         model = Attribute
-        fields = ["id", "school", "description"]
+        fields = ["code", "school", "description"]
         read_only_fields = fields
 
 
-class RestrictionListSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField(
-        read_only=True,
-        help_text="The code of the restriction (ex: WUOM)",
-    )
-
-    @staticmethod
-    def get_id(obj):
-        return obj.code
-
+class NGSSRestrictionListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Restriction
-        fields = ["id", "restriction_type", "include_or_exclude", "description"]
+        model = NGSSRestriction
+        fields = ["code", "restriction_type", "include_or_exclude", "description"]
         read_only_fields = fields
 
 
@@ -352,6 +334,17 @@ class CourseDetailSerializer(CourseListSerializer):
         ),
     )
 
+    restrictions = NGSSRestrictionListSerializer(
+        many=True,
+        read_only=True,
+        help_text=dedent(
+            """
+        A list of NGSSRestrictions this course has. Restrictions provide information about
+        who can take a course.
+        """
+        ),
+    )
+
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
     )
@@ -380,8 +373,9 @@ class CourseDetailSerializer(CourseListSerializer):
             "work_required",
         ] + [
             "crosslistings",
-            "pre_ngss_requirements"
+            "pre_ngss_requirements",
             "attributes",
+            "restrictions",
             "sections",
         ]
         read_only_fields = fields

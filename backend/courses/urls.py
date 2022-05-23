@@ -30,7 +30,7 @@ urlpatterns = [
     ),
     path(
         "restrictions/",
-        views.RestrictionList.as_view(),
+        views.NGSSRestrictionList.as_view(),
         name="restrictions-list",
     ),
     path("statusupdate/<slug:full_code>/", views.StatusUpdateView.as_view(), name="statusupdate"),

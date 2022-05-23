@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 
 import courses.examples as examples
 from courses.filters import CourseSearchFilterBackend
-from courses.models import Attribute, Course, PreNGSSRequirement, Restriction, Section, StatusUpdate
+from courses.models import Attribute, Course, PreNGSSRequirement, NGSSRestriction, Section, StatusUpdate
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
     AttributeListSerializer,
@@ -14,7 +14,7 @@ from courses.serializers import (
     CourseListSerializer,
     MiniSectionSerializer,
     PreNGSSRequirementListSerializer,
-    RestrictionListSerializer,
+    NGSSRestrictionListSerializer,
     SectionDetailSerializer,
     StatusUpdateSerializer,
     UserSerializer,
@@ -282,7 +282,7 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
     queryset = PreNGSSRequirement.objects.all()
 
 
-class AttributeList(generics.ListAPIView, BaseCourseMixin):
+class AttributeList(generics.ListAPIView):
     """
     Retrieve a list of unique attributes (introduced post-NGSS)
     """
@@ -300,13 +300,13 @@ class AttributeList(generics.ListAPIView, BaseCourseMixin):
     queryset = Attribute.objects.all()
 
 
-class RestrictionList(generics.ListAPIView, BaseCourseMixin):
+class NGSSRestrictionList(generics.ListAPIView):
     """
     Retrieve a list of unique attributes (introduced post-NGSS)
     """
 
     schema = PcxAutoSchema(
-        examples=examples.RestrictionList_examples,
+        examples=examples.NGSSRestrictionList_examples,
         response_codes={
             reverse_func("restrictions-list"): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."}
@@ -314,8 +314,8 @@ class RestrictionList(generics.ListAPIView, BaseCourseMixin):
         },
     )
 
-    serializer_class = RestrictionListSerializer
-    queryset = Restriction.objects.all()
+    serializer_class = NGSSRestrictionListSerializer
+    queryset = NGSSRestriction.objects.all()
 
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
