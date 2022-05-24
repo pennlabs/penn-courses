@@ -268,8 +268,8 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "required": False,
                 "in": "query",
                 "description": "Deprecated since 2022C. Filter courses by comma-separated pre"
-                               "ngss requirements, ANDed together. Use `/requirements` endpoint"
-                               "to get requirement IDs.",
+                "ngss requirements, ANDed together. Use `/requirements` endpoint"
+                "to get requirement IDs.",
                 "schema": {"type": "string"},
                 "example": "SS@SEAS,H@SEAS",
             },
