@@ -220,6 +220,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         filters = {
             "attributes": attribute_filter,
+            "pre_ngss_requirements": pre_ngss_requirement_filter,
             "cu": choice_filter("sections__credits"),
             "activity": choice_filter("sections__activity"),
             "course_quality": bound_filter("course_quality"),
@@ -261,6 +262,16 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                     "default": "auto",
                     "enum": ["auto", "course", "keyword"],
                 },
+            },
+            {
+                "name": "pre_ngss_requirements",
+                "required": False,
+                "in": "query",
+                "description": "Deprecated since 2022C. Filter courses by comma-separated pre"
+                               "ngss requirements, ANDed together. Use `/requirements` endpoint"
+                               "to get requirement IDs.",
+                "schema": {"type": "string"},
+                "example": "SS@SEAS,H@SEAS",
             },
             {
                 "name": "attributes",
