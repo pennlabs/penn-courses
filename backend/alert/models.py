@@ -8,7 +8,7 @@ from dateutil.tz import gettz
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Case, F, Max, Q, Value, When
 from django.db.models.functions import Extract
 from django.utils import timezone
@@ -21,7 +21,6 @@ from courses.util import (
     get_course_and_section,
     get_current_semester,
     get_or_create_add_drop_period,
-    in_dev,
 )
 from PennCourses.settings.base import TIME_ZONE
 
@@ -342,13 +341,14 @@ class Registration(models.Model):
     )
     head_registration = models.ForeignKey(
         "Registration",
-        blank=True,
-        null=True,
         on_delete=models.CASCADE,
         help_text=dedent(
             """
         The head of this registration's resubscribe chain (pointing to
-        itself if this registration is the head of its chain).
+        itself if this registration is the head of its chain). If you call `.save()`
+        on a registration  without setting its `head_registration` field, the overridden
+        `Registration.save()` method will automatically set its `head_registration`
+        to a self-reference.
         """
         ),
     )
@@ -468,63 +468,75 @@ class Registration(models.Model):
 
     def save(self, load_script=False, *args, **kwargs):
         """
-        This save method converts the phone field to E164 format, or sets it to
-        None if it is unparseable. Then, if the user field is not None, but either of the phone
-        or email fields are not None, it moves the info in the phone / email fields
-        to the user object (this was only a concern during the PCA refresh transition
-        process and is left in for redundancy).
-        Then, if original_created_at is None, it sets the original_created_at field to be
-        created_at if the registration is the tail of its resubscribe chain, and traverses the
-        resubscribe chain to get the original registration's created at otherwise, properly
-        setting the original_created_at field. Note that the resubscribe logic carries over
-        the original_created_at field to new registrations created by a resubscribe, so the
-        case in which the chain is traversed to find the proper value for original_created_at is
-        only for redundancy.
-        It sets head_registration to the object being saved if the field is null.
-        It finally calls the normal save method with args and kwargs.
-        Asynchronously after the save completes successfully, if load_script is set to False
-        and the registration's semester is the current semester,
-        it updates the PcaDemandDistributionEstimate models and current_demand_distribution_estimate
-        cache to reflect the demand change if this registration was just created or deactivated.
-        """
-        from alert.tasks import registration_update  # imported here to avoid circular imports
+        This save method enforces the following invariants on the registration:
+          - The `phone` field is converted to E164 format, or set to `None` if unparseable.
+          - If the `user` field is not `None`, but either of the legacy `phone`
+            or `email` fields are not `None`, the contents of the `phone` / `email` fields
+            are moved to the `profile` of the `user` object (this was only a concern during the
+            PCA refresh transition process, when we switched away from using these legacy fields).
+          - If `head_registration` is `None`, it is set to a self-reference.
+          - Any other registration whose `head_registration` equals `self.resubscribed_from`
+            are updated to have `self` as their `head_registration`.
+          - The `original_created_at` field is set to the `created_at` of the tail of the
+            resubscribe chain.
 
-        super().save(*args, **kwargs)
-        update_registration_volume = (
-            not load_script
-        ) and self.section.semester == get_current_semester()
-        if update_registration_volume:
-            try:
-                was_active = Registration.objects.get(id=self.id).is_active
-            except Registration.DoesNotExist:
-                was_active = False
-        self.validate_phone()
-        if self.user is not None:
-            if self.email is not None:
-                user_data, _ = UserProfile.objects.get_or_create(user=self.user)
-                user_data.email = self.email
-                user_data.save()
-                self.user.profile = user_data
-                self.user.save()
-                self.email = None
-            if self.phone is not None:
-                user_data, _ = UserProfile.objects.get_or_create(user=self.user)
-                user_data.phone = self.phone
-                user_data.save()
-                self.user.profile = user_data
-                self.user.save()
-                self.phone = None
-        if self.head_registration is None:
-            self.head_registration = self
-        if self.original_created_at is None:
-            if self.resubscribed_from is None:
-                self.original_created_at = self.created_at
-            else:
-                self.original_created_at = self.get_original_registration_iter().created_at
-        super().save()
-        if update_registration_volume and not in_dev():
-            is_now_active = self.is_active
-            registration_update.delay(self.section.id, was_active, is_now_active, self.updated_at)
+        If `load_script` is set to False (indicating this registration is being actively
+        created by a PCA user, rather than being loaded in from an external data source),
+        and the registration's semester is the current semester, and the registration
+        has just been created or deactivated, then the `PcaDemandDistributionEstimate` model
+        and `current_demand_distribution_estimate` cache are asynchronously updated
+        (via a celery task) to reflect the resulting section demand change.
+        """
+        from alert.tasks import registration_update
+        from courses.util import get_set_id, is_fk_set
+
+        # ^ imported here to avoid circular imports
+
+        with transaction.atomic():
+            self.validate_phone()
+            if self.user is not None:
+                if self.email is not None:
+                    user_data, _ = UserProfile.objects.get_or_create(user=self.user)
+                    user_data.email = self.email
+                    user_data.save()
+                    self.user.profile = user_data
+                    self.user.save()
+                    self.email = None
+                if self.phone is not None:
+                    user_data, _ = UserProfile.objects.get_or_create(user=self.user)
+                    user_data.phone = self.phone
+                    user_data.save()
+                    self.user.profile = user_data
+                    self.user.save()
+                    self.phone = None
+
+            # Find old registration
+            old_registration = Registration.objects.get(id=self.id) if self.id else None
+            was_active = bool(old_registration and old_registration.is_active)
+
+            # Set head_registration to self if not set
+            if not is_fk_set(self, "head_registration"):
+                self.head_registration_id = self.id or get_set_id(self)
+
+            super().save(*args, **kwargs)
+
+            if self.resubscribed_from_id:
+                Registration.objects.filter(head_registration_id=self.resubscribed_from_id).update(
+                    head_registration=self
+                )
+
+            if self.original_created_at is None:
+                self.original_created_at = self.get_original_registration().created_at
+                super().save()
+
+            if (
+                not load_script
+                and self.section.semester == get_current_semester()
+                and was_active != self.is_active
+            ):
+                registration_update.delay(
+                    self.section.id, was_active, self.is_active, self.updated_at
+                )
 
     def alert(self, forced=False, sent_by="", close_notification=False):
         """
@@ -595,7 +607,6 @@ class Registration(models.Model):
         :return: Registration object for the resubscription
         """
         most_recent_reg = self.get_most_current()
-
         if most_recent_reg.is_active:  # if the head of this resub chain is active
             return most_recent_reg  # don't create duplicate registrations for no reason.
 
@@ -610,9 +621,6 @@ class Registration(models.Model):
             original_created_at=self.original_created_at,
         )
         new_registration.save()
-        Registration.objects.filter(head_registration=most_recent_reg).update(
-            head_registration=new_registration
-        )
         return new_registration
 
     def get_resubscribe_group(self):
@@ -649,7 +657,7 @@ class Registration(models.Model):
         head_registration relations.
         """
         original = self
-        while original.resubscribed_from is not None:
+        while original.resubscribed_from:
             original = original.resubscribed_from
         return original
 
@@ -680,12 +688,8 @@ def register_for_course(
     ):
         return RegStatus.NO_CONTACT_INFO, None, None
     try:
-        course, section = get_course_and_section(course_code, get_current_semester())
-    except Course.DoesNotExist:
-        return RegStatus.COURSE_NOT_FOUND, None, None
-    except Section.DoesNotExist:
-        return RegStatus.COURSE_NOT_FOUND, None, None
-    except ValueError:
+        _, section = get_course_and_section(course_code, get_current_semester())
+    except (Course.DoesNotExist, Section.DoesNotExist, ValueError):
         return RegStatus.COURSE_NOT_FOUND, None, None
 
     if user is None:
@@ -966,43 +970,46 @@ class AddDropPeriod(models.Model):
         estimated_end fields, updates the in_add_drop_period and percent_through_add_drop_period
         fields of StatusUpdates and PcaDemandDistributionEstimates from this semester, and then
         calls the overridden save method.
-        NOTE: make sure to run recompute_percent_open (in recompute_stats) for this semester
-        any time you change the add/drop period.
         """
-        super().save(*args, **kwargs)
-        cache.delete("add_drop_periods")  # invalidate add_drop_periods cache
-        self.estimated_start = self.estimate_start()
-        self.estimated_end = self.estimate_end()
-        period = self.estimated_end - self.estimated_start
-        for model, sem_filter_key in [
-            (StatusUpdate, "section__course__semester"),
-            (PcaDemandDistributionEstimate, "semester"),
-        ]:
-            sem_filter = {sem_filter_key: self.semester}
-            model.objects.filter(**sem_filter).update(
-                in_add_drop_period=Case(
-                    When(
-                        Q(created_at__gte=self.estimated_start)
-                        & Q(created_at__lte=self.estimated_end),
-                        then=Value(True),
+        from alert.tasks import recompute_percent_open_async  # avoid circular import
+
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            cache.delete("add_drop_periods")  # invalidate add_drop_periods cache
+            self.estimated_start = self.estimate_start()
+            self.estimated_end = self.estimate_end()
+            period = self.estimated_end - self.estimated_start
+            for model, sem_filter_key in [
+                (StatusUpdate, "section__course__semester"),
+                (PcaDemandDistributionEstimate, "semester"),
+            ]:
+                sem_filter = {sem_filter_key: self.semester}
+                model.objects.filter(**sem_filter).update(
+                    in_add_drop_period=Case(
+                        When(
+                            Q(created_at__gte=self.estimated_start)
+                            & Q(created_at__lte=self.estimated_end),
+                            then=Value(True),
+                        ),
+                        default=Value(False),
+                        output_field=models.BooleanField(),
                     ),
-                    default=Value(False),
-                    output_field=models.BooleanField(),
-                ),
-                percent_through_add_drop_period=Case(
-                    When(
-                        Q(created_at__lte=self.estimated_start),
-                        then=Value(0),
+                    percent_through_add_drop_period=Case(
+                        When(
+                            Q(created_at__lte=self.estimated_start),
+                            then=Value(0),
+                        ),
+                        When(Q(created_at__gte=self.estimated_end), then=Value(1)),
+                        default=(
+                            Extract(F("created_at"), "epoch")
+                            - Value(self.estimated_start.timestamp())
+                        )
+                        / Value(period.total_seconds()),
+                        output_field=models.FloatField(),
                     ),
-                    When(Q(created_at__gte=self.estimated_end), then=Value(1)),
-                    default=(
-                        Extract(F("created_at"), "epoch") - Value(self.estimated_start.timestamp())
-                    )
-                    / Value(period.total_seconds()),
-                    output_field=models.FloatField(),
-                ),
-            )
-        super().save()
+                )
+            super().save()
+            recompute_percent_open_async.delay(self.semester)
 
     def estimate_start(self):
         """

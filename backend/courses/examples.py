@@ -3,7 +3,7 @@ from PennCourses.docs_settings import reverse_func
 
 # See backend/PennCourses/docs_settings.py for more info on how to format these examples files.
 
-RequirementList_examples = {
+PreNGSSRequirementList_examples = {
     reverse_func("requirements-list", args=["semester"]): {
         "GET": {
             "requests": [],
@@ -269,7 +269,7 @@ CourseDetail_examples = {
                         "difficulty": 2,
                         "work_required": 2,
                         "crosslistings": [],
-                        "requirements": [
+                        "pre_ngss_requirements": [
                             {
                                 "id": "ENG@SEAS",
                                 "code": "ENG",

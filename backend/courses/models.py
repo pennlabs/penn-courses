@@ -6,9 +6,8 @@ import phonenumbers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
-from django.db.models import Case, Index, OuterRef, Q, Subquery, When
-from django.db.models.functions import Cast
+from django.db import models, transaction
+from django.db.models import OuterRef, Q, Subquery
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -90,22 +89,42 @@ class Department(models.Model):
 
 
 def sections_with_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+    # get all the reviews for instructors in the Section.instructors many-to-many
+    instructors_subquery = Subquery(
+        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id")
+    )
+
     return review_averages(
         queryset,
-        {
-            "review__section__course__full_code": OuterRef("course__full_code"),
-            # get all the reviews for instructors in the Section.instructors many-to-many
-            "review__instructor__in": Subquery(
-                Instructor.objects.filter(section=OuterRef(OuterRef("id"))).values("id").order_by()
-            ),
-        },
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr
+            & Q(review__section__course__topic=OuterRef("course__topic"))
+            & Q(review__instructor__in=instructors_subquery)
+        ),
+        section_subfilters=(
+            section_filters_pcr
+            & Q(course__topic=OuterRef("course__topic"))
+            & Q(instructors__in=instructors_subquery)
+        ),
         extra_metrics=False,
     ).order_by("code")
 
 
 def course_reviews(queryset):
+    from review.views import reviewbit_filters_pcr, section_filters_pcr
+
+    # ^ imported here to avoid circular imports
+
     return review_averages(
-        queryset, {"review__section__course__full_code": OuterRef("full_code")}, extra_metrics=False
+        queryset,
+        reviewbit_subfilters=(
+            reviewbit_filters_pcr & Q(review__section__course__topic=OuterRef("topic"))
+        ),
+        section_subfilters=(section_filters_pcr & Q(course__topic=OuterRef("topic"))),
+        extra_metrics=False,
     )
 
 
@@ -167,6 +186,17 @@ class Course(models.Model):
         ),
     )
 
+    syllabus_url = models.TextField(
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+            A URL for the syllabus of the course, if available.
+            Not available for courses offered in or before spring 2022.
+            """
+        ),
+    )
+
     full_code = models.CharField(
         max_length=16,
         blank=True,
@@ -179,17 +209,27 @@ class Course(models.Model):
         help_text="Text describing the prereqs for a course, e.g. 'CIS 120, 160' for CIS-121.",
     )
 
+    topic = models.ForeignKey(
+        "Topic",
+        related_name="courses",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The Topic of this course",
+    )
+
     primary_listing = models.ForeignKey(
         "Course",
         related_name="listing_set",
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         help_text=dedent(
             """
-        The primary Course object with which this course is crosslisted (all crosslisted courses
-        have a primary listing). The set of crosslisted courses to which this course belongs can
-        thus be accessed with the related field listing_set on the primary_listing course.
+        The primary Course object with which this course is crosslisted. The set of crosslisted
+        courses to which this course belongs can thus be accessed with the related field
+        `listing_set` on the `primary_listing` course. If a course doesn't have any crosslistings,
+        its `primary_listing` foreign key will point to itself. If you call `.save()` on a course
+        without setting its `primary_listing` field, the overridden `Course.save()` method will
+        automatically set its `primary_listing` to a self-reference.
         """
         ),
     )
@@ -205,10 +245,34 @@ class Course(models.Model):
     )
 
     class Meta:
-        unique_together = (("department", "code", "semester"), ("full_code", "semester"))
+        unique_together = (
+            ("department", "code", "semester"),
+            ("full_code", "semester"),
+        )
 
     def __str__(self):
         return "%s %s" % (self.full_code, self.semester)
+
+    def full_str(self):
+        return f"{self.full_code} ({self.semester}): {self.title}\n{self.description}"
+
+    @property
+    def is_primary(self):
+        """
+        Returns True iff this is the primary course among its crosslistings.
+        """
+        return self.primary_listing.id == self.id
+
+    @property
+    def from_new_banner_api(self):
+        """
+        This property is used to determine whether the course was imported from the new
+        OpenData API based on Banner, the university's new course data management system
+        (docs: https://app.swaggerhub.com/apis-docs/UPennISC/open-data/prod),
+        as opposed to the old OpenData API
+        (docs: https://esb.isc-seo.upenn.edu/8091/documentation).
+        """
+        return self.semester > "2022A"
 
     @property
     def crosslistings(self):
@@ -216,36 +280,162 @@ class Course(models.Model):
         A QuerySet (list on frontend) of the Course objects which are crosslisted with this
         course (not including this course).
         """
-        if self.primary_listing is not None:
-            return self.primary_listing.listing_set.exclude(id=self.id)
-        else:
-            return Course.objects.none()
+        return self.primary_listing.listing_set.exclude(id=self.id)
 
     @property
-    def requirements(self):
+    def pre_ngss_requirements(self):
         """
-        A QuerySet (list on frontend) of all the Requirement objects this course fulfills. Note that
-        a course fulfills a requirement if and only if it is not in the requirement's
+        A QuerySet (list on frontend) of all the PreNGSSRequirement objects this course fulfills.
+        Note that a course fulfills a requirement if and only if it is not in the requirement's
         overrides set (related name nonrequirements_set), and is in the requirement's
         courses set (related name requirement_set) or its department is in the requirement's
         departments set (related name requirements).
         """
         return (
-            Requirement.objects.exclude(id__in=self.nonrequirement_set.all())
+            PreNGSSRequirement.objects.exclude(id__in=self.pre_ngss_nonrequirement_set.all())
             .filter(semester=self.semester)
             .filter(
-                Q(id__in=self.requirement_set.all()) | Q(id__in=self.department.requirements.all())
+                Q(id__in=self.pre_ngss_requirement_set.all())
+                | Q(id__in=self.department.pre_ngss_requirements.all())
             )
         )
 
     def save(self, *args, **kwargs):
+        """
+        This overridden `.save()` method enforces the following invariants on the course:
+          - The course's full code equals the dash-joined department and code
+          - If a course doesn't have crosslistings, its `primary_listing` is a self-reference
+          - If a course doesn't have a topic, by default it joins the topics of which any
+            of its crosslisted codes are members (if there are multiple such topics, they are
+            merged).
+          - All crosslisted courses have the same topic
+          - The `Topic.most_recent` invariant (see the help_text on that field)
+        """
+        from courses.util import get_set_id, is_fk_set  # avoid circular imports
+
         self.full_code = f"{self.department.code}-{self.code}"
+
+        # Set primary_listing to self if not set
+        if not is_fk_set(self, "primary_listing"):
+            self.primary_listing_id = self.id or get_set_id(self)
+
         super().save(*args, **kwargs)
 
+        # Give this course's listing set a topic if it doesn't already have one
+        # (merge topics if this course connects to multiple topics)
+        if not self.topic:
+            with transaction.atomic():
+                primary = self.primary_listing
+                topics = list(
+                    Topic.objects.select_related("most_recent")
+                    .filter(
+                        Q(most_recent__full_code=primary.full_code)
+                        | Q(most_recent__full_code__in=primary.listing_set.values("full_code")),
+                    )
+                    .select_related("most_recent")
+                )
+                if topics:
+                    topic = max(
+                        topics,
+                        key=lambda t: (
+                            int(t.most_recent.full_code == primary.full_code),
+                            t.most_recent.semester,
+                        ),
+                    )
+                    if topic.most_recent.semester < primary.semester:
+                        topic.most_recent = primary
+                        topic.save()
+                else:
+                    topic = Topic(most_recent=primary)
+                    topic.save()
 
-class Restriction(models.Model):
+                self.topic = topic
+                # This update takes care of saving self.topic
+                primary.listing_set.all().update(topic=topic)
+
+
+class Topic(models.Model):
     """
-    A registration restriction, e.g. PDP (permission needed from department)
+    A grouping of courses of the same topic (to accomodate course code changes).
+    """
+
+    most_recent = models.ForeignKey(
+        "Course",
+        related_name="+",
+        on_delete=models.PROTECT,
+        help_text=dedent(
+            """
+        The most recent course (by semester) of this topic. The `most_recent` course should
+        be the `primary_listing` if it has crosslistings. These invariants are maintained
+        by the `Course.save()` and `Topic.merge_with()` methods. Defer to using these methods
+        rather than setting this field manually. You must change the corresponding
+        `Topic` object's `most_recent` field before deleting a Course if it is the
+        `most_recent` course (`on_delete=models.PROTECT`).
+        """
+        ),
+    )
+
+    branched_from = models.ForeignKey(
+        "Topic",
+        related_name="branched_to",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+        When relevant, the Topic from which this Topic was branched (this will likely only be
+        useful for the spring 2022 NGSS course code changes, where some courses were split into
+        multiple new courses of different topics).
+        """
+        ),
+    )
+
+    @staticmethod
+    def merge_all(topics):
+        if not topics:
+            raise ValueError("Cannot merge an empty list of topics.")
+        with transaction.atomic():
+            topic = topics[0]
+            for topic2 in topics[1:]:
+                topic = topic.merge_with(topic2)
+            return topic
+
+    def merge_with(self, topic):
+        """
+        Merges this topic with the specified topic. Returns the resulting topic.
+        """
+        with transaction.atomic():
+            if self == topic:
+                return self
+            if (
+                self.branched_from
+                and topic.branched_from
+                and self.branched_from != topic.branched_from
+            ):
+                raise ValueError("Cannot merge topics with different branched_from topics.")
+            if self.most_recent.semester >= topic.most_recent.semester:
+                Course.objects.filter(topic=topic).update(topic=self)
+                if topic.branched_from and not self.branched_from:
+                    self.branched_from = topic.branched_from
+                    self.save()
+                topic.delete()
+                return self
+            else:
+                Course.objects.filter(topic=self).update(topic=topic)
+                if self.branched_from and not topic.branched_from:
+                    topic.branched_from = self.branched_from
+                    topic.save()
+                self.delete()
+                return topic
+
+    def __str__(self):
+        return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
+
+
+class PreNGSSRestriction(models.Model):
+    """
+    A pre-NGSS (deprecated since 2022C) registration restriction,
+    e.g. PDP (permission needed from department)
     """
 
     code = models.CharField(
@@ -316,25 +506,6 @@ class Section(models.Model):
 
     class Meta:
         unique_together = (("code", "course"),)
-        indexes = [
-            Index(
-                Case(
-                    When(
-                        Q(capacity__isnull=False) & Q(capacity__gt=0),
-                        then=(
-                            Cast(
-                                "registration_volume",
-                                models.FloatField(),
-                            )
-                            / Cast("capacity", models.FloatField())
-                        ),
-                    ),
-                    default=None,
-                    output_field=models.FloatField(null=True, blank=True),
-                ),
-                name="raw_demand",
-            ),
-        ]
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -363,6 +534,18 @@ class Section(models.Model):
             """
         The full code of the section, in the form '{dept code}-{course code}-{section code}',
         e.g. `CIS-120-001` for the 001 section of CIS-120.
+        """
+        ),
+    )
+    crn = models.CharField(
+        max_length=8,
+        db_index=True,
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        The CRN ID of the section.
+        Only available on sections after spring 2022 (i.e. after the NGSS transition).
         """
         ),
     )
@@ -423,20 +606,41 @@ class Section(models.Model):
         """
         ),
     )
-    restrictions = models.ManyToManyField(
-        Restriction,
+    pre_ngss_restrictions = models.ManyToManyField(
+        PreNGSSRestriction,
         related_name="sections",
         blank=True,
-        help_text="All registration Restriction objects to which this section is subject.",
+        help_text=(
+            "All pre-NGSS (deprecated since 2022C) registration Restriction objects to which "
+            "this section is subject. This field will be empty for sections "
+            "in 2022C or later."
+        ),
     )
 
     credits = models.DecimalField(
-        max_digits=3,  # some course for 2019C is 14 CR...
+        max_digits=4,  # some course for 2019C is 14 CR...
         decimal_places=2,
         null=True,
         blank=True,
         db_index=True,
         help_text="The number of credits this section is worth.",
+    )
+
+    has_reviews = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+            A flag indicating whether this section has reviews (precomputed for efficiency).
+            """
+        ),
+    )
+    has_status_updates = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+            A flag indicating whether this section has Status Updates (precomputed for efficiency).
+            """
+        ),
     )
 
     registration_volume = models.PositiveIntegerField(
@@ -648,6 +852,9 @@ class StatusUpdate(models.Model):
             self.percent_through_add_drop_period = (created_at - start) / (end - start)
         super().save()
 
+        self.section.has_status_updates = True
+        self.section.save()
+
 
 """
 Schedule Models
@@ -764,8 +971,38 @@ class Meeting(models.Model):
     )
     room = models.ForeignKey(
         Room,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
-        help_text="The Room object in which the meeting is taking place.",
+        help_text=dedent(
+            """
+        The Room object in which the meeting is taking place
+        (null if this is an online meeting).
+        """
+        ),
+    )
+
+    start_date = models.TextField(
+        blank=True,
+        null=True,
+        max_length=10,
+        help_text=dedent(
+            """
+        The first day this meeting takes place, in the form 'YYYY-MM-DD', e.g. '2022-08-30'.
+        Not available for sections offered in or before spring 2022.
+        """
+        ),
+    )
+    end_date = models.TextField(
+        blank=True,
+        null=True,
+        max_length=10,
+        help_text=dedent(
+            """
+        The last day this meeting takes place, in the form 'YYYY-MM-DD', e.g. '2022-12-12'.
+        Not available for sections offered in or before spring 2022.
+        """
+        ),
     )
 
     class Meta:
@@ -807,14 +1044,15 @@ class Meeting(models.Model):
 
 
 """
-Requirements
+PreNGSSRequirement
 """
 
 
-class Requirement(models.Model):
+class PreNGSSRequirement(models.Model):
     """
-    An academic requirement which the specified course(s) fulfill(s). Not to be confused with
-    Restriction objects, which are restrictions on registration for certain course section(s).
+    A pre-NGSS (deprecated since 2022C) academic requirement which the specified course(s)
+    fulfill(s). Not to be confused with PreNGSSRestriction objects, which were restrictions
+    on registration for certain course section(s).
     """
 
     SCHOOL_CHOICES = (("SEAS", "Engineering"), ("WH", "Wharton"), ("SAS", "College"))
@@ -870,7 +1108,7 @@ class Requirement(models.Model):
     )
     departments = models.ManyToManyField(
         Department,
-        related_name="requirements",
+        related_name="pre_ngss_requirements",
         blank=True,
         help_text=dedent(
             """
@@ -888,7 +1126,7 @@ class Requirement(models.Model):
     )
     courses = models.ManyToManyField(
         Course,
-        related_name="requirement_set",
+        related_name="pre_ngss_requirement_set",
         blank=True,
         help_text=dedent(
             """
@@ -903,7 +1141,7 @@ class Requirement(models.Model):
     )
     overrides = models.ManyToManyField(
         Course,
-        related_name="nonrequirement_set",
+        related_name="pre_ngss_nonrequirement_set",
         blank=True,
         help_text=dedent(
             """

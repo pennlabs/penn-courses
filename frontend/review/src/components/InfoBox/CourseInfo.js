@@ -1,52 +1,12 @@
-import React, { useMemo } from "react";
+import React from "react";
 import reactStringReplace from "react-string-replace";
 import { Link } from "react-router-dom";
+import styled from "styled-components";
 
 import { CourseDetails, Popover, PopoverTitle } from "../common";
-import {
-  convertInstructorName,
-  convertSemesterToInt,
-  toNormalizedSemester
-} from "../../utils/helpers";
-import { act } from "react-dom/test-utils";
+import { toNormalizedSemester } from "../../utils/helpers";
 
-const getSyllabusData = courses =>
-  Object.values(courses)
-    .map(course =>
-      Object.values(course)
-        .filter(({ syllabus_url: url }) => url)
-        .map(
-          ({
-            syllabus_url: url,
-            section_id_normalized: sectionId,
-            instructors = []
-          }) => {
-            const instructedBy =
-              instructors.map(c => c.name).join(", ") || "Unknown";
-            return {
-              url,
-              name: `${sectionId} - ${instructedBy}`
-            };
-          }
-        )
-    )
-    .flat()
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-const getPrereqData = courses => {
-  const prereqString = Object.values(courses)
-    .map(a =>
-      Object.values(a)
-        .map(({ prerequisite_notes: notes = [] }) => notes.join(" "))
-        .filter(b => b)
-    )
-    .flat()
-    .join(" ");
-  const prereqs = [
-    ...new Set(prereqString.match(/[A-Z]{2,4}[ -]\d{3}/g))
-  ].map(a => a.replace(" ", "-"));
-  return prereqs;
-};
+import ReactTooltip from "react-tooltip";
 
 const activityMap = {
   REC: "Recitation",
@@ -54,26 +14,14 @@ const activityMap = {
   SEM: "Seminar",
   LAB: "Laboratory"
 };
-const laterSemester = (a, b) => {
-  if (!a.localeCompare) {
-    return b;
-  } else if (!b.localeCompare) {
-    return a;
-  }
 
-  if (a.localeCompare(b) > 0) {
-    return a;
-  } else {
-    return b;
-  }
-};
 const TagsNotOffered = ({ data }) => {
-  const { instructors: instructorData = {}, code = "" } = data;
+  let {
+    instructors: instructorData = {},
+    latest_semester: mostRecent,
+    code = ""
+  } = data;
   const courseName = code.replace("-", " ");
-  let mostRecent = Object.values(instructorData)
-    .map(a => a.latest_semester)
-    .reduce(laterSemester);
-
   if (!mostRecent) {
     return <div />;
   }
@@ -94,6 +42,7 @@ const TagsNotOffered = ({ data }) => {
     </div>
   );
 };
+
 const TagsWhenOffered = ({
   liveData = null,
   data = {},
@@ -101,11 +50,6 @@ const TagsWhenOffered = ({
 }) => {
   const { instructors: instructorData = {}, code = "" } = data;
   const courseName = code.replace("-", " ");
-  // TODO: Get syllabus data
-  // const [syllabi, prereqs] = useMemo(
-  //   () => [getSyllabusData(courses), getPrereqData(courses)],
-  //   [courses]
-  // );
   const { sections, semester } = liveData;
   const term = toNormalizedSemester(semester);
   const credits =
@@ -245,6 +189,18 @@ const TagsWhenOffered = ({
   );
 };
 
+const RelatedCodes = styled.div`
+  display: flex;
+  flex-direction: row;
+  color: #4a4a4a;
+  align-items: center;
+  flex-wrap: wrap;
+`;
+
+const Spacer = styled.div`
+  height: 0.6rem;
+`;
+
 export const CourseHeader = ({
   aliases,
   code,
@@ -318,16 +274,60 @@ export const CourseHeader = ({
       </span>
     </div>
     {aliases && Boolean(aliases.length) && (
-      <div className="crosslist">
-        Also:{" "}
+      <RelatedCodes>
+        <strong>Also:&nbsp;</strong>
         {aliases.map((cls, i) => [
-          i > 0 && ", ",
-          <Link key={cls} to={`/course/${cls}`}>
-            {cls}
-          </Link>
+          i > 0 && <div>&#44;&nbsp;</div>,
+          <div>{cls}</div>
         ])}
-      </div>
+      </RelatedCodes>
     )}
+    {data.historical_codes && Boolean(data.historical_codes.length) && (
+      <RelatedCodes>
+        <strong>Previously:&nbsp;</strong>
+        {data.historical_codes.map((obj, i) => [
+          i > 0 && <div>&#44;&nbsp;</div>,
+          obj.branched_from ? (
+            <Link to={`/course/${obj.full_code}`}>{obj.full_code} </Link>
+          ) : (
+            <div>{obj.full_code}</div>
+          )
+        ])}
+        &nbsp;
+        <span data-tip data-for="historical-tooltip">
+          <i
+            className="fa fa-question-circle"
+            style={{
+              color: "#c6c6c6",
+              fontSize: "13px",
+              marginBottom: "0.3rem"
+            }}
+          />
+        </span>
+        <ReactTooltip
+          id="historical-tooltip"
+          place="right"
+          className="opaque"
+          type="light"
+          effect="solid"
+          border={true}
+          borderColor="#ededed"
+          textColor="#4a4a4a"
+        >
+          <span className="tooltip-text">
+            Historical courses are grouped on PCR <br />
+            using a variety of approximate methods.
+            <br />
+            Grouped courses should not necessarily
+            <br />
+            be seen as equivalent for the purposes of
+            <br />
+            academic planning or fulfilling requirements.
+          </span>
+        </ReactTooltip>
+      </RelatedCodes>
+    )}
+    <Spacer />
     <p className="subtitle">{name}</p>
     {notes &&
       notes.map(note => (
@@ -350,7 +350,7 @@ export const CourseHeader = ({
 export const CourseDescription = ({ description }) => {
   const content = reactStringReplace(
     description,
-    /([A-Z]{2,4}[ -]\d{3})/g,
+    /([A-Z]{2,4}[ -]\d{3,4})/g,
     (m, i) => (
       <Link to={`/course/${m.replace(" ", "-")}`} key={m + i}>
         {m}

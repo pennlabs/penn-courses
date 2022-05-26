@@ -155,6 +155,25 @@ const AlertForm = ({
         setResponse(new Response(blob, { status }));
     };
 
+    const isCourseOpen = (section) => {
+        return fetch(`/api/base/current/sections/${section}/`).then((res) => 
+            res.json().then((courseResult) => {
+
+                const isOpen = courseResult["status"] === "O";
+                if (isOpen) {
+                    setResponse(new Response(new Blob([JSON.stringify({message: "Course is currently open!", status: 400})], {
+                        type: "application/json",
+                    })))
+                } 
+
+                return isOpen;
+            }))
+            .catch((err) => {
+                handleError(err);
+                return false;
+            })
+    } 
+
     const handleError = (e) => {
         Sentry.captureException(e);
         sendError(
@@ -223,7 +242,7 @@ const AlertForm = ({
         }
 
         // register all selected sections
-        const promises: Array<Promise<Response>> = [];
+        const promises: Array<Promise<Response | undefined>> = [];
         selectedCourses.forEach((section) => {
             const promise = postRegistration(section.section_id);
             promises.push(promise);
@@ -231,19 +250,28 @@ const AlertForm = ({
 
         const sections = Array.from(selectedCourses);
 
-        Promise.allSettled(promises).then((responses) =>
-            responses.forEach((res: PromiseSettledResult<Response>, i) => {
-                //fulfilled if response is returned, even if reg is unsuccessful.
-                if (res.status === "fulfilled") {
-                    setResponse(res.value);
-                    if (res.value.ok) {
-                        deselectCourse(sections[i]);
-                        setClosedNotif(false);
-                    }
+        Promise.allSettled(promises)
+            .then((responses) => responses.forEach(
+                (res: PromiseSettledResult<Response | undefined>, i) => {
+                
+                    //fulfilled if response is returned, even if reg is unsuccessful.
+                    if (res.status === "fulfilled") {
+                        if (res.value == undefined) {
+                            return;
+                        }
+
+                        const response: Response = res.value!
+
+                        setResponse(response);
+                        if (response.ok) {
+                            deselectCourse(sections[i]);
+                            setClosedNotif(false);
+                        } 
+                    
                     //only if network error occurred
-                } else {
-                    handleError(res.reason);
-                }
+                    } else {
+                        handleError(res.reason);
+                    }
             })
         );
     };

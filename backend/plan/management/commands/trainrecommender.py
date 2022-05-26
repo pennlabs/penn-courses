@@ -229,6 +229,16 @@ def get_unsequenced_courses_by_user(courses_by_semester_by_user):
     return list(unsequenced_courses_by_user.values())
 
 
+def get_descriptions(courses, preloaded_descriptions):
+    descriptions = []
+    for course in courses:
+        if course in preloaded_descriptions:
+            descriptions.append(preloaded_descriptions[course])
+        else:
+            descriptions.append(get_description(course))
+    return descriptions
+
+
 def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_descriptions={}):
     """
     Generates a dict associating courses to vectors for those courses,
@@ -244,14 +254,9 @@ def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_
     courses, courses_vectorized_by_schedule_presence = zip(
         *vectorize_courses_by_schedule_presence(courses_by_user).items()
     )
-
-    descriptions = []
-    for course in courses:
-        if course in preloaded_descriptions:
-            descriptions.append(preloaded_descriptions[course])
-        else:
-            descriptions.append(get_description(course))
-    courses_vectorized_by_description = vectorize_courses_by_description(descriptions)
+    courses_vectorized_by_description = vectorize_courses_by_description(
+        get_descriptions(courses, preloaded_descriptions)
+    )
     copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
     copresence_vectors_past = [copresence_vectors_by_course_past[course] for course in courses]
     copresence_vectors = normalize(copresence_vectors)
@@ -300,10 +305,7 @@ def normalize_class_name(class_name):
     course_obj: Course = lookup_course(class_name)
     if course_obj is None:
         return class_name
-    class_name = (
-        class_name if course_obj.primary_listing is None else course_obj.primary_listing.full_code
-    )
-    return class_name
+    return course_obj.primary_listing.full_code
 
 
 def generate_course_clusters(courses_data, n_per_cluster=100, preloaded_descriptions={}):
@@ -433,7 +435,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--course_data_path",
+            "--course-data-path",
             type=str,
             default=None,
             help=(
@@ -448,7 +450,7 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--preloaded_descriptions_path",
+            "--preloaded-descriptions-path",
             type=str,
             default=None,
             help=(
@@ -471,7 +473,7 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--train_from_s3",
+            "--train-from-s3",
             default=False,
             action="store_true",
             help=(
@@ -480,13 +482,13 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--output_path",
+            "--output-path",
             default=None,
             type=str,
             help="The local path where the model pkl should be saved.",
         )
         parser.add_argument(
-            "--upload_to_s3",
+            "--upload-to-s3",
             default=False,
             action="store_true",
             help=(
@@ -496,7 +498,7 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--n_per_cluster",
+            "--n-per-cluster",
             type=int,
             default=100,
             help="The number of courses to include in each cluster (a hyperparameter). "

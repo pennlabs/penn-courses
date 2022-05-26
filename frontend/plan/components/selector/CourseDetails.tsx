@@ -27,7 +27,7 @@ const annotatePrerequisites = (
     onClick: (course: string) => void
 ) => {
     if (typeof text !== "string" || !/\S/.test(text)) return null;
-    const courseRegex = /((^|\W)[A-Z]{3}[A-Z]?(-|\s)[0-9]{3}($|(?=\W)))/;
+    const courseRegex = /((^|\W)[A-Z]{3}[A-Z]?(-|\s)[0-9]{3,4}($|(?=\W)))/;
     const tokens = text.split(courseRegex).filter((elem) => /\S/.test(elem));
     tokens.unshift("Prerequisites: ");
     return tokens.map((token, i) =>
@@ -168,18 +168,16 @@ export default function CourseDetails({
                     </ShowMore>
                 </ShowMoreContainer>
             )}
-            {
-                <ShowMoreContainer>
-                    <ShowMore
-                        disabled={isExpandedView}
-                        lines={2}
-                        more="See more"
-                        less="See less"
-                    >
-                        {description}
-                    </ShowMore>
-                </ShowMoreContainer>
-            }
+            <ShowMoreContainer>
+                <ShowMore
+                    disabled={isExpandedView}
+                    lines={2}
+                    more="See more"
+                    less="See less"
+                >
+                    {description}
+                </ShowMore>
+            </ShowMoreContainer>
         </CourseDetailsContainer>
     );
 }

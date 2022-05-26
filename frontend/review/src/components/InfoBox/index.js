@@ -22,11 +22,6 @@ const NewLabel = styled.div`
   justify-self: start;
 `;
 
-const ButtonContainer = styled.div`
-  width: 100%;
-  margin-top: 5px;
-`;
-
 const StatsToggleContainer = styled.div`
   display: flex;
   justify-content: start;
@@ -73,6 +68,10 @@ const InfoBox = ({
     rCourseQuality: recentCourseQuality,
     rDifficulty: recentDifficulty
   } = recent;
+  const hasReviews =
+    avgInstructorQuality != null ||
+    avgCourseQuality != null ||
+    avgDifficulty != null;
 
   const isCourse = type === "course";
   const isInstructor = type === "instructor";
@@ -166,7 +165,7 @@ const InfoBox = ({
         </StatsToggleContainer>
       )}
 
-      {!isDepartment && (
+      {!isDepartment && hasReviews && (
         <div id="banner-score">
           <Ratings
             value="Average"

@@ -2,13 +2,13 @@ import gc
 import uuid
 
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
 from tqdm import tqdm
 
 from courses.models import Course, Instructor
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
+    merge_instructors,
     separate_course_code,
 )
 from review.models import COLUMN_TO_SLUG, CONTEXT_TO_SLUG, Review, ReviewBit
@@ -53,68 +53,61 @@ def import_instructor(pennid, fullname, stat):
             user.set_unusable_password()
             user.save()
 
-        if Instructor.objects.filter(user=user).exists():
-            inst = Instructor.objects.get(user=user)
-            inst_created = False
-        elif Instructor.objects.filter(name=fullname).exists():
+        try:
+            merge_instructors(user, fullname)
+            return Instructor.objects.get(user=user)
+        except Instructor.DoesNotExist:
+            pass
+
+        try:
             inst = Instructor.objects.get(name=fullname)
             inst.user = user
             inst.save()
-            inst_created = False
-        else:
-            try:
-                inst = Instructor.objects.create(user=user, name=fullname)
-            except IntegrityError:
-                stat("instructor:integrity_error")
-                return
-            inst_created = True
+            return inst
+        except Instructor.DoesNotExist:
+            pass
 
-        if inst_created:
-            stat("instructors_created")
+        stat("instructors_created")
+        return Instructor.objects.create(user=user, name=fullname)
 
-    elif len(fullname) > 0:
+    if fullname:
         inst, inst_created = Instructor.objects.get_or_create(name=fullname)
         if inst_created:
             stat("instructors_created")
-    else:
-        stat("instructors_without_info")
-        inst = None
+        return inst
 
-    return inst
+    stat("instructors_without_info")
+    return None
 
 
 def import_course_and_section(full_course_code, semester, course_title, primary_section_code, stat):
     """
     Given course and section info, update/create objects.
     """
+    primary_listing = None
+    if primary_section_code:
+        try:
+            dept, ccode, _ = separate_course_code(primary_section_code)
+        except ValueError:
+            stat("invalid_primary_section_id")
+            return
+        primary_listing, _ = get_or_create_course(dept, ccode, semester)
+
     try:
-        (course, section, course_created, section_created) = get_or_create_course_and_section(
-            full_course_code, semester
+        course, section, _, _ = get_or_create_course_and_section(
+            full_course_code,
+            semester,
+            course_defaults={"primary_listing": primary_listing, "title": course_title or ""},
         )
     except ValueError:
         stat("invalid_section_id")
         return None, None
 
     # Update course title if one isn't already set.
-    course_dirty = False
-    if course.title == "":
-        course_dirty = True
+    if course_title and not course.title:
         course.title = course_title
-
-    # If no primary listing is set, add one.
-    if primary_section_code is not None and course.primary_listing is None:
-        try:
-            dept, ccode, _ = separate_course_code(primary_section_code)
-        except ValueError:
-            stat("invalid_primary_section_id")
-            return
-
-        course.primary_listing, _ = get_or_create_course(dept, ccode, semester)
-        course_dirty = True
-
-    if course_dirty:
-        stat("courses_updated")
         course.save()
+        stat("courses_updated")
 
     return course, section
 
@@ -122,30 +115,22 @@ def import_course_and_section(full_course_code, semester, course_title, primary_
 def import_review(section, instructor, enrollment, responses, form_type, bits, stat):
     # Assumption: that all review objects for the semesters in question were
     # deleted before this runs.
-    try:
-        review, created = Review.objects.get_or_create(
-            section=section,
-            instructor=instructor,
-            defaults={
-                "enrollment": enrollment,
-                "responses": responses,
-                "form_type": form_type,
-            },
-        )
-        if not created:
-            stat("duplicate_review")
-    except IntegrityError:
-        stat("review:integrity_error")
-        return
+    review, created = Review.objects.get_or_create(
+        section=section,
+        instructor=instructor,
+        defaults={
+            "enrollment": enrollment,
+            "responses": responses,
+            "form_type": form_type,
+        },
+    )
+    if not created:
+        stat("duplicate_review")
     review_bits = [ReviewBit(review=review, field=k, average=v) for k, v in bits.items()]
 
     # This saves us a bunch of database calls per row, since reviews have > 10 bits.
-    try:
-        ReviewBit.objects.bulk_create(review_bits, ignore_conflicts=True)
-        stat("reviewbit_created_count", len(review_bits))
-    except IntegrityError:
-        stat("review:integrity_error")
-        return
+    ReviewBit.objects.bulk_create(review_bits, ignore_conflicts=True)
+    stat("reviewbit_created_count", len(review_bits))
 
 
 def import_summary_row(row, stat):
@@ -328,10 +313,10 @@ def import_description_rows(num_rows, rows, semesters=None, show_progress_bar=Tr
         desc[int(paragraph_num)] = description_paragraph
         descriptions[course_code] = desc
 
-    # The course_id we get from the description doesn't have a section code, which is needed
-    # for separate_course_code.
     for course_id, paragraphs in tqdm(descriptions.items(), disable=(not show_progress_bar)):
-        dept_code, course_code, _ = separate_course_code(course_id + "000")
+        dept_code, course_code, _ = separate_course_code(course_id, allow_partial=True)
+        if course_code is None:
+            continue
         # Don't replace descriptions which are already present (from registrar import, most likely).
         courses = Course.objects.filter(
             department__code=dept_code, code=course_code, description=""

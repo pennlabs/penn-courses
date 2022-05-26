@@ -1,7 +1,7 @@
 import React, { Component, CSSProperties } from "react";
+import styled from "styled-components";
 import Meter from "./Meter";
 import { Meeting, Section } from "../../types";
-import styled from "styled-components";
 
 interface StatsProps {
     meetings: Section[];
@@ -79,12 +79,12 @@ const StartEndTimeBlock = styled.div`
 class Stats extends Component<StatsProps> {
     parseTime = (t: number) => {
         let hour = Math.floor(t % 12);
-        let min = Math.round((t % 1) * 100);
+        const min = Math.round((t % 1) * 100);
 
         if (hour === 0) {
             hour = 12;
         }
-        let minStr = min === 0 ? "00" : min.toString();
+        const minStr = min === 0 ? "00" : min.toString();
         return `${hour}:${minStr} ${t >= 12 ? "PM" : "AM"}`;
     };
 

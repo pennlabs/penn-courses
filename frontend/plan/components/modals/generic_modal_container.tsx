@@ -1,12 +1,12 @@
 import React, { PropsWithChildren } from "react";
 import styled from "styled-components";
 import { connect, DispatchProp } from "react-redux";
+import { ThunkDispatch } from "redux-thunk";
 import { closeModal } from "../../actions";
 import {
     generateModalInterior,
     generateModalActions,
 } from "./model_content_generator";
-import { ThunkDispatch } from "redux-thunk";
 
 interface ModalContainerProps {
     title: string;

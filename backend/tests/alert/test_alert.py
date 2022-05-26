@@ -8,6 +8,7 @@ from unittest.mock import patch
 from dateutil.tz.tz import gettz
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.test import Client, TestCase
@@ -19,12 +20,13 @@ from rest_framework.test import APIClient
 
 from alert import tasks
 from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
-from alert.tasks import get_registrations_for_alerts, registration_update
+from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
 from courses.util import (
     get_add_drop_period,
     get_or_create_course_and_section,
     invalidate_current_semester_cache,
+    translate_semester,
 )
 from PennCourses.celery import app as celeryapp
 from PennCourses.settings.base import TIME_ZONE
@@ -56,29 +58,28 @@ def override_delay(modules_names, before_func, before_kwargs):
     (RTFM) before using to prevent unintended behavior or errors.
     See AlertRegistrationTestCase.simulate_alert for an example of how to use this function
 
-    Args:
-        modules_names: a list of 2-tuples of the form (module, name) where module is the module in
-            which the delay()ed function is located and name is its name.  Note that each 2-tuple
-            corresponds to exactly one delay()ed function.
-            Make sure to order the delayed functions' 2-tuples in the
-            modules_names list in the order that they will be executed.
-            Also, note that each delay()ed function after the first must be
-            triggered by the previous one (directly or indirectly).  Otherwise you could just
-            call this function multiple times.  If this condition is not met,
-            an error will be thrown.  For more complicated use-cases (like patching functions
-            between delay()ed functions), you will have to implement the functionality of this
-            function yourself, in a custom way tailored to your use-case.
-            Example of valid modules_names argument (from AlertRegistrationTestCase.simulate_alert):
-                [('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')]
-        before_func: a function (not its name, the actual function as a variable) which will be
-            executed to trigger the first delay()ed function in modules_names.
-            Note that this function MUST trigger the first delay()ed function in modules_names
-            or an error will be thrown.
-            Example of a valid before_func argument (from AlertRegistrationTestCase.simulate_alert):
-                a function simulating the webhook firing which causes send_course_alerts.delay()
-                to be called
-        before_kwargs: a dictionary of keyword-value arguments which will be
-            unpacked and passed into before_func
+    :param modules_names: a list of 2-tuples of the form (module, name) where module is the module
+        in which the delay()ed function is located and name is its name.  Note that each 2-tuple
+        corresponds to exactly one delay()ed function.
+        Make sure to order the delayed functions' 2-tuples in the
+        modules_names list in the order that they will be executed.
+        Also, note that each delay()ed function after the first must be
+        triggered by the previous one (directly or indirectly).  Otherwise you could just
+        call this function multiple times.  If this condition is not met,
+        an error will be thrown.  For more complicated use-cases (like patching functions
+        between delay()ed functions), you will have to implement the functionality of this
+        function yourself, in a custom way tailored to your use-case.
+        Example of valid modules_names argument (from AlertRegistrationTestCase.simulate_alert):
+            [('alert.tasks', 'send_course_alerts'), ('alert.tasks', 'send_alert')]
+    :param before_func: a function (not its name, the actual function as a variable) which will be
+        executed to trigger the first delay()ed function in modules_names.
+        Note that this function MUST trigger the first delay()ed function in modules_names
+        or an error will be thrown.
+        Example of a valid before_func argument (from AlertRegistrationTestCase.simulate_alert):
+            a function simulating the webhook firing which causes send_course_alerts.delay()
+            to be called
+    :param before_kwargs: a dictionary of keyword-value arguments which will be
+        unpacked and passed into before_func
     """
     if len(modules_names) > 0:
         mn = modules_names[-1]
@@ -90,15 +91,72 @@ def override_delay(modules_names, before_func, before_kwargs):
                 override_delay(modules_names[:-1], before_func, before_kwargs)
 
 
+class RegistrationSaveAutoHeadRegistrationTest(TestCase):
+    def setUp(self):
+        set_semester()
+        user = User.objects.create_user(username="jacob", password="top_secret")
+        user.save()
+        self.user = user
+
+    def create_reg(self, full_code, **kwargs):
+        _, section, _, _ = get_or_create_course_and_section(full_code, TEST_SEMESTER)
+        reg = Registration(section=section, user=self.user, **kwargs)
+        reg.save()
+        return reg
+
+    def test_new(self):
+        a = self.create_reg("CIS-120-001")
+        self.assertEqual(a.head_registration, a)
+
+    def test_delete_max_id(self):
+        self.create_reg("CIS-120-001")
+        self.create_reg("CIS-160-001")
+        c = self.create_reg("CIS-121-001")
+        c.delete()
+        d = self.create_reg("CIS-240-001")
+        self.assertEqual(d.head_registration, d)
+
+    def test_delete_min_id(self):
+        a = self.create_reg("CIS-120-001")
+        self.create_reg("CIS-160-001")
+        self.create_reg("CIS-121-001")
+        a.delete()
+        d = self.create_reg("CIS-240-001")
+        self.assertEqual(d.head_registration, d)
+
+    def test_delete_all(self):
+        a = self.create_reg("CIS-120-001")
+        b = self.create_reg("CIS-160-001")
+        c = self.create_reg("CIS-121-001")
+        a.delete()
+        b.delete()
+        c.delete()
+        d = self.create_reg("CIS-240-001")
+        self.assertEqual(d.head_registration, d)
+
+    def test_update_resub_group(self):
+        self.create_reg("CIS-120-001")
+        b = self.create_reg("CIS-121-001")
+        c = self.create_reg("CIS-121-001", resubscribed_from=b)
+        d = self.create_reg("CIS-121-001", resubscribed_from=c)
+        b_db = Registration.objects.get(id=b.id)
+        c_db = Registration.objects.get(id=c.id)
+        d_db = Registration.objects.get(id=d.id)
+        self.assertEqual(d.head_registration, d)
+        self.assertEqual(b_db.head_registration, d_db)
+        self.assertEqual(c_db.head_registration, d_db)
+        self.assertEqual(d_db.head_registration, d_db)
+
+
 @patch("alert.models.PushNotification.send_alert")
 @patch("alert.models.Text.send_alert")
 @patch("alert.models.Email.send_alert")
 class SendAlertTestCase(TestCase):
     def setUp(self):
-        registration_update.delay = registration_update.__wrapped__
-        celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)
         set_semester()
-        course, section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
+        _, section, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
+        section.capacity = 30
+        section.save()
         self.r_legacy = Registration(email="yo@example.com", phone="+15555555555", section=section)
         self.r_legacy.save()
         user = User.objects.create_user(username="jacob", password="top_secret")
@@ -113,7 +171,7 @@ class SendAlertTestCase(TestCase):
         self.assertIsNone(r_legacy.user)
         self.assertEquals("yo@example.com", r_legacy.email)
         self.assertEquals("+15555555555", r_legacy.phone)
-        self.assertEquals("CIS-160-001", r_legacy.section.full_code)
+        self.assertEquals("CIS-1600-001", r_legacy.section.full_code)
         self.assertFalse(r_legacy.notification_sent)
         self.assertTrue(r_legacy.is_active)
         tasks.send_alert(self.r_legacy.id, False, sent_by="ADM")
@@ -137,22 +195,22 @@ class SendAlertTestCase(TestCase):
         self.assertIsNotNone(r.user.profile)
         self.assertEquals("yo@example.com", r.user.profile.email)
         self.assertEquals("+15555555555", r.user.profile.phone)
-        self.assertEquals("CIS-160-001", r.section.full_code)
+        self.assertEquals("CIS-1600-001", r.section.full_code)
         self.assertIsNone(r.email)
         self.assertIsNone(r.phone)
         self.assertEquals(push_notification, r.user.profile.push_notifications)
         self.assertFalse(r.notification_sent)
         self.assertTrue(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         self.assertEquals(
-            0, len(get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="X"))
+            0, len(get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="X"))
         )
         self.assertEquals(
-            0, len(get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status=""))
+            0, len(get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status=""))
         )
         tasks.send_alert(self.r.id, False, sent_by="ADM")
         r = Registration.objects.get(id=self.r.id)
@@ -163,10 +221,10 @@ class SendAlertTestCase(TestCase):
         self.assertIsNotNone("ADM", r.notification_sent_by)
         self.assertEqual("ADM", r.notification_sent_by)
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
 
     def test_send_alert_push(self, mock_email, mock_text, mock_push_notification):
@@ -207,10 +265,10 @@ class SendAlertTestCase(TestCase):
         self.r.save()
         r = Registration.objects.get(id=self.r.id)
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertTrue(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         tasks.send_alert(self.r.id, close_notification=True, sent_by="ADM")
         if manual_resubscribe:
@@ -226,10 +284,10 @@ class SendAlertTestCase(TestCase):
         self.assertIsNotNone(r.close_notification_sent_at)
         self.assertEqual("ADM", r.close_notification_sent_by)
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
 
     def test_send_close_notification_push(self, mock_email, mock_text, mock_push_notification):
@@ -309,10 +367,10 @@ class SendAlertTestCase(TestCase):
         self.r.save()
         r = Registration.objects.get(id=self.r.id)
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         tasks.send_alert(self.r.id, close_notification=close_notification, sent_by="ADM")
         self.assertFalse(mock_email.called)
@@ -393,9 +451,9 @@ class RegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
         self.sections = []
-        self.sections.append(get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)[1])
-        self.sections.append(get_or_create_course_and_section("CIS-160-002", TEST_SEMESTER)[1])
-        self.sections.append(get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section("CIS-1600-002", TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section("CIS-1200-001", TEST_SEMESTER)[1])
 
     def test_successful_registration(self):
         res, norm, _ = register_for_course(
@@ -412,12 +470,12 @@ class RegisterTestCase(TestCase):
         self.assertIsNone(r.api_key)
 
     def test_nonnormalized_course_code(self):
-        res, norm, _ = register_for_course("cis160001", "e@example.com", "+15555555555")
+        res, norm, _ = register_for_course("cis1600001", "e@example.com", "+15555555555")
         self.assertEqual(RegStatus.SUCCESS, res)
-        self.assertEqual("CIS-160-001", norm)
+        self.assertEqual("CIS-1600-001", norm)
         self.assertEqual(1, len(Registration.objects.all()))
         r = Registration.objects.get()
-        self.assertEqual("CIS-160-001", r.section.full_code)
+        self.assertEqual("CIS-1600-001", r.section.full_code)
 
     def test_duplicate_registration(self):
         r1 = Registration(email="e@example.com", phone="+15555555555", section=self.sections[0])
@@ -502,7 +560,7 @@ class RegisterTestCase(TestCase):
 class ResubscribeTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
+        _, self.section, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
         self.base_reg = Registration(
             email="e@example.com", phone="+15555555555", section=self.section
         )
@@ -592,7 +650,7 @@ class ResubscribeTestCase(TestCase):
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section, _, _ = get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)
+        _, self.section, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
         self.r1 = Registration(email="e@example.com", phone="+15555555555", section=self.section)
         self.r2 = Registration(email="f@example.com", phone="+15555555556", section=self.section)
         self.r3 = Registration(email="g@example.com", phone="+15555555557", section=self.section)
@@ -611,8 +669,8 @@ class WebhookTriggeredAlertTestCase(TestCase):
             self.assertTrue(id_ in expected_ids)
 
     def test_collect_none(self):
-        get_or_create_course_and_section("CIS-121-001", TEST_SEMESTER)
-        result = tasks.get_registrations_for_alerts("CIS-121-001", TEST_SEMESTER)
+        get_or_create_course_and_section("CIS-1210-001", TEST_SEMESTER)
+        result = tasks.get_registrations_for_alerts("CIS-1210-001", TEST_SEMESTER)
         self.assertTrue(len(result) == 0)
 
     def test_collect_one(self):
@@ -652,11 +710,11 @@ class WebhookViewTestCase(TestCase):
             "Authorization": f"Basic {auth.decode()}",
         }
         self.body = {
-            "course_section": "ANTH361401",
+            "section_id_normalized": "ANTH-3610-401",
             "previous_status": "X",
             "status": "O",
             "status_code_normalized": "Open",
-            "term": TEST_SEMESTER,
+            "term": translate_semester(TEST_SEMESTER),
         }
         Option.objects.update_or_create(
             key="SEND_FROM_WEBHOOK", value_type="BOOL", defaults={"value": "TRUE"}
@@ -667,11 +725,11 @@ class WebhookViewTestCase(TestCase):
             reverse("webhook", urlconf="alert.urls"),
             data=json.dumps(
                 {
-                    "course_section": "INTLBUL001",
+                    "section_id_normalized": "INTL-BUL-001",
                     "previous_status": "X",
                     "status": "O",
                     "status_code_normalized": "Open",
-                    "term": TEST_SEMESTER,
+                    "term": translate_semester(TEST_SEMESTER),
                 }
             ),
             content_type="application/json",
@@ -680,7 +738,7 @@ class WebhookViewTestCase(TestCase):
 
         self.assertEqual(200, res.status_code)
         self.assertTrue(mock_alert.called)
-        self.assertEqual("INTLBUL001", mock_alert.call_args[0][0])
+        self.assertEqual("INTL-BUL-001", mock_alert.call_args[0][0])
         self.assertEqual("2019A", mock_alert.call_args[1]["semester"])
         self.assertEqual("O", mock_alert.call_args[1]["course_status"])
         self.assertTrue("sent" in json.loads(res.content)["message"])
@@ -698,7 +756,7 @@ class WebhookViewTestCase(TestCase):
 
         self.assertEqual(200, res.status_code)
         self.assertTrue(mock_alert.called)
-        self.assertEqual("ANTH361401", mock_alert.call_args[0][0])
+        self.assertEqual("ANTH-3610-401", mock_alert.call_args[0][0])
         self.assertEqual("2019A", mock_alert.call_args[1]["semester"])
         self.assertEqual("O", mock_alert.call_args[1]["course_status"])
         self.assertTrue("sent" in json.loads(res.content)["message"])
@@ -823,10 +881,10 @@ class WebhookViewTestCase(TestCase):
             reverse("webhook", urlconf="alert.urls"),
             data=json.dumps(
                 {
-                    "course_section": "ANTH361401",
+                    "section_id_normalized": "ANTH-3610-401",
                     "previous_status": "X",
                     "status_code_normalized": "Open",
-                    "term": "2019A",
+                    "term": translate_semester("2019A"),
                 }
             ),
             content_type="application/json",
@@ -884,40 +942,40 @@ class CourseStatusUpdateTestCase(TestCase):
         start = adp.estimated_start
         end = adp.estimated_end
         duration = end - start
-        _, cis120_section = create_mock_data("CIS-120-001", TEST_SEMESTER)
-        _, cis160_section = create_mock_data("CIS-160-001", TEST_SEMESTER)
+        _, cis1200_section = create_mock_data("CIS-1200-001", TEST_SEMESTER)
+        _, cis1600_section = create_mock_data("CIS-1600-001", TEST_SEMESTER)
         self.statusUpdates = [
             StatusUpdate(
                 created_at=start - duration / 4,
-                section=cis120_section,
+                section=cis1200_section,
                 old_status="C",
                 new_status="O",
                 alert_sent=False,
             ),
             StatusUpdate(
                 created_at=start + duration / 4,
-                section=cis120_section,
+                section=cis1200_section,
                 old_status="O",
                 new_status="C",
                 alert_sent=False,
             ),
             StatusUpdate(
                 created_at=start + duration / 2,
-                section=cis120_section,
+                section=cis1200_section,
                 old_status="C",
                 new_status="O",
                 alert_sent=True,
             ),
             StatusUpdate(
                 created_at=start + 3 * duration / 4,
-                section=cis160_section,
+                section=cis1600_section,
                 old_status="C",
                 new_status="O",
                 alert_sent=True,
             ),
             StatusUpdate(
                 created_at=end + duration / 4,
-                section=cis160_section,
+                section=cis1600_section,
                 old_status="O",
                 new_status="C",
                 alert_sent=False,
@@ -927,8 +985,8 @@ class CourseStatusUpdateTestCase(TestCase):
             s.save()
         self.client = APIClient()
 
-    def test_cis120(self):
-        response = self.client.get(reverse("statusupdate", args=["CIS-120-001"]))
+    def test_cis1200(self):
+        response = self.client.get(reverse("statusupdate", args=["CIS-1200-001"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[0]["old_status"], "O")
@@ -940,8 +998,8 @@ class CourseStatusUpdateTestCase(TestCase):
         self.assertEqual(response.data[1]["alert_sent"], True)
         self.assertFalse(hasattr(response.data[1], "request_body"))
 
-    def test_cis160(self):
-        response = self.client.get(reverse("statusupdate", args=["CIS-160-001"]))
+    def test_cis1600(self):
+        response = self.client.get(reverse("statusupdate", args=["CIS-1600-001"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]["old_status"], "C")
@@ -949,8 +1007,8 @@ class CourseStatusUpdateTestCase(TestCase):
         self.assertEqual(response.data[0]["alert_sent"], True)
         self.assertFalse(hasattr(response.data[0], "request_body"))
 
-    def test_cis121_missing(self):
-        response = self.client.get(reverse("statusupdate", args=["CIS-121"]))
+    def test_cis1210_missing(self):
+        response = self.client.get(reverse("statusupdate", args=["CIS-1210"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
@@ -978,16 +1036,16 @@ class AlertRegistrationTestCase(TestCase):
         self.user = User.objects.get(username="jacob")
         self.client = APIClient()
         self.client.login(username="jacob", password="top_secret")
-        _, self.cis120 = create_mock_data("CIS-120-001", TEST_SEMESTER)
-        _, self.cis160 = create_mock_data("CIS-160-001", TEST_SEMESTER)
-        _, self.cis121 = create_mock_data("CIS-121-001", TEST_SEMESTER)
+        _, self.cis1200 = create_mock_data("CIS-1200-001", TEST_SEMESTER)
+        _, self.cis1600 = create_mock_data("CIS-1600-001", TEST_SEMESTER)
+        _, self.cis1210 = create_mock_data("CIS-1210-001", TEST_SEMESTER)
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1200-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
-        self.registration_cis120 = Registration.objects.get(section=self.cis120)
+        self.registration_cis1200 = Registration.objects.get(section=self.cis1200)
 
     @staticmethod
     def convert_date(date):
@@ -1024,11 +1082,11 @@ class AlertRegistrationTestCase(TestCase):
             "Authorization": f"Basic {auth.decode()}",
         }
         body = {
-            "course_section": section.full_code.replace("-", ""),
+            "section_id_normalized": section.full_code,
             "previous_status": from_status,
             "status": to_status,
             "status_code_normalized": "Open",
-            "term": section.semester,
+            "term": translate_semester(section.semester),
         }
         res = self.client.post(
             reverse("webhook", urlconf="alert.urls"),
@@ -1217,15 +1275,15 @@ class AlertRegistrationTestCase(TestCase):
     def create_resubscribe_group(self, close_notifications=False):
         """
         Resubscribe chains created:
-        first -> third -> fourth (CIS-120-001)
-        second (CIS-160-001)
-        fifth (CIS-121-001)
+        first -> third -> fourth (CIS-1200-001)
+        second (CIS-1600-001)
+        fifth (CIS-1210-001)
         """
-        first_id = self.registration_cis120.id
-        self.assertEqual(self.registration_cis120.head_registration, self.registration_cis120)
+        first_id = self.registration_cis1200.id
+        self.assertEqual(self.registration_cis1200.head_registration, self.registration_cis1200)
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1600-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
@@ -1237,7 +1295,7 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-detail", args=[second_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
-        self.simulate_alert(self.cis120, 1)
+        self.simulate_alert(self.cis1200, 1)
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps({"id": first_id, "resubscribe": True}),
@@ -1255,11 +1313,13 @@ class AlertRegistrationTestCase(TestCase):
 
         response = self.client.get(reverse("registrations-detail", args=[third_id]))
         self.assertEqual(200, response.status_code)
-        self.check_model_with_response_data(self.registration_cis120.resubscribed_to, response.data)
-        self.simulate_alert(
-            self.cis120, 2, close_notification=True, should_send=close_notifications
+        self.check_model_with_response_data(
+            self.registration_cis1200.resubscribed_to, response.data
         )
-        self.simulate_alert(self.cis120, 3)
+        self.simulate_alert(
+            self.cis1200, 2, close_notification=True, should_send=close_notifications
+        )
+        self.simulate_alert(self.cis1200, 3)
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps({"id": third_id, "resubscribe": True}),
@@ -1279,7 +1339,7 @@ class AlertRegistrationTestCase(TestCase):
 
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-121-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1210-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
@@ -1288,9 +1348,9 @@ class AlertRegistrationTestCase(TestCase):
         fifth_ob = Registration.objects.get(id=fifth_id)
         self.assertEqual(fifth_ob.head_registration, fifth_ob)
 
-        # first is original CIS120 registration, second is disconnected CIS160 registration,
+        # first is original CIS1200 registration, second is disconnected CIS1600 registration,
         # third is resubscribed from first, fourth is resubscribed from third,
-        # and fifth is disconnected CIS121 registration
+        # and fifth is disconnected CIS1210 registration
         return {
             "first_id": first_id,
             "second_id": second_id,
@@ -1302,11 +1362,11 @@ class AlertRegistrationTestCase(TestCase):
     def create_auto_resubscribe_group(self, put=False, close_notifications=False):
         """
         Resubscribe chains created:
-        first -> third -> fourth (CIS-120-001)
-        second (CIS-160-001)
-        fifth (CIS-121-001)
+        first -> third -> fourth (CIS-1200-001)
+        second (CIS-1600-001)
+        fifth (CIS-1210-001)
         """
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         if put:
             response = self.client.put(
                 reverse("registrations-detail", args=[first_id]),
@@ -1325,7 +1385,7 @@ class AlertRegistrationTestCase(TestCase):
         self.check_model_with_response_data(Registration.objects.get(id=first_id), response.data)
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-160-001", "auto_resubscribe": True}),
+            json.dumps({"section": "CIS-1600-001", "auto_resubscribe": True}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
@@ -1333,7 +1393,7 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-detail", args=[second_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
-        self.simulate_alert(self.cis120, 1)
+        self.simulate_alert(self.cis1200, 1)
         first_ob = Registration.objects.get(id=first_id)
         third_ob = first_ob.resubscribed_to
         third_id = third_ob.id
@@ -1344,9 +1404,9 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(third_ob, response.data)
         self.simulate_alert(
-            self.cis120, 2, close_notification=True, should_send=close_notifications
+            self.cis1200, 2, close_notification=True, should_send=close_notifications
         )
-        self.simulate_alert(self.cis120, 3)
+        self.simulate_alert(self.cis1200, 3)
         first_ob = Registration.objects.get(id=first_id)
         third_ob = first_ob.resubscribed_to
         fourth_ob = third_ob.resubscribed_to
@@ -1356,7 +1416,7 @@ class AlertRegistrationTestCase(TestCase):
         self.check_model_with_response_data(fourth_ob, response.data)
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-121-001", "auto_resubscribe": True}),
+            json.dumps({"section": "CIS-1210-001", "auto_resubscribe": True}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
@@ -1364,9 +1424,9 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-detail", args=[fifth_id]))
         self.assertEqual(response.status_code, 200)
         self.check_model_with_response_data(Registration.objects.get(id=fifth_id), response.data)
-        # first is original CIS120 registration, second is disconnected CIS160 registration,
+        # first is original CIS1200 registration, second is disconnected CIS1600 registration,
         # third is auto-resubscribed from first, fourth is auto-resubscribed from third,
-        # and fifth is disconnected CIS121 registration
+        # and fifth is disconnected CIS1210 registration
         return {
             "first_id": first_id,
             "second_id": second_id,
@@ -1377,19 +1437,20 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_registrations_get_simple(self):
         response = self.client.get(
-            reverse("registrations-detail", args=[self.registration_cis120.pk])
+            reverse("registrations-detail", args=[self.registration_cis1200.pk])
         )
         self.assertEqual(200, response.status_code)
-        self.check_model_with_response_data(self.registration_cis120, response.data)
+        self.check_model_with_response_data(self.registration_cis1200, response.data)
 
     def test_semester_not_set(self):
         Option.objects.filter(key="SEMESTER").delete()
+        cache.delete("SEMESTER")
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(500, response.status_code)
         self.assertTrue("SEMESTER" in response.data["detail"])
 
     def test_registrations_get_only_current_semester(self):
-        _, self.cis110in2019C = create_mock_data("CIS-110-001", "2019C")
+        _, self.cis110in2019C = create_mock_data("CIS-1100-001", "2019C")
         registration = Registration(section=self.cis110in2019C, user=self.user, source="PCA")
         registration.auto_resubscribe = False
         registration.save()
@@ -1397,11 +1458,11 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(1, len(response.data))
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(
-            Registration.objects.get(section=self.cis120), response.data[0]
+            Registration.objects.get(section=self.cis1200), response.data[0]
         )
 
     def test_registration_history_get_only_current_semester(self):
-        _, self.cis110in2019C = create_mock_data("CIS-110-001", "2019C")
+        _, self.cis110in2019C = create_mock_data("CIS-1100-001", "2019C")
         registration = Registration(section=self.cis110in2019C, user=self.user, source="PCA")
         registration.auto_resubscribe = False
         registration.save()
@@ -1409,7 +1470,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(1, len(response.data))
         self.assertEqual(200, response.status_code)
         self.check_model_with_response_data(
-            Registration.objects.get(section=self.cis120), response.data[0]
+            Registration.objects.get(section=self.cis1200), response.data[0]
         )
 
     def registrations_resubscribe_get_old_and_history_helper(self, ids):
@@ -1424,7 +1485,7 @@ class AlertRegistrationTestCase(TestCase):
         second_data = next(item for item in response.data if item["id"] == ids["second_id"])
         fifth_data = next(item for item in response.data if item["id"] == ids["fifth_id"])
         self.check_model_with_response_data(
-            self.registration_cis120.resubscribed_to.resubscribed_to, fourth_data
+            self.registration_cis1200.resubscribed_to.resubscribed_to, fourth_data
         )
         self.check_model_with_response_data(
             Registration.objects.get(id=ids["second_id"]), second_data
@@ -1455,7 +1516,7 @@ class AlertRegistrationTestCase(TestCase):
         third_data = next(item for item in response.data if item["id"] == ids["third_id"])
         third_ob = Registration.objects.get(id=ids["third_id"])
         self.assertEqual(
-            self.registration_cis120.resubscribed_to,
+            self.registration_cis1200.resubscribed_to,
             Registration.objects.get(id=ids["third_id"]),
         )
         self.assertEqual(first_ob, third_ob.resubscribed_from)
@@ -1498,8 +1559,8 @@ class AlertRegistrationTestCase(TestCase):
         """
         first_ob = Registration.objects.get(id=ids["first_id"])
         fourth_ob = Registration.objects.get(id=ids["fourth_id"])
-        self.simulate_alert(self.cis120, 4, close_notification=True, should_send=False)
-        self.simulate_alert(self.cis120, 5)
+        self.simulate_alert(self.cis1200, 4, close_notification=True, should_send=False)
+        self.simulate_alert(self.cis1200, 5)
         if auto_resub:
             sixth_id = Registration.objects.get(id=ids["fourth_id"]).resubscribed_to.id
         else:
@@ -1534,13 +1595,13 @@ class AlertRegistrationTestCase(TestCase):
         num = Registration.objects.count()
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1600-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(409, response.status_code)
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1200-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(409, response.status_code)
@@ -1553,13 +1614,13 @@ class AlertRegistrationTestCase(TestCase):
         self.user.save()
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1600-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(406, response.status_code)
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-121-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1210-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(406, response.status_code)
@@ -1575,23 +1636,23 @@ class AlertRegistrationTestCase(TestCase):
         new_client = APIClient()
         new_client.login(username="new_jacob", password="top_secret")
         new_user = User.objects.get(username="new_jacob")
-        create_mock_data("CIS-192-201", TEST_SEMESTER)
+        create_mock_data("CIS-1920-201", TEST_SEMESTER)
         response = new_client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-192-201", "auto_resubscribe": True}),
+            json.dumps({"section": "CIS-1920-201", "auto_resubscribe": True}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
         new_first_id = response.data["id"]
         response = new_client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1200-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
         new_second_id = response.data["id"]
         self.simulate_alert(
-            "CIS-192-201",
+            "CIS-1920-201",
             num_status_updates=1,
             contact_infos=[
                 {
@@ -1604,7 +1665,7 @@ class AlertRegistrationTestCase(TestCase):
             close_notification=False,
         )
         self.simulate_alert(
-            "CIS-120-201",
+            "CIS-1200-201",
             num_status_updates=1,
             contact_infos=[
                 {
@@ -1635,17 +1696,17 @@ class AlertRegistrationTestCase(TestCase):
         new_user.profile.save()
         new_client = APIClient()
         new_client.login(username="new_jacob", password="top_secret")
-        create_mock_data("CIS-192-201", TEST_SEMESTER)
+        create_mock_data("CIS-1920-201", TEST_SEMESTER)
         response = new_client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-192-201", "auto_resubscribe": auto_resub}),
+            json.dumps({"section": "CIS-1920-201", "auto_resubscribe": auto_resub}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
         new_first_id = response.data["id"]
         response = new_client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-120-001", "auto_resubscribe": auto_resub}),
+            json.dumps({"section": "CIS-1200-001", "auto_resubscribe": auto_resub}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
@@ -1677,9 +1738,9 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
         self.assertEqual(5, len(response.data))
         # now test resubscribing with multiple users and alerts for multiple users
-        self.simulate_alert(self.cis120, 4, close_notification=True, should_send=False)
+        self.simulate_alert(self.cis1200, 4, close_notification=True, should_send=False)
         self.simulate_alert(
-            self.cis120,
+            self.cis1200,
             5,
             [
                 {"number": "+11234567890", "email": "j@gmail.com"},
@@ -1752,10 +1813,10 @@ class AlertRegistrationTestCase(TestCase):
         new_user.profile.save()
         new_client = APIClient()
         new_client.login(username="new_jacob", password="top_secret")
-        create_mock_data("CIS-192-201", TEST_SEMESTER)
+        create_mock_data("CIS-1920-201", TEST_SEMESTER)
         response = new_client.post(
             reverse("registrations-list"),
-            json.dumps({"id": ids["fifth_id"], "section": "CIS-192-201"}),
+            json.dumps({"id": ids["fifth_id"], "section": "CIS-1920-201"}),
             content_type="application/json",
         )
         self.assertEqual(403, response.status_code)
@@ -1784,7 +1845,7 @@ class AlertRegistrationTestCase(TestCase):
         to update, and delete_before_sim_webhook specifies whether the function should simulate
         the webhook and then delete, or delete before the webook triggers.
         """
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         if auto_resub:
             if put:
                 self.client.put(
@@ -1799,7 +1860,7 @@ class AlertRegistrationTestCase(TestCase):
                     content_type="application/json",
                 )
         if not delete_before_sim_webhook:
-            self.simulate_alert(self.cis120, 1, should_send=True)
+            self.simulate_alert(self.cis1200, 1, should_send=True)
         if put:
             response = self.client.put(
                 reverse("registrations-detail", args=[first_id]),
@@ -1814,7 +1875,7 @@ class AlertRegistrationTestCase(TestCase):
             )
         self.assertEqual(200, response.status_code)
         if delete_before_sim_webhook:
-            self.simulate_alert(self.cis120, 1, should_send=False)
+            self.simulate_alert(self.cis1200, 1, should_send=False)
         if not auto_resub:
             if put:
                 response = self.client.put(
@@ -1914,9 +1975,9 @@ class AlertRegistrationTestCase(TestCase):
         ids = self.create_auto_resubscribe_group()
         """
         Resubscribe chains created:
-        first -> third -> fourth (CIS-120-001)
-        second (CIS-160-001)
-        fifth (CIS-121-001)
+        first -> third -> fourth (CIS-1200-001)
+        second (CIS-1600-001)
+        fifth (CIS-1210-001)
         """
         response = self.client.put(
             reverse("registrations-detail", args=[ids["fourth_id"]]),
@@ -1925,8 +1986,8 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
 
-        self.simulate_alert(self.cis120, 4, close_notification=True, should_send=False)
-        self.simulate_alert(self.cis120, 5, should_send=False)
+        self.simulate_alert(self.cis1200, 4, close_notification=True, should_send=False)
+        self.simulate_alert(self.cis1200, 5, should_send=False)
 
         response = self.client.put(
             reverse("registrations-detail", args=[ids["fourth_id"]]),
@@ -1958,20 +2019,20 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
 
-        self.simulate_alert(self.cis120, 6, close_notification=True, should_send=False)
-        self.simulate_alert(self.cis120, 7, should_send=False)
+        self.simulate_alert(self.cis1200, 6, close_notification=True, should_send=False)
+        self.simulate_alert(self.cis1200, 7, should_send=False)
 
     def resub_after_new_registration_for_section(self, put):
         """
         This function tests that you cannot resubscribe to a registration if you have already
         made a new registration for the same section (using PUT or POST).
         """
-        first_id = self.registration_cis120.id
-        self.simulate_alert(self.cis120, 1, should_send=True)
+        first_id = self.registration_cis1200.id
+        self.simulate_alert(self.cis1200, 1, should_send=True)
 
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1200-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
@@ -2003,7 +2064,7 @@ class AlertRegistrationTestCase(TestCase):
         Option.objects.update_or_create(key="REGISTRATION_OPEN", value_type="BOOL", value="FALSE")
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1600-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(503, response.status_code)
@@ -2015,8 +2076,8 @@ class AlertRegistrationTestCase(TestCase):
 
         Option.objects.update_or_create(key="REGISTRATION_OPEN", value_type="BOOL", value="FALSE")
 
-        first_id = self.registration_cis120.id
-        self.simulate_alert(self.cis120, 1, should_send=True)
+        first_id = self.registration_cis1200.id
+        self.simulate_alert(self.cis1200, 1, should_send=True)
 
         if put:
             response = self.client.put(
@@ -2047,7 +2108,7 @@ class AlertRegistrationTestCase(TestCase):
 
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-160-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1600-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(503, response.status_code)
@@ -2057,8 +2118,8 @@ class AlertRegistrationTestCase(TestCase):
         This function tests that you cannot resubscribe after the add/drop period ends.
         """
 
-        first_id = self.registration_cis120.id
-        self.simulate_alert(self.cis120, 1, should_send=True)
+        first_id = self.registration_cis1200.id
+        self.simulate_alert(self.cis1200, 1, should_send=True)
 
         current_adp = get_add_drop_period(semester=TEST_SEMESTER)
         current_adp.end = datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE)) - timedelta(days=1)
@@ -2094,9 +2155,9 @@ class AlertRegistrationTestCase(TestCase):
 
         """
         Resubscribe chains created:
-        first -> third -> fourth (CIS-120-001)
-        second (CIS-160-001)
-        fifth (CIS-121-001)
+        first -> third -> fourth (CIS-1200-001)
+        second (CIS-1600-001)
+        fifth (CIS-1210-001)
         """
 
         response = self.client.put(
@@ -2106,12 +2167,12 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
 
-        self.simulate_alert(self.cis120, 4, close_notification=True, should_send=False)
-        self.simulate_alert(self.cis120, 5, should_send=True)
+        self.simulate_alert(self.cis1200, 4, close_notification=True, should_send=False)
+        self.simulate_alert(self.cis1200, 5, should_send=True)
 
         response = self.client.post(
             reverse("registrations-list"),
-            json.dumps({"section": "CIS-120-001", "auto_resubscribe": False}),
+            json.dumps({"section": "CIS-1200-001", "auto_resubscribe": False}),
             content_type="application/json",
         )
         self.assertEqual(201, response.status_code)
@@ -2137,7 +2198,7 @@ class AlertRegistrationTestCase(TestCase):
         and the cancel_before_sim_webhook paramater specifies whether or not the function should
         cancel the registration before or after the webhook triggers.
         """
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         if auto_resub:
             if put:
                 self.client.put(
@@ -2152,7 +2213,7 @@ class AlertRegistrationTestCase(TestCase):
                     content_type="application/json",
                 )
         if not cancel_before_sim_webhook:
-            self.simulate_alert(self.cis120, 1, should_send=True)
+            self.simulate_alert(self.cis1200, 1, should_send=True)
         if put:
             response = self.client.put(
                 reverse("registrations-detail", args=[first_id]),
@@ -2172,7 +2233,7 @@ class AlertRegistrationTestCase(TestCase):
             self.assertEqual(200, response.status_code)
             self.assertEqual("Registration cancelled", response.data["detail"])
         if cancel_before_sim_webhook:
-            self.simulate_alert(self.cis120, 1, should_send=False)
+            self.simulate_alert(self.cis1200, 1, should_send=False)
         if not auto_resub:
             if put:
                 response = self.client.put(
@@ -2233,7 +2294,7 @@ class AlertRegistrationTestCase(TestCase):
         self.cancel_and_resub_helper(**value)
 
     def test_cancel_deleted(self):
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         self.client.put(
             reverse("registrations-detail", args=[first_id]),
             json.dumps({"deleted": True}),
@@ -2248,8 +2309,8 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEquals("You cannot cancel a deleted registration.", response.data["detail"])
 
     def test_cancel_sent(self):
-        first_id = self.registration_cis120.id
-        self.simulate_alert(self.cis120, 1, should_send=True)
+        first_id = self.registration_cis1200.id
+        self.simulate_alert(self.cis1200, 1, should_send=True)
         response = self.client.put(
             reverse("registrations-detail", args=[first_id]),
             json.dumps({"cancelled": True}),
@@ -2259,7 +2320,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEquals("You cannot cancel a sent registration.", response.data["detail"])
 
     def test_delete_cancelled(self):
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         response = self.client.put(
             reverse("registrations-detail", args=[first_id]),
             json.dumps({"cancelled": True}),
@@ -2295,9 +2356,9 @@ class AlertRegistrationTestCase(TestCase):
         specifies whether to send the update as a PUT or POST request, while the update_field
         parameter specifies which dominant field to update ("resub" or "deleted").
         """
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         if update_field == "resub":
-            self.simulate_alert(self.cis120, 1)
+            self.simulate_alert(self.cis1200, 1)
             if put:
                 self.client.put(
                     reverse("registrations-detail", args=[first_id]),
@@ -2394,7 +2455,7 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps(
-                {"section": "CIS-160-001", "auto_resubscribe": True, "close_notification": True}
+                {"section": "CIS-1600-001", "auto_resubscribe": True, "close_notification": True}
             ),
             content_type="application/json",
         )
@@ -2407,39 +2468,39 @@ class AlertRegistrationTestCase(TestCase):
         self.assertTrue(r.close_notification)
         self.assertTrue(r.auto_resubscribe)
         self.assertTrue(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         self.simulate_alert(
-            self.cis160, 1, close_notification=True, should_send=False, contact_infos=contact_infos
+            self.cis1600, 1, close_notification=True, should_send=False, contact_infos=contact_infos
         )
         r = Registration.objects.get(id=first_id)
         self.assertTrue(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
-        self.simulate_alert(self.cis160, 2, should_send=True, contact_infos=contact_infos)
+        self.simulate_alert(self.cis1600, 2, should_send=True, contact_infos=contact_infos)
         r = Registration.objects.get(id=first_id)
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertTrue(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         contact_infos[0]["number"] = None
         self.simulate_alert(
-            self.cis160, 3, close_notification=True, should_send=True, contact_infos=contact_infos
+            self.cis1600, 3, close_notification=True, should_send=True, contact_infos=contact_infos
         )
         r = Registration.objects.get(id=first_id)
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="O")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r in get_registrations_for_alerts("CIS-160-001", TEST_SEMESTER, course_status="C")
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
 
     def test_close_notification_creation(self):
@@ -2456,7 +2517,7 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps(
-                {"section": "CIS-160-001", "auto_resubscribe": True, "close_notification": True}
+                {"section": "CIS-1600-001", "auto_resubscribe": True, "close_notification": True}
             ),
             content_type="application/json",
         )
@@ -2470,7 +2531,7 @@ class AlertRegistrationTestCase(TestCase):
         PUT or POST request, and the auto_resub parameter specifies whether the enable or disable
         auto resubscription on the registration.
         """
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         if put:
             self.client.put(
                 reverse("registrations-detail", args=[first_id]),
@@ -2499,7 +2560,7 @@ class AlertRegistrationTestCase(TestCase):
         self.user.profile.email = None
         self.user.profile.save()
         self.user.save()
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         response = self.client.put(
             reverse("registrations-detail", args=[first_id]),
             json.dumps({"auto_resubscribe": True, "close_notification": True}),
@@ -2515,7 +2576,7 @@ class AlertRegistrationTestCase(TestCase):
         contact_infos = [
             {"number": "+11234567890", "email": "j@gmail.com", "push_username": self.user.username}
         ]
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
 
         response = self.client.put(
             reverse("registrations-detail", args=[first_id]),
@@ -2524,9 +2585,9 @@ class AlertRegistrationTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        self.simulate_alert(self.cis120, 1, should_send=True)
+        self.simulate_alert(self.cis1200, 1, should_send=True)
 
-        second_id = self.registration_cis120.resubscribed_to.id
+        second_id = self.registration_cis1200.resubscribed_to.id
 
         response = self.client.put(
             reverse("registrations-detail", args=[second_id]),
@@ -2542,7 +2603,7 @@ class AlertRegistrationTestCase(TestCase):
             self.assertTrue(first_reg.cancelled)
 
         self.simulate_alert(
-            self.cis120, 2, close_notification=True, should_send=False, contact_infos=contact_infos
+            self.cis1200, 2, close_notification=True, should_send=False, contact_infos=contact_infos
         )
 
     def test_close_notification_cancel(self):
@@ -2562,7 +2623,7 @@ class AlertRegistrationTestCase(TestCase):
             reverse("registrations-list"),
             json.dumps(
                 {
-                    "section": "CIS-160-001",
+                    "section": "CIS-1600-001",
                     "auto_resubscribe": auto_resub,
                     "close_notification": True,
                 }
@@ -2581,7 +2642,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data["close_notification"])
         self.assertEquals(auto_resub, response.data["auto_resubscribe"])
-        self.simulate_alert(self.cis160, 1, should_send=True)
+        self.simulate_alert(self.cis1600, 1, should_send=True)
         if not auto_resub:
             if put:
                 response = self.client.put(
@@ -2612,7 +2673,7 @@ class AlertRegistrationTestCase(TestCase):
         This function checks that auto resubscribing carries over the auto_resubscribe property,
         for both PUT requests and POST requests.
         """
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         if put:
             self.client.put(
                 reverse("registrations-detail", args=[first_id]),
@@ -2625,7 +2686,7 @@ class AlertRegistrationTestCase(TestCase):
                 json.dumps({"id": first_id, "auto_resubscribe": True}),
                 content_type="application/json",
             )
-        self.simulate_alert(self.cis120, 1)
+        self.simulate_alert(self.cis1200, 1)
         self.assertTrue(Registration.objects.get(id=first_id).notification_sent)
         self.assertFalse(Registration.objects.get(id=first_id).resubscribed_to.notification_sent)
         self.assertTrue(Registration.objects.get(id=first_id).auto_resubscribe)
@@ -2641,7 +2702,7 @@ class AlertRegistrationTestCase(TestCase):
         This function tests that attributes are not changed if a registration is deleted in a
         PUT or POST update request.
         """
-        first_id = self.registration_cis120.id
+        first_id = self.registration_cis1200.id
         if put:
             self.client.put(
                 reverse("registrations-detail", args=[first_id]),
@@ -2794,9 +2855,9 @@ class AlertRegistrationTestCase(TestCase):
         ids = self.create_auto_resubscribe_group()
         """
         Resubscribe chains created:
-        first -> third -> fourth (CIS-120-001)
-        second (CIS-160-001)
-        fifth (CIS-121-001)
+        first -> third -> fourth (CIS-1200-001)
+        second (CIS-1600-001)
+        fifth (CIS-1210-001)
         """
 
         # First check registrations-list

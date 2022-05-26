@@ -325,19 +325,6 @@ const percentSectionChartOptions = {
   }
 };
 
-const calcApproxDate = (startDateString, endDateString, percent) => {
-  const startDate = new Date(startDateString);
-  const endDate = new Date(endDateString);
-
-  const percentageThrough = (endDate.getTime() - startDate.getTime()) * percent;
-  const approxDate = new Date(startDate.getTime() + percentageThrough);
-
-  return approxDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric"
-  });
-};
-
 const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
   const averageOrRecent = isAverage ? "average_plots" : "recent_plots";
 

@@ -11,7 +11,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Course, Department, Instructor, Requirement
+from courses.models import Course, Department, Instructor, PreNGSSRequirement
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course, invalidate_current_semester_cache
 from plan.models import Schedule
@@ -162,8 +162,17 @@ class TypedSearchBackendTestCase(TestCase):
             terms = self.search.get_search_fields(None, req)
             self.assertEqual(["^full_code"], terms, f"search:{course}")
 
-    def test_auto_keyword(self):
-        keywords = ["rajiv", "gandhi", "programming", "hello world"]
+    def test_auto_keyword_both(self):
+        keywords = ["rajiv", "gandhi"]
+        for kw in keywords:
+            req = self.factory.get("/", {"type": "auto", "search": kw})
+            terms = self.search.get_search_fields(None, req)
+            self.assertEqual(
+                ["^full_code", "title", "sections__instructors__name"], terms, f"search:{kw}"
+            )
+
+    def test_auto_keyword_only(self):
+        keywords = ["hello world", "discrete math", "programming"]
         for kw in keywords:
             req = self.factory.get("/", {"type": "auto", "search": kw})
             terms = self.search.get_search_fields(None, req)
@@ -276,50 +285,52 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
 class SectionSearchTestCase(TestCase):
     def setUp(self):
         set_semester()
-        create_mock_data("CIS-120-001", TEST_SEMESTER)
-        create_mock_data("CIS-160-001", TEST_SEMESTER)
-        create_mock_data("CIS-120-201", TEST_SEMESTER)
-        create_mock_data("PSCI-181-001", TEST_SEMESTER)
+        create_mock_data("CIS-1200-001", TEST_SEMESTER)
+        create_mock_data("CIS-1600-001", TEST_SEMESTER)
+        create_mock_data("CIS-1200-201", TEST_SEMESTER)
+        create_mock_data("PSCI-1810-001", TEST_SEMESTER)
         self.client = APIClient()
 
     def test_match_exact(self):
         res = self.client.get(
-            reverse("section-search", args=["current"]), {"search": "CIS-120-001"}
+            reverse("section-search", args=["current"]), {"search": "CIS-1200-001"}
         )
         self.assertEqual(res.status_code, 200)
         self.assertEqual(1, len(res.data))
-        self.assertEqual("CIS-120-001", res.data[0]["section_id"])
+        self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_exact_spaces(self):
         res = self.client.get(
-            reverse("section-search", args=["current"]), {"search": "CIS 120 001"}
+            reverse("section-search", args=["current"]), {"search": "CIS 1200 001"}
         )
         self.assertEqual(res.status_code, 200)
 
         self.assertEqual(1, len(res.data))
-        self.assertEqual("CIS-120-001", res.data[0]["section_id"])
+        self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_exact_nosep(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "PSCI181001"})
+        res = self.client.get(
+            reverse("section-search", args=["current"]), {"search": "PSCI1810001"}
+        )
         self.assertEqual(res.status_code, 200)
 
         self.assertEqual(1, len(res.data))
-        self.assertEqual("PSCI-181-001", res.data[0]["section_id"])
+        self.assertEqual("PSCI-1810-001", res.data[0]["section_id"])
 
     def test_match_full_course_nosep(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS120"})
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS1200"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(2, len(res.data))
-        self.assertEqual("CIS-120-001", res.data[0]["section_id"])
+        self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_full_course_exact(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS-120"})
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS-1200"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(2, len(res.data))
-        self.assertEqual("CIS-120-001", res.data[0]["section_id"])
+        self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_full_course_space(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "PSCI 181"})
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "PSCI 1810"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(1, len(res.data))
 
@@ -329,7 +340,7 @@ class SectionSearchTestCase(TestCase):
         self.assertEqual(3, len(res.data))
 
     def test_match_lowercase(self):
-        res = self.client.get(reverse("section-search", args=["current"]), {"search": "cis120"})
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "cis1200"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(2, len(res.data))
 
@@ -338,10 +349,11 @@ class SectionSearchTestCase(TestCase):
             reverse("section-search", args=["current"]), {"search": "123bdfsh3wq!@#"}
         )
         self.assertEqual(res.status_code, 200)
+        print(res.data)
         self.assertEqual(0, len(res.data))
 
 
-class RequirementListTestCase(TestCase):
+class PreNGSSRequirementListTestCase(TestCase):
     def setUp(self):
         set_semester()
         get_or_create_course(
@@ -351,9 +363,13 @@ class RequirementListTestCase(TestCase):
         self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
         self.department = Department.objects.get(code="CIS")
 
-        self.req1 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1")
-        self.req2 = Requirement(semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2")
-        self.req3 = Requirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
+        self.req1 = PreNGSSRequirement(
+            semester=TEST_SEMESTER, school="SAS", code="TEST1", name="Test 1"
+        )
+        self.req2 = PreNGSSRequirement(
+            semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2"
+        )
+        self.req3 = PreNGSSRequirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
 
         self.req1.save()
         self.req2.save()

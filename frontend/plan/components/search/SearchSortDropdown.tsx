@@ -57,8 +57,8 @@ const DropdownButton = ({
     </DropdownButtonContainer>
 );
 
-type SortByType = "Name" | "Quality" | "Difficulty" | "Good & Easy" | "Suggested";
-const contents: SortByType[] = ["Name", "Suggested", "Quality", "Difficulty", "Good & Easy"];
+type SortByType = "Name" | "Quality" | "Difficulty" | "Good & Easy"; // | "Suggested"
+const contents: SortByType[] = ["Name", "Quality", "Difficulty", "Good & Easy"]; // TODO: re-add "Suggested"
 
 const DropdownContainer = styled.div`
     border-radius: 0.5rem;
@@ -164,11 +164,11 @@ const SearchSortDropdown = (obj: { updateSort: (s: SortByType) => void }) => {
 };
 
 const mapStateToProps = () => ({});
-//@ts-ignore
+// @ts-ignore
 const mapDispatchToProps = (dispatch) => ({
-    //@ts-ignore
+    // @ts-ignore
     updateSort: (sortMode) => dispatch(changeSortType(sortMode)),
 });
 
-//@ts-ignore
+// @ts-ignore
 export default connect(mapStateToProps, mapDispatchToProps)(SearchSortDropdown);

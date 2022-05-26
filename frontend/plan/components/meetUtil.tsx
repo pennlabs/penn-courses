@@ -104,11 +104,11 @@ export const meetingSetsIntersect = (
 export const getTimeString = (meetings: Meeting[]) => {
     const intToTime = (t: number) => {
         let hour = Math.floor(t % 12);
-        let min = Math.round((t % 1) * 100);
+        const min = Math.round((t % 1) * 100);
         if (hour === 0) {
             hour = 12;
         }
-        let minStr = min === 0 ? "00" : min.toString();
+        const minStr = min === 0 ? "00" : min.toString();
         return `${hour}:${minStr}`;
     };
 

@@ -1,6 +1,6 @@
 import React from "react";
-import MyCircularProgressBar from "./MyCircularProgressBar";
 import styled from "styled-components";
+import MyCircularProgressBar from "./MyCircularProgressBar";
 
 interface MeterProps {
     value: number;

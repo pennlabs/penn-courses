@@ -3,23 +3,21 @@ import styled from "styled-components";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import getCsrf from "../csrf";
-import { doAPIRequest } from "../../actions/index";
+import {
+    doAPIRequest,
+    fetchCourseDetails,
+    updateCourseInfo,
+    addSchedItem,
+    removeSchedItem,
+    updateScrollPos,
+} from "../../actions/index";
 
 import CourseList from "./CourseList";
 import CourseInfo from "./CourseInfo";
 import Recs from "../recomendations/Recs";
 
 import { Loading } from "../bulma_derived_components";
-import { Course as CourseType } from "../../types";
-
-import {
-    fetchCourseDetails,
-    updateCourseInfo,
-    addSchedItem,
-    removeSchedItem,
-    updateScrollPos,
-} from "../../actions";
-import { Course, Section, SortMode } from "../../types";
+import { Course as CourseType, Course, Section, SortMode } from "../../types";
 
 interface SelectorProps {
     courses: Course[];
@@ -69,11 +67,11 @@ const Selector: FunctionComponent<SelectorProps> = ({
 
     const [showRecs, setShowRecs] = useState(true);
     const [recCourses, setRecCourses] = useState<CourseType[]>([]);
-    //0 - not loaded, 1 - loaded, 2 - error, 3 - no auth
+    // 0 - not loaded, 1 - loaded, 2 - error, 3 - no auth
     const [fetchStatus, setFetchStatus] = useState(0);
     const [refresh, setRefresh] = useState(false);
 
-    //delete func - does nothing for now
+    // delete func - does nothing for now
     const onClickDelete = () => {};
 
     useEffect(() => {
@@ -91,7 +89,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
             body: JSON.stringify({}),
         };
 
-        doAPIRequest(`/plan/recommendations/`, requestOptions).then((res) => {
+        doAPIRequest("/plan/recommendations/", requestOptions).then((res) => {
             setRefresh(false);
             if (res.ok) {
                 res.json().then((recCoursesResult) => {
@@ -106,7 +104,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
         });
     }, [refresh, setRecCourses, setFetchStatus]);
 
-    let recPanel = (
+    const recPanel = (
         <Recs
             showRecs={showRecs}
             setShowRecs={setShowRecs}
@@ -141,7 +139,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                 for something specific? Try using the filters!
             </EmptyResultsContainer>
 
-            {recPanel}
+            {/* recPanel // TODO: re-enable */}
         </>
     );
 
@@ -169,13 +167,13 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     }}
                 >
                     {courseList}
-                    {recPanel}
+                    {/* recPanel // TODO: re-enable */}
                 </div>
             </div>
         ) : (
             <>
                 {courseList}
-                {recPanel}
+                {/* recPanel // TODO: re-enable */}
             </>
         );
     }
@@ -193,7 +191,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     }}
                 >
                     {courseList}
-                    {recPanel}
+                    {/* recPanel // TODO: re-enable */}
                 </div>
                 <div
                     className="column is-two-thirds"

@@ -6,8 +6,8 @@ import scipy.stats as stats
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
-from django.db import transaction
-from django.db.models import Count, F, OuterRef, Subquery, Value
+from django.db import connection, transaction
+from django.db.models import Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from tqdm import tqdm
@@ -22,7 +22,7 @@ from courses.management.commands.load_add_drop_dates import (
     fill_in_add_drop_periods,
     load_add_drop_dates,
 )
-from courses.models import Course, Meeting, StatusUpdate
+from courses.models import Course, Meeting, StatusUpdate, Topic
 from courses.util import (
     get_current_semester,
     get_or_create_add_drop_period,
@@ -32,12 +32,16 @@ from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATE
 from review.views import extra_metrics_section_filters
 
 
+def all_semesters():
+    return set(Course.objects.values_list("semester", flat=True).distinct())
+
+
 def get_semesters(semesters=None, verbose=False):
     """
     Validate a given string semesters argument, and return a list of the individual string semesters
     specified by the argument.
     """
-    possible_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
+    possible_semesters = all_semesters()
     if semesters is None:
         semesters = [get_current_semester()]
     elif semesters == "all":
@@ -65,60 +69,96 @@ def get_semesters(semesters=None, verbose=False):
     return semesters
 
 
-def recompute_precomputed_fields(semesters=None, verbose=False, semesters_precomputed=False):
-    """
-    Recomputes Course.num_activities and Section.num_meetings fields for the given semesters.
-    Args:
-        semesters: The semesters argument should be a comma-separated list of string semesters
-            corresponding to the semesters for which you want to recompute precomputed fields,
-            i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
-            It defaults to None, in which case only the current semester is used. If you supply
-            the string "all", this function will run for all semesters found in Courses in the db.
-            If semesters_precomputed is set to True (non-default), then this argument should
-            instead be a list of single string semesters.
-        semesters_precomputed: If False (default), the semesters argument will expect a raw
-            comma-separated string input. If True, the semesters argument will expect a list of
-            individual string semesters.
-        verbose: Set to True if you want this script to print its status as it goes,
-            or keep as False (default) if you want the script to work silently.
-    """
-    semesters = (
-        semesters if semesters_precomputed else get_semesters(semesters=semesters, verbose=verbose)
-    )
-
-    if verbose:
-        print(f"Recomputing precomputed fields for semesters {str(semesters)}...")
-
-    Course.objects.filter(semester__in=semesters).annotate(
+def recompute_num_activities():
+    Course.objects.all().annotate(
         activity_count=subquery_count_distinct(
             Section.objects.filter(course_id=OuterRef("id")), column="activity"
         )
     ).update(num_activities=F("activity_count"))
-    Section.objects.filter(course__semester__in=semesters).annotate(
+
+
+def recompute_meeting_count():
+    Section.objects.all().annotate(
         meeting_count=subquery_count_distinct(
             Meeting.objects.filter(section_id=OuterRef("id")), column="id"
         )
     ).update(num_meetings=F("meeting_count"))
 
+
+def recompute_has_reviews():
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+        UPDATE "courses_section" U0
+        SET "has_reviews" = CASE WHEN
+            EXISTS (SELECT id FROM "review_review" U1
+                WHERE U0."id" = U1."section_id")
+            THEN true ELSE false
+        END
+        """
+        )
+
+
+def recompute_has_status_updates():
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+        UPDATE "courses_section" U0
+        SET "has_status_updates" = CASE WHEN
+            EXISTS (SELECT id FROM "courses_statusupdate" U1
+                WHERE U0."id" = U1."section_id")
+            THEN true ELSE false
+        END
+        """
+        )
+
+
+def recompute_precomputed_fields(verbose=False):
+    """
+    Recomputes the following precomputed fields:
+        - Course.num_activities
+        - Section.num_meetings
+        - Section.has_reviews
+        - Section.has_status_updates
+
+    :param verbose: Set to True if you want this script to print its status as it goes,
+        or keep as False (default) if you want the script to work silently.
+    """
     if verbose:
-        print("done.")
+        print("Recomputing precomputed fields...")
+
+    if verbose:
+        print("\tRecomputing Course.num_activities")
+    recompute_num_activities()
+    if verbose:
+        print("\tRecomputing Section.num_meetings")
+    recompute_meeting_count()
+    if verbose:
+        print("\tRecomputing Section.has_reviews")
+    recompute_has_reviews()
+    if verbose:
+        print("\tRecomputing Section.has_status_updates")
+    recompute_has_status_updates()
+
+    if verbose:
+        print("Done recomputing precomputed fields.")
 
 
 def deduplicate_status_updates(semesters=None, verbose=False, semesters_precomputed=False):
     """
     Removes duplicate/redundant status updates from the specified semesters.
-    Args:
-        semesters: The semesters argument should be a comma-separated list of string semesters
-            corresponding to the semesters for which you want to remove duplicate/redundant
-            status updates, i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
-            It defaults to None, in which case only the current semester is used. If you supply
-            the string "all", it will deduplicate for all semesters found in Courses in the db.
-            If semesters_precomputed is set to True (non-default), then this argument should
-            instead be a list of single string semesters.
-        semesters_precomputed: If False (default), the semesters argument will expect a raw
-            comma-separated string input. If True, the semesters argument will expect a list of
-            individual string semesters.
-        verbose: Set to True if you want this script to print its status as it goes,
+
+    :param semesters: The semesters argument should be a comma-separated list of string semesters
+        corresponding to the semesters for which you want to remove duplicate/redundant
+        status updates, i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
+        It defaults to None, in which case only the current semester is used. If you supply
+        the string "all", it will deduplicate for all semesters found in Courses in the db.
+        If semesters_precomputed is set to True (non-default), then this argument should
+        instead be a list of single string semesters.
+    :param semesters_precomputed: If False (default), the semesters argument will expect a raw
+        comma-separated string input. If True, the semesters argument will expect a list of
+        individual string semesters.
+    :param verbose: Set to True if you want this script to print its status as it goes,
             or keep as False (default) if you want the script to work silently.
     """
 
@@ -170,19 +210,19 @@ def deduplicate_status_updates(semesters=None, verbose=False, semesters_precompu
 def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=False):
     """
     Recomputes the percent_open field for each section in the given semester(s).
-    Args:
-        semesters: The semesters argument should be a comma-separated list of string semesters
-            corresponding to the semesters for which you want to recompute percent_open fields,
-            i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020. It defaults to None,
-            in which case only the current semester is used. If you supply the string "all",
-            it will recompute for all semesters found in Courses in the db.
-            If semesters_precomputed is set to True (non-default), then this argument should
-            instead be a list of single string semesters.
-        semesters_precomputed: If False (default), the semesters argument will expect a raw
-            comma-separated string input. If True, the semesters argument will expect a list of
-            individual string semesters.
-        verbose: Set to True if you want this script to print its status as it goes,
-            or keep as False (default) if you want the script to work silently.
+
+    :param semesters: The semesters argument should be a comma-separated list of string semesters
+        corresponding to the semesters for which you want to recompute percent_open fields,
+        i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020. It defaults to None,
+        in which case only the current semester is used. If you supply the string "all",
+        it will recompute for all semesters found in Courses in the db.
+        If semesters_precomputed is set to True (non-default), then this argument should
+        instead be a list of single string semesters.
+    :param semesters_precomputed: If False (default), the semesters argument will expect a raw
+        comma-separated string input. If True, the semesters argument will expect a list of
+        individual string semesters.
+    :param verbose: Set to True if you want this script to print its status as it goes,
+        or keep as False (default) if you want the script to work silently.
     """
 
     current_semester = get_current_semester()
@@ -226,7 +266,7 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
                             .new_status
                         )
                     except StatusUpdate.DoesNotExist:
-                        guess_status = "C"
+                        guess_status = section.status
                     section.percent_open = float(guess_status == "O")
                 else:
                     last_dt = add_drop_start
@@ -260,19 +300,19 @@ def recompute_percent_open(semesters=None, verbose=False, semesters_precomputed=
 def recompute_registration_volumes(semesters=None, semesters_precomputed=False, verbose=False):
     """
     Recomputes the registration_volume fields for all sections in the given semester(s).
-    Args:
-        semesters: The semesters argument should be a comma-separated list of string semesters
-            corresponding to the semesters for which you want to recompute demand distribution
-            estimate, i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020. It
-            defaults to None, in which case only the current semester is used. If you supply the
-            string "all", it will recompute for all semesters found in Courses in the db.
-            If semesters_precomputed is set to True (non-default), then this argument should
-            instead be a list of single string semesters.
-        semesters_precomputed: If False (default), the semesters argument will expect a raw
-            comma-separated string input. If True, the semesters argument will expect a list of
-            individual string semesters.
-        verbose: Set to True if you want this script to print its status as it goes,
-            or keep as False (default) if you want the script to work silently.
+
+    :param semesters: The semesters argument should be a comma-separated list of string semesters
+        corresponding to the semesters for which you want to recompute demand distribution
+        estimate, i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020. It
+        defaults to None, in which case only the current semester is used. If you supply the
+        string "all", it will recompute for all semesters found in Courses in the db.
+        If semesters_precomputed is set to True (non-default), then this argument should
+        instead be a list of single string semesters.
+    :param semesters_precomputed: If False (default), the semesters argument will expect a raw
+        comma-separated string input. If True, the semesters argument will expect a list of
+        individual string semesters.
+    :param verbose: Set to True if you want this script to print its status as it goes,
+        or keep as False (default) if you want the script to work silently.
     """
 
     semesters = (
@@ -306,19 +346,19 @@ def recompute_demand_distribution_estimates(
     based on saved Registration objects. In doing so, it also recomputes the registration_volume
     and percent_open fields for all sections in the given semester(s)
     (by calling recompute_registration_volumes and recompute_percent_open).
-    Args:
-        semesters: The semesters argument should be a comma-separated list of string semesters
-            corresponding to the semesters for which you want to recompute demand distribution
-            estimate, i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020. It
-            defaults to None, in which case only the current semester is used. If you supply the
-            string "all", it will recompute for all semesters found in Courses in the db.
-            If semesters_precomputed is set to True (non-default), then this argument should
-            instead be a list of single string semesters.
-        semesters_precomputed: If False (default), the semesters argument will expect a raw
-            comma-separated string input. If True, the semesters argument will expect a list of
-            individual string semesters.
-        verbose: Set to True if you want this script to print its status as it goes,
-            or keep as False (default) if you want the script to work silently.
+
+    :param semesters: The semesters argument should be a comma-separated list of string semesters
+        corresponding to the semesters for which you want to recompute demand distribution
+        estimate, i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020. It
+        defaults to None, in which case only the current semester is used. If you supply the
+        string "all", it will recompute for all semesters found in Courses in the db.
+        If semesters_precomputed is set to True (non-default), then this argument should
+        instead be a list of single string semesters.
+    :param semesters_precomputed: If False (default), the semesters argument will expect a raw
+        comma-separated string input. If True, the semesters argument will expect a list of
+        individual string semesters.
+    :param verbose: Set to True if you want this script to print its status as it goes,
+        or keep as False (default) if you want the script to work silently.
     """
 
     current_semester = get_current_semester()
@@ -326,7 +366,7 @@ def recompute_demand_distribution_estimates(
         semesters if semesters_precomputed else get_semesters(semesters=semesters, verbose=verbose)
     )
 
-    # Recompute most recent registration volumes and open percentages
+    recompute_precomputed_fields(verbose=verbose)
     recompute_registration_volumes(semesters=semesters, semesters_precomputed=True, verbose=verbose)
     recompute_percent_open(semesters=semesters, semesters_precomputed=True, verbose=verbose)
 
@@ -538,6 +578,15 @@ def recompute_demand_distribution_estimates(
         )
 
 
+def garbage_collect_topics():
+    """
+    Deletes topics with no courses.
+    """
+    Topic.objects.filter(
+        ~Q(id__in=Subquery(Topic.objects.filter(courses__isnull=False).values("id"))),
+    ).delete()
+
+
 def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     """
     Recomputes PCA demand distribution estimates, as well as the registration_volume
@@ -547,12 +596,12 @@ def recompute_stats(semesters=None, semesters_precomputed=False, verbose=False):
     if not semesters_precomputed:
         semesters = get_semesters(semesters=semesters, verbose=verbose)
     semesters = fill_in_add_drop_periods(verbose=verbose).intersection(semesters)
+    garbage_collect_topics()
     load_add_drop_dates(verbose=verbose)
     deduplicate_status_updates(semesters=semesters, semesters_precomputed=True, verbose=verbose)
     recompute_demand_distribution_estimates(
         semesters=semesters, semesters_precomputed=True, verbose=verbose
     )
-    recompute_precomputed_fields(semesters=semesters, semesters_precomputed=True, verbose=verbose)
 
 
 class Command(BaseCommand):

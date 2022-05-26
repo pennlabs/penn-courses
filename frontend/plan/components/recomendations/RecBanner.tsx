@@ -64,7 +64,7 @@ interface RecBannerProps {
 const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
     const [refreshDisabled, setRefreshDisabled] = useState(false);
 
-    //Cooldown of 2s after clicking refresh to prevent spamming
+    // Cooldown of 2s after clicking refresh to prevent spamming
     const onRefresh = () => {
         setRefreshDisabled(true);
         setRefresh(true);
@@ -89,7 +89,7 @@ const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
                 </RefreshIconContainer>
             </BannerLeft>
 
-            {/* Right side*/}
+            {/* Right side */}
             <span>
                 <RecHide show={show} setShow={setShow} />
             </span>

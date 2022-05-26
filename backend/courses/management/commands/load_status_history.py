@@ -12,6 +12,7 @@ from tqdm import tqdm
 from alert.management.commands.recomputestats import recompute_stats
 from alert.models import AddDropPeriod
 from courses.models import Section, StatusUpdate
+from courses.util import get_or_create_add_drop_period
 from PennCourses.settings.base import TIME_ZONE
 
 
@@ -19,7 +20,9 @@ class Command(BaseCommand):
     help = (
         "Load course status history into the database from a CSV file with the 6 columns:\n"
         "full_code, semester, created_at (%Y-%m-%d %H:%M:%S.%f %Z), old_status, new_status, "
-        "alert_sent. "
+        "alert_sent\n"
+        "You should load all sections referenced by this StatusUpdate dataset using the "
+        "load_test_courses_data script, before running this import script."
     )
 
     def add_arguments(self, parser):
@@ -66,7 +69,6 @@ class Command(BaseCommand):
             with open(src) as history_file:
                 print(f"Beginning to load status history from {src}")
                 history_reader = csv.reader(history_file)
-                to_save = []
                 for row in tqdm(history_reader, total=row_count):
                     full_code = row[0]
                     semester = row[1]
@@ -89,10 +91,11 @@ class Command(BaseCommand):
                         created_at=created_at,
                         alert_sent=alert_sent,
                     )
+                    if semester not in add_drop_periods:
+                        add_drop_periods[semester] = get_or_create_add_drop_period(semester)
                     status_update.save(add_drop_period=add_drop_periods[semester])
-                StatusUpdate.objects.bulk_create(to_save)
 
-            print(f"Finished loading status history from {src}... processed {row_count} rows. ")
+                print(f"Finished loading status history from {src}... processed {row_count} rows. ")
 
-            print(f"Recomputing PCA Stats for {len(semesters)} semesters...")
-            recompute_stats(semesters=",".join(semesters), verbose=True)
+                print(f"Recomputing PCA Stats for {len(semesters)} semesters...")
+                recompute_stats(semesters=",".join(semesters), verbose=True)
