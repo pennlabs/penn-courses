@@ -1084,7 +1084,7 @@ class Room(models.Model):
         ),
     )
     number = models.CharField(
-        max_length=5, help_text="The room number, e.g. `101` for Wu and Chen Auditorium in Levine."
+        max_length=8, help_text="The room number, e.g. `101` for Wu and Chen Auditorium in Levine."
     )
     name = models.CharField(
         max_length=80,
