@@ -156,23 +156,37 @@ const AlertForm = ({
     };
 
     const isCourseOpen = (section) => {
-        return fetch(`/api/base/current/sections/${section}/`).then((res) => 
-            res.json().then((courseResult) => {
+        return fetch(`/api/base/current/sections/${section}/`)
+            .then((res) =>
+                res.json().then((courseResult) => {
+                    const isOpen = courseResult["status"] === "O";
+                    if (isOpen) {
+                        setResponse(
+                            new Response(
+                                new Blob(
+                                    [
+                                        JSON.stringify({
+                                            message:
+                                                "Course is currently open!",
+                                            status: 400,
+                                        }),
+                                    ],
+                                    {
+                                        type: "application/json",
+                                    }
+                                )
+                            )
+                        );
+                    }
 
-                const isOpen = courseResult["status"] === "O";
-                if (isOpen) {
-                    setResponse(new Response(new Blob([JSON.stringify({message: "Course is currently open!", status: 400})], {
-                        type: "application/json",
-                    })))
-                } 
-
-                return isOpen;
-            }))
+                    return isOpen;
+                })
+            )
             .catch((err) => {
                 handleError(err);
                 return false;
-            })
-    } 
+            });
+    };
 
     const handleError = (e) => {
         Sentry.captureException(e);
@@ -250,17 +264,16 @@ const AlertForm = ({
 
         const sections = Array.from(selectedCourses);
 
-        Promise.allSettled(promises)
-            .then((responses) => responses.forEach(
+        Promise.allSettled(promises).then((responses) =>
+            responses.forEach(
                 (res: PromiseSettledResult<Response | undefined>, i) => {
-                
                     //fulfilled if response is returned, even if reg is unsuccessful.
                     if (res.status === "fulfilled") {
                         if (res.value == undefined) {
                             return;
                         }
 
-                        const response: Response = res.value!
+                        const response: Response = res.value!;
 
                         setResponse(response);
                         if (response.ok) {
@@ -270,6 +283,7 @@ const AlertForm = ({
                     
                     //only if network error occurred
                     } else {
+                        //only if network error occurred
                         handleError(res.reason);
                     }
             })

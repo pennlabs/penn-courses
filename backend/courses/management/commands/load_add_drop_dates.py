@@ -39,7 +39,6 @@ def load_add_drop_dates(verbose=False):
     if verbose:
         print(f"Loading course selection period dates for semester {semester} from the Almanac")
     with transaction.atomic():
-        start_date, end_date = None, None
         adp = get_or_create_add_drop_period(semester)
         start_date = adp.start
         end_date = adp.end
@@ -140,7 +139,7 @@ def load_add_drop_dates(verbose=False):
                 datetime.strptime(f"{e_year}-{e_month}-{e_day} 11:59", "%Y-%m-%d %H:%M"),
                 timezone=tz,
             )
-        adp.start, adp.end = start_date, end_date
+        adp.estimated_start, adp.end = start_date, end_date
         adp.save()
     if verbose:
         print("Done!")
