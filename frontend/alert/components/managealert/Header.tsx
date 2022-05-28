@@ -48,6 +48,7 @@ const HeaderText = styled.p`
 const HeaderAction = styled(HeaderText)`
     margin-right: 1rem;
     color: #489be8;
+    margin-left: 0rem;
 `;
 
 const HeaderButtonsFlex = styled(Flex)`

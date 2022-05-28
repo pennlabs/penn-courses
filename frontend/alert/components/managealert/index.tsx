@@ -239,7 +239,7 @@ const batchActionHandler = (
     const filteredAlerts = handleBatchNoEffect(idList, alerts);
     const allToggled = handleAllAlreadyToggled(idList, alerts);
 
-    if (actionenum == AlertAction.ONALERT && !allToggled) {
+    if (actionenum == AlertAction.ONALERT && allToggled == false) {
         handleLocalMutation(idList, data, mutate, callback, actionenum);
     } else if (actionenum == AlertAction.OFFALERT) {
         handleAllPromises(idList, actionenum, callback);
