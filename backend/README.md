@@ -37,7 +37,7 @@ First, navigate to the `backend` directory in your terminal.
         - `apt-get install gcc python3-dev libpq-dev`
 
 2. Running Docker
-    - Run `docker-compose up` in a separate terminal window (also from the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres and Redis). To make an alias for this command, you can run the following command `echo "alias courses-compose='cd "$PWD"; docker-compose up'" >> ~/.zshrc; source ~/.zshrc` (replacing `~/.zshrc` with `~/.bashrc` or whatever configuration file your shell uses, if you don't use zsh). Then, in the future you can just run `courses-compose` from any directory as an alias for running `docker-compose up` from the `backend` directory.
+    - Run `docker-compose up` in a separate terminal window (also in the `backend` directory) before running any manage.py commands (this will spin up a Docker container running Postgres and Redis).
     - Depending on your system configuration, you may have to start docker manually. If this is the case (ie, if you cannot get `docker-compose up` to work due to a docker connection error) try to manually start docker before running `[sudo] docker-compose up`
         - (linux) `[sudo] systemctl start docker`
         - (WSL) `[sudo] service docker start`
