@@ -516,12 +516,9 @@ def add_attributes(course, attributes):
     course.attributes.clear()
     for attribute in attributes:
         school = identify_school(attribute.get("attribute_code"))
-        attr = Attribute.objects.get_or_create(
+        attr, _ = Attribute.objects.get_or_create(
             code=attribute.get("attribute_code"),
-            defaults={
-                "description": attribute.get("attribute_desc"),
-                "school": school
-            }
+            defaults={"description": attribute.get("attribute_desc"), "school": school},
         )
         attr.courses.add(course)
 
@@ -560,13 +557,13 @@ def add_restrictions(course, restrictions):
     """
     course.ngss_restrictions.clear()
     for restriction in restrictions:
-        res = NGSSRestriction.objects.get_or_create(
+        res, _ = NGSSRestriction.objects.get_or_create(
             code=restriction.get("restriction_code"),
             defaults={
                 "description": restriction.get("restriction_desc"),
                 "restriction_type": restriction.get("restriction_type"),
-                "inclusive": restriction.get("incl_excl_ind") == "I"
-            }
+                "inclusive": restriction.get("incl_excl_ind") == "I",
+            },
         )
         res.courses.add(course)
 

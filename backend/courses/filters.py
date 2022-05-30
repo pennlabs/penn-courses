@@ -167,10 +167,6 @@ def attribute_filter(queryset, attr_codes):
         return queryset
     query = Q()
     for attr_code in attr_codes.split(","):
-        try:
-            attribute = Attribute.objects.get(code=attr_code)
-        except Attribute.DoesNotExist:
-            continue
         query |= Q(attributes__code=attr_code)
     return queryset.filter(query)
 
