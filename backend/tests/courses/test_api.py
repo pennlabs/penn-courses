@@ -412,14 +412,14 @@ class RestrictionListTestCase(TestCase):
             restriction_type="ATTR",
             code="EMCI",
             description="SEAS CIS NonCIS Elective",
-            include_or_exclude=True,
+            inclusive=True,
         )
         # Fake restriction
         self.restriction2 = NGSSRestriction.objects.create(
             restriction_type="CAMP",
             code="PHILA",
             description="Philadelphia Campus",
-            include_or_exclude=True,
+            inclusive=True,
         )
 
         self.restriction1.courses.add(self.course)

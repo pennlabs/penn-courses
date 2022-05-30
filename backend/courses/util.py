@@ -497,12 +497,8 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
     set_instructors(section, info["instructors"])
     add_associated_sections(section, info["linked_courses"])
 
-    # delete all attributes and restrictions
-    Attribute.objects.all().delete()
-    NGSSRestriction.objects.all().delete()
-
-    add_attributes(section, info["attributes"])
-    add_restrictions(section, info["course_restrictions"])
+    add_attributes(course, info["attributes"])
+    add_restrictions(course, info["course_restrictions"])
     # add_grade_modes(section, info["grade_modes"])  # TODO: save grade modes
 
     section.save()
@@ -512,24 +508,22 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
         missing_sections.discard(section.full_code)
 
 
-def add_attributes(section, attributes):
+def add_attributes(course, attributes):
     """
-    Add attributes to course of section.
+    Clear attributes of a course and add new ones.
     Create attribute if it does not exist
     """
+    course.attributes.clear()
     for attribute in attributes:
-        try:
-            attr = Attribute.objects.get(
-                code=attribute.get("attribute_code"),
-            )
-        except ObjectDoesNotExist:
-            school = identify_school(attribute.get("attribute_code"))
-            attr = Attribute.objects.create(
-                code=attribute.get("attribute_code"),
-                description=attribute.get("attribute_desc"),
-                school=school,
-            )
-        attr.courses.add(section.course)
+        school = identify_school(attribute.get("attribute_code"))
+        attr = Attribute.objects.get_or_create(
+            code=attribute.get("attribute_code"),
+            defaults={
+                "description": attribute.get("attribute_desc"),
+                "school": school
+            }
+        )
+        attr.courses.add(course)
 
 
 def identify_school(attribute_code):
@@ -559,24 +553,22 @@ def identify_school(attribute_code):
     return "OTHER"
 
 
-def add_restrictions(section, restrictions):
+def add_restrictions(course, restrictions):
     """
     Add restrictions to course of section.
     Create restriction if it does not exist.
     """
+    course.ngss_restrictions.clear()
     for restriction in restrictions:
-        try:
-            res = Attribute.objects.get(
-                code=restriction.get("restriction_code"),
-            )
-        except ObjectDoesNotExist:
-            res = NGSSRestriction.objects.create(
-                code=restriction.get("restriction_code"),
-                description=restriction.get("restriction_desc"),
-                restriction_type=restriction.get("restriction_type"),
-                include_or_exclude=restriction.get("incl_excl_ind") == "E",
-            )
-        res.courses.add(section.course)
+        res = NGSSRestriction.objects.get_or_create(
+            code=restriction.get("restriction_code"),
+            defaults={
+                "description": restriction.get("restriction_desc"),
+                "restriction_type": restriction.get("restriction_type"),
+                "inclusive": restriction.get("incl_excl_ind") == "I"
+            }
+        )
+        res.courses.add(course)
 
 
 def update_course_from_record(update):

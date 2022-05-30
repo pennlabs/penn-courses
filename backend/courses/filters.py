@@ -157,21 +157,21 @@ def pre_ngss_requirement_filter(queryset, req_ids):
     return queryset.filter(query)
 
 
-def attribute_filter(queryset, attr_ids):
+def attribute_filter(queryset, attr_codes):
     """
     :param queryset: initial Course object queryset
-    :param attr_ids: the attribute codes (ex: WUOM) comma seperated
+    :param attr_codes: the attribute codes (ex: WUOM) comma separated
     :return: filtered queryset
     """
-    if not attr_ids:
+    if not attr_codes:
         return queryset
     query = Q()
-    for attr_id in attr_ids.split(","):
+    for attr_code in attr_codes.split(","):
         try:
-            attribute = Attribute.objects.get(code=attr_id)
+            attribute = Attribute.objects.get(code=attr_code)
         except Attribute.DoesNotExist:
             continue
-        query |= Q(id__in=attribute.courses.all())
+        query |= Q(attributes__code=attr_code)
     return queryset.filter(query)
 
 
@@ -268,7 +268,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "required": False,
                 "in": "query",
                 "description": "Deprecated since 2022C. Filter courses by comma-separated pre"
-                "ngss requirements, ANDed together. Use `/requirements` endpoint"
+                "ngss requirements, ANDed together. Use the list requirements endpoint"
                 "to get requirement IDs.",
                 "schema": {"type": "string"},
                 "example": "SS@SEAS,H@SEAS",
@@ -278,7 +278,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "required": False,
                 "in": "query",
                 "description": "Filter courses by comma-separated attributes, ORed together."
-                "Use `/attributes` endpoint to get attribute codes.",
+                "Use list attributes endpoint to get attribute codes.",
                 "schema": {"type": "string"},
                 "example": "WUOM,WUGA",
             },

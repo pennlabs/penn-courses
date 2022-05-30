@@ -440,20 +440,16 @@ class Attribute(models.Model):
     e.g. WUOM for the "Wharton OIDD Operation" track
 
     Note that Attributes (like Restrictions) do not have an associated
-    semester. This is because only the Attribute/NGSSRestriction set used in the
-    current semester is maintained. Specifically, Attribute and NGSSRestriction
-    objects are regenerated at every upsert from OpenData such that every
-    attribute and restriction is associated with at least one course.
+    semester.
     """
 
     code = models.CharField(
         max_length=10,
         unique=True,
+        db_index=True,
         help_text=dedent(
             """
         A registration attribute code, for instance 'WUOM' for Wharton OIDD Operations track.
-        See [https://bit.ly/3L8bQDA](https://bit.ly/3L8bQDA)
-        for all options
         """
         ),
     )
@@ -463,7 +459,6 @@ class Attribute(models.Model):
             """
         The registration attribute description, e.g. 'Wharton OIDD Operation'
         for the WUOM attribute.
-        See [https://bit.ly/3L8bQDA](https://bit.ly/3L8bQDA) for all options.
         """
         )
     )
@@ -490,7 +485,7 @@ class Attribute(models.Model):
         help_text=dedent(
             """
         What school/program this attribute belongs to, e.g. `SAS` for `ASOC` restriction
-        or `WH` for `WUOM` or `MODE` for `QP`
+        or `WH` for `WUOM` or `MODE` for `QP`. Options and meanings:
         """
             + string_dict_to_html(dict(SCHOOL_CHOICES))
         ),
@@ -516,12 +511,13 @@ class NGSSRestriction(models.Model):
     A restriction on who can register for this course.
 
     Note that Restrictions (like Attributes) do not have an associated
-    semester. See Attribute above for an explanation why.
+    semester.
     """
 
     code = models.CharField(
         max_length=10,
         unique=True,
+        db_index=True,
         help_text=dedent(
             """
         The code of the restriction.
@@ -549,13 +545,13 @@ class NGSSRestriction(models.Model):
         db_index=True,
         help_text=dedent(
             """
-        What the restriction is based on (e.g., campus).
+        What the restriction is based on (e.g., campus). Options and meanings:
         """
             + string_dict_to_html(dict(RESTRICTION_TYPE_CHOICES))
         ),
     )
 
-    include_or_exclude = models.BooleanField(
+    inclusive = models.BooleanField(
         help_text=dedent(
             """
         Whether this is an include or exclude restriction. Corresponds to the incl_excl_ind
@@ -766,7 +762,7 @@ class Section(models.Model):
         related_name="sections",
         blank=True,
         help_text=(
-            "All pre-NGSS (deprecated since 2022C) registration NGSSRestriction objects to which "
+            "All pre-NGSS (deprecated since 2022C) registration Restriction objects to which "
             "this section is subject. This field will be empty for sections "
             "in 2022C or later."
         ),

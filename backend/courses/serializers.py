@@ -209,7 +209,7 @@ class AttributeListSerializer(serializers.ModelSerializer):
 class NGSSRestrictionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = NGSSRestriction
-        fields = ["code", "restriction_type", "include_or_exclude", "description"]
+        fields = ["code", "restriction_type", "inclusive", "description"]
         read_only_fields = fields
 
 

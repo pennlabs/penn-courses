@@ -97,13 +97,13 @@ NGSSRestrictionList_examples = {
                         {
                             "code": "PHL",
                             "type": "CAMP",
-                            "include_or_exclude": True,
+                            "inclusive": True,
                             "description": "Philly Campus",
                         },
                         {
                             "code": "WUOM",
                             "type": "ATTR",
-                            "include_or_exclude": True,
+                            "inclusive": True,
                             "description": "Wharton OIDD Operation",
                         },
                     ],
