@@ -4,7 +4,7 @@ from django.db.models import Count, Q
 from django.db.models.expressions import F, Subquery
 from rest_framework import filters
 
-from courses.models import Attribute, Meeting, PreNGSSRequirement, Section
+from courses.models import Meeting, PreNGSSRequirement, Section
 from courses.util import get_current_semester
 from plan.models import Schedule
 

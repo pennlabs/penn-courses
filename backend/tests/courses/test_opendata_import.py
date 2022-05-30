@@ -6,7 +6,7 @@ from django.test import TestCase
 from options.models import Option
 
 from alert.models import AddDropPeriod
-from courses.models import Attribute, Course, Instructor, Meeting, Section, NGSSRestriction
+from courses.models import Attribute, Course, Instructor, Meeting, NGSSRestriction, Section
 from courses.util import (
     add_attributes,
     add_restrictions,
@@ -14,6 +14,7 @@ from courses.util import (
     invalidate_current_semester_cache,
     upsert_course_from_opendata,
 )
+
 
 TEST_SEMESTER = "2019A"
 
@@ -74,12 +75,12 @@ class AddNGSSRestrictionTestCase(TestCase):
         self.PHL = {
             "restriction_code": "PHL",
             "restriction_type": "Campus",
-            "restriction_desc": "Philly Campus"
+            "restriction_desc": "Philly Campus",
         }
         self.DOLLAR = {
             "restriction_code": "DOLLAR",
             "restriction_type": "Cohort",
-            "restriction_desc": "Exclusive for cohort dollar"
+            "restriction_desc": "Exclusive for cohort dollar",
         }
 
     def test_add_multiple_restrictions_multiple_times(self):
