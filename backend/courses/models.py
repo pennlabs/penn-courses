@@ -525,29 +525,13 @@ class NGSSRestriction(models.Model):
         ),
     )
 
-    RESTRICTION_TYPE_CHOICES = (
-        ("ATTR", "Attribute"),
-        ("CAMP", "Campus"),
-        ("CLASI", "Classification"),
-        ("COHO", "Cohort"),
-        ("DEGR", "Degree"),
-        ("DIVI", "Division"),
-        ("LVL", "Level"),
-        ("MAJ", "Major"),
-        ("MIN", "Minor"),
-        ("PROG", "Program"),
-        ("SPEC", "Special Approval"),
-    )
-
     restriction_type = models.CharField(
-        max_length=5,
-        choices=RESTRICTION_TYPE_CHOICES,
+        max_length=25,
         db_index=True,
         help_text=dedent(
             """
-        What the restriction is based on (e.g., campus). Options and meanings:
+        What the restriction is based on (e.g., Campus).
         """
-            + string_dict_to_html(dict(RESTRICTION_TYPE_CHOICES))
         ),
     )
 

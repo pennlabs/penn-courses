@@ -525,8 +525,8 @@ class AttributeFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "LLLL"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 4)
-        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data), 0)
 
     def test_existent_and_nonexistent_attributes(self):
         response = self.client.get(
