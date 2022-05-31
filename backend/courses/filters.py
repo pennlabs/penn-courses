@@ -216,20 +216,20 @@ class AttributeQueryTreeToCourseQ(Transformer):
         return False, ~c
 
 
-def attribute_filter(queryset, attr_codes):
+def attribute_filter(queryset, attr_query):
     """
     :param queryset: initial Course object queryset
-    :param attr_codes: the attribute query string; see the description
+    :param attr_query: the attribute query string; see the description
         of the attributes query param below for an explanation of the
         syntax/semantics of this filter
     :return: filtered queryset
     """
-    if not attr_codes:
+    if not attr_query:
         return queryset
 
     expr = None
     try:
-        expr = attribute_query_parser.parse(attr_codes)
+        expr = attribute_query_parser.parse(attr_query)
     except UnexpectedInput as e:
         raise BadRequest(e)
 
