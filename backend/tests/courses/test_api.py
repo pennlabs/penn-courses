@@ -589,6 +589,14 @@ class AttributeFilterTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "MGMT-117", "ANTH-001"})
 
+    def test_demorgan(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "~EMCI*~WUOM"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"ANTH-001"})
+
     def test_empty_parens(self):
         response = self.client.get(
             reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "()"}
