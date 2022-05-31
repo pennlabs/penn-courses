@@ -201,18 +201,30 @@ class AttributeQueryTreeToCourseQ(Transformer):
         (c1_leaf, c1), (c2_leaf, c2) = children
         return (c1_leaf or c2_leaf), c1 | c2
 
+    def lift_exists(self, q):
+        """
+        'Lifts' the given `q` query object from a leaf-level attribute
+        filter (e.g. `Q(attributes__code="WUOM")`) to an 'exists' subquery,
+        e.g. `Q(Exists(Course.objects.filter(attributes__code="WUOM", id=OuterRef("id"))))`.
+        This is required for conjunction and negation operations, as `Q(attributes__code="WUOM")`
+        simply performs a join between the `Course` and `Attribute` tables and filters the joined
+        rows, so `Q(attributes__code="WUOM") & Q(attributes__code="EMCI")`
+        would filter out all rows, (as no row can have code equal to both "WUOM" and "EMCI"), and
+        `~Q(attributes__code="WUOM")` would filter for courses that contain some attribute
+        other than WUOM (not the desired behavior). Lifing these conditions with an exists subquery
+        before combining with the relevant logical connectives fixes this issue.
+        """
+        return Q(Exists(Course.objects.filter(q, id=OuterRef("id"))))
+
     def conjunction(self, children):
-        children = [
-            Q(Exists(Course.objects.filter(c, id=OuterRef("id")))) if c_leaf else c
-            for c_leaf, c in children
-        ]
+        children = [self.lift_exists(c) if c_leaf else c for c_leaf, c in children]
         c1, c2 = children
         return False, c1 & c2
 
     def negation(self, children):
         ((c_leaf, c),) = children
         if c_leaf:
-            c = Q(Exists(Course.objects.filter(c, id=OuterRef("id"))))
+            c = self.lift_exists(c)
         return False, ~c
 
 
@@ -257,7 +269,7 @@ def attribute_filter(queryset, attr_query):
 
     _, query = AttributeQueryTreeToCourseQ().transform(expr)
 
-    return queryset.filter(query)
+    return queryset.filter(query).distinct()
 
 
 def bound_filter(field):
