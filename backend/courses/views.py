@@ -177,7 +177,10 @@ class CourseListSearch(CourseList):
         examples=examples.CourseListSearch_examples,
         response_codes={
             reverse_func("courses-search", args=["semester"]): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully.",
+                    400: "Bad request (invalid query).",
+                }
             }
         },
         custom_path_parameter_desc={
@@ -280,7 +283,14 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
         },
         custom_path_parameter_desc={
             reverse_func("requirements-list", args=["semester"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
+                "GET": {
+                    "semester": (
+                        "The semester of the requirement (of the form YYYYx where x is A "
+                        "[for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019. "
+                        "We organize requirements by semester so that we don't get huge related "
+                        "sets which don't give particularly good info."
+                    )
+                }
             }
         },
     )
@@ -309,7 +319,7 @@ class AttributeList(generics.ListAPIView):
 
 class NGSSRestrictionList(generics.ListAPIView):
     """
-    Retrieve a list of unique attributes (introduced post-NGSS)
+    Retrieve a list of unique restrictions (introduced post-NGSS)
     """
 
     schema = PcxAutoSchema(
