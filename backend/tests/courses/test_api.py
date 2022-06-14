@@ -494,7 +494,6 @@ class AttributeFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": ""}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 4)
         self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_single_attribute(self):
@@ -502,22 +501,19 @@ class AttributeFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "WUOM"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
         self.assertEqual({res["id"] for res in response.data}, {"MGMT-117", "ECON-001"})
 
         response = self.client.get(
             reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "ECON-001"})
 
     def test_multiple_overlapping_attributes(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "WUOM,EMCI"}
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "WUOM|EMCI"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 3)
         self.assertEqual({res["id"] for res in response.data}, {"MGMT-117", "ECON-001", "CIS-120"})
 
     def test_nonexistent_attribute(self):
@@ -530,11 +526,150 @@ class AttributeFilterTestCase(TestCase):
 
     def test_existent_and_nonexistent_attributes(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI,LLLL"}
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI|LLLL"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "ECON-001"})
+
+    def test_and(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI*WUOM"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"ECON-001"})
+
+    def test_and_nonexistent(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI*LLLL"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_and_or(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI*WUOM)|EMCI"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "ECON-001"})
+
+    def test_not(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "~EMCI"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"MGMT-117", "ANTH-001"})
+
+    def test_not_nonexistent(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "~LLLL"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_and_not(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "~EMCI*WUOM"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"MGMT-117"})
+
+    def test_and_or_not(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI*WUOM)|~EMCI"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"ECON-001", "MGMT-117", "ANTH-001"})
+
+    def test_and_or_nots(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "(~EMCI*WUOM)|~WUOM"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "MGMT-117", "ANTH-001"})
+
+    def test_demorgan(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "~EMCI*~WUOM"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"ANTH-001"})
+
+    def test_empty_parens(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "()"}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_partial_binary_op(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI|"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "|EMCI"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI*"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "*EMCI"}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_partial_negation(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "~"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI|~"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI~"}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_unmatched_parens(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI)"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": ")EMCI("}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI*(WUOM|LLLL)"}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_invalid_chars(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI,LLLL"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI&LLLL"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI^LLLL"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI+LLLL"}
+        )
+        self.assertEqual(response.status_code, 400)
 
 
 class SectionListTestCase(TestCase):
