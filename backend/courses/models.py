@@ -433,6 +433,145 @@ class Topic(models.Model):
         return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
 
 
+class Attribute(models.Model):
+    """
+    A post-NGSS registration attribute, which is used to
+    mark courses which students in a program/major should take.
+    e.g. WUOM for the "Wharton OIDD Operation" track
+
+    Note that Attributes (like Restrictions) do not have an associated
+    semester.
+    """
+
+    code = models.CharField(
+        max_length=10,
+        unique=True,
+        db_index=True,
+        help_text=dedent(
+            """
+        A registration attribute code, for instance 'WUOM' for Wharton OIDD Operations track.
+        """
+        ),
+    )
+
+    description = models.TextField(
+        help_text=dedent(
+            """
+        The registration attribute description, e.g. 'Wharton OIDD Operation'
+        for the WUOM attribute.
+        """
+        )
+    )
+
+    SCHOOL_CHOICES = (
+        ("SAS", "School of Arts and Sciences"),
+        ("LPS", "College of Liberal and Professional Studies"),
+        ("SEAS", "Engineering"),
+        ("DSGN", "Design"),
+        ("GSE", "Graduate School of Education"),
+        ("LAW", "Law School"),
+        ("MED", "School of Medicine"),
+        ("MODE", "Grade Mode"),
+        ("VET", "School of Veterinary Medicine"),
+        ("NUR", "Nursing"),
+        ("WH", "Wharton"),
+    )
+
+    school = models.CharField(
+        max_length=5,
+        choices=SCHOOL_CHOICES,
+        db_index=True,
+        null=True,
+        help_text=dedent(
+            """
+        What school/program this attribute belongs to, e.g. `SAS` for `ASOC` restriction
+        or `WH` for `WUOM` or `MODE` for `QP`. Options and meanings:
+        """
+            + string_dict_to_html(dict(SCHOOL_CHOICES))
+        ),
+    )
+
+    courses = models.ManyToManyField(
+        Course,
+        related_name="attributes",
+        blank=True,
+        help_text=dedent(
+            """
+            Course objects which have this attribute
+            """
+        ),
+    )
+
+    def __str__(self):
+        return f"{self.code} @ {self.school} - {self.description}"
+
+
+class NGSSRestriction(models.Model):
+    """
+    A restriction on who can register for this course.
+
+    Note that Restrictions (like Attributes) do not have an associated
+    semester.
+    """
+
+    code = models.CharField(
+        max_length=10,
+        unique=True,
+        db_index=True,
+        help_text=dedent(
+            """
+        The code of the restriction.
+        """
+        ),
+    )
+
+    restriction_type = models.CharField(
+        max_length=25,
+        db_index=True,
+        help_text=dedent(
+            """
+        What the restriction is based on (e.g., Campus).
+        """
+        ),
+    )
+
+    inclusive = models.BooleanField(
+        help_text=dedent(
+            """
+        Whether this is an include or exclude restriction. Corresponds to the `incl_excl_ind`
+        response field. `True` if include (ie, `incl_excl_ind` is "I") and `False` if exclude ("E").
+        """
+        )
+    )
+
+    description = models.TextField(
+        help_text=dedent(
+            """
+        The registration restriction description.
+        """
+        )
+    )
+
+    courses = models.ManyToManyField(
+        Course,
+        related_name="ngss_restrictions",
+        blank=True,
+        help_text=dedent(
+            """
+            Individual Course objects which have this restriction.
+            """
+        ),
+    )
+
+    def __str__(self):
+        return f"{self.code} - {self.restriction_type} - {self.description}"
+
+
+class SectionManager(models.Manager):
+    def get_queryset(self):
+        return sections_with_reviews(super().get_queryset()).distinct()
+
+
 class PreNGSSRestriction(models.Model):
     """
     A pre-NGSS (deprecated since 2022C) registration restriction,
@@ -469,11 +608,6 @@ class PreNGSSRestriction(models.Model):
 
     def __str__(self):
         return f"{self.code} - {self.description}"
-
-
-class SectionManager(models.Manager):
-    def get_queryset(self):
-        return sections_with_reviews(super().get_queryset()).distinct()
 
 
 class Section(models.Model):

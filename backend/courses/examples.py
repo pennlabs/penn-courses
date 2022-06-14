@@ -47,6 +47,72 @@ PreNGSSRequirementList_examples = {
     },
 }
 
+
+AttributeList_examples = {
+    reverse_func("attributes-list"): {
+        "GET": {
+            "requests": [],
+            "responses": [
+                {
+                    "code": 200,
+                    "summary": "List Attributes",
+                    "value": [
+                        {
+                            "code": "EMCI",
+                            "school": "SEAS",
+                            "description": "SEAS CIS NonCIS Elective",
+                        },
+                        {
+                            "code": "ASOC",
+                            "school": "SAS",
+                            "description": "SOCI M Soc of Cultur",
+                        },
+                        {
+                            "code": "UNVE",
+                            "school": "VIPER",
+                            "description": "VIPER Energy Course",
+                        },
+                        {
+                            "code": "WUOM",
+                            "school": "WH",
+                            "description": "Wharton OIDD Operation",
+                        },
+                    ],
+                }
+            ],
+        }
+    },
+}
+
+
+NGSSRestrictionList_examples = {
+    reverse_func("restrictions-list"): {
+        "GET": {
+            "requests": [],
+            "responses": [
+                {
+                    "code": 200,
+                    "summary": "List NGSSRestrictions",
+                    "value": [
+                        {
+                            "code": "PHL",
+                            "type": "Campus",
+                            "inclusive": True,
+                            "description": "Philly Campus",
+                        },
+                        {
+                            "code": "WUOM",
+                            "type": "Attribute",
+                            "inclusive": True,
+                            "description": "Wharton OIDD Operation",
+                        },
+                    ],
+                }
+            ],
+        }
+    },
+}
+
 SectionList_examples = {
     reverse_func("section-search", args=["semester"]): {
         "GET": {
