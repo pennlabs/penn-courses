@@ -475,13 +475,13 @@ class Attribute(models.Model):
         ("VET", "School of Veterinary Medicine"),
         ("NUR", "Nursing"),
         ("WH", "Wharton"),
-        ("OTHER", "Other"),
     )
 
     school = models.CharField(
         max_length=5,
         choices=SCHOOL_CHOICES,
         db_index=True,
+        null=True,
         help_text=dedent(
             """
         What school/program this attribute belongs to, e.g. `SAS` for `ASOC` restriction

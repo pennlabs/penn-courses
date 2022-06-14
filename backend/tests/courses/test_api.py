@@ -455,7 +455,7 @@ class AttributeListTestCase(TestCase):
         self.attr2.courses.add(self.course2)
         self.client = APIClient()
 
-    def test_restriction_route(self):
+    def test_attribute_route(self):
         response = self.client.get(reverse("attributes-list"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(2, len(response.data))

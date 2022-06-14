@@ -528,8 +528,7 @@ def identify_school(attribute_code):
     Determine the school short code (defined in the Attribute model's SCHOOL_CHOICES attribute)
     based on the first one or two letters of attribute_code
     :param attribute_code: the attribute's attribute_code
-    :return: the short code representing the school this attribute fits in (may be "OTHER"
-        if none of these heuristics apply)
+    :return: the short code representing the school this attribute fits in or None
     """
     prefix_to_school = {
         "A": "SAS",
@@ -547,7 +546,7 @@ def identify_school(attribute_code):
     for prefix, school in prefix_to_school.items():
         if attribute_code.startswith(prefix):
             return school
-    return "OTHER"
+    return None
 
 
 def add_restrictions(course, restrictions):

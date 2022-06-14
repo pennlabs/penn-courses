@@ -63,6 +63,14 @@ class AddAttributesTestCase(TestCase):
         self.assertIn(self.MUSC_0050, AMTH_obj.courses.all())
         self.assertIn(self.ANTH_0020, AMTH_obj.courses.all())
 
+    def test_add_attribute_with_no_school(self):
+        add_attributes(
+            self.MUSC_0050, [{"attribute_code": "ZPRS", "attribute_desc": "VIPER seminar"}]
+        )
+        VPRS_obj = Attribute.objects.get(code="ZPRS")
+        self.assertIsNone(VPRS_obj.school)
+        self.assertIn(self.MUSC_0050, VPRS_obj.courses.all())
+
 
 class AddNGSSRestrictionTestCase(TestCase):
     def setUp(self):
