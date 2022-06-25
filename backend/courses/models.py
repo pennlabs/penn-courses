@@ -861,23 +861,6 @@ class Section(models.Model):
             return self.percent_open
 
     @property
-    def raw_demand(self):
-        """
-        The current raw PCA demand of the section, which is defined as:
-        [the number of active PCA registrations for this section]/[the class capacity]
-        NOTE: if this section has a null or non-positive capacity, then this property will be null.
-        """
-        # Note for backend developers: this is a property, not a field. However,
-        # in the Meta class for this model, we define the raw_property index identically to
-        # this property's computation. Thus, you can access this value (as an indexed column)
-        # in database queries using the same name. This is useful for computing
-        # distribution estimates.
-        if self.capacity is None or self.capacity <= 0:
-            return None
-        else:
-            return float(self.registration_volume) / float(self.capacity)
-
-    @property
     def last_status_update(self):
         """
         Returns the last StatusUpdate object for this section, or None if no status updates
