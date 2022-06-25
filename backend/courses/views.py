@@ -4,7 +4,6 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
-import courses.examples as examples
 from courses.filters import CourseSearchFilterBackend
 from courses.models import (
     Attribute,
@@ -72,7 +71,6 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.SectionList_examples,
         response_codes={
             reverse_func("section-search", args=["semester"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Sections Listed Successfully."}
@@ -101,7 +99,6 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.SectionDetail_examples,
         response_codes={
             reverse_func("sections-detail", args=["semester", "full_code"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
@@ -128,7 +125,6 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.CourseList_examples,
         response_codes={
             reverse_func("courses-list", args=["semester"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
@@ -174,7 +170,6 @@ class CourseListSearch(CourseList):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.CourseListSearch_examples,
         response_codes={
             reverse_func("courses-search", args=["semester"]): {
                 "GET": {
@@ -233,7 +228,6 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.CourseDetail_examples,
         response_codes={
             reverse_func("courses-detail", args=["semester", "full_code"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
@@ -275,7 +269,6 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.PreNGSSRequirementList_examples,
         response_codes={
             reverse_func("requirements-list", args=["semester"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
@@ -305,7 +298,6 @@ class AttributeList(generics.ListAPIView):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.AttributeList_examples,
         response_codes={
             reverse_func("attributes-list"): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."}
@@ -323,7 +315,6 @@ class NGSSRestrictionList(generics.ListAPIView):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.NGSSRestrictionList_examples,
         response_codes={
             reverse_func("restrictions-list"): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."}
@@ -356,7 +347,6 @@ class StatusUpdateView(generics.ListAPIView):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.StatusUpdateView_examples,
         response_codes={
             reverse_func("statusupdate", args=["full_code"]): {
                 "GET": {

@@ -14,7 +14,6 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-import alert.examples as examples
 from alert.models import Registration, RegStatus, register_for_course
 from alert.serializers import (
     RegistrationCreateSerializer,
@@ -249,7 +248,6 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.RegistrationViewSet_examples,
         response_codes={
             reverse_func("registrations-list"): {
                 "POST": {
@@ -581,7 +579,6 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
     """
 
     schema = PcxAutoSchema(
-        examples=examples.RegistrationViewSet_examples,
         response_codes={
             reverse_func("registrationhistory-list"): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registration history successfully listed."}
