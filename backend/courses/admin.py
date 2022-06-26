@@ -8,6 +8,7 @@ from django.utils.html import format_html, format_html_join
 from courses.models import (
     APIKey,
     APIPrivilege,
+    Attribute,
     Building,
     Course,
     Department,
@@ -48,19 +49,20 @@ class InstructorAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
+class AttributeAdmin(admin.ModelAdmin):
+    search_fields = ("code",)
+    list_display = ("code", "school")
+    exclude = ("courses",)
+
+
 class CourseAdmin(admin.ModelAdmin):
     search_fields = ("full_code", "department__code", "code", "semester")
     autocomplete_fields = ("department", "primary_listing")
-    readonly_fields = (
-        "topic",
-        "crosslistings",
-    )
+    readonly_fields = ("topic", "crosslistings", "course_attributes")
+    exclude = ("attributes",)
     list_filter = ("semester",)
 
-    list_select_related = (
-        "department",
-        "topic",
-    )
+    list_select_related = ("department", "topic")
 
     def crosslistings(self, instance):
         return format_html_join(
@@ -72,6 +74,19 @@ class CourseAdmin(admin.ModelAdmin):
                     str(c),
                 )
                 for c in instance.crosslistings.all()
+            ),
+        )
+
+    def course_attributes(self, instance):
+        return format_html_join(
+            "\n",
+            '<li><a href="{}">{}</li>',
+            (
+                (
+                    reverse("admin:courses_attribute_change", args=[a.id]),
+                    str(a),
+                )
+                for a in instance.attributes.all()
             ),
         )
 
@@ -185,6 +200,7 @@ admin.site.register(PreNGSSRestriction)
 admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Meeting, MeetingAdmin)
 admin.site.register(StatusUpdate, StatusUpdateAdmin)
+admin.site.register(Attribute, AttributeAdmin)
 
 # https://github.com/sibtc/django-admin-user-profile
 admin.site.unregister(User)

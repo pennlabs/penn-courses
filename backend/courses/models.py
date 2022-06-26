@@ -515,7 +515,7 @@ class NGSSRestriction(models.Model):
     """
 
     code = models.CharField(
-        max_length=10,
+        max_length=16,
         unique=True,
         db_index=True,
         help_text=dedent(
