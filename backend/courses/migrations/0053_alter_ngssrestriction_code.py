@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0052_merge_20220614_0027'),
+        ("courses", "0052_merge_20220614_0027"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='ngssrestriction',
-            name='code',
-            field=models.CharField(db_index=True, help_text='\nThe code of the restriction.\n', max_length=16, unique=True),
+            model_name="ngssrestriction",
+            name="code",
+            field=models.CharField(
+                db_index=True,
+                help_text="\nThe code of the restriction.\n",
+                max_length=16,
+                unique=True,
+            ),
         ),
     ]
