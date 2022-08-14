@@ -51,3 +51,31 @@ class Schedule(models.Model):
 
     def __str__(self):
         return "User: %s, Schedule ID: %s" % (self.person, self.id)
+
+
+class PrimaryScheduleLoookup(models.Model):
+    """
+    Used to save schedules created by users on PCP
+    """
+
+    person = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        help_text="The person (user) to which the schedule belongs.",
+    )
+    
+    schedule = models.ForeignKey(
+        Schedule,
+        help_text=dedent(
+            """
+        The class sections which comprise the schedule. The semester of each of these sections is
+        assumed to  match the semester defined by the semester field below.
+        """
+        ),
+    )
+   
+    class Meta:
+        unique_together = (("person", "schedule"),)
+
+    def __str__(self):
+        return "User: %s, Primary Schedule ID: %s" % (self.person, self.schedule)
