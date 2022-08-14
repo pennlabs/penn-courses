@@ -1419,3 +1419,36 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created and instance.email != "":
         instance.profile.email = instance.email
     instance.profile.save()
+
+
+
+class Friendship(models.Model):
+    """
+    Used to track friendships along with requests status 
+    """
+    
+    requestSender = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        help_text="The person (user) who sent the request.",
+    )
+    requestReciever = models.ForeignKey(
+        UserProfile,
+        help_text="The person (user) who recieved the request.",
+    )
+
+    status = models.IntegerField(
+        help_text=dedent(
+            """
+        Whether the request was sent or accepted (0 if sent, 
+        1 if recieved and accepted, deleted if rejected)
+        """
+        ),
+    )
+
+    accepted_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField()
+
+    def __str__(self):
+        return "Sender: %s, Reciever: %s, Status: %s" % (self.requestSender, self.requestReciever, self.status)
+
