@@ -6,6 +6,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.http import JsonResponse
 
 from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
@@ -176,6 +177,32 @@ def recommend_courses_view(request):
         status=status.HTTP_200_OK,
     )
 
+@permission_classes([IsAuthenticated])
+# Function-Based View for Primary Schedule Setting
+
+# everything dealing with setting primary schedules will hit this API route 
+def setPrimarySchedule(request):
+    res = {}
+    # verify that the user and the schedule exist and set it as the primary for 
+    # for the passed in user
+
+    # return successful response code once set
+    return JsonResponse(res)
+
+    # return HttpResponseBadRequest("Bad response, user does not exists")
+    # return HttpResponseBadRequest("Bad response, schedule does not exist")
+
+# everything dealing with retrieving primary schedules will hit this API route
+def getPrimarySchedule(request):
+    res = {}
+    # verify that the user exist and retrieve the primary schedule associated with him
+    # and that the schedule still exists (in the case that the schedule was deleted)
+
+    # return successful response code once set
+    return JsonResponse(res)
+
+    # return HttpResponseBadRequest("Bad response, user does not exists")
+    # return HttpResponseBadRequest("Bad response, schedule does not exist")
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """

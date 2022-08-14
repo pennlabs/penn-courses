@@ -1430,10 +1430,14 @@ class Friendship(models.Model):
     requestSender = models.ForeignKey(
         UserProfile,
         on_delete=models.CASCADE,
+        related_name="sender",
         help_text="The person (user) who sent the request.",
     )
+
     requestReciever = models.ForeignKey(
         UserProfile,
+        related_name="receiver",
+         on_delete=models.CASCADE,
         help_text="The person (user) who recieved the request.",
     )
 

@@ -63,9 +63,10 @@ class PrimaryScheduleLoookup(models.Model):
         on_delete=models.CASCADE,
         help_text="The person (user) to which the schedule belongs.",
     )
-    
+
     schedule = models.ForeignKey(
         Schedule,
+         on_delete=models.CASCADE,
         help_text=dedent(
             """
         The class sections which comprise the schedule. The semester of each of these sections is

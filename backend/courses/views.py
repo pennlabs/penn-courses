@@ -1,3 +1,4 @@
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
 from django_auto_prefetching import AutoPrefetchViewSetMixin
@@ -12,6 +13,7 @@ from courses.models import (
     PreNGSSRequirement,
     Section,
     StatusUpdate,
+    Friendship
 )
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
@@ -376,3 +378,43 @@ class StatusUpdateView(generics.ListAPIView):
             section__course__semester=get_current_semester(),
             in_add_drop_period=True,
         ).order_by("created_at")
+
+
+# Function-Based View for Friendship Handling
+def sendFriendshipRequest(request):
+    res = {}
+    # verify that the friendship request can be sent (only if it doesn't already exist and
+    # if the requestor and sender exist)
+
+    # if it can be sent, add to the friendships database and set status to 0
+
+    # return successful response code once added
+    return JsonResponse(res)
+
+    # return HttpResponseBadRequest("Bad response, friend request already exists")
+    # return HttpResponseBadRequest("Bad response, requestor or sendor does not exist")
+
+# Function-Based View for Friendship Handling
+def handleFriendshipRequest(request):
+    res = {}
+    # verify that the friendship request can be handled (only if it exist and
+    # if the requestor and sender exist)
+
+    # if it can be sent, handles the friendship according to the request
+    # if accepted, it will change status to 1
+    # if rejected, it will remove the request from db
+
+    # return successful response code once handled
+    return JsonResponse(res)
+
+    # return HttpResponseBadRequest("Bad response, friend request doesn't exists")
+    # return HttpResponseBadRequest("Bad response, requestor or sendor does not exist")
+
+def getAllFriendships(request):
+    res = {}
+    # gets all friendships and friend requests based on the user passed in request
+    # works as long as the user exists
+
+    # return JSON with the friendships and friend requests (and diferrentiated the two)
+    return JsonResponse(res)
+
