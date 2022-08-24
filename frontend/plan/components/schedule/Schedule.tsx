@@ -9,6 +9,7 @@ import {
     fetchCourseDetails,
     changeSchedule,
     duplicateSchedule,
+    downloadSchedule,
     deleteSchedule,
     openModal,
 } from "../../actions";
@@ -34,6 +35,7 @@ interface ScheduleProps {
     schedulesMutator: {
         copy: (scheduleName: string) => void;
         remove: (scheduleName: string) => void;
+        download: (scheduleName: string) => void;
 
         // NOT IN ORIGINAL PROPS
         create: () => void;
@@ -330,6 +332,8 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     schedulesMutator: {
         copy: (scheduleName: string) =>
             dispatch(duplicateSchedule(scheduleName)),
+        download: (scheduleName: string) =>
+            dispatch(downloadSchedule(scheduleName)),
         remove: (scheduleName: string) =>
             dispatch(deleteSchedule(scheduleName)),
         rename: (oldName: string) =>

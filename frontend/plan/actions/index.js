@@ -25,6 +25,7 @@ export const REMOVE_SCHED_ITEM = "REMOVE_SCHED_ITEM";
 export const DELETE_SCHEDULE = "DELETE_SCHEDULE";
 export const RENAME_SCHEDULE = "RENAME_SCHEDULE";
 export const DUPLICATE_SCHEDULE = "DUPLICATE_SCHEDULE";
+export const DOWNLOAD_SCHEDULE = "DOWNLOAD_SCHEDULE";
 export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
 export const ENFORCE_SEMESTER = "ENFORCE_SEMESTER";
 export const CLEAR_ALL_SCHEDULE_DATA = "CLEAR_ALL_SCHEDULE_DATA";
@@ -78,6 +79,12 @@ export const doAPIRequest = (path, options = {}) =>
 
 export const duplicateSchedule = (scheduleName) => ({
     type: DUPLICATE_SCHEDULE,
+    scheduleName,
+});
+
+// download schedule action
+export const downloadSchedule = (scheduleName) => ({
+    type: DOWNLOAD_SCHEDULE,
     scheduleName,
 });
 
