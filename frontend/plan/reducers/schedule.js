@@ -29,6 +29,9 @@ import {
     MIN_TIME_DIFFERENCE,
 } from "../constants/sync_constants";
 
+// ics import
+import * as ics from "ics";
+
 const DEFAULT_SCHEDULE_NAME = "Schedule";
 
 // returns the default empty schedule
