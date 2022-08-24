@@ -20,6 +20,8 @@ services:
     depends_on:
       - db
       - redis
+    profiles:
+      - dev
     build:
       context: .
       dockerfile: Dockerfile.dev
