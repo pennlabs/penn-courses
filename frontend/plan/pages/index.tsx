@@ -34,6 +34,12 @@ const GlobalStyle = createGlobalStyle`
     background-color: #f1eff9;
   }
 
+  @media (max-width: 769px) {
+    html {
+        font-size: calc(100vw / 40);
+    }
+  }
+
   .smooth-transition {
     transition: all 0.5s ease-in-out;
   }
@@ -46,7 +52,14 @@ const CustomTabs = styled(Tabs)`
 
     .topTab {
         text-transform: none !important;
-        background-color: black;
+        font-family: inherit;
+        font-weight: bold;
+        font-size: 1em;
+    }
+
+    .MuiTabs-indicator {
+        color: #7b84e6;
+        background-color: #7b84e6;
     }
 `;
 

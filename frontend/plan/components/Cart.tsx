@@ -50,6 +50,10 @@ interface CartProps {
     mobileView: boolean;
 }
 
+const CartEmptyImage = styled.img`
+    max-width: min(60%, 40vw);
+`;
+
 const CartEmpty = () => (
     <div
         style={{
@@ -68,11 +72,7 @@ const CartEmpty = () => (
         </h3>
         Click a course section&apos;s + icon to add it to the schedule.
         <br />
-        <img
-            style={{ height: "60%" }}
-            src="/icons/empty-state-cart.svg"
-            alt=""
-        />
+        <CartEmptyImage src="/icons/empty-state-cart.svg" alt="" />
     </div>
 );
 

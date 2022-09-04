@@ -21,7 +21,7 @@ const Time = styled.span<{ startTime: number; i: number }>`
         position: absolute;
         white-space: nowrap;
         top: -9px;
-        left: -15px;
+        left: 0 px;
     }
 `;
 
