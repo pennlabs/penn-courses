@@ -220,7 +220,6 @@ class CourseListSearch(CourseList):
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")
 
-
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     """
     Retrieve a detailed look at a specific course. Includes all details necessary to display course

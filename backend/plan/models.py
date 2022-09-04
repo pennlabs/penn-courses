@@ -43,6 +43,16 @@ class Schedule(models.Model):
         """
         ),
     )
+    is_adv_reg = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text=dedent(
+            """
+            Whether this schedule is from advanced registration. Schedules of this type are hidden
+            on the front end.
+        """
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
