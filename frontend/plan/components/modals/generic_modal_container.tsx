@@ -106,6 +106,7 @@ const ModalCardHead = styled.header`
     background-color: white !important;
     font-weight: bold;
     border-radius: 4px !important;
+    border-radius: 4px 4px 0 0 !important;
     padding-left: 2rem;
     padding-right: 2rem;
 `;
