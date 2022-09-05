@@ -5,6 +5,8 @@ import styled from "styled-components";
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
+import * as ReactDOM from "react-dom";
+import dynamic from "next/dynamic";
 import { DropdownButton } from "../DropdownButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
@@ -230,6 +232,12 @@ const ClearButton = styled.button`
 const PCPImage = styled.img`
     height: 2.5rem;
     padding-left: 1.5rem;
+`;
+
+const MobilePCPImage = styled.img`
+    height: 2.5rem;
+    padding-left: 0;
+    padding-right: 2.5rem;
 `;
 
 const Icon = styled.span`
@@ -462,6 +470,7 @@ SearchBarProps) {
         return (
             <MobileSearchBarOuterContainer>
                 <MobileSearchBarInnerContainer>
+                    <MobilePCPImage src="/icons/favicon.ico" alt="" />
                     <AccountIndicator
                         user={user}
                         login={(u: User) => {
@@ -480,6 +489,7 @@ SearchBarProps) {
                         setTab={setTab}
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
+                        mobileView={mobileView}
                         updateSearchText={updateSearchText}
                     />
                     <MobileFilterContainer
