@@ -48,7 +48,7 @@ const GlobalStyle = createGlobalStyle`
 const CustomTabs = styled(Tabs)`
     background: white;
     margin-top: -20px;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
 
     .topTab {
         text-transform: none !important;

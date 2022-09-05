@@ -85,7 +85,7 @@ const ScheduleBox = styled.div`
     color: #4a4a4a;
     display: block;
     padding: 1.25rem;
-    height: calc(100vh - 12em);
+    min-height: calc(100vh - 12em);
 `;
 
 const ScheduleContents = styled.div`

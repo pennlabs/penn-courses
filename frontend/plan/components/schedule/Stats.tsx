@@ -16,7 +16,7 @@ const StatsContainer = styled.div`
 
     @media only screen and (max-width: 480px) {
         width: 100%;
-        height: 300px;
+        height: 225px;
         padding: 0px 20px;
         display: block;
     }
