@@ -14,9 +14,9 @@ const StatsContainer = styled.div`
     display: grid;
     grid-template-columns: 50% 50%;
 
-    @media only screen and (max-width: 480px) {
+    @media only screen and (max-width: 769px) {
         width: 100%;
-        height: 225px;
+        height: 20em;
         padding: 0px 20px;
         display: block;
     }
