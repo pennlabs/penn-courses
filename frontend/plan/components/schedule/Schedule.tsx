@@ -121,7 +121,6 @@ const ScheduleContents = styled.div`
     @media only screen and (max-width: 480px) {
         height: 100%;
         max-height: 500px;
-        font-size: 12px;
         margin-right: 0px;
     }
 
