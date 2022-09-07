@@ -36,7 +36,7 @@ const GlobalStyle = createGlobalStyle`
 
   @media (max-width: 769px) {
     html {
-        font-size: calc(100vw / 40);
+        font-size: calc(100vw / 30);
     }
   }
 
