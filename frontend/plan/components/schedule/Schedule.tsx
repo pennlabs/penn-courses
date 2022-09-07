@@ -86,6 +86,9 @@ const ScheduleBox = styled.div`
     display: block;
     padding: 1.25rem;
     min-height: calc(100vh - 12em);
+    @media only screen and (min-width: 769px) {
+        height: calc(100vh - 12em);
+    }
 `;
 
 const ScheduleContents = styled.div`
