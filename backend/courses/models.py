@@ -11,6 +11,7 @@ from django.db.models import Case, OuterRef, Q, Subquery, Value, When
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from review.annotations import review_averages
 
@@ -1427,32 +1428,37 @@ class Friendship(models.Model):
     Used to track friendships along with requests status 
     """
     
-    requestSender = models.ForeignKey(
+    sender = models.ForeignKey(
         UserProfile,
         on_delete=models.CASCADE,
         related_name="sender",
         help_text="The person (user) who sent the request.",
     )
 
-    requestReciever = models.ForeignKey(
+    recipient = models.ForeignKey(
         UserProfile,
         related_name="receiver",
          on_delete=models.CASCADE,
         help_text="The person (user) who recieved the request.",
     )
 
-    status = models.IntegerField(
-        help_text=dedent(
-            """
-        Whether the request was sent or accepted (0 if sent, 
-        1 if recieved and accepted, deleted if rejected)
-        """
-        ),
+    class FriendshipStatus(models.TextChoices):
+        SENT = 'S', _('Sent')
+        ACCEPTED = 'A', _('Accepted')
+        REJECTED = 'R', _('Rejected')
+
+    status = models.CharField(
+        max_length=1,
+        choices=FriendshipStatus.choices,
+        default=FriendshipStatus.SENT,
     )
 
-    accepted_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField()
     sent_at = models.DateTimeField()
 
+    class Meta:
+        unique_together = (("sender", "recipient"),)
+
     def __str__(self):
-        return "Sender: %s, Reciever: %s, Status: %s" % (self.requestSender, self.requestReciever, self.status)
+        return f'Sender: {self.sender}, Reciever: {self.recipient}, Status: {self.status}'
 
