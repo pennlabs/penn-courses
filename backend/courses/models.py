@@ -1453,6 +1453,14 @@ class Friendship(models.Model):
         default=FriendshipStatus.SENT,
     )
 
+    def setStatus(self, status):
+        if (status == "A"):
+            self.status = self.FriendshipStatus.ACCEPTED
+            self.accepted_at = timezone.now()
+        elif (status == "R"):
+            self.status = self.FriendshipStatus.REJECTED
+        self.save()
+
     accepted_at = models.DateTimeField()
     sent_at = models.DateTimeField()
 
