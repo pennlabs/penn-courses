@@ -65,6 +65,7 @@ class PreNGSSRequirementFilterTestCase(TestCase):
         self.req = PreNGSSRequirement(semester=TEST_SEMESTER, code="REQ", school="SAS")
         self.req.save()
         self.req.courses.add(self.math)
+        print(self.req.satisfying_courses)
         self.client = APIClient()
         set_semester()
 
@@ -75,7 +76,7 @@ class PreNGSSRequirementFilterTestCase(TestCase):
 
     def test_filter_for_req(self):
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"requirements": "REQ@SAS"}
+            reverse("courses-search", args=["current"]), {"pre_ngss_requirements": "REQ@SAS"}
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -88,7 +89,7 @@ class PreNGSSRequirementFilterTestCase(TestCase):
         req2.save()
         req2.courses.add(self.different_math)
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"requirements": "REQ@SAS"}
+            reverse("courses-search", args=["current"]), {"pre_ngss_requirements": "REQ@SAS"}
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -102,7 +103,8 @@ class PreNGSSRequirementFilterTestCase(TestCase):
         req2.courses.add(course3)
 
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"requirements": "REQ@SAS,REQ2@SEAS"}
+            reverse("courses-search", args=["current"]),
+            {"pre_ngss_requirements": "REQ@SAS,REQ2@SEAS"},
         )
         self.assertEqual(0, len(response.data))
 
@@ -111,7 +113,8 @@ class PreNGSSRequirementFilterTestCase(TestCase):
         req2.save()
         req2.courses.add(self.math)
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"requirements": "REQ@SAS,REQ2@SEAS"}
+            reverse("courses-search", args=["current"]),
+            {"pre_ngss_requirements": "REQ@SAS,REQ2@SEAS"},
         )
         self.assertEqual(1, len(response.data))
         self.assertEqual("MATH-114", response.data[0]["id"])

@@ -163,50 +163,6 @@ If you include "[UNDOCUMENTED]" in your string description, that will
 remove that response status code from the schema/docs. This is useful if you want to remove
 a code that is included by default from the schema.
 
-You should add examples for an API route if the auto-generated examples are not to
-your liking (they are usually not as good as actual examples with realistic values).
-You can do this by including an examples kwarg in your PcxAutoSchema instantiation.  You should
-input a dict mapping paths (indicated by reverse_func) to dicts, where each subdict maps string
-methods to dicts, and each further subdict is of the following form:
-    {
-        "requests": [...],
-        "responses": [...]
-    }
-where requests and responses map to lists of dicts.  The dicts in these lists are examples objects,
-the format of which is governed by the OpenAPI specification
-(http://spec.openapis.org/oas/v3.0.3.html#fixed-fields-15) WITH ONE IMPORTANT ADDITION:
-you must include a "code":int key/value in any object in the responses list, specifying which
-response code that example corresponds to.  Here is a full example of the entire examples dict:
-    examples = {
-        reverse_func("registrations-list"): {
-            "POST": {
-                "requests": [
-                    {
-                        "summary": "Maximally Customized POST",
-                        "value": {
-                            "section": "CIS-120-001",
-                            "auto_resubscribe": True
-                        }
-                    }
-                ],
-                "responses": [
-                    {
-                        "code": 201,
-                        "summary": "Registration Created Successfully",
-                        "value": {
-                            "message": "Your registration for CIS-120-001 was successful!",
-                            "id": 1
-                        }
-                    }
-                ]
-            }
-        }
-        ...
-    }
-Since these examples can get quite long, it is good practice to move your examples dict to
-a separate examples.py file (and import the dict into your views.py file or wherever you are
-instantiating the PcxAutoSchema class).
-
 If you want to make manual changes to a request schema, include an override_request_schema kwarg
 in your PcxAutoSchema instantiation.  You should input a dict mapping paths (indicated by
 reverse_func) to dicts, where each subdict maps string methods to objects specifying the
@@ -468,6 +424,7 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
         "GET",
     ): "Section-Specific Reviews",
     (reverse_func("requirements-list", args=["semester"]), "GET"): "Pre-NGSS Requirement",
+    (reverse_func("restrictions-list"), "GET"): "NGSS Restriction",
 }
 assert all(
     [isinstance(k, tuple) and len(k) == 2 and isinstance(k[1], str) for k in custom_name.keys()]
@@ -727,8 +684,6 @@ def pluralize_word(s):
 
 # Customization dicts populated by PcxAutoSchema __init__ method calls
 
-# A cumulative version of the examples parameter to PcxAutoSchema
-cumulative_examples = dict()
 # A cumulative version of the response_codes parameter to PcxAutoSchema:
 cumulative_response_codes = dict()
 # A cumulative version of the override_request_schema parameter to PcxAutoSchema:
@@ -849,150 +804,6 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
         # Remove empty tag groups
         data["x-tagGroups"] = [g for g in data["x-tagGroups"] if len(g["tags"]) != 0]
 
-        def fail(location, hint):
-            """
-            A function to generate an error message if validation of the examples dict fails
-            """
-            raise ValueError(
-                f"Invalid examples kwarg passed into PcxAutoSchema at {location}; please "
-                f"check the meta docs in PennCourses/docs_settings.py for an explanation of "
-                f"the proper format of this kwarg. Hint:\n{hint}"
-            )
-
-        # Convert cumulative_examples keys to strings (necessary since keys are paths indicated
-        # by reverse_func).
-        global cumulative_examples
-        new_cumulative_examples = dict()
-        for key, value in cumulative_examples.items():
-            if not callable(key) or not isinstance(key(), str):
-                not_using_reverse_func(
-                    "examples",
-                    key,
-                    PcxAutoSchema=True,
-                    traceback=cumulative_examples[key]["traceback"],
-                )
-            new_cumulative_examples[key()] = value
-
-        # Add request/response examples to the documentation (instructions on how to customize a
-        # route's examples can be found above).
-        for path in new_cumulative_examples.keys():
-            traceback = new_cumulative_examples[path]["traceback"]
-            for method in new_cumulative_examples[path].keys():
-                if method == "traceback":
-                    continue
-                ob = new_cumulative_examples[path][method]
-                if path not in data["paths"].keys():
-                    fail(traceback, f"No such path exists in schema: '{path}'")
-                if method not in data["paths"][path].keys():
-                    fail(traceback, f"No such method exists in schema: '{method}'")
-                if "responses" in ob.keys():
-                    for response in ob["responses"]:
-                        if "code" not in response.keys():
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                "An object in the responses list  does not contain a response code "
-                                "key/value pair.",
-                            )
-                        code = response["code"]
-                        if "responses" not in data["paths"][path][method].keys():
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                "The given path and method does not have a responses "
-                                "object in the schema, but an example response was given.",
-                            )
-                        if code not in data["paths"][path][method]["responses"].keys():
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                f"An example response with code {code} is invalid "
-                                "because that is not a response code in the schema "
-                                "for the given path/method.",
-                            )
-                        if "content" not in data["paths"][path][method]["responses"][code].keys():
-                            raise ValueError(
-                                f"Invalid inputs to PcxAutoSchema at {traceback}.\n"
-                                f"Check your response_codes dictionary for:\n"
-                                f"{method.upper()} {path}, response code {code}\n"
-                                f"If '[DESCRIBE_RESPONSE_SCHEMA]' is not in the description for "
-                                f"this path/method/code, no response schema content will be "
-                                "created for it and you will not be able to make an example "
-                                f"response for it. Alternatively, remove the {code} response from "
-                                f"the {method.upper()} {path} responses list in your examples dict."
-                            )
-                        if (
-                            "application/json"
-                            not in data["paths"][path][method]["responses"][code]["content"].keys()
-                        ):
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                f"An example response with code {code} is invalid "
-                                "because the response corresponding to the given "
-                                "path/method/code does not have data type application/json.",
-                            )
-                        final_ob = data["paths"][path][method]["responses"][code]["content"][
-                            "application/json"
-                        ]
-                        if "examples" not in final_ob.keys():
-                            final_ob["examples"] = {}
-                        if "summary" not in response.keys():
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                f"An example response with code {code} is invalid "
-                                "because it does not contain required field 'summary'.",
-                            )
-                        if "value" not in response.keys():
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                f"An example response with code {code} is invalid "
-                                "because it does not contain required field 'value'.",
-                            )
-                        final_ob["examples"][response["summary"]] = response
-                if "requests" in ob.keys():
-                    for request in ob["requests"]:
-                        if "requestBody" not in data["paths"][path][method].keys():
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                "The given path and method does not have a requestBody "
-                                "object in the schema, but an example request was given.",
-                            )
-                        if (
-                            "application/json"
-                            not in data["paths"][path][method]["requestBody"]["content"].keys()
-                        ):
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                f"An example request is invalid "
-                                "because the request corresponding to the given "
-                                "path/method/code does not have data type application/json.",
-                            )
-                        final_ob = data["paths"][path][method]["requestBody"]["content"][
-                            "application/json"
-                        ]
-                        if "examples" not in final_ob.keys():
-                            final_ob["examples"] = {}
-                        if "summary" not in request.keys():
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                f"An example request is invalid "
-                                "because it does not contain required field 'summary'.",
-                            )
-                        if "value" not in request.keys():
-                            fail(
-                                traceback,
-                                f"Check your examples dict for:\n{method} {path}\n"
-                                f"An example request is invalid "
-                                "because it does not contain required field 'value'.",
-                            )
-                        final_ob["examples"][request["summary"]] = request
-
         # This code ensures that no path/methods in optional dictionary kwargs passed to
         # PcxAutoSchema __init__ methods are invalid (indicating user error)
         for original_kwarg, parameter_name, parameter_dict in [
@@ -1044,7 +855,7 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
         for key, value in cumulative_cp.items():
             if not callable(key) or not isinstance(key(), str):
                 not_using_reverse_func(
-                    "examples",
+                    "custom_parameters",
                     key,
                     PcxAutoSchema=True,
                     traceback=cumulative_cp[key]["traceback"],
@@ -1084,7 +895,6 @@ class PcxAutoSchema(AutoSchema):
     def __new__(
         cls,
         *args,
-        examples=None,
         response_codes=None,
         override_request_schema=None,
         override_response_schema=None,
@@ -1107,7 +917,6 @@ class PcxAutoSchema(AutoSchema):
     def __init__(
         self,
         *args,
-        examples=None,
         response_codes=None,
         override_request_schema=None,
         override_response_schema=None,
@@ -1116,7 +925,7 @@ class PcxAutoSchema(AutoSchema):
         **kwargs,
     ):
         """
-        This custom __init__ method deals with optional passed-in kwargs such as examples,
+        This custom __init__ method deals with optional passed-in kwargs such as
         response_codes, override_response_schema, and custom_path_parameter_desc.
         """
 
@@ -1133,7 +942,6 @@ class PcxAutoSchema(AutoSchema):
 
         # Validate that each of the passed-in kwargs are nested dictionaries of the correct depth
         for param_name, param_dict in [
-            ("examples", examples),
             ("response_codes", response_codes),
             ("override_request_schema", override_request_schema),
             ("override_response_schema", override_response_schema),
@@ -1160,7 +968,6 @@ class PcxAutoSchema(AutoSchema):
                                 f"All values of the dict values of {param_name} must be dicts.",
                             )
                         if param_name in [
-                            "examples",
                             "override_request_schema",
                             "override_response_schema",
                         ]:
@@ -1171,22 +978,6 @@ class PcxAutoSchema(AutoSchema):
                                     param_name,
                                     f"Too deep nested dictionaries found in {param_name}.",
                                 )
-
-        # Handle passed-in examples
-        # Change all the response codes in examples to strings, and change the methods to lower case
-        global cumulative_examples
-        if examples is not None:
-            examples = deepcopy(examples)
-            for this_path in examples.keys():
-                examples[this_path] = {k.lower(): v for k, v in examples[this_path].items()}
-                for this_method in examples[this_path].keys():
-                    if "responses" in examples[this_path][this_method].keys():
-                        for res in examples[this_path][this_method]["responses"]:
-                            if "code" in res.keys() and isinstance(res["code"], int):
-                                res["code"] = str(res["code"])
-            for dictionary in examples.values():
-                dictionary["traceback"] = self.created_at
-            cumulative_examples.update(examples)
 
         # Handle passed-in custom response codes
         global cumulative_response_codes

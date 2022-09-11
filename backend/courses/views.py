@@ -4,14 +4,22 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
-import courses.examples as examples
 from courses.filters import CourseSearchFilterBackend
-from courses.models import Course, PreNGSSRequirement, Section, StatusUpdate
+from courses.models import (
+    Attribute,
+    Course,
+    NGSSRestriction,
+    PreNGSSRequirement,
+    Section,
+    StatusUpdate,
+)
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
+    AttributeListSerializer,
     CourseDetailSerializer,
     CourseListSerializer,
     MiniSectionSerializer,
+    NGSSRestrictionListSerializer,
     PreNGSSRequirementListSerializer,
     SectionDetailSerializer,
     StatusUpdateSerializer,
@@ -63,7 +71,6 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.SectionList_examples,
         response_codes={
             reverse_func("section-search", args=["semester"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Sections Listed Successfully."}
@@ -92,7 +99,6 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.SectionDetail_examples,
         response_codes={
             reverse_func("sections-detail", args=["semester", "full_code"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
@@ -119,7 +125,6 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.CourseList_examples,
         response_codes={
             reverse_func("courses-list", args=["semester"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
@@ -165,10 +170,12 @@ class CourseListSearch(CourseList):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.CourseListSearch_examples,
         response_codes={
             reverse_func("courses-search", args=["semester"]): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully.",
+                    400: "Bad request (invalid query).",
+                }
             }
         },
         custom_path_parameter_desc={
@@ -221,7 +228,6 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.CourseDetail_examples,
         response_codes={
             reverse_func("courses-detail", args=["semester", "full_code"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
@@ -263,7 +269,6 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.PreNGSSRequirementList_examples,
         response_codes={
             reverse_func("requirements-list", args=["semester"]): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
@@ -271,13 +276,54 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
         },
         custom_path_parameter_desc={
             reverse_func("requirements-list", args=["semester"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
+                "GET": {
+                    "semester": (
+                        "The semester of the requirement (of the form YYYYx where x is A "
+                        "[for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019. "
+                        "We organize requirements by semester so that we don't get huge related "
+                        "sets which don't give particularly good info."
+                    )
+                }
             }
         },
     )
 
     serializer_class = PreNGSSRequirementListSerializer
     queryset = PreNGSSRequirement.objects.all()
+
+
+class AttributeList(generics.ListAPIView):
+    """
+    Retrieve a list of unique attributes (introduced post-NGSS)
+    """
+
+    schema = PcxAutoSchema(
+        response_codes={
+            reverse_func("attributes-list"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."}
+            },
+        },
+    )
+
+    serializer_class = AttributeListSerializer
+    queryset = Attribute.objects.all()
+
+
+class NGSSRestrictionList(generics.ListAPIView):
+    """
+    Retrieve a list of unique restrictions (introduced post-NGSS)
+    """
+
+    schema = PcxAutoSchema(
+        response_codes={
+            reverse_func("restrictions-list"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."}
+            },
+        },
+    )
+
+    serializer_class = NGSSRestrictionListSerializer
+    queryset = NGSSRestriction.objects.all()
 
 
 class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
@@ -301,7 +347,6 @@ class StatusUpdateView(generics.ListAPIView):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.StatusUpdateView_examples,
         response_codes={
             reverse_func("statusupdate", args=["full_code"]): {
                 "GET": {

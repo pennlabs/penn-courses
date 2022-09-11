@@ -2,11 +2,13 @@ FROM pennlabs/django-base:f0f05216db7c23c1dbb5b95c3bc9e8a2603bf2fd
 
 LABEL maintainer="Penn Labs"
 
+WORKDIR /backend
+
 # Copy project dependencies
-COPY Pipfile* /app/
+COPY Pipfile* .
 
-# Install project dependencies
-RUN pipenv install --dev --system --deploy
+# Install backend dependencies
+RUN pipenv install --dev
 
-# Copy project files
-COPY . /app/
+# Alias runserver command
+RUN echo 'alias runserver="python manage.py runserver 0.0.0.0:8000"' >> ~/.bashrc
