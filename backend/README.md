@@ -11,9 +11,8 @@ Welcome to the Penn Courses Backend (PCX)!
 ### Environment Variables
 
 If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file to
-put in your `backend` directory. This will contain settings specific to your local
-environment and some sensitive credentials (which is why the file contents are not
-pasted in this public README).
+put in your `backend` directory. This will contain some sensitive credentials (which is why the file contents are not
+pasted in this public README). If you are not in Penn Labs, see the "Loading Course Data on Demand" section below for instructions on how to get your own credentials.
 
 NOTE: when using `pipenv`, environment variables are only refreshed when you exit your shell and rerun `pipenv shell` (this is a common source of confusing behavior, so it's good to know about).
 
@@ -50,12 +49,11 @@ First, navigate to the `backend` directory in your terminal.
     - `pipenv shell`
     - `python manage.py migrate`
 
-4. Loading test data (if you are a member of Penn Labs)
+4. Loading test data (if you are a member of Penn Labs). If you are not a member of Penn Labs, you can skip this section and load in course data from the registrar, as explained below.
 
     - To get going quickly with a local database loaded with lots of test data,
       you can download this [pcx_test.sql](https://penn-labs.slack.com/archives/CDDK7CB53/p1650211990189289)
       SQL dump file.
-      This file is only accessible to Penn Labs members (anyone else should skip this step and load in course data from the registrar, as explained below).
     - Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
     - Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
     - Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` (replacing `pcx_test.sql` with the full path to that file on your computer) to load
