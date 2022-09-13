@@ -183,7 +183,7 @@ def recommend_courses_view(request):
 # Function-Based Views for Sharing Schedules
 
 @permission_classes([IsAuthenticated])
-def setSharedSchedule(request):
+def set_shared_schedule(request):
     res = {}
     # verify that the user and the schedule exist and set it as the primary for 
     # for the passed in user
@@ -213,7 +213,7 @@ def setSharedSchedule(request):
     # return HttpResponseBadRequest("Bad response, schedule does not exist")
 
 @permission_classes([IsAuthenticated])
-def getSharedSchedule(request):
+def get_shared_schedule(request):
     res = {}
     # verify that the user exist and retrieve the primary schedule associated with them
     # and that the schedule still exists (in the case that the schedule was deleted)

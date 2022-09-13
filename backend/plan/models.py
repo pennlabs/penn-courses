@@ -16,6 +16,7 @@ class Schedule(models.Model):
         on_delete=models.CASCADE,
         help_text="The person (user) to which the schedule belongs.",
     )
+
     sections = models.ManyToManyField(
         Section,
         help_text=dedent(
@@ -25,6 +26,7 @@ class Schedule(models.Model):
         """
         ),
     )
+
     semester = models.CharField(
         max_length=5,
         help_text=dedent(
@@ -34,6 +36,7 @@ class Schedule(models.Model):
         """
         ),
     )
+    
     name = models.CharField(
         max_length=255,
         help_text=dedent(
