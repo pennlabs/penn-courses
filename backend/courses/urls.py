@@ -2,6 +2,7 @@ from django.urls import path
 
 from courses import views
 from courses.views import CourseListSearch
+from courses.views import send_friendship_request, remove_friendship, handle_friendship_request, cancel_friendship_request
 
 
 urlpatterns = [
@@ -34,4 +35,8 @@ urlpatterns = [
         name="restrictions-list",
     ),
     path("statusupdate/<slug:full_code>/", views.StatusUpdateView.as_view(), name="statusupdate"),
+    path("frienship/send_request", send_friendship_request, name="send-friendship-request"),
+    path("frienship/remove_friend", remove_friendship, name="remove-friendship"),
+    path("frienship/handle_request", handle_friendship_request, name="handle-friendship-request"),
+    path("frienship/cancel_request", cancel_friendship_request, name="cancel-friendship-request"),
 ]
