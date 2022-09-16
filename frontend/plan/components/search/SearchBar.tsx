@@ -232,6 +232,12 @@ const PCPImage = styled.img`
     padding-left: 1.5rem;
 `;
 
+const MobilePCPImage = styled.img`
+    height: 2.5rem;
+    padding-left: 0;
+    padding-right: 2.5rem;
+`;
+
 const Icon = styled.span`
     align-items: center;
     display: inline-flex;
@@ -462,6 +468,7 @@ SearchBarProps) {
         return (
             <MobileSearchBarOuterContainer>
                 <MobileSearchBarInnerContainer>
+                    <MobilePCPImage src="/icons/favicon.ico" alt="" />
                     <AccountIndicator
                         user={user}
                         login={(u: User) => {
@@ -480,6 +487,7 @@ SearchBarProps) {
                         setTab={setTab}
                         startSearch={conditionalStartSearch}
                         filterData={filterData}
+                        mobileView={mobileView}
                         updateSearchText={updateSearchText}
                     />
                     <MobileFilterContainer
