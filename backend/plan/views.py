@@ -1,16 +1,16 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q
-from backend.courses.models import User
+from django.forms.models import model_to_dict
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.forms.models import model_to_dict
 
+from backend.courses.models import User
 from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
@@ -180,37 +180,40 @@ def recommend_courses_view(request):
         status=status.HTTP_200_OK,
     )
 
+
 # Function-Based Views for Sharing Schedules
+
 
 @permission_classes([IsAuthenticated])
 def set_shared_schedule(request):
     res = {}
-    # verify that the user and the schedule exist and set it as the primary for 
+    # verify that the user and the schedule exist and set it as the primary for
     # for the passed in user
     user = get_object_or_404(User, pk=request.user_id)
     schedule = get_object_or_404(Schedule, pk=request.schedule_id)
-    if (not user or not schedule):
-        res['message'] = 'User/Schedule does not exist'
+    if not user or not schedule:
+        res["message"] = "User/Schedule does not exist"
         return JsonResponse(res, status=400)
-    
+
     # check syntax for this but ensure that the schedule belongs to the user
-    if (schedule.person != user):
-        res['message'] = 'Schedule does not belong to user'
+    if schedule.person != user:
+        res["message"] = "Schedule does not belong to user"
         return JsonResponse(res, status=400)
 
     # set the schedule as the primary schedule for the user (and set old shared to false)
     old_shared_schedule = Schedule.objects.filter(person=user, is_shared=True)
-    if (old_shared_schedule):
+    if old_shared_schedule:
         old_shared_schedule.is_shared = False
         old_shared_schedule.save()
     schedule.is_shared = True
     schedule.save()
-    res['message'] = 'Schedule set as shared'
+    res["message"] = "Schedule set as shared"
     # return successful response code once set
     return JsonResponse(res)
 
     # return HttpResponseBadRequest("Bad response, user does not exists")
     # return HttpResponseBadRequest("Bad response, schedule does not exist")
+
 
 @permission_classes([IsAuthenticated])
 def get_shared_schedule(request):
@@ -219,13 +222,13 @@ def get_shared_schedule(request):
     # and that the schedule still exists (in the case that the schedule was deleted)
 
     user = get_object_or_404(User, pk=request.user_id)
-    if (not user):
-        res['message'] = 'User does not exist'
+    if not user:
+        res["message"] = "User does not exist"
         return JsonResponse(res, status=400)
-    
+
     schedule = Schedule.objects.filter(person=user, is_shared=True)
-    if (not schedule):
-        res['message'] = 'No shared schedule for user'
+    if not schedule:
+        res["message"] = "No shared schedule for user"
         return JsonResponse(res, status=400)
 
     # return the schedule
@@ -233,6 +236,7 @@ def get_shared_schedule(request):
     res["message"] = "Shared schedule retrieved."
     # return successful response code once set
     return JsonResponse(res)
+
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """

@@ -36,7 +36,7 @@ class Schedule(models.Model):
         """
         ),
     )
-    
+
     name = models.CharField(
         max_length=255,
         help_text=dedent(
@@ -48,20 +48,21 @@ class Schedule(models.Model):
     )
     is_shared = models.BooleanField(
         default=False,
-        help_text="This determines whether this schedule is sharable with the user's friends"
-    );
+        help_text="This determines whether this schedule is sharable with the user's friends",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = (("name", "semester", "person"),)
-        constraints = [ 
+        constraints = [
             models.UniqueConstraint(
-                fields=("person_id",), 
-                condition=models.Q(is_shared=True), 
-                name="max_one_shared_per_person")
-                        ]
+                fields=("person_id",),
+                condition=models.Q(is_shared=True),
+                name="max_one_shared_per_person",
+            )
+        ]
 
     def __str__(self):
         return "User: %s, Schedule ID: %s" % (self.person, self.id)

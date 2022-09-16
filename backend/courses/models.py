@@ -1422,12 +1422,11 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     instance.profile.save()
 
 
-
 class Friendship(models.Model):
     """
-    Used to track friendships along with requests status 
+    Used to track friendships along with requests status
     """
-    
+
     sender = models.ForeignKey(
         UserProfile,
         on_delete=models.CASCADE,
@@ -1438,14 +1437,14 @@ class Friendship(models.Model):
     recipient = models.ForeignKey(
         UserProfile,
         related_name="receiver",
-         on_delete=models.CASCADE,
+        on_delete=models.CASCADE,
         help_text="The person (user) who recieved the request.",
     )
 
     class FriendshipStatus(models.TextChoices):
-        SENT = 'S', _('Sent')
-        ACCEPTED = 'A', _('Accepted')
-        REJECTED = 'R', _('Rejected')
+        SENT = "S", _("Sent")
+        ACCEPTED = "A", _("Accepted")
+        REJECTED = "R", _("Rejected")
 
     status = models.CharField(
         max_length=1,
@@ -1454,10 +1453,10 @@ class Friendship(models.Model):
     )
 
     def setStatus(self, status):
-        if (status == "A"):
+        if status == "A":
             self.status = self.FriendshipStatus.ACCEPTED
             self.accepted_at = timezone.now()
-        elif (status == "R"):
+        elif status == "R":
             self.status = self.FriendshipStatus.REJECTED
         self.save()
 
@@ -1468,5 +1467,4 @@ class Friendship(models.Model):
         unique_together = (("sender", "recipient"),)
 
     def __str__(self):
-        return f'Sender: {self.sender}, Reciever: {self.recipient}, Status: {self.status}'
-
+        return f"Sender: {self.sender}, Reciever: {self.recipient}, Status: {self.status}"
