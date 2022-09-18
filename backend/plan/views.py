@@ -7,7 +7,6 @@ from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-import plan.examples as examples
 from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
@@ -244,7 +243,6 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
 
     schema = PcxAutoSchema(
-        examples=examples.ScheduleViewSet_examples,
         response_codes={
             reverse_func("schedules-list"): {
                 "GET": {

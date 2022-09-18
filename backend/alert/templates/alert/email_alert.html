@@ -9,27 +9,21 @@
         <h1 style="margin-bottom: 1.5em;">{{ course }} just {% block course_event %}<span style="color:#78D381;">opened up</span>!{% endblock %}</h1>
         <p>
             {% block email_body %}
-            <a href="https://pennintouch.apps.upenn.edu/"
-               style="cursor: pointer; border-width: 0; text-decoration: none; padding: 10px 25px; font-size: 1.2em; margin-top: 20px; color: white; background-color: #3eaa6d; border-radius: 5px; font-weight: bold">
-                Register now on Penn InTouch
-            </a>
-            {% endblock %}
+            <a href="http://bit.ly/pathpenn" style="cursor: pointer; border-width: 0; text-decoration: none; padding: 10px 25px; font-size: 1.2em; margin-top: 20px; color: white; background-color: #3eaa6d; border-radius: 5px; font-weight: bold">
+                Register now on Path@Penn
+            </a> {% endblock %}
         </p>
 
         <p style="padding-top: 1em; font-size: 1.2em;">
             {% if auto_resubscribe %}
             <span>Don't need more alerts?</span>
-            <a href="https://penncoursealert.com/#manage"
-                style="cursor: pointer; border-width: 0; text-decoration: none; padding: 10px 25px; margin-top: 20px; color: white; background-color: #f66f63; border-radius: 5px;" >
+            <a href="https://penncoursealert.com/#manage" style="cursor: pointer; border-width: 0; text-decoration: none; padding: 10px 25px; margin-top: 20px; color: white; background-color: #f66f63; border-radius: 5px;">
                  Cancel here
-            </a>
-            {% else %}
+            </a> {% else %}
             <span>Unlucky?</span>
-            <a href="https://penncoursealert.com/#manage"
-                style="cursor: pointer; border-width: 0; text-decoration: none; padding: 10px 25px; margin-top: 20px; color: white; background-color: #209cee; border-radius: 5px;" >
+            <a href="https://penncoursealert.com/#manage" style="cursor: pointer; border-width: 0; text-decoration: none; padding: 10px 25px; margin-top: 20px; color: white; background-color: #209cee; border-radius: 5px;">
                  Resubscribe here
-            </a>
-            {% endif %}
+            </a> {% endif %}
         </p>
     </div>
 

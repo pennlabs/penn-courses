@@ -1,5 +1,6 @@
 # Docker
 Dockerfile
+Dockerfile.dev
 .dockerignore
 
 # git

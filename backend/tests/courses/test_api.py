@@ -11,7 +11,14 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Course, Department, Instructor, PreNGSSRequirement
+from courses.models import (
+    Attribute,
+    Course,
+    Department,
+    Instructor,
+    NGSSRestriction,
+    PreNGSSRequirement,
+)
 from courses.search import TypedCourseSearchBackend
 from courses.util import get_or_create_course, invalidate_current_semester_cache
 from plan.models import Schedule
@@ -392,6 +399,277 @@ class PreNGSSRequirementListTestCase(TestCase):
         response = self.client.get(reverse("requirements-list", kwargs={"semester": "XXXXX"}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(1, len(response.data))
+
+
+class RestrictionListTestCase(TestCase):
+    def setUp(self):
+        set_semester()
+        self.course, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
+        self.department = Department.objects.get(code="CIS")
+
+        self.restriction1 = NGSSRestriction.objects.create(
+            restriction_type="ATTR",
+            code="EMCI",
+            description="SEAS CIS NonCIS Elective",
+            inclusive=True,
+        )
+        # Fake restriction
+        self.restriction2 = NGSSRestriction.objects.create(
+            restriction_type="CAMP",
+            code="PHILA",
+            description="Philadelphia Campus",
+            inclusive=True,
+        )
+
+        self.restriction1.courses.add(self.course)
+        self.restriction2.courses.add(self.course)
+        self.restriction2.courses.add(self.course2)
+        self.client = APIClient()
+
+    def test_restriction_route(self):
+        response = self.client.get(reverse("restrictions-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(2, len(response.data))
+
+
+class AttributeListTestCase(TestCase):
+    def setUp(self):
+        set_semester()
+        self.course, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
+        self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
+        self.department = Department.objects.get(code="CIS")
+
+        self.attr1 = Attribute.objects.create(
+            code="EMCI",
+            description="SEAS CIS NonCIS Elective",
+            school="SEAS",
+        )
+        self.attr2 = Attribute.objects.create(
+            code="WUFN",
+            description="Wharton Finance Majo",
+            school="WH",
+        )
+        self.attr1.courses.add(self.course)
+        self.attr2.courses.add(self.course)
+        self.attr2.courses.add(self.course2)
+        self.client = APIClient()
+
+    def test_attribute_route(self):
+        response = self.client.get(reverse("attributes-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(2, len(response.data))
+        self.assertEqual({res["code"] for res in response.data}, {"EMCI", "WUFN"})
+
+
+class AttributeFilterTestCase(TestCase):
+    def setUp(self):
+        set_semester()
+        # Courses (4)
+        self.cis_120, _ = create_mock_data("CIS-120-001", TEST_SEMESTER)
+        self.mgmt_117, _ = create_mock_data("MGMT-117-001", TEST_SEMESTER)
+        self.econ_001, _ = create_mock_data("ECON-001-001", TEST_SEMESTER)
+        self.anth_001, _ = create_mock_data("ANTH-001-001", TEST_SEMESTER)
+
+        # Attributes
+        self.wuom = Attribute.objects.create(
+            code="WUOM", description="Wharton OIDD Operation", school="WH"
+        )
+        self.emci = Attribute.objects.create(
+            code="EMCI", description="SEAS CIS NonCIS Elective", school="SEAS"
+        )
+
+        # Attach courses to attributes
+        self.wuom.courses.add(self.mgmt_117)
+        self.wuom.courses.add(self.econ_001)
+        self.emci.courses.add(self.cis_120)
+        self.emci.courses.add(self.econ_001)
+
+        self.all_codes = {"CIS-120", "MGMT-117", "ECON-001", "ANTH-001"}
+
+        self.client = APIClient()
+
+    def test_no_attributes(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": ""}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_single_attribute(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "WUOM"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"MGMT-117", "ECON-001"})
+
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "ECON-001"})
+
+    def test_multiple_overlapping_attributes(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "WUOM|EMCI"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"MGMT-117", "ECON-001", "CIS-120"})
+
+    def test_nonexistent_attribute(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "LLLL"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data), 0)
+
+    def test_existent_and_nonexistent_attributes(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI|LLLL"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "ECON-001"})
+
+    def test_and(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI*WUOM"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"ECON-001"})
+
+    def test_and_nonexistent(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI*LLLL"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_and_or(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI*WUOM)|EMCI"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "ECON-001"})
+
+    def test_not(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "~EMCI"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"MGMT-117", "ANTH-001"})
+
+    def test_not_nonexistent(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "~LLLL"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_and_not(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "~EMCI*WUOM"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"MGMT-117"})
+
+    def test_and_or_not(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI*WUOM)|~EMCI"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"ECON-001", "MGMT-117", "ANTH-001"})
+
+    def test_and_or_nots(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "(~EMCI*WUOM)|~WUOM"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "MGMT-117", "ANTH-001"})
+
+    def test_demorgan(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "~EMCI*~WUOM"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({res["id"] for res in response.data}, {"ANTH-001"})
+
+    def test_empty_parens(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "()"}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_partial_binary_op(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI|"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "|EMCI"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI*"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "*EMCI"}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_partial_negation(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "~"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI|~"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI~"}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_unmatched_parens(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI)"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": ")EMCI("}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI*(WUOM|LLLL)"}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_invalid_chars(self):
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI,LLLL"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI&LLLL"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI^LLLL"}
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "EMCI+LLLL"}
+        )
+        self.assertEqual(response.status_code, 400)
 
 
 class SectionListTestCase(TestCase):
