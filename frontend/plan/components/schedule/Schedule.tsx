@@ -85,7 +85,10 @@ const ScheduleBox = styled.div`
     color: #4a4a4a;
     display: block;
     padding: 1.25rem;
-    height: calc(100vh - 12em);
+    min-height: calc(100vh - 12em);
+    @media only screen and (min-width: 769px) {
+        height: calc(100vh - 12em);
+    }
 `;
 
 const ScheduleContents = styled.div`
@@ -118,7 +121,6 @@ const ScheduleContents = styled.div`
     @media only screen and (max-width: 480px) {
         height: 100%;
         max-height: 500px;
-        font-size: 12px;
         margin-right: 0px;
     }
 

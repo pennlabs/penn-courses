@@ -4,9 +4,11 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from courses.models import (
+    Attribute,
     Course,
     Instructor,
     Meeting,
+    NGSSRestriction,
     PreNGSSRequirement,
     Section,
     StatusUpdate,
@@ -197,6 +199,20 @@ class PreNGSSRequirementListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class AttributeListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attribute
+        fields = ["code", "school", "description"]
+        read_only_fields = fields
+
+
+class NGSSRestrictionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NGSSRestriction
+        fields = ["code", "restriction_type", "inclusive", "description"]
+        read_only_fields = fields
+
+
 class CourseListSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(
         source="full_code",
@@ -306,6 +322,29 @@ class CourseDetailSerializer(CourseListSerializer):
         ),
     )
 
+    attributes = AttributeListSerializer(
+        many=True,
+        read_only=True,
+        help_text=dedent(
+            """
+        A list of attributes this course has. Attributes are typically
+        used to mark courses which students in a program/major should
+        take.
+        """
+        ),
+    )
+
+    restrictions = NGSSRestrictionListSerializer(
+        many=True,
+        read_only=True,
+        help_text=dedent(
+            """
+        A list of NGSSRestrictions this course has. Restrictions provide information about
+        who can take a course.
+        """
+        ),
+    )
+
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
     )
@@ -335,6 +374,8 @@ class CourseDetailSerializer(CourseListSerializer):
         ] + [
             "crosslistings",
             "pre_ngss_requirements",
+            "attributes",
+            "restrictions",
             "sections",
         ]
         read_only_fields = fields

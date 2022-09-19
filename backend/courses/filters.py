@@ -1,10 +1,13 @@
 from decimal import Decimal
 
-from django.db.models import Count, Q
+from django.core.exceptions import BadRequest
+from django.db.models import Count, Exists, OuterRef, Q
 from django.db.models.expressions import F, Subquery
+from lark import Lark, Transformer, Tree
+from lark.exceptions import UnexpectedInput
 from rest_framework import filters
 
-from courses.models import Meeting, PreNGSSRequirement, Section
+from courses.models import Course, Meeting, PreNGSSRequirement, Section
 from courses.util import get_current_semester
 from plan.models import Schedule
 
@@ -140,7 +143,7 @@ def gen_schedule_filter(request):
     return schedule_filter
 
 
-def requirement_filter(queryset, req_ids):
+def pre_ngss_requirement_filter(queryset, req_ids):
     if not req_ids:
         return queryset
     query = Q()
@@ -155,6 +158,118 @@ def requirement_filter(queryset, req_ids):
         query &= Q(id__in=requirement.satisfying_courses.all())
 
     return queryset.filter(query)
+
+
+# See the attribute_filter docstring for an explanation of this grammar
+# https://lark-parser.readthedocs.io/en/latest/examples/calc.html
+attribute_query_parser = Lark(
+    r"""
+    ?expr : or_expr
+
+    ?or_expr : and_expr
+             | and_expr "|" or_expr -> disjunction
+
+    ?and_expr : atom
+              | atom "*" and_expr -> conjunction
+
+    ?atom : attribute
+          | "~" atom -> negation
+          | "(" or_expr ")"
+
+    attribute : WORD
+
+    %import common.WORD
+    %import common.WS
+    %ignore WS
+    """,
+    start="expr",
+)
+
+
+class AttributeQueryTreeToCourseQ(Transformer):
+    """
+    Each transformation step returns a tuple of the form `(is_leaf, q)`,
+    where `is_leaf` is a boolean indicating if that query expression
+    is a leaf-level attribute code filter, and `q` is the query expression.
+    """
+
+    def attribute(self, children):
+        (code,) = children
+        return True, Q(attributes__code=code.upper())
+
+    def disjunction(self, children):
+        (c1_leaf, c1), (c2_leaf, c2) = children
+        return (c1_leaf or c2_leaf), c1 | c2
+
+    def lift_exists(self, q):
+        """
+        'Lifts' the given `q` query object from a leaf-level attribute
+        filter (e.g. `Q(attributes__code="WUOM")`) to an 'exists' subquery,
+        e.g. `Q(Exists(Course.objects.filter(attributes__code="WUOM", id=OuterRef("id"))))`.
+        This is required for conjunction and negation operations, as `Q(attributes__code="WUOM")`
+        simply performs a join between the `Course` and `Attribute` tables and filters the joined
+        rows, so `Q(attributes__code="WUOM") & Q(attributes__code="EMCI")`
+        would filter out all rows, (as no row can have code equal to both "WUOM" and "EMCI"), and
+        `~Q(attributes__code="WUOM")` would filter for courses that contain some attribute
+        other than WUOM (not the desired behavior). Lifing these conditions with an exists subquery
+        before combining with the relevant logical connectives fixes this issue.
+        """
+        return Q(Exists(Course.objects.filter(q, id=OuterRef("id"))))
+
+    def conjunction(self, children):
+        children = [self.lift_exists(c) if c_leaf else c for c_leaf, c in children]
+        c1, c2 = children
+        return False, c1 & c2
+
+    def negation(self, children):
+        ((c_leaf, c),) = children
+        if c_leaf:
+            c = self.lift_exists(c)
+        return False, ~c
+
+
+def attribute_filter(queryset, attr_query):
+    """
+    :param queryset: initial Course object queryset
+    :param attr_query: the attribute query string; see the description
+        of the attributes query param below for an explanation of the
+        syntax/semantics of this filter
+    :return: filtered queryset
+    """
+    if not attr_query:
+        return queryset
+
+    expr = None
+    try:
+        expr = attribute_query_parser.parse(attr_query)
+    except UnexpectedInput as e:
+        raise BadRequest(e)
+
+    def lift_demorgan(t):
+        """
+        Optimization: Given a Lark parse tree t, tries to
+        convert `*` to leaf-level `|` operators as much as possible,
+        using DeMorgan's laws (for query performance).
+        """
+        if t.data == "attribute":
+            return t
+        t.children = [lift_demorgan(c) for c in t.children]
+        if t.data == "conjunction":
+            c1, c2 = t.children
+            if c1.data == "negation" and c2.data == "negation":
+                (c1c,) = c1.children
+                (c2c,) = c2.children
+                return Tree(
+                    data="negation",
+                    children=[Tree(data="disjunction", children=[c1c, c2c])],
+                )
+        return t
+
+    expr = lift_demorgan(expr)
+
+    _, query = AttributeQueryTreeToCourseQ().transform(expr)
+
+    return queryset.filter(query).distinct()
 
 
 def bound_filter(field):
@@ -201,7 +316,8 @@ def choice_filter(field):
 class CourseSearchFilterBackend(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         filters = {
-            "requirements": requirement_filter,
+            "attributes": attribute_filter,
+            "pre_ngss_requirements": pre_ngss_requirement_filter,
             "cu": choice_filter("sections__credits"),
             "activity": choice_filter("sections__activity"),
             "course_quality": bound_filter("course_quality"),
@@ -236,8 +352,10 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "name": "type",
                 "required": False,
                 "in": "query",
-                "description": "Can specify what kind of query to run. Course queries are faster, "
-                "keyword queries look against professor name and course title.",
+                "description": (
+                    "Can specify what kind of query to run. Course queries are faster, "
+                    "keyword queries look against professor name and course title."
+                ),
                 "schema": {
                     "type": "string",
                     "default": "auto",
@@ -245,13 +363,41 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 },
             },
             {
-                "name": "requirements",
+                "name": "pre_ngss_requirements",
                 "required": False,
                 "in": "query",
-                "description": "Filter courses by comma-separated requirements, ANDed together. "
-                "Use `/requirements` endpoint to get requirement IDs.",
+                "description": (
+                    "Deprecated since 2022C. Filter courses by comma-separated pre "
+                    "ngss requirements, ANDed together. Use the "
+                    "[List Requirements](/api/documentation/#operation/List%20Pre-Ngss%20Requirements) "  # noqa: E501
+                    "endpoint to get requirement IDs."
+                ),
                 "schema": {"type": "string"},
                 "example": "SS@SEAS,H@SEAS",
+            },
+            {
+                "name": "attributes",
+                "required": False,
+                "in": "query",
+                "description": (
+                    "This query parameter accepts a logical expression of attribute codes "
+                    "separated by `*` (AND) or `|` (OR) connectives, optionally grouped "
+                    "into clauses by parentheses and arbitrarily nested (we avoid using "
+                    "`&` for the AND connective so the query string doesn't have to be escaped). "
+                    "You can negate an individual attribute code or a clause with the `~` operator "
+                    "(this will filter for courses that do NOT have that attribute or do not "
+                    "satisfy that clause). Binary operators are left-associative, "
+                    "and operator precedence is as follows: `~ > * > |`. "
+                    "Whitespace is ignored. "
+                    "A syntax error will cause a 400 response to be returned. "
+                    "Example: `(EUHS|EUSS)*(QP|QS)` would filter for courses that "
+                    "satisfy the EAS humanities or social science requirements "
+                    "and also have a standard grade type or a pass/fail grade type. Use the "
+                    "[List Attributes](/api/documentation/#operation/List%20Attributes) endpoint "
+                    "to get a list of valid attribute codes and descriptions."
+                ),
+                "schema": {"type": "string"},
+                "example": "WUOM|WUGA",
             },
             {
                 "name": "cu",

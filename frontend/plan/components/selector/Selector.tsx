@@ -36,6 +36,8 @@ interface SelectorProps {
 }
 
 const EmptyResultsContainer = styled.div`
+    margin-left: auto;
+    margin-right: auto;
     font-size: 0.8rem;
     text-align: center;
     margin-top: 5vh;

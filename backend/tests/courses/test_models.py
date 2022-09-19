@@ -348,7 +348,7 @@ class CrosslistingTestCase(TestCase):
         self.assertEqual(3, Course.objects.count())
 
 
-class RequirementTestCase(TestCase):
+class PreNGSSRequirementTestCase(TestCase):
     def setUp(self):
         set_semester()
         get_or_create_course(

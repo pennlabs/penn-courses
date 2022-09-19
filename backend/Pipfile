@@ -14,7 +14,7 @@ flake8-quotes = "*"
 pytest = "*"
 pytest-django = "*"
 django-debug-toolbar = "*"
-black = "==21.12b0"
+black = "==22.3.0"
 
 [packages]
 click = "==8.0.4"
@@ -55,9 +55,6 @@ numpy = "*"
 scikit-learn = "*"
 pandas = "*"
 python-dateutil = "*"
-jellyfish = "*"
-matplotlib = "*"
-jupyter = "*"
 docutils = "*"
 
 [requires]

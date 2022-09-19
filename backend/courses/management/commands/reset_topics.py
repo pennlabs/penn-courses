@@ -13,7 +13,7 @@ def fill_topics(verbose=False):
     if verbose:
         print("Filling courses without topics...")
     filled = 0
-    for course in tqdm(Course.objects.all().order_by("semester")):
+    for course in tqdm(Course.objects.filter(topic__isnull=True).order_by("semester")):
         if not course.topic:
             filled += 1
             course.save()

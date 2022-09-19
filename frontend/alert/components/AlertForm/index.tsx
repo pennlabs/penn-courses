@@ -46,27 +46,29 @@ interface RadioSetProps {
 const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
     <span>
         {options.map(({ label, value }) => (
-                <label htmlFor={value} key={label}>
-                    <input
-                        type="radio"
-                        name="name"
-                        id={value}
-                        value={value}
-                        onChange={(e) => setSelected(e.target.value)}
-                        checked={value === selected}
-                    />
-                    {label}
-                </label>
+            <label htmlFor={value} key={label}>
+                <input
+                    type="radio"
+                    name="name"
+                    id={value}
+                    value={value}
+                    onChange={(e) => setSelected(e.target.value)}
+                    checked={value === selected}
+                />
+                {label}
+            </label>
         ))}
     </span>
 );
 
 RadioSet.propTypes = {
     selected: PropTypes.string,
-    options: PropTypes.arrayOf(PropTypes.shape({
-        label: PropTypes.string,
-        value: PropTypes.string,
-      })),
+    options: PropTypes.arrayOf(
+        PropTypes.shape({
+            label: PropTypes.string,
+            value: PropTypes.string,
+        })
+    ),
     setSelected: PropTypes.func,
 };
 
@@ -138,23 +140,37 @@ const AlertForm = ({
     };
 
     const isCourseOpen = (section) => {
-        return fetch(`/api/base/current/sections/${section}/`).then((res) => 
-            res.json().then((courseResult) => {
+        return fetch(`/api/base/current/sections/${section}/`)
+            .then((res) =>
+                res.json().then((courseResult) => {
+                    const isOpen = courseResult["status"] === "O";
+                    if (isOpen) {
+                        setResponse(
+                            new Response(
+                                new Blob(
+                                    [
+                                        JSON.stringify({
+                                            message:
+                                                "Course is currently open!",
+                                            status: 400,
+                                        }),
+                                    ],
+                                    {
+                                        type: "application/json",
+                                    }
+                                )
+                            )
+                        );
+                    }
 
-                const isOpen = courseResult["status"] === "O";
-                if (isOpen) {
-                    setResponse(new Response(new Blob([JSON.stringify({message: "Course is currently open!", status: 400})], {
-                        type: "application/json",
-                    })))
-                } 
-
-                return isOpen;
-            }))
+                    return isOpen;
+                })
+            )
             .catch((err) => {
                 handleError(err);
                 return false;
-            })
-    } 
+            });
+    };
 
     const handleError = (e) => {
         Sentry.captureException(e);
@@ -174,12 +190,12 @@ const AlertForm = ({
      * @param newSelectedCourses - most up-to-date selected courses set
      * @param suggestion - the section
      */
-     const clearInputValue = () => {
+    const clearInputValue = () => {
         if (autoCompleteInputRef.current) {
             autoCompleteInputRef.current.value = "";
             setValue("");
         }
-    }
+    };
 
     const deselectCourse = (section: Section): boolean => {
         const newSelectedCourses = new Set(selectedCourses);
@@ -191,76 +207,72 @@ const AlertForm = ({
         }
 
         return removed;
-    }
+    };
 
     const submitRegistration = () => {
         // if user has a auto fill section and didn't change the input value then register for section
         // and support user manually entered a course (without checking checkbox)
         if (
             autoCompleteInputRef.current &&
-            (autoCompleteInputRef.current.value === autofillSection || (autoCompleteInputRef.current.value !== "" && selectedCourses.size == 0))
+            (autoCompleteInputRef.current.value === autofillSection ||
+                (autoCompleteInputRef.current.value !== "" &&
+                    selectedCourses.size == 0))
         ) {
             const section = autoCompleteInputRef.current.value;
-            isCourseOpen(section).then(isOpen => {
-                if (!isOpen) {
-                    doAPIRequest("/api/alert/registrations/", "POST", {
-                        section: section,
-                        auto_resubscribe: autoResub === "true",
+            isCourseOpen(section).then((isOpen) => {
+                doAPIRequest("/api/alert/registrations/", "POST", {
+                    section: section,
+                    auto_resubscribe: autoResub === "true",
+                })
+                    .then((res) => {
+                        if (res.ok) {
+                            clearInputValue();
+                        }
+                        setResponse(res);
                     })
-                        .then((res) => {
-                            if (res.ok) {
-                                clearInputValue();
-                            }
-                            setResponse(res)
-                        })
-                        .catch(handleError);
-                } 
-            })
+                    .catch(handleError);
+            });
 
             return;
-            
         }
 
         // register all selected sections
         const promises: Array<Promise<Response | undefined>> = [];
         selectedCourses.forEach((section) => {
+            const promise = isCourseOpen(section.section_id).then((isOpen) => {
+                return doAPIRequest("/api/alert/registrations/", "POST", {
+                    section: section.section_id,
+                    auto_resubscribe: autoResub === "true",
+                });
+            });
 
-            const promise = isCourseOpen(section.section_id).then(isOpen => {
-                 if (!isOpen) {
-                      return doAPIRequest("/api/alert/registrations/", "POST", {
-                        section: section.section_id,
-                        auto_resubscribe: autoResub === "true",
-                    })
-                }
-
-            })
-            
-           promises.push(promise)
+            promises.push(promise);
         });
 
-        const sections = Array.from(selectedCourses)
+        const sections = Array.from(selectedCourses);
 
-        Promise.allSettled(promises)
-            .then((responses) => responses.forEach(
+        Promise.allSettled(promises).then((responses) =>
+            responses.forEach(
                 (res: PromiseSettledResult<Response | undefined>, i) => {
-                
                     //fulfilled if response is returned, even if reg is unsuccessful.
                     if (res.status === "fulfilled") {
                         if (res.value == undefined) {
                             return;
                         }
 
-                        const response: Response = res.value!
+                        const response: Response = res.value!;
 
                         setResponse(response);
                         if (response.ok) {
                             deselectCourse(sections[i]);
-                        } 
-                    //only if network error occurred
+                        }
                     } else {
+                        //only if network error occurred
                         handleError(res.reason);
                     }
-                }));
+                }
+            )
+        );
     };
 
     const onSubmit = () => {

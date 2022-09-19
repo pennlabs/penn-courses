@@ -94,7 +94,7 @@ def section_demand_change(section_id, updated_at):
         )
         if (
             current_demand_distribution_estimate == sentinel
-            or current_demand_distribution_estimate["semester"] != semester
+            or current_demand_distribution_estimate.semester != semester
         ):
             create_new_distribution_estimate = True
 
