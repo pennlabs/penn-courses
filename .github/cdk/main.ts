@@ -21,32 +21,32 @@ export class MyStack extends Stack {
       }
     });
 
-    // const plan = new ReactProject(workflow, {
-    //   id: "pcp",
-    //   path: "frontend",
-    //   imageName: "pcp-frontend",
-    //   publishProps: {
-    //     dockerfile: "plan/Dockerfile",
-    //   },
-    // });
+    const plan = new ReactProject(workflow, {
+      id: "pcp",
+      path: "frontend",
+      imageName: "pcp-frontend",
+      publishProps: {
+        dockerfile: "plan/Dockerfile",
+      },
+    });
 
-    // const alert = new ReactProject(workflow, {
-    //   id: "pca",
-    //   path: "frontend",
-    //   imageName: "pca-frontend",
-    //   publishProps: {
-    //     dockerfile: "alert/Dockerfile",
-    //   },
-    // });
+    const alert = new ReactProject(workflow, {
+      id: "pca",
+      path: "frontend",
+      imageName: "pca-frontend",
+      publishProps: {
+        dockerfile: "alert/Dockerfile",
+      },
+    });
 
-    // const review = new ReactProject(workflow, {
-    //   id: "pcr",
-    //   path: "frontend",
-    //   imageName: "pcr-frontend",
-    //   publishProps: {
-    //     dockerfile: "review/Dockerfile",
-    //   },
-    // });
+    const review = new ReactProject(workflow, {
+      id: "pcr",
+      path: "frontend",
+      imageName: "pcr-frontend",
+      publishProps: {
+        dockerfile: "review/Dockerfile",
+      },
+    });
 
     const landing = new DockerPublishJob(workflow, 'landing', {
       imageName: 'pcx-landing',
@@ -59,9 +59,9 @@ export class MyStack extends Stack {
       {
         needs: [
           django.publishJobId,
-          // plan.publishJobId,
-          // alert.publishJobId,
-          // review.publishJobId,
+          plan.publishJobId,
+          alert.publishJobId,
+          review.publishJobId,
           landing.id,
         ],
       }
