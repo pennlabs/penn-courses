@@ -1441,9 +1441,9 @@ class Friendship(models.Model):
     )
 
     class FriendshipStatus(models.TextChoices):
-        SENT = "S", _("Sent")
-        ACCEPTED = "A", _("Accepted")
-        REJECTED = "R", _("Rejected")
+        SENT = "S", "Sent"
+        ACCEPTED = "A", "Accepted"
+        REJECTED = "R", "Rejected"
 
     status = models.CharField(
         max_length=1,
