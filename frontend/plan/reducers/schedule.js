@@ -483,116 +483,118 @@ export const schedule = (state = initialState, action) => {
                 },
             };
 
-            // the ics download schedule reducer
-            case DOWNLOAD_SCHEDULE:
-                // get the schedule that was clicked
-                const schedule = state.schedules[action.scheduleName]
-    
-                // create an empty 'events' array
-                let events = [];
-    
-                // map through the schedule's sections and get the section's title
-                schedule["sections"].map((section) => {
-                    const title = section["id"];
-    
-                    // map through the section's meetings
-                    section["meetings"].map((meeting, i) => {
-    
-                        // call the data constructor
-                        const date = new Date()
-    
-                        // get the current year
-                        const year = date.getFullYear();
-    
-                        // get the current month
-                        const month = date.getUTCMonth() + 1;
-    
-                        // calculate the date of next Monday
-                        // https://stackoverflow.com/questions/33078406/getting-the-date-of-next-monday
+        // the ics download schedule reducer
+        case DOWNLOAD_SCHEDULE: {
+            // get the schedule that was clicked
+            const schedule = state.schedules[action.scheduleName];
 
-                        const monday = date.getDate() + (((1 + 7 - date.getDay()) % 7) || 7)
-    
-                        // get the start hour of the class
-                        const hour = Math.floor(meeting["start"]);
-    
-                        // get the starting minute of the class
-                        const minute = Math.floor((meeting["start"] - hour) * 100);
-    
-                        // get the duration of the class in minutes
-                        const duration = Math.ceil(
-                            (meeting["end"] - meeting["start"]) * 60
-                        );
-    
-                        let day = 0;
-    
-                        // get the weekday of the class
-                        switch (meeting["day"]) {
-                            case "M":
-                                day = monday;
-                                break;
-                            case "T":
-                                day = monday + 1;
-                                break;
-                            case "W":
-                                day = monday + 2;
-                                break;
-                            case "R":
-                                day = monday + 3;
-                                break;
-                            case "F":
-                                day = monday + 4;
-                                break;
-                        }
-    
-                        // https://github.com/adamgibbons/ics
-                        events.push({
-                            title: `${title}-${i}`,
-                            start: [year, month, day, hour, minute],
-                            // perhaps, we can add a recurrence rule for the schedule,
-                            // but, in case the user downloads their schedule on the last
-                            // week of the semester, the recurrence rule would be practially
-                            // useless
-    
-                            // recurrenceRule: FREQ=WEEKLY;INTERVAL=5,
-                            duration: { minutes: duration },
-                        });
+            // create an empty 'events' array
+            let events = [];
+
+            // map through the schedule's sections and get the section's title
+            schedule["sections"].map((section) => {
+                const title = section["id"];
+
+                // map through the section's meetings
+                section["meetings"].map((meeting, i) => {
+                    // call the data constructor
+                    const date = new Date();
+
+                    // get the current year
+                    const year = date.getFullYear();
+
+                    // get the current month
+                    const month = date.getUTCMonth() + 1;
+
+                    // calculate the date of next Monday
+                    // https://stackoverflow.com/questions/33078406/getting-the-date-of-next-monday
+
+                    const monday =
+                        date.getDate() + ((1 + 7 - date.getDay()) % 7 || 7);
+
+                    // get the start hour of the class
+                    const hour = Math.floor(meeting["start"]);
+
+                    // get the starting minute of the class
+                    const minute = Math.floor((meeting["start"] - hour) * 100);
+
+                    // get the duration of the class in minutes
+                    const duration = Math.ceil(
+                        (meeting["end"] - meeting["start"]) * 60
+                    );
+
+                    let day = 0;
+
+                    // get the weekday of the class
+                    switch (meeting["day"]) {
+                        case "M":
+                            day = monday;
+                            break;
+                        case "T":
+                            day = monday + 1;
+                            break;
+                        case "W":
+                            day = monday + 2;
+                            break;
+                        case "R":
+                            day = monday + 3;
+                            break;
+                        case "F":
+                            day = monday + 4;
+                            break;
+                    }
+
+                    // https://github.com/adamgibbons/ics
+                    events.push({
+                        title: `${title}-${i}`,
+                        start: [year, month, day, hour, minute],
+                        // perhaps, we can add a recurrence rule for the schedule,
+                        // but, in case the user downloads their schedule on the last
+                        // week of the semester, the recurrence rule would be practially
+                        // useless
+
+                        // recurrenceRule: FREQ=WEEKLY;INTERVAL=5,
+                        duration: { minutes: duration },
                     });
                 });
-    
-                // https://github.com/adamgibbons/ics
-                const { value } = ics.createEvents(events);
-    
-                // Create an invisible anchor element and set its URL using `createObjectURL`
-                const link = document.createElement("a");
-                link.style.display = "none";
-    
-                // https://developer.mozilla.org/en-US/docs/Web/API/Blob
-    
-                // "Blobs can represent data that isn't necessarily in a JavaScript-native format. 
-                // The File interface is based on Blob, inheriting blob functionality and 
-                // expanding it to support files on the user's system."
-    
-                link.href = URL.createObjectURL(
-                    new Blob([value], { type: "text/plain" })
-                );
-    
-                //the file name is {scheduleName} + '.ics'
-                link.download = `${action.scheduleName}.ics`;
-    
-                // Append the link to the body
-                document.body.appendChild(link);
-    
-                // click the link, prompting the download
-                link.click();
-    
-                // the cleaning step, remove the link from the DOM
-                URL.revokeObjectURL(link.href);
-                link.parentNode.removeChild(link);
-    
-                // return the state unchanged
-                return {
-                    ...state,
-                };
+            });
+
+            // https://github.com/adamgibbons/ics
+            const { value } = ics.createEvents(events);
+
+            // Create an invisible anchor element and set its URL using `createObjectURL`
+            const link = document.createElement("a");
+            link.style.display = "none";
+
+            // https://developer.mozilla.org/en-US/docs/Web/API/Blob
+
+            // "Blobs can represent data that isn't necessarily in a JavaScript-native format.
+            // The File interface is based on Blob, inheriting blob functionality and
+            // expanding it to support files on the user's system."
+
+            link.href = URL.createObjectURL(
+                new Blob([value], { type: "text/plain" })
+            );
+
+            //the file name is {scheduleName} + '.ics'
+            link.download = `${action.scheduleName}.ics`;
+
+            // Append the link to the body
+            document.body.appendChild(link);
+
+            // click the link, prompting the download
+            link.click();
+
+            // the cleaning step, remove the link from the DOM
+            URL.revokeObjectURL(link.href);
+            link.parentNode.removeChild(link);
+
+            // return the state unchanged
+            return {
+                ...state,
+            };
+        }
+
         case CREATE_SCHEDULE:
             return {
                 ...state,
