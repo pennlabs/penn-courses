@@ -503,7 +503,7 @@ export const schedule = (state = initialState, action) => {
                     // get the current year
                     const year = date.getFullYear();
 
-                    // get the current month
+                    // get the current month 
                     const month = date.getUTCMonth() + 1;
 
                     // calculate the date of next Monday
