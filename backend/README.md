@@ -59,6 +59,7 @@ First, navigate to the `backend` directory in your terminal.
     - Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` (replacing `pcx_test.sql` with the full path to that file on your computer) to load
       the contents of the test database (this might take a while).
     - For accessing the Django admin site, the admin username is `admin` and the password is `admin` if you use this test db.
+    - Run `python manage.py migrate` to apply migrations
 
 5. Running the backend
 
