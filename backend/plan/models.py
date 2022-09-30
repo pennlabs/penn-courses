@@ -48,7 +48,12 @@ class Schedule(models.Model):
     )
     is_shared = models.BooleanField(
         default=False,
-        help_text="This determines whether this schedule is sharable with the user's friends",
+        help_text=dedent(
+            """
+            This indicates whether this schedule is shared with the user's friends. 
+            Note that at most one of a user's schedules can be shared.
+        """
+        ),
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

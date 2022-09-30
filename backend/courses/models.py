@@ -1429,13 +1429,13 @@ class Friendship(models.Model):
     sender = models.ForeignKey(
         UserProfile,
         on_delete=models.CASCADE,
-        related_name="sender",
+        related_name="sent_friendships",
         help_text="The person (user) who sent the request.",
     )
 
     recipient = models.ForeignKey(
         UserProfile,
-        related_name="receiver",
+        related_name="received_friendships",
         on_delete=models.CASCADE,
         help_text="The person (user) who recieved the request.",
     )
@@ -1451,13 +1451,27 @@ class Friendship(models.Model):
         default=FriendshipStatus.SENT,
     )
 
-    def setStatus(self, status):
-        if status == "A":
-            self.status = self.FriendshipStatus.ACCEPTED
+    def check_friendship(self, user1, user2):
+        """
+        Checks if two users are friends
+        """
+        if (
+            Friendship.objects.filter(sender=user1, recipient=user2, status="A")
+            or Friendship.objects.filter(sender=user2, recipient=user1, status="A")
+        ):
+            return True
+        return False
+
+    def save(self, *args, **kwargs):
+        if (self.status == self.FriendshipStatus.ACCEPTED):
             self.accepted_at = timezone.now()
-        elif status == "R":
-            self.status = self.FriendshipStatus.REJECTED
-        self.save()
+        if (self.status == self.FriendshipStatus.REJECTED):
+            # any other logic that needs to happen when a friendship is rejected 
+            pass
+        if (self.status == self.FriendshipStatus.SENT):
+            self.sent_at = timezone.now()
+        super().save(*args, **kwargs) 
+
 
     accepted_at = models.DateTimeField()
     sent_at = models.DateTimeField()
@@ -1466,4 +1480,4 @@ class Friendship(models.Model):
         unique_together = (("sender", "recipient"),)
 
     def __str__(self):
-        return f"Sender: {self.sender}, Reciever: {self.recipient}, Status: {self.status}"
+        return f"Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status}"
