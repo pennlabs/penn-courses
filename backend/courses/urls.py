@@ -40,8 +40,5 @@ urlpatterns = [
         name="restrictions-list",
     ),
     path("statusupdate/<slug:full_code>/", views.StatusUpdateView.as_view(), name="statusupdate"),
-    path("frienship/send_request", send_friendship_request, name="send-friendship-request"),
-    path("frienship/remove_friend", remove_friendship, name="remove-friendship"),
-    path("frienship/handle_request", handle_friendship_request, name="handle-friendship-request"),
-    path("frienship/cancel_request", cancel_friendship_request, name="cancel-friendship-request"),
+    path("frienships/", views.FriendshipViewSet.as_view(), name="friendships"),
 ]
