@@ -46,15 +46,15 @@ class Schedule(models.Model):
         """
         ),
     )
-    is_shared = models.BooleanField(
-        default=False,
-        help_text=dedent(
-            """
-            This indicates whether this schedule is shared with the user's friends. 
-            Note that at most one of a user's schedules can be shared.
-        """
-        ),
-    )
+    # is_shared = models.BooleanField(
+    #     default=False,
+    #     help_text=dedent(
+    #         """
+    #         This indicates whether this schedule is shared with the user's friends. 
+    #         Note that at most one of a user's schedules can be shared.
+    #     """
+    #     ),
+    # )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -62,12 +62,38 @@ class Schedule(models.Model):
     class Meta:
         unique_together = (("name", "semester", "person"),)
         constraints = [
-            models.UniqueConstraint(
-                fields=("person_id",),
-                condition=models.Q(is_shared=True),
-                name="max_one_shared_per_person",
-            )
+            # models.UniqueConstraint(
+            #     fields=("person_id",),
+            #     condition=models.Q(is_shared=True),
+            #     name="max_one_shared_per_person",
+            # )
         ]
 
     def __str__(self):
         return "User: %s, Schedule ID: %s" % (self.person, self.id)
+
+
+class PrimarySchedule(models.Model):
+    """
+    Used to save the primary schedule for a user. This is the schedule that is displayed
+    on the main page.
+    """
+
+    person = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        help_text="The person (user) to which the schedule belongs.",
+    )
+
+    schedule = models.ForeignKey(
+        Schedule,
+        on_delete=models.CASCADE,
+        help_text="The schedule that is the primary schedule for the user.",
+    )
+
+    class Meta:
+        # for now, we only allow one primary schedule per user
+        unique_together = (("person",),)
+
+    def __str__(self):
+        return "User: %s, Schedule ID: %s" % (self.person, self.schedule.id)

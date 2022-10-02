@@ -4,13 +4,15 @@ from django.db.models import Prefetch, Q
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from backend.courses.views import get_accepted_friends
+from backend.plan.models import PrimarySchedule
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from backend.courses.models import User
+from backend.courses.models import Friendship, User
 from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
@@ -180,63 +182,75 @@ def recommend_courses_view(request):
         status=status.HTTP_200_OK,
     )
 
+class PrimaryScheduleViewSet(viewsets.ViewSet):
+    model = PrimarySchedule
+    queryset = PrimarySchedule.objects.all()
+    http_method_names = ["get", "post"]
+    permission_classes = [IsAuthenticated]
 
-# Function-Based Views for Sharing Schedules
+    # TODO: generate propoer PcxAutoschema for this viewset
+    schema = PcxAutoSchema()
 
+    def get(self, request):
+        res = {}
+        # return all shared schedules with this user (if friend is passed in, then we
+        # return that specific friend's shared schedule)
+        user = request.user.id
+        friend = request.friend_id
+        if friend: 
+            if (not Friendship.check_friendship(user, friend)):
+                res['message'] = "User is not friends with specified friend"
+                return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
+            schedule = self.queryset.filter(person=friend).schedule
+            if not schedule:
+                res["message"] = "No primary schedule found for this friend"
+                return JsonResponse(res, status=status.HTTP_404_NOT_FOUND)
+            # return the schedule
+            res = model_to_dict(schedule)
+            res["message"] = "Friend's primary schedule retrieved."
+            return JsonResponse(res)
+        else: 
+            # if no friend is specified, return all shared schedules with the current user
+            all_friends = get_accepted_friends(user)
+            friends = []
+            for friend in all_friends:
+                schedule = self.queryset.filter(person=friend).schedule
+                if schedule:
+                    friends.append( (model_to_dict(friend), model_to_dict(schedule)) )
+                    
+            res["message"] = "All primary schedules of friends retrieved."
+            res["schedules"] = friends
+            return JsonResponse(res)
 
-@permission_classes([IsAuthenticated])
-def set_shared_schedule(request):
-    res = {}
-    # verify that the user and the schedule exist and set it as the primary for
-    # for the passed in user
-    user = get_object_or_404(User, pk=request.user_id)
-    schedule = get_object_or_404(Schedule, pk=request.schedule_id)
-    if not user or not schedule:
-        res["message"] = "User/Schedule does not exist"
-        return JsonResponse(res, status=400)
+    def post(self, request):
+        res = {}
+        # verify that schedule exist and set it as the primary for the passed in user
 
-    # check syntax for this but ensure that the schedule belongs to the user
-    if schedule.person != user:
-        res["message"] = "Schedule does not belong to user"
-        return JsonResponse(res, status=400)
+        user = request.user.id
+        schedule = get_object_or_404(Schedule, pk=request.schedule_id)
+        if not schedule:
+            res["message"] = "Schedule does not exist"
+            return JsonResponse(res, status=status.HTTP_STATUS_400_BAD_REQUEST)
 
-    # set the schedule as the primary schedule for the user (and set old shared to false)
-    old_shared_schedule = Schedule.objects.filter(person=user, is_shared=True)
-    if old_shared_schedule:
-        old_shared_schedule.is_shared = False
-        old_shared_schedule.save()
-    schedule.is_shared = True
-    schedule.save()
-    res["message"] = "Schedule set as shared"
-    # return successful response code once set
-    return JsonResponse(res)
+        # check syntax for this but ensure that the schedule belongs to the user
+        if schedule.person != user:
+            res["message"] = "Schedule does not belong to user"
+            return JsonResponse(res, status=status.HTTP_STATUS_403_FORBIDDEN)
 
-    # return HttpResponseBadRequest("Bad response, user does not exists")
-    # return HttpResponseBadRequest("Bad response, schedule does not exist")
+        # set the schedule as the primary schedule for the user (and return old shared schedule if exists)
+        primary_schedule_entry = self.queryset.filter(person=user)
+        if primary_schedule_entry:
+            res['old_shared_schedule'] = model_to_dict(primary_schedule_entry.schedule)
+            res['new_shared_schedule'] = model_to_dict(schedule)
+            primary_schedule_entry.schedule = schedule
+            primary_schedule_entry.save()
+            res["message"] = "Primary schedule successfully updated"
+        else:
+            self.queryset.create(person=user, schedule=schedule)
+            res['new_shared_schedule'] = model_to_dict(schedule)
+            res["message"] = "Primary schedule successfully created"
 
-
-@permission_classes([IsAuthenticated])
-def get_shared_schedule(request):
-    res = {}
-    # verify that the user exist and retrieve the primary schedule associated with them
-    # and that the schedule still exists (in the case that the schedule was deleted)
-
-    user = get_object_or_404(User, pk=request.user_id)
-    if not user:
-        res["message"] = "User does not exist"
-        return JsonResponse(res, status=400)
-
-    schedule = Schedule.objects.filter(person=user, is_shared=True)
-    if not schedule:
-        res["message"] = "No shared schedule for user"
-        return JsonResponse(res, status=400)
-
-    # return the schedule
-    res = model_to_dict(schedule)
-    res["message"] = "Shared schedule retrieved."
-    # return successful response code once set
-    return JsonResponse(res)
-
+        return JsonResponse(res)
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
