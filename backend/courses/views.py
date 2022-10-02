@@ -402,7 +402,7 @@ class FriendshipViewSet(viewsets.ViewSet):
     schema = PcxAutoSchema()
 
     def get(self, request):
-        # get user's friends
+        # get user's friends and friend requests
         res = {}
         user = request.user
 
@@ -428,7 +428,7 @@ class FriendshipViewSet(viewsets.ViewSet):
             res["message"] = "Recipient does not exist."
             return JsonResponse(res, status=400)
 
-        if self.queryset.filter(sender=sender, recipient=recipient).exists():
+        if self.queryset.get(sender=sender, recipient=recipient).exists():
             # if it already exists but was rejected, should we reinstate it?
             # -> (for now, no, but we can change this later)
             res["message"] = "Friendship request already exists."
@@ -444,7 +444,7 @@ class FriendshipViewSet(viewsets.ViewSet):
             res["message"] = "Friendship request accepted."
         else:
             # create the friendship request
-            friendship = self.model(sender=sender, recipient=recipient)
+            friendship = Friendship(sender=sender, recipient=recipient)
             friendship.status = Friendship.FriendshipStatus.SENT
             friendship.save()
             res = model_to_dict(friendship)
@@ -485,7 +485,7 @@ class FriendshipViewSet(viewsets.ViewSet):
             res["message"] = "Friendship sender does not exist."
             return JsonResponse(res, status=400)
 
-        friendship = self.queryset.filter(sender=sender, recipient=recipient)
+        friendship = self.queryset.get(sender=sender, recipient=recipient)
         if not friendship:
             res["message"] = "Friendship request does not exist."
         else:

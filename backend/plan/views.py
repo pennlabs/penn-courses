@@ -193,15 +193,20 @@ class PrimaryScheduleViewSet(viewsets.ViewSet):
 
     def get(self, request):
         res = {}
-        # return all shared schedules with this user (if friend is passed in, then we
-        # return that specific friend's shared schedule)
+        # return user primary schedule and all shared schedules with this user 
+        # if friend is passed in, then we return that specific friend's shared schedule
         user = request.user.id
         friend = request.friend_id
+
+        primary_schedule = PrimarySchedule.objects.get(user=user)
+        if primary_schedule:
+            res["primary_schedule"] = model_to_dict(primary_schedule)
+
         if friend: 
             if (not Friendship.check_friendship(user, friend)):
                 res['message'] = "User is not friends with specified friend"
                 return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
-            schedule = self.queryset.filter(person=friend).schedule
+            schedule = self.queryset.get(person=friend).schedule
             if not schedule:
                 res["message"] = "No primary schedule found for this friend"
                 return JsonResponse(res, status=status.HTTP_404_NOT_FOUND)
@@ -214,7 +219,7 @@ class PrimaryScheduleViewSet(viewsets.ViewSet):
             all_friends = get_accepted_friends(user)
             friends = []
             for friend in all_friends:
-                schedule = self.queryset.filter(person=friend).schedule
+                schedule = self.queryset.get(person=friend).schedule
                 if schedule:
                     friends.append( (model_to_dict(friend), model_to_dict(schedule)) )
                     
