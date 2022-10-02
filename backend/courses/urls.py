@@ -2,11 +2,7 @@ from django.urls import path
 
 from courses import views
 from courses.views import (
-    CourseListSearch,
-    cancel_friendship_request,
-    handle_friendship_request,
-    remove_friendship,
-    send_friendship_request,
+    CourseListSearch
 )
 
 
