@@ -1,3 +1,4 @@
+from genericpath import exists
 import math
 import uuid
 from textwrap import dedent
@@ -1455,12 +1456,8 @@ class Friendship(models.Model):
         """
         Checks if two users are friends
         """
-        if (
-            Friendship.objects.filter(sender=user1, recipient=user2, status="A")
-            or Friendship.objects.filter(sender=user2, recipient=user1, status="A")
-        ):
-            return True
-        return False
+        return (Friendship.objects.filter(sender=user1, recipient=user2, status="A").exists() or 
+                Friendship.objects.filter(sender=user2, recipient=user1, status="A").exists())
 
     def save(self, *args, **kwargs):
         if (self.status == self.FriendshipStatus.ACCEPTED):

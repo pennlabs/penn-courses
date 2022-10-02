@@ -6,10 +6,9 @@ from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
-from django.views import View
 
 from backend.courses.models import User
 from courses.filters import CourseSearchFilterBackend
@@ -393,8 +392,7 @@ def get_accepted_friends(user):
     accepted_friendships = friendships.filter(status=Friendship.FriendshipStatus.ACCEPTED)
     return [model_to_dict(friendship) for friendship in accepted_friendships]
 
-class FriendshipViewSet(View):
-
+class FriendshipViewSet(viewsets.ViewSet):
     model = Friendship
     queryset = Friendship.objects.all()
     http_method_names = ["get", "post", "delete"]
