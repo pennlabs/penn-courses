@@ -49,13 +49,12 @@ const ClosedCheckbox = styled.input`
     width: auto;
     height: auto;
     margin-left: 0.5rem;
-`
+`;
 
 const closeNotifInfoText = `Check this box to receive a
 follow-up email when a course
 closes again after alerting you
-of an opening.`
-
+of an opening.`;
 
 const doAPIRequest = (
     url: string,
@@ -189,12 +188,12 @@ const AlertForm = ({
         return removed;
     };
 
-    const postRegistration = (section_id: string) => 
-    doAPIRequest("/api/alert/registrations/", "POST", {
-        section: section_id,
-        auto_resubscribe: true,
-        close_notification: email !== "" && closedNotif,
-    });
+    const postRegistration = (section_id: string) =>
+        doAPIRequest("/api/alert/registrations/", "POST", {
+            section: section_id,
+            auto_resubscribe: true,
+            close_notification: email !== "" && closedNotif,
+        });
 
     const submitRegistration = () => {
         // if user has a auto fill section and didn't change the input value then register for section
@@ -208,17 +207,16 @@ const AlertForm = ({
         ) {
             const section = autoCompleteInputRef.current.value;
             isCourseOpen(section).then((isOpen) => {
-                 
-            postRegistration(section)
-                .then((res) => {
-                    if (res.ok) {
-                        clearInputValue();
-                        setClosedNotif(false);
-                    }
-                    setResponse(res);
-                })
-                .catch(handleError);
-             })
+                postRegistration(section)
+                    .then((res) => {
+                        if (res.ok) {
+                            clearInputValue();
+                            setClosedNotif(false);
+                        }
+                        setResponse(res);
+                    })
+                    .catch(handleError);
+            });
             return;
         }
 
@@ -227,7 +225,7 @@ const AlertForm = ({
         selectedCourses.forEach((section) => {
             const promise = isCourseOpen(section.section_id).then((isOpen) => {
                 return postRegistration(section.section_id);
-            })
+            });
             promises.push(promise);
         });
 
@@ -248,14 +246,15 @@ const AlertForm = ({
                         if (response.ok) {
                             deselectCourse(sections[i]);
                             setClosedNotif(false);
-                        } 
-                    
-                    //only if network error occurred
+                        }
+
+                        //only if network error occurred
                     } else {
                         //only if network error occurred
                         handleError(res.reason);
                     }
-            })
+                }
+            )
         );
     };
 
@@ -321,7 +320,7 @@ const AlertForm = ({
             <Center>
                 <ClosedText>
                     Notify when closed?&nbsp;
-                    <InfoTool text={closeNotifInfoText}/>
+                    <InfoTool text={closeNotifInfoText} />
                     <ClosedCheckbox
                         type="checkbox"
                         checked={closedNotif}
