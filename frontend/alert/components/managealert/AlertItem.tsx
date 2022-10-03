@@ -22,6 +22,11 @@ const StatusGridItem = styled(GridItem)`
 
 const TrashImg = styled(Img)`
     cursor: pointer;
+    opacity: 75%;
+    
+    &:hover {
+        opacity: 100%;
+    }
     &:active {
         transform: translateY(0.1rem);
     }
