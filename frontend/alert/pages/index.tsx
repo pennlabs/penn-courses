@@ -169,6 +169,13 @@ function App() {
             });
     };
 
+    const sendError = (status, message) => {
+        const blob = new Blob([JSON.stringify({ message })], {
+            type: "application/json",
+        });
+        setResponse(new Response(blob, { status }));
+    };
+
     // Separates showLoginModal from state so that the login modal doesn't show up on page load
     const updateUser = (newUserVal: User | null) => {
         if (!newUserVal) {
@@ -232,6 +239,7 @@ function App() {
                         {user ? (
                             <AlertForm
                                 user={user}
+                                sendError={sendError}
                                 setResponse={setResponse}
                                 setTimeline={setTimeline}
                                 autofillSection={router.query.course as string}
@@ -239,7 +247,7 @@ function App() {
                         ) : null}
                     </Flex>
                 ) : (
-                    <ManageAlertWrapper setResponse={setResponse}/>
+                    <ManageAlertWrapper sendError={sendError}/>
                 )}
 
                 <Timeline courseCode={timeline} setTimeline={setTimeline} />

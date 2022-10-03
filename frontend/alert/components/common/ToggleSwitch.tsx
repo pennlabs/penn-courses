@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { AlertAction } from "../../types";
 
 const Label = styled.label`
   display: flex;
@@ -43,15 +44,40 @@ const Input = styled.input`
   }
 `;
 
-interface ToggleSwitchProps {
-  handleChange: () => void;
-  isChecked?: boolean;
+const setIsToggled = (type) => {
+  let isToggled;
+
+  switch (type) {
+    case AlertAction.ONALERT:
+        isToggled = false;
+        break;
+    case AlertAction.OFFALERT:
+        isToggled = true;
+        break;
+    case AlertAction.ONCLOSED:
+        isToggled = false;
+        break;
+    case AlertAction.OFFCLOSED:
+        isToggled = true;
+        break;
+    case AlertAction.NOEFFECT:
+        isToggled = false;
+        break;
+    default:
+  }
+  return isToggled;
 }
 
-const ToggleSwitch = ({ handleChange, isChecked } : ToggleSwitchProps ) => {
+interface ToggleSwitchProps {
+  type: AlertAction;
+  handleChange: () => void;
+}
+
+const ToggleSwitch = ({ type, handleChange } : ToggleSwitchProps ) => {
+  let isToggled = setIsToggled(type);
   return (
     <Label>
-      <Input type="checkbox" onChange={handleChange} checked={isChecked || false}/>
+      <Input type="checkbox" onChange={handleChange} checked={isToggled || false}/>
       <Switch />
     </Label>
   );

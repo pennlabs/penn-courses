@@ -13,6 +13,13 @@ const DropdownContainer = styled.div<Props>`
     justify-content: center;
     width: ${(props) => props.width}rem;
     margin-right: 0.5rem;
+    z-index: 1;
+`;
+
+const DropdownDiv = styled.div`
+    display: flex;
+    justify-content: center;
+    position: relative;
 `;
 
 const Icon = styled(Img)`
@@ -20,9 +27,10 @@ const Icon = styled(Img)`
     margin-right: 0.3rem;
 `;
 
-const Arrow = styled(Img)`
+const Arrow = styled(Img)<Props>`
     padding-top: 0.1rem;
     margin-left: 0.25rem;
+    transform ${({ show }) => (show ? "rotate(180deg)" : "rotate(0)")};
 `;
 
 const DropdownMenu = styled.div<Props>`
@@ -37,10 +45,11 @@ const DropdownMenu = styled.div<Props>`
     cursor: pointer;
     color: #489be8;
     overflow: hidden;
-    width: ${(props) => props.width}rem;
+    width: auto;
     background-color: white;
     border-radius: 0.25rem;
     border: 0.1rem solid #e1e3e7;
+
 `;
 
 const DropdownTitle = styled.span`
@@ -56,31 +65,32 @@ const DropdownTitle = styled.span`
 `;
 
 const DropdownItem = styled.div`
-    padding: 0.25rem 0rem 0.25rem 0rem;
+    padding: 0.25rem 0.5rem 0.25rem 0.5rem;
     &:hover {
         background-color: #e1e3e7;
     }
 `;
 
 interface DropdownToolProps {
-    actionsText: String[];
-    functions: (() => void)[];
+    dropdownTitle: string;
+    dropdownOptionsText: String[];
+    optionFunctions: (() => void)[];
     width: string;
     img: string;
 }
 
 const DropdownTool = ({
-    actionsText,
-    functions,
+    dropdownTitle,
+    dropdownOptionsText,
+    optionFunctions,
     width,
     img,
 }: DropdownToolProps) => {
     const [show, setShow] = useState(false);
-    const [arrow, setArrow] = useState("/svg/down-arrow.svg");
 
     const showDropdown = () => {
-        return actionsText.slice(1).map((action, i) => (
-            <DropdownItem key={i} onClick={functions[i]}>
+        return dropdownOptionsText.map((action, i) => (
+            <DropdownItem key={i} onClick={optionFunctions[i]}>
                 {action}
             </DropdownItem>
         ));
@@ -91,28 +101,22 @@ const DropdownTool = ({
             <DropdownContainer
                 onMouseEnter={() => {
                     setShow(true);
-                    setArrow("/svg/up-arrow.svg");
                 }}
                 onMouseLeave={() => {
                     setShow(false);
-                    setArrow("/svg/down-arrow.svg");
                 }}
                 width={width}
             >
                 <DropdownTitle>
                     <Icon src={img} width="0.75rem" height="0.75rem" />
-                    {actionsText[0]}
-                    <Arrow src={arrow} width="0.5rem" height="0.5rem" />
+                    {dropdownTitle}
+                    <Arrow src={"/svg/down-arrow.svg"} show={show} width="0.5rem" height="0.5rem" />
                 </DropdownTitle>
-                <div
-                    style={{
-                        position: "relative",
-                    }}
-                >
+                <DropdownDiv>
                     <DropdownMenu show={show} width={width}>
                         {showDropdown()}
                     </DropdownMenu>
-                </div>
+                </DropdownDiv>
             </DropdownContainer>
         </>
     );

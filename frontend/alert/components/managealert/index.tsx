@@ -3,7 +3,7 @@ import ReactGA from "react-ga";
 import useSWR from "swr";
 import { ManageAlert } from "./ManageAlertUI";
 import getCsrf from "../../csrf";
-import { Alert, AlertAction, SectionStatus, TAlertSel } from "../../types";
+import { Alert, AlertAction, TAlertSel } from "../../types";
 
 const REGISTRATIONS_API_ROUTE = "/api/alert/registrations/";
 
@@ -93,6 +93,14 @@ const filterAlerts = (alerts, filter) => {
     });
 };
 
+/** Handles all fetch requests.
+ *
+ * @param {number} id - ID of alert whose fields need to be modified.
+ * @param {AlertAction} actionenum - Desired action to be performed on alert.
+ * @param {Alert} alert - Alert object whose data is to be modified.
+ * @returns {func} fetch request.
+ *
+ */
 const getActionPromise = (id, actionenum, alert) => {
     let body;
 
@@ -133,6 +141,10 @@ const getActionPromise = (id, actionenum, alert) => {
     });
 };
 
+/**
+ * A function that checks whether all selected alerts are all already toggled,
+ * a case in which sending a request would raise an undesired error.
+ */
 const handleAllAlreadyToggled = (idList, alerts) => {
     let toggleState = true;
 
@@ -146,6 +158,10 @@ const handleAllAlreadyToggled = (idList, alerts) => {
     return toggleState;
 };
 
+/**
+ * Handles batch actions. Iterates through all alerts that need to be modified
+ * and calls getActionPromise with proper params.
+ */
 const handleAllPromises = (idList, actionenum, callback) => {
     Promise.all(idList.map((id, i) => getActionPromise(id, actionenum, null)))
         .then((res) => callback())
@@ -157,6 +173,8 @@ const handleAllPromises = (idList, actionenum, callback) => {
             )
         );
 };
+
+// Manually parses through local data and changes fields based off of user's actions. 
 
 const handleChangeLocalData = (idList, data) => {
     let modifiedAlerts = [...data];
@@ -179,15 +197,21 @@ const handleChangeLocalData = (idList, data) => {
     return modifiedAlerts;
 };
 
+/**
+ * Calls mutate function returned from useMemo to handle local mutation of data. 
+ * When using useMemo, there is a slight delay when data is modified during which 
+ * no data is returned. This function ensures users don't face this delay.
+ */
 const handleLocalMutation = (idList, data, mutate, callback, actionenum) => {
     const modifiedData = handleChangeLocalData(idList, data);
 
     mutate(handleAllPromises(idList, actionenum, callback), modifiedData);
 };
+
 /**
  * A generic alert item action handler that takes in a
  * callback, executes the alert item action (ex. AlertAction.Resubscribe)
- * for the alert with id "id", and calls the callback
+ * for the alert with id "id", and calls the callback. 
  *
  * @param {func} callback - The callback to execute after request is fulfilled
  * @returns {func} - The function which executes the action which expects
@@ -210,6 +234,10 @@ const actionHandler = (callback, errorCallback, data, mutate) => (
     }
 };
 
+/**
+ * Handles the case that user attempts to complete a batch action where one or multiple
+ * alerts won't be affected.
+ */
 const handleBatchNoEffect = (idList, alerts) => {
     const parsedIds = [...idList];
     parsedIds.forEach((id, i) => (parsedIds[i] = parseInt(id)));
@@ -221,7 +249,8 @@ const handleBatchNoEffect = (idList, alerts) => {
  * A generic batch alert item action handler that takes in
  * a callback and a list of alert IDs, executes the
  * action specified by actionenum for all alerts in idList,
- * and calls the callback
+ * and calls the callback. Uses handleLocalMutation or handleAllPromises
+ * to handle edge cases.
  *
  * @param {func} callback - The callback to execute after request is fulfilled
  * @param {number[]} idList - The list of alert IDs to execute the action for
@@ -255,6 +284,7 @@ const batchActionHandler = (
     }
 };
 
+// Handles selecting all alerts.
 const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
     const selMap = {};
     if (alerts) {
@@ -273,10 +303,10 @@ const batchSelectHandler = (setAlertSel, currAlerts, alerts) => (checked) => {
 };
 
 interface ManageAlertWrapperProps {
-    setResponse: (res: Response) => void;
+    sendError: (status: number, message: string) => void;
 }
 
-const ManageAlertWrapper = ({ setResponse }: ManageAlertWrapperProps) => {
+const ManageAlertWrapper = ({ sendError }: ManageAlertWrapperProps) => {
     // alerts processed directly from registrationhistory
     const { alerts, mutateAlerts, alertsError, data } = useAlerts();
     // TODO: handle alertsError
@@ -287,13 +317,6 @@ const ManageAlertWrapper = ({ setResponse }: ManageAlertWrapperProps) => {
     // alerts after passing through frontend filters
     const [currAlerts, setCurrAlerts] = useState<Alert[]>([]);
     const [filter, setFilter] = useState({ search: "" });
-
-    const sendError = (status, message) => {
-        const blob = new Blob([JSON.stringify({ message })], {
-            type: "application/json",
-        });
-        setResponse(new Response(blob, { status }));
-    };
 
     useEffect(() => {
         setCurrAlerts(filterAlerts(alerts, filter));

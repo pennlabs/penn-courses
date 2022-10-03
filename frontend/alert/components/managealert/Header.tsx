@@ -138,12 +138,12 @@ const Header = ({
                                 |
                             </Separator>
                             <DropdownTool
-                                actionsText={[
-                                    "ALERTS",
+                                dropdownTitle={"ALERTS"}
+                                dropdownOptionsText={[
                                     "Toggle On",
                                     "Toggle Off",
                                 ]}
-                                functions={[
+                                optionFunctions={[
                                     () =>
                                         batchActionHandler(AlertAction.ONALERT),
                                     () =>
@@ -156,12 +156,12 @@ const Header = ({
                             />
 
                             <DropdownTool
-                                actionsText={[
-                                    "NOTIFY WHEN CLOSED",
+                                dropdownTitle={"NOTIFY WHEN CLOSED"}
+                                dropdownOptionsText={[
                                     "Toggle On",
                                     "Toggle Off",
                                 ]}
-                                functions={[
+                                optionFunctions={[
                                     () =>
                                         batchActionHandler(
                                             AlertAction.ONCLOSED

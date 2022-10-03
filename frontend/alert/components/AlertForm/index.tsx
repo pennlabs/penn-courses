@@ -45,48 +45,17 @@ const Form = styled.form`
     flex-direction: column;
 `;
 
-const spacer = {
-    container: {
-        width: "auto",
-        height: "auto",
-        marginLeft: "0.25rem",
-    },
-} as const;
+const ClosedCheckbox = styled.input`
+    width: auto;
+    height: auto;
+    margin-left: 0.5rem;
+`
 
-interface RadioSetProps {
-    selected: string;
-    options: { label: string; value: string }[];
-    setSelected: (val: string) => void;
-}
+const closeNotifInfoText = `Check this box to receive a
+follow-up email when a course
+closes again after alerting you
+of an opening.`
 
-const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
-    <span>
-        {options.map(({ label, value }) => (
-            <label htmlFor={value} style={spacer.container}>
-                <input
-                    type="radio"
-                    name="name"
-                    id={value}
-                    value={value}
-                    onChange={(e) => setSelected(e.target.value)}
-                    checked={value === selected}
-                />
-                {label}
-            </label>
-        ))}
-    </span>
-);
-
-RadioSet.propTypes = {
-    selected: PropTypes.string,
-    options: PropTypes.arrayOf(
-        PropTypes.shape({
-            label: PropTypes.string,
-            value: PropTypes.string,
-        })
-    ),
-    setSelected: PropTypes.func,
-};
 
 const doAPIRequest = (
     url: string,
@@ -109,6 +78,7 @@ const doAPIRequest = (
 
 interface AlertFormProps {
     user: User;
+    sendError: (status: number, message: string) => void;
     setResponse: (res: Response) => void;
     setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
     autofillSection?: string;
@@ -116,6 +86,7 @@ interface AlertFormProps {
 
 const AlertForm = ({
     user,
+    sendError,
     setResponse,
     setTimeline,
     autofillSection = "",
@@ -147,13 +118,6 @@ const AlertForm = ({
 
     const contactInfoChanged = () =>
         !user || user.profile.email !== email || isPhoneDirty;
-
-    const sendError = (status, message) => {
-        const blob = new Blob([JSON.stringify({ message })], {
-            type: "application/json",
-        });
-        setResponse(new Response(blob, { status }));
-    };
 
     const isCourseOpen = (section) => {
         return fetch(`/api/base/current/sections/${section}/`)
@@ -225,16 +189,16 @@ const AlertForm = ({
         return removed;
     };
 
+    const postRegistration = (section_id: string) => 
+    doAPIRequest("/api/alert/registrations/", "POST", {
+        section: section_id,
+        auto_resubscribe: true,
+        close_notification: email !== "" && closedNotif,
+    });
+
     const submitRegistration = () => {
         // if user has a auto fill section and didn't change the input value then register for section
         // and support user manually entered a course (without checking checkbox)
-
-        const postRegistration = (section_id: string) =>
-            doAPIRequest("/api/alert/registrations/", "POST", {
-                section: section_id,
-                auto_resubscribe: true,
-                close_notification: email !== "" && closedNotif,
-            });
 
         if (
             autoCompleteInputRef.current &&
@@ -242,7 +206,10 @@ const AlertForm = ({
                 (autoCompleteInputRef.current.value !== "" &&
                     selectedCourses.size == 0))
         ) {
-            postRegistration(autoCompleteInputRef.current.value)
+            const section = autoCompleteInputRef.current.value;
+            isCourseOpen(section).then((isOpen) => {
+                 
+            postRegistration(section)
                 .then((res) => {
                     if (res.ok) {
                         clearInputValue();
@@ -251,14 +218,16 @@ const AlertForm = ({
                     setResponse(res);
                 })
                 .catch(handleError);
-
+             })
             return;
         }
 
         // register all selected sections
         const promises: Array<Promise<Response | undefined>> = [];
         selectedCourses.forEach((section) => {
-            const promise = postRegistration(section.section_id);
+            const promise = isCourseOpen(section.section_id).then((isOpen) => {
+                return postRegistration(section.section_id);
+            })
             promises.push(promise);
         });
 
@@ -351,41 +320,14 @@ const AlertForm = ({
             />
             <Center>
                 <ClosedText>
-                    Notify when Closed?&nbsp;
-                    <span data-tip data-for="historical-tooltip">
-                        <i
-                            className="fa fa-question-circle"
-                            style={{
-                                color: "#c6c6c6",
-                                fontSize: "13px",
-                                marginBottom: "0.3rem",
-                            }}
-                        />
-                    </span>
-                    <ReactTooltip
-                        id="historical-tooltip"
-                        place="right"
-                        className="opaque"
-                        type="light"
-                        effect="solid"
-                        border={true}
-                        borderColor="#ededed"
-                        textColor="#4a4a4a"
-                    >
-                        <span className="tooltip-text">
-                            Check this box to receive a <br /> 
-                            follow-up email when a course <br />
-                            closes again after alerting you <br />
-                            of an opening.
-                        </span>
-                    </ReactTooltip>
-                    <Input
+                    Notify when closed?&nbsp;
+                    <InfoTool text={closeNotifInfoText}/>
+                    <ClosedCheckbox
                         type="checkbox"
                         checked={closedNotif}
                         onChange={(e) => {
                             setClosedNotif(e.target.checked);
                         }}
-                        style={spacer.container}
                     />
                 </ClosedText>
 

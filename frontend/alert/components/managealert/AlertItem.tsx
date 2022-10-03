@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { GridItem } from "pcx-shared-components/src/common/layout";
 import { P } from "../common/common";
-import { ToggleManager } from "./ToggleManager";
+import ToggleSwitch from "../common/ToggleSwitch";
 import { AlertAction, SectionStatus } from "../../types";
 import { Img } from "../common/common";
 
@@ -97,16 +97,16 @@ export const AlertItem = ({
             </StatusGridItem>
             <GridItem border column={5} row={rownum} halign valign></GridItem>
             <GridItem border column={6} row={rownum} halign valign>
-                <ToggleManager type={actions} handleChange={alertHandler} />
+                <ToggleSwitch type={actions} handleChange={alertHandler} />
             </GridItem>
             <GridItem border column={7} row={rownum} halign valign>
-                <ToggleManager type={closed} handleChange={closedHandler} />
+                <ToggleSwitch type={closed} handleChange={closedHandler} />
             </GridItem>
             <GridItem border column={8} row={rownum} halign valign>
                 <TrashImg
                     src="/svg/trash.svg"
-                    width="1.5rem"
-                    height="1.5rem"
+                    width="1.15rem"
+                    height="1.15rem"
                     onClick={deleteHandler}
                 />
             </GridItem>
