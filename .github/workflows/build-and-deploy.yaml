@@ -3,7 +3,7 @@ on: push
 jobs:
   backend:
     name: PennCourses Backend
-    uses: pennlabs/shared-actions/.github/workflows/django.yaml@main
+    uses: pennlabs/shared-actions/.github/workflows/django.yaml@add-docker-publish
     with:
       imageName: penn-courses-backend
       projectName: PennCourses
@@ -11,7 +11,7 @@ jobs:
       path: backend
   pcp:
     name: Penn Course Plan Frontend
-    uses: pennlabs/shared-actions/.github/workflows/react.yaml@main
+    uses: pennlabs/shared-actions/.github/workflows/react.yaml@add-docker-publish
     with:
       imageName: pcp-frontend
       path: frontend
