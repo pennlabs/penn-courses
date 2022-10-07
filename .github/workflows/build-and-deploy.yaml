@@ -3,7 +3,7 @@ on: push
 jobs:
   backend:
     name: PennCourses Backend
-    uses: pennlabs/shared-actions/.github/workflows/django.yaml@add-docker-publish
+    uses: pennlabs/shared-actions/.github/workflows/django.yaml@main
     with:
       imageName: penn-courses-backend
       projectName: PennCourses
@@ -15,7 +15,7 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   pcp:
     name: Penn Course Plan Frontend
-    uses: pennlabs/shared-actions/.github/workflows/react.yaml@add-docker-publish
+    uses: pennlabs/shared-actions/.github/workflows/react.yaml@main
     with:
       imageName: pcp-frontend
       path: frontend
@@ -26,7 +26,7 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   pca:
     name: Penn Course Alert Frontend
-    uses: pennlabs/shared-actions/.github/workflows/react.yaml@add-docker-publish
+    uses: pennlabs/shared-actions/.github/workflows/react.yaml@main
     with:
       imageName: pca-frontend
       path: frontend
@@ -37,7 +37,7 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   pcr:
     name: Penn Course Review Frontend
-    uses: pennlabs/shared-actions/.github/workflows/react.yaml@add-docker-publish
+    uses: pennlabs/shared-actions/.github/workflows/react.yaml@main
     with:
       imageName: pcr-frontend
       path: frontend
@@ -48,7 +48,7 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   landing:
     name: Courses Landing Page
-    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@add-docker-publish
+    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@main
     with:
       imageName: pcx-landing
       path: frontend/landing
@@ -58,7 +58,7 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   deployment:
     name: Deploy
-    uses: pennlabs/shared-actions/.github/workflows/deployment.yaml@add-docker-publish
+    uses: pennlabs/shared-actions/.github/workflows/deployment.yaml@main
     with:
       githubRef: ${{ github.ref }}
     secrets:
