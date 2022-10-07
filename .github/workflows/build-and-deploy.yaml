@@ -10,6 +10,9 @@ jobs:
       pythonVersion: 3.10-buster
       path: backend
       githubRef: ${{ github.ref }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   pcp:
     name: Penn Course Plan Frontend
     uses: pennlabs/shared-actions/.github/workflows/react.yaml@add-docker-publish
