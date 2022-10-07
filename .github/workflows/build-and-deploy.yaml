@@ -1,0 +1,69 @@
+name: Build and Deploy
+on: push
+jobs:
+  backend:
+    name: PennCourses Backend
+    uses: pennlabs/shared-actions/.github/workflows/django.yaml@main
+    with:
+      imageName: penn-courses-backend
+      projectName: PennCourses
+      pythonVersion: 3.10-buster
+      path: backend
+  pcp:
+    name: Penn Course Plan Frontend
+    uses: pennlabs/shared-actions/.github/workflows/react.yaml@main
+    with:
+      imageName: pcp-frontend
+      path: frontend
+      githubRef: ${{ github.ref }}
+      dockerfile: plan/Dockerfile
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  pca:
+    name: Penn Course Alert Frontend
+    uses: pennlabs/shared-actions/.github/workflows/react.yaml@main
+    with:
+      imageName: pca-frontend
+      path: frontend
+      githubRef: ${{ github.ref }}
+      dockerfile: alert/Dockerfile
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  pcr:
+    name: Penn Course Review Frontend
+    uses: pennlabs/shared-actions/.github/workflows/react.yaml@main
+    with:
+      imageName: pcr-frontend
+      path: frontend
+      githubRef: ${{ github.ref }}
+      dockerfile: review/Dockerfile
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  landing:
+    name: Courses Landing Page
+    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@main
+    with:
+      imageName: pcx-landing
+      path: frontend/landing
+      githubRef: ${{ github.ref }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  deployment:
+    name: Deploy
+    uses: pennlabs/shared-actions/.github/workflows/deployment.yaml@main
+    with:
+      githubRef: ${{ github.ref }}
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      GH_AWS_ACCESS_KEY_ID: ${{ secrets.GH_AWS_ACCESS_KEY_ID }}
+      GH_AWS_SECRET_ACCESS_KEY: ${{ secrets.GH_AWS_SECRET_ACCESS_KEY }}
+    needs:
+      - backend
+      - pcp
+      - pca
+      - pcr
+      - landing
