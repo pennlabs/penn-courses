@@ -9,6 +9,7 @@ jobs:
       projectName: PennCourses
       pythonVersion: 3.10-buster
       path: backend
+      githubRef: ${{ github.ref }}
   pcp:
     name: Penn Course Plan Frontend
     uses: pennlabs/shared-actions/.github/workflows/react.yaml@add-docker-publish
