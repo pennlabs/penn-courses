@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from "react";
-import PropTypes from "prop-types";
 import styled from "styled-components";
 import * as Sentry from "@sentry/browser";
 
@@ -12,8 +11,6 @@ import { Input } from "../Input";
 import AutoComplete from "../AutoComplete";
 import getCsrf from "../../csrf";
 import { User, Section } from "../../types";
-
-import ReactTooltip from "react-tooltip";
 
 const SubmitButton = styled.button`
     border-radius: 5px;
