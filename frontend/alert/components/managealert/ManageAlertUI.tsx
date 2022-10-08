@@ -50,38 +50,6 @@ const AlertGrid = styled.div`
     }
 `;
 
-// const Input = styled.input`
-//     width: 16rem;
-//     outline: none;
-//     height: 1.8rem;
-//     border: solid 0.5px #d6d6d6;
-//     border-radius: 0.3rem 0rem 0rem 0.3rem;
-//     font-size: 0.9rem;
-//     padding-left: 0.5rem;
-// `;
-
-// const Button = styled.button`
-//     outline: none;
-//     height: 1.97rem;
-//     width: 5rem;
-//     border: solid 0.5px #489be8;
-//     border-radius: 0rem 0.2rem 0.2rem 0rem;
-//     background-color: #489be8;
-//     color: #ffffff;
-//     font-weight: 600;
-//     font-size: 0.9rem;
-//     cursor: pointer;
-//     :hover {
-//         background-color: #1496ed;
-//     }
-// `;
-
-// const RightItemAlertFilter = styled(RightItem)`
-//     & > * {
-//         display: block;
-//     }
-// `;
-
 export const ManageAlertHeader = () => (
     <Flex margin="-3.4rem 0rem 0rem 0rem">
         <img
@@ -89,12 +57,6 @@ export const ManageAlertHeader = () => (
             src="/svg/PCA_logo.svg"
             width="50rem"
         />
-
-        {/*     <Flex> */}
-        {/*         <Input placeholder="Course" /> */}
-        {/*         <Button>Alert me</Button> */}
-        {/*     </Flex> */}
-        {/*     <P size="0.9rem" margin="1rem 0rem 0rem -3rem">Alert me until I cancel</P> */}
     </Flex>
 );
 
