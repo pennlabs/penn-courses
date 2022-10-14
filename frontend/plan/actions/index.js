@@ -263,7 +263,7 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // Checkbox Filters
-    const checkboxFields = ["cu", "activity", "days"];
+    const checkboxFields = ["cu", "activity", "days", "fit_schedule"];
     const checkboxDefaultFields = [
         {
             0.5: 0,
@@ -285,6 +285,9 @@ function buildCourseSearchUrl(filterData) {
             S: 1,
             U: 1,
         },
+        {
+            id: -1,
+        },
     ];
     for (let i = 0; i < checkboxFields.length; i += 1) {
         if (
@@ -303,6 +306,9 @@ function buildCourseSearchUrl(filterData) {
                 if (checkboxFields[i] === "days") {
                     queryString +=
                         applied.length < 7 ? `&days=${applied.join("")}` : "";
+                } else if (checkboxFields[i] === "fit_schedule") {
+                    // pass in the schedule id
+                    queryString += `&schedule-fit=${applied[i]}`;
                 } else {
                     queryString += `&${checkboxFields[i]}=${applied[0]}`;
                     for (let j = 1; j < applied.length; j += 1) {
