@@ -20,7 +20,8 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
 1. `cd backend`
 2. Compiling postgres (`psycopg2`)
     - **Mac**
-        > :warning: NOTE: If you are having trouble installing packages (e.g. on Apple silicon), you can use the workaround described in the next section to run the server in a docker container.  
+        > :warning: NOTE: If you are having trouble installing packages (e.g. on Apple silicon), you can use the workaround described in the next section ([Trouble Installing Packages (Apple Silicon)](#trouble-installing-packages-apple-silicon)) to run the server in a docker container. 
+
         > :warning: NOTE: If your computer runs on Apple silicon and you use Rosetta to run Python as an x86 program, use `arch -x86_64 brew <rest of command>` for all `brew` commands.
         1. `brew install postgresql`
         2. `brew install openssl`
@@ -34,11 +35,11 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
 
 3. Running Docker
     1. Open a new terminal window (also in the `backend` directory) and run `docker-compose up` 
-        > :warning: Depending on your system configuration, you may have to start `docker manually`. If this is the case (ie, if you cannot get `docker-compose up` to work due to a docker connection error) try this:
+        > :warning: Depending on your system configuration, you may have to start `docker` manually. If this is the case (ie, if you cannot get `docker-compose up` to work due to a docker connection error) try this:
         >    - (linux) `[sudo] systemctl start docker`
         >    - (WSL) `[sudo] service docker start`
 
-> ⚠️ **NOTE** If you are having trouble installing packages (or with installing pipenv), see (#If-you-are-having-trouble-installing-packages-on-your-computer-(e.g.-on-Apple-silicon)). Return to finish these instructions from step 4. Note these issues usually occur on apple.
+> ⚠️ **NOTE** If you are having trouble installing packages or with installing pipenv (e.g., on Apple silicon), see [Trouble Installing Packages (Apple Silicon)](#trouble-installing-packages-apple-silicon). Return to finish these instructions from step 4.
 
 4. Setting up your Penn Courses development environment
     1. `pipenv install --dev`
@@ -67,7 +68,7 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
     - Run `python manage.py test` to run our test suite.
     - To run a specific test, you can use the format `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` (also note that in this example, you can use any prefix of that path to run a larger set of tests).
 
-### If you are having trouble installing packages on your computer (e.g. on Apple silicon)
+### Trouble Installing Packages (Apple Silicon)
 
 1. Always run `docker-compose --profile=dev up` instead of just `docker-compose up`.
     - To alias this command, run `echo "alias courses-compose='cd "$PWD"; docker-compose up'" >> ~/.zshrc; source ~/.zshrc` (replacing `~/.zshrc` with `~/.bashrc` or whatever configuration file your shell uses, if you don't use zsh).
