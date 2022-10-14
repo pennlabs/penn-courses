@@ -219,10 +219,10 @@ class PrimaryScheduleViewSet(viewsets.ViewSet):
             all_friends = get_accepted_friends(user)
             friends = []
             for friend in all_friends:
-                # get the friend's id from the list of friendship models for this user
-                query_friend = friend.sender if friend.sender != user else friend.receiver
-                # is the friend's "id" stored in courses "get_user_model" the same as the id in UserProfile() in plan?
-                schedule = self.queryset.get(person=friend).schedule
+                # get the friend's id (user field in UserProfile) from the list of friendship models for this user
+                query_friend = friend.sender.user if friend.sender.user != user else friend.receiver.user
+                # is the friend's "id" stored in courses "get_user_model" the same as the user in UserProfile() in plan?
+                schedule = self.queryset.get(person=query_friend).schedule
                 if schedule:
                     friends.append( (query_friend, model_to_dict(schedule)) )
                     

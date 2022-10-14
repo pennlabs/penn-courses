@@ -1452,10 +1452,12 @@ class Friendship(models.Model):
         default=FriendshipStatus.SENT,
     )
 
-    def check_friendship(self, user1, user2):
+    def check_friendship(self, user1_id, user2_id):
         """
-        Checks if two users are friends
+        Checks if two users are friends (lookup by Platform user id)
         """
+        user1 = UserProfile.objects.get(user=user1_id)
+        user2 = UserProfile.objects.get(user=user2_id)
         return (Friendship.objects.filter(sender=user1, recipient=user2, status="A").exists() or 
                 Friendship.objects.filter(sender=user2, recipient=user1, status="A").exists())
 
