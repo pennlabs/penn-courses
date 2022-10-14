@@ -54,7 +54,11 @@ export function SearchField({
                 type="text"
                 value={searchValue}
                 onChange={handleChangeVal}
-                className="input is-small is-rounded"
+                className={
+                    mobileView
+                        ? "input is-medium is-rounded"
+                        : "input is-small is-rounded"
+                }
                 autoComplete="off"
                 placeholder="Search"
                 disabled={isDisabled}

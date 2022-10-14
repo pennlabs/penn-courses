@@ -17,7 +17,8 @@
         "react/jsx-boolean-value": 0,
         "no-bitwise": "off",
         "no-await-in-loop": "warn",
-        "import/extensions": 0
+        "import/extensions": 0,
+        "semi": ["warn", "always"]
     },
     "settings": {
         "import/resolver": {
