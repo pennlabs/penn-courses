@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import PropTypes from "prop-types";
 import styled from "styled-components";
 import * as Sentry from "@sentry/browser";
+
+import InfoTool from "pcx-shared-components/src/common/InfoTool";
 
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
@@ -27,9 +28,13 @@ const SubmitButton = styled.button`
     }
 `;
 
-const AlertText = styled.div`
-    padding-top: 1rem;
+const ClosedText = styled.div`
+    padding-top: 0.5rem;
     color: #555555;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    flex-direction: row;
 `;
 
 const Form = styled.form`
@@ -37,40 +42,16 @@ const Form = styled.form`
     flex-direction: column;
 `;
 
-interface RadioSetProps {
-    selected: string;
-    options: { label: string; value: string }[];
-    setSelected: (val: string) => void;
-}
+const ClosedCheckbox = styled.input`
+    width: auto;
+    height: auto;
+    margin-left: 0.5rem;
+`;
 
-const RadioSet = ({ selected, options, setSelected }: RadioSetProps) => (
-    <span>
-        {options.map(({ label, value }) => (
-            <label htmlFor={value} key={label}>
-                <input
-                    type="radio"
-                    name="name"
-                    id={value}
-                    value={value}
-                    onChange={(e) => setSelected(e.target.value)}
-                    checked={value === selected}
-                />
-                {label}
-            </label>
-        ))}
-    </span>
-);
-
-RadioSet.propTypes = {
-    selected: PropTypes.string,
-    options: PropTypes.arrayOf(
-        PropTypes.shape({
-            label: PropTypes.string,
-            value: PropTypes.string,
-        })
-    ),
-    setSelected: PropTypes.func,
-};
+const closeNotifInfoText = `Check this box to receive a
+follow-up email when a course
+closes again after alerting you
+of an opening.`;
 
 const doAPIRequest = (
     url: string,
@@ -93,6 +74,7 @@ const doAPIRequest = (
 
 interface AlertFormProps {
     user: User;
+    sendError: (status: number, message: string) => void;
     setResponse: (res: Response) => void;
     setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
     autofillSection?: string;
@@ -100,6 +82,7 @@ interface AlertFormProps {
 
 const AlertForm = ({
     user,
+    sendError,
     setResponse,
     setTimeline,
     autofillSection = "",
@@ -114,7 +97,7 @@ const AlertForm = ({
     const [phone, setPhone] = useState("");
     const [isPhoneDirty, setPhoneDirty] = useState(false);
 
-    const [autoResub, setAutoResub] = useState("false");
+    const [closedNotif, setClosedNotif] = useState(false);
 
     const autoCompleteInputRef = useRef<HTMLInputElement>(null);
 
@@ -131,13 +114,6 @@ const AlertForm = ({
 
     const contactInfoChanged = () =>
         !user || user.profile.email !== email || isPhoneDirty;
-
-    const sendError = (status, message) => {
-        const blob = new Blob([JSON.stringify({ message })], {
-            type: "application/json",
-        });
-        setResponse(new Response(blob, { status }));
-    };
 
     const isCourseOpen = (section) => {
         return fetch(`/api/base/current/sections/${section}/`)
@@ -209,9 +185,17 @@ const AlertForm = ({
         return removed;
     };
 
+    const postRegistration = (section_id: string) =>
+        doAPIRequest("/api/alert/registrations/", "POST", {
+            section: section_id,
+            auto_resubscribe: true,
+            close_notification: email !== "" && closedNotif,
+        });
+
     const submitRegistration = () => {
         // if user has a auto fill section and didn't change the input value then register for section
         // and support user manually entered a course (without checking checkbox)
+
         if (
             autoCompleteInputRef.current &&
             (autoCompleteInputRef.current.value === autofillSection ||
@@ -220,19 +204,16 @@ const AlertForm = ({
         ) {
             const section = autoCompleteInputRef.current.value;
             isCourseOpen(section).then((isOpen) => {
-                doAPIRequest("/api/alert/registrations/", "POST", {
-                    section: section,
-                    auto_resubscribe: autoResub === "true",
-                })
+                postRegistration(section)
                     .then((res) => {
                         if (res.ok) {
                             clearInputValue();
+                            setClosedNotif(false);
                         }
                         setResponse(res);
                     })
                     .catch(handleError);
             });
-
             return;
         }
 
@@ -240,12 +221,8 @@ const AlertForm = ({
         const promises: Array<Promise<Response | undefined>> = [];
         selectedCourses.forEach((section) => {
             const promise = isCourseOpen(section.section_id).then((isOpen) => {
-                return doAPIRequest("/api/alert/registrations/", "POST", {
-                    section: section.section_id,
-                    auto_resubscribe: autoResub === "true",
-                });
+                return postRegistration(section.section_id);
             });
-
             promises.push(promise);
         });
 
@@ -265,7 +242,10 @@ const AlertForm = ({
                         setResponse(response);
                         if (response.ok) {
                             deselectCourse(sections[i]);
+                            setClosedNotif(false);
                         }
+
+                        //only if network error occurred
                     } else {
                         //only if network error occurred
                         handleError(res.reason);
@@ -276,10 +256,10 @@ const AlertForm = ({
     };
 
     const onSubmit = () => {
-        if (phone.length === 0 && email.length === 0) {
+        if (email.length === 0) {
             sendError(
                 400,
-                "Please add at least one contact method (either email or phone number)."
+                "Please enter your email address for alert purposes."
             );
             return;
         }
@@ -327,7 +307,7 @@ const AlertForm = ({
                 onChange={(e) => setEmail(e.target.value)}
             />
             <Input
-                placeholder="Phone"
+                placeholder="Phone (optional)"
                 value={phone}
                 onChange={(e) => {
                     setPhone(e.target.value);
@@ -335,17 +315,18 @@ const AlertForm = ({
                 }}
             />
             <Center>
-                <AlertText>
-                    Alert me
-                    <RadioSet
-                        options={[
-                            { label: "once", value: "false" },
-                            { label: "until I cancel", value: "true" },
-                        ]}
-                        setSelected={setAutoResub}
-                        selected={autoResub}
+                <ClosedText>
+                    Notify when closed?&nbsp;
+                    <InfoTool text={closeNotifInfoText} />
+                    <ClosedCheckbox
+                        type="checkbox"
+                        checked={closedNotif}
+                        onChange={(e) => {
+                            setClosedNotif(e.target.checked);
+                        }}
                     />
-                </AlertText>
+                </ClosedText>
+
                 <SubmitButton
                     onClick={(e) => {
                         e.preventDefault();

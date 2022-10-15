@@ -4,11 +4,11 @@
 
 This is the unified home of all [Penn Courses](https://penncourses.org) products.
 
-Check out the `README`s in the frontend and backend directories for setup instructions!
+## Installation & Setup
+1. [Install the backend](https://github.com/pennlabs/penn-courses/blob/master/backend/README.md)
+2. If you need to, [install the frontend](https://github.com/pennlabs/penn-courses/blob/master/frontend/README.md)
 
-## Installation
-Make sure you have [`pipenv`](https://docs.pipenv.org/en/latest/) and [`yarn`](https://classic.yarnpkg.com/en/)
-installed.
+Note that you need the backend to run the frontend.
 
 ## API Documentation
 API Docs can be found at `/api/documentation` on the back-end server. Also check out the code for more explanations

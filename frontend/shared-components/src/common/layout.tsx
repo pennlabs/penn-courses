@@ -40,6 +40,7 @@ export const Center = styled.div`
 export interface GridItemProps {
     valign?: boolean;
     halign?: boolean;
+    talign?: boolean;
     column: number | string;
     row: number;
     color?: string;
@@ -50,6 +51,7 @@ export const GridItem = styled.div<GridItemProps>`
     display: flex;
     align-items: ${(props) => (props.valign ? "center" : null)};
     justify-content: ${(props) => (props.halign ? "center" : null)};
+    text-align: ${(props) => (props.talign ? "center" : null)};
     grid-column: ${(props) => props.column};
     grid-row: ${(props) => props.row};
     background-color: ${(props) => (props.color ? props.color : "white")};
