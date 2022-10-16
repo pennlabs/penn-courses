@@ -318,11 +318,6 @@ function buildCourseSearchUrl(filterData) {
             }
         }
     }
-
-    // Fit Schedule filter
-    // if (filterData["fit_schedule"]) {
-    //     queryString += '&schedule-fit=${}'
-    // }
     return queryString;
 }
 
