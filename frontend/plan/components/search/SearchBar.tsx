@@ -6,6 +6,7 @@ import styled from "styled-components";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
 import { DropdownButton } from "../DropdownButton";
+import { FilterButton } from "../FilterButton";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
@@ -455,13 +456,13 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            {/* <DropdownButton
+            <FilterButton
                 title="Fit Schedule"
                 filterData={filterData.fit_schedule}
                 defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
             >
-            </DropdownButton> //TODO: Add Fit Schedule */}
+            </FilterButton> 
         </DropdownContainer>
     );
     if (mobileView) {
