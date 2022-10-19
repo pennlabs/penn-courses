@@ -8,7 +8,7 @@ from django.db.models import Q, Subquery
 from tqdm import tqdm
 
 from alert.management.commands.export_anon_registrations import get_semesters
-from courses.models import Course, Department, Instructor, Section
+from courses.models import Course, Department, Instructor, Section, Meeting
 from PennCourses.settings.base import S3_resource
 from review.models import Review, ReviewBit
 
@@ -38,6 +38,15 @@ test_data_fields = {
         "activity",
         "meeting_times",
         "credits",
+    ],
+    "meetings": [
+        "id",
+        "section_id",
+        "day",
+        "start",
+        "end",
+        "start_date",
+        "end_date",
     ],
     "instructors": ["id", "name"],
     "sections_instructors_m2mfield": [
@@ -85,6 +94,7 @@ related_id_fields = {
         "department_id": "departments",
     },
     "sections": {"course_id": "courses"},
+    "meetings": {"section_id": "sections"},
     "reviews": {
         "section_id": "sections",
         "instructor_id": "instructors",
@@ -103,6 +113,7 @@ models = {
     "departments": Department,
     "courses": Course,
     "sections": Section,
+    "meetings": Meeting,
     "instructors": Instructor,
     "reviews": Review,
     "review_bits": ReviewBit,
@@ -112,6 +123,7 @@ unique_identifying_fields = {
     "departments": ["code"],
     "courses": ["full_code", "semester"],
     "sections": ["course_id", "code"],
+    "meetings": ["section_id", "day", "start", "end"], # NOTE: this does not match meetings unique constraint
     "instructors": ["name"],
     "reviews": ["section_id", "instructor_id"],
     "review_bits": ["review_id", "field"],
@@ -240,6 +252,11 @@ class Command(BaseCommand):
                             course__in=querysets["courses"]
                         ).prefetch_related("associated_sections", "instructors")
                         querysets["sections"] = queryset
+                    elif data_type == "meetings":
+                        queryset = Meeting.objects.filter(
+                            section__in=querysets["sections"]
+                        )
+                        querysets["meetings"] = queryset
                     elif data_type == "instructors":
                         queryset = Instructor.objects.all()
                         querysets["instructors"] = queryset
