@@ -1,5 +1,4 @@
 import React, { ReactElement, useState } from "react";
-import styled from "styled-components";
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { 
     DropdownContainer, 
@@ -10,20 +9,22 @@ import {
 
 import { FilterType } from "../types";
 
-interface FilterButtonProps {
+interface FilterButtonProps<F> {
     title: string;
     children: never[];
     filterData: FilterType;
     defaultFilter: FilterType;
     clearFilter: () => void;
+    startSearch: (searchObj: F) => void;
 }
 
-export function FilterButton({
+export function FilterButton<F>({
     title,
     filterData,
     defaultFilter,
     clearFilter,
-}: FilterButtonProps) {
+    startSearch
+}: FilterButtonProps<F>) {
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
@@ -33,15 +34,14 @@ export function FilterButton({
             setIsActive(true);
         }
     };
-    const ref = useOnClickOutside(toggleButton, !isActive);
+    const ref = useOnClickOutside(toggleButton, true);
 
     return (
         <DropdownContainer ref={ref as React.RefObject<HTMLDivElement>}>
             <DropdownTrigger className="dropdown-trigger">
                 <DropdownFilterButton
                     defaultData={
-                        JSON.stringify(filterData) ===
-                        JSON.stringify(defaultFilter)
+                        !isActive
                     }
                     aria-haspopup="true"
                     aria-controls="dropdown-menu"
@@ -49,8 +49,7 @@ export function FilterButton({
                     type="button"
                 >
                     <div>{title}</div>
-                    {JSON.stringify(filterData) !==
-                        JSON.stringify(defaultFilter) && (
+                    { isActive && (
                         <DeleteButtonContainer>
                             <DeleteButton
                                 type="button"
@@ -58,6 +57,7 @@ export function FilterButton({
                                 onClick={(e) => {
                                     clearFilter();
                                     e.stopPropagation();
+                                    setIsActive(false);
                                 }}
                             />
                         </DeleteButtonContainer>

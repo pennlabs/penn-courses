@@ -474,6 +474,7 @@ SearchBarProps) {
                 filterData={filterData.fit_schedule}
                 defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
+                startSearch={conditionalStartSearch}
             >
             </FilterButton> 
         </DropdownContainer>
