@@ -8,10 +8,10 @@ from django.db.models import F
 from django.utils import timezone
 from tqdm import tqdm
 
-from alert.management.commands.recomputestats import get_semesters, recompute_precomputed_fields
+from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import Registration, Section, validate_add_drop_semester
 from courses.models import StatusUpdate
-from courses.util import get_current_semester, get_or_create_add_drop_period
+from courses.util import get_current_semester, get_or_create_add_drop_period, get_semesters
 from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES, S3_resource
 from review.views import extra_metrics_section_filters
 
