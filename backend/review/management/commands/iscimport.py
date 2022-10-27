@@ -7,7 +7,7 @@ import zipfile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from alert.management.commands.recomputestats import recompute_stats
+from alert.management.commands.recomputestats import recompute_has_reviews
 from courses.util import get_current_semester
 from PennCourses.settings.base import S3_client
 from review.import_utils.import_to_db import (
@@ -271,11 +271,8 @@ class Command(BaseCommand):
 
             gc.collect()
 
-            print(f"Recomputing stats for semester(s) {', '.join(semesters)}...")
-            recompute_stats(
-                semesters=semesters,
-                semesters_precomputed=True,
-                verbose=True,
-            )
+            print("Recomputing Section.has_reviews...")
+            recompute_has_reviews()
 
+        print("Done.")
         return 0

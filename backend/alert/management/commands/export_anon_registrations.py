@@ -6,8 +6,8 @@ from django.core.management.base import BaseCommand
 from django.db.models import F
 from tqdm import tqdm
 
-from alert.management.commands.recomputestats import get_semesters
 from alert.models import Registration
+from courses.util import get_semesters
 from PennCourses.settings.base import S3_resource
 
 

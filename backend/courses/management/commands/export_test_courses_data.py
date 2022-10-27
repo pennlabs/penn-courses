@@ -7,8 +7,8 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q, Subquery
 from tqdm import tqdm
 
-from alert.management.commands.export_anon_registrations import get_semesters
 from courses.models import Course, Department, Instructor, Section
+from courses.util import get_semesters
 from PennCourses.settings.base import S3_resource
 from review.models import Review, ReviewBit
 

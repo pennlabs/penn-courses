@@ -5,8 +5,8 @@ from textwrap import dedent
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
-from alert.management.commands.export_anon_registrations import get_semesters
 from courses.models import StatusUpdate
+from courses.util import get_semesters
 from PennCourses.settings.base import S3_resource
 
 
