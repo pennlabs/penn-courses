@@ -483,8 +483,7 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                                     param_shape,
                                     param_loc,
                                     param_scale,
-                                )
-                                * (1 - csrdv_frac_zero)
+                                ) * (1 - csrdv_frac_zero)
                             )
                 if change["percent_through"] > bin_start_pct + bin_size:
                     if num_in_bin > 0:
