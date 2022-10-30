@@ -49,7 +49,7 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
 5. Loading test data (if you are a member of Penn Labs). If you are not a member of Penn Labs, you can skip this section and load in course data from the registrar, as explained below.
 
     - To get going quickly with a local database loaded with lots of test data,
-      you can download this [pcx_test.sql](https://penn-labs.slack.com/files/U02FND52FLJ/F049C1Y5WJU/pcx_test.zip)
+      you can download this [pcx_test.sql](https://penn-labs.slack.com/files/U02FND52FLJ/F048M2YQBQV/pcx_test.sql)
       SQL dump file.
     - Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
     - Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
