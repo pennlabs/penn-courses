@@ -4,8 +4,10 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
+from alert.management.commands.recomputestats import garbage_collect_topics
 from courses.management.commands.load_crosswalk import load_crosswalk
-from courses.models import Course, Topic
+from courses.models import Course
+from courses.util import get_semesters
 from review.management.commands.clearcache import clear_cache
 
 
@@ -30,13 +32,19 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--delete",
-            action="store_true",
+            "--semesters",
+            type=str,
             help=dedent(
                 """
-                Delete all Topics and remake from scratch.
+                A comma-separated list of semesters for which you want to reset courses' topics,
+                e.g. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
+                If this argument is omitted, no topics will be deleted (topics will only be
+                computed/linked for courses not already linked to a topic).
+                If you pass "all" to this argument, this script will delete/recompute all topics.
                 """
             ),
+            nargs="?",
+            default=None,
         )
 
     def handle(self, *args, **kwargs):
@@ -46,19 +54,13 @@ class Command(BaseCommand):
             "database will remain as it was before the script was run."
         )
 
-        delete = kwargs["delete"]
+        semesters = kwargs["semesters"] and get_semesters(semesters=kwargs["semesters"])
 
         with transaction.atomic():
-            if delete:
-                to_delete = Topic.objects.all()
-                prompt = input(
-                    f"This script will delete all Topic objects ({to_delete.count()} total). "
-                    "Proceed? (y/N) "
-                )
-                if prompt.strip().upper() != "Y":
-                    return
-                to_delete.delete()
+            if semesters:
+                Course.objects.filter(semester__in=semesters).update(topic=None)
 
+            garbage_collect_topics()
             fill_topics(verbose=True)
             load_crosswalk(print_missing=False, verbose=True)
 

@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { maxWidth, minWidth, PHONE } from "../constants";
 
 export const Input = styled.input`
+    width: auto;
     outline: none;
     border: 1px solid #d6d6d6;
     color: #4a4a4a;

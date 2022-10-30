@@ -285,9 +285,10 @@ function SearchBar({
 SearchBarProps) {
     const router = useRouter();
 
-    useEffect(() => {
-        loadRequirements();
-    }, [loadRequirements]);
+    //TODO: Add requirements support back
+    // useEffect(() => {
+    //     loadRequirements();
+    // }, [loadRequirements]);
 
     useEffect(() => {
         // ensure that the user is logged in before initiating the sync
