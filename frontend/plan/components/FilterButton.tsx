@@ -16,6 +16,7 @@ interface FilterButtonProps<F> {
     defaultFilter: FilterType;
     clearFilter: () => void;
     startSearch: (searchObj: F) => void;
+    activeSchedule: number;
 }
 
 export function FilterButton<F>({
@@ -23,7 +24,8 @@ export function FilterButton<F>({
     filterData,
     defaultFilter,
     clearFilter,
-    startSearch
+    startSearch, 
+    activeSchedule
 }: FilterButtonProps<F>) {
     const [isActive, setIsActive] = useState(false);
 
