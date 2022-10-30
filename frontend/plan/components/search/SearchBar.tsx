@@ -70,6 +70,7 @@ interface SearchBarProps {
     store: object;
     storeLoaded: boolean;
     setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
+    activeSchedule: number;
 }
 
 function shouldSearch(filterData: FilterData) {
@@ -294,6 +295,7 @@ function SearchBar({
     store,
     storeLoaded,
     setShowLoginModal,
+    activeSchedule
 }: /* eslint-enable no-shadow */
 SearchBarProps) {
     const router = useRouter();
@@ -475,6 +477,7 @@ SearchBarProps) {
                 defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
                 startSearch={conditionalStartSearch}
+                activeSchedule={activeSchedule}
             >
             </FilterButton> 
         </DropdownContainer>
@@ -644,6 +647,7 @@ const mapStateToProps = (state) => ({
     isLoadingCourseInfo: state.sections.courseInfoLoading,
     isSearchingCourseInfo: state.sections.searchInfoLoading,
     user: state.login.user,
+    activeSchedule: state.schedule.schedules[state.schedule.scheduleSelected].id,
 });
 
 // @ts-ignore
