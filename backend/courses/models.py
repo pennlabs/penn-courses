@@ -539,7 +539,7 @@ class NGSSRestriction(models.Model):
         help_text=dedent(
             """
         Whether this is an include or exclude restriction. Corresponds to the `incl_excl_ind`
-        response field. `True` if include (ie, `incl_excl_ind` is "I") and `False` if exclude ("E").
+        field in the ISC api response. `True` if include (ie, `incl_excl_ind` is "I") and `False` if exclude ("E").
         """
         )
     )
