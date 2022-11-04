@@ -109,14 +109,27 @@ const MobileFilterContainer = styled.div`
 const MobileFilterDropdowns = styled.div`
     z-index: 100;
     margin-top: -20px;
-    margin-bottom: 20px;
-    padding: 10px;
+    padding: 5px 10px;
+    padding-bottom: 5px;
     display: flex;
     width: 100vw;
     align-items: center;
     flex-wrap: wrap;
     background: white;
     justify-content: flex-start;
+    overflow-x: scroll;
+`;
+
+const ClearContainer = styled.div`
+    z-index: 100;
+    padding: 10px;
+    padding-top: 0px;
+    display: flex;
+    width: 100vw;
+    align-items: center;
+    flex-wrap: wrap;
+    background: white;
+    justify-content: center;
 `;
 
 const SearchBarContainer = styled.div`
@@ -469,7 +482,7 @@ SearchBarProps) {
         return (
             <MobileSearchBarOuterContainer>
                 <MobileSearchBarInnerContainer>
-                    <MobilePCPImage src="/icons/favicon.ico" alt="" />
+                    {/* <MobilePCPImage src="/icons/favicon.ico" alt="" /> */}
                     <AccountIndicator
                         user={user}
                         login={(u: User) => {
@@ -498,9 +511,30 @@ SearchBarProps) {
                         <i className="fas fa-filter" />
                     </MobileFilterContainer>
                 </MobileSearchBarInnerContainer>
-                {reqsShown && (
-                    <MobileFilterDropdowns>{dropDowns}</MobileFilterDropdowns>
-                )}
+                {reqsShown && 
+                    <>
+                    <MobileFilterDropdowns>
+                        {dropDowns}
+                    </MobileFilterDropdowns> 
+                    <ClearContainer>
+                        <ClearButton
+                            type="button"
+                            onClick={() => {
+                                clearSearchResults();
+                                conditionalStartSearch({
+                                    // TODO: remove any cast when getting rid of redux
+                                    ...(defaultFilters.filterData as any),
+                                    searchString: filterData.searchString,
+                                    selectedReq: defaultReqs,
+                                });
+                                clearAll();
+                            }}
+                        >
+                            Clear all
+                        </ClearButton>
+                    </ClearContainer>
+                    </>
+                }
             </MobileSearchBarOuterContainer>
         );
     }
