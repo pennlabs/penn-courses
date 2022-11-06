@@ -76,7 +76,8 @@ interface SearchBarProps {
 }
 
 function shouldSearch(filterData: FilterData) {
-    // const searchString = filterData.searchString.length >= 3;
+    //fix stuff here for filter button
+    const searchString = filterData.searchString.length >= 3;
     let selectedReq = false;
     if (filterData.selectedReq) {
         for (const key of Object.keys(filterData.selectedReq)) {
@@ -86,8 +87,7 @@ function shouldSearch(filterData: FilterData) {
             }
         }
     }
-    // return searchString || selectedReq;
-    return selectedReq;
+    return searchString || selectedReq;
 }
 
 const MobileSearchBarOuterContainer = styled.div`
@@ -464,7 +464,8 @@ SearchBarProps) {
             )}
             <FilterButton
                 title="Fit Schedule"
-                filterData={filterData.fit_schedule}
+                
+                filterData={filterData}
                 defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
                 // @ts-ignore

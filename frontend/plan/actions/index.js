@@ -316,11 +316,7 @@ function buildCourseSearchUrl(filterData) {
 
     // toggle button filters
     const buttonFields = ["fit_schedule"];
-    const buttonDefaultFields = [
-        {
-            id: -1,
-        },
-    ];
+    const buttonDefaultFields = [-1];
 
     for (let i = 0; i < buttonFields.length; i += 1) {
         if (
@@ -328,17 +324,13 @@ function buildCourseSearchUrl(filterData) {
             JSON.stringify(filterData[buttonFields[i]]) !==
                 JSON.stringify(buttonDefaultFields[i])
         ) {
-            const applied = [];
-            Object.keys(filterData[buttonFields[i]]).forEach((item) => {
-                // eslint-disable-line
-                if (filterData[buttonFields[i]][item]) {
-                    applied.push(item);
-                }
-            });
+            console.log(filterData[buttonFields[i]]);
+            const applied = Object.keys(filterData[buttonFields[i]]);
             if (applied.length > 0) {
+                console.log("HI");
                 if (buttonFields[i] === "fit_schedule") {
                     // pass in the schedule id
-                    queryString += `&schedule-fit=${applied[i]}`;
+                    queryString += `&schedule-fit=${applied[0]}`;
                 }
             }
         }

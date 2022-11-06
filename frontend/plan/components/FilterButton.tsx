@@ -14,7 +14,7 @@ import { FilterData, FilterType } from "../types";
 interface FilterButtonProps<F, K extends keyof F> {
     title: string;
     children: never[];
-    filterData: FilterType;
+    filterData: F;
     defaultFilter: FilterType;
     clearFilter: () => void;
     startSearch: (searchObj: F) => void;
@@ -24,7 +24,7 @@ interface FilterButtonProps<F, K extends keyof F> {
 }
 
 export function FilterButton<
-    F extends { [P in K]: [number, number] },
+    F extends { [P in K]: number },
     K extends keyof F>({
     title,
     filterData,
@@ -40,13 +40,12 @@ export function FilterButton<
     const toggleButton = () => {
         console.log(activeSchedule)
         if (isActive) {
-            setIsActive(false);
             clearFilter();
+            setIsActive(false);
         } else {
             setIsActive(true);
             updateButtonFilter(activeSchedule);
             startSearch({
-                // @ts-ignore
                 ...filterData,
                 [buttonProperty]: activeSchedule,
             });
@@ -58,10 +57,7 @@ export function FilterButton<
         <DropdownContainer ref={ref as React.RefObject<HTMLDivElement>}>
             <DropdownTrigger className="dropdown-trigger">
                 <DropdownFilterButton
-                    defaultData={
-                        JSON.stringify(filterData) ===
-                        JSON.stringify(defaultFilter)
-                    }
+                    defaultData={!isActive}
                     aria-haspopup="true"
                     aria-controls="dropdown-menu"
                     onClick={toggleButton}
