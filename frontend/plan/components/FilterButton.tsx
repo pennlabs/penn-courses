@@ -1,3 +1,5 @@
+/* A button that toggles on click and allows search to filter class that only fits schedule */
+
 import React, { ReactElement, useState } from "react";
 import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { 
@@ -7,9 +9,9 @@ import {
     DeleteButtonContainer,
     DeleteButton } from "./DropdownButton";
 
-import { FilterType } from "../types";
+import { FilterData, FilterType } from "../types";
 
-interface FilterButtonProps<F> {
+interface FilterButtonProps<F, K extends keyof F> {
     title: string;
     children: never[];
     filterData: FilterType;
@@ -17,23 +19,37 @@ interface FilterButtonProps<F> {
     clearFilter: () => void;
     startSearch: (searchObj: F) => void;
     activeSchedule: number;
+    buttonProperty: K;
+    updateButtonFilter: (value: number) => void
 }
 
-export function FilterButton<F>({
+export function FilterButton<
+    F extends { [P in K]: [number, number] },
+    K extends keyof F>({
     title,
     filterData,
     defaultFilter,
     clearFilter,
     startSearch, 
-    activeSchedule
-}: FilterButtonProps<F>) {
+    activeSchedule,
+    buttonProperty,
+    updateButtonFilter
+}: FilterButtonProps<F, K>) {
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
+        console.log(activeSchedule)
         if (isActive) {
             setIsActive(false);
+            clearFilter();
         } else {
             setIsActive(true);
+            updateButtonFilter(activeSchedule);
+            startSearch({
+                // @ts-ignore
+                ...filterData,
+                [buttonProperty]: activeSchedule,
+            });
         }
     };
     const ref = useOnClickOutside(toggleButton, true);
@@ -43,7 +59,8 @@ export function FilterButton<F>({
             <DropdownTrigger className="dropdown-trigger">
                 <DropdownFilterButton
                     defaultData={
-                        !isActive
+                        JSON.stringify(filterData) ===
+                        JSON.stringify(defaultFilter)
                     }
                     aria-haspopup="true"
                     aria-controls="dropdown-menu"
