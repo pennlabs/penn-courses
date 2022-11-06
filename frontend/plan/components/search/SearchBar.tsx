@@ -117,7 +117,6 @@ const MobileFilterDropdowns = styled.div`
     flex-wrap: wrap;
     background: white;
     justify-content: flex-start;
-    overflow-x: scroll;
 `;
 
 const ClearContainer = styled.div`
