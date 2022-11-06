@@ -40,6 +40,7 @@ export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
 export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
 export const UPDATE_CHECKBOX_FILTER = "UPDATE_CHECKBOX_FILTER";
+export const UPDATE_FILTER_BUTTON_FILTER = "UPDATE_FILTER_BUTTON_FILTER";
 export const CLEAR_FILTER = "CLEAR_FILTER";
 export const CLEAR_ALL = "CLEAR_ALL";
 
@@ -263,7 +264,7 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // Checkbox Filters
-    const checkboxFields = ["cu", "activity", "days", "fit_schedule"];
+    const checkboxFields = ["cu", "activity", "days"];
     const checkboxDefaultFields = [
         {
             0.5: 0,
@@ -285,9 +286,6 @@ function buildCourseSearchUrl(filterData) {
             S: 1,
             U: 1,
         },
-        {
-            id: -1,
-        },
     ];
     for (let i = 0; i < checkboxFields.length; i += 1) {
         if (
@@ -306,9 +304,6 @@ function buildCourseSearchUrl(filterData) {
                 if (checkboxFields[i] === "days") {
                     queryString +=
                         applied.length < 7 ? `&days=${applied.join("")}` : "";
-                } else if (checkboxFields[i] === "fit_schedule") {
-                    // pass in the schedule id
-                    queryString += `&schedule-fit=${applied[i]}`;
                 } else {
                     queryString += `&${checkboxFields[i]}=${applied[0]}`;
                     for (let j = 1; j < applied.length; j += 1) {
@@ -318,6 +313,37 @@ function buildCourseSearchUrl(filterData) {
             }
         }
     }
+
+    // toggle button filters
+    const buttonFields = ["fit_schedule"];
+    const buttonDefaultFields = [
+        {
+            id: -1,
+        },
+    ];
+
+    for (let i = 0; i < buttonFields.length; i += 1) {
+        if (
+            filterData[buttonFields[i]] &&
+            JSON.stringify(filterData[buttonFields[i]]) !==
+                JSON.stringify(buttonDefaultFields[i])
+        ) {
+            const applied = [];
+            Object.keys(filterData[buttonFields[i]]).forEach((item) => {
+                // eslint-disable-line
+                if (filterData[buttonFields[i]][item]) {
+                    applied.push(item);
+                }
+            });
+            if (applied.length > 0) {
+                if (buttonFields[i] === "fit_schedule") {
+                    // pass in the schedule id
+                    queryString += `&schedule-fit=${applied[i]}`;
+                }
+            }
+        }
+    }
+
     return queryString;
 }
 
@@ -397,6 +423,14 @@ export function updateCheckboxFilter(field, value, toggleState) {
         field,
         value,
         toggleState,
+    };
+}
+
+export function updateFilterButtonFilter(field, value) {
+    return {
+        type: UPDATE_CHECKBOX_FILTER,
+        field,
+        value,
     };
 }
 

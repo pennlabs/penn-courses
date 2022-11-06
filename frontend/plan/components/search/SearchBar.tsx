@@ -24,6 +24,7 @@ import {
     updateSearchText,
     updateRangeFilter,
     updateCheckboxFilter,
+    updateFilterButtonFilter,
     clearAll,
     clearFilter,
     updateSearch,
@@ -71,10 +72,11 @@ interface SearchBarProps {
     storeLoaded: boolean;
     setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
     activeSchedule: number;
+    updateButtonFilter: (field: string) => (value: number) => void;
 }
 
 function shouldSearch(filterData: FilterData) {
-    const searchString = filterData.searchString.length >= 3;
+    // const searchString = filterData.searchString.length >= 3;
     let selectedReq = false;
     if (filterData.selectedReq) {
         for (const key of Object.keys(filterData.selectedReq)) {
@@ -84,7 +86,8 @@ function shouldSearch(filterData: FilterData) {
             }
         }
     }
-    return searchString || selectedReq;
+    // return searchString || selectedReq;
+    return selectedReq;
 }
 
 const MobileSearchBarOuterContainer = styled.div`
@@ -283,7 +286,8 @@ function SearchBar({
     store,
     storeLoaded,
     setShowLoginModal,
-    activeSchedule
+    activeSchedule,
+    updateButtonFilter
 }: /* eslint-enable no-shadow */
 SearchBarProps) {
     const router = useRouter();
@@ -463,8 +467,11 @@ SearchBarProps) {
                 filterData={filterData.fit_schedule}
                 defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
+                // @ts-ignore
                 startSearch={conditionalStartSearch}
                 activeSchedule={activeSchedule}
+                buttonProperty="fit_schedule"
+                updateButtonFilter={updateButtonFilter("fit_schedule")}
             >
             </FilterButton> 
         </DropdownContainer>
@@ -633,6 +640,8 @@ const mapDispatchToProps = (dispatch) => ({
         value: string,
         toggleState: boolean
     ) => dispatch(updateCheckboxFilter(field, value, toggleState)),
+    updateButtonFilter: (field: string) => (value: number) =>
+        dispatch(updateFilterButtonFilter(field, value)),
     clearAll: () => dispatch(clearAll()),
     clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),
