@@ -11,7 +11,7 @@ from twilio.rest import Client
 # from identity.identity import authenticated_b2b_request
 
 # SNIP -- Remove Below for Prod
-configfile = './../../../django-labs-accounts/'
+configfile = './../../django-labs-accounts/'
 
 import os
 import sys
