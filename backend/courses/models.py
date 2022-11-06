@@ -1428,16 +1428,18 @@ class Friendship(models.Model):
     """
 
     sender = models.ForeignKey(
-        UserProfile,
+        get_user_model(),
         on_delete=models.CASCADE,
+        null=True,
         related_name="sent_friendships",
         help_text="The person (user) who sent the request.",
     )
 
     recipient = models.ForeignKey(
-        UserProfile,
+        get_user_model(),
         related_name="received_friendships",
         on_delete=models.CASCADE,
+        null=True,
         help_text="The person (user) who recieved the request.",
     )
 
@@ -1454,10 +1456,10 @@ class Friendship(models.Model):
 
     def check_friendship(self, user1_id, user2_id):
         """
-        Checks if two users are friends (lookup by Platform user id)
+        Checks if two users are friends (lookup by user id)
         """
-        user1 = UserProfile.objects.get(user=user1_id)
-        user2 = UserProfile.objects.get(user=user2_id)
+        user1 = User.objects.get(id=user1_id)
+        user2 = User.objects.get(id=user2_id)
         return (Friendship.objects.filter(sender=user1, recipient=user2, status="A").exists() or 
                 Friendship.objects.filter(sender=user2, recipient=user1, status="A").exists())
 
@@ -1472,8 +1474,12 @@ class Friendship(models.Model):
         super().save(*args, **kwargs) 
 
 
-    accepted_at = models.DateTimeField()
-    sent_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(
+        null=True
+    )
+    sent_at = models.DateTimeField(
+        null=True
+    )
 
     class Meta:
         unique_together = (("sender", "recipient"),)

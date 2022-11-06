@@ -4,15 +4,15 @@ from django.db.models import Prefetch, Q
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from backend.courses.views import get_accepted_friends
-from backend.plan.models import PrimarySchedule
+from courses.views import get_accepted_friends
+from plan.models import PrimarySchedule
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from backend.courses.models import Friendship, User
+from courses.models import Friendship, User
 from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
@@ -188,14 +188,14 @@ class PrimaryScheduleViewSet(viewsets.ViewSet):
     http_method_names = ["get", "post"]
     permission_classes = [IsAuthenticated]
 
-    # TODO: generate propoer PcxAutoschema for this viewset
+    # TODO: generate proper PcxAutoschema for this viewset
     schema = PcxAutoSchema()
 
     def get(self, request):
         res = {}
         # return user primary schedule and all shared schedules with this user 
         # if friend is passed in, then we return that specific friend's shared schedule
-        user = request.user.id
+        user = request.user
         friend = request.friend_id
 
         primary_schedule = PrimarySchedule.objects.get(user=user)
@@ -203,7 +203,7 @@ class PrimaryScheduleViewSet(viewsets.ViewSet):
             res["primary_schedule"] = model_to_dict(primary_schedule)
 
         if friend: 
-            if (not Friendship.check_friendship(user, friend)):
+            if (not Friendship.check_friendship(user.id, friend)):
                 res['message'] = "User is not friends with specified friend"
                 return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
             schedule = self.queryset.get(person=friend).schedule
@@ -219,9 +219,8 @@ class PrimaryScheduleViewSet(viewsets.ViewSet):
             all_friends = get_accepted_friends(user)
             friends = []
             for friend in all_friends:
-                # get the friend's id (user field in UserProfile) from the list of friendship models for this user
-                query_friend = friend.sender.user if friend.sender.user != user else friend.receiver.user
-                # is the friend's "id" stored in courses "get_user_model" the same as the user in UserProfile() in plan?
+                # get the friend's id from the list of friendship models for this user
+                query_friend = friend.sender if friend.sender != user else friend.receiver
                 schedule = self.queryset.get(person=query_friend).schedule
                 if schedule:
                     friends.append( (query_friend, model_to_dict(schedule)) )
@@ -234,7 +233,7 @@ class PrimaryScheduleViewSet(viewsets.ViewSet):
         res = {}
         # verify that schedule exist and set it as the primary for the passed in user
 
-        user = request.user.id
+        user = request.user
         schedule = get_object_or_404(Schedule, pk=request.schedule_id)
         if not schedule:
             res["message"] = "Schedule does not exist"
