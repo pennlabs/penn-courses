@@ -385,21 +385,27 @@ class StatusUpdateView(generics.ListAPIView):
             in_add_drop_period=True,
         ).order_by("created_at")
 
-
-# private helper function used to get user's accepted friends
 def get_accepted_friends(user):
-    friendships = Friendship.objects.filter(Q(sender=user) | Q(recipient=user))
-    accepted_friendships = friendships.filter(status=Friendship.FriendshipStatus.ACCEPTED)
-    return [model_to_dict(friendship) for friendship in accepted_friendships]
+    """ Return user's accepted friends"""
+    Friendship.objects.filter(
+        Q(sender=user) | Q(recipient=user), 
+        status=Friendship.Status.ACCEPTED
+    ).values()
 
 class FriendshipViewSet(viewsets.ViewSet):
     model = Friendship
-    queryset = Friendship.objects.all()
     http_method_names = ["get", "post", "delete"]
     permission_classes = [IsAuthenticated]
+    queryset = Friendship.objects.none()
 
     # TODO: generate proper PcxAutoschema for this viewset
     schema = PcxAutoSchema()
+
+    def get_queryset(self):
+        return Friendship.objects.filter(
+            Q(sender=self.request.user) | Q(recipient=self.request.user),
+            status__ne=Friendship.Status.REJECTED
+        )
 
     def get(self, request):
         # get user's friends and friend requests
@@ -407,9 +413,9 @@ class FriendshipViewSet(viewsets.ViewSet):
         user = request.user
 
         friendships = self.queryset.filter(Q(sender=user) | Q(recipient=user))
-        accepted_friendships = friendships.filter(status=Friendship.FriendshipStatus.ACCEPTED)
-        pending_friendships = friendships.filter(status=Friendship.FriendshipStatus.SENT)
-        rejected_friendships = friendships.filter(status=Friendship.FriendshipStatus.REJECTED)
+        accepted_friendships = friendships.filter(status=Friendship.Status.ACCEPTED)
+        pending_friendships = friendships.filter(status=Friendship.Status.SENT)
+        rejected_friendships = friendships.filter(status=Friendship.Status.REJECTED)
         res["accepted"] = [model_to_dict(friendship) for friendship in accepted_friendships]
         res["pending"] = [model_to_dict(friendship) for friendship in pending_friendships]
         res["rejected"] = [
@@ -422,43 +428,42 @@ class FriendshipViewSet(viewsets.ViewSet):
         res = {}
         # send friendship request to passed in recipient
         sender = request.user
-        recipient = get_object_or_404(User, id=request.recipient_id)
+        recipient = get_object_or_404(User, id=request.data.friend_id)
 
-        if not recipient:
-            res["message"] = "Recipient does not exist."
-            return JsonResponse(res, status=400)
+        existing_friendship = self.queryset.filter(
+            Q(recipient=recipient) | Q(sender=recipient)
+        ).first()
 
-        # if friend request already exists but was rejected, we can reinstate it:
-        friend_req = self.queryset.get(sender=sender, recipient=recipient, status=Friendship.FriendshipStatus.REJECTED)
-        if not friend_req:
-            friend_req = self.queryset.get(sender=recipient, recipient=sender, status=Friendship.FriendshipStatus.REJECTED)
-        if friend_req:
-            friend_req.status = Friendship.FriendshipStatus.SENT
+        if not existing_friendship:
+            # create new friendship
+            friendship = Friendship(sender=sender, recipient=recipient, status=Friendship.Status.SENT)
             friendship.save()
             res = model_to_dict(friendship)
             res["message"] = "Friendship request sent successfully."
-        
-        if self.queryset.get(sender=sender, recipient=recipient, status=Friendship.FriendshipStatus.SENT).exists():
-            res["message"] = "Friendship request already exists."
-            return JsonResponse(res, status=status.HTTP_409_CONFLICT)
+            return JsonResponse(res, status=200)
 
-        # if a request exists in the other direction, then we accept the friend request
-        friendship_request = self.queryset.get(sender=recipient, recipient=sender, status=Friendship.FriendshipStatus.SENT)
-        if friendship_request:
-            # accept friend request
-            friendship_request.setStatus("A")
-            friendship.save()
-            res = model_to_dict(friendship_request)
-            res["message"] = "Friendship request accepted."
-        else:
-            # create the friendship request
-            friendship = Friendship(sender=sender, recipient=recipient)
-            friendship.status = Friendship.FriendshipStatus.SENT
-            friendship.save()
-            res = model_to_dict(friendship)
+        # reinstate old friendship request if it was previously rejected
+        if existing_friendship.status == Friendship.Status.REJECTED:
+            existing_friendship.status = Friendship.Status.SENT
+            existing_friendship.sender = sender
+            existing_friendship.recipient = recipient
+            existing_friendship.save()
+            res = model_to_dict(existing_friendship)
             res["message"] = "Friendship request sent successfully."
-
-        return JsonResponse(res, status=200)
+            return JsonResponse(res, status=200)
+        # if friendship request was sent, handle it according to status
+        elif existing_friendship.status == Friendship.Status.SENT:
+            # if sender is the same as friendship request sender, then it's a duplicate request
+            if existing_friendship.sender == sender:
+                res["message"] = "Friendship request already sent."
+                return JsonResponse(res, status=status.HTTP_409_CONFLICT)
+            # handle friendship request according to status
+            elif existing_friendship.recipient == sender:
+                existing_friendship.status = request.data.status
+                existing_friendship.save()
+                res = model_to_dict(existing_friendship)
+                res["message"] = "Friendship request handled successfully."
+                return JsonResponse(res, status=200)
 
     def delete(self, request):
         # either deletes a friendship or cancels a friendship request (depends on status)
@@ -466,40 +471,24 @@ class FriendshipViewSet(viewsets.ViewSet):
         sender = request.user
         recipient = get_object_or_404(User, id=request.recipient_id)
 
-        if not recipient:
-            res["message"] = "Recipient does not exist."
-            return JsonResponse(res, status=400)
+        existing_friendship = self.queryset.filter(
+            Q(recipient=recipient) | Q(sender=recipient)
+        ).first()
 
-        # delete the friendship/request (see if it exists the other way around)
-        friendship = self.queryset.get(sender=sender, recipient=recipient)
-        if not friendship:
-            friendship = self.queryset.get(sender=recipient, recipient=sender)
-        if not friendship:
-            res["message"] = "Friendship/friendship request does not exist."
-        else:
-            friendship.delete()
+        if not existing_friendship:
+            # friendship doesn't exist
+            res["message"] = "Friendship doesn't exist."
+            return JsonResponse(res, status=status.HTTP_404_NOT_FOUND)
+
+        # delete the friendship/request if it has already been accepted
+        if existing_friendship.status == Friendship.Status.ACCEPTED:
+            existing_friendship.delete()
+            res["message"] = "Friendship deleted successfully."
+        elif existing_friendship.status == Friendship.Status.SENT and existing_friendship.sender == sender:
+            existing_friendship.delete()
             res["message"] = "Friendship request removed."
+        else:
+            res['message'] = "Invalid friendship delete request."
+            return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
         return JsonResponse(res, status=200)
     
-    # not sure what URL this method gets assigned to???
-    def handle(self, request):
-        res = {}
-        # verify that the friendship request can be handled (only if it exists)
-        # note that recipient is the only user that can handle a friendship request
-        recipient = request.user
-        sender = get_object_or_404(User, id=request.recipient_id)
-
-        if not sender:
-            res["message"] = "Friendship sender does not exist."
-            return JsonResponse(res, status=400)
-
-        friendship = self.queryset.get(sender=sender, recipient=recipient)
-        if not friendship:
-            res["message"] = "Friendship request does not exist."
-        else:
-            # handle the friendship request
-            friendship.status = request.status
-            friendship.save()
-            res = model_to_dict(friendship)
-            res["message"] = "Friendship request handled."
-        return JsonResponse(res, status=200)

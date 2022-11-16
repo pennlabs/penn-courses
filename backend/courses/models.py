@@ -1443,33 +1443,33 @@ class Friendship(models.Model):
         help_text="The person (user) who recieved the request.",
     )
 
-    class FriendshipStatus(models.TextChoices):
+    class Status(models.TextChoices):
         SENT = "S", "Sent"
         ACCEPTED = "A", "Accepted"
         REJECTED = "R", "Rejected"
 
     status = models.CharField(
         max_length=1,
-        choices=FriendshipStatus.choices,
-        default=FriendshipStatus.SENT,
+        choices=Status.choices,
+        default=Status.SENT,
     )
 
-    def check_friendship(self, user1_id, user2_id):
+    def are_friends(self, user1_id, user2_id):
         """
         Checks if two users are friends (lookup by user id)
         """
-        user1 = User.objects.get(id=user1_id)
-        user2 = User.objects.get(id=user2_id)
-        return (Friendship.objects.filter(sender=user1, recipient=user2, status="A").exists() or 
-                Friendship.objects.filter(sender=user2, recipient=user1, status="A").exists())
+        return Friendship.objects.filter(
+            Q(sender_id=user1_id, recipient_id=user2_id, status="A")
+            | Q(sender_id=user2_id, recipient_id=user1_id, status="A")
+        ).exists()
 
     def save(self, *args, **kwargs):
-        if (self.status == self.FriendshipStatus.ACCEPTED):
+        if (self.status == self.Status.ACCEPTED and self.accepted_at is None):
             self.accepted_at = timezone.now()
-        if (self.status == self.FriendshipStatus.REJECTED):
-            # any other logic that needs to happen when a friendship is rejected 
-            pass
-        if (self.status == self.FriendshipStatus.SENT):
+        if (self.status == self.Status.REJECTED):
+            self.accepted_at = None
+            self.sent_at = None # reset the "sent at" status so that we can resend more friend requests
+        if (self.status == self.Status.SENT and self.sent_at is None):
             self.sent_at = timezone.now()
         super().save(*args, **kwargs) 
 
