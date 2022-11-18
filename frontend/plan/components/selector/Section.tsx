@@ -29,6 +29,14 @@ const SectionInfoContainer = styled.li`
     align-items: center;
     margin-bottom: 0;
     border-bottom: 1px solid rgb(230, 230, 230);
+    overflow-x: scroll;
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
 `;
 
 const SectionInfo = styled.div`
@@ -165,7 +173,7 @@ export default function Section({ section, cart, inCart }: SectionProps) {
         );
     return (
         <SectionContainer>
-            <SectionInfoContainer>
+            <SectionInfoContainer onClick={inCart ? cart.remove : () => cartAdd()}>
                 <SectionInfo>
                     <IdAndInstructorContainer>
                         <IdAndActivityContainer>
@@ -241,6 +249,9 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={`https://penncoursealert.com/?course=${section.id}`}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                }}
                             >
                                 <i
                                     style={{ fontSize: "1rem" }}
@@ -259,7 +270,10 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                 </BadgesContainer>
                 <AddRemoveButton
                     role="button"
-                    onClick={inCart ? cart.remove : () => cartAdd()}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        inCart ? cart.remove() : cartAdd();
+                    }}
                 >
                     {inCart ? (
                         <HoverSwitch>

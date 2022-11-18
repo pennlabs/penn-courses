@@ -1,6 +1,5 @@
 import React, { RefObject, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import PropTypes, { string } from "prop-types";
 
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
