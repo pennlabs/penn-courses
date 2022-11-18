@@ -77,6 +77,94 @@ from plan.serializers import ScheduleSerializer
         },
     )
 )
+
+# PcxAutoSchema for the advanced registration view.
+@api_view(["POST"])
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("advanced-registration-schedule"): {
+                "POST": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
+                    201: "[UNDOCUMENTED]",
+                    400: "Invalid advanced_reg_codes, advanced_reg_sections, schedule_user, or advanced_reg_schedule_name (see response).",
+                }
+            }
+        },
+        override_request_schema={
+            reverse_func("advanced-registration-schedule"): {
+                "POST": {
+                    "type": "object",
+                    "properties": {
+                        "advanced_reg_codes": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user is currently planning to "
+                                "take, each specified by its string full code, of the form "
+                                "e.g. CIS-120-000."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "advanced_reg_schedule_name": {
+                            "type": "string",
+                            "description": (
+                                "Name of the advanced registration schedule as "
+                                "Specified by the user "
+
+                            ),
+                        },
+                    },
+                }
+            }
+        },
+        override_response_schema={
+            reverse_func("advanced-registration-schedule"): {
+                "POST": {
+                    200: {"type": "object"}
+                }
+            }
+        },
+    )
+)
+
+@permission_classes([IsAuthenticated])
+def advanced_registration_schedule_view(request):
+    """
+    This route will takes in advanced registration codes and a schedule's name
+    to compose an advanced registration schedule and save it to the database. This view
+    also returns the created schedule in the response.
+    """
+
+    schedule_user = request.user
+    advanced_reg_codes = request.data.get("advanced_reg_codes", None)
+    advanced_reg_codes = advanced_reg_codes if advanced_reg_codes is not None else []
+
+    advanced_reg_schedule_name = request.data.get("advanced_reg_schedule_name")
+    semester = request.data.get("semester", get_current_semester())
+
+    try:
+        advanced_reg_sections = []
+        for advanced_reg_code in advanced_reg_codes:
+            advanced_reg_sections.append(Section.objects.filter(code=advanced_reg_code))
+
+        if len(advanced_reg_sections) == 0:
+            return Response(
+                f"Empty Advanced Registration Schedule",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        advanced_reg_schedule = Schedule.objects.create(person=schedule_user, sections=advanced_reg_sections,
+            semester=semester, name=advanced_reg_schedule_name, advanced_registration=True)
+        advanced_reg_schedule.save()
+        
+    except ValueError as e:
+        return Response(
+            str(e),
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return Response({"message": "success", "advanced_reg_schedule": advanced_reg_schedule}, status=status.HTTP_200_OK)
+
+
 @permission_classes([IsAuthenticated])
 def recommend_courses_view(request):
     """
@@ -157,6 +245,7 @@ def recommend_courses_view(request):
     queryset = Course.with_reviews.filter(
         semester=get_current_semester(), full_code__in=recommended_course_codes
     )
+    
     queryset = queryset.prefetch_related(
         Prefetch(
             "sections",
