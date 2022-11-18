@@ -1,9 +1,8 @@
-import React, { ChangeEventHandler, PropsWithChildren } from "react";
+import React, { ChangeEventHandler } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
-import { Flex, FlexProps } from "pcx-shared-components/src/common/layout";
+import { Flex } from "pcx-shared-components/src/common/layout";
 import { Img } from "../common/common";
-import { WrappedStyled } from "../../types";
 
 const SearchFlex = styled(Flex)`
     background-color: #f4f4f4;

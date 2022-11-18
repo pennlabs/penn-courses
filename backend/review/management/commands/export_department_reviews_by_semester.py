@@ -5,8 +5,8 @@ from textwrap import dedent
 from django.core.management.base import BaseCommand
 from django.db.models import F, OuterRef, Q, Sum
 
-from alert.management.commands.recomputestats import get_semesters
 from courses.models import Department
+from courses.util import get_semesters
 from PennCourses.settings.base import S3_resource
 from review.annotations import review_averages
 from review.models import ALL_FIELD_SLUGS, Review

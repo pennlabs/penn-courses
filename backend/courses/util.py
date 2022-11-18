@@ -630,3 +630,40 @@ def does_object_pass_filter(obj, filter):
         if actual_value != expected_value:
             return False
     return True
+
+
+def all_semesters():
+    return set(Course.objects.values_list("semester", flat=True).distinct())
+
+
+def get_semesters(semesters=None, verbose=False):
+    """
+    Validate a given string semesters argument, and return a list of the individual string semesters
+    specified by the argument.
+    """
+    possible_semesters = all_semesters()
+    if semesters is None:
+        semesters = [get_current_semester()]
+    elif semesters == "all":
+        semesters = list(possible_semesters)
+    else:
+        semesters = semesters.strip().split(",")
+        for s in semesters:
+            if s not in possible_semesters:
+                raise ValueError(f"Provided semester {s} was not found in the db.")
+    if verbose:
+        if len(semesters) > 1:
+            print(
+                "This script's updates for each semester are atomic, i.e. either all the "
+                "updates for a certain semester are accepted by the database, or none of them are "
+                "(if an error is encountered). If an error is encountered during the "
+                "processing of a certain semester, any correctly completed updates for previously "
+                "processed semesters will have already been accepted by the database."
+            )
+        else:
+            print(
+                "This script's updates for the given semester are atomic, i.e. either all the "
+                "updates will be accepted by the database, or none of them will be "
+                "(if an error is encountered)."
+            )
+    return semesters
