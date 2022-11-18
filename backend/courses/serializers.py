@@ -1,6 +1,7 @@
 from textwrap import dedent
 
 from django.contrib.auth import get_user_model
+from backend.courses.models import Friendship
 from rest_framework import serializers
 
 from courses.models import (
@@ -432,3 +433,8 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
         model = StatusUpdate
         fields = ["section", "old_status", "new_status", "created_at", "alert_sent"]
         read_only_fields = fields
+
+class FrienshipSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Friendship
+        fields = ["sender", "request", "status", "sent_at", "accepted_at"]
