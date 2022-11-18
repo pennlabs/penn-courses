@@ -32,7 +32,7 @@ class FriendshipModelTest(TestCase):
         print(friendship)
         obj = Friendship.objects.first()
         print(obj)
-        self.assertEquals(friendship.status, Friendship.FriendshipStatus.SENT)
+        self.assertEquals(friendship.status, Friendship.Status.SENT)
         self.assertTrue(Friendship.objects.filter(sender=u1, recipient=u2).exists())
         self.assertFalse(Friendship.objects.filter(sender=u2, recipient=u1).exists())
     
@@ -42,12 +42,12 @@ class FriendshipModelTest(TestCase):
         friendship = Friendship(sender=u1, recipient=u2)
         friendship.save()
 
-        self.assertEquals(friendship.status, Friendship.FriendshipStatus.SENT)
+        self.assertEquals(friendship.status, Friendship.Status.SENT)
         friendship = Friendship.objects.get(sender=u1, recipient=u2)
-        friendship.status = Friendship.FriendshipStatus.ACCEPTED
+        friendship.status = Friendship.Status.ACCEPTED
         friendship.save()
-        self.assertTrue(Friendship.objects.filter(sender=u1, recipient=u2, status=Friendship.FriendshipStatus.ACCEPTED).exists())
-        self.assertFalse(Friendship.objects.filter(sender=u1, recipient=u2, status=Friendship.FriendshipStatus.SENT).exists())
+        self.assertTrue(Friendship.objects.filter(sender=u1, recipient=u2, status=Friendship.Status.ACCEPTED).exists())
+        self.assertFalse(Friendship.objects.filter(sender=u1, recipient=u2, status=Friendship.Status.SENT).exists())
     
     def test_basic_friendship_reject(self):
         u1 = self.u1
@@ -57,10 +57,10 @@ class FriendshipModelTest(TestCase):
 
 
         friendship = Friendship.objects.get(sender=u1, recipient=u2)
-        friendship.status = Friendship.FriendshipStatus.REJECTED
+        friendship.status = Friendship.Status.REJECTED
         friendship.save()
-        self.assertTrue(Friendship.objects.filter(sender=u1, recipient=u2, status=Friendship.FriendshipStatus.REJECTED).exists())
-        self.assertFalse(Friendship.objects.filter(sender=u1, recipient=u2, status=Friendship.FriendshipStatus.SENT).exists())
+        self.assertTrue(Friendship.objects.filter(sender=u1, recipient=u2, status=Friendship.Status.REJECTED).exists())
+        self.assertFalse(Friendship.objects.filter(sender=u1, recipient=u2, status=Friendship.Status.SENT).exists())
 
     
     def test_friendship_route_logic(self):
