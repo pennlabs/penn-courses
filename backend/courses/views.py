@@ -398,8 +398,26 @@ class FriendshipViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Friendship.objects.none()
 
-    # TODO: generate proper PcxAutoschema for this viewset
-    schema = PcxAutoSchema()
+    # Is this PcxAutoSchema correct given the responses in each view function below?
+    schema = PcxAutoSchema(
+        response_codes={
+            reverse_func("friendship", args=['friend_id']): {
+                "GET": {
+                    200: "Friendships retrieved successfully.",
+                },
+                "POST": {
+                    200: "Friendship request handled successfully.",
+                    409: "Friendship request already exists",
+                    400: "Bad request.",
+                },
+                "DELETE": {
+                    200: "Friendship deleted successfully.",
+                    404: "Friendship does not exist.",
+                    400: "Bad request.",
+                }
+            }
+        },
+    )
 
     def get_queryset(self):
         return Friendship.objects.filter(
@@ -469,7 +487,7 @@ class FriendshipViewSet(viewsets.ViewSet):
         # either deletes a friendship or cancels a friendship request (depends on status)
         res = {}
         sender = request.user
-        recipient = get_object_or_404(User, id=request.recipient_id)
+        recipient = get_object_or_404(User, id=request.data.friend_id)
 
         existing_friendship = self.queryset.filter(
             Q(recipient=recipient) | Q(sender=recipient)
