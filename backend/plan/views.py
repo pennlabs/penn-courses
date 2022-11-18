@@ -4,6 +4,7 @@ from django.db.models import Prefetch, Q
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from backend.plan.serializers import PrimaryScheduleSerializer
 from courses.views import get_accepted_friends
 from plan.models import PrimarySchedule
 from django_auto_prefetching import AutoPrefetchViewSetMixin
@@ -187,6 +188,7 @@ class PrimaryScheduleViewSet(viewsets.ViewSet):
     queryset = PrimarySchedule.objects.none()
     http_method_names = ["get", "post"]
     permission_classes = [IsAuthenticated]
+    serializer_class = PrimaryScheduleSerializer
 
     def get_queryset(self):
         return PrimarySchedule.objects.all()

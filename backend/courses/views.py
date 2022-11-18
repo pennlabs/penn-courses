@@ -5,6 +5,7 @@ from django.db.models import Prefetch, Q
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from backend.courses.serializers import FrienshipSerializer
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import permission_classes
@@ -397,6 +398,7 @@ class FriendshipViewSet(viewsets.ViewSet):
     http_method_names = ["get", "post", "delete"]
     permission_classes = [IsAuthenticated]
     queryset = Friendship.objects.none()
+    serializer_class = FrienshipSerializer
 
     # Is this PcxAutoSchema correct given the responses in each view function below?
     schema = PcxAutoSchema(

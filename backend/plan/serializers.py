@@ -1,3 +1,4 @@
+from backend.plan.models import PrimarySchedule
 from rest_framework import serializers
 
 from courses.serializers import SectionDetailSerializer
@@ -16,3 +17,12 @@ class ScheduleSerializer(serializers.ModelSerializer):
         model = Schedule
         exclude = ["person"]
         extra_kwargs = {"semester": {"required": False}}
+
+class PrimaryScheduleSerializer(serializers.ModelSerializers):
+    schedule = ScheduleSerializer(
+        read_only=False, help_text="The primary schedule.", required=True
+    )
+
+    class Meta:
+        model = PrimarySchedule
+        fields = ["person", "schedule"]
