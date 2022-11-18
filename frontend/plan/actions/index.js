@@ -324,13 +324,11 @@ function buildCourseSearchUrl(filterData) {
             JSON.stringify(filterData[buttonFields[i]]) !==
                 JSON.stringify(buttonDefaultFields[i])
         ) {
-            console.log(filterData[buttonFields[i]]);
             const applied = Object.keys(filterData[buttonFields[i]]);
             if (applied.length > 0) {
-                console.log("HI");
                 if (buttonFields[i] === "fit_schedule") {
                     // pass in the schedule id
-                    queryString += `&schedule-fit=${applied[0]}`;
+                    queryString += `&schedule-fit=${applied[i]}`;
                 }
             }
         }

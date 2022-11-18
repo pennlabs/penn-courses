@@ -38,7 +38,6 @@ export function FilterButton<
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
-        console.log(activeSchedule)
         if (isActive) {
             clearFilter();
             setIsActive(false);
@@ -47,7 +46,7 @@ export function FilterButton<
             updateButtonFilter(activeSchedule);
             startSearch({
                 ...filterData,
-                [buttonProperty]: activeSchedule,
+                [buttonProperty]: {[activeSchedule]: null},
             });
         }
     };
