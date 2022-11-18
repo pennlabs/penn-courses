@@ -1,11 +1,20 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import RecHide from "./RecHide";
-import RecInfo from "./RecInfo";
+import RecInfo from "pcx-shared-components/src/common/InfoTool";
 import RecNew from "./RecNew";
 import { Icon } from "../bulma_derived_components";
 
 const TIME_OUT_DURATION = 2000;
+
+const text = `Recommendations are generated based on course
+description and courses taken by users with similar mock schedules 
+(voluntarily sent to Penn Labs for use in course 
+recommendations by users of Penn Mobile). Refreshing the 
+page or pressing the refresh button above the 
+recommendations section will take into account any changes 
+you have made to your Penn Course Plan schedules since the 
+last refresh.`;
 
 const BannerContainer = styled.div<{ collapse: boolean }>`
     display: flex;
@@ -70,7 +79,7 @@ const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
             <BannerLeft>
                 <RecNew />
                 <Title>Recommended</Title>
-                <RecInfo />
+                <RecInfo text={text}/>
                 <RefreshIconContainer
                     onClick={() => !refreshDisabled && onRefresh()}
                 >

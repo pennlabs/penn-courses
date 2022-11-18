@@ -28,54 +28,27 @@ const TitleText = styled.p`
     }
 `;
 
-const Grid = styled.div`
+const AlertGrid = styled.div`
     display: grid;
-    grid-template-columns: 1fr 3fr 2fr 2fr 3fr 2fr;
-    grid-template-rows: 1.5rem;
+    grid-template-columns: 1fr 1fr 3fr 1fr 1.5fr 1.25fr 2fr 1fr;
     grid-auto-rows: 3rem;
 
     ${maxWidth(PHONE)} {
-        grid-template-columns: 0fr 0fr 2fr 2fr 3fr 2fr;
-        & > div:nth-child(6n + 1) {
+        grid-template-columns: 0fr 0fr 2.5fr 2fr 0.5fr 3.5fr 0fr 1.5fr;
+        & > div:nth-child(0) {
             display: none;
         }
-        & > div:nth-child(6n + 2) {
+        & > div:nth-child(8n + 1) {
+            display: none;
+        }
+        & > div:nth-child(8n + 2) {
+            display: none;
+        }
+        & > div:nth-child(8n + 7) {
             display: none;
         }
     }
 `;
-
-// const Input = styled.input`
-//     width: 16rem;
-//     outline: none;
-//     height: 1.8rem;
-//     border: solid 0.5px #d6d6d6;
-//     border-radius: 0.3rem 0rem 0rem 0.3rem;
-//     font-size: 0.9rem;
-//     padding-left: 0.5rem;
-// `;
-
-// const Button = styled.button`
-//     outline: none;
-//     height: 1.97rem;
-//     width: 5rem;
-//     border: solid 0.5px #489be8;
-//     border-radius: 0rem 0.2rem 0.2rem 0rem;
-//     background-color: #489be8;
-//     color: #ffffff;
-//     font-weight: 600;
-//     font-size: 0.9rem;
-//     cursor: pointer;
-//     :hover {
-//         background-color: #1496ed;
-//     }
-// `;
-
-// const RightItemAlertFilter = styled(RightItem)`
-//     & > * {
-//         display: block;
-//     }
-// `;
 
 export const ManageAlertHeader = () => (
     <Flex margin="-3.4rem 0rem 0rem 0rem">
@@ -84,18 +57,12 @@ export const ManageAlertHeader = () => (
             src="/svg/PCA_logo.svg"
             width="50rem"
         />
-
-        {/*     <Flex> */}
-        {/*         <Input placeholder="Course" /> */}
-        {/*         <Button>Alert me</Button> */}
-        {/*     </Flex> */}
-        {/*     <P size="0.9rem" margin="1rem 0rem 0rem -3rem">Alert me until I cancel</P> */}
     </Flex>
 );
 
 interface ManageAlertProps {
     alerts: Alert[];
-    actionButtonHandler: (id: number, action: AlertAction) => void;
+    actionHandler: (id: number, action: AlertAction) => void;
     batchActionHandler: (action: AlertAction) => void;
     batchSelectHandler: (select: boolean) => void;
     batchSelected: boolean;
@@ -109,7 +76,7 @@ export const ManageAlert = ({
     alertSel,
     setAlertSel,
     setFilter,
-    actionButtonHandler,
+    actionHandler,
     batchActionHandler,
     batchSelectHandler,
     batchSelected,
@@ -148,31 +115,37 @@ export const ManageAlert = ({
                 <TitleText>Alert Management</TitleText>
                 <AlertSearch value={searchValue} onChange={handleChange} />
             </Flex>
-            <Grid>
-                <Header
-                    selected={numSelected}
-                    batchSelected={batchSelected}
-                    setBatchSelected={setBatchSelected}
-                    batchActionHandler={batchActionHandler}
-                    batchSelectHandler={batchSelectHandler}
-                />
+            <Header
+                selected={numSelected}
+                batchSelected={batchSelected}
+                setBatchSelected={setBatchSelected}
+                batchActionHandler={batchActionHandler}
+                batchSelectHandler={batchSelectHandler}
+            />
+            <AlertGrid>
                 {alerts?.map?.((alert, i) => (
                     <AlertItem
                         key={alert.id}
                         checked={alertSel[alert.id]}
-                        rownum={i + 2}
+                        rownum={i + 1}
                         alertLastSent={alert.alertLastSent}
                         course={alert.section}
                         status={alert.status}
-                        repeat={alert.repeat}
                         actions={alert.actions}
+                        closed={alert.closedNotif}
                         toggleAlert={toggleAlert(alert.id)}
-                        actionButtonHandler={() =>
-                            actionButtonHandler(alert.id, alert.actions)
+                        alertHandler={() =>
+                            actionHandler(alert.id, alert.actions)
+                        }
+                        closedHandler={() =>
+                            actionHandler(alert.id, alert.closedNotif)
+                        }
+                        deleteHandler={() =>
+                            actionHandler(alert.id, AlertAction.DELETE)
                         }
                     />
                 ))}
-            </Grid>
+            </AlertGrid>
         </Container>
     );
 };
