@@ -46,28 +46,12 @@ class Schedule(models.Model):
         """
         ),
     )
-    # is_shared = models.BooleanField(
-    #     default=False,
-    #     help_text=dedent(
-    #         """
-    #         This indicates whether this schedule is shared with the user's friends. 
-    #         Note that at most one of a user's schedules can be shared.
-    #     """
-    #     ),
-    # )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = (("name", "semester", "person"),)
-        constraints = [
-            # models.UniqueConstraint(
-            #     fields=("person_id",),
-            #     condition=models.Q(is_shared=True),
-            #     name="max_one_shared_per_person",
-            # )
-        ]
 
     def __str__(self):
         return "User: %s, Schedule ID: %s" % (self.person, self.id)
@@ -79,15 +63,17 @@ class PrimarySchedule(models.Model):
     on the main page.
     """
 
-    person = models.ForeignKey(
+    user = models.OneToOneField(
         get_user_model(),
         on_delete=models.CASCADE,
-        help_text="The person (user) to which the schedule belongs.",
+        related_name="primary_schedule",
+        help_text="The User to which this schedule belongs.",
     )
 
-    schedule = models.ForeignKey(
+    schedule = models.OneToOneField(
         Schedule,
         on_delete=models.CASCADE,
+        related_name="primary_schedule",
         help_text="The schedule that is the primary schedule for the user.",
     )
 
@@ -96,4 +82,4 @@ class PrimarySchedule(models.Model):
         unique_together = (("person",),)
 
     def __str__(self):
-        return "User: %s, Schedule ID: %s" % (self.person, self.schedule.id)
+        return f"PrimarySchedule(User: {self.user}, Schedule ID: {self.schedule_id})"

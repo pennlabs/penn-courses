@@ -36,5 +36,5 @@ urlpatterns = [
         name="restrictions-list",
     ),
     path("statusupdate/<slug:full_code>/", views.StatusUpdateView.as_view(), name="statusupdate"),
-    path("frienships/", views.FriendshipViewSet.as_view(), name="friendships"),
+    path("friendships/", views.FriendshipViewSet.as_view(), name="friendships"),
 ]

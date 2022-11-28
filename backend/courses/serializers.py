@@ -437,4 +437,4 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
 class FrienshipSerializer(serializers.ModelSerializer):
     class Meta:
         model = Friendship
-        fields = ["sender", "request", "status", "sent_at", "accepted_at"]
+        fields = ["sender", "recipient", "status", "sent_at", "accepted_at"]

@@ -1469,7 +1469,7 @@ class Friendship(models.Model):
             self.accepted_at = timezone.now()
         if (self.status == self.Status.REJECTED):
             self.accepted_at = None
-            self.sent_at = None # reset the "sent at" status so that we can resend more friend requests
+            self.sent_at = None 
         if (self.status == self.Status.SENT and self.sent_at is None):
             self.sent_at = timezone.now()
         super().save(*args, **kwargs) 
@@ -1486,4 +1486,4 @@ class Friendship(models.Model):
         unique_together = (("sender", "recipient"),)
 
     def __str__(self):
-        return f"Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status}"
+        return f"Friendship(Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status})"
