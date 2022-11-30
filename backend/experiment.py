@@ -46,6 +46,9 @@ def parse_courselist(courselist):
         if requirement.has_attr("class") and "areaheader" in requirement["class"]:
             if current_area_header is not None:
                 # add prev requirements
+                if current_select is not None:
+                    current_requirements.append(current_select)
+                    current_select = None
                 areas[current_area_header] = current_requirements
                 current_requirements = []
             current_area_header = requirement.find("td").find("span").text
@@ -79,18 +82,12 @@ def parse_courselist(courselist):
         if comment is None:
             continue
 
-        # SELECT
-        if comment.text.startswith("Select"):
+        # Wharton concentrations put general Wharton reqs twice
+        if comment.text == "Other Wharton Requirements":
+            continue
+
+        if row_elts[1].text:
             current_select = Requirement(comment.text, [], row_elts[1].text)
-
-        # WHARTON
-        elif comment.text == "Other Wharton Requirements":
-            pass
-
-        # OTHER COMMENTS
-        elif row_elts[1].text:
-            req = Requirement(comment.text, [], row_elts[1].text)
-            current_requirements.append(req)
 
     if current_select is not None:
         current_requirements.append(current_select)
