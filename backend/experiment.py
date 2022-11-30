@@ -64,10 +64,16 @@ def parse_courselist(courselist):
         # REGULAR COURSES
         if len(row_elts) >= 3:
             if current_select is None:
-                req = Requirement("Course", [(row_elts[0].text.replace("\xa0", " "), row_elts[1].text)], row_elts[2].text)
+                req = Requirement(
+                    "Course",
+                    [(row_elts[0].text.replace("\xa0", " "), row_elts[1].text)],
+                    row_elts[2].text,
+                )
                 current_requirements.append(req)
             else:
-                current_select.add_course(row_elts[0].text.replace("\xa0", " "), row_elts[1].text)
+                current_select.add_course(
+                    row_elts[0].text.replace("\xa0", " "), row_elts[1].text
+                )
 
         comment = row_elts[0].find("span", class_="courselistcomment")
         if comment is None:
@@ -78,7 +84,7 @@ def parse_courselist(courselist):
             current_select = Requirement(comment.text, [], row_elts[1].text)
 
         # WHARTON
-        if comment.text == "Other Wharton Requirements":
+        elif comment.text == "Other Wharton Requirements":
             pass
 
         # OTHER COMMENTS
@@ -93,7 +99,8 @@ def parse_courselist(courselist):
     areas[current_area_header] = current_requirements
     return areas
 
-def print_program_requirements(program_url):
+
+def get_program_requirements(program_url):
     program = requests.get(program_url)
     soup = BeautifulSoup(program.content, "html.parser")
 
@@ -105,23 +112,24 @@ def print_program_requirements(program_url):
     for courselist in courselists:
         areas.update(parse_courselist(courselist))
 
-    total_cus = 0
-    for key, value in areas.items():
-        print(f"--- {key} ---")
-        for item in value:
-            print(item)
-            try:
-                total_cus += float(item.get_cus())
-            except:
-                print("some problem here")
-
-    print(f"{total_cus} CUs total")
+    return areas
 
 
 if __name__ == "__main__":
     program_urls = get_programs_urls()
-    for program_name, program_url in program_urls.items():
-        print(f"##### --- {program_name} --- #####")
-        print_program_requirements(program_url)
-        print()
-    # print_program_requirements("https://catalog.upenn.edu/undergraduate/programs/accounting-bs/")
+
+    with open("output.txt", "w") as f:
+        for program_name, program_url in program_urls.items():
+            f.write(f"##### --- {program_name} --- #####\n")
+            areas = get_program_requirements(program_url)
+            total_cus = 0
+            for key, value in areas.items():
+                f.write(f"--- {key} ---\n")
+                for item in value:
+                    f.write(item.__repr__() + "\n")
+                    try:
+                        total_cus += float(item.get_cus())
+                    except:
+                        f.write("some problem here\n")
+
+            f.write(f"{total_cus} CUs total\n\n")
