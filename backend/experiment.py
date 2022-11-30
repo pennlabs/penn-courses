@@ -3,77 +3,125 @@ import requests
 from bs4 import BeautifulSoup
 
 CATALOG_PREFIX = "https://catalog.upenn.edu/"
+PROGRAMS_PREFIX = "/undergraduate/programs"
 
 
 class Requirement:
-    def __init__(self, courseCode, courseName, cu):
-        self.courseCode = courseCode
-        self.courseName = courseName
-        self.cu = cu
+    def __init__(self, name, courses, cus):
+        self.name = name
+        self.courses = courses
+        self.cus = cus
 
-    def __str__(self):
-        return self.courseCode + " " + self.courseName + " " + self.cu
+    def add_course(self, code, name):
+        self.courses.append((code, name))
+
+    def get_cus(self):
+        return self.cus
+
+    def __repr__(self):
+        return f"{self.name} ({self.cus} CUs): {self.courses}"
 
 
-def get_programs_url():
+def get_programs_urls():
     soup = BeautifulSoup(
         requests.get(CATALOG_PREFIX + "programs").content, "html.parser"
     )
     links = {
         link.find_all("span", class_="title")[0].text: CATALOG_PREFIX + link.get("href")
         for link in soup.find_all("a")
-        if link.get("href") and link.get("href").startswith("/undergraduate/programs")
+        if link.get("href") and link.get("href").startswith(PROGRAMS_PREFIX)
     }
     return links
 
 
-# SUS code
-def get_program_requirements(programURL):
+def parse_courselist(courselist):
     areas = {}  # key: area header, value: list of requirements
-    program = requests.get(programURL)
-    soup = BeautifulSoup(program.content, "html.parser")
+    requirements = courselist.find("tbody").find_all("tr")
 
-    requirements = (
-        soup.find("table", class_="sc_courselist").find("tbody").find_all("tr")
-    )
     current_area_header = None
     current_requirements = []
-    current_cu = "0"
+    current_select = None
     for requirement in requirements:
+        # HEADERS
         if requirement.has_attr("class") and "areaheader" in requirement["class"]:
-            if current_area_header != None:
-                print(current_area_header)
-                areas[
-                    current_area_header
-                ] = current_requirements  # add all prev requirements
-            current_area_header = (
-                requirement.find("td").find("span").text
-            )  # update area header
+            if current_area_header is not None:
+                # add prev requirements
+                areas[current_area_header] = current_requirements
+                current_requirements = []
+            current_area_header = requirement.find("td").find("span").text
             continue
-        if requirement.find("td").find("span", class_="courselistcomment") != None:
-            # TODO: don't wanna worry about this LOL
-            # Example: CIS Elective, 4 CU
-            print("Found a qUirKy subScriPt")
-            print(requirement)
+
+        # Courses have 3 elements (code, name, CUs) and non-courses have 2
+        row_elts = requirement.find_all("td")
+
+        # Close select if necessary
+        if row_elts[0].find("div", class_="blockindent") is None:
+            # close previous select
+            if current_select is not None:
+                current_requirements.append(current_select)
+                current_select = None
+
+        # REGULAR COURSES
+        if len(row_elts) >= 3:
+            if current_select is None:
+                req = Requirement("Course", [(row_elts[0].text.replace("\xa0", " "), row_elts[1].text)], row_elts[2].text)
+                current_requirements.append(req)
+            else:
+                current_select.add_course(row_elts[0].text.replace("\xa0", " "), row_elts[1].text)
+
+        comment = row_elts[0].find("span", class_="courselistcomment")
+        if comment is None:
             continue
-        reqs = requirement.find_all("td")
-        c = reqs[0].find("a")
-        if c == None:
-            c = reqs[0]
-        courseCode = c.text
-        courseName = ""
-        if len(reqs) > 1:
-            courseName = reqs[1].text
-        cu = 0
-        if len(reqs) > 2:
-            current_cu = reqs[2].text
-        cu = current_cu
 
-        req = Requirement(courseCode, courseName, cu)
-        print(req)
-        current_requirements.append(req)
+        # SELECT
+        if comment.text.startswith("Select"):
+            current_select = Requirement(comment.text, [], row_elts[1].text)
+
+        # WHARTON
+        if comment.text == "Other Wharton Requirements":
+            pass
+
+        # OTHER COMMENTS
+        elif row_elts[1].text:
+            req = Requirement(comment.text, [], row_elts[1].text)
+            current_requirements.append(req)
+
+    if current_select is not None:
+        current_requirements.append(current_select)
+    if current_area_header is None:
+        current_area_header = "Requirements"
+    areas[current_area_header] = current_requirements
+    return areas
+
+def print_program_requirements(program_url):
+    program = requests.get(program_url)
+    soup = BeautifulSoup(program.content, "html.parser")
+
+    courselists = soup.find_all("table", class_="sc_courselist")
+    if courselists is None:
+        return
+
+    areas = {}
+    for courselist in courselists:
+        areas.update(parse_courselist(courselist))
+
+    total_cus = 0
+    for key, value in areas.items():
+        print(f"--- {key} ---")
+        for item in value:
+            print(item)
+            try:
+                total_cus += float(item.get_cus())
+            except:
+                print("some problem here")
+
+    print(f"{total_cus} CUs total")
 
 
-for program in get_programs_url():
-    print(program)
-    get_program_requirements(get_programs_url()[program])
+if __name__ == "__main__":
+    program_urls = get_programs_urls()
+    for program_name, program_url in program_urls.items():
+        print(f"##### --- {program_name} --- #####")
+        print_program_requirements(program_url)
+        print()
+    # print_program_requirements("https://catalog.upenn.edu/undergraduate/programs/accounting-bs/")
