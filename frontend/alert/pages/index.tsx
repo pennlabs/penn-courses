@@ -221,12 +221,11 @@ function App() {
                 <WarningBanner>
                     <p>
                         <span role="img" aria-label="warning">
-                            ⚠️
+                            📢
                         </span>{" "}
-                        If your carrier is AT&T, you may not recieve text
-                        alerts.{" "}
+                        Text alerts are now working for all users!{" "}
                         <span role="img" aria-label="warning">
-                            ⚠️
+                            📢
                         </span>{" "}
                     </p>
                 </WarningBanner>
