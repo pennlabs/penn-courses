@@ -71,7 +71,10 @@ from plan.serializers import ScheduleSerializer
         override_response_schema={
             reverse_func("recommend-courses"): {
                 "POST": {
-                    200: {"type": "array", "items": {"$ref": "#/components/schemas/CourseList"}}
+                    200: {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/CourseList"},
+                    }
                 }
             }
         },
@@ -331,7 +334,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             schedule.name = request.data.get("name")
             schedule.save()
             schedule.sections.set(sections)
-            return Response({"message": "success", "id": schedule.id}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "success", "id": schedule.id}, status=status.HTTP_200_OK
+            )
         except IntegrityError as e:
             return Response(
                 {
@@ -375,7 +380,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 )
             schedule.sections.set(sections)
             return Response(
-                {"message": "success", "id": schedule.id}, status=status.HTTP_201_CREATED
+                {"message": "success", "id": schedule.id},
+                status=status.HTTP_201_CREATED,
             )
         except IntegrityError as e:
             return Response(

@@ -130,9 +130,9 @@ def gen_schedule_filter(request):
             return Q()
         meetings = Meeting.objects.filter(
             section_id__in=Subquery(
-                Schedule.objects.filter(id=int(schedule_id), person_id=request.user.id).values(
-                    "sections__id"
-                )
+                Schedule.objects.filter(
+                    id=int(schedule_id), person_id=request.user.id
+                ).values("sections__id")
             )
         )
         query = Q()

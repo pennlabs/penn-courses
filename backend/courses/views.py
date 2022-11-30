@@ -27,7 +27,10 @@ from courses.serializers import (
 )
 from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
-from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
+from plan.management.commands.recommendcourses import (
+    retrieve_course_clusters,
+    vectorize_user,
+)
 
 
 SEMESTER_PARAM_DESCRIPTION = (
@@ -101,7 +104,9 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         response_codes={
             reverse_func("sections-detail", args=["semester", "full_code"]): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."
+                }
             }
         },
         custom_path_parameter_desc={
@@ -138,7 +143,9 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = CourseListSerializer
-    queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
+    queryset = Course.with_reviews.filter(
+        sections__isnull=False
+    )  # included redundantly for docs
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
@@ -204,15 +211,27 @@ class CourseListSearch(CourseList):
         """
         context = super().get_serializer_context()
 
-        if self.request is None or not self.request.user or not self.request.user.is_authenticated:
+        if (
+            self.request is None
+            or not self.request.user
+            or not self.request.user.is_authenticated
+        ):
             return context
 
-        _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
+        (
+            _,
+            _,
+            curr_course_vectors_dict,
+            past_course_vectors_dict,
+        ) = retrieve_course_clusters()
         user_vector, _ = vectorize_user(
             self.request.user, curr_course_vectors_dict, past_course_vectors_dict
         )
         context.update(
-            {"user_vector": user_vector, "curr_course_vectors_dict": curr_course_vectors_dict}
+            {
+                "user_vector": user_vector,
+                "curr_course_vectors_dict": curr_course_vectors_dict,
+            }
         )
 
         return context
@@ -230,7 +249,9 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         response_codes={
             reverse_func("courses-detail", args=["semester", "full_code"]): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."
+                }
             }
         },
         custom_path_parameter_desc={
@@ -254,7 +275,11 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct()
                 .prefetch_related(
-                    "course", "meetings", "associated_sections", "meetings__room", "instructors"
+                    "course",
+                    "meetings",
+                    "associated_sections",
+                    "meetings__room",
+                    "instructors",
                 ),
             )
         )
@@ -271,7 +296,9 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         response_codes={
             reverse_func("requirements-list", args=["semester"]): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."
+                }
             },
         },
         custom_path_parameter_desc={
@@ -300,7 +327,9 @@ class AttributeList(generics.ListAPIView):
     schema = PcxAutoSchema(
         response_codes={
             reverse_func("attributes-list"): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."}
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."
+                }
             },
         },
     )
@@ -317,7 +346,9 @@ class NGSSRestrictionList(generics.ListAPIView):
     schema = PcxAutoSchema(
         response_codes={
             reverse_func("restrictions-list"): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."}
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."
+                }
             },
         },
     )

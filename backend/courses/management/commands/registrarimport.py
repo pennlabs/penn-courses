@@ -22,7 +22,9 @@ def registrar_import(semester=None, query=""):
     results = registrar.get_courses(query, semester)
 
     missing_sections = set(
-        Section.objects.filter(course__semester=semester).values_list("full_code", flat=True)
+        Section.objects.filter(course__semester=semester).values_list(
+            "full_code", flat=True
+        )
     )
     for info in tqdm(results):
         upsert_course_from_opendata(info, semester, missing_sections)

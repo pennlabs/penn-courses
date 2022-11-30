@@ -59,7 +59,10 @@ def similar_courses(course_a, course_b):
         and lev_divided_by_avg_length(title_a, title_b) < 0.2
     ):
         return True
-    desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
+    desc_a, desc_b = (
+        course_a.description.strip().lower(),
+        course_b.description.strip().lower(),
+    )
     if (
         not description_rejection_heuristics(desc_a, desc_b)
         and lev_divided_by_avg_length(desc_a, desc_b) < 0.2
@@ -150,7 +153,8 @@ def merge_topics(verbose=False, ignore_inexact=False):
                         course_links.append((last, course))
                     last = course
                 if any(
-                    course_a.semester == course_b.semester and not same_course(course_a, course_b)
+                    course_a.semester == course_b.semester
+                    and not same_course(course_a, course_b)
                     for course_a, course_b in course_links
                 ):
                     continue
@@ -182,7 +186,8 @@ def manual_merge(topic_ids):
     invalid_ids = [i for i in topic_ids if not i.isdigit()]
     if invalid_ids:
         print(
-            f"The following topic IDs are invalid (non-integer):\n{invalid_ids}\n" "Aborting merge."
+            f"The following topic IDs are invalid (non-integer):\n{invalid_ids}\n"
+            "Aborting merge."
         )
         return
     topic_ids = [int(i) for i in topic_ids]
@@ -194,7 +199,9 @@ def manual_merge(topic_ids):
     found_ids = topics.values_list("id", flat=True)
     not_found_ids = list(set(topic_ids) - set(found_ids))
     if not_found_ids:
-        print(f"The following topic IDs were not found:\n{not_found_ids}\nAborting merge.")
+        print(
+            f"The following topic IDs were not found:\n{not_found_ids}\nAborting merge."
+        )
         return
     if not prompt_for_link_topics(topics):
         print("Aborting merge.")

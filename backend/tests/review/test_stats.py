@@ -26,7 +26,9 @@ TEST_CURRENT_SEMESTER = "2021C"
 TEST_SEMESTER = "2021A"  # Past semester for reviews
 
 assert TEST_CURRENT_SEMESTER >= "2021C", "TEST_CURRENT_SEMESTER must be at least 2021C"
-assert "b" not in TEST_CURRENT_SEMESTER.lower(), "TEST_CURRENT_SEMESTER cannot be a summer semester"
+assert (
+    "b" not in TEST_CURRENT_SEMESTER.lower()
+), "TEST_CURRENT_SEMESTER cannot be a summer semester"
 assert TEST_SEMESTER >= "2021A", "TEST_SEMESTER must be at least 2021A"
 assert "b" not in TEST_SEMESTER.lower(), "TEST_SEMESTER cannot be a summer semester"
 
@@ -115,9 +117,14 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         set_semester()
         cls.instructor_name = "Instructor One"
         create_review(
-            "ESE-120-001", TEST_SEMESTER, cls.instructor_name, {"instructor_quality": 3.5}
+            "ESE-120-001",
+            TEST_SEMESTER,
+            cls.instructor_name,
+            {"instructor_quality": 3.5},
         )
-        create_review("ESE-120-001", "2020C", cls.instructor_name, {"instructor_quality": 2})
+        create_review(
+            "ESE-120-001", "2020C", cls.instructor_name, {"instructor_quality": 2}
+        )
         cls.ESE_120_001_TEST_SEMESTER_id = Section.objects.get(
             full_code="ESE-120-001", course__semester=TEST_SEMESTER
         ).id
@@ -161,9 +168,11 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         old_status = "O"
         new_status = "C"
         start, end, duration = get_start_end_duration(cls.old_adp)
-        for date in [start - 3 * duration / 5, start - 2 * duration / 5, start - duration / 5] + [
-            start + i * duration / 4 for i in range(1, 4)
-        ]:
+        for date in [
+            start - 3 * duration / 5,
+            start - 2 * duration / 5,
+            start - duration / 5,
+        ] + [start + i * duration / 4 for i in range(1, 4)]:
             # C[.25]O[.5]C[.75]O
             record_update(
                 Section.objects.get(id=cls.ESE_120_001_2020C_id),
@@ -182,7 +191,11 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         to_date = get_to_date_func(cls.adp)
         # O[.2]C[.4]O[.6]C[.8]O[.81]C[.82]O
         registration_list_TS = [
-            {"created_at": to_date(0.1), "cancelled_at": to_date(0.19), "cancelled": True},
+            {
+                "created_at": to_date(0.1),
+                "cancelled_at": to_date(0.19),
+                "cancelled": True,
+            },
             {
                 "created_at": to_date(0.15),
                 "notification_sent_at": to_date(0.4),
@@ -328,7 +341,10 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         self.assertRequestContainsAppx(
             "course-reviews",
             "ESE-120",
-            {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
+            {
+                **reviews_subdict,
+                "instructors": {Instructor.objects.get().pk: reviews_subdict},
+            },
         )
         self.assertRequestContainsAppx(
             "course-plots",
@@ -336,7 +352,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             self.course_plots_subdict,
         )
 
-        instructor_ids = ",".join(str(id) for id in Instructor.objects.values_list("id", flat=True))
+        instructor_ids = ",".join(
+            str(id) for id in Instructor.objects.values_list("id", flat=True)
+        )
         self.assertRequestContainsAppx(
             "course-plots",
             "ESE-120",
@@ -440,7 +458,9 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
     def test_current_percent_open(self):
         self.assertAlmostEquals(
             self.recent_percent_open,
-            Section.objects.get(id=self.ESE_120_001_TEST_SEMESTER_id).current_percent_open,
+            Section.objects.get(
+                id=self.ESE_120_001_TEST_SEMESTER_id
+            ).current_percent_open,
         )
         self.assertAlmostEquals(
             self.old_percent_open,
@@ -454,7 +474,10 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         set_semester()
         cls.instructor_name = "Instructor One"
         create_review(
-            "ESE-120-001", TEST_SEMESTER, cls.instructor_name, {"instructor_quality": 3.5}
+            "ESE-120-001",
+            TEST_SEMESTER,
+            cls.instructor_name,
+            {"instructor_quality": 3.5},
         )
         cls.ESE_120_001_id = Section.objects.get(full_code="ESE-120-001").id
         cls.instructor_quality = 3.5
@@ -466,9 +489,11 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         old_status = "C"
         new_status = "O"
         percent_open_plot = [(0, 1)]
-        for date in [start - 3 * duration / 7, start - 2 * duration / 7, start - duration / 7] + [
-            start + i * duration / 7 for i in range(1, 7)
-        ]:
+        for date in [
+            start - 3 * duration / 7,
+            start - 2 * duration / 7,
+            start - duration / 7,
+        ] + [start + i * duration / 7 for i in range(1, 7)]:
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
@@ -490,13 +515,21 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         set_registrations(
             cls.ESE_120_001_id,
             [
-                {"created_at": to_date(0.25), "cancelled_at": to_date(0.26), "cancelled": True},
+                {
+                    "created_at": to_date(0.25),
+                    "cancelled_at": to_date(0.26),
+                    "cancelled": True,
+                },
                 {
                     "created_at": to_date(0.5),
                     "notification_sent_at": to_date(4 / 7),
                     "notification_sent": True,
                 },
-                {"created_at": to_date(0.75), "deleted_at": to_date(5.9 / 7), "deleted": True},
+                {
+                    "created_at": to_date(0.75),
+                    "deleted_at": to_date(5.9 / 7),
+                    "deleted": True,
+                },
             ],
         )
 
@@ -577,7 +610,10 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         self.assertRequestContainsAppx(
             "course-reviews",
             "ESE-120",
-            {**reviews_subdict, "instructors": {Instructor.objects.get().pk: reviews_subdict}},
+            {
+                **reviews_subdict,
+                "instructors": {Instructor.objects.get().pk: reviews_subdict},
+            },
         )
 
     def test_instructor(self):
@@ -672,10 +708,16 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         cls.instructor_1_name = "Instructor One"
         cls.instructor_2_name = "Instructor Two"
         create_review(
-            "ESE-120-001", TEST_SEMESTER, cls.instructor_1_name, {"instructor_quality": 3.5}
+            "ESE-120-001",
+            TEST_SEMESTER,
+            cls.instructor_1_name,
+            {"instructor_quality": 3.5},
         )
         create_review(
-            "ESE-120-001", TEST_SEMESTER, cls.instructor_2_name, {"instructor_quality": 3.5}
+            "ESE-120-001",
+            TEST_SEMESTER,
+            cls.instructor_2_name,
+            {"instructor_quality": 3.5},
         )
         cls.ESE_120_001_id = Section.objects.get(full_code="ESE-120-001").id
         cls.instructor_quality = 3.5
@@ -687,9 +729,11 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         old_status = "C"
         new_status = "O"
         percent_open_plot = [(0, 1)]
-        for date in [start - 3 * duration / 7, start - 2 * duration / 7, start - duration / 7] + [
-            start + i * duration / 7 for i in range(1, 7)
-        ]:
+        for date in [
+            start - 3 * duration / 7,
+            start - 2 * duration / 7,
+            start - duration / 7,
+        ] + [start + i * duration / 7 for i in range(1, 7)]:
             # O[1/7]C[2/7]O[3/7]C[4/7]O[5/7]C[6/7]O
             percent_thru = cls.adp.get_percent_through_add_drop(date)
             record_update(
@@ -710,13 +754,21 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         set_registrations(
             cls.ESE_120_001_id,
             [
-                {"created_at": to_date(0.25), "cancelled_at": to_date(0.26), "cancelled": True},
+                {
+                    "created_at": to_date(0.25),
+                    "cancelled_at": to_date(0.26),
+                    "cancelled": True,
+                },
                 {
                     "created_at": to_date(0.5),
                     "notification_sent_at": to_date(4 / 7),
                     "notification_sent": True,
                 },
-                {"created_at": to_date(0.75), "deleted_at": to_date(5.9 / 7), "deleted": True},
+                {
+                    "created_at": to_date(0.75),
+                    "deleted_at": to_date(5.9 / 7),
+                    "deleted": True,
+                },
             ],
         )
         cls.percent_open = (duration * 4 / 7).total_seconds() / duration.total_seconds()
@@ -805,8 +857,12 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             {
                 **reviews_subdict,
                 "instructors": {
-                    Instructor.objects.get(name=self.instructor_1_name).pk: reviews_subdict,
-                    Instructor.objects.get(name=self.instructor_2_name).pk: reviews_subdict,
+                    Instructor.objects.get(
+                        name=self.instructor_1_name
+                    ).pk: reviews_subdict,
+                    Instructor.objects.get(
+                        name=self.instructor_2_name
+                    ).pk: reviews_subdict,
                 },
             },
         )
@@ -886,7 +942,9 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "ESE-120",
             self.course_plots_subdict,
             query_params={
-                "instructor_ids": str(Instructor.objects.get(name=self.instructor_1_name).id),
+                "instructor_ids": str(
+                    Instructor.objects.get(name=self.instructor_1_name).id
+                ),
             },
         )
         self.assertRequestContainsAppx(
@@ -894,7 +952,9 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "ESE-120",
             self.course_plots_subdict,
             query_params={
-                "instructor_ids": str(Instructor.objects.get(name=self.instructor_2_name).id),
+                "instructor_ids": str(
+                    Instructor.objects.get(name=self.instructor_2_name).id
+                ),
             },
         )
 
@@ -962,7 +1022,9 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                         "desc": "ESE",
                         "url": (
                             "/instructor/"
-                            + str(Instructor.objects.get(name=self.instructor_1_name).pk)
+                            + str(
+                                Instructor.objects.get(name=self.instructor_1_name).pk
+                            )
                         ),
                     },
                     {
@@ -970,7 +1032,9 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                         "desc": "ESE",
                         "url": (
                             "/instructor/"
-                            + str(Instructor.objects.get(name=self.instructor_2_name).pk)
+                            + str(
+                                Instructor.objects.get(name=self.instructor_2_name).pk
+                            )
                         ),
                     },
                 ],

@@ -39,7 +39,11 @@ class Migration(migrations.Migration):
             model_name="requirement",
             name="school",
             field=models.CharField(
-                choices=[("SEAS", "Engineering"), ("WH", "Wharton"), ("SAS", "College")],
+                choices=[
+                    ("SEAS", "Engineering"),
+                    ("WH", "Wharton"),
+                    ("SAS", "College"),
+                ],
                 db_index=True,
                 max_length=5,
             ),
@@ -81,7 +85,12 @@ class Migration(migrations.Migration):
             model_name="section",
             name="status",
             field=models.CharField(
-                choices=[("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted")],
+                choices=[
+                    ("O", "Open"),
+                    ("C", "Closed"),
+                    ("X", "Cancelled"),
+                    ("", "Unlisted"),
+                ],
                 db_index=True,
                 max_length=4,
             ),

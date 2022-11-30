@@ -147,7 +147,9 @@ def get_add_drop_period(semester):
     cached_adps = cache.get("add_drop_periods", dict())
     if semester not in cached_adps:
         cached_adps[semester] = AddDropPeriod.objects.get(semester=semester)
-        cache.set("add_drop_periods", cached_adps, timeout=90000)  # cache expires every 25 hours
+        cache.set(
+            "add_drop_periods", cached_adps, timeout=90000
+        )  # cache expires every 25 hours
     return cached_adps[semester]
 
 
@@ -231,7 +233,11 @@ def get_or_create_course(dept_code, course_id, semester, defaults=None):
 
 
 def get_or_create_course_and_section(
-    course_code, semester, section_manager=None, course_defaults=None, section_defaults=None
+    course_code,
+    semester,
+    section_manager=None,
+    course_defaults=None,
+    section_defaults=None,
 ):
     if section_manager is None:
         section_manager = Section.objects
@@ -252,7 +258,9 @@ def get_course_and_section(course_code, semester, section_manager=None):
         section_manager = Section.objects
 
     dept_code, course_id, section_id = separate_course_code(course_code)
-    course = Course.objects.get(department__code=dept_code, code=course_id, semester=semester)
+    course = Course.objects.get(
+        department__code=dept_code, code=course_id, semester=semester
+    )
     section = section_manager.get(course=course, code=section_id)
     return course, section
 
@@ -272,7 +280,12 @@ def update_percent_open(section, new_status_update):
         if last_status_update.created_at >= add_drop.estimated_end:
             return
         seconds_before_last = Decimal(
-            max((last_status_update.created_at - add_drop.estimated_start).total_seconds(), 0)
+            max(
+                (
+                    last_status_update.created_at - add_drop.estimated_start
+                ).total_seconds(),
+                0,
+            )
         )
         seconds_since_last = Decimal(
             max(
@@ -290,7 +303,9 @@ def update_percent_open(section, new_status_update):
         section.save()
 
 
-def record_update(section, semester, old_status, new_status, alerted, req, created_at=None):
+def record_update(
+    section, semester, old_status, new_status, alerted, req, created_at=None
+):
     from alert.models import validate_add_drop_semester  # avoid circular imports
 
     u = StatusUpdate(
@@ -410,7 +425,8 @@ def set_meetings(section, meetings):
     for meeting in meetings:
         meeting["days"] = "".join(sorted(list(set(meeting["days"]))))
     meeting_times = [
-        f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}" for meeting in meetings
+        f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}"
+        for meeting in meetings
     ]
     section.meeting_times = json.dumps(meeting_times)
 
@@ -425,7 +441,9 @@ def set_meetings(section, meetings):
                 or meeting["building_desc"].lower() == "no room needed"
             )
         )
-        room = None if online else get_room(meeting["building_code"], meeting["room_code"])
+        room = (
+            None if online else get_room(meeting["building_code"], meeting["room_code"])
+        )
         start_time = Decimal(meeting["begin_time_24"]) / 100
         end_time = Decimal(meeting["end_time_24"]) / 100
         start_date = extract_date(meeting.get("start_date"))
@@ -465,7 +483,9 @@ def set_crosslistings(course, crosslistings):
     for crosslisting in crosslistings:
         if crosslisting["is_primary_section"]:
             primary_course, _ = get_or_create_course(
-                crosslisting["subject_code"], crosslisting["course_number"], course.semester
+                crosslisting["subject_code"],
+                crosslisting["course_number"],
+                course.semester,
             )
             course.primary_listing = primary_course
             return
@@ -480,7 +500,9 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
     course.title = info["course_title"] or ""
     course.description = (info["course_description"] or "").strip()
     if info.get("additional_section_narrative"):
-        course.description += (course.description and "\n") + info["additional_section_narrative"]
+        course.description += (course.description and "\n") + info[
+            "additional_section_narrative"
+        ]
     # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite info
     course.syllabus_url = info.get("syllabus_url") or None
 
