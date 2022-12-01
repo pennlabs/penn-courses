@@ -34,66 +34,124 @@ def get_programs_urls():
     return links
 
 
+def parse_courselist_row(row):
+    row_elts = row.find_all("td")
+    if len(row_elts) >= 3:
+        return {
+            "type": "course",
+            "code": row_elts[0].text.replace("\xa0", " ").strip(),
+            "name": row_elts[1].text.strip(),
+            "cus": row_elts[2].text,
+            "indent": row_elts[0].find("div", class_="blockindent") is not None,
+        }
+
+    if "areaheader" in row["class"]:
+        return {"type": "header", "title": row_elts[0].find("span").text.strip()}
+
+    if "orclass" in row["class"]:
+        return {
+            "type": "orcourse",
+            "code": row_elts[0].text.replace("\xa0", " ")[3:].strip(),
+            "name": row_elts[1].text.strip(),
+        }
+
+    if "listsum" in row["class"]:
+        return None
+
+    if row_elts[0].text == "Other Wharton Requirements":
+        return None
+
+    if row_elts[1].text:
+        return {
+            "type": "textcourse",
+            "name": row_elts[0].text.strip(),
+            "cus": row_elts[1].text,
+            "indent": row_elts[0].find("div", class_="blockindent") is not None,
+        }
+
+    if "areasubheader" in row["class"]:
+        return {"type": "header", "title": row_elts[0].find("span").text.strip()}
+
+    if row_elts[0].find("div", class_="blockindent") is not None:
+        return {"type": "textcourse", "name": row_elts[0].text.strip(), "indent": True}
+
+    return {"type": "unknown", "html": row}
+
+
 def parse_courselist(courselist):
     areas = {}  # key: area header, value: list of requirements
     requirements = courselist.find("tbody").find_all("tr")
 
-    current_area_header = None
-    current_requirements = []
-    current_select = None
+    area_header = None
+    area_requirements = []
+    current_requirement = None
     for requirement in requirements:
-        # HEADERS
-        if requirement.has_attr("class") and "areaheader" in requirement["class"]:
-            if current_area_header is not None:
-                # add prev requirements
-                if current_select is not None:
-                    current_requirements.append(current_select)
-                    current_select = None
-                areas[current_area_header] = current_requirements
-                current_requirements = []
-            current_area_header = requirement.find("td").find("span").text
+        row = parse_courselist_row(requirement)
+        if row is None:
             continue
 
-        # Courses have 3 elements (code, name, CUs) and non-courses have 2
-        row_elts = requirement.find_all("td")
-
-        # Close select if necessary
-        if row_elts[0].find("div", class_="blockindent") is None:
-            # close previous select
-            if current_select is not None:
-                current_requirements.append(current_select)
-                current_select = None
-
-        # REGULAR COURSES
-        if len(row_elts) >= 3:
-            if current_select is None:
-                req = Requirement(
-                    "Course",
-                    [(row_elts[0].text.replace("\xa0", " "), row_elts[1].text)],
-                    row_elts[2].text,
-                )
-                current_requirements.append(req)
+        if row["type"] == "course":
+            if row["indent"]:
+                if current_requirement is None:
+                    print("FIXME: Indented course without requirement")
+                    continue
+                current_requirement.add_course(row["code"], row["name"])
             else:
-                current_select.add_course(
-                    row_elts[0].text.replace("\xa0", " "), row_elts[1].text
-                )
+                if current_requirement is not None:
+                    area_requirements.append(current_requirement)
+                try:
+                    cus = float(row["cus"])
+                    current_requirement = Requirement(
+                        row["name"], [(row["code"], row["name"])], cus
+                    )
+                except ValueError:
+                    print("FIXME: Couldn't convert CUs")
+                    print(row)
+                    current_requirement = Requirement(row["name"], [], 0)
 
-        comment = row_elts[0].find("span", class_="courselistcomment")
-        if comment is None:
-            continue
+        elif row["type"] == "header":
+            if area_header is not None:
+                if current_requirement is not None:
+                    area_requirements.append(current_requirement)
+                    current_requirement = None
+                areas[area_header] = area_requirements
+                area_requirements = []
+            area_header = row["title"]
 
-        # Wharton concentrations put general Wharton reqs twice
-        if comment.text == "Other Wharton Requirements":
-            continue
+        elif row["type"] == "orcourse":
+            if current_requirement is None:
+                print("FIXME: Or course without requirement")
+                continue
+            current_requirement.add_course(row["code"], row["name"])
 
-        if row_elts[1].text:
-            current_select = Requirement(comment.text, [], row_elts[1].text)
+        elif row["type"] == "textcourse":
+            if row["indent"]:
+                if current_requirement is None:
+                    print("FIXME: Indented course without requirement")
+                    continue
+                current_requirement.add_course("", row["name"])
+            else:
+                if current_requirement is not None:
+                    area_requirements.append(current_requirement)
 
-    if current_select is not None:
-        current_requirements.append(current_select)
-    if current_area_header is None:
-        current_area_header = "Requirements"
-    areas[current_area_header] = current_requirements
+                try:
+                    cus = float(row["cus"])
+                    current_requirement = Requirement(row["name"], [], cus)
+                except ValueError:
+                    print("FIXME: Couldn't convert CUs")
+                    print(row)
+                    current_requirement = Requirement(row["name"], [], 0)
+
+        elif row["type"] == "unknown":
+            pass
+            # print("FIXME: Unknown row encountered")
+            # print(row["html"])
+
+    if current_requirement is not None:
+        area_requirements.append(current_requirement)
+    if area_header is None:
+        area_header = "Default Header"
+    areas[area_header] = area_requirements
     return areas
 
 
@@ -115,8 +173,18 @@ def get_program_requirements(program_url):
 if __name__ == "__main__":
     program_urls = get_programs_urls()
 
+    # program_urls = {
+    #     "PROGRAM NAME": "https://catalog.upenn.edu/undergraduate/programs/africana-studies-minor/"
+    # }
+
+    skipped = 0
     with open("output.txt", "w") as f:
         for program_name, program_url in program_urls.items():
+            # FIXME: Biology has problems with different tracks
+            if "Biology" in program_name:
+                skipped += 1
+                continue
+
             f.write(f"##### --- {program_name} --- #####\n")
             areas = get_program_requirements(program_url)
             total_cus = 0
@@ -124,9 +192,7 @@ if __name__ == "__main__":
                 f.write(f"--- {key} ---\n")
                 for item in value:
                     f.write(item.__repr__() + "\n")
-                    try:
-                        total_cus += float(item.get_cus())
-                    except:
-                        f.write("some problem here\n")
+                    total_cus += item.get_cus()
 
             f.write(f"{total_cus} CUs total\n\n")
+    print(f"Skipped: {skipped}")
