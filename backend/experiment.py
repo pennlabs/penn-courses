@@ -1,4 +1,6 @@
 # Webscraping using bs4 o penn course catalogue
+import json
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -155,7 +157,14 @@ def parse_courselist(courselist):
     return areas
 
 
-def get_program_requirements(program_url):
+def get_program_requirements(program_url, timestamp=None):
+    if timestamp:
+        wayback_url = f"https://archive.org/wayback/available?url={program_url}&timestamp={timestamp}"
+        wayback = requests.get(wayback_url)
+        wayback_json = wayback.json()
+        if wayback_json is not None and "closest" in wayback_json["archived_snapshots"]:
+            program_url = wayback_json["archived_snapshots"]["closest"]["url"]
+
     program = requests.get(program_url)
     soup = BeautifulSoup(program.content, "html.parser")
 
@@ -171,10 +180,11 @@ def get_program_requirements(program_url):
 
 
 if __name__ == "__main__":
+    timestamp = "20200101" # YYYYMMDDhhmmss format (use None for most recent)
     program_urls = get_programs_urls()
 
     # program_urls = {
-    #     "PROGRAM NAME": "https://catalog.upenn.edu/undergraduate/programs/africana-studies-minor/"
+    #     "PROGRAM NAME": "https://web.archive.org/web/20191218093455/https://catalog.upenn.edu/undergraduate/programs/accounting-bs/"
     # }
 
     skipped = 0
@@ -186,7 +196,7 @@ if __name__ == "__main__":
                 continue
 
             f.write(f"##### --- {program_name} --- #####\n")
-            areas = get_program_requirements(program_url)
+            areas = get_program_requirements(program_url, timestamp=timestamp)
             total_cus = 0
             for key, value in areas.items():
                 f.write(f"--- {key} ---\n")
