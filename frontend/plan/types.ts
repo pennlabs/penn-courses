@@ -186,6 +186,7 @@ export interface FilterData {
     };
     time: [number, number];
     fit_schedule: number;
+    is_open: boolean;
 }
 
 export type FilterType =
@@ -205,4 +206,5 @@ export type FilterType =
           U: boolean;
           time: [number, number];
       }
-    | number;
+    | number
+    | boolean

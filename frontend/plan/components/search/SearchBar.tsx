@@ -464,15 +464,26 @@ SearchBarProps) {
             )}
             <FilterButton
                 title="Fit Schedule"
-                
                 filterData={filterData}
                 defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
-                activeSchedule={activeSchedule}
+                value={activeSchedule}
                 buttonProperty="fit_schedule"
                 updateButtonFilter={updateButtonFilter("fit_schedule")}
+            >
+            </FilterButton> 
+            <FilterButton
+                title="Open"
+                filterData={filterData}
+                defaultFilter={defaultFilters.filterData.is_open}
+                clearFilter={clearFilterSearch("is_open")}
+                // @ts-ignore
+                startSearch={conditionalStartSearch}
+                value={activeSchedule}
+                buttonProperty="is_open"
+                updateButtonFilter={updateButtonFilter("is_open")}
             >
             </FilterButton> 
         </DropdownContainer>
@@ -641,7 +652,7 @@ const mapDispatchToProps = (dispatch) => ({
         value: string,
         toggleState: boolean
     ) => dispatch(updateCheckboxFilter(field, value, toggleState)),
-    updateButtonFilter: (field: string) => (value: number) =>
+    updateButtonFilter: (field: string) => (value: number | boolean) =>
         dispatch(updateFilterButtonFilter(field, value)),
     clearAll: () => dispatch(clearAll()),
     clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),

@@ -9,7 +9,7 @@ import {
     DeleteButtonContainer,
     DeleteButton } from "./DropdownButton";
 
-import { FilterData, FilterType } from "../types";
+import { FilterType } from "../types";
 
 interface FilterButtonProps<F, K extends keyof F> {
     title: string;
@@ -18,20 +18,20 @@ interface FilterButtonProps<F, K extends keyof F> {
     defaultFilter: FilterType;
     clearFilter: () => void;
     startSearch: (searchObj: F) => void;
-    activeSchedule: number;
+    value: number;
     buttonProperty: K;
-    updateButtonFilter: (value: number) => void
+    updateButtonFilter: (value: any) => void
 }
 
 export function FilterButton<
-    F extends { [P in K]: number },
+    F extends { [P in K]: number | boolean },
     K extends keyof F>({
     title,
     filterData,
     defaultFilter,
     clearFilter,
     startSearch, 
-    activeSchedule,
+    value,
     buttonProperty,
     updateButtonFilter
 }: FilterButtonProps<F, K>) {
@@ -43,11 +43,20 @@ export function FilterButton<
             setIsActive(false);
         } else {
             setIsActive(true);
-            updateButtonFilter(activeSchedule);
-            startSearch({
-                ...filterData,
-                [buttonProperty]: {[activeSchedule]: null},
-            });
+            if (buttonProperty === "fit_schedule") {
+                updateButtonFilter(value);
+                startSearch({
+                    ...filterData,
+                    [buttonProperty]: {[value]: null},
+                });
+            } else if (buttonProperty === "is_open") {
+                updateButtonFilter(isActive);
+                startSearch({
+                    ...filterData,
+                    [buttonProperty]: {[`${isActive}`]: null},
+                });
+            } 
+            
         }
     };
     const ref = useOnClickOutside(toggleButton, true);

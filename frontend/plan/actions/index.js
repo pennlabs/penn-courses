@@ -315,8 +315,8 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // toggle button filters
-    const buttonFields = ["fit_schedule"];
-    const buttonDefaultFields = [-1];
+    const buttonFields = ["fit_schedule", "is_open"];
+    const buttonDefaultFields = [-1, "false"];
 
     for (let i = 0; i < buttonFields.length; i += 1) {
         if (
@@ -329,6 +329,8 @@ function buildCourseSearchUrl(filterData) {
                 if (buttonFields[i] === "fit_schedule") {
                     // pass in the schedule id
                     queryString += `&schedule-fit=${applied[i]}`;
+                } else if (buttonFields[i] === "is_open") {
+                    queryString += `$is_open=${applied[i]}`;
                 }
             }
         }
