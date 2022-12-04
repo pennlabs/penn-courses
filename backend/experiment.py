@@ -1,5 +1,6 @@
 # Webscraping using bs4 o penn course catalogue
 import json
+from enum import Enum
 
 import requests
 from bs4 import BeautifulSoup
@@ -7,12 +8,26 @@ from bs4 import BeautifulSoup
 CATALOG_PREFIX = "https://catalog.upenn.edu/"
 PROGRAMS_PREFIX = "/undergraduate/programs"
 
+# TODO: Add support for biology tracks (split into 2 different requirements)
+# class SatisfiedByEnum(Enum):
+#     ALL = 1
+#     ANY = 2
+#     CUS = 3
+#     NUM_COURSES = 4
+
+# class SatisfiedBy:
+#     def __init__(self, satisfied_by, value):
+#         self.satisfied_by = satisfied_by
+#         self.value = value
 
 class Requirement:
+    # def __init__(self, name, courses, cus, satisfiedBy):
     def __init__(self, name, courses, cus):
         self.name = name
         self.courses = courses
         self.cus = cus
+        self.comment = ""
+        # self.satisfiedBy = satisfiedBy
 
     def add_course(self, code, name):
         self.courses.append((code, name))
@@ -36,7 +51,7 @@ def get_programs_urls():
     return links
 
 
-def parse_courselist_row(row):
+def parse_courselist_row(row, ignore_indent=False):
     row_elts = row.find_all("td")
     if len(row_elts) >= 3:
         return {
@@ -44,17 +59,25 @@ def parse_courselist_row(row):
             "code": row_elts[0].text.replace("\xa0", " ").strip(),
             "name": row_elts[1].text.strip(),
             "cus": row_elts[2].text,
-            "indent": row_elts[0].find("div", class_="blockindent") is not None,
+            "indent": row_elts[0].find("div", class_="blockindent") is not None and not ignore_indent,
+            "superscript_id": row_elts[0].find("sup"),
         }
+    
+    # if any of the row_elts contain a sup tag, then associate it with a comment
+    # superscript_id = None
+    # if any([elt.find("sup") for elt in row_elts]):
+    #     superscript_id = int(row_elts[0].find("sup").text)
+    superscript_id = None
 
     if "areaheader" in row["class"]:
-        return {"type": "header", "title": row_elts[0].find("span").text.strip()}
+        return {"type": "header", "title": row_elts[0].find("span").text.strip(), "superscript_id": superscript_id}
 
     if "orclass" in row["class"]:
         return {
             "type": "orcourse",
             "code": row_elts[0].text.replace("\xa0", " ")[3:].strip(),
             "name": row_elts[1].text.strip(),
+            "superscript_id": superscript_id,
         }
 
     if "listsum" in row["class"]:
@@ -68,19 +91,20 @@ def parse_courselist_row(row):
             "type": "textcourse",
             "name": row_elts[0].text.strip(),
             "cus": row_elts[1].text,
-            "indent": row_elts[0].find("div", class_="blockindent") is not None,
+            "indent": row_elts[0].find("div", class_="blockindent") is not None and not ignore_indent,
+            "superscript_id": superscript_id,
         }
 
     if "areasubheader" in row["class"]:
-        return {"type": "header", "title": row_elts[0].find("span").text.strip()}
+        return {"type": "header", "title": row_elts[0].find("span").text.strip(), "superscript_id": superscript_id}
 
-    if row_elts[0].find("div", class_="blockindent") is not None:
-        return {"type": "textcourse", "name": row_elts[0].text.strip(), "indent": True}
+    if row_elts[0].find("div", class_="blockindent") is not None and not ignore_indent:
+        return {"type": "textcourse", "name": row_elts[0].text.strip(), "indent": True, "superscript_id": superscript_id}
 
-    return {"type": "unknown", "html": row}
+    return {"type": "unknown", "html": row, "superscript_id": superscript_id}
 
 
-def parse_courselist(courselist):
+def parse_courselist(courselist, ignore_indent=False):
     areas = {}  # key: area header, value: list of requirements
     requirements = courselist.find("tbody").find_all("tr")
 
@@ -88,14 +112,21 @@ def parse_courselist(courselist):
     area_requirements = []
     current_requirement = None
     for requirement in requirements:
-        row = parse_courselist_row(requirement)
+        row = parse_courselist_row(requirement, ignore_indent)
         if row is None:
             continue
+
+        # if row["superscript_id"] is not None:
+        #     table = courselist.find("dl", class_="sc_footnotes")
+        #     ids = table.find_all("dt")
+        #     comments = table.find_all("dd")
 
         if row["type"] == "course":
             if row["indent"]:
                 if current_requirement is None:
                     print("FIXME: Indented course without requirement")
+                    print(row)
+                    print(area_header)
                     continue
                 current_requirement.add_course(row["code"], row["name"])
             else:
@@ -172,15 +203,20 @@ def get_program_requirements(program_url, timestamp=None):
     if courselists is None:
         return
 
+    if "Data Science, Minor" in soup.find("title").text:
+        ignore_indent = True
+    else:
+        ignore_indent = False
     areas = {}
     for courselist in courselists:
-        areas.update(parse_courselist(courselist))
+        areas.update(parse_courselist(courselist, ignore_indent))
 
     return areas
 
 
 if __name__ == "__main__":
-    timestamp = "20200101" # YYYYMMDDhhmmss format (use None for most recent)
+    # timestamp = "20200101" # YYYYMMDDhhmmss format (use None for most recent)
+    timestamp = None
     program_urls = get_programs_urls()
 
     # program_urls = {
@@ -206,3 +242,8 @@ if __name__ == "__main__":
 
             f.write(f"{total_cus} CUs total\n\n")
     print(f"Skipped: {skipped}")
+
+# purity data source
+# endpoint for testing
+# relate this to user stuff
+# cart stuff (planning stuff)
