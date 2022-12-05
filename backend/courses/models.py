@@ -1460,8 +1460,8 @@ class Friendship(models.Model):
         Checks if two users are friends (lookup by user id)
         """
         return Friendship.objects.filter(
-            Q(sender_id=user1_id, recipient_id=user2_id, status="A")
-            | Q(sender_id=user2_id, recipient_id=user1_id, status="A")
+            Q(sender_id=user1_id, recipient_id=user2_id, status=Friendship.Status.ACCEPTED) 
+            | Q(sender_id=user2_id, recipient_id=user1_id, status=Friendship.Status.ACCEPTED)
         ).exists()
 
     def save(self, *args, **kwargs):

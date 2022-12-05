@@ -434,7 +434,7 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
         fields = ["section", "old_status", "new_status", "created_at", "alert_sent"]
         read_only_fields = fields
 
-class FrienshipSerializer(serializers.ModelSerializer):
+class FriendshipSerializer(serializers.ModelSerializer):
     class Meta:
         model = Friendship
         fields = ["sender", "recipient", "status", "sent_at", "accepted_at"]

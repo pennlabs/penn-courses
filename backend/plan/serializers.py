@@ -20,7 +20,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
 class PrimaryScheduleSerializer(serializers.ModelSerializers):
     schedule = ScheduleSerializer(
-        read_only=False, help_text="The primary schedule.", required=True
+        read_only=True, help_text="The primary schedule.", required=False
     )
 
     class Meta:

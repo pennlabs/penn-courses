@@ -5,7 +5,7 @@ from django.db.models import Prefetch, Q
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from backend.courses.serializers import FrienshipSerializer
+from backend.courses.serializers import FriendshipSerializer
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import permission_classes
@@ -399,8 +399,8 @@ class FriendshipViewSet(viewsets.ViewSet):
     Filter the list by status (accepted, sent) to distinguish between friendships and friendship requests.
 
     create: Create a friendship between two users (sender and recipient). If a previous request does not exist between
-    the two friendships, then we create friendship request. If a previous request exists (where the recipient is the sender), 
-    then we accept the request. If the recipient of a request hits this route, then we accept the request and create the friendship.
+    the two friendships, then we create friendship request. If a previous request exists (where the recipient is the sender) and 
+    the recipient of a request hits this route, then we accept the request. 
     
     delete: Delete a friendship between two users (sender and recipient). If there exists only a friendship request between two users, then 
     we either delete the friendship request if the sender hits the route, or we reject the request if the recipient hits this route.
@@ -409,9 +409,8 @@ class FriendshipViewSet(viewsets.ViewSet):
     http_method_names = ["get", "post", "delete"]
     permission_classes = [IsAuthenticated]
     queryset = Friendship.objects.none()
-    serializer_class = FrienshipSerializer
+    serializer_class = FriendshipSerializer
 
-    # Is this PcxAutoSchema correct given the responses in each view function below?
     schema = PcxAutoSchema(
         response_codes={
             reverse_func("friendships"): {
@@ -421,7 +420,6 @@ class FriendshipViewSet(viewsets.ViewSet):
                 "POST": {
                     200: "Friendship request handled successfully.",
                     409: "Friendship request already exists",
-                    400: "Bad request.",
                 },
                 "DELETE": {
                     200: "Friendship deleted successfully.",
@@ -479,14 +477,14 @@ class FriendshipViewSet(viewsets.ViewSet):
         if not existing_friendship:
             friendship = Friendship(sender=sender, recipient=recipient, status=Friendship.Status.SENT)
             friendship.save()
-            res = model_to_dict(friendship)
+            res = FriendshipSerializer(friendship)
             return JsonResponse(res, status=status.HTTP_200_OK)
         elif existing_friendship.status == Friendship.Status.REJECTED:
             existing_friendship.status = Friendship.Status.SENT
             existing_friendship.sender = sender
             existing_friendship.recipient = recipient
             existing_friendship.save()
-            res = model_to_dict(existing_friendship)
+            res = FriendshipSerializer(existing_friendship) 
             return JsonResponse(res, status=status.HTTP_200_OK)
         elif existing_friendship.status == Friendship.Status.SENT:
             if existing_friendship.sender == sender:
@@ -495,9 +493,12 @@ class FriendshipViewSet(viewsets.ViewSet):
             elif existing_friendship.recipient == sender:
                 existing_friendship.status = Friendship.Status.ACCEPTED
                 existing_friendship.save()
-                res = model_to_dict(existing_friendship)
+                res = FriendshipSerializer(existing_friendship)
                 res["message"] = "Friendship request accepted successfully."
                 return JsonResponse(res, status=status.HTTP_200_OK)
+        else:
+            res["message"] = "Friendship already exists."
+            return JsonResponse(res, status=status.HTTP_409_CONFLICT)
 
     def delete(self, request):
         # either deletes a friendship or cancels/rejects a friendship request (depends on who sends the request)
