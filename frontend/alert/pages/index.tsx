@@ -127,10 +127,6 @@ const RecruitingBanner = styled.div`
     }
 `;
 
-const WarningBanner = styled(RecruitingBanner)`
-    background-color: #d2d7df;
-`;
-
 function App() {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
@@ -218,17 +214,6 @@ function App() {
                         </p>
                     </RecruitingBanner>
                 )}
-                <WarningBanner>
-                    <p>
-                        <span role="img" aria-label="warning">
-                            📢
-                        </span>{" "}
-                        Text alerts are now working for all users!{" "}
-                        <span role="img" aria-label="warning">
-                            📢
-                        </span>{" "}
-                    </p>
-                </WarningBanner>
                 <Nav
                     login={updateUser}
                     logout={logout}
