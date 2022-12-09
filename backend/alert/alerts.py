@@ -10,18 +10,18 @@ from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 # from identity.identity import authenticated_b2b_request
 
-# SNIP -- Remove Below for Prod
-configfile = './../../../django-labs-accounts/'
+# # SNIP -- Remove Below for Prod
+# configfile = './../../../django-labs-accounts/'
 
-import os
-import sys
+# import os
+# import sys
 
-sys.path.append(os.path.dirname(os.path.expanduser(configfile)))
+# sys.path.append(os.path.dirname(os.path.expanduser(configfile)))
 
-from identity.identity import get_platform_jwks, attest, authenticated_b2b_request
-get_platform_jwks()
-attest()
-# -- END SNIP
+# from identity.identity import get_platform_jwks, attest, authenticated_b2b_request
+# get_platform_jwks()
+# attest()
+# # -- END SNIP
 
 from PennCourses.settings.production import MOBILE_NOTIFICATION_SECRET
 
