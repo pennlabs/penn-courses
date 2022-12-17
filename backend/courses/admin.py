@@ -173,7 +173,7 @@ class MeetingAdmin(admin.ModelAdmin):
         "section__course",
         "section__course__department",
     )
-    autocomplete_fields = ['section']
+    autocomplete_fields = ["section"]
 
 
 class PreNGSSRequirementAdmin(admin.ModelAdmin):
