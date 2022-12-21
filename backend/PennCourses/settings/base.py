@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "courses",
     "plan",
     "review",
+    "degree",
 ]
 
 MIDDLEWARE = [

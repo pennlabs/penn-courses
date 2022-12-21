@@ -132,10 +132,9 @@ class DegreeFulfillment(models.Model):
         """
         ),
     )
-    course = models.ManyToManyField( # TODO: should be topic?
+    course = models.ForeignKey( # TODO: should be topic?
         Course,
-        null=True,
-        related_name="semester_plans",
+        on_delete=models.CASCADE, # TODO: is cascade the right behavior here
         help_text=dedent(
             """
         The fulfilling course.
