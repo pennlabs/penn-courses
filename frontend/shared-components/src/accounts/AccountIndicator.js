@@ -21,11 +21,14 @@ const AccountIndicator = ({
 }) => {
     useEffect(() => {
         if (user) {
+            console.log("user exist");
             return;
         }
         fetch("/accounts/me/")
             .then((response) => {
+                console.log(response);
                 if (!response.ok) {
+                    console.log("response not ok");
                     logout();
                     return;
                 }

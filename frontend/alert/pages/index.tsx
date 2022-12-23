@@ -80,6 +80,7 @@ const Nav = ({ login, logout, user, page, setPage }: NavProps) => (
                 nameLength={2}
                 login={login}
                 logout={logout}
+                pathname={"/"}
             />
         </NavElt>
         <NavElt
@@ -178,6 +179,7 @@ function App() {
 
     // Separates showLoginModal from state so that the login modal doesn't show up on page load
     const updateUser = (newUserVal: User | null) => {
+        console.log(newUserVal + " test");
         if (!newUserVal) {
             // the user has logged out; show the login modal
             setShowLoginModal(true);
