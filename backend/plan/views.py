@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, F
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Course, Section
-from courses.serializers import CourseListSerializer
+from courses.serializers import CourseListSerializer, MiniSectionSerializer
 from courses.util import get_course_and_section, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from plan.management.commands.recommendcourses import (
@@ -21,6 +21,358 @@ from plan.management.commands.recommendcourses import (
 from plan.models import Schedule
 from plan.serializers import ScheduleSerializer
 
+from ortools.sat.python import cp_model
+from collections import defaultdict
+
+from courses.filters import (
+    day_filter,
+    time_filter,
+    section_ids_by_meeting_query,
+    course_ids_by_section_query,
+)
+
+@api_view(["POST"])
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("recommend-schedules"): {
+                "POST": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
+                    201: "[UNDOCUMENTED]",
+                    400: "Invalid curr_courses, past_courses, or n_recommendations (see response).",
+                }
+            }
+        },
+        override_request_schema={
+            reverse_func("recommend-schedules"): {
+                "POST": {
+                    "type": "object",
+                    "properties": {
+                        "num_schedules": {
+                            "type": "integer",
+                            "description": (
+                                "The number of credits you want returned. "
+                                "Defaults to 5.0."
+                            ),
+                        },
+                        "num_credits": {
+                            "type": "float",
+                            "description": (
+                                "The number of credits you want returned. "
+                                "Defaults to 5.0."
+                            ),
+                        },
+                        "min_courses": {
+                            "type": "integer",
+                            "description": (
+                                "The number of courses you want returned. "
+                            ),
+                        },
+                        "max_courses": {
+                            "type": "integer",
+                            "description": (
+                                "The number of courses you want returned. "
+                            ),
+                        },
+                        "locked_courses": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user is currently planning to "
+                                "take, each specified by its string full code, of the form "
+                                "DEPT-XXX, e.g. CIS-120."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "locked_sections": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user is currently planning to "
+                                "take, each specified by its string full code, of the form "
+                                "DEPT-XXX, e.g. CIS-120."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "avoid_courses": {
+                            "type": "array",
+                            "description": (
+                                "An array of courses the user is currently planning to "
+                                "take, each specified by its string full code, of the form "
+                                "DEPT-XXX, e.g. CIS-120."
+                            ),
+                            "items": {"type": "string"},
+                        },
+                        "min_difficulty": {
+                            "type": "boolean",
+                            "description": (
+                                "The number of courses you want returned. "
+                            ),
+                        },
+                        "max_quality": {
+                            "type": "boolean",
+                            "description": (
+                                "The number of courses you want returned. "
+                            ),
+                        },
+                        "are_open": {
+                            "type": "boolean",
+                            "description": (
+                                "... "
+                            ),
+                        },
+                        "days": {
+                            "type": "string",
+                            "description": (
+                                "..."
+                            ),
+                        },
+                        "time": {
+                            "type": "string",
+                            "description": (
+                                "..."
+                            ),
+                        },
+                        "attributes": {
+                            "type": "array",
+                            "description": (
+                                "..."
+                            ),
+                            "items": {"type": "object"},
+                        }
+                    },
+                }
+            }
+        },
+        # override_response_schema={
+        #     reverse_func("recommend-schedules"): {
+        #         "POST": {
+        #             200: {"type": "array", "items": {"$ref": "#/components/schemas/CourseList"}}
+        #         }
+        #     }
+        # },
+    )
+)
+@permission_classes([IsAuthenticated])
+def recommend_schedules_view(request):
+    """
+    """
+    num_schedules = request.data.get("num_schedules", 1)
+
+    num_credits = request.data.get("num_credits", 5.0)
+    min_courses = request.data.get("min_courses", None)
+    max_courses = request.data.get("max_courses", None)
+
+    locked_courses = set(request.data.get("locked_courses", []))
+    locked_sections = set(request.data.get("locked_sections", []))
+    avoid_courses = set(request.data.get("avoid_courses", []))
+
+    min_difficulty = request.data.get("min_difficulty", False)
+    max_quality = request.data.get("max_quality", False)
+
+    are_open = request.data.get("are_open", False)
+    days = request.data.get("days", None)
+    time = request.data.get("time", None)
+
+    attributes = request.data.get("attributes", {})
+    attribute_set = set([attribute["code"] for attribute in attributes])
+
+    queryset = Course.with_reviews.filter(semester="2023A", sections__isnull=False).distinct()
+
+    section_status_query = Q(status="O") if are_open else Q(status="O") | Q(status="C")
+    section_query = section_status_query
+
+    section_meeting_query = Q()
+    if days:
+        section_meeting_query &= day_filter(days)
+    if time:
+        section_meeting_query &= time_filter(time)
+    if len(section_meeting_query) > 0:
+        section_query &= Q(num_meetings=0) | Q(id__in=section_ids_by_meeting_query(section_meeting_query))
+
+    section_locked_query = Q(full_code__in=locked_sections)
+    section_query = section_query | section_locked_query # Note: Locked sections will ignore open / meeting constraints
+
+    # Allows potentially filtering out locked courses -> Show warning on front-end if locked course will prevent feasible schedules
+    queryset = queryset.filter(id__in=course_ids_by_section_query(section_query))
+    # Last step - filter out crosslisted courses that aren't locked
+    queryset = queryset.filter(Q(id=F('primary_listing__id')) | Q(full_code__in=locked_courses))
+
+    queryset = queryset.prefetch_related(
+        Prefetch(
+            "sections",
+            Section.with_reviews.all()
+            .filter(credits__isnull=False)
+            .filter(meetings__isnull=False)
+            .filter(section_query)
+            .distinct()
+            .prefetch_related("meetings"),
+        )
+    )
+
+    # Creates the model.
+    model = cp_model.CpModel()
+
+    # Creates the variables.
+    courses = {}
+    sections = {}
+    all_section_intervals = []
+
+    day_to_index = { "U": 0, "M": 1, "T": 2, "W": 3, "R": 4, "F": 5, "S": 6 }
+    def meeting_to_interval(meeting):
+        start_offset = day_to_index[meeting.day] * 24
+        start, end = meeting.start, meeting.end
+        if start >= 24:
+            start -= 12
+        if end >= 24:
+            end -= 12
+        start = int(100 * (start_offset + start))
+        end = int(100 * (start_offset + end))
+        duration = end - start
+        return (start, duration)
+
+    for course in queryset:
+        courses[course.full_code] = model.NewBoolVar('course_%s' % (course.full_code))
+
+        for section in course.sections.all():
+            sections[section.full_code] = model.NewBoolVar('section_%s' % (section.full_code))
+
+            for i, meeting in enumerate(section.meetings.all()):
+                start, duration = meeting_to_interval(meeting)
+                meeting_interval = model.NewOptionalFixedSizeIntervalVar(start, duration, sections[section.full_code], 'section_%s_interval_%d' % (section.full_code, i))
+                all_section_intervals.append(meeting_interval)
+
+    no_solution_response = Response(
+        { 
+            "detail": "No solution found." 
+        }, 
+        status=status.HTTP_400_BAD_REQUEST
+    )
+    if True in (c not in courses for c in locked_courses) or True in (s not in sections for s in locked_sections):
+        return no_solution_response
+
+    # Creates the constraints.
+    schedule_courses = []
+    schedule_credits = []
+    section_scores = [] # Objective score
+    schedule_attributes = defaultdict(list)
+
+    for course in queryset:
+        schedule_courses.append(courses[course.full_code])
+        course_sections = defaultdict(set)
+
+        for attribute in course.attributes.all():
+            if attribute.code in attribute_set:
+                schedule_attributes[attribute.code] += [1 * courses[course.full_code]]
+
+        if course.full_code in locked_courses:
+            model.Add(courses[course.full_code] == 1)
+        
+        if course.full_code in avoid_courses:
+            model.Add(courses[course.full_code] == 0)
+
+        if not course.sections.all():
+            model.Add(courses[course.full_code] == 0)
+        else:
+            for section in course.sections.all():
+                course_sections[section.activity].add(sections[section.full_code])
+                schedule_credits.append(int(100 * section.credits) * sections[section.full_code])
+
+                model.AddImplication(sections[section.full_code], courses[course.full_code])
+                model.AddImplication(courses[course.full_code].Not(), sections[section.full_code].Not())
+
+                if section.full_code in locked_sections:
+                    model.Add(sections[section.full_code] == 1)
+                else:
+                    section_score = 0.0
+                    if max_quality:
+                        section_score += section.instructor_quality or 0.0
+                    if min_difficulty:
+                        section_score -= course.difficulty or 4.0
+                    section_score = int(section_score * int(100 * section.credits))
+                    section_scores.append(section_score * sections[section.full_code])
+
+            for activity in course_sections:
+                model.AddAtMostOne(course_sections[activity])
+                model.AddAtLeastOne(course_sections[activity]).OnlyEnforceIf(courses[course.full_code])
+
+    model.Add(sum(schedule_credits) == int(num_credits * 100))
+
+    if min_courses:
+        model.Add(sum(schedule_courses) >= min_courses)
+
+    if max_courses:
+        model.Add(sum(schedule_courses) <= min_courses)
+
+    model.AddNoOverlap(all_section_intervals)
+
+    for attribute in attributes:
+        model.Add(sum(schedule_attributes[attribute["code"]]) == attribute["num"])
+
+    # Creates a solver and solves the model.
+    solver = cp_model.CpSolver()
+
+    print("solving...")
+
+    if max_quality or min_difficulty:
+        model.Maximize(sum(section_scores))
+        result = solver.Solve(model)
+        if result == cp_model.OPTIMAL or result == cp_model.FEASIBLE:
+            best_objective_bound = round(solver.ObjectiveValue())
+            delta = int(min(0.25, num_schedules * 0.05) * abs(best_objective_bound))
+            model.Proto().ClearField('objective')
+            model.Add(sum(section_scores) >= best_objective_bound - delta)
+        else:
+            return no_solution_response
+
+    # Sets a time limit of 10 seconds.
+    solver.parameters.max_time_in_seconds = 10.0
+
+    # Enumerate all solutions.
+    solver.parameters.enumerate_all_solutions = True
+
+    class SolutionHandler(cp_model.CpSolverSolutionCallback):
+        def __init__(self, schedules, sections, limit):
+            cp_model.CpSolverSolutionCallback.__init__(self)
+            self.__schedules = schedules
+            self.__sections = sections
+            self.__solution_count = 0
+            self.__solution_limit = limit
+
+        def on_solution_callback(self):
+            # TO-DO: OR-Tools needs to fix viewing optional variables (intervals) as different solutions?
+            # self.__solution_count += 1
+            recommended_schedule = [section for section in self.__sections if self.Value(self.__sections[section])]
+
+            if True not in [set(recommended_schedule) == set(schedule) for schedule in self.__schedules]:
+                print(recommended_schedule)
+                self.__schedules += [recommended_schedule]
+                self.__solution_count += 1
+
+            if self.__solution_count >= self.__solution_limit:
+                self.StopSearch()
+        
+        def solution_count(self):
+            return self.__solution_count
+
+    recommended_schedules = []
+    solution_handler = SolutionHandler(recommended_schedules, sections, num_schedules)
+    result = solver.Solve(model, solution_handler)
+
+    if solution_handler.solution_count():
+        recommended_schedules_data = []
+        
+        for schedule in recommended_schedules:
+            queryset = Section.with_reviews.filter(course__semester="2023A", full_code__in=schedule)
+            recommended_schedules_data.append(MiniSectionSerializer(queryset, many=True).data)
+        
+        return Response(
+            {
+                "results": solution_handler.solution_count(),
+                "schedules": recommended_schedules_data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    return no_solution_response
 
 @api_view(["POST"])
 @schema(
@@ -175,7 +527,6 @@ def recommend_courses_view(request):
         ).data,
         status=status.HTTP_200_OK,
     )
-
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
