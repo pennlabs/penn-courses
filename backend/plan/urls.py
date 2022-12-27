@@ -11,7 +11,7 @@ router.register(r"schedules", ScheduleViewSet, basename="schedules")
 
 urlpatterns = [
     path("", TemplateView.as_view(template_name="plan/build/index.html")),
-    path("recommendations/schedules/", recommend_schedules_view, name="recommend-schedules"),
+    path("recommendations/schedules/", recommend_schedules_view, name="recommend-schedule"),
     path("recommendations/courses/", recommend_courses_view, name="recommend-courses"),
     path("", include(router.urls)),
 ]

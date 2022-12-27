@@ -35,99 +35,121 @@ from courses.filters import (
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("recommend-schedules"): {
+            reverse_func("recommend-schedule"): {
                 "POST": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
                     201: "[UNDOCUMENTED]",
-                    400: "Invalid curr_courses, past_courses, or n_recommendations (see response).",
+                    400: "No feasible schedule for the given constraints.",
                 }
             }
         },
         override_request_schema={
-            reverse_func("recommend-schedules"): {
+            reverse_func("recommend-schedule"): {
                 "POST": {
                     "type": "object",
                     "properties": {
                         "num_credits": {
                             "type": "float",
                             "description": (
-                                "The number of credits you want returned. "
+                                "The number of credits for the recommended schedule. "
                                 "Defaults to 5.0."
                             ),
                         },
                         "min_courses": {
                             "type": "integer",
                             "description": (
-                                "The number of courses you want returned. "
+                                "The minimum number of courses for the recommended schedule. "
                             ),
                         },
                         "max_courses": {
                             "type": "integer",
                             "description": (
-                                "The number of courses you want returned. "
+                                "The maximum number of courses for the recommended schedule. "
                             ),
                         },
                         "locked_courses": {
                             "type": "array",
                             "description": (
-                                "An array of courses the user is currently planning to "
-                                "take, each specified by its string full code, of the form "
-                                "DEPT-XXX, e.g. CIS-120."
+                                "An array of courses that must be in the recommended schedule, "
+                                "each specified by its string full code, of the form DEPT-XXXX, "
+                                "e.g. CIS-1200."
                             ),
                             "items": {"type": "string"},
                         },
                         "locked_sections": {
                             "type": "array",
                             "description": (
-                                "An array of courses the user is currently planning to "
-                                "take, each specified by its string full code, of the form "
-                                "DEPT-XXX, e.g. CIS-120."
+                                "An array of sections that must be in the recommended schedule, "
+                                "each specified by its string full code, of the form DEPT-XXXX-XXX, "
+                                "e.g. CIS-1200-001."
                             ),
                             "items": {"type": "string"},
                         },
                         "avoid_courses": {
                             "type": "array",
                             "description": (
-                                "An array of courses the user is currently planning to "
-                                "take, each specified by its string full code, of the form "
-                                "DEPT-XXX, e.g. CIS-120."
+                                "An array of courses that must not be in the recommended schedule, "
+                                "each specified by its string full code, of the form DEPT-XXXX, "
+                                "e.g. CIS-1200."
                             ),
                             "items": {"type": "string"},
                         },
                         "min_difficulty": {
                             "type": "boolean",
                             "description": (
-                                "The number of courses you want returned. "
+                                "Set this to true if the difficulty of the recommended schedule "
+                                "should be minimized. "
+                                "Defaults to false."
                             ),
                         },
                         "max_quality": {
                             "type": "boolean",
                             "description": (
-                                "The number of courses you want returned. "
+                                "Set this to true if the instructor quality of the recommended "
+                                "schedule should be minimized. "
+                                "Defaults to false."
                             ),
                         },
                         "is_open": {
                             "type": "boolean",
                             "description": (
-                                "... "
+                                "Set this to true if the sections in the recommended schedule"
+                                "must currently be open. "
+                                "Defaults to false."
                             ),
                         },
                         "days": {
                             "type": "string",
                             "description": (
-                                "..."
+                                "The set of days that sections in the recommended schedule can "
+                                "have meetings on. The set of days should be specified as a "
+                                "string containing some combination of the characters "
+                                "[M, T, W, R, F, S, U]. Passing an empty string will not limit "
+                                "the set of days that sections can have meetings on."
                             ),
                         },
                         "time": {
                             "type": "string",
                             "description": (
-                                "..."
+                                "The times that sections in the recommended schedule can have "
+                                "meetings within. The start and end time of the filter should be "
+                                "dash-separated. Times should be specified as decimal numbers of "
+                                "the form `h+mm/100` where h is the hour `[0..23]` and mm is the "
+                                "minute `[0,60)`, in ET. You can omit either the start or end "
+                                "time to leave that side unbounded, e.g. '11.30-'. Passing an "
+                                "empty string will not limit the time ranges that sections can "
+                                "have meetings within."
                             ),
                         },
                         "attributes": {
                             "type": "array",
                             "description": (
-                                "..."
+                                "An array of attributes that must be fulfilled by the recommended "
+                                "schedule. Each attribute requirement should be in the form of an "
+                                "object with a 'code' property set to the attribute code and a "
+                                "'num' property set to the number of courses in the recommended "
+                                "schedule that must have that specific attribute, e.g. "
+                                "`{ 'code': 'WUCN', 'num': 1 }`."
                             ),
                             "items": {"type": "object"},
                         }
@@ -135,18 +157,39 @@ from courses.filters import (
                 }
             }
         },
-        # override_response_schema={
-        #     reverse_func("recommend-schedules"): {
-        #         "POST": {
-        #             200: {"type": "array", "items": {"$ref": "#/components/schemas/CourseList"}}
-        #         }
-        #     }
-        # },
+        override_response_schema={
+            reverse_func("recommend-schedule"): {
+                "POST": {
+                    200: {"type": "array", "items": {"$ref": "#/components/schemas/MiniSection"}}
+                }
+            }
+        },
     )
 )
 @permission_classes([IsAuthenticated])
-def recommend_schedules_view(request):
+def recommend_schedule_view(request):
     """
+    Generate a schedule that meets a number of constraints. 
+    The number of credits and the minimum/maximum number of courses for the generated schedule can
+    be specified via the "num_credits," "min_courses," and "max_courses" fields. 
+    Passing in full course codes (in the form DEPT-XXXX) in the "locked_courses" and "avoid_courses" 
+    fields will guarantee that those courses are in or not in the generated schedule respectively.
+    Similarly, passing in a full section code (in the form DEPT-XXXX-XXX) in the "locked_sections"
+    field will guarantee that that section is in the generated schedule.
+    One can also set the fields "min_difficulty" and "max_quality" to be true in order to 
+    respectively minimize the difficulty and maximize the instructor quality of the sections in the
+    generated schedule.
+    Setting the field "is_open" to true will result in the generated schedule only including sections
+    that are currently open.
+    Lastly, one can specify constraints on the meeting times of the generated schedule's sections via
+    the "days" and "time" fields.
+    Note that locked courses and sections are not subject to section open/closed status and meeting
+    (day/time) constraints.
+
+    If a schedule that meets all of the given constraints exists, a 200 response code 
+    will be returned, alongside that schedule in the form of a list of sections.
+    If there is no schedule that meets all of the given constraints, a 400 response code
+    will be returned.
     """
 
     # Get schedule requirements from request
@@ -169,8 +212,6 @@ def recommend_schedules_view(request):
     required_attributes = set([req["code"] for req in attribute_requirements])
 
     # Filter potential courses and sections
-    queryset = Course.with_reviews.filter(semester=get_current_semester(), sections__isnull=False).distinct()
-
     section_status_query = Q(status="O") if is_open else Q(status="O") | Q(status="C")
     section_query = section_status_query
 
@@ -191,7 +232,7 @@ def recommend_schedules_view(request):
     course_query = Q(id__in=course_ids_by_section_query(section_query)) & Q(id=F('primary_listing__id'))
     course_query = course_query | Q(full_code__in=locked_courses)
 
-    queryset = queryset.filter(course_query)
+    queryset = Course.with_reviews.filter(semester=get_current_semester(), sections__isnull=False).distinct().filter(course_query)
     queryset = queryset.prefetch_related(
         Prefetch(
             "sections",
