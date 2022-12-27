@@ -48,13 +48,6 @@ from courses.filters import (
                 "POST": {
                     "type": "object",
                     "properties": {
-                        "num_schedules": {
-                            "type": "integer",
-                            "description": (
-                                "The number of credits you want returned. "
-                                "Defaults to 5.0."
-                            ),
-                        },
                         "num_credits": {
                             "type": "float",
                             "description": (
@@ -113,7 +106,7 @@ from courses.filters import (
                                 "The number of courses you want returned. "
                             ),
                         },
-                        "are_open": {
+                        "is_open": {
                             "type": "boolean",
                             "description": (
                                 "... "
@@ -155,7 +148,6 @@ from courses.filters import (
 def recommend_schedules_view(request):
     """
     """
-    num_schedules = request.data.get("num_schedules", 1)
 
     num_credits = request.data.get("num_credits", 5.0)
     min_courses = request.data.get("min_courses", None)
@@ -168,7 +160,7 @@ def recommend_schedules_view(request):
     min_difficulty = request.data.get("min_difficulty", False)
     max_quality = request.data.get("max_quality", False)
 
-    are_open = request.data.get("are_open", False)
+    is_open = request.data.get("is_open", False)
     days = request.data.get("days", None)
     time = request.data.get("time", None)
 
@@ -177,7 +169,7 @@ def recommend_schedules_view(request):
 
     queryset = Course.with_reviews.filter(semester="2023A", sections__isnull=False).distinct()
 
-    section_status_query = Q(status="O") if are_open else Q(status="O") | Q(status="C")
+    section_status_query = Q(status="O") if is_open else Q(status="O") | Q(status="C")
     section_query = section_status_query
 
     section_meeting_query = Q()
@@ -246,6 +238,7 @@ def recommend_schedules_view(request):
         }, 
         status=status.HTTP_400_BAD_REQUEST
     )
+
     if True in (c not in courses for c in locked_courses) or True in (s not in sections for s in locked_sections):
         return no_solution_response
 
@@ -307,68 +300,28 @@ def recommend_schedules_view(request):
     for attribute in attributes:
         model.Add(sum(schedule_attributes[attribute["code"]]) == attribute["num"])
 
-    # Creates a solver and solves the model.
-    solver = cp_model.CpSolver()
-
-    print("solving...")
-
     if max_quality or min_difficulty:
         model.Maximize(sum(section_scores))
-        result = solver.Solve(model)
-        if result == cp_model.OPTIMAL or result == cp_model.FEASIBLE:
-            best_objective_bound = round(solver.ObjectiveValue())
-            delta = int(min(0.25, num_schedules * 0.05) * abs(best_objective_bound))
-            model.Proto().ClearField('objective')
-            model.Add(sum(section_scores) >= best_objective_bound - delta)
-        else:
-            return no_solution_response
+
+    # Creates a solver and solves the model.
+    solver = cp_model.CpSolver()
 
     # Sets a time limit of 10 seconds.
     solver.parameters.max_time_in_seconds = 10.0
 
-    # Enumerate all solutions.
-    solver.parameters.enumerate_all_solutions = True
+    print("solving...")
 
-    class SolutionHandler(cp_model.CpSolverSolutionCallback):
-        def __init__(self, schedules, sections, limit):
-            cp_model.CpSolverSolutionCallback.__init__(self)
-            self.__schedules = schedules
-            self.__sections = sections
-            self.__solution_count = 0
-            self.__solution_limit = limit
+    result = solver.Solve(model)
 
-        def on_solution_callback(self):
-            # TO-DO: OR-Tools needs to fix viewing optional variables (intervals) as different solutions?
-            # self.__solution_count += 1
-            recommended_schedule = [section for section in self.__sections if self.Value(self.__sections[section])]
+    if result == cp_model.OPTIMAL or result == cp_model.FEASIBLE:
+        recommended_schedule = [section for section in sections if solver.Value(sections[section])]
+        queryset = Section.with_reviews.filter(course__semester="2023A", full_code__in=recommended_schedule)
 
-            if True not in [set(recommended_schedule) == set(schedule) for schedule in self.__schedules]:
-                print(recommended_schedule)
-                self.__schedules += [recommended_schedule]
-                self.__solution_count += 1
-
-            if self.__solution_count >= self.__solution_limit:
-                self.StopSearch()
-        
-        def solution_count(self):
-            return self.__solution_count
-
-    recommended_schedules = []
-    solution_handler = SolutionHandler(recommended_schedules, sections, num_schedules)
-    result = solver.Solve(model, solution_handler)
-
-    if solution_handler.solution_count():
-        recommended_schedules_data = []
-        
-        for schedule in recommended_schedules:
-            queryset = Section.with_reviews.filter(course__semester="2023A", full_code__in=schedule)
-            recommended_schedules_data.append(MiniSectionSerializer(queryset, many=True).data)
-        
         return Response(
-            {
-                "results": solution_handler.solution_count(),
-                "schedules": recommended_schedules_data,
-            },
+            MiniSectionSerializer(
+                queryset,
+                many=True
+            ).data,
             status=status.HTTP_200_OK,
         )
 
