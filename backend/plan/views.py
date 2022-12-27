@@ -149,6 +149,7 @@ def recommend_schedules_view(request):
     """
     """
 
+    # Get schedule requirements from request
     num_credits = request.data.get("num_credits", 5.0)
     min_courses = request.data.get("min_courses", None)
     max_courses = request.data.get("max_courses", None)
@@ -164,10 +165,11 @@ def recommend_schedules_view(request):
     days = request.data.get("days", None)
     time = request.data.get("time", None)
 
-    attributes = request.data.get("attributes", {})
-    attribute_set = set([attribute["code"] for attribute in attributes])
+    attribute_requirements = request.data.get("attributes", {})
+    required_attributes = set([req["code"] for req in attribute_requirements])
 
-    queryset = Course.with_reviews.filter(semester="2023A", sections__isnull=False).distinct()
+    # Filter potential courses and sections
+    queryset = Course.with_reviews.filter(semester=get_current_semester(), sections__isnull=False).distinct()
 
     section_status_query = Q(status="O") if is_open else Q(status="O") | Q(status="C")
     section_query = section_status_query
@@ -180,14 +182,16 @@ def recommend_schedules_view(request):
     if len(section_meeting_query) > 0:
         section_query &= Q(num_meetings=0) | Q(id__in=section_ids_by_meeting_query(section_meeting_query))
 
-    section_locked_query = Q(full_code__in=locked_sections)
-    section_query = section_query | section_locked_query # Note: Locked sections will ignore open / meeting constraints
+    # Ignore section status and meeting constraints for locked courses and sections
+    section_locked_query = Q(full_code__in=locked_sections) | Q(course__full_code__in=locked_courses)
+    section_query = section_query | section_locked_query
 
-    # Allows potentially filtering out locked courses -> Show warning on front-end if locked course will prevent feasible schedules
-    queryset = queryset.filter(id__in=course_ids_by_section_query(section_query))
-    # Last step - filter out crosslisted courses that aren't locked
-    queryset = queryset.filter(Q(id=F('primary_listing__id')) | Q(full_code__in=locked_courses))
+    # Only consider locked courses and primary courses (not crosslistings) for 
+    # which at least one section of each activity type passes the section query
+    course_query = Q(id__in=course_ids_by_section_query(section_query)) & Q(id=F('primary_listing__id'))
+    course_query = course_query | Q(full_code__in=locked_courses)
 
+    queryset = queryset.filter(course_query)
     queryset = queryset.prefetch_related(
         Prefetch(
             "sections",
@@ -200,13 +204,13 @@ def recommend_schedules_view(request):
         )
     )
 
-    # Creates the model.
+    # Create the model
     model = cp_model.CpModel()
 
-    # Creates the variables.
+    # Create the model variables
     courses = {}
     sections = {}
-    all_section_intervals = []
+    meeting_intervals = []
 
     day_to_index = { "U": 0, "M": 1, "T": 2, "W": 3, "R": 4, "F": 5, "S": 6 }
     def meeting_to_interval(meeting):
@@ -222,15 +226,17 @@ def recommend_schedules_view(request):
         return (start, duration)
 
     for course in queryset:
+        # Create a variable to indicate whether or not the course (any of its sections) is in the generated schedule
         courses[course.full_code] = model.NewBoolVar('course_%s' % (course.full_code))
 
         for section in course.sections.all():
+            # Create a variable to indicate whether or not the section is in the generated schedule
             sections[section.full_code] = model.NewBoolVar('section_%s' % (section.full_code))
 
             for i, meeting in enumerate(section.meetings.all()):
                 start, duration = meeting_to_interval(meeting)
                 meeting_interval = model.NewOptionalFixedSizeIntervalVar(start, duration, sections[section.full_code], 'section_%s_interval_%d' % (section.full_code, i))
-                all_section_intervals.append(meeting_interval)
+                meeting_intervals.append(meeting_interval)
 
     no_solution_response = Response(
         { 
@@ -239,22 +245,22 @@ def recommend_schedules_view(request):
         status=status.HTTP_400_BAD_REQUEST
     )
 
+    # Exit if a locked course or section does not exist (should never happen)
     if True in (c not in courses for c in locked_courses) or True in (s not in sections for s in locked_sections):
         return no_solution_response
 
-    # Creates the constraints.
-    schedule_courses = []
-    schedule_credits = []
-    section_scores = [] # Objective score
-    schedule_attributes = defaultdict(list)
+    # Create the constraints
+    schedule_courses = list(courses.values())   # All of the course boolean variables
+    schedule_credits = []                       # All of the section boolean variables multiplied by their respective course credits
+    schedule_section_scores = []                # All of the section boolean variables multiplied by an objective score (based on quality and difficulty)
+    schedule_attributes = defaultdict(list)     # Map of course attributes to courses
 
     for course in queryset:
-        schedule_courses.append(courses[course.full_code])
-        course_sections = defaultdict(set)
+        course_sections_by_activity = defaultdict(set)
 
         for attribute in course.attributes.all():
-            if attribute.code in attribute_set:
-                schedule_attributes[attribute.code] += [1 * courses[course.full_code]]
+            if attribute.code in required_attributes:
+                schedule_attributes[attribute.code].append(1 * courses[course.full_code])
 
         if course.full_code in locked_courses:
             model.Add(courses[course.full_code] == 1)
@@ -266,26 +272,30 @@ def recommend_schedules_view(request):
             model.Add(courses[course.full_code] == 0)
         else:
             for section in course.sections.all():
-                course_sections[section.activity].add(sections[section.full_code])
+                course_sections_by_activity[section.activity].add(sections[section.full_code])
                 schedule_credits.append(int(100 * section.credits) * sections[section.full_code])
 
+                # A section boolean variable is true if and only if the corresponding course boolean variable is true
                 model.AddImplication(sections[section.full_code], courses[course.full_code])
                 model.AddImplication(courses[course.full_code].Not(), sections[section.full_code].Not())
 
                 if section.full_code in locked_sections:
                     model.Add(sections[section.full_code] == 1)
                 else:
+                    # Calculate an objective score for sections that we can maximize
                     section_score = 0.0
                     if max_quality:
                         section_score += section.instructor_quality or 0.0
                     if min_difficulty:
                         section_score -= course.difficulty or 4.0
                     section_score = int(section_score * int(100 * section.credits))
-                    section_scores.append(section_score * sections[section.full_code])
+                    schedule_section_scores.append(section_score * sections[section.full_code])
 
-            for activity in course_sections:
-                model.AddAtMostOne(course_sections[activity])
-                model.AddAtLeastOne(course_sections[activity]).OnlyEnforceIf(courses[course.full_code])
+            for activity in course_sections_by_activity:
+                # Ensure that no more than one section of the same activity for a course is true
+                model.AddAtMostOne(course_sections_by_activity[activity])
+                # Ensure that if a course is true, then every activity for that course is satisfied
+                model.AddAtLeastOne(course_sections_by_activity[activity]).OnlyEnforceIf(courses[course.full_code])
 
     model.Add(sum(schedule_credits) == int(num_credits * 100))
 
@@ -295,27 +305,22 @@ def recommend_schedules_view(request):
     if max_courses:
         model.Add(sum(schedule_courses) <= min_courses)
 
-    model.AddNoOverlap(all_section_intervals)
+    model.AddNoOverlap(meeting_intervals)
 
-    for attribute in attributes:
-        model.Add(sum(schedule_attributes[attribute["code"]]) == attribute["num"])
+    for req in attribute_requirements:
+        model.Add(sum(schedule_attributes[req["code"]]) == req["num"])
 
     if max_quality or min_difficulty:
-        model.Maximize(sum(section_scores))
+        model.Maximize(sum(schedule_section_scores))
 
-    # Creates a solver and solves the model.
+    # Solve the model
     solver = cp_model.CpSolver()
-
-    # Sets a time limit of 10 seconds.
     solver.parameters.max_time_in_seconds = 10.0
-
-    print("solving...")
-
     result = solver.Solve(model)
 
     if result == cp_model.OPTIMAL or result == cp_model.FEASIBLE:
         recommended_schedule = [section for section in sections if solver.Value(sections[section])]
-        queryset = Section.with_reviews.filter(course__semester="2023A", full_code__in=recommended_schedule)
+        queryset = Section.with_reviews.filter(course__semester=get_current_semester(), full_code__in=recommended_schedule)
 
         return Response(
             MiniSectionSerializer(
