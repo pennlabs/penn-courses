@@ -6,12 +6,24 @@ from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 from abc import ABC, abstractmethod
 
+re_header_class = re.compile(
+    "area(sub)?(sub)?(sub)?(sub)?(sub)?(sub)?(sub)?(sub)?header")
+re_select_n = ("Select (one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen"
+               "|sixteen|seventeen|eighteen|nineteen|twenty|[0-9]+) ")
+re_course_units = "((?:course unit|course unit of|course units of|course units)(?: |$))?(?:course |courses )?"
+re_select_following = re.compile(re_select_n + re_course_units + "of the following ?(.*)")
+re_select_course_set = re.compile(
+    re_select_n + re_course_units + "(?:in(?: |$))?(.*)"
+)
+re_elective = re.compile("(.*) [eE]lectives?")
+re_ends_with_colon = re.compile("(.*):$")
+
 
 class RequirementNode(ABC):
     @property
     @abstractmethod
     def children(self):
-        pass;
+        pass
 
 
 class CourseLeaf(RequirementNode):
@@ -28,7 +40,7 @@ class CourseLeaf(RequirementNode):
 
 
 class CourseSetLeaf(RequirementNode):
-    def __init__(self, course_set: str, num_courses: None | str, num_credits: None | str):
+    def __init__(self, course_set: str, num_courses: None | str = None, num_credits: None | str = None):
         self.course_set = course_set
         self.num_courses = num_courses  # Note: at most one of num_courses and num_credits should be set (ie, not None)
         self.num_credits = num_credits
@@ -46,6 +58,18 @@ class CourseSetLeaf(RequirementNode):
         return []
 
 
+class CommentLeaf(RequirementNode):
+    def __init__(self, comment):
+        self.comment = comment
+
+    @property
+    def children(self) -> [RequirementNode]:
+        return []
+
+    def __str__(self):
+        return f"COMMENT: {self.comment}"
+
+
 class BranchingNode(RequirementNode):
     def __init__(self, label: str, children=None, num_courses: None | str = None, num_credits: None | str = None):
         if children is None:
@@ -60,7 +84,7 @@ class BranchingNode(RequirementNode):
             num_str = "%s courses" % self.num_courses
         else:
             num_str = "%s credits" % self.num_credits
-        return f"`f{self.label}` {num_str}"
+        return f"`{self.label}` {num_str}"
 
     @property
     def children(self):
@@ -70,6 +94,7 @@ class BranchingNode(RequirementNode):
 class OrNode(BranchingNode):
     def __str__(self):
         return "OR: " + super().__str__()
+
 
 class AndNode(BranchingNode):
     def __str__(self):
@@ -92,66 +117,162 @@ def walk_tree(root: RequirementNode, indent=""):
 
 
 def get_course_units(is_course_units, num):
-    units = {"num_courses": None, "num_credits": None}
-    if is_course_units:
-        units['num_credits'] = num
-    else:
-        units['num_courses'] = num
+    units = {"num_courses": 1, "num_credits": None}
+    if num:
+        if is_course_units:
+            units["num_credits"] = num
+            units["num_courses"] = None
+        else:
+            units["num_courses"] = num
     return units
 
 
-def scrape(soup):
-    re_header_class = re.compile(
-        "area(sub)?(sub)?(sub)?(sub)?(sub)?(sub)?(sub)?(sub)?header")  # TODO: hacky way of capturing up to 7 layers of "subs"
-    re_select_n = ("Select (one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen"
-                   "|sixteen|seventeen|eighteen|nineteen|twenty|[0-9]+) ")
-    re_select_following = re.compile(re_select_n + "(course units )?of the following ?(.*)")
-    re_select_course_set = re.compile(re_select_n + "(course units of |course units )?(.*) courses")
+def count_heading_depth(row):
+    """
+    :param row:
+    :return: 0 indexed heading depth, where 0 is the most important heading, 1 is a subheading and -1 is not a heading
+    """
+    if row.has_attr("class") and (match := re.search(re_header_class, " ".join(row['class']))) is not None:
+        return len([group for group in match.groups() if group is not None])
+    else:
+        return -1
 
-    # Degree name
-    degree_name = soup.find("h1", class_="page-title").text
+
+def check_class(element, class_name):
+    """
+    Check if beautiful soup element has a class
+    """
+    return element.has_attr("class") and class_name in element["class"]
+
+
+def parse(rows, degree_name):
+    is_indented = lambda element: element.find(class_="blockindent") is not None
+    is_andclass = lambda element: check_class(element, "andclass")
+    is_orclass = lambda element: check_class(element, "orclass")
 
     # Help traversal up the tree
-    stack = [AndNode(f"{degree_name}")]  # TODO
-    breadcrumbs = [0]  # indices within stack where currently applicable headings & subheadings live
+    stack = [AndNode(f"{degree_name}")]
+    heading_breadcrumbs = [0]  # indices within stack where currently applicable headings & subheadings live
+    indent_breadcrumbs = [0]
+
+    for i, row in enumerate(rows):
+        print(f"{row.text}")
+        if i+1 < len(rows) and is_andclass(rows[i + 1]) and not is_andclass(row):
+            node = AndNode("")
+            stack[-1].children_.append(node)
+            stack.append(node)
+        elif i+1 < len(rows) and is_orclass(rows[i + 1]) and not is_orclass(row):
+            print(f"OR START: `{row.text}`")
+            node = OrNode("")
+            stack[-1].children_.append(node)
+            stack.append(node)
+        elif i-1 >= 0 and is_andclass(rows[i-1]) and not is_andclass(row):
+            stack.pop()
+        elif i-1 >= 0 and is_orclass(rows[i-1]) and not is_orclass(row):
+            stack.pop()
+            print(f"OR END: `{row.text}`")
+
+        if is_indented(row) and (i - 1 < 0 or not is_indented(rows[i - 1])):
+            if len(stack[-1].children) > 0:
+                node = AndNode("")
+                stack[-1].children_.append(node)
+                stack.append(node)
+            # otherwise, there is a newly created node that should be popped when indent ends
+            indent_breadcrumbs.append(len(stack) - 1)  # index of last the last element on the stack
+        elif (i - 1 >= 0 and is_indented(rows[i - 1])) and not is_indented(row):
+            stack[indent_breadcrumbs.pop():] = []
+
+        # get hours
+        hours = None  # TODO: use.
+        if (hours_col := row.find("td", class_="hourscol")) is not None and (hours_str := hours_col.text.strip()):
+            hours = hours_str
+
+        if (full_code := row.find(class_="code")) is not None:
+            full_code = "-".join(
+                full_code.text.strip().split("/")[0].strip().upper().split()
+            )  # only take first code if multiple are given like "ARTH 1020/VLST 2320"
+            stack[-1].children_.append(
+                CourseLeaf(
+                    full_code,
+                    hours
+                )
+            )
+            continue
+
+        # if it's not a course, must be a courselistcomment
+        comment = row.find(class_="courselistcomment")
+        if comment is None:
+            print(f'ERROR: row that is not a course is also not a comment: `{row.text}`')
+            continue
+
+        heading_depth = -1
+        if (heading_depth := count_heading_depth(row)) >= 0:  # TODO: use.
+            stack[(indent_breadcrumbs[-1] + 1):] = []
+
+        if (match := re.match(re_select_following, comment.text)) is not None:
+            is_course_units = match.group(2)
+            num = match.group(1)
+            stack[(indent_breadcrumbs[-1] + 1):] = []
+            node = OrNode(comment.text, **get_course_units(is_course_units, num))
+            stack[-1].children_.append(node)
+            stack.append(node)
+        elif (match := re.match(re_ends_with_colon, comment.text)) is not None:
+            stack[(indent_breadcrumbs[-1] + 1):] = []
+            node = AndNode(match.group(1), num_credits=hours)
+            stack[-1].children_.append(node)
+            stack.append(node)
+        elif (match := re.search(re_select_course_set, comment.text)) is not None:
+            is_course_units = match.group(2)
+            num = match.group(1)
+            stack[-1].children.append(
+                CourseSetLeaf(
+                    match.group(3),
+                    **get_course_units(is_course_units, num)
+                )
+            )
+        elif (match := re.search(re_elective, comment.text)) is not None:
+            stack[-1].children.append(
+                CourseSetLeaf(
+                    match.group(1),
+                    num_credits=hours
+                )
+            )
+        elif hours is not None:
+            stack[-1].children_.append(
+                CourseSetLeaf(
+                    comment.text,
+                    num_credits=hours
+                )
+            )
+        else:
+            stack[-1].children_.append(
+                CommentLeaf(comment.text)
+            )
+
+    return stack[0]
+
+
+def scrape(soup) -> list[RequirementNode]:
+    soup.prettify(formatter=lambda s: s.replace(u'\xa0', ' '))  # replace &nbsp with regular spaces
+
+    degree_name = soup.find("h1", class_="page-title").text
 
     soup.prettify(formatter=lambda s: s.replace(u'\xa0', ' '))  # replace &nbsp with regular spaces
-    table = soup.find(class_='sc_courselist')
+    tables = soup.find_all("tbody")  # assumes a single table
 
-    for row in table.find_all("tr"):
-        parent = stack[-1]
-        obj = None
-        if row.has_attr("class") and (match := re.search(re_header_class, " ".join(row['class']))) is not None:
-            heading_depth = len([group for group in match.groups() if group is not None])
-            obj = AndNode(row.text)
-            parent = stack[breadcrumbs[heading_depth]]
-            stack[(breadcrumbs[heading_depth] + 1):] = []  # pop stack past parent
-            breadcrumbs[(heading_depth + 1):] = [len(stack)]  # set breadcrumbs
-            stack.append(obj)
-        elif hours := row.find("td", class_="hourscol"):
-            if comment := row.find(class_="courselistcomment"):
-                if match := re.search(re_select_following, comment.text):
-                    is_course_units = match.group(2)
-                    num = match.group(1)  # Could be None
-                    obj = OrNode(comment.text, **get_course_units(is_course_units, num))
-                    stack.append(obj)
-                elif match := re.search(re_select_course_set, comment.text):
-                    is_course_units = match.group(2)
-                    num = match.group(1)
-                    obj = CourseSetLeaf(match.group(3), **get_course_units(is_course_units, num))
-                elif hours.text.strip(): # TODO: should this also be a course set?
-                    obj = CourseSetLeaf(comment.text, num_credits=hours.text, num_courses=None)
-
-            elif full_code := row.find("td", class_="codecol"):
-                obj = CourseLeaf(
-                    full_code.text.strip().upper().replace(" ", "-"),
-                    hours.text
-                )
-        if obj is None:
-            print(f"`{row.text}` could not be identified")
-        else:
-            parent.children_.append(obj)
-    return stack[0]
+    ignore = []
+    if len(tables) > 1:
+        print(f"Found {len(tables)} tables")
+        try:
+            ignore = eval(input("Enter tables to ignore (as a list like `[0, 2, 3]`): "))
+        except SyntaxError:
+            pass
+    parsed = []
+    for i, table in enumerate(tables):
+        if i in ignore:
+            continue
+        parsed.append(parse(table.find_all("tr"), degree_name))
+    return parsed
 
 
 class Command(BaseCommand):
@@ -182,8 +303,9 @@ class Command(BaseCommand):
         if (url := kwargs.get("url")) is not None:
             page = requests.get(url).text
             if (out_file_path := kwargs.get("response_dump_file")) is not None:
-                if out_file_path == True: # check if provided as a flag
-                    out_file_path = "./degree/data/" + [piece for piece in url.rsplit("/", 2) if piece.strip() != ''][-1] + ".html"
+                if out_file_path == True:  # check if provided as a flag
+                    out_file_path = "./degree/data/" + [piece for piece in url.rsplit("/", 2) if piece.strip() != ''][
+                        -1] + ".html"
                 with open(out_file_path, "w") as f:
                     f.write(page)
         elif (in_file_path := kwargs.get("file")) is not None:
@@ -191,7 +313,8 @@ class Command(BaseCommand):
         else:
             raise ValueError("At least one of --url or --file should be not None")
         soup = BeautifulSoup(page, 'html.parser')
-        walk_tree(scrape(soup))
+        for tree in scrape(soup):
+            walk_tree(tree)
 
         try:
             page.close()
