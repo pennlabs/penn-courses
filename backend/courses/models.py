@@ -50,7 +50,10 @@ class Instructor(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     name = models.CharField(
-        max_length=255, unique=True, db_index=True, help_text="The full name of the instructor."
+        max_length=255,
+        unique=True,
+        db_index=True,
+        help_text="The full name of the instructor.",
     )
     user = models.ForeignKey(
         User,
@@ -156,7 +159,9 @@ class Course(models.Model):
         ),
     )
     code = models.CharField(
-        max_length=8, db_index=True, help_text="The course code, e.g. `120` for CIS-120."
+        max_length=8,
+        db_index=True,
+        help_text="The course code, e.g. `120` for CIS-120.",
     )
     semester = models.CharField(
         max_length=5,
@@ -292,7 +297,9 @@ class Course(models.Model):
         departments set (related name requirements).
         """
         return (
-            PreNGSSRequirement.objects.exclude(id__in=self.pre_ngss_nonrequirement_set.all())
+            PreNGSSRequirement.objects.exclude(
+                id__in=self.pre_ngss_nonrequirement_set.all()
+            )
             .filter(semester=self.semester)
             .filter(
                 Q(id__in=self.pre_ngss_requirement_set.all())
@@ -330,11 +337,18 @@ class Course(models.Model):
                     topic = (
                         Topic.objects.filter(
                             Q(most_recent__full_code=primary.full_code)
-                            | Q(most_recent__full_code__in=primary.listing_set.values("full_code")),
+                            | Q(
+                                most_recent__full_code__in=primary.listing_set.values(
+                                    "full_code"
+                                )
+                            ),
                         )
                         .annotate(
                             most_recent_match=Case(
-                                When(most_recent__full_code=primary.full_code, then=Value(1)),
+                                When(
+                                    most_recent__full_code=primary.full_code,
+                                    then=Value(1),
+                                ),
                                 default=Value(0),
                                 output_field=models.IntegerField(),
                             )
@@ -413,7 +427,9 @@ class Topic(models.Model):
                 and topic.branched_from
                 and self.branched_from != topic.branched_from
             ):
-                raise ValueError("Cannot merge topics with different branched_from topics.")
+                raise ValueError(
+                    "Cannot merge topics with different branched_from topics."
+                )
             if self.most_recent.semester >= topic.most_recent.semester:
                 Course.objects.filter(topic=topic).update(topic=self)
                 if topic.branched_from and not self.branched_from:
@@ -730,7 +746,8 @@ class Section(models.Model):
     )
 
     instructors = models.ManyToManyField(
-        Instructor, help_text="The Instructor object(s) of the instructor(s) teaching the section."
+        Instructor,
+        help_text="The Instructor object(s) of the instructor(s) teaching the section.",
     )
     associated_sections = models.ManyToManyField(
         "Section",
@@ -780,7 +797,8 @@ class Section(models.Model):
     )
 
     registration_volume = models.PositiveIntegerField(
-        default=0, help_text="The number of active PCA registrations watching this section."
+        default=0,
+        help_text="The number of active PCA registrations watching this section.",
     )  # For the set of PCA registrations for this section, use the related field `registrations`.
 
     def __str__(self):
@@ -837,11 +855,15 @@ class Section(models.Model):
                 return None
             try:
                 last_status_update = StatusUpdate.objects.filter(
-                    section=self, created_at__gt=add_drop_start, created_at__lt=add_drop_end
+                    section=self,
+                    created_at__gt=add_drop_start,
+                    created_at__lt=add_drop_end,
                 ).latest("created_at")
             except StatusUpdate.DoesNotExist:
                 last_status_update = None
-            last_update_dt = last_status_update.created_at if last_status_update else add_drop_start
+            last_update_dt = (
+                last_status_update.created_at if last_status_update else add_drop_start
+            )
             period_seconds = float(
                 (min(current_time, add_drop_end) - add_drop_start).total_seconds()
             )
@@ -882,7 +904,12 @@ class StatusUpdate(models.Model):
     A registration status update for a specific section (e.g. CIS-120-001 went from open to close)
     """
 
-    STATUS_CHOICES = (("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted"))
+    STATUS_CHOICES = (
+        ("O", "Open"),
+        ("C", "Closed"),
+        ("X", "Cancelled"),
+        ("", "Unlisted"),
+    )
     section = models.ForeignKey(
         Section,
         related_name="status_updates",
@@ -917,7 +944,8 @@ class StatusUpdate(models.Model):
     # and the save() method of StatusUpdate
 
     in_add_drop_period = models.BooleanField(
-        default=False, help_text="Was this status update created during the add/drop period?"
+        default=False,
+        help_text="Was this status update created during the add/drop period?",
     )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
     # and the save() method of StatusUpdate
 
@@ -1048,7 +1076,8 @@ class Room(models.Model):
         ),
     )
     number = models.CharField(
-        max_length=8, help_text="The room number, e.g. `101` for Wu and Chen Auditorium in Levine."
+        max_length=8,
+        help_text="The room number, e.g. `101` for Wu and Chen Auditorium in Levine.",
     )
     name = models.CharField(
         max_length=80,
@@ -1327,7 +1356,9 @@ class APIKey(models.Model):
     code = models.CharField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
     active = models.BooleanField(blank=True, default=True)
 
-    privileges = models.ManyToManyField(APIPrivilege, related_name="key_set", blank=True)
+    privileges = models.ManyToManyField(
+        APIPrivilege, related_name="key_set", blank=True
+    )
 
 
 class UserProfile(models.Model):
@@ -1405,7 +1436,9 @@ class UserProfile(models.Model):
                     phone_number, phonenumbers.PhoneNumberFormat.E164
                 )
             except phonenumbers.phonenumberutil.NumberParseException:
-                raise ValidationError("Invalid phone number (this should have been caught already)")
+                raise ValidationError(
+                    "Invalid phone number (this should have been caught already)"
+                )
         super().save(*args, **kwargs)
 
 
@@ -1420,3 +1453,66 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created and instance.email != "":
         instance.profile.email = instance.email
     instance.profile.save()
+
+class Requirement(models.Model):
+    """
+    A set of courses that a student should take to fulfill a requirement for a degree.
+    """
+
+    SATISFIED_BY = (
+        ("ALL", "Must take all courses to satisfy requirements"),
+        ("Any", "Can take any course to satisfy requirements"),
+        ("CUS", "Must take courses with total number of CUs to satisfy requirements"),
+        ("NUM_COURSES", "Must take a certain number of courses to satisfy requirements"),
+    )
+
+    name = models.TextField(
+        help_text=dedent(
+            """
+        The name of the requirement.
+        """
+        )
+    )
+    
+    class SatisfiedBy(models.IntegerChoices):
+        ALL = 1
+        ANY = 2
+        CUS = 3
+        NUM_COURSES = 4
+
+    satisfied_by = models.IntegerField(
+        choices=SatisfiedBy.choices,
+        db_index=False, #TODO: is db_index true or false here?
+        null=True,
+        help_text=dedent(
+            """
+        The way in which this requirement is satisfied.  This is a string, and can be one of the
+        following:
+        """
+            + string_dict_to_html(dict(SATISFIED_BY))
+        ),
+    )
+
+    courses = models.ManyToManyField(
+        Course,
+        related_name="requirements",
+        blank=True,
+        help_text=dedent(
+            """
+            Course objects which have this requirement.
+            """
+        ),
+    )
+
+    cus = models.IntegerField(
+        null=True,
+        help_text=dedent(
+            """
+        The number of CUs required to satisfy this requirement.  This is only used if
+        `satisfied_by` is "CUS".
+        """
+        ),
+    )
+
+    def __str__(self):
+        return f"{self.name} @ {self.courses} - {self.cus}"

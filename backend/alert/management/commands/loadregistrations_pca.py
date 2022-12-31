@@ -10,7 +10,9 @@ from django.db.models import F
 from django.utils.timezone import make_aware
 from tqdm import tqdm
 
-from alert.management.commands.recomputestats import recompute_demand_distribution_estimates
+from alert.management.commands.recomputestats import (
+    recompute_demand_distribution_estimates,
+)
 from alert.models import Registration, Section
 from PennCourses.settings.base import TIME_ZONE
 
@@ -65,7 +67,9 @@ class Command(BaseCommand):
                 full_code__in=full_codes, course__semester__in=semesters
             ).annotate(efficient_semester=F("course__semester"))
             for section_ob in section_obs:
-                sections_map[section_ob.full_code, section_ob.efficient_semester] = section_ob.id
+                sections_map[
+                    section_ob.full_code, section_ob.efficient_semester
+                ] = section_ob.id
 
         id_corrections = dict()
         semesters = set()
@@ -99,7 +103,9 @@ class Command(BaseCommand):
                     full_code = row[0]
                     semester = row[1]
                     if (full_code, semester) not in sections_map:
-                        raise ValueError(f"Section {full_code} {semester} not found in database.")
+                        raise ValueError(
+                            f"Section {full_code} {semester} not found in database."
+                        )
                     semesters.add(semester)
 
                     original_id = row[4]
@@ -113,7 +119,9 @@ class Command(BaseCommand):
                         dt = datetime.strptime(dt_string, "%Y-%m-%d %H:%M:%S.%f %Z")
                         return make_aware(dt, timezone=gettz(TIME_ZONE), is_dst=None)
 
-                    registration_dict = dict()  # fields to unpack into Registration initialization
+                    registration_dict = (
+                        dict()
+                    )  # fields to unpack into Registration initialization
                     registration_dict["section_id"] = sections_map[full_code, semester]
                     registration_dict["source"] = "SCRIPT_PCA"
                     registration_dict["created_at"] = extract_date(row[2])
@@ -130,14 +138,18 @@ class Command(BaseCommand):
                     registration.created_at = registration_dict["created_at"]
                     registration.save(load_script=True)
                     id_corrections[original_id] = registration.id
-                    registrations.append((registration, original_id, resubscribed_from_id))
+                    registrations.append(
+                        (registration, original_id, resubscribed_from_id)
+                    )
 
             print("Connecting resubscribe chains...")
 
             to_save = []
             for registration, original_id, resubscribed_from_id in registrations:
                 if resubscribed_from_id is not None:
-                    registration.resubscribed_from_id = id_corrections[resubscribed_from_id]
+                    registration.resubscribed_from_id = id_corrections[
+                        resubscribed_from_id
+                    ]
                     to_save.append(registration)
             Registration.objects.bulk_update(to_save, ["resubscribed_from_id"])
             to_save = []
@@ -153,4 +165,6 @@ class Command(BaseCommand):
             print(
                 f"Recomputing PCA Demand Distribution Estimates for {len(semesters)} semesters..."
             )
-            recompute_demand_distribution_estimates(semesters=",".join(semesters), verbose=True)
+            recompute_demand_distribution_estimates(
+                semesters=",".join(semesters), verbose=True
+            )

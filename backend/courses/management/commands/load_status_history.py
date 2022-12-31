@@ -55,7 +55,9 @@ class Command(BaseCommand):
                 full_code__in=full_codes, course__semester__in=semesters
             ).annotate(efficient_semester=F("course__semester"))
             for section_ob in section_obs:
-                sections_map[section_ob.full_code, section_ob.efficient_semester] = section_ob.id
+                sections_map[
+                    section_ob.full_code, section_ob.efficient_semester
+                ] = section_ob.id
         add_drop_periods = dict()  # maps semester to AddDropPeriod object
         for adp in AddDropPeriod.objects.filter(semester__in=semesters):
             add_drop_periods[adp.semester] = adp
@@ -73,7 +75,9 @@ class Command(BaseCommand):
                     full_code = row[0]
                     semester = row[1]
                     created_at = datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S.%f %Z")
-                    created_at = make_aware(created_at, timezone=gettz(TIME_ZONE), is_dst=None)
+                    created_at = make_aware(
+                        created_at, timezone=gettz(TIME_ZONE), is_dst=None
+                    )
                     old_status = row[3]
                     new_status = row[4]
                     alert_sent = row[5]
@@ -82,7 +86,9 @@ class Command(BaseCommand):
                     if new_status != "O" and new_status != "C" and new_status != "X":
                         new_status = ""
                     if (full_code, semester) not in sections_map.keys():
-                        raise ValueError(f"Section {full_code} {semester} not found in db.")
+                        raise ValueError(
+                            f"Section {full_code} {semester} not found in db."
+                        )
                     section_id = sections_map[full_code, semester]
                     status_update = StatusUpdate(
                         section_id=section_id,
@@ -92,10 +98,14 @@ class Command(BaseCommand):
                         alert_sent=alert_sent,
                     )
                     if semester not in add_drop_periods:
-                        add_drop_periods[semester] = get_or_create_add_drop_period(semester)
+                        add_drop_periods[semester] = get_or_create_add_drop_period(
+                            semester
+                        )
                     status_update.save(add_drop_period=add_drop_periods[semester])
 
-                print(f"Finished loading status history from {src}... processed {row_count} rows. ")
+                print(
+                    f"Finished loading status history from {src}... processed {row_count} rows. "
+                )
 
                 print(f"Recomputing PCA Stats for {len(semesters)} semesters...")
                 recompute_stats(semesters=",".join(semesters), verbose=True)

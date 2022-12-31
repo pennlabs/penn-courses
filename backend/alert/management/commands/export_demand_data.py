@@ -11,8 +11,15 @@ from tqdm import tqdm
 from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import Registration, Section, validate_add_drop_semester
 from courses.models import StatusUpdate
-from courses.util import get_current_semester, get_or_create_add_drop_period, get_semesters
-from PennCourses.settings.base import ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES, S3_resource
+from courses.util import (
+    get_current_semester,
+    get_or_create_add_drop_period,
+    get_semesters,
+)
+from PennCourses.settings.base import (
+    ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES,
+    S3_resource,
+)
 from review.views import extra_metrics_section_filters
 
 
@@ -34,10 +41,15 @@ def get_demand_data(semesters, section_query="", verbose=False):
         add_drop_period = get_or_create_add_drop_period(semester)
 
         if verbose:
-            print(f"Processing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.\n")
+            print(
+                f"Processing semester {semester}, "
+                f"{(semester_num+1)}/{len(semesters)}.\n"
+            )
 
         output_dict[semester] = []  # list of demand data dicts
-        section_id_to_object = dict()  # maps section id to section object (for this semester)
+        section_id_to_object = (
+            dict()
+        )  # maps section id to section object (for this semester)
         volume_changes_map = dict()  # maps section id to list of volume changes
         status_updates_map = dict()  # maps section id to list of status updates
 
@@ -62,9 +74,9 @@ def get_demand_data(semesters, section_query="", verbose=False):
         if verbose:
             print("Computing registration volume changes over time for each section...")
         for registration in iterator_wrapper(
-            Registration.objects.filter(section_id__in=section_id_to_object.keys()).annotate(
-                section_capacity=F("section__capacity")
-            )
+            Registration.objects.filter(
+                section_id__in=section_id_to_object.keys()
+            ).annotate(section_capacity=F("section__capacity"))
         ):
             section_id = registration.section_id
             volume_changes_map[section_id].append(
@@ -72,7 +84,9 @@ def get_demand_data(semesters, section_query="", verbose=False):
             )
             deactivated_at = registration.deactivated_at
             if deactivated_at is not None:
-                volume_changes_map[section_id].append({"date": deactivated_at, "volume_change": -1})
+                volume_changes_map[section_id].append(
+                    {"date": deactivated_at, "volume_change": -1}
+                )
 
         if verbose:
             print("Collecting status updates over time for each section...")
@@ -109,11 +123,15 @@ def get_demand_data(semesters, section_query="", verbose=False):
 
         # Initialize variables to be maintained in our main all_changes loop
         latest_popularity_dist_estimate = None
-        registration_volumes = {section_id: 0 for section_id in section_id_to_object.keys()}
+        registration_volumes = {
+            section_id: 0 for section_id in section_id_to_object.keys()
+        }
         demands = {section_id: 0 for section_id in section_id_to_object.keys()}
 
         # Initialize section statuses
-        section_status = {section_id: None for section_id in section_id_to_object.keys()}
+        section_status = {
+            section_id: None for section_id in section_id_to_object.keys()
+        }
         for change in all_changes:
             section_id = change["section_id"]
             if change["type"] == "status_update":
@@ -154,15 +172,19 @@ def get_demand_data(semesters, section_query="", verbose=False):
             volume_change = change["volume_change"]
             registration_volumes[section_id] += volume_change
             demands[section_id] = (
-                registration_volumes[section_id] / section_id_to_object[section_id].capacity
+                registration_volumes[section_id]
+                / section_id_to_object[section_id].capacity
             )
             max_id = max(demands.keys(), key=lambda x: demands[x])
             min_id = min(demands.keys(), key=lambda x: demands[x])
             if (
                 latest_popularity_dist_estimate is None
-                or section_id == latest_popularity_dist_estimate["highest_demand_section"].id
-                or section_id == latest_popularity_dist_estimate["lowest_demand_section"].id
-                or latest_popularity_dist_estimate["highest_demand_section"].id != max_id
+                or section_id
+                == latest_popularity_dist_estimate["highest_demand_section"].id
+                or section_id
+                == latest_popularity_dist_estimate["lowest_demand_section"].id
+                or latest_popularity_dist_estimate["highest_demand_section"].id
+                != max_id
                 or latest_popularity_dist_estimate["lowest_demand_section"].id != min_id
                 or num_changes_without_estimate >= distribution_estimate_threshold
             ):
@@ -171,7 +193,9 @@ def get_demand_data(semesters, section_query="", verbose=False):
                     {
                         "percent_through": percent_through,
                         "demands": [
-                            val for sec_id, val in demands.items() if section_status[sec_id] == "C"
+                            val
+                            for sec_id, val in demands.items()
+                            if section_status[sec_id] == "C"
                         ],
                     }
                 )
@@ -261,4 +285,6 @@ class Command(BaseCommand):
         if upload_to_s3:
             S3_resource.meta.client.upload_file(output_file_path, "penn.courses", path)
             os.remove(output_file_path)
-        print(f"Generated {script_print_path} with demand data from {len(semesters)} semesters.")
+        print(
+            f"Generated {script_print_path} with demand data from {len(semesters)} semesters."
+        )

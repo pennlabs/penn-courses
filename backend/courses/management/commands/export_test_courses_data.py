@@ -175,9 +175,13 @@ class Command(BaseCommand):
         path = kwargs["path"]
         assert path.endswith(".csv") or path == os.devnull
         script_print_path = ("s3://penn.courses/" if upload_to_s3 else "") + path
-        print(f"Exporting test data from semesters {semesters} to {script_print_path}...")
+        print(
+            f"Exporting test data from semesters {semesters} to {script_print_path}..."
+        )
 
-        querysets = dict()  # will map datatype to the queryset generated for that datatype
+        querysets = (
+            dict()
+        )  # will map datatype to the queryset generated for that datatype
         fields = test_data_fields
         data_types = fields.keys()
 
@@ -201,7 +205,9 @@ class Command(BaseCommand):
 
                     if data_type.endswith("_m2mfield"):
                         for object in tqdm(querysets[fields[data_type][0]]):
-                            for related_object in getattr(object, fields[data_type][2]).all():
+                            for related_object in getattr(
+                                object, fields[data_type][2]
+                            ).all():
                                 rows += 1
                                 # _m2mfield schema:
                                 # from model, from id, through field, to id, to model
@@ -244,17 +250,24 @@ class Command(BaseCommand):
                         queryset = Instructor.objects.all()
                         querysets["instructors"] = queryset
                     elif data_type == "reviews":
-                        queryset = Review.objects.filter(section__in=querysets["sections"])
+                        queryset = Review.objects.filter(
+                            section__in=querysets["sections"]
+                        )
                         querysets["reviews"] = queryset
                     elif data_type == "review_bits":
-                        queryset = ReviewBit.objects.filter(review__in=querysets["reviews"])
+                        queryset = ReviewBit.objects.filter(
+                            review__in=querysets["reviews"]
+                        )
                         querysets["review_bits"] = queryset
 
                     for object in tqdm(queryset):
                         rows += 1
                         csv_writer.writerow(
                             [data_type]
-                            + [str(getattr(object, field)) for field in fields[data_type]]
+                            + [
+                                str(getattr(object, field))
+                                for field in fields[data_type]
+                            ]
                         )
                         if rows % 5000 == 0:
                             output_file.flush()
@@ -263,4 +276,6 @@ class Command(BaseCommand):
             S3_resource.meta.client.upload_file(output_file_path, "penn.courses", path)
             os.remove(output_file_path)
 
-        print(f"Exported {rows} of test data from semesters {semesters} to {script_print_path}.")
+        print(
+            f"Exported {rows} of test data from semesters {semesters} to {script_print_path}."
+        )
