@@ -15,8 +15,7 @@ class Degree(models.Model):
         unique=True,
         help_text=dedent(
             """
-        The name of this requirement. No two schedules can match in all of the fields
-        `[name, semester, person]`
+        The name of this degree
         """
         ),
     )
@@ -47,14 +46,6 @@ class DegreeRequirement(models.Model):
         The degree this requirement falls under.
         """
         ),
-    )
-    semester = models.CharField(
-        max_length=5,
-        help_text=dedent(
-            """
-        The academic semester this degree requirement is applicable to.
-        """
-        ), # TODO: remove?
     )
     name = models.CharField(
         max_length=255,
@@ -96,9 +87,11 @@ class DegreeRequirement(models.Model):
         Topic,
         related_name="degree_requirements"
     )
+    created_at = models.DateTimeField(auto_now_add=True) # TODO: do we need these fields?
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = (("name", "semester", "degree"),) # TODO: should be just name & semester?
+        unique_together = (("name", "degree"),) # TODO: should be just name & semester?
 
     def __str__(self):
         return "Name: %s, DegreeRequirement ID: %s" % (self.name, self.id)
@@ -186,7 +179,7 @@ class DegreePlan(models.Model):
     cart = models.ManyToManyField(
         Course,
     )
-    created_at = models.DateTimeField(auto_now_add=True) # TODO: do we need these fields?
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
