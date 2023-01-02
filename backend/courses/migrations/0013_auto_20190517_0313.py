@@ -13,18 +13,26 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="requirement",
             name="overrides",
-            field=models.ManyToManyField(related_name="nonrequirement_set", to="courses.Course"),
+            field=models.ManyToManyField(
+                related_name="nonrequirement_set", to="courses.Course"
+            ),
         ),
         migrations.AlterField(
             model_name="requirement",
             name="courses",
-            field=models.ManyToManyField(related_name="requirement_set", to="courses.Course"),
+            field=models.ManyToManyField(
+                related_name="requirement_set", to="courses.Course"
+            ),
         ),
         migrations.AlterField(
             model_name="requirement",
             name="school",
             field=models.CharField(
-                choices=[("SEAS", "Engineering"), ("WH+", "Wharton"), ("SAS", "College")],
+                choices=[
+                    ("SEAS", "Engineering"),
+                    ("WH+", "Wharton"),
+                    ("SAS", "College"),
+                ],
                 max_length=5,
             ),
         ),

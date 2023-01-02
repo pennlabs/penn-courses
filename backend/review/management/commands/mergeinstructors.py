@@ -171,7 +171,9 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument("--dryrun", action="store_true", help="perform a dry run of merge.")
+        parser.add_argument(
+            "--dryrun", action="store_true", help="perform a dry run of merge."
+        )
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument(
             "--instructor",
@@ -182,7 +184,9 @@ class Command(BaseCommand):
             default=list(),
         )
         group.add_argument("--strategy", "-s", dest="strategies", action="append")
-        group.add_argument("--all", "-a", action="store_const", const=None, dest="strategies")
+        group.add_argument(
+            "--all", "-a", action="store_const", const=None, dest="strategies"
+        )
 
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
@@ -210,12 +214,17 @@ class Command(BaseCommand):
             """
             print("Finding duplicates...")
             duplicates = strat()
-            print(f"Found {len(duplicates)} instructors with multiple rows. Merging records...")
+            print(
+                f"Found {len(duplicates)} instructors with multiple rows. Merging records..."
+            )
             resolve_duplicates(duplicates, dry_run, stat, force)
 
         if len(manual_merge) > 0:
             print("***Merging records manually***")
-            run_merge(lambda: [set(Instructor.objects.filter(pk__in=manual_merge))], force=True)
+            run_merge(
+                lambda: [set(Instructor.objects.filter(pk__in=manual_merge))],
+                force=True,
+            )
         else:
             if selected_strategies is None:
                 selected_strategies = list(strategies.keys())

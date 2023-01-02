@@ -7,7 +7,9 @@ from alert.views import RegistrationHistoryViewSet, RegistrationViewSet
 
 router = routers.DefaultRouter()
 router.register(r"registrations", RegistrationViewSet, basename="registrations")
-router.register(r"registrationhistory", RegistrationHistoryViewSet, basename="registrationhistory")
+router.register(
+    r"registrationhistory", RegistrationHistoryViewSet, basename="registrationhistory"
+)
 
 urlpatterns = [
     path("webhook", views.accept_webhook, name="webhook"),

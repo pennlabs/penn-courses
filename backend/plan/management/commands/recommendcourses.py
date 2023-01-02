@@ -35,7 +35,9 @@ def vectorize_user_by_courses(
         )
     invalid_curr_courses = set(curr_courses) - {
         c.full_code
-        for c in Course.objects.filter(semester=get_current_semester(), full_code__in=curr_courses)
+        for c in Course.objects.filter(
+            semester=get_current_semester(), full_code__in=curr_courses
+        )
     }
     if len(invalid_curr_courses) > 0:
         raise ValueError(
@@ -79,24 +81,27 @@ def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict):
     curr_courses = set(
         [
             s
-            for s in Schedule.objects.filter(person=user, semester=curr_semester).values_list(
-                "sections__course__full_code", flat=True
-            )
+            for s in Schedule.objects.filter(
+                person=user, semester=curr_semester
+            ).values_list("sections__course__full_code", flat=True)
             if s is not None
         ]
     )
     past_courses = set(
         [
             s
-            for s in Schedule.objects.filter(person=user, semester__lt=curr_semester).values_list(
-                "sections__course__full_code", flat=True
-            )
+            for s in Schedule.objects.filter(
+                person=user, semester__lt=curr_semester
+            ).values_list("sections__course__full_code", flat=True)
             if s is not None
         ]
     )
     past_courses = past_courses - curr_courses
     return vectorize_user_by_courses(
-        list(curr_courses), list(past_courses), curr_course_vectors_dict, past_course_vectors_dict
+        list(curr_courses),
+        list(past_courses),
+        curr_course_vectors_dict,
+        past_course_vectors_dict,
     )
 
 
@@ -123,13 +128,16 @@ def best_recommendations(
     recs = [
         (c.full_code, rec_course_to_score[c.full_code])
         for c in Course.objects.filter(
-            semester=get_current_semester(), full_code__in=list(rec_course_to_score.keys())
+            semester=get_current_semester(),
+            full_code__in=list(rec_course_to_score.keys()),
         )
     ]  # only recommend currently offered courses
     if n_recommendations > len(recs):
         n_recommendations = len(recs)
 
-    return [course for course, _ in heapq.nlargest(n_recommendations, recs, lambda x: x[1])]
+    return [
+        course for course, _ in heapq.nlargest(n_recommendations, recs, lambda x: x[1])
+    ]
 
 
 def recommend_courses(
@@ -157,7 +165,9 @@ def recommend_courses(
     )
 
 
-dev_course_clusters = None  # a global variable used to "cache" the course clusters in dev
+dev_course_clusters = (
+    None  # a global variable used to "cache" the course clusters in dev
+)
 
 
 def retrieve_course_clusters():
@@ -167,7 +177,8 @@ def retrieve_course_clusters():
             print("TRAINING DEVELOPMENT MODEL... PLEASE WAIT")
             dev_course_clusters = train_recommender(
                 course_data_path=(
-                    settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_data_test.csv"
+                    settings.BASE_DIR
+                    + "/tests/plan/course_recs_test_data/course_data_test.csv"
                 ),
                 preloaded_descriptions_path=(
                     settings.BASE_DIR
@@ -182,7 +193,9 @@ def retrieve_course_clusters():
         return cached_data
     # Need to redownload
     course_cluster_data = pickle.loads(
-        S3_client.get_object(Bucket="penn.courses", Key="course-cluster-data.pkl")["Body"].read()
+        S3_client.get_object(Bucket="penn.courses", Key="course-cluster-data.pkl")[
+            "Body"
+        ].read()
     )
     cache.set("course-cluster-data", course_cluster_data, timeout=90000)
     return course_cluster_data
@@ -254,6 +267,10 @@ class Command(BaseCommand):
 
         print(
             recommend_courses(
-                curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses
+                curr_course_vectors_dict,
+                cluster_centroids,
+                clusters,
+                user_vector,
+                user_courses,
             )
         )

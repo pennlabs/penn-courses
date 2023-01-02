@@ -106,9 +106,13 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-course_quality_help = "The average course quality rating for this section, on a scale of 0-4."
+course_quality_help = (
+    "The average course quality rating for this section, on a scale of 0-4."
+)
 difficulty_help = "The average difficult rating for this section, on a scale of 0-4."
-instructor_quality_help = "The average instructor quality for this section, on a scale of 0-4."
+instructor_quality_help = (
+    "The average instructor quality for this section, on a scale of 0-4."
+)
 work_required_help = "The average work required for this section, on a scale of 0-4."
 
 
@@ -156,7 +160,10 @@ class SectionDetailSerializer(serializers.ModelSerializer):
         max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
     )
     instructor_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
+        max_digits=4,
+        decimal_places=3,
+        read_only=True,
+        help_text=instructor_quality_help,
     )
     work_required = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
@@ -273,7 +280,10 @@ class CourseListSerializer(serializers.ModelSerializer):
         max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
     )
     instructor_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
+        max_digits=4,
+        decimal_places=3,
+        read_only=True,
+        help_text=instructor_quality_help,
     )
     work_required = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
@@ -352,7 +362,10 @@ class CourseDetailSerializer(CourseListSerializer):
         max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
     )
     instructor_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
+        max_digits=4,
+        decimal_places=3,
+        read_only=True,
+        help_text=instructor_quality_help,
     )
     work_required = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help

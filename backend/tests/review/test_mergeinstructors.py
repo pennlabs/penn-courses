@@ -27,7 +27,8 @@ class BatchDuplicateTestCase(TestCase):
 
     def test_batch_duplicates(self):
         dupes = batch_duplicates(
-            Instructor.objects.all().annotate(name_lower=Lower("name")), lambda x: x.name_lower
+            Instructor.objects.all().annotate(name_lower=Lower("name")),
+            lambda x: x.name_lower,
         )
         self.assertEqual(1, len(dupes))
         self.assertEqual("a", dupes[0].pop().name.lower())
@@ -51,13 +52,21 @@ class ResolveDuplicatesTestCase(TestCase):
         self.inst_a = Instructor.objects.create(name="a")
         self.inst_b = Instructor.objects.create(name="b")
 
-        self.course1, self.section1, _, _ = get_or_create_course_and_section("CIS-120-001", "2020C")
-        self.course2, self.section2, _, _ = get_or_create_course_and_section("CIS-120-001", "2019C")
+        self.course1, self.section1, _, _ = get_or_create_course_and_section(
+            "CIS-120-001", "2020C"
+        )
+        self.course2, self.section2, _, _ = get_or_create_course_and_section(
+            "CIS-120-001", "2019C"
+        )
 
-        self.review1 = Review.objects.create(section=self.section1, instructor=self.inst_A)
+        self.review1 = Review.objects.create(
+            section=self.section1, instructor=self.inst_A
+        )
         self.section1.instructors.add(self.inst_A)
 
-        self.review2 = Review.objects.create(section=self.section2, instructor=self.inst_a)
+        self.review2 = Review.objects.create(
+            section=self.section2, instructor=self.inst_a
+        )
         self.section2.instructors.add(self.inst_a)
 
         self.stats = dict()
@@ -135,11 +144,15 @@ class MergeStrategyTestCase(TestCase):
         self.inst_b = Instructor.objects.create(name="b")
 
     def test_case_insensitive(self):
-        self.assertListEqual([{self.inst_a, self.inst_A}], strategies["case-insensitive"]())
+        self.assertListEqual(
+            [{self.inst_a, self.inst_A}], strategies["case-insensitive"]()
+        )
 
     def test_case_insensitive_recent_first(self):
         self.inst_A.save()
-        self.assertListEqual([{self.inst_A, self.inst_a}], strategies["case-insensitive"]())
+        self.assertListEqual(
+            [{self.inst_A, self.inst_a}], strategies["case-insensitive"]()
+        )
 
     def test_pennid(self):
         self.inst_A.user = self.user1
@@ -149,7 +162,9 @@ class MergeStrategyTestCase(TestCase):
         self.assertListEqual([{self.inst_a, self.inst_A}], strategies["pennid"]())
 
     def test_flns_shared(self):
-        _, cis_1600_001, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
+        _, cis_1600_001, _, _ = get_or_create_course_and_section(
+            "CIS-1600-001", TEST_SEMESTER
+        )
 
         rajiv_no_middle = Instructor.objects.create(name="Rajiv Gandhi")
         rajiv_no_middle.user = self.user1
@@ -164,7 +179,9 @@ class MergeStrategyTestCase(TestCase):
         )
 
     def test_flns_not_shared(self):
-        _, cis_1600_001, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
+        _, cis_1600_001, _, _ = get_or_create_course_and_section(
+            "CIS-1600-001", TEST_SEMESTER
+        )
 
         rajiv_no_middle = Instructor.objects.create(name="Rajiv Gandhi")
         cis_1600_001.instructors.add(rajiv_no_middle)
@@ -188,13 +205,21 @@ class MergeInstructorsCommandTestCase(TestCase):
         self.inst_a = Instructor.objects.create(name="a")
         self.inst_b = Instructor.objects.create(name="b")
 
-        self.course1, self.section1, _, _ = get_or_create_course_and_section("CIS-120-001", "2020C")
-        self.course2, self.section2, _, _ = get_or_create_course_and_section("CIS-120-001", "2019C")
+        self.course1, self.section1, _, _ = get_or_create_course_and_section(
+            "CIS-120-001", "2020C"
+        )
+        self.course2, self.section2, _, _ = get_or_create_course_and_section(
+            "CIS-120-001", "2019C"
+        )
 
-        self.review1 = Review.objects.create(section=self.section1, instructor=self.inst_A)
+        self.review1 = Review.objects.create(
+            section=self.section1, instructor=self.inst_A
+        )
         self.section1.instructors.add(self.inst_A)
 
-        self.review2 = Review.objects.create(section=self.section2, instructor=self.inst_a)
+        self.review2 = Review.objects.create(
+            section=self.section2, instructor=self.inst_a
+        )
         self.section2.instructors.add(self.inst_a)
 
     def test_with_all_strats(self):

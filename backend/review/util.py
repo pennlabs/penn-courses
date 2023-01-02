@@ -65,7 +65,9 @@ def get_single_dict_from_qs(qs):
     return dict(vals[0])
 
 
-def get_average_and_recent_dict_single(values_dict, extra_fields=None, **extra_fields_conv):
+def get_average_and_recent_dict_single(
+    values_dict, extra_fields=None, **extra_fields_conv
+):
     """
     Accepts a dict taken from the `.values()` list of a queryset
     previously annotated by `annotate_average_and_recent`.
@@ -84,7 +86,10 @@ def get_average_and_recent_dict_single(values_dict, extra_fields=None, **extra_f
         "num_semesters": values_dict["average_semester_count"],
         "latest_semester": values_dict["average_semester_calc"],
         **{k: values_dict[k] for k in extra_fields},
-        **{new_key: values_dict[old_key] for new_key, old_key in extra_fields_conv.items()},
+        **{
+            new_key: values_dict[old_key]
+            for new_key, old_key in extra_fields_conv.items()
+        },
     }
 
 
@@ -96,7 +101,10 @@ def get_historical_codes(topic, exclude_codes):
         semester = course.semester
         if full_code in exclude_codes:
             continue
-        if full_code not in historical_codes or historical_codes[full_code]["semester"] < semester:
+        if (
+            full_code not in historical_codes
+            or historical_codes[full_code]["semester"] < semester
+        ):
             historical_codes[full_code] = {
                 "full_code": full_code,
                 "branched_from": False,
@@ -111,7 +119,9 @@ def get_historical_codes(topic, exclude_codes):
             "semester": c.semester,
         }
 
-    return sorted(list(historical_codes.values()), key=lambda c: c["semester"], reverse=True)
+    return sorted(
+        list(historical_codes.values()), key=lambda c: c["semester"], reverse=True
+    )
 
 
 def get_num_sections(*args, **kwargs):
@@ -188,18 +198,24 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
     # Second pass: Aggregate grouped reviews by taking the average of all scores and recent scores.
     for k, reviews in grouped_reviews.items():
         latest_sem_with_reviews = max(
-            [r["semester"] for r in reviews if not r.get("exclude_from_recent")], default=None
+            [r["semester"] for r in reviews if not r.get("exclude_from_recent")],
+            default=None,
         )
         latest_sem = max([r["semester"] for r in reviews], default=None)
         all_scores = [r["scores"] for r in reviews]
-        recent_scores = [r["scores"] for r in reviews if r["semester"] == latest_sem_with_reviews]
+        recent_scores = [
+            r["scores"] for r in reviews if r["semester"] == latest_sem_with_reviews
+        ]
         aggregated[k] = {
             "id": k,
             "average_reviews": dict_average(all_scores),
             "recent_reviews": dict_average(recent_scores),
             "latest_semester": latest_sem,
             "num_semesters": len(set([r["semester"] for r in reviews])),
-            **{extra_field: reviews[0][extra_field] for extra_field, _ in extra_fields.items()},
+            **{
+                extra_field: reviews[0][extra_field]
+                for extra_field, _ in extra_fields.items()
+            },
         }
 
     return aggregated
@@ -244,7 +260,12 @@ def average_given_plots(plots_dict, bin_size=0.000001):
     averaged_plot = []
     latest_values = [None for _ in range(len(plots))]
     # averaged_plot: This will be our final averaged plot (which we will return)
-    while any([plot_idx < len(plots[i]) for i, plot_idx in enumerate(frontier_candidate_indices)]):
+    while any(
+        [
+            plot_idx < len(plots[i])
+            for i, plot_idx in enumerate(frontier_candidate_indices)
+        ]
+    ):
         min_percent_through = min(
             plots[i][frontier_candidate_indices[i]][0]
             for i in range(len(plots))
@@ -261,12 +282,16 @@ def average_given_plots(plots_dict, bin_size=0.000001):
                 <= min_percent_through + bin_size
             ):
                 take_latest_value = False
-                plots_bins[plot_num].append(plots[plot_num][new_frontier_candidate_index][1])
+                plots_bins[plot_num].append(
+                    plots[plot_num][new_frontier_candidate_index][1]
+                )
                 new_frontier_candidate_index += 1
             if take_latest_value and latest_values[plot_num] is not None:
                 plots_bins[plot_num].append(latest_values[plot_num])
             frontier_candidate_indices[plot_num] = new_frontier_candidate_index
-        latest_values = [sum(lst) / len(lst) if len(lst) > 0 else None for lst in plots_bins]
+        latest_values = [
+            sum(lst) / len(lst) if len(lst) > 0 else None for lst in plots_bins
+        ]
         non_null_latest_values = [val for val in latest_values if val is not None]
         latest_val_avg = sum(non_null_latest_values) / len(non_null_latest_values)
         if (
@@ -289,7 +314,9 @@ def get_status_updates_map(section_map):
 
     status_updates = StatusUpdate.objects.filter(
         section_id__in=[
-            section_id for semester in section_map.keys() for section_id in section_map[semester]
+            section_id
+            for semester in section_map.keys()
+            for section_id in section_map[semester]
         ],
         in_add_drop_period=True,
     ).annotate(semester=F("section__course__semester"))
@@ -300,7 +327,9 @@ def get_status_updates_map(section_map):
         for section_id in section_map[semester].keys():
             status_updates_map[semester][section_id] = []
     for status_update in status_updates:
-        status_updates_map[status_update.semester][status_update.section_id].append(status_update)
+        status_updates_map[status_update.semester][status_update.section_id].append(
+            status_update
+        )
     return status_updates_map
 
 
@@ -340,9 +369,13 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
     registrations_map = defaultdict(lambda: defaultdict(list))
     # registrations_map: maps semester to section id to a list of registrations from that section
     section_id_to_semester = {
-        section_id: semester for semester in section_map for section_id in section_map[semester]
+        section_id: semester
+        for semester in section_map
+        for section_id in section_map[semester]
     }
-    registrations = Registration.objects.filter(section_id__in=section_id_to_semester.keys())
+    registrations = Registration.objects.filter(
+        section_id__in=section_id_to_semester.keys()
+    )
     for registration in registrations:
         semester = section_id_to_semester[registration.section_id]
         registrations_map[semester][registration.section_id].append(registration)
@@ -375,7 +408,9 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
             continue
         for section in section_map[semester].values():
             section_id = section.id
-            volume_changes = []  # a list containing registration volume changes over time
+            volume_changes = (
+                []
+            )  # a list containing registration volume changes over time
             for registration in registrations_map[semester][section_id]:
                 volume_changes.append(
                     {
@@ -410,7 +445,9 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
             # demand_plot: the demand plot for this section, containing elements of the form
             # (percent_through, relative_demand)
             changes = sorted(
-                volume_changes + demand_distribution_estimates_changes + status_updates_list,
+                volume_changes
+                + demand_distribution_estimates_changes
+                + status_updates_list,
                 key=lambda x: (
                     x["percent_through"],
                     1
@@ -438,7 +475,9 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
             bin_start_pct = 0
             for change in changes:
                 if change["type"] == "status_update":
-                    if change["old_status"] != section_status:  # Skip erroneous status updates
+                    if (
+                        change["old_status"] != section_status
+                    ):  # Skip erroneous status updates
                         continue
                     section_status = change["new_status"]
                 elif change["type"] == "distribution_estimate_change":
@@ -457,7 +496,9 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                 ):
                     rel_demand = 1 / 2
                 else:
-                    csrdv_frac_zero = latest_raw_demand_distribution_estimate["csrdv_frac_zero"]
+                    csrdv_frac_zero = latest_raw_demand_distribution_estimate[
+                        "csrdv_frac_zero"
+                    ]
                     raw_demand = registration_volume / section.capacity
                     if csrdv_frac_zero is None:
                         csrdv_frac_zero = int(raw_demand <= 0)
@@ -473,19 +514,29 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                         param_scale = latest_raw_demand_distribution_estimate[
                             "csprdv_lognorm_param_scale"
                         ]
-                        if param_shape is None or param_loc is None or param_scale is None:
+                        if (
+                            param_shape is None
+                            or param_loc is None
+                            or param_scale is None
+                        ):
                             rel_demand = csrdv_frac_zero
                         else:
-                            rel_demand = csrdv_frac_zero + stats.lognorm.cdf(
-                                raw_demand,
-                                param_shape,
-                                param_loc,
-                                param_scale,
-                            ) * (1 - csrdv_frac_zero)
+                            rel_demand = (
+                                csrdv_frac_zero
+                                + stats.lognorm.cdf(
+                                    raw_demand,
+                                    param_shape,
+                                    param_loc,
+                                    param_scale,
+                                )
+                                * (1 - csrdv_frac_zero)
+                            )
                 if change["percent_through"] > bin_start_pct + bin_size:
                     if num_in_bin > 0:
                         bin_avg = total_value_in_bin / num_in_bin
-                        if len(demand_plot) == 0 or not isclose(demand_plot[-1][1], bin_avg):
+                        if len(demand_plot) == 0 or not isclose(
+                            demand_plot[-1][1], bin_avg
+                        ):
                             demand_plot.append((bin_start_pct, bin_avg))
                     bin_start_pct = change["percent_through"]
                     total_value_in_bin = 0
@@ -502,13 +553,17 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
         max(demand_plots_map.keys()) if len(demand_plots_map) > 0 else None
     )
     recent_demand_plot = (
-        average_given_plots(demand_plots_map[recent_demand_plot_semester], bin_size=bin_size)
+        average_given_plots(
+            demand_plots_map[recent_demand_plot_semester], bin_size=bin_size
+        )
         if len(demand_plots_map) > 0
         else None
     )
 
     avg_demand_plot = average_given_plots(demand_plots_map, bin_size=bin_size)
-    avg_demand_plot_min_semester = min(demand_plots_map.keys()) if demand_plots_map else None
+    avg_demand_plot_min_semester = (
+        min(demand_plots_map.keys()) if demand_plots_map else None
+    )
     avg_percent_open_plot_num_semesters = len(demand_plots_map)
 
     return (
@@ -553,7 +608,10 @@ def avg_and_recent_percent_open_plots(section_map, status_updates_map):
             )
             if len(updates) == 0:
                 estimate_open = int(section.percent_open > 0.5)
-                open_plots[semester][section_id] = [(0, estimate_open), (1, estimate_open)]
+                open_plots[semester][section_id] = [
+                    (0, estimate_open),
+                    (1, estimate_open),
+                ]
                 continue
             open_plot = [(0, int(updates[0].old_status == "O"))]
             # open_plot: the demand plot for this section, containing elements of the form
@@ -565,19 +623,27 @@ def avg_and_recent_percent_open_plots(section_map, status_updates_map):
                     # Ignore invalid status updates
                     continue
                 latest_status = int(update.new_status == "O")
-                open_plot.append((update.percent_through_add_drop_period, latest_status))
+                open_plot.append(
+                    (update.percent_through_add_drop_period, latest_status)
+                )
             if open_plot[-1][0] < 1:
                 open_plot.append((1, latest_status))
 
             open_plots[semester][section_id] = open_plot
 
-    recent_percent_open_plot_semester = max(open_plots.keys()) if len(open_plots) > 0 else None
+    recent_percent_open_plot_semester = (
+        max(open_plots.keys()) if len(open_plots) > 0 else None
+    )
     recent_percent_open_plot = (
-        average_given_plots(open_plots[max(section_map.keys())]) if len(section_map) > 0 else None
+        average_given_plots(open_plots[max(section_map.keys())])
+        if len(section_map) > 0
+        else None
     )
 
     avg_percent_open_plot = average_given_plots(open_plots)
-    avg_percent_open_plot_min_semester = min(open_plots.keys()) if len(open_plots) > 0 else None
+    avg_percent_open_plot_min_semester = (
+        min(open_plots.keys()) if len(open_plots) > 0 else None
+    )
     avg_percent_open_plot_num_semesters = len(open_plots)
 
     return (

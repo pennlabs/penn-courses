@@ -30,7 +30,9 @@ def set_mock_get_serializer_context():
         "SETTING `CourseListSearch.get_serializer_context` "
         "TO `CourseList.get_serializer_context`...\n"
     )
-    production_CourseListSearch_get_serializer_context = CourseListSearch.get_serializer_context
+    production_CourseListSearch_get_serializer_context = (
+        CourseListSearch.get_serializer_context
+    )
     CourseListSearch.get_serializer_context = CourseList.get_serializer_context
     return production_CourseListSearch_get_serializer_context
 

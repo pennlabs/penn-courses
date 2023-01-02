@@ -40,7 +40,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         if not in_dev():
-            raise ValueError("This script cannot be run in a non-development environment.")
+            raise ValueError(
+                "This script cannot be run in a non-development environment."
+            )
         src = os.path.abspath(kwargs["src"])
         _, file_extension = os.path.splitext(kwargs["src"])
         if not os.path.exists(src):
@@ -65,7 +67,11 @@ class Command(BaseCommand):
                     f"Datatype {data_type} in the given csv is not valid for this version "
                     f"of the import script. Valid datatypes: {data_types}"
                 )
-                should_be = 6 if data_type.endswith("_m2mfield") else (1 + len(fields[data_type]))
+                should_be = (
+                    6
+                    if data_type.endswith("_m2mfield")
+                    else (1 + len(fields[data_type]))
+                )
                 assert len(row) == should_be, (
                     f"The row {row} in the given csv is not valid for this version of the import "
                     f"script. Contains {len(row)} columns, while valid "
@@ -83,7 +89,9 @@ class Command(BaseCommand):
         # id_change_map: maps datatype to old id to new id
         self_related_ids = {data_type: defaultdict(dict) for data_type in data_types}
         # self_related_ids: maps datatype to field to object id to self-related object id
-        deferred_related_ids = {data_type: defaultdict(dict) for data_type in data_types}
+        deferred_related_ids = {
+            data_type: defaultdict(dict) for data_type in data_types
+        }
         # deferred_related_ids: maps datatype to field to object id to deferred related object id
         topic_id_to_course_uid_strs = defaultdict(set)
         # topic_id_to_course_uid_strs: maps old topic id to a set of course unique id strs
@@ -95,8 +103,13 @@ class Command(BaseCommand):
             components = []
             for field in unique_identifying_fields[data_type]:
                 field_value = row[1 + fields[data_type].index(field)]
-                if data_type in related_id_fields and field in related_id_fields[data_type]:
-                    field_value = id_change_map[related_id_fields[data_type][field]][field_value]
+                if (
+                    data_type in related_id_fields
+                    and field in related_id_fields[data_type]
+                ):
+                    field_value = id_change_map[related_id_fields[data_type][field]][
+                        field_value
+                    ]
                 components.append(field_value)
             return tuple(components)
 
@@ -132,21 +145,31 @@ class Command(BaseCommand):
                         object_id = id_change_map[dtype][row[2]]
                         object = objects[dtype][object_id]
                         related_dtype = row[5]
-                        getattr(object, row[3]).add(id_change_map[related_dtype][row[4]])
+                        getattr(object, row[3]).add(
+                            id_change_map[related_dtype][row[4]]
+                        )
                         continue
                     unique_str = generate_unique_id_str_from_row(data_type, row)
                     identify_id_map[data_type][unique_str] = row[1]
-                    field_to_index = {field: (1 + i) for i, field in enumerate(fields[data_type])}
-                    to_save_dict = dict()  # this will be unpacked into the model initialization
+                    field_to_index = {
+                        field: (1 + i) for i, field in enumerate(fields[data_type])
+                    }
+                    to_save_dict = (
+                        dict()
+                    )  # this will be unpacked into the model initialization
                     for field in fields[data_type]:
                         if row[field_to_index[field]] is None or (
-                            row[field_to_index[field]] == "None" and field != "prerequisites"
+                            row[field_to_index[field]] == "None"
+                            and field != "prerequisites"
                         ):
                             to_save_dict[field] = None
                             continue
                         if field == "id":
                             continue
-                        if data_type in related_id_fields and field in related_id_fields[data_type]:
+                        if (
+                            data_type in related_id_fields
+                            and field in related_id_fields[data_type]
+                        ):
                             related_data_type = related_id_fields[data_type][field]
                             if related_data_type in id_change_map:
                                 # Related object has already been loaded
@@ -161,11 +184,13 @@ class Command(BaseCommand):
                             data_type in self_related_id_fields
                             and field in self_related_id_fields[data_type]
                         ):
-                            self_related_ids[data_type][field][row[field_to_index["id"]]] = row[
-                                field_to_index[field]
-                            ]
+                            self_related_ids[data_type][field][
+                                row[field_to_index["id"]]
+                            ] = row[field_to_index[field]]
                         elif data_type == "courses" and field == "topic_id":
-                            topic_id_to_course_uid_strs[row[field_to_index[field]]].add(unique_str)
+                            topic_id_to_course_uid_strs[row[field_to_index[field]]].add(
+                                unique_str
+                            )
                         else:
                             to_save_dict[field] = row[field_to_index[field]]
                     to_save[data_type].append(models[data_type](**to_save_dict))
@@ -184,7 +209,8 @@ class Command(BaseCommand):
                     to_save[data_type] = [
                         ob
                         for ob in to_save[data_type]
-                        if generate_unique_id_str_from_object(data_type, ob) not in existing_objects
+                        if generate_unique_id_str_from_object(data_type, ob)
+                        not in existing_objects
                     ]
                 if data_type.endswith("_m2mfield"):
                     continue
@@ -213,7 +239,9 @@ class Command(BaseCommand):
                 if data_type in self_related_ids.keys():
                     for field in self_related_ids[data_type].keys():
                         to_update = []
-                        for self_id, other_id in self_related_ids[data_type][field].items():
+                        for self_id, other_id in self_related_ids[data_type][
+                            field
+                        ].items():
                             self_new_id = id_change_map[data_type][self_id]
                             self_other_id = id_change_map[data_type][other_id]
                             obj = objects[data_type][self_new_id]
@@ -229,7 +257,9 @@ class Command(BaseCommand):
                 for field in deferred_related_ids[data_type].keys():
                     related_data_type = related_id_fields[data_type][field]
                     to_update = []
-                    for obj_id, related_id in deferred_related_ids[data_type][field].items():
+                    for obj_id, related_id in deferred_related_ids[data_type][
+                        field
+                    ].items():
                         obj_new_id = id_change_map[data_type][obj_id]
                         related_new_id = id_change_map[related_data_type][related_id]
                         obj = objects[data_type][obj_new_id]
@@ -251,7 +281,9 @@ class Command(BaseCommand):
                     .distinct()
                 )
 
-                courses = Course.objects.filter(id__in=course_ids).select_related("primary_listing")
+                courses = Course.objects.filter(id__in=course_ids).select_related(
+                    "primary_listing"
+                )
                 most_recent = None
                 for course in courses:
                     course = course.primary_listing
@@ -272,7 +304,9 @@ class Command(BaseCommand):
                     topic.save()
 
             recompute_stats(
-                semesters=sorted(list(semesters)), semesters_precomputed=True, verbose=True
+                semesters=sorted(list(semesters)),
+                semesters_precomputed=True,
+                verbose=True,
             )
 
         print(f"Finished loading test data {src}... processed {row_count} rows. ")

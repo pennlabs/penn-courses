@@ -33,7 +33,9 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument("src", help="path to directory or zip file holding .sql dumps.")
+        parser.add_argument(
+            "src", help="path to directory or zip file holding .sql dumps."
+        )
 
         file_options = parser.add_mutually_exclusive_group()
         file_options.add_argument(
@@ -106,7 +108,9 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--force", action="store_true", help="Complete action in non-interactive mode."
+            "--force",
+            action="store_true",
+            help="Complete action in non-interactive mode.",
         )
 
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
@@ -205,7 +209,9 @@ class Command(BaseCommand):
 
             summary_fo = files[0]
             print("Loading summary file...")
-            summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
+            summary_rows = load_sql_dump(
+                summary_fo, progress=show_progress_bar, lazy=False
+            )
             gc.collect()
             print("SQL parsed and loaded!")
 
