@@ -15,6 +15,7 @@ pytest = "*"
 pytest-django = "*"
 django-debug-toolbar = "*"
 black = "==22.3.0"
+colorama = {version = "*", sys_platform = "== 'win32'^"}
 
 [packages]
 click = "==8.0.4"
