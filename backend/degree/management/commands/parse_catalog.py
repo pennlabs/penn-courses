@@ -1,6 +1,7 @@
 # Webscraping using bs4 of penn course catalogue
 import os
 import re
+from textwrap import dedent
 
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 import requests
@@ -457,14 +458,13 @@ class Command(BaseCommand):
     help = "This script scrapes a provided Penn Catalog (catalog.upenn.edu) into an AST"
 
     def add_arguments(self, parser):
-        # TODO: arguments do nothing
-        parser.add_argument(
-            "--url",
-            help="URL to scrape (should be from Penn Catalog).",
-        )
         parser.add_argument(
             "--output-file",
-            help="File to output to"
+            default="output.txt",
+            help=dedent(
+                """
+            File to output to, relative to (...)/penn-courses/backend/degree/. Defaults to output.txt.
+            """)
         )
 
     def handle(self, *args, **kwargs):
@@ -477,7 +477,7 @@ class Command(BaseCommand):
         # }
 
         skipped = 0
-        with open(os.path.join(settings.BASE_DIR, "degree", "output.txt"), "w") as f:
+        with open(os.path.join(settings.BASE_DIR, "degree", kwargs["output_file"]), "w") as f:
             for program_name, program_url in program_urls.items():
                 # FIXME: Biology has problems with different tracks
                 if "Biology" in program_name:
@@ -496,7 +496,3 @@ class Command(BaseCommand):
 
                 f.write(f"{total_cus} CUs total\n\n")
         print(f"Skipped: {skipped}")
-# purity data source
-# endpoint for testing
-# relate this to user stuff
-# cart stuff (planning stuff)
