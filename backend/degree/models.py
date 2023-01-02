@@ -2,7 +2,7 @@ from django.db import models
 from textwrap import dedent
 from django.contrib.auth import get_user_model
 
-from courses.models import Topic, Course
+from courses.models import Topic, Course, string_dict_to_html
 
 
 class Degree(models.Model):
@@ -30,11 +30,72 @@ class Degree(models.Model):
     def __str__(self):
         return "Name: %s, Degree ID: %s" % (self.name, self.id)
 
+
 class DegreeRequirement(models.Model):
     """
     This model represents a degree requirement as a recursive tree.
     """
+    SATISFIED_BY = (
+        ("ALL", "Not an actual satisfied by mode: represented by NUM_COURSES where num = number of courses. Must "
+                "take all courses to satisfy requirements"),
+        ("ANY", "Not an actual satisfied by mode: represented by NUM_COURSES where num = 1. Can take any course to "
+                "satisfy requirements."),
+        ("CUS", "Must take courses with total number of CUs to satisfy requirements"),
+        ("NUM_COURSES", "Must take a certain number of courses to satisfy requirements"),
+    )
 
+    class SatisfiedBy(models.IntegerChoices):
+        ALL = 1
+        CUS = 2
+        NUM_COURSES = 3
+
+    name = models.TextField(
+        help_text=dedent(
+            """
+        The name of the requirement.
+        """
+        )
+    )
+    satisfied_by = models.IntegerField(
+        choices=SatisfiedBy.choices,
+        db_index=False,  # TODO: is db_index true or false here?
+        null=True,
+        help_text=dedent(
+            """
+        The way in which this requirement is satisfied.  This is a string, and can be one of the
+        following:
+        """
+            + string_dict_to_html(dict(SATISFIED_BY))
+        ),
+    )
+    q = models.TextField(
+        max_length=1000,
+        null=True,
+        help_text=dedent(
+            """
+        Used to store more complex & larger query sets using the same interface as Q() objects. Not null if and only iff
+        courses is blank/empty.
+        """
+        )
+    )
+    topics = models.ManyToManyField(
+        Topic,
+        related_name="requirements",
+        blank=True,
+        help_text=dedent(
+            """
+            Course objects which have this requirement.
+            """
+        ),
+    )
+    num = models.IntegerField(
+        null=True,
+        help_text=dedent(
+            """
+        The number of CUs or Courses required to satisfy this requirement
+        """
+        ),
+    )
     degree = models.ForeignKey(
         Degree,
         on_delete=models.CASCADE,
@@ -47,54 +108,17 @@ class DegreeRequirement(models.Model):
         """
         ),
     )
-    name = models.CharField(
-        max_length=255,
-        help_text=dedent(
-            """
-        The name of this requirement.
-        """
-        ),
-    )
-    num_courses = models.IntegerField(
-        null=True,
-        help_text=dedent(
-            """
-        The number of courses required to fulfil this requirement. Can be null if this
-        requirement does not have a number of courses associated. Note that only one of
-        num_courses and num_credits should be null.
-        """
-        ),
-    )
-    num_credits = models.IntegerField(
-        null=True,
-        help_text=dedent(
-            """
-        The number of courses units (CUs) required to fulfil this requirement. Can be null if this
-        requirement does not have a number of CUs. Note that only one of num_courses and num_credits should
-        be null.
-        """
-        ),
-    )
-    inclusive = models.BooleanField(
-        help_text=dedent(
-            """
-        Whether the `topics` fields are the courses that fulfill this requirement (inclusive -> True),
-        or are the set of courses that do not fulfill the requirement (exclusive -> False).
-        """
-        )
-    )
-    topics = models.ManyToManyField(
-        Topic,
-        related_name="degree_requirements"
-    )
     created_at = models.DateTimeField(auto_now_add=True) # TODO: do we need these fields?
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        unique_together = (("name", "degree"),) # TODO: should be just name & semester?
-
     def __str__(self):
-        return "Name: %s, DegreeRequirement ID: %s" % (self.name, self.id)
+        return f"{self.name} @ {self.topics} - {self.cus}"
+
+    def fulfills(self, course):
+        return self.topics.all().contains(course.topic)
+
+    class Meta:
+        unique_together = (("name", "degree"),)
 
 
 class DegreeFulfillment(models.Model):
@@ -103,6 +127,16 @@ class DegreeFulfillment(models.Model):
 
     Note: this model is not tied to a user, but the DegreePlan model is.
     """
+    STATUS = (
+        ("TAKEN", "course has already been taken"),
+        ("IN_PROGRESS", "course is currently in progress (in the current semester)"),
+        ("PLANNED", "course is planned for the future"),
+    )
+
+    class Status(models.IntegerChoices): # TODO: can we just infer this from the semester
+        TAKEN = 1
+        IN_PROGRESS = 2 # TODO: is this necessary
+        PLANNED = 3
 
     degree_plan = models.ForeignKey(
         "DegreePlan",
@@ -116,12 +150,23 @@ class DegreeFulfillment(models.Model):
         """
         ),
     )
+    status = models.IntegerField(
+        choices=Status.choices,
+        null=True,
+        help_text=dedent(
+            """
+        The way in which this requirement is satisfied.  This is a string, and can be one of the
+        following:
+        """
+            + string_dict_to_html(dict(STATUS))
+        ),
+    )
     semester = models.CharField(
         max_length=5,
         db_index=True,
         help_text=dedent(
             """
-        The academic semester this degree fulfillment is applicable to.
+        The academic semester this degree fulfillment is applicable to, like `2021C`.
         """
         ),
     )
@@ -181,6 +226,14 @@ class DegreePlan(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    notes = models.TextField(
+        help_text=dedent(
+            """
+        Used to store any notes about the degree (for instance, the superscript notes on Penn's Catalog)
+        """
+        ),
+    )
 
     class Meta:
         unique_together = (("name", "person"),)

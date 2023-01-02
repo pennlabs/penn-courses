@@ -1,11 +1,15 @@
 # Webscraping using bs4 of penn course catalogue
+import os
 import re
 
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 import requests
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 
-# from courses.models import Course, Department
+from django.db.models import Q, Model
+from django.conf import settings
+from courses.models import Department
 
 CATALOG_PREFIX = "https://catalog.upenn.edu/"
 PROGRAMS_PREFIX = "/undergraduate/programs"
@@ -13,9 +17,14 @@ PROGRAMS_PREFIX = "/undergraduate/programs"
 # REGULAR EXPRESSIONS
 SELECT_N = "Select (?P<num>one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)"  # NOTE: does not handle decimals
 COURSE_UNITS = "course units?|courses?|electives?"
-SELECT_N_FROM_FOLLOWING = re.compile(f"{SELECT_N} (?P<course_units>{COURSE_UNITS}) of the following ?(?P<extra>.*)", re.IGNORECASE)
-SELECT_N_SET_COURSES = re.compile(f"{SELECT_N} ?(?P<course_set>.+) (?P<course_units>{COURSE_UNITS}) ?(?P<extra>.+)", re.IGNORECASE)
-SELECT_N_COURSES_FROM_SET = re.compile(f"{SELECT_N} (?P<course_units>{COURSE_UNITS})(?: (?:in|of|from))? ?(?P<course_set>.+)", re.IGNORECASE)
+WITH_OR_PARENTHESIS = "\bwith\b|\("
+SELECT_N_FROM_FOLLOWING = re.compile(f"{SELECT_N} (?P<course_units>{COURSE_UNITS}) of the following ?(?P<extra>.*)",
+                                     re.IGNORECASE)
+SELECT_N_COURSES = re.compile(f"{SELECT_N} (?P<course_units>{COURSE_UNITS}) (?P<course_set>.*)", re.IGNORECASE)
+SELECT_N_SET_COURSES = re.compile(f"{SELECT_N} ?(?P<course_set>.+) (?P<course_units>{COURSE_UNITS}) ?(?P<extra>.*)",
+                                  re.IGNORECASE)
+SELECT_N_COURSES_FROM_SET = re.compile(
+    f"{SELECT_N} (?P<course_units>{COURSE_UNITS})(?: (?:in|of|from))? ?(?P<course_set>.*)", re.IGNORECASE)
 
 WORD_TO_NUMBER = {
     "one": 1,
@@ -47,13 +56,14 @@ class BaseRequirement:
     # def __init__(self, name, cus, satisfiedBy):
     def __init__(self, name, cus, num_courses):
         self.name = name
-        self.num_courses = num_courses # used iff CUs is None
+        self.num_courses = num_courses  # used iff CUs is None
         self.cus = cus
         self.comment = ""
         # self.satisfiedBy = satisfiedBy
 
     def get_cus(self):
         return self.cus
+
 
 class Requirement(BaseRequirement):
     def __init__(self, name, courses, cus, num_courses=None):
@@ -69,7 +79,8 @@ class Requirement(BaseRequirement):
     def __repr__(self):
         return f"{self.name} ({self.cus} CUs): {self.courses}"
 
-class QRequirement:
+
+class QRequirement(BaseRequirement):
     def __init__(self, name, q, cus, num_courses=None):
         super().__init__(name, cus, num_courses)
         self.q = q
@@ -79,6 +90,7 @@ class QRequirement:
 
     def __repr__(self):
         return f"{self.name} ({self.cus} CUs): Q {self.q}"
+
 
 def get_programs_urls():
     soup = BeautifulSoup(
@@ -103,18 +115,25 @@ def test_courselist_row(row, ignore_indents=False):
     if match := re.match(SELECT_N_SET_COURSES, textcourse):
         num_matches += 1
         print("SELECT_N_SET_COURSES")
-        print("    ", row)
+        print("    ", row_elts[0])
         print("    ", match.groupdict())
     if match := re.match(SELECT_N_COURSES_FROM_SET, textcourse):
         num_matches += 1
         print("SELECT_COURSES_FROM_SET")
-        print("    ", row)
+        print("    ", row_elts[0])
         print("    ", match.groupdict())
     if num_matches > 1:
-       print("ERROR: matches more than one of SELECT_N_COURSES_FROM_SET and SELECT_N_SET_COURSES")
+        print("ERROR: matches more than one of SELECT_N_COURSES_FROM_SET and SELECT_N_SET_COURSES")
     return None
 
+
 def parse_courselist_row(row, ignore_indent=False):
+    # remove superscripts
+    superscript_ids = []
+    for superscript in row.find_all("sup"):
+        superscript_ids.append(superscript.text)
+        superscript.decompose()
+
     row_elts = row.find_all("td")
 
     is_indented = row_elts[0].find("div", class_="blockindent") is not None and not ignore_indent
@@ -130,12 +149,6 @@ def parse_courselist_row(row, ignore_indent=False):
             "superscript_ids": [row_elts[0].find_all("sup")],
         }
 
-    # if any of the row_elts contain a sup tag, then associate it with a comment
-    # superscript_id = None
-    # if any([elt.find("sup") for elt in row_elts]):
-    #     superscript_id = int(row_elts[0].find("sup").text)
-    superscript_ids = None
-
     if "areaheader" in row["class"]:
         return {
             "type": "header",
@@ -143,10 +156,10 @@ def parse_courselist_row(row, ignore_indent=False):
             "superscript_ids": superscript_ids
         }
 
-    if "orclass" in row["class"]:
+    if "orclass" in row["class"]: # TODO: are there andclasses?
         return {
             "type": "orcourse",
-            "code": row_elts[0].text.strip(),
+            "code": row_elts[0].text.replace("or", "").strip(),
             "name": row_elts[1].text.strip(),
             "superscript_ids": superscript_ids,
         }
@@ -154,12 +167,37 @@ def parse_courselist_row(row, ignore_indent=False):
     if "listsum" in row["class"]:
         return None
 
-    if row_elts[0].text == "Other Wharton Requirements":
+    if row_elts[0].text.strip() == "Other Wharton Requirements":
         return None
 
-    if (match := re.search(SELECT_N_COURSES_FROM_SET, row_elts[0].text)) or (match := re.search(SELECT_N_SET_COURSES, row_elts[0].text)):
-        num, course_units = match.groupdict().get("num"), match.groupdict().get("course_units")
-        is_course_units = course_units is not None and course_units.lower().startswith("course unit")
+    if match := re.match(SELECT_N_FROM_FOLLOWING, row_elts[0].text):
+        num, is_course_units, _ = match.groups()
+        is_course_units = is_course_units is not None and is_course_units.lower().startswith("course unit")
+        try:
+            num = WORD_TO_NUMBER.get(num) or float(num)
+        except ValueError:
+            num = None
+        if row_elts[1].text.strip():
+            return {
+                "type": "textcourse",
+                "name": row_elts[0].text.strip(),
+                "cus": row_elts[1].text.strip(),
+                "courses": num if not is_course_units else None,
+                "indent": is_indented,
+                "superscript_ids": superscript_ids,
+            }
+        else:
+            return {
+                "type": "textcourse",
+                "name": row_elts[0].text.strip(),
+                "cus": row_elts[1].text.strip(),
+                "courses": num if not is_course_units else None,
+                "indent": is_indented,
+                "superscript_ids": superscript_ids,
+            }
+
+    if match := re.search(f"SELECT_N", row_elts[0].text):
+        num = match.groupdict().get("num")
         try:
             num = WORD_TO_NUMBER.get(num) or float(num)
         except ValueError:
@@ -175,8 +213,8 @@ def parse_courselist_row(row, ignore_indent=False):
         return {
             "type": "courseset",
             "name": row_elts[0].text.strip(),
-            "cus": num if is_course_units else None,
-            "courses": num if not is_course_units else None,
+            "cus": None,
+            "courses": num,  # by default, assume it is number of courses
             "indent": is_indented,
             "superscript_ids": superscript_ids,
         }
@@ -228,8 +266,44 @@ def parse_courselist_row(row, ignore_indent=False):
     }
 
 
-def parse_course_set(course_set: str):
-    return None
+def parse_course_set_text(course_set_text: str):
+    course_set_text = re.sub(f"({COURSE_UNITS})$", "", course_set_text).strip()
+    pieces = re.split("(?:,\s)?(?:\b(?:and|or)\b)?", course_set_text)
+    q = Q()
+    for piece in pieces:
+        piece = piece.strip()
+        if not piece:
+            continue
+        if Department.objects.filter(name=piece).exists():
+            q |= Q(department__name=piece)
+            continue
+        if Department.objects.filter(code=piece).exists():
+            q |= Q(department__code=piece)
+            continue
+
+        # print(f"FIXME: could not parse course set")
+        # print(f"    `{course_set_text}`")
+    return q
+
+
+def q_of_course_set(name: str):
+    if match := re.match(SELECT_N_COURSES_FROM_SET, name):
+        print(f"SELECT_N_COURSES_FROM_SET")
+    elif match := re.match(SELECT_N_COURSES, name):
+        print(f"SELECT_N_COURSES")
+    elif match := re.match(SELECT_N_SET_COURSES, name):
+        print(f"SELECT_N_SET_COURSE")
+    else:
+        return None
+    groups = match.groupdict()
+    # NOTE: extra could None
+    num, course_units, course_set, extra = groups.get("num"), groups.get("course_units"), groups.get(
+        "course_set"), groups.get("extra")
+    print(f"\t`{name}`\n\t`{course_set}`\n\t`{extra}`")
+    if extra:
+        print(f"\textra is defined: `{extra}`")
+    q = parse_course_set_text(course_set)
+    return q
 
 
 def parse_courselist(courselist, ignore_indent=False):
@@ -244,105 +318,102 @@ def parse_courselist(courselist, ignore_indent=False):
     if requirements[0].find("div", class_="blockindent") is not None:
         ignore_indent = True
 
-    for i, requirement in enumerate(requirements):
-        row = test_courselist_row(requirement, ignore_indent)
-        if row is None:
+    for i, row in enumerate(requirements):
+        requirement = parse_courselist_row(row, ignore_indent)
+        if requirement is None:
             continue
 
-        # if row["superscript_id"] is not None:
-        #     table = courselist.find("dl", class_="sc_footnotes")
-        #     ids = table.find_all("dt")
-        #     comments = table.find_all("dd")
-
-        if row["type"] == "course":
-            if row["indent"]:
+        if requirement["type"] == "course":
+            if requirement["indent"]:
                 if current_requirement is None:
                     # print("FIXME: Indented course without requirement")
                     # print("    ", row)
                     # print("    ", area_header)
                     continue
-                current_requirement.add_course(row["code"], row["name"])
+                current_requirement.add_course(requirement["code"], requirement["name"])
             else:
                 if current_requirement is not None:
                     area_requirements.append(current_requirement)
                 try:
-                    cus = float(row["cus"])
+                    cus = float(requirement["cus"])
                     current_requirement = Requirement(
-                        row["name"], [(row["code"], row["name"])], cus
+                        requirement["name"], [(requirement["code"], requirement["name"])], cus
                     )
                 except ValueError:
                     # print("FIXME: Couldn't convert CUs")
                     # print("    ", row)
-                    current_requirement = Requirement(row["name"], [], 0)
+                    current_requirement = Requirement(requirement["name"], [], 0)
 
-        elif row["type"] == "header":
+        elif requirement["type"] == "header":
             if area_header is not None:
                 if current_requirement is not None:
                     area_requirements.append(current_requirement)
                     current_requirement = None
                 areas[area_header] = area_requirements
                 area_requirements = []
-            area_header = row["title"]
+            area_header = requirement["title"]
 
-        elif row["type"] == "orcourse":
+        elif requirement["type"] == "orcourse":
             if current_requirement is None:
                 # print("FIXME: Or course without requirement")
                 continue
-            current_requirement.add_course(row["code"], row["name"])
+            print(f"ORCOURSE CODE: {requirement['code']}")
+            current_requirement.add_course(requirement["code"], requirement["name"])
 
-        elif row["type"] == "courseset":
-            if row["indent"]:
+        elif requirement["type"] == "courseset":
+            if requirement["indent"]:
                 if current_requirement is None:
-                    print("FIXME: Indented courseset without requirement")
-                    print("    ", row)
-                    print("    ", area_header)
+                    # print("FIXME: Indented courseset without requirement")
+                    # print("    ", row)
+                    # print("    ", area_header)
                     continue
-                print("FIXME: Indented courseset cannot be handled")
-                print("    ", row)
-                print("    ", area_header)
+                # print("FIXME: Indented courseset cannot be handled")
+                # print("    ", row)
+                # print("    ", area_header)
                 continue
             else:
                 if current_requirement is not None:
                     area_requirements.append(current_requirement)
-                q = parse_course_set(row["name"])
-                current_requirement = QRequirement(row["name"], q, 0)
-                if row["cus"]:
+                q = q_of_course_set(requirement["name"])  # could be None
+                if requirement["cus"]:
                     try:
-                        cus = float(row["cus"])
-                        current_requirement = QRequirement(row["name"], q, cus)
+                        cus = float(requirement["cus"])
+                        area_requirements.append(QRequirement(requirement["name"], q, cus))
                     except ValueError:
                         # print("FIXME: Couldn't convert CUs")
                         # print("    ", row)
+                        area_requirements.append(QRequirement(requirement["name"], q, 0))
                         pass
-                elif row["courses"]:
-                    print("FIXME: specified number of courses (not CUs)")
-                    print("    ", row)
+                elif requirement["courses"]:
+                    # print("FIXME: specified number of courses (not CUs)")
+                    # print("    ", row)
+                    area_requirements.append(QRequirement(requirement["name"], q, 0))
 
-
-        elif row["type"] == "textcourse":
-            if row["indent"]:
+        elif requirement["type"] == "textcourse":
+            if requirement["indent"]:
                 if current_requirement is None:
                     # print("FIXME: Indented course without requirement")
                     # print("    ", row)
                     continue
-                current_requirement.add_course("", row["name"])
+                current_requirement.add_course("", requirement["name"])
             else:
                 if current_requirement is not None:
                     area_requirements.append(current_requirement)
-                current_requirement = Requirement(row["name"], [], 0)
-                if row["cus"]:
+                current_requirement = Requirement(requirement["name"], [], 0)
+                if requirement["cus"]:
                     try:
-                        cus = float(row["cus"])
-                        current_requirement = Requirement(row["name"], [], cus)
+                        cus = float(requirement["cus"])
+                        current_requirement = Requirement(requirement["name"], [], cus)
                     except ValueError:
                         # print("FIXME: Couldn't convert CUs")
                         # print("    ", row)
                         pass
-                elif row["courses"]:
-                    print("FIXME: textcourse with specified number of courses (not CUs)")
-                    print("    ", row)
+                elif requirement["courses"]:
+                    # print("FIXME: textcourse with specified number of courses (not CUs)")
+                    # print("    ", row)
+                    pass
 
-        elif row["type"] == "unknown":
+        elif requirement["type"] == "unknown":
             pass
             # print("FIXME: Unknown row encountered")
             # print(row["html"])
@@ -381,6 +452,7 @@ def get_program_requirements(program_url, timestamp=None):
 
     return areas
 
+
 class Command(BaseCommand):
     help = "This script scrapes a provided Penn Catalog (catalog.upenn.edu) into an AST"
 
@@ -405,7 +477,7 @@ class Command(BaseCommand):
         # }
 
         skipped = 0
-        with open("../../output.txt", "w") as f:
+        with open(os.path.join(settings.BASE_DIR, "degree", "output.txt"), "w") as f:
             for program_name, program_url in program_urls.items():
                 # FIXME: Biology has problems with different tracks
                 if "Biology" in program_name:
@@ -413,7 +485,7 @@ class Command(BaseCommand):
                     continue
 
                 f.write(f"##### --- {program_name} --- #####\n")
-                print(f"##### --- {program_name} --- #####\n")
+                print(f"##### --- {program_name} --- #####")
                 areas = get_program_requirements(program_url, timestamp=timestamp)
                 total_cus = 0
                 for key, value in areas.items():
