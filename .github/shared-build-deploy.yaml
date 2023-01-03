@@ -1,0 +1,187 @@
+
+# ========================================
+# Note:  If you make changes to this CI/CD, please include someone from DevOps in the list of reviewers for the PR.
+# ========================================
+name: Build and Deploy OHQ
+
+on: push
+
+jobs:
+  backend-check:
+    name: "Backend Check"
+    uses: pennlabs/shared-actions/.github/workflows/django-check.yaml@v0.1
+    with:
+      projectName: PennCourses
+      path: backend
+      flake: true
+      black: true
+
+  publish-backend:
+    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
+    with:
+      # Inputs
+      imageName: "office-hours-queue-backend"
+      githubRef: ${{ github.ref }}
+      gitSha: ${{ github.sha }}
+
+      # Optional inputs
+      
+      # Path to the docker context
+      path: backend
+      
+      # Path to the dockerfile (relative to `path` variable)
+      dockerfile: Dockerfile
+      
+      # If enabled, will cache_from the latest version of the docker image.
+      cache: true
+    
+    secrets: 
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    
+    needs: backend-check
+
+  # PennCourseAlert
+  # ========================================================================================================
+
+  frontend-pcr-check:
+    name: "Frontend Check"
+    uses: pennlabs/shared-actions/.github/workflows/react-check.yaml@v0.1
+    with:
+      path: frontend/review
+
+  publish-pcr-frontend:
+    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
+    with:
+      # Inputs
+      imageName: "pcr-frontend"
+      githubRef: ${{ github.ref }}
+      gitSha: ${{ github.sha }}
+      
+      # Path to the docker context
+      path: frontend/review
+      
+      # Path to the dockerfile (relative to `path` variable)
+      dockerfile: Dockerfile
+      
+      # If enabled, will cache_from the latest version of the docker image.
+      cache: true
+    
+    secrets: 
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    
+    needs: frontend-pcr-check
+
+  # PennCoursePlan
+  # ========================================================================================================
+
+  frontend-pcp-check:
+    name: "Frontend Check"
+    uses: pennlabs/shared-actions/.github/workflows/react-check.yaml@v0.1
+    with:
+      path: frontend/plan
+
+  publish-pcp-frontend:
+    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
+    with:
+      # Inputs
+      imageName: "pcp-frontend"
+      githubRef: ${{ github.ref }}
+      gitSha: ${{ github.sha }}
+      
+      # Path to the docker context
+      path: frontend/plan
+      
+      # Path to the dockerfile (relative to `path` variable)
+      dockerfile: Dockerfile
+      
+      # If enabled, will cache_from the latest version of the docker image.
+      cache: true
+    
+    secrets: 
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    
+    needs: frontend-pcp-check
+  # ========================================================================================================
+
+  # PennCourseAlert
+  # ========================================================================================================
+
+  frontend-pca-check:
+    name: "Frontend Check"
+    uses: pennlabs/shared-actions/.github/workflows/react-check.yaml@v0.1
+    with:
+      path: frontend/alert
+
+  publish-pca-frontend:
+    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
+    with:
+      # Inputs
+      imageName: "pca-frontend"
+      githubRef: ${{ github.ref }}
+      gitSha: ${{ github.sha }}
+      
+      # Path to the docker context
+      path: frontend/alert
+      
+      # Path to the dockerfile (relative to `path` variable)
+      dockerfile: Dockerfile
+      
+      # If enabled, will cache_from the latest version of the docker image.
+      cache: true
+    
+    secrets: 
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    
+    needs: frontend-pca-check
+  # ========================================================================================================
+
+  # Landing
+  # ========================================================================================================
+  publish-landing:
+      uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
+      with:
+        # Inputs
+        imageName: "pcx-landing"
+        githubRef: ${{ github.ref }}
+        gitSha: ${{ github.sha }}
+        
+        # Path to the docker context
+        path: frontend/landing
+        
+        # Path to the dockerfile (relative to `path` variable)
+        dockerfile: Dockerfile
+        
+        # If enabled, will cache_from the latest version of the docker image.
+        cache: true
+      
+      secrets: 
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      
+      needs: frontend-pca-check
+  # ========================================================================================================
+
+  # Deploy
+
+  deploy:
+    name: "Deploy"
+    uses: pennlabs/shared-actions/.github/workflows/deployment.yaml@v0.1
+
+    with:
+      githubRef: ${{ github.ref }}
+      gitSha: ${{ github.sha }}
+
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      GH_AWS_ACCESS_KEY_ID: ${{ secrets.GH_AWS_ACCESS_KEY_ID }}
+      GH_AWS_SECRET_ACCESS_KEY: ${{ secrets.GH_AWS_SECRET_ACCESS_KEY }}
+
+    needs:
+      - publish-backend
+      - publish-pcr-frontend
+      - publish-pcp-frontend
+      - publish-pca-frontend
