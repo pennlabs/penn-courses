@@ -20,7 +20,7 @@ jobs:
     uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
     with:
       # Inputs
-      imageName: "office-hours-queue-backend"
+      imageName: "penn-courses-backend"
       githubRef: ${{ github.ref }}
       gitSha: ${{ github.sha }}
 
@@ -59,10 +59,10 @@ jobs:
       gitSha: ${{ github.sha }}
       
       # Path to the docker context
-      path: frontend/review
+      path: frontend
       
       # Path to the dockerfile (relative to `path` variable)
-      dockerfile: Dockerfile
+      dockerfile: review/Dockerfile
       
       # If enabled, will cache_from the latest version of the docker image.
       cache: true
@@ -91,10 +91,10 @@ jobs:
       gitSha: ${{ github.sha }}
       
       # Path to the docker context
-      path: frontend/plan
+      path: frontend
       
       # Path to the dockerfile (relative to `path` variable)
-      dockerfile: Dockerfile
+      dockerfile: plan/Dockerfile
       
       # If enabled, will cache_from the latest version of the docker image.
       cache: true
@@ -124,10 +124,10 @@ jobs:
       gitSha: ${{ github.sha }}
       
       # Path to the docker context
-      path: frontend/alert
+      path: frontend
       
       # Path to the dockerfile (relative to `path` variable)
-      dockerfile: Dockerfile
+      dockerfile: alert/Dockerfile
       
       # If enabled, will cache_from the latest version of the docker image.
       cache: true
