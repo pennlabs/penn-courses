@@ -105,6 +105,9 @@ def get_programs_urls():
     return links
 
 
+def startswith(prefix, string):
+    return string.lower().startswith(prefix.lower())
+
 def test_courselist_row(row, ignore_indents=False):
     """
     A dummy method that just tests rows
@@ -170,6 +173,13 @@ def parse_courselist_row(row, ignore_indent=False):
 
     if row_elts[0].text.strip() == "Other Wharton Requirements":
         return None
+
+    # for row in row_elts:
+        # if re.search('^Select', row.text.strip()):
+        #     string = row.text.strip()
+        #     select_file = open("management/commands/select.txt", "a")
+        #     select_file.write("{}\n".format(string))
+        #     select_file.close()
 
     if match := re.match(SELECT_N_FROM_FOLLOWING, row_elts[0].text):
         num, is_course_units, _ = match.groups()
