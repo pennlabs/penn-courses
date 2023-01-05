@@ -42,20 +42,29 @@ jobs:
     
     needs: backend-check
 
-  # PennCourseAlert
+  
+  # Publish
   # ========================================================================================================
-
-  frontend-pcr-check:
+  
+  frontend-check:
     name: "Frontend Check"
     uses: pennlabs/shared-actions/.github/workflows/react-check.yaml@v0.1
+    strategy:
+      fail-fast: true
+      matrix:
+        product: [review, plan, alert]
     with:
-      path: frontend/review
+      path: frontend/${{ matrix.product }}
 
-  publish-pcr-frontend:
+  publish-frontend:
     uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
+    strategy:
+      fail-fast: true
+      matrix:
+        product: [{name: pcr, path: review}, {name: pcp, path: plan}, {name: pca, path: alert}]
     with:
       # Inputs
-      imageName: "pcr-frontend"
+      imageName: "${{ matrix.product.name }}-frontend"
       githubRef: ${{ github.ref }}
       gitSha: ${{ github.sha }}
       
@@ -63,7 +72,7 @@ jobs:
       path: frontend
       
       # Path to the dockerfile (relative to `path` variable)
-      dockerfile: review/Dockerfile
+      dockerfile: ${{ matrix.product.path }}/Dockerfile
       
       # If enabled, will cache_from the latest version of the docker image.
       cache: true
@@ -72,72 +81,9 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     
-    needs: frontend-pcr-check
+    needs: frontend-${{ matrix.product.name }}-check
 
-  # PennCoursePlan
-  # ========================================================================================================
 
-  frontend-pcp-check:
-    name: "Frontend Check"
-    uses: pennlabs/shared-actions/.github/workflows/react-check.yaml@v0.1
-    with:
-      path: frontend/plan
-
-  publish-pcp-frontend:
-    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
-    with:
-      # Inputs
-      imageName: "pcp-frontend"
-      githubRef: ${{ github.ref }}
-      gitSha: ${{ github.sha }}
-      
-      # Path to the docker context
-      path: frontend
-      
-      # Path to the dockerfile (relative to `path` variable)
-      dockerfile: plan/Dockerfile
-      
-      # If enabled, will cache_from the latest version of the docker image.
-      cache: true
-    
-    secrets: 
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    
-    needs: frontend-pcp-check
-  # ========================================================================================================
-
-  # PennCourseAlert
-  # ========================================================================================================
-
-  frontend-pca-check:
-    name: "Frontend Check"
-    uses: pennlabs/shared-actions/.github/workflows/react-check.yaml@v0.1
-    with:
-      path: frontend/alert
-
-  publish-pca-frontend:
-    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
-    with:
-      # Inputs
-      imageName: "pca-frontend"
-      githubRef: ${{ github.ref }}
-      gitSha: ${{ github.sha }}
-      
-      # Path to the docker context
-      path: frontend
-      
-      # Path to the dockerfile (relative to `path` variable)
-      dockerfile: alert/Dockerfile
-      
-      # If enabled, will cache_from the latest version of the docker image.
-      cache: true
-    
-    secrets: 
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    
-    needs: frontend-pca-check
   # ========================================================================================================
 
   # Landing
