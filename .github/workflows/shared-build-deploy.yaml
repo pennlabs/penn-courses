@@ -81,7 +81,7 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     
-    needs: [frontend-pcr-check, frontend-pcp-check, frontend-pca-check]
+    needs: frontend-check
 
 
   # ========================================================================================================
