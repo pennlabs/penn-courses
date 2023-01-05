@@ -127,7 +127,4 @@ jobs:
 
     needs:
       - publish-backend
-      - publish-pcr-frontend
-      - publish-pcp-frontend
-      - publish-pca-frontend
-      - publish-landing
+      - publish-frontend
