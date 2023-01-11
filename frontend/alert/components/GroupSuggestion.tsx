@@ -281,6 +281,9 @@ const GroupSuggestion = ({
 
     };
 
+    console.log("Logging sections");
+    console.log(sections);
+
     return (
         <>
             <DropdownItemBox headerBox={true}>
