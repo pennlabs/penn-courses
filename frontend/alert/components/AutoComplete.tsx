@@ -170,8 +170,6 @@ const AutoComplete = ({
     const [active, setActive] = useState(false);
     const [backdrop, setBackdrop] = useState("");
 
-    console.log("Suggestions length: " + suggestions.length);
-
     const show = active && suggestions.length > 0;
     const bulkMode = selectedCourses.size > 1;
 
