@@ -290,7 +290,7 @@ const GroupSuggestion = ({
                 <DropdownItemLeftCol headerBox={true}>
                     <SuggestionTitle>{courseCode}</SuggestionTitle>
                     <SuggestionSubtitle>
-                        {sections[Object.keys(sections)[0]].length > 0 &&
+                        {sections[Object.keys(sections)[0]] && sections[Object.keys(sections)[0]].length > 0 &&
                             sections[Object.keys(sections)[0]][0].course_title}
                     </SuggestionSubtitle>
                 </DropdownItemLeftCol>
