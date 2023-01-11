@@ -11,9 +11,7 @@ export const mapActivityToString = (activity) => {
         SRT: "Senior Theses",
         STU: "Studios",
         ONL: "Online",
-        "***": "Uncategorized",
     };
 
-    console.log("activityMap: " + activityStringMap[activity]);
     return activity in activityStringMap ? activityStringMap[activity] : "";
 };
