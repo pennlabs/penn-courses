@@ -14,5 +14,6 @@ export const mapActivityToString = (activity) => {
         "***": "Uncategorized",
     };
 
-    return activityStringMap[activity];
+    console.log("activityMap: " + activityStringMap[activity]);
+    return activity in activityStringMap ? activityStringMap[activity] : "";
 };
