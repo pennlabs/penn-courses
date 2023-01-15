@@ -3,13 +3,21 @@ from django.db import IntegrityError
 from django.db.models import Prefetch, Q
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, permission_classes, schema
+from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes, schema, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
+from django.contrib.auth import get_user_model
+
+from ics import Calendar as ICSCal
+from ics import Event as ICSEvent
+from ics.grammar.parse import ContentLine
+
+
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from plan.management.commands.recommendcourses import (
     clean_course_input,
@@ -399,3 +407,25 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             "sections__meetings__room",
         )
         return queryset
+
+
+class CalendarAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        uuid = kwargs["user_secretuuid"]
+        schedule_pk = kwargs["schedule_pk"]
+
+        if not uuid:
+            return Response({"detail": "You must provide a uuid to access the calendar"})
+
+        user = get_user_model().objects.filter(uuid_secret=uuid).first()
+        if user != self.request.user:
+            return Response({"detail": "You cannot access this user's calendar"})
+
+        schedule = Schedule.objects.filter(pk=schedule_pk).first()
+        if not schedule:
+            return Response({"detail": "Invalid schedule"})
+
+        calendar = ICSCal(creator=f"Penn Labs")
+        calendar.extra.append(ContentLine(name="X-WR-CALNAME", value=f"Courses Calendar"))
+
+        return Response()
