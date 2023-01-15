@@ -30,7 +30,7 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
             - `echo 'export PATH="/usr/local/opt/openssl@3/bin:$PATH"' >> ~/.zshrc`
             - `export LDFLAGS="-L/usr/local/opt/openssl@3/lib"`
             - `export CPPFLAGS="-I/usr/local/opt/openssl@3/include"`
-    - **Windows**
+    - **Windows/Linux**
         1. `apt-get install gcc python3-dev libpq-dev`
 
 3. Running Docker
@@ -77,7 +77,7 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
     - This will spin up a container from which you can run the server (with all required packages preinstalled). 
 3. In a separate terminal (from any directory), run `docker exec -it backend-development-1 /bin/bash` to open a shell in the container (if this says "no such container", run `docker container ls` and use the name of whatever container most closely matches the `backend_development` image). Just like exiting a Pipenv shell, you can exit the container by pressing `Ctrl+D` (which sends the "end of transmission" / EOF character). 
     - You might want to add an alias for this command so it is easier to run (e.g. `echo 'alias courses-backend="docker exec -it backend_development_1 /bin/bash"' >> ~/.zshrc && source ~/.zshrc`). Then you can just run `courses-backend` from any directory to connect to the Docker container from which you will run the server (assuming `courses-compose` is already running in another terminal).
-4. Once you have a shell open in the container, you can continue running the rest of the commands in this README (except you can skip `pipenv install --dev` since that has already been done for you). 
+4. Once you have a shell open in the container, you can continue running the rest of the commands in the [Setting Up the Backend](#setting-up-the-backend) section of this README (except you can skip `pipenv install --dev` since that has already been done for you). 
     1. Remember to run `pipenv shell` (to open a [Pipenv] shell inside of a [docker container] shell inside of your computer's shell!). Note that the `/backend` directory inside the container is automatically synced with the `backend` directory on your host machine (from which you ran `docker-compose --profile=dev up`). 
 5. There's just one last complication. Due to some annoying details of Docker networking, you have to expose the server on IP address `0.0.0.0` inside the container, rather than `127.0.0.1` or `localhost` as is default (otherwise the server won't be accessible from outside of the container). To do this, instead of running `python manage.py runserver`, run `python manage.py runserver 0.0.0.0:8000`. In `Dockerfile.dev`, we automatically alias the command `runserver` to the latter, so in the container shell (in `/backend`, as is default) you can simply run the command `runserver` (no `python manage.py` necessary).
 
