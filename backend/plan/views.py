@@ -1,13 +1,21 @@
+import arrow
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q
+from django.http import HttpResponse
+from django.utils import timezone
 from django_auto_prefetching import AutoPrefetchViewSetMixin
+from ics import Calendar as ICSCal
+from ics import Event as ICSEvent
+from ics.grammar.parse import ContentLine
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from courses.models import Course, Section
+from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
@@ -399,3 +407,97 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             "sections__meetings__room",
         )
         return queryset
+
+
+class CalendarAPIView(APIView):
+
+    schema = PcxAutoSchema(
+        response_codes={
+            reverse_func("calendar-view", args=["user_secretuuid", "schedule_pk"]): {
+                "GET": {
+                    200: "Schedule exported successfully",
+                },
+            },
+        },
+    )
+
+    def get(self, *args, **kwargs):
+        """
+        Return a .ics file of the user's selected schedule
+        ---
+        responses:
+            "200":
+                description: Return a calendar file in ICS format.
+                content:
+                    text/calendar:
+                        schema:
+                            type: string
+        ---
+        """
+        uuid = kwargs["user_secretuuid"]
+        schedule_pk = kwargs["schedule_pk"]
+
+        if not uuid:
+            return Response(
+                {"detail": "You must provide a uuid to access the calendar"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = get_user_model().objects.filter(uuid_secret=uuid).first()
+        if not user:
+            return Response(
+                {"detail": "User does not exist"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        schedule = (
+            Schedule.objects.filter(pk=schedule_pk, person=user)
+            .first()
+            .prefetch_related("sections", "sections__meetings")
+        )
+        if not schedule:
+            return Response({"detail": "Invalid schedule"}, status=status.HTTP_403_FORBIDDEN)
+
+        day_mapping = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR"}
+
+        calendar = ICSCal(creator="Penn Labs")
+        calendar.extra.append(ContentLine(name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
+
+        try:
+            for section in schedule.sections:
+                e = ICSEvent()
+                e.name = section.full_code
+                e.created = timezone.now()
+
+                days = []
+                for meeting in section.meetings:
+                    days.append(day_mapping[meeting.day])
+                first_meeting = list(section.meetings)[0]
+
+                start_time = str(Meeting.int_to_time(first_meeting.start))
+                end_time = str(Meeting.int_to_time(first_meeting.end))
+                start_datetime = first_meeting.start_date + " " + start_time
+                end_datetime = first_meeting.end_date + " " + end_time
+
+                # need YYYYmmddTHHmmss format for ICS, easily done with Arrow
+                e.begin = arrow.get(start_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York")
+                e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York")
+
+                end_date = arrow.get(first_meeting.end_date, tzinfo="America/New York")
+
+                e.extra.append(
+                    ContentLine(
+                        "RRULE",
+                        {},
+                        f'FREQ=WEEKLY;UNTIL={end_date}Z;WKST=SU;BYDAY={",".join(days)}',
+                    )
+                )
+                calendar.events.add(e)
+
+        except Exception:
+            # Fail silently, calendar should not blip
+            pass
+
+        response = HttpResponse(calendar, content_type="text/calendar")
+        response["Content-Disposition"] = "attachment; pcp-schedule.ics"
+        return response
