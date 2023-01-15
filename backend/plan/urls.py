@@ -2,7 +2,7 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 from rest_framework_nested import routers
 
-from plan.views import ScheduleViewSet, calendar_view, recommend_courses_view
+from plan.views import CalendarAPIView, ScheduleViewSet, recommend_courses_view
 
 
 router = routers.DefaultRouter()
@@ -12,7 +12,7 @@ schedules_router = routers.NestedSimpleRouter(router, r"schedules", lookup="sche
 
 schedules_router.register(
     r"calendar/<slug:user_secretuuid>/",
-    calendar_view,
+    CalendarAPIView.as_view(),
     basename="calendar-view",
 )
 
