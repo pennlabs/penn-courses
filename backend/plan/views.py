@@ -438,11 +438,17 @@ class CalendarAPIView(APIView):
         schedule_pk = kwargs["schedule_pk"]
 
         if not uuid:
-            return Response({"detail": "You must provide a uuid to access the calendar"})
+            return Response(
+                {"detail": "You must provide a uuid to access the calendar"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user = get_user_model().objects.filter(uuid_secret=uuid).first()
         if user != self.request.user:
-            return Response({"detail": "You cannot access this user's calendar"})
+            return Response(
+                {"detail": "You cannot access this user's calendar"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         schedule = (
             Schedule.objects.filter(pk=schedule_pk, person=user)
@@ -450,7 +456,7 @@ class CalendarAPIView(APIView):
             .prefetch_related("sections", "sections__meetings")
         )
         if not schedule:
-            return Response({"detail": "Invalid schedule"})
+            return Response({"detail": "Invalid schedule"}, status=status.HTTP_403_FORBIDDEN)
 
         day_mapping = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR"}
 
