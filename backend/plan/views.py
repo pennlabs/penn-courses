@@ -488,7 +488,7 @@ class CalendarAPIView(APIView):
                 )
                 calendar.events.add(e)
 
-        except Exception as e:
+        except Exception:
             # Fail silently, calendar should not blip
             pass
 
