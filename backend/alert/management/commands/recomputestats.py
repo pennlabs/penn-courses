@@ -53,7 +53,7 @@ def recompute_has_reviews():
     with connection.cursor() as cursor:
         cursor.execute(
             """
-        UPDATE "courses_section" as U0
+        UPDATE "courses_section" AS U0
         SET "has_reviews" = CASE WHEN
             EXISTS (SELECT id FROM "review_review" AS U1
                 WHERE U0."id" = U1."section_id")
@@ -67,7 +67,7 @@ def recompute_has_status_updates():
     with connection.cursor() as cursor:
         cursor.execute(
             """
-        UPDATE "courses_section" as U0
+        UPDATE "courses_section" AS U0
         SET "has_status_updates" = CASE WHEN
             EXISTS (SELECT id FROM "courses_statusupdate" AS U1
                 WHERE U0."id" = U1."section_id")
