@@ -444,10 +444,10 @@ class CalendarAPIView(APIView):
             )
 
         user = get_user_model().objects.filter(uuid_secret=uuid).first()
-        if user != self.request.user:
+        if not user:
             return Response(
-                {"detail": "You cannot access this user's calendar"},
-                status=status.HTTP_401_UNAUTHORIZED,
+                {"detail": "User does not exist"},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         schedule = (
