@@ -410,6 +410,17 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
 
 class CalendarAPIView(APIView):
+
+    schema = PcxAutoSchema(
+        response_codes={
+            reverse_func("calendar-view", args=["user_secretuuid", "schedule_pk"]): {
+                "GET": {
+                    200: "Schedule exported successfully",
+                },
+            },
+        },
+    )
+
     def get(self, *args, **kwargs):
         """
         Return a .ics file of the user's selected schedule
@@ -444,7 +455,7 @@ class CalendarAPIView(APIView):
         day_mapping = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR"}
 
         calendar = ICSCal(creator="Penn Labs")
-        calendar.extra.append(ContentLine(name="X-WR-CALNAME", value="Courses Calendar"))
+        calendar.extra.append(ContentLine(name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
 
         try:
             for section in schedule.sections:
@@ -475,9 +486,11 @@ class CalendarAPIView(APIView):
                         f'FREQ=WEEKLY;UNTIL={end_date}Z;WKST=SU;BYDAY={",".join(days)}',
                     )
                 )
+                calendar.events.add(e)
 
-        except Exception:
-            return Response({"detail": "Failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            # Fail silently, calendar should not blip
+            pass
 
         response = HttpResponse(calendar, content_type="text/calendar")
         response["Content-Disposition"] = "attachment; pcp-schedule.ics"
