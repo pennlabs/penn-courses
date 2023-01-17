@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 import numpy as np
 import redis
@@ -81,6 +82,11 @@ def section_demand_change(section_id, updated_at):
     :param: section_id: the id of the section involved in the demand change
     :param: updated_at: the datetime at which the demand change occurred
     """
+    if type(updated_at) is str:
+        updated_at = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+    elif type(updated_at) is not datetime:
+        return
+
     section = Section.objects.get(id=section_id)
     semester = section.semester
     if semester != get_current_semester():

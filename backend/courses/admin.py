@@ -107,7 +107,7 @@ class TopicAdmin(admin.ModelAdmin):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Hack to limit most_recent choices to courses of the same Topic
-        if db_field.name == "most_recent":
+        if db_field.name == "most_recent" and request.resolver_match.kwargs.get("object_id"):
             topic_id = request.resolver_match.kwargs["object_id"]
             kwargs["queryset"] = Course.objects.filter(topic_id=topic_id)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
@@ -173,6 +173,7 @@ class MeetingAdmin(admin.ModelAdmin):
         "section__course",
         "section__course__department",
     )
+    autocomplete_fields = ["section"]
 
 
 class PreNGSSRequirementAdmin(admin.ModelAdmin):
