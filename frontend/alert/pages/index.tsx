@@ -127,9 +127,9 @@ const RecruitingBanner = styled.div`
     }
 `;
 
-const WarningBanner = styled(RecruitingBanner)`
-    background-color: #d2d7df;
-`;
+// const WarningBanner = styled(RecruitingBanner)`
+//     background-color: #d2d7df;
+// `;
 
 function App() {
     const router = useRouter();
@@ -218,7 +218,7 @@ function App() {
                         </p>
                     </RecruitingBanner>
                 )}
-                <WarningBanner>
+                {/* <WarningBanner>
                     <p>
                         <span role="img" aria-label="warning">
                             📢
@@ -229,7 +229,7 @@ function App() {
                             📢
                         </span>{" "}
                     </p>
-                </WarningBanner>
+                </WarningBanner> */}
                 <Nav
                     login={updateUser}
                     logout={logout}
