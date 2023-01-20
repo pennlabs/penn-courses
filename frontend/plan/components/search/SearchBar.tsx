@@ -6,7 +6,7 @@ import styled from "styled-components";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
 import { DropdownButton } from "../DropdownButton";
-import { FilterButton } from "../FilterButton";
+import { FilterButton } from "./ButtonFilter";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
@@ -24,7 +24,7 @@ import {
     updateSearchText,
     updateRangeFilter,
     updateCheckboxFilter,
-    updateFilterButtonFilter,
+    updateButtonFilter,
     clearAll,
     clearFilter,
     updateSearch,
@@ -76,7 +76,6 @@ interface SearchBarProps {
 }
 
 function shouldSearch(filterData: FilterData) {
-    //fix stuff here for filter button
     const searchString = filterData.searchString.length >= 3;
     let selectedReq = false;
     if (filterData.selectedReq) {
@@ -676,7 +675,7 @@ const mapDispatchToProps = (dispatch) => ({
         toggleState: boolean
     ) => dispatch(updateCheckboxFilter(field, value, toggleState)),
     updateButtonFilter: (field: string) => (value: number) =>
-        dispatch(updateFilterButtonFilter(field, value)),
+        dispatch(updateButtonFilter(field, value)),
     clearAll: () => dispatch(clearAll()),
     clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),

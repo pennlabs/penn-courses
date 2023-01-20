@@ -7,9 +7,9 @@ import {
     DropdownTrigger,
     DropdownFilterButton,
     DeleteButtonContainer,
-    DeleteButton } from "./DropdownButton";
+    DeleteButton } from "../DropdownButton";
 
-import { FilterData, FilterType } from "../types";
+import { FilterData, FilterType } from "../../types";
 
 interface FilterButtonProps<F, K extends keyof F> {
     title: string;

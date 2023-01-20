@@ -40,7 +40,7 @@ export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
 export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
 export const UPDATE_CHECKBOX_FILTER = "UPDATE_CHECKBOX_FILTER";
-export const UPDATE_FILTER_BUTTON_FILTER = "UPDATE_FILTER_BUTTON_FILTER";
+export const UPDATE_BUTTON_FILTER = "UPDATE_BUTTON_FILTER";
 export const CLEAR_FILTER = "CLEAR_FILTER";
 export const CLEAR_ALL = "CLEAR_ALL";
 
@@ -416,7 +416,7 @@ export function updateCheckboxFilter(field, value, toggleState) {
     };
 }
 
-export function updateFilterButtonFilter(field, value) {
+export function updateButtonFilter(field, value) {
     return {
         type: UPDATE_CHECKBOX_FILTER,
         field,

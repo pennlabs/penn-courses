@@ -7,7 +7,7 @@ import {
     CLEAR_FILTER,
     CLEAR_ALL,
     UPDATE_CHECKBOX_FILTER,
-    UPDATE_FILTER_BUTTON_FILTER,
+    UPDATE_BUTTON_FILTER,
 } from "../actions";
 
 export const initialState = {
@@ -118,7 +118,7 @@ export const filters = (state = initialState, action) => {
             };
 
         // for filter buttons that toggle
-        case UPDATE_FILTER_BUTTON_FILTER:
+        case UPDATE_BUTTON_FILTER:
             return {
                 ...state,
                 filterData: {
