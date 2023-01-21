@@ -79,7 +79,7 @@ class PrimarySchedule(models.Model):
 
     class Meta:
         # for now, we only allow one primary schedule per user
-        unique_together = (("person",),)
+        unique_together = (("user",),)
 
     def __str__(self):
         return f"PrimarySchedule(User: {self.user}, Schedule ID: {self.schedule_id})"

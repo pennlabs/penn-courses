@@ -1,7 +1,7 @@
 from textwrap import dedent
 
 from django.contrib.auth import get_user_model
-from backend.courses.models import Friendship
+from courses.models import Friendship
 from rest_framework import serializers
 
 from courses.models import (

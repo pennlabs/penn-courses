@@ -5,7 +5,7 @@ from django.db.models import Prefetch, Q
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from backend.courses.serializers import FriendshipSerializer
+from courses.serializers import FriendshipSerializer
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import permission_classes

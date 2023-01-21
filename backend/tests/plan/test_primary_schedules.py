@@ -18,7 +18,7 @@ class PrimaryScheduleTest(TestCase):
             - retrieve primary schedule and update it with a valid schedule (check to see if old is not primary anymore)
             - remove primary schedule (and check no other primary scheudles in the models)
             - retrieve all friends schedules (and verify that they are primary)
-            - retrieve specific friend's primary schedule
             - removing friend does not retrieve their primary schedule
+            - adding new friend does retrieve their primary schedule
         '''
 
