@@ -40,6 +40,7 @@ export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
 export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
 export const UPDATE_CHECKBOX_FILTER = "UPDATE_CHECKBOX_FILTER";
+export const UPDATE_BUTTON_FILTER = "UPDATE_BUTTON_FILTER";
 export const CLEAR_FILTER = "CLEAR_FILTER";
 export const CLEAR_ALL = "CLEAR_ALL";
 
@@ -313,10 +314,26 @@ function buildCourseSearchUrl(filterData) {
         }
     }
 
-    // Fit Schedule filter
-    // if (filterData["fit_schedule"]) {
-    //     queryString += '&schedule-fit=${}'
-    // }
+    // toggle button filters
+    const buttonFields = ["fit_schedule"];
+    const buttonDefaultFields = [-1];
+
+    for (let i = 0; i < buttonFields.length; i += 1) {
+        if (
+            filterData[buttonFields[i]] &&
+            JSON.stringify(filterData[buttonFields[i]]) !==
+                JSON.stringify(buttonDefaultFields[i])
+        ) {
+            const applied = Object.keys(filterData[buttonFields[i]]);
+            if (applied.length > 0) {
+                if (buttonFields[i] === "fit_schedule") {
+                    // pass in the schedule id
+                    queryString += `&schedule-fit=${applied[i]}`;
+                }
+            }
+        }
+    }
+
     return queryString;
 }
 
@@ -396,6 +413,14 @@ export function updateCheckboxFilter(field, value, toggleState) {
         field,
         value,
         toggleState,
+    };
+}
+
+export function updateButtonFilter(field, value) {
+    return {
+        type: UPDATE_CHECKBOX_FILTER,
+        field,
+        value,
     };
 }
 

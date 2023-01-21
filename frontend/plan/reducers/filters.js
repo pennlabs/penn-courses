@@ -7,6 +7,7 @@ import {
     CLEAR_FILTER,
     CLEAR_ALL,
     UPDATE_CHECKBOX_FILTER,
+    UPDATE_BUTTON_FILTER,
 } from "../actions";
 
 export const initialState = {
@@ -44,7 +45,7 @@ export const initialState = {
             U: true,
         },
         time: [1.5, 17],
-        fit_schedule: false,
+        fit_schedule: -1,
     },
     defaultReqs: null,
 };
@@ -113,6 +114,16 @@ export const filters = (state = initialState, action) => {
                         ...state.filterData[action.field],
                         [action.value]: action.toggleState,
                     },
+                },
+            };
+
+        // for filter buttons that toggle
+        case UPDATE_BUTTON_FILTER:
+            return {
+                ...state,
+                filterData: {
+                    ...state.filterData,
+                    [action.field]: action.value,
                 },
             };
 

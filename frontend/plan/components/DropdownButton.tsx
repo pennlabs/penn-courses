@@ -12,17 +12,17 @@ interface DropdownButtonProps {
     clearFilter: () => void;
 }
 
-const DropdownContainer = styled.div`
+export const DropdownContainer = styled.div`
     display: inline-flex;
     position: relative;
     vertical-align: top;
 `;
 
-const DropdownTrigger = styled.div`
+export const DropdownTrigger = styled.div`
     margin: 0.2em;
 `;
 
-const DropdownFilterButton = styled.button`
+export const DropdownFilterButton = styled.button`
     padding: calc(0.375em - 1px) 0.75em;
     padding-left: 1em;
     padding-right: 1em;
@@ -78,13 +78,13 @@ const DropdownFilterButton = styled.button`
     }
 `;
 
-const DeleteButtonContainer = styled.div`
+export const DeleteButtonContainer = styled.div`
     padding-left: 0.5em;
     margin-right: -0.5em;
     height: 16px;
 `;
 
-const DeleteButton = styled.button`
+export const DeleteButton = styled.button`
     line-height: 1.5;
 `;
 

@@ -6,6 +6,7 @@ import styled from "styled-components";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
 import { DropdownButton } from "../DropdownButton";
+import { FilterButton } from "./ButtonFilter";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
@@ -23,6 +24,7 @@ import {
     updateSearchText,
     updateRangeFilter,
     updateCheckboxFilter,
+    updateButtonFilter,
     clearAll,
     clearFilter,
     updateSearch,
@@ -69,6 +71,8 @@ interface SearchBarProps {
     store: object;
     storeLoaded: boolean;
     setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
+    activeSchedule: number;
+    updateButtonFilter: (field: string) => (value: number) => void;
 }
 
 function shouldSearch(filterData: FilterData) {
@@ -293,6 +297,8 @@ function SearchBar({
     store,
     storeLoaded,
     setShowLoginModal,
+    activeSchedule,
+    updateButtonFilter
 }: /* eslint-enable no-shadow */
 SearchBarProps) {
     const router = useRouter();
@@ -468,13 +474,19 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            {/* <DropdownButton
+            <FilterButton
                 title="Fit Schedule"
-                filterData={filterData.fit_schedule}
+                
+                filterData={filterData}
                 defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
+                // @ts-ignore
+                startSearch={conditionalStartSearch}
+                activeSchedule={activeSchedule}
+                buttonProperty="fit_schedule"
+                updateButtonFilter={updateButtonFilter("fit_schedule")}
             >
-            </DropdownButton> //TODO: Add Fit Schedule */}
+            </FilterButton> 
         </DropdownContainer>
     );
     if (mobileView) {
@@ -642,6 +654,7 @@ const mapStateToProps = (state) => ({
     isLoadingCourseInfo: state.sections.courseInfoLoading,
     isSearchingCourseInfo: state.sections.searchInfoLoading,
     user: state.login.user,
+    activeSchedule: state.schedule.schedules[state.schedule.scheduleSelected].id,
 });
 
 // @ts-ignore
@@ -661,6 +674,8 @@ const mapDispatchToProps = (dispatch) => ({
         value: string,
         toggleState: boolean
     ) => dispatch(updateCheckboxFilter(field, value, toggleState)),
+    updateButtonFilter: (field: string) => (value: number) =>
+        dispatch(updateButtonFilter(field, value)),
     clearAll: () => dispatch(clearAll()),
     clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),
