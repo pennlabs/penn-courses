@@ -3,12 +3,10 @@ import PropTypes from "prop-types";
 import styled from "styled-components";
 import {
     FontAwesomeIcon,
-    FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 
 import { between, TABLET, SMALLDESKTOP } from "../constants";
-import { WrappedStyled } from "../types";
 
 interface BorderProps {
     border: string;

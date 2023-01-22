@@ -6,7 +6,7 @@ import styled from "styled-components";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
 import { DropdownButton } from "../DropdownButton";
-import { FilterButton } from "../FilterButton";
+import { ButtonFilter } from "./ButtonFilter";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
@@ -24,7 +24,7 @@ import {
     updateSearchText,
     updateRangeFilter,
     updateCheckboxFilter,
-    updateFilterButtonFilter,
+    updateButtonFilter,
     clearAll,
     clearFilter,
     updateSearch,
@@ -76,7 +76,6 @@ interface SearchBarProps {
 }
 
 function shouldSearch(filterData: FilterData) {
-    //fix stuff here for filter button
     const searchString = filterData.searchString.length >= 3;
     let selectedReq = false;
     if (filterData.selectedReq) {
@@ -114,14 +113,26 @@ const MobileFilterContainer = styled.div`
 const MobileFilterDropdowns = styled.div`
     z-index: 100;
     margin-top: -20px;
-    margin-bottom: 20px;
-    padding: 10px;
+    padding: 5px 10px;
+    padding-bottom: 5px;
     display: flex;
     width: 100vw;
     align-items: center;
     flex-wrap: wrap;
     background: white;
     justify-content: flex-start;
+`;
+
+const ClearContainer = styled.div`
+    z-index: 100;
+    padding: 10px;
+    padding-top: 0px;
+    display: flex;
+    width: 100vw;
+    align-items: center;
+    flex-wrap: wrap;
+    background: white;
+    justify-content: center;
 `;
 
 const SearchBarContainer = styled.div`
@@ -292,9 +303,10 @@ function SearchBar({
 SearchBarProps) {
     const router = useRouter();
 
-    useEffect(() => {
-        loadRequirements();
-    }, [loadRequirements]);
+    //TODO: Add requirements support back
+    // useEffect(() => {
+    //     loadRequirements();
+    // }, [loadRequirements]);
 
     useEffect(() => {
         // ensure that the user is logged in before initiating the sync
@@ -462,7 +474,7 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            <FilterButton
+            <ButtonFilter
                 title="Fit Schedule"
                 filterData={filterData}
                 defaultFilter={defaultFilters.filterData.fit_schedule}
@@ -473,8 +485,8 @@ SearchBarProps) {
                 buttonProperty="fit_schedule"
                 updateButtonFilter={updateButtonFilter("fit_schedule")}
             >
-            </FilterButton> 
-            <FilterButton
+            </ButtonFilter> 
+            <ButtonFilter
                 title="Open"
                 filterData={filterData}
                 defaultFilter={defaultFilters.filterData.is_open}
@@ -485,14 +497,14 @@ SearchBarProps) {
                 buttonProperty="is_open"
                 updateButtonFilter={updateButtonFilter("is_open")}
             >
-            </FilterButton> 
+            </ButtonFilter> 
         </DropdownContainer>
     );
     if (mobileView) {
         return (
             <MobileSearchBarOuterContainer>
                 <MobileSearchBarInnerContainer>
-                    <MobilePCPImage src="/icons/favicon.ico" alt="" />
+                    {/* <MobilePCPImage src="/icons/favicon.ico" alt="" /> */}
                     <AccountIndicator
                         user={user}
                         login={(u: User) => {
@@ -521,9 +533,30 @@ SearchBarProps) {
                         <i className="fas fa-filter" />
                     </MobileFilterContainer>
                 </MobileSearchBarInnerContainer>
-                {reqsShown && (
-                    <MobileFilterDropdowns>{dropDowns}</MobileFilterDropdowns>
-                )}
+                {reqsShown && 
+                    <>
+                    <MobileFilterDropdowns>
+                        {dropDowns}
+                    </MobileFilterDropdowns> 
+                    <ClearContainer>
+                        <ClearButton
+                            type="button"
+                            onClick={() => {
+                                clearSearchResults();
+                                conditionalStartSearch({
+                                    // TODO: remove any cast when getting rid of redux
+                                    ...(defaultFilters.filterData as any),
+                                    searchString: filterData.searchString,
+                                    selectedReq: defaultReqs,
+                                });
+                                clearAll();
+                            }}
+                        >
+                            Clear all
+                        </ClearButton>
+                    </ClearContainer>
+                    </>
+                }
             </MobileSearchBarOuterContainer>
         );
     }
@@ -652,8 +685,8 @@ const mapDispatchToProps = (dispatch) => ({
         value: string,
         toggleState: boolean
     ) => dispatch(updateCheckboxFilter(field, value, toggleState)),
-    updateButtonFilter: (field: string) => (value: number | boolean) =>
-        dispatch(updateFilterButtonFilter(field, value)),
+    updateButtonFilter: (field: string) => (value: number) =>
+        dispatch(updateButtonFilter(field, value)),
     clearAll: () => dispatch(clearAll()),
     clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),

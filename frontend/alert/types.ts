@@ -14,8 +14,11 @@ export interface User {
 
 // Enums for AlertItem component
 export enum AlertAction {
-    RESUBSCRIBE,
-    CANCEL,
+    ONALERT,
+    OFFALERT,
+    ONCLOSED,
+    OFFCLOSED,
+    NOEFFECT,
     DELETE,
 }
 
@@ -25,20 +28,14 @@ export enum SectionStatus {
     CANCELLED = "X",
 }
 
-export enum AlertRepeat {
-    INACTIVE,
-    EOS,
-    ONCE,
-}
-
 export interface Alert {
     id: number;
     originalCreatedAt: string;
     section: string;
     alertLastSent: string;
     status: SectionStatus;
-    repeat: AlertRepeat;
     actions: AlertAction;
+    closedNotif: AlertAction;
 }
 
 export interface Instructor {

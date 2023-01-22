@@ -127,6 +127,10 @@ const RecruitingBanner = styled.div`
     }
 `;
 
+// const WarningBanner = styled(RecruitingBanner)`
+//     background-color: #d2d7df;
+// `;
+
 function App() {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
@@ -169,6 +173,13 @@ function App() {
             });
     };
 
+    const sendError = (status, message) => {
+        const blob = new Blob([JSON.stringify({ message })], {
+            type: "application/json",
+        });
+        setResponse(new Response(blob, { status }));
+    };
+
     // Separates showLoginModal from state so that the login modal doesn't show up on page load
     const updateUser = (newUserVal: User | null) => {
         if (!newUserVal) {
@@ -207,6 +218,18 @@ function App() {
                         </p>
                     </RecruitingBanner>
                 )}
+                {/* <WarningBanner>
+                    <p>
+                        <span role="img" aria-label="warning">
+                            📢
+                        </span>{" "}
+                        Unexpected error when searching LING and PPE courses is now fixed!
+                        {" "}
+                        <span role="img" aria-label="warning">
+                            📢
+                        </span>{" "}
+                    </p>
+                </WarningBanner> */}
                 <Nav
                     login={updateUser}
                     logout={logout}
@@ -232,6 +255,7 @@ function App() {
                         {user ? (
                             <AlertForm
                                 user={user}
+                                sendError={sendError}
                                 setResponse={setResponse}
                                 setTimeline={setTimeline}
                                 autofillSection={router.query.course as string}
@@ -239,7 +263,7 @@ function App() {
                         ) : null}
                     </Flex>
                 ) : (
-                    <ManageAlertWrapper />
+                    <ManageAlertWrapper sendError={sendError}/>
                 )}
 
                 <Timeline courseCode={timeline} setTimeline={setTimeline} />
