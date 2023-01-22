@@ -66,6 +66,7 @@ class PrimarySchedule(models.Model):
     user = models.OneToOneField(
         get_user_model(),
         on_delete=models.CASCADE,
+        null=True,
         related_name="primary_schedule",
         help_text="The User to which this schedule belongs.",
     )
@@ -73,6 +74,7 @@ class PrimarySchedule(models.Model):
     schedule = models.OneToOneField(
         Schedule,
         on_delete=models.CASCADE,
+        null=True,
         related_name="primary_schedule",
         help_text="The schedule that is the primary schedule for the user.",
     )
