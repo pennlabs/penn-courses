@@ -1,7 +1,7 @@
 /* A button that toggles on click and allows search to filter class that only fits schedule */
 
 import React, { useState } from "react";
-import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
+import { useOnClickOutside } from "../../../shared-components/src/useOnClickOutside";
 import { 
     DropdownContainer, 
     DropdownTrigger,
@@ -49,7 +49,8 @@ export function ButtonFilter<
                     ...filterData,
                     [buttonProperty]: {[value]: null},
                 });
-            } else if (buttonProperty === "is_open") {
+            }
+            if (buttonProperty === "is_open") {
                 updateButtonFilter(isActive);
                 startSearch({
                     ...filterData,
