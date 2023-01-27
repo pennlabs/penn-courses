@@ -45,8 +45,8 @@ export const initialState = {
             U: true,
         },
         time: [1.5, 17],
-        fit_schedule: -1,
-        is_open: false,
+        fit_schedule: { "-1": null },
+        is_open: { false: null },
     },
     defaultReqs: null,
 };
@@ -124,7 +124,7 @@ export const filters = (state = initialState, action) => {
                 ...state,
                 filterData: {
                     ...state.filterData,
-                    [action.field]: action.value,
+                    [action.field]: { [action.value]: null },
                 },
             };
 

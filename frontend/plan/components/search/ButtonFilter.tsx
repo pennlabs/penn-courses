@@ -18,7 +18,7 @@ interface ButtonFilterProps<F, K extends keyof F> {
     defaultFilter: FilterType;
     clearFilter: () => void;
     startSearch: (searchObj: F) => void;
-    value: number;
+    value: string;
     buttonProperty: K;
     updateButtonFilter: (value: any) => void
 }
@@ -54,7 +54,7 @@ export function ButtonFilter<
                 updateButtonFilter(isActive);
                 startSearch({
                     ...filterData,
-                    [buttonProperty]: {[`${isActive}`]: null},
+                    [buttonProperty]: {["true"]: null},
                 });
             } 
             
@@ -68,7 +68,7 @@ export function ButtonFilter<
                 <DropdownFilterButton
                     defaultData={!isActive}
                     aria-haspopup="true"
-                    aria-controls="dropdown-menu"
+                    // aria-controls="dropdown-menu"
                     onClick={toggleButton}
                     type="button"
                 >

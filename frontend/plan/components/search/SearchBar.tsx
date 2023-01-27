@@ -72,7 +72,7 @@ interface SearchBarProps {
     storeLoaded: boolean;
     setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
     activeSchedule: number;
-    updateButtonFilter: (field: string) => (value: number) => void;
+    updateButtonFilter: (field: string) => (value: number | boolean) => void;
 }
 
 function shouldSearch(filterData: FilterData) {
@@ -477,11 +477,11 @@ SearchBarProps) {
             <ButtonFilter
                 title="Fit Schedule"
                 filterData={filterData}
-                defaultFilter={defaultFilters.filterData.fit_schedule}
+                defaultFilter={Object.keys(defaultFilters.filterData.fit_schedule)[0]}
                 clearFilter={clearFilterSearch("fit_schedule")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
-                value={activeSchedule}
+                value={`${activeSchedule}`}
                 buttonProperty="fit_schedule"
                 updateButtonFilter={updateButtonFilter("fit_schedule")}
             >
@@ -489,11 +489,11 @@ SearchBarProps) {
             <ButtonFilter
                 title="Open"
                 filterData={filterData}
-                defaultFilter={defaultFilters.filterData.is_open}
+                defaultFilter={Object.keys(defaultFilters.filterData.is_open)[0]}
                 clearFilter={clearFilterSearch("is_open")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
-                value={activeSchedule}
+                value={`${activeSchedule}`}
                 buttonProperty="is_open"
                 updateButtonFilter={updateButtonFilter("is_open")}
             >
@@ -685,7 +685,7 @@ const mapDispatchToProps = (dispatch) => ({
         value: string,
         toggleState: boolean
     ) => dispatch(updateCheckboxFilter(field, value, toggleState)),
-    updateButtonFilter: (field: string) => (value: number) =>
+    updateButtonFilter: (field: string) => (value: number | boolean) =>
         dispatch(updateButtonFilter(field, value)),
     clearAll: () => dispatch(clearAll()),
     clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),

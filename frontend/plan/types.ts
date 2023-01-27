@@ -208,3 +208,4 @@ export type FilterType =
       }
     | number
     | boolean
+    | string
