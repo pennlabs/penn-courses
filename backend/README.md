@@ -20,7 +20,7 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
 1. `cd backend`
 2. Compiling postgres (`psycopg2`)
     - **Mac**
-        > :warning: NOTE: If you are having trouble installing packages (e.g. on Apple silicon), you can use the workaround described in the next section ([Trouble Installing Packages (Apple Silicon)](#trouble-installing-packages-apple-silicon)) to run the server in a docker container. 
+        > :warning: NOTE: If you are having trouble installing packages (e.g. on Apple silicon), you can use the workaround described in the next section ([Trouble Installing Packages (Apple Silicon)](#trouble-installing-packages-apple-silicon)) to run the server in a docker container.
 
         > :warning: NOTE: If your computer runs on Apple silicon and you use Rosetta to run Python as an x86 program, use `arch -x86_64 brew <rest of command>` for all `brew` commands.
         1. `brew install postgresql`
@@ -34,7 +34,7 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
         1. `apt-get install gcc python3-dev libpq-dev`
 
 3. Running Docker
-    1. Open a new terminal window (also in the `backend` directory) and run `docker-compose up` 
+    1. Open a new terminal window (also in the `backend` directory) and run `docker-compose up`
         > :warning: Depending on your system configuration, you may have to start `docker` manually. If this is the case (ie, if you cannot get `docker-compose up` to work due to a docker connection error) try this:
         >    - (linux) `[sudo] systemctl start docker`
         >    - (WSL) `[sudo] service docker start`
@@ -65,6 +65,7 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
     - Note: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
     - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
     - Note: If you have not loaded the test data from the previous step (Step 4), ensure that you have created a local user named "Penn-Courses" with the password "postgres" in your PostgreSQL. To add the user, navigate to your pgAdmin, and follow the path of Object -> Create -> Login/Group Role and create the appropriate user.
+    - Note: If you ever encounter a `pg_hba.conf` entry error, open the `~/var/lib/postgresql/data/pg_hba.conf` file in your docker container and append the line `host  all  all 0.0.0.0/0 md5` into the file.
 
 7. Running tests
     - Run `python manage.py test` to run our test suite.
@@ -74,11 +75,11 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
 
 1. Always run `docker-compose --profile=dev up` instead of just `docker-compose up`.
     - To alias this command, run `echo "alias courses-compose='cd "$PWD"; docker-compose up'" >> ~/.zshrc; source ~/.zshrc` (replacing `~/.zshrc` with `~/.bashrc` or whatever configuration file your shell uses, if you don't use zsh).
-    - This will spin up a container from which you can run the server (with all required packages preinstalled). 
-3. In a separate terminal (from any directory), run `docker exec -it backend-development-1 /bin/bash` to open a shell in the container (if this says "no such container", run `docker container ls` and use the name of whatever container most closely matches the `backend_development` image). Just like exiting a Pipenv shell, you can exit the container by pressing `Ctrl+D` (which sends the "end of transmission" / EOF character). 
+    - This will spin up a container from which you can run the server (with all required packages preinstalled).
+3. In a separate terminal (from any directory), run `docker exec -it backend-development-1 /bin/bash` to open a shell in the container (if this says "no such container", run `docker container ls` and use the name of whatever container most closely matches the `backend_development` image). Just like exiting a Pipenv shell, you can exit the container by pressing `Ctrl+D` (which sends the "end of transmission" / EOF character).
     - You might want to add an alias for this command so it is easier to run (e.g. `echo 'alias courses-backend="docker exec -it backend_development_1 /bin/bash"' >> ~/.zshrc && source ~/.zshrc`). Then you can just run `courses-backend` from any directory to connect to the Docker container from which you will run the server (assuming `courses-compose` is already running in another terminal).
-4. Once you have a shell open in the container, you can continue running the rest of the commands in the [Setting Up the Backend](#setting-up-the-backend) section of this README (except you can skip `pipenv install --dev` since that has already been done for you). 
-    1. Remember to run `pipenv shell` (to open a [Pipenv] shell inside of a [docker container] shell inside of your computer's shell!). Note that the `/backend` directory inside the container is automatically synced with the `backend` directory on your host machine (from which you ran `docker-compose --profile=dev up`). 
+4. Once you have a shell open in the container, you can continue running the rest of the commands in the [Setting Up the Backend](#setting-up-the-backend) section of this README (except you can skip `pipenv install --dev` since that has already been done for you).
+    1. Remember to run `pipenv shell` (to open a [Pipenv] shell inside of a [docker container] shell inside of your computer's shell!). Note that the `/backend` directory inside the container is automatically synced with the `backend` directory on your host machine (from which you ran `docker-compose --profile=dev up`).
 5. There's just one last complication. Due to some annoying details of Docker networking, you have to expose the server on IP address `0.0.0.0` inside the container, rather than `127.0.0.1` or `localhost` as is default (otherwise the server won't be accessible from outside of the container). To do this, instead of running `python manage.py runserver`, run `python manage.py runserver 0.0.0.0:8000`. In `Dockerfile.dev`, we automatically alias the command `runserver` to the latter, so in the container shell (in `/backend`, as is default) you can simply run the command `runserver` (no `python manage.py` necessary).
 
 ## Loading Course Data on Demand
