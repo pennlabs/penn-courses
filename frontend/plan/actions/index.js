@@ -316,7 +316,7 @@ function buildCourseSearchUrl(filterData) {
 
     // toggle button filters
     const buttonFields = ["fit_schedule", "is_open"];
-    const buttonDefaultFields = [{ "-1": null }, { false: null }];
+    const buttonDefaultFields = ["-1", false];
 
     // console.log(filterData)
     for (let i = 0; i < buttonFields.length; i += 1) {
@@ -325,7 +325,7 @@ function buildCourseSearchUrl(filterData) {
             JSON.stringify(filterData[buttonFields[i]]) !==
                 JSON.stringify(buttonDefaultFields[i])
         ) {
-            const applied = Object.keys(filterData[buttonFields[i]])[0];
+            const applied = filterData[buttonFields[i]];
             console.log(applied);
             // console.log("HELLOOOOOOO")
             if (applied !== undefined && applied !== "" && applied !== null) {

@@ -47,14 +47,14 @@ export function ButtonFilter<
                 updateButtonFilter(value);
                 startSearch({
                     ...filterData,
-                    [buttonProperty]: {[value]: null},
+                    [buttonProperty]: value,
                 });
-            }
+            } 
             if (buttonProperty === "is_open") {
-                updateButtonFilter(isActive);
+                updateButtonFilter(true);
                 startSearch({
                     ...filterData,
-                    [buttonProperty]: {["true"]: null},
+                    [buttonProperty]: true,
                 });
             } 
             

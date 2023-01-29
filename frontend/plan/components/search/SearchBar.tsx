@@ -487,7 +487,7 @@ SearchBarProps) {
             >
             </ButtonFilter> 
             <ButtonFilter
-                title="Open"
+                title="Is Open"
                 filterData={filterData}
                 defaultFilter={Object.keys(defaultFilters.filterData.is_open)[0]}
                 clearFilter={clearFilterSearch("is_open")}
