@@ -11,7 +11,7 @@ urlpatterns = [
         name="degree-search",
     ),
     path(
-        "<slug:graduation>/degrees/<slug:full_code>/",
+        "degrees/<slug:graduation>/<slug:full_code>/",
         views.DegreeDetail.as_view(),
         name="degree-detail",
     ),

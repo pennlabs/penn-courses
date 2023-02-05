@@ -4,20 +4,19 @@ from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 from degree.models import (
     Degree,
-    DegreeRequirement,
-    DegreeFulfillment,
-    DegreePlan
+    # DegreeRequirement,
+    # DegreeFulfillment,
+    # DegreePlan
 )
 
 from degree.serializers import (
     DegreeSerializer,
-    DegreePlanSerializer,
-    DegreeFulfillmentSerializer,
-    DegreeRequirementSerializer
+    # DegreePlanSerializer,
+    # DegreeFulfillmentSerializer,
+    # DegreeRequirementSerializer
 )
 
 # Create your views here.
-
 
 class DegreeList(generics.ListAPIView):
     """
@@ -51,9 +50,9 @@ class DegreeDetail(generics.RetrieveAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("courses-detail", args=["graduation", "full_code"]): {
+            reverse_func("degree-detail", args=["graduation", "full_code"]): {
                 "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Degree detail retrieved successfully."
                 }
             }
         },
