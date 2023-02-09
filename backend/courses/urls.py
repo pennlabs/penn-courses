@@ -7,7 +7,7 @@ from courses.views import (
 )
 
 router = routers.DefaultRouter()
-router.register(r"friendship", views.FriendshipViewSet, basename="friendship")
+router.register("friendship", views.FriendshipViewSet, basename="friendship")
 
 urlpatterns = [
     path("<slug:semester>/courses/", views.CourseList.as_view(), name="courses-list"),

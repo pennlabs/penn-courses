@@ -183,7 +183,7 @@ def recommend_courses_view(request):
         status=status.HTTP_200_OK,
     )
 
-class PrimaryScheduleViewSet(viewsets.ViewSet):
+class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     """
     list: Get the primary schedule for the current user as well as primary schedules of the user's friends.
 

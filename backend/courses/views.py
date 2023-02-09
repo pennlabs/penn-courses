@@ -10,6 +10,7 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import serializers
 
 from courses.models import User
 from courses.filters import CourseSearchFilterBackend
@@ -393,7 +394,7 @@ def get_accepted_friends(user):
         status=Friendship.Status.ACCEPTED
     )
 
-class FriendshipViewSet(viewsets.ViewSet):
+class FriendshipViewSet(viewsets.ModelViewSet):
     """
     list: Get a list of all friendships and friendship requests (sent and recieved) for the specified user.
     Filter the list by status (accepted, sent) to distinguish between friendships and friendship requests.
@@ -409,11 +410,18 @@ class FriendshipViewSet(viewsets.ViewSet):
     http_method_names = ["get", "post", "delete"]
     permission_classes = [IsAuthenticated]
     queryset = Friendship.objects.none()
-    serializer_class = FriendshipSerializer
+
+    serializer_class = serializers.Default # for auto docs
+    def get_serializer_class(self):
+        print(self.action)
+        print("in serializer class")
+        if self.action in ['retrieve', 'list']:
+            return FriendshipSerializer
+        return serializers.Default
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("friendships"): {
+            reverse_func("friendship"): {
                 "GET": {
                     200: "Friendships retrieved successfully.",
                 },
@@ -429,16 +437,7 @@ class FriendshipViewSet(viewsets.ViewSet):
             }
         },
         custom_parameters={
-            reverse_func("friendships"): {
-                "POST": [
-                    {
-                        "name": "friend_id",
-                        "in": "query",
-                        "description": "The ID of the user you are sending a friend request to or handling a request from.",  # noqa E501
-                        "schema": {"type": "int"},
-                        "required": True,
-                    },
-                ],
+            reverse_func("friendship"): {
                 "DELETE": [
                     {
                         "name": "friend_id",
@@ -451,9 +450,16 @@ class FriendshipViewSet(viewsets.ViewSet):
             },
         },
         override_request_schema={
-            reverse_func("friendships"): {
+            reverse_func("friendship"): {
                 "POST": {
                     "type": "object",
+                    "properties": {
+                        "friend_id": {
+                            "type": "int",
+                            "description": "The ID of the user you are sending a friend request to or handling a request from.",  # noqa E501
+                            "required": True,
+                        },
+                    },
                 }
             }
         }
@@ -466,9 +472,10 @@ class FriendshipViewSet(viewsets.ViewSet):
         )
                 
     def post(self, request):
+        print("in friendship post")
         res = {}
         sender = request.user
-        recipient = get_object_or_404(User, id=request.GET.get("friend_id"))
+        recipient = get_object_or_404(User, id=request.data.get("friend_id"))
 
         existing_friendship = self.queryset.filter(
             Q(recipient=recipient) | Q(sender=recipient)
