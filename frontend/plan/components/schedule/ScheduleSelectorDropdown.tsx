@@ -102,7 +102,7 @@ const DropdownButton = ({
             </div>
             <div onClick={download} className="s-option-copy" role="button">
                 <Icon>
-                    <i className="far fa-file-export" aria-hidden="true" />
+                    <i className="fa fa-download" aria-hidden="true" />
                 </Icon>
             </div>
             <div onClick={remove} className="s-option-copy" role="button">

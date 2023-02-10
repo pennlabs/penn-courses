@@ -1,5 +1,10 @@
 import React from "react";
-import { createScheduleOnFrontend, renameSchedule } from "../../actions";
+import {
+    createScheduleOnFrontend,
+    downloadSchedule,
+    renameSchedule,
+} from "../../actions";
+import CalendarModal from "./CalendarModal";
 import NameScheduleModalInterior from "./NameScheduleModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
 
@@ -40,7 +45,23 @@ export const generateModalInterior = (reduxState) => {
                 />
             );
         case "WELCOME":
-            return <WelcomeModalInterior />;
+            return (
+                <WelcomeModalInterior
+                    usedScheduleNames={Object.keys(
+                        reduxState.schedule.schedules
+                    )}
+                />
+            );
+        case "DOWNLOAD_SCHEDULE":
+            return (
+                <CalendarModal
+                    schedulePk={
+                        reduxState.schedule.schedules[
+                            reduxState.schedule.scheduleSelected
+                        ].id
+                    }
+                />
+            );
         case "MULTITAB":
             return (
                 <div>
@@ -72,6 +93,11 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             return {
                 namingFunction: (newName) =>
                     dispatch(createScheduleOnFrontend(newName)),
+            };
+        case "DOWNLOAD_SCHEDULE":
+            return {
+                namingFunction: (newName) =>
+                    dispatch(downloadSchedule(newName)),
             };
         default:
             return {};

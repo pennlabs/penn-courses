@@ -83,7 +83,6 @@ export const duplicateSchedule = (scheduleName) => ({
     scheduleName,
 });
 
-// download schedule action
 export const downloadSchedule = (scheduleName) => ({
     type: DOWNLOAD_SCHEDULE,
     scheduleName,

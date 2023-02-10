@@ -60,6 +60,9 @@ scikit-learn = "*"
 pandas = "*"
 python-dateutil = "*"
 docutils = "*"
+ics = "*"
+psycopg2-binary = "*"
+drf-nested-routers = "*"
 
 [requires]
 python_full_version = "3.10"
