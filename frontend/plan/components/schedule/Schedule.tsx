@@ -335,7 +335,13 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
         copy: (scheduleName: string) =>
             dispatch(duplicateSchedule(scheduleName)),
         download: (scheduleName: string) =>
-            dispatch(downloadSchedule(scheduleName)),
+            dispatch(
+                openModal(
+                    "DOWNLOAD_SCHEDULE",
+                    { scheduleName: scheduleName },
+                    "Download Schedule"
+                )
+            ),
         remove: (scheduleName: string) =>
             dispatch(deleteSchedule(scheduleName)),
         rename: (oldName: string) =>
