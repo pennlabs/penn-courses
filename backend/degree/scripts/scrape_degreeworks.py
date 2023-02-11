@@ -1,34 +1,68 @@
 from selenium import webdriver
-from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.expected_conditions import title_contains
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
-import time
 import requests
+from selenium.webdriver.common.keys import Keys
+import os
 
 driver = webdriver.Chrome()
+
 driver.get("https://degreeworks-prod-j.isc-seo.upenn.edu:9904/")
+
+# autofill
+driver.find_element(By.ID, "pennname").send_keys("aagamd")
+password = os.environ.get("PENNKEY_PASSWORD")
+password_field = driver.find_element(By.ID, "password")
+if password is None:
+    password_field.send_keys("") # focus password
+else:
+    password_field.send_keys(password)
+    password_field.send_keys(Keys.ENTER)
+
 WebDriverWait(driver, timeout=100).until(title_contains("Dashboard"))
 
-# Click "what if" button
-what_if = driver.find_element(By.XPATH, '//button[@id="what-if"]')
-# what_if = driver.find_element(By.ID, 'what-if')
-what_if.click()
+cookies = driver.get_cookies()
 
-# Wait for what-if to load
-time.sleep(5)
+s = requests.Session()
 
-# Get section with the dropdowns
-what_if_goals = driver.find_element(By.ID, "WhatIfGoals")
+simple_cookies = {
+    cookie["name"]: cookie["value"] for cookie in cookies
+    if cookie["name"] in ["REFRESH_TOKEN", "NAME", "X-AUTH-TOKEN"]
+}
+s.cookies.update(simple_cookies),
 
-catalog_year = what_if_goals.find_element(By.XPATH, '//div[@id="catalogYear_label_value"]')
-catalog_year.click()
+s.headers.update({
+    "Accept": "application/json",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Content-Type": "application/json",
+    "Host": "degreeworks-prod-j.isc-seo.upenn.edu:9904",
+    "Origin": "https://degreeworks-prod-j.isc-seo.upenn.edu:9904",
+    "Pragma": "no-cache",
+    "Referer": "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/worksheets/whatif",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin",
+})
 
-print(driver.get_cookies())
+params = {
+    "studentId": "71200681",
+    "school": "UG",
+    "degree": "BS",
+    # "is-process-new": "false",
+    # "audit-type": "AA",
+    # "auditId": "W0001DfM",
+    # "include-inprogress": "true",
+    # "include-preregistered": "true",
+    # "aid-term": "undefined"
+}
 
-catalog_year_options = driver.find_elements(By.XPATH, '//ul[@aria-labelledby="catalogYear_label_label"]/li')
-# [print(option.get_attribute("outerHTML")) for option in catalog_year_options]
-selected_option = catalog_year_options[0]
-selected_option.click()
+res = s.get(
+    "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/audit/",
+    params=params
+)
 
-driver.quit()
+print(res.status_code, res.text)
+
+driver.close()
