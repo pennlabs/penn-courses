@@ -36,8 +36,9 @@ interface ScheduleProps {
         remove: (scheduleName: string) => void;
 
         // NOT IN ORIGINAL PROPS
-        create: () => void;
+        createSchedule: () => void;
         rename: (oldName: string) => void;
+        addFriend: () => void;
     };
     activeScheduleName: string;
     setTab?: (_: number) => void;
@@ -342,7 +343,7 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
                     "Rename Schedule"
                 )
             ),
-        create: () =>
+        createSchedule: () =>
             dispatch(
                 openModal(
                     "CREATE_SCHEDULE",
@@ -350,6 +351,14 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
                     "Create Schedule"
                 )
             ),
+        addFriend: () =>
+            dispatch(
+                openModal(
+                    "ADD_FRIEND",
+                    { defaultValue: "Enter your friend's PennKey" },
+                    "Add New Friend"
+                )
+        ),
     },
 });
 

@@ -117,7 +117,8 @@ interface ScheduleSelectorDropdownProps {
     mutators: {
         copy: (scheduleName: string) => void;
         remove: (scheduleName: string) => void;
-        create: () => void;
+        createSchedule: () => void;
+        addFriend: () => void;
         rename: (oldName: string) => void;
     };
 }
@@ -179,7 +180,7 @@ const DropdownContent = styled.div`
     padding: 0;
 `;
 
-const AddSchedule = styled.a`
+const AddNew = styled.a`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -205,7 +206,7 @@ const AddSchedule = styled.a`
 const ScheduleSelectorDropdown = ({
     activeName,
     contents,
-    mutators: { copy, remove, rename, create },
+    mutators: { copy, remove, rename, createSchedule, addFriend },
 }: ScheduleSelectorDropdownProps) => {
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -258,12 +259,19 @@ const ScheduleSelectorDropdown = ({
                             />
                         )
                     )}
-                    <AddSchedule onClick={create} role="button" href="#">
+                    <AddNew onClick={createSchedule} role="button" href="#">
                         <Icon>
                             <i className="fa fa-plus" aria-hidden="true" />
                         </Icon>
                         <span> Add new schedule </span>
-                    </AddSchedule>
+                    </AddNew>
+                    <AddNew onClick={addFriend} role="button" href="#">
+                        <Icon>
+                            <i className="fa fa-plus" aria-hidden="true" />
+                        </Icon>
+                        <span> Add new friend </span>
+                    </AddNew>                 
+
                 </DropdownContent>
             </DropdownMenu>
         </ScheduleDropdownContainer>

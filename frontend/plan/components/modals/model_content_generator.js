@@ -28,6 +28,7 @@ export const generateModalInterior = (reduxState) => {
                     usedScheduleNames={Object.keys(
                         reduxState.schedule.schedules
                     )}
+                    mode="schedule"
                 />
             );
         case "CREATE_SCHEDULE":
@@ -37,8 +38,19 @@ export const generateModalInterior = (reduxState) => {
                     usedScheduleNames={Object.keys(
                         reduxState.schedule.schedules
                     )}
+                    mode="schedule"
                 />
             );
+        case "ADD_FRIEND":
+            return (
+                <NameScheduleModalInterior
+                    buttonName="Request"
+                    usedScheduleNames={Object.keys(
+                        reduxState.schedule.schedules
+                    )}
+                    mode="friend"
+                />
+        );
         case "WELCOME":
             return <WelcomeModalInterior />;
         case "MULTITAB":
@@ -69,6 +81,11 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
                     dispatch(renameSchedule(modalProps.scheduleName, newName)),
             };
         case "CREATE_SCHEDULE":
+            return {
+                namingFunction: (newName) =>
+                    dispatch(createScheduleOnFrontend(newName)),
+            };
+        case "ADD_FRIEND":
             return {
                 namingFunction: (newName) =>
                     dispatch(createScheduleOnFrontend(newName)),

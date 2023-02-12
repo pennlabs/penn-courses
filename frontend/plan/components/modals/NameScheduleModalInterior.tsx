@@ -8,6 +8,7 @@ interface NameScheduleModalInteriorProps {
     buttonName: string;
     defaultValue: string;
     overwriteDefault: boolean;
+    mode: string;
 }
 
 const NameScheduleModalInterior = ({
@@ -17,12 +18,14 @@ const NameScheduleModalInterior = ({
     buttonName,
     defaultValue,
     overwriteDefault = false,
+    mode,
 }: NameScheduleModalInteriorProps) => {
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
     const [userInput, setUserInput] = useState(defaultValue);
     const { error, message: errorMessage } = validateScheduleName(
         userInput,
-        usedScheduleNames
+        usedScheduleNames,
+        mode
     );
     useEffect(() => {
         const listener = (event: MouseEvent) => {

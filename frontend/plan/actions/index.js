@@ -640,6 +640,35 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
         });
 };
 
+export const addFriendOnBackend = (name, sections) => (dispatch) => {
+    dispatch(creationAttempted(name));
+    rateLimitedFetch("/plan/schedules/", {
+        method: "POST",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify({
+            name,
+            sections,
+        }),
+    })
+        .then((response) => response.json())
+        .then(({ id }) => {
+            if (id) {
+                dispatch(creationSuccessful(name, id));
+            }
+        })
+        .catch(({ message }) => {
+            if (message !== "minDelayNotElapsed") {
+                dispatch(creationUnsuccessful(name));
+            }
+        });
+};
+
 export const deleteScheduleOnBackend = (deletedScheduleId) => (dispatch) => {
     dispatch(attemptDeletion(deletedScheduleId));
     rateLimitedFetch(`/plan/schedules/${deletedScheduleId}/`, {
