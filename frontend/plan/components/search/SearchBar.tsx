@@ -5,7 +5,7 @@ import styled from "styled-components";
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
-import { DropdownButton } from "../DropdownButton";
+import { DropdownButton } from "./DropdownButton";
 import { ButtonFilter } from "./ButtonFilter";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
@@ -477,7 +477,6 @@ SearchBarProps) {
             <ButtonFilter
                 title="Fit Schedule"
                 filterData={filterData}
-                defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
@@ -489,11 +488,10 @@ SearchBarProps) {
             <ButtonFilter
                 title="Is Open"
                 filterData={filterData}
-                defaultFilter={defaultFilters.filterData.is_open}
                 clearFilter={clearFilterSearch("is_open")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
-                value={activeSchedule}
+                value={1}
                 buttonProperty="is_open"
                 updateButtonFilter={updateButtonFilter("is_open")}
             >

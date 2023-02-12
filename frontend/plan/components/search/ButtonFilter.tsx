@@ -1,13 +1,13 @@
 /* A button that toggles on click and allows search to filter class that only fits schedule */
 
 import React, { useState } from "react";
-import { useOnClickOutside } from "../../../shared-components/src/useOnClickOutside";
+import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { 
     DropdownContainer, 
     DropdownTrigger,
     DropdownFilterButton,
     DeleteButtonContainer,
-    DeleteButton } from "../DropdownButton";
+    DeleteButton } from "./DropdownButton";
 
 import { FilterType } from "../../types";
 
@@ -15,7 +15,6 @@ interface ButtonFilterProps<F, K extends keyof F> {
     title: string;
     children: never[];
     filterData: F;
-    defaultFilter: FilterType;
     clearFilter: () => void;
     startSearch: (searchObj: F) => void;
     value: number;
@@ -28,7 +27,6 @@ export function ButtonFilter<
     K extends keyof F>({
     title,
     filterData,
-    defaultFilter,
     clearFilter,
     startSearch, 
     value,
@@ -43,21 +41,11 @@ export function ButtonFilter<
             setIsActive(false);
         } else {
             setIsActive(true);
-            if (buttonProperty === "fit_schedule") {
-                updateButtonFilter(value);
-                startSearch({
-                    ...filterData,
-                    [buttonProperty]: value,
-                });
-            } 
-            if (buttonProperty === "is_open") {
-                updateButtonFilter(true);
-                startSearch({
-                    ...filterData,
-                    [buttonProperty]: 1,
-                });
-            } 
-            
+            updateButtonFilter(value);
+            startSearch({
+                ...filterData,
+                [buttonProperty]: value,
+            });
         }
     };
     const ref = useOnClickOutside(toggleButton, true);
