@@ -316,26 +316,18 @@ function buildCourseSearchUrl(filterData) {
 
     // toggle button filters
     const buttonFields = ["fit_schedule", "is_open"];
-    const buttonDefaultFields = ["-1", false];
+    const buttonDefaultFields = [-1, 0];
 
-    // console.log(filterData)
     for (let i = 0; i < buttonFields.length; i += 1) {
         if (
             filterData[buttonFields[i]] &&
             JSON.stringify(filterData[buttonFields[i]]) !==
                 JSON.stringify(buttonDefaultFields[i])
         ) {
+            // get each filter's value
             const applied = filterData[buttonFields[i]];
-            console.log(applied);
-            // console.log("HELLOOOOOOO")
             if (applied !== undefined && applied !== "" && applied !== null) {
-                if (buttonFields[i] === "fit_schedule") {
-                    // pass in the schedule id
-                    queryString += `&schedule-fit=${applied}`;
-                }
-                if (buttonFields[i] === "is_open") {
-                    queryString += `&is_open=${applied}`;
-                }
+                queryString += `&${buttonFields[i]}=${applied}`;
             }
         }
     }

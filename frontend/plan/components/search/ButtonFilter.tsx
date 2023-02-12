@@ -9,7 +9,7 @@ import {
     DeleteButtonContainer,
     DeleteButton } from "../DropdownButton";
 
-import { FilterData, FilterType } from "../../types";
+import { FilterType } from "../../types";
 
 interface ButtonFilterProps<F, K extends keyof F> {
     title: string;
@@ -18,13 +18,13 @@ interface ButtonFilterProps<F, K extends keyof F> {
     defaultFilter: FilterType;
     clearFilter: () => void;
     startSearch: (searchObj: F) => void;
-    value: string;
+    value: number;
     buttonProperty: K;
     updateButtonFilter: (value: any) => void
 }
 
 export function ButtonFilter<
-    F extends { [P in K]: number | boolean },
+    F extends { [P in K]: number },
     K extends keyof F>({
     title,
     filterData,
@@ -54,7 +54,7 @@ export function ButtonFilter<
                 updateButtonFilter(true);
                 startSearch({
                     ...filterData,
-                    [buttonProperty]: true,
+                    [buttonProperty]: 1,
                 });
             } 
             
@@ -67,8 +67,6 @@ export function ButtonFilter<
             <DropdownTrigger className="dropdown-trigger">
                 <DropdownFilterButton
                     defaultData={!isActive}
-                    aria-haspopup="true"
-                    // aria-controls="dropdown-menu"
                     onClick={toggleButton}
                     type="button"
                 >

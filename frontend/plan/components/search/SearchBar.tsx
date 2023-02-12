@@ -477,11 +477,11 @@ SearchBarProps) {
             <ButtonFilter
                 title="Fit Schedule"
                 filterData={filterData}
-                defaultFilter={Object.keys(defaultFilters.filterData.fit_schedule)[0]}
+                defaultFilter={defaultFilters.filterData.fit_schedule}
                 clearFilter={clearFilterSearch("fit_schedule")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
-                value={`${activeSchedule}`}
+                value={activeSchedule}
                 buttonProperty="fit_schedule"
                 updateButtonFilter={updateButtonFilter("fit_schedule")}
             >
@@ -489,11 +489,11 @@ SearchBarProps) {
             <ButtonFilter
                 title="Is Open"
                 filterData={filterData}
-                defaultFilter={Object.keys(defaultFilters.filterData.is_open)[0]}
+                defaultFilter={defaultFilters.filterData.is_open}
                 clearFilter={clearFilterSearch("is_open")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
-                value={`${activeSchedule}`}
+                value={activeSchedule}
                 buttonProperty="is_open"
                 updateButtonFilter={updateButtonFilter("is_open")}
             >
