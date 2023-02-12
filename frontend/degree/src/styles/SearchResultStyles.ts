@@ -1,0 +1,1 @@
+export const searchResult = { maxHeight: 570, overflow: 'auto' };
