@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from "react";
 import styled from "styled-components";
-import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
+import { useOnClickOutside } from "../../../shared-components/src/useOnClickOutside";
 import { FilterType } from "../../types";
 
 interface DropdownButtonProps {
