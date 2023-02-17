@@ -3,9 +3,9 @@ from datetime import timezone
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
 from django.forms.models import model_to_dict
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
-from courses.serializers import FriendshipSerializer
+from courses.serializers import FriendshipSerializer, FriendshipRequestSerializer
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import permission_classes
@@ -394,7 +394,7 @@ def get_accepted_friends(user):
         status=Friendship.Status.ACCEPTED
     )
 
-class FriendshipViewSet(viewsets.ModelViewSet):
+class FriendshipViewSet(viewsets.ReadOnlyModelViewSet):
     """
     list: Get a list of all friendships and friendship requests (sent and recieved) for the specified user.
     Filter the list by status (accepted, sent) to distinguish between friendships and friendship requests.
@@ -411,13 +411,13 @@ class FriendshipViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Friendship.objects.none()
 
-    serializer_class = serializers.Default # for auto docs
-    def get_serializer_class(self):
-        print(self.action)
-        print("in serializer class")
-        if self.action in ['retrieve', 'list']:
-            return FriendshipSerializer
-        return serializers.Default
+    serializer_class = FriendshipSerializer # for auto docs
+    # def get_serializer_class(self):
+    #     print(self.action)
+    #     print("in serializer class")
+    #     if self.action in ['update', 'create']:
+    #         return FriendshipRequestSerializer
+    #     return FriendshipSerializer
 
     schema = PcxAutoSchema(
         response_codes={
@@ -426,6 +426,7 @@ class FriendshipViewSet(viewsets.ModelViewSet):
                     200: "Friendships retrieved successfully.",
                 },
                 "POST": {
+                    201: "Friendship request created successfully.",
                     200: "Friendship request handled successfully.",
                     409: "Friendship request already exists",
                 },
@@ -485,7 +486,7 @@ class FriendshipViewSet(viewsets.ModelViewSet):
             friendship = Friendship(sender=sender, recipient=recipient, status=Friendship.Status.SENT)
             friendship.save()
             res = FriendshipSerializer(friendship)
-            return JsonResponse(res, status=status.HTTP_200_OK)
+            return HttpResponse(res, status=status.HTTP_201_CREATED, content_type="application/json")
         elif existing_friendship.status == Friendship.Status.REJECTED:
             existing_friendship.status = Friendship.Status.SENT
             existing_friendship.sender = sender

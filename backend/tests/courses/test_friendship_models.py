@@ -35,15 +35,14 @@ class FriendshipModelTest(TestCase):
         self.assertTrue(UserProfile.objects.filter(user=u1).exists())
 
         make_friends = self.client1.post(friendship_url,
-                {"friend_id": u2.id},
-            content_type="application/json")
-            
-        self.assertEquals(make_friends.status_code, 200)
+                {"friend_id": u2.id})
+
+        self.assertEquals(make_friends.status_code, 201)
         self.assertTrue(Friendship.objects.filter(sender=u1, recipient=u2, status=Friendship.Status.SENT).exists())
         self.assertFalse(Friendship.objects.filter(sender=u2, recipient=u1).exists())
     
     def test_basic_friendship_accept(self):
-        u1 = self.u1
+        u1 = self.u1br
         u2 = self.u2
         friendship = Friendship(sender=u1, recipient=u2)
         friendship.save()

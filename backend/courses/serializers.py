@@ -1,3 +1,4 @@
+import json
 from textwrap import dedent
 
 from django.contrib.auth import get_user_model
@@ -435,6 +436,14 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 class FriendshipSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = Friendship
         fields = ["sender", "recipient", "status", "sent_at", "accepted_at"]
+
+class FriendshipRequestSerializer(serializers.Serializer):
+    friend_id = serializers.IntegerField()
+
+    def to_representation(self, instance):
+        print("in representation function")
+        return super().to_representation(instance)
