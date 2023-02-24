@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import usePlatformOptions from "pcx-shared-components/src/data-hooks/usePlatformOptions";
 import styled from "styled-components";
 import ReactGA from "react-ga";
@@ -20,6 +20,7 @@ import Timeline from "../components/Timeline";
 
 import MessageList from "../components/MessageList";
 import { User } from "../types";
+import { init } from "@sentry/browser";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
@@ -133,8 +134,9 @@ const RecruitingBanner = styled.div`
 
 function App() {
     const router = useRouter();
+
     const [user, setUser] = useState<User | null>(null);
-    const [page, setPage] = useState("home");
+    const [page, setPage] = useState<string>("");
     const [messages, setMessages] = useState<
         { message: string; status: number; key: number }[]
     >([]);
@@ -142,8 +144,17 @@ function App() {
     const [timeline, setTimeline] = useState<string | null>(null);
 
     const { options } = usePlatformOptions();
+    const initialRender = useRef(true);
 
     const showRecruiting = options?.RECRUITING;
+
+    useEffect(() => {
+        if (initialRender.current) {
+            setPage(router.query.route ? router.query.route as string : "home");
+            initialRender.current = false;
+            console.log(page);
+        }
+    })
 
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
@@ -250,6 +261,7 @@ function App() {
                 />
 
                 <Heading />
+                {console.log(page + " " + page === "home")}
                 {page === "home" ? (
                     <Flex col grow={1}>
                         {user ? (
