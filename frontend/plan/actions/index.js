@@ -315,7 +315,7 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // toggle button filters
-    const buttonFields = ["fit_schedule", "is_open"];
+    const buttonFields = ["schedule-fit", "is_open"];
     const buttonDefaultFields = [-1, 0];
 
     for (let i = 0; i < buttonFields.length; i += 1) {

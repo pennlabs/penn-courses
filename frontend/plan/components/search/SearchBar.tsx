@@ -477,12 +477,12 @@ SearchBarProps) {
             <ButtonFilter
                 title="Fit Schedule"
                 filterData={filterData}
-                clearFilter={clearFilterSearch("fit_schedule")}
+                clearFilter={clearFilterSearch("schedule-fit")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
                 value={activeSchedule}
-                buttonProperty="fit_schedule"
-                updateButtonFilter={updateButtonFilter("fit_schedule")}
+                buttonProperty="schedule-fit"
+                updateButtonFilter={updateButtonFilter("schedule-fit")}
             >
             </ButtonFilter> 
             <ButtonFilter
