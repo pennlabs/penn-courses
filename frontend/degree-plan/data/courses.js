@@ -76,14 +76,6 @@ export const coursesSpring2024 = [
     "title": "Robotics: Planning and Perception",
     "description": "This introductory course will present basic principles of robotics with an emphasis  to computer science aspects. Algorithms for planning and perception will be studied and implemented on actual robots. While planning is a fundamental problem in artificial intelligence and decision making, robot planning refers to finding a path from A to B in the presence of obstacles and by complying with the kinematic constraints of the robot. Perception involves the estimation of the robot’s motion and path as well as the shape of the environment from sensors. In this course, algorithms will be implemented in Python on mobile platforms on ground and in the air. No prior experience with Python is needed but we require knowledge of data structures, linear algebra, and basic probability."
   },
-
-  {
-    "dept": "CIS",
-    "number": 398,
-    "title": "Quantum Computer and Information Science",
-    "description": "The purpose of this course is to introduce undergraduate students in computer science and engineering to quantum computers (QC) and quantum information science (QIS). This course is meant primarily for juniors and seniors in CIS. No prior knowledge of quantum mechanics (QM) is assumed."
-  },
-
   {
     "dept": "CIS",
     "number": 400,
