@@ -21,12 +21,6 @@ function App() {
               </DndProvider>
           }
         />
-        < Route
-          path='/Checkout/:receipt'
-          element={
-            <CheckoutPage />
-          }
-        />
       </Routes >
     </div >
   )

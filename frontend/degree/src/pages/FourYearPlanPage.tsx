@@ -4,6 +4,9 @@ import Detail from "../components/SearchResult/Detail";
 import { useSelector } from 'react-redux';
 import Cart from "../components/Cart/Cart";
 import { RootState } from "../store/configureStore";
+import ReqPanel from "../components/Requirements/ReqPanel";
+import PlanPanel from "../components/FourYearPlan/PlanPanel";
+import Plan from "../components/example/Plan";
 
 const FourYearPlanPage = () => {
     const current = useSelector((store : RootState) => store.entities.current);
@@ -11,18 +14,13 @@ const FourYearPlanPage = () => {
 
     return (
         <div>
-            <div className="d-flex justify-content-center">
-                {current.id && 
-                    <div className="col-3 m-2">
-                        <Detail/>
-                    </div>
-                }
+            <div className="mt-4 d-flex justify-content-center">
                 <div className="m-2">
-                    <FourYearPlan/>
+                    <PlanPanel/>
                 </div>
-                {showCart && <div className="m-2">
-                    <Cart/>
-                </div>}
+                <div className="m-2">
+                    <ReqPanel/>
+                </div>
             </div>
         </div>
     )

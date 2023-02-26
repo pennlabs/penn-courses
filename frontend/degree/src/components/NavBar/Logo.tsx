@@ -5,7 +5,7 @@ import { detailViewed } from '../../store/reducers/courses';
 import { useDispatch} from 'react-redux';
 
 // constants
-const logo = "Pass@Penn";
+const title = "";
 
 const Logo = () => {
     const returnToFrontPage = () => {
@@ -19,8 +19,9 @@ const Logo = () => {
     return (
         <Link to="/" className="">
             <label onClick={returnToFrontPage}>
-                <h2 className="m-2"> 
-                    {logo} 
+                <h2 className=""> 
+                    <img src='logo.png' width='45' height='60'/>
+                    {title} 
                 </h2>
             </label>
         </Link>

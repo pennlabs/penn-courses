@@ -18,9 +18,7 @@ const MainPage = () => {
         <>
             <ToastContainer />
             <Nav />
-            {!hideSearchBar && <SearchBar />}
-            {showFourYearPlan && <FourYearPlanPage />}
-            {!showFourYearPlan && onContentPage && query && <SearchResultPage/>}
+            <FourYearPlanPage />
         </>
     )
 }

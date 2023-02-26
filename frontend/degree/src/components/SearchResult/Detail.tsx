@@ -10,7 +10,7 @@ const Detail = () => {
    const course = useSelector((store : RootState) => store.entities.current);
 
    return (
-      <div className='me-4' style={detailWrapper}> 
+      <div className='mt-4 me-4' style={detailWrapper}> 
       {course.id &&
          <>
             <div className="mb-3" style={descriptionWrapper}>

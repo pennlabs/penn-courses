@@ -2,8 +2,8 @@ export const CartPanel = {
     border: '1px solid rgba(0, 0, 0, 0.1)',
     padding: '1rem',
     borderRadius: '4px',
-    height: 'calc(100vh - 50px)',
-    width: '40vw',
+    height: 650,
+    width: 400
   }
 
 export const currentCartCoursesWrapper = { height: 320, overflow: 'auto' };

@@ -1,45 +1,71 @@
-import React from "react";
+import React, { useState } from "react";
 import { useDrop } from 'react-dnd';
 import { useDispatch} from 'react-redux';
 import { courseAddedToSemester } from "../../store/reducers/courses";
 import { semesterCourseList } from "../../styles/FourYearStyles";
 import CourseInCart from "../Cart/CourseInCart";
 import { ISemester, ICourse } from "../../store/configureStore";
+import CoursePlanned from "./CoursePlanned";
+import { DragDropContext, Draggable, DraggableProvided, Droppable, DroppableProvided, DropResult } from 'react-beautiful-dnd';
 
-interface SemesterProps {
-    year: string,
-    semester: ISemester
+
+import {
+    DndContext, 
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    useDroppable,
+  } from '@dnd-kit/core';
+  import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+  } from '@dnd-kit/sortable';
+
+// interface SemesterProps {
+//     year: string,
+//     semester: ISemester
+// }
+
+const semesterCardStyle = {
+    background: 'linear-gradient(0deg, #FFFFFF, #FFFFFF), #FFFFFF',
+    boxShadow: '0px 0px 4px 2px rgba(0, 0, 0, 0.05)',
+    borderRadius: '10px',
+    borderWidth: '0px',
+    padding: '15px'
 }
+const Semester = ({semester, items, id, index} : any) => {
 
-const SemesterComponent = ({year, semester} : SemesterProps) => {
-    const handleDrop = (course : ICourse) => {
-        dispatch(courseAddedToSemester({year: year, semester: semester.name, course: course}));
-    }
-
-    const dispatch = useDispatch();
-    /* react-dnd droppable*/
-    const [, drop] = useDrop(() => ({
-        accept: 'course',
-        drop: (course : ICourse) => handleDrop(course),
-        collect: monitor => ({
-          isOver: !!monitor.isOver(),
-        }),
-      }));
+    const [courses, setCourses] = useState(semester.courses);
+    console.log(items);
+    const { setNodeRef } = useDroppable({
+        id
+    });
 
     return (
-        <div>
-            <div>
-                <div className="mt-1 mb-1">
+        <>
+            <div className="card col-5 m-3" style={semesterCardStyle}>
+                <h5 className="mt-1 mb-1">
                     {semester.name}
-                </div>
-                <div className="card" ref={drop} style={semesterCourseList}>
-                    {semester.courses.map((course : ICourse) => 
-                        <CourseInCart course={course} year={year} semester={semester.name} inCoursePlan={true}/>
-                    )}
-                </div>
+                </h5>
+                    <SortableContext 
+                        items={items[index]}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        <div ref={setNodeRef}> 
+                        {items[index].map((id: string) => 
+                            <CoursePlanned courses={courses} id={id} key={id}/>
+                        )}
+                        </div>
+                    </SortableContext>
+                    {/* </div>
+                </SortableContext> */}
             </div>
-        </div>
+        </>
     )
 }
 
-export default SemesterComponent;
+export default Semester;

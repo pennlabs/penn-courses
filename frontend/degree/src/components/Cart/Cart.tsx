@@ -8,7 +8,7 @@ import CreateNewCart from "./CreateNewCart";
 const Cart = () => {
 
   return (
-    <div className='' style={CartPanel}>
+    <div className='mt-4' style={CartPanel}>
       <CurrentCartTitle />
       <CurrentCartContent />
       <AllCarts />
