@@ -198,19 +198,19 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return PrimarySchedule.objects.filter(Q(user=self.request.user) | Q(user_id__in=Subquery(get_accepted_friends(self.request.user).values("id"))))
 
-    schema = PcxAutoSchema(
-        response_codes={
-            reverse_func("primary-schedule"): {
-                "GET": {
-                    200: "Primary schedule (and friend's schedules) retrieved successfully.",
-                },
-                "PUT": {
-                    200: "Primary schedule updated successfully.",
-                    400 : "Invalid schedule in request."
-                }
-            },
-        }
-    )
+    # schema = PcxAutoSchema(
+    #     response_codes={
+    #         reverse_func("primary-schedule"): {
+    #             "GET": {
+    #                 200: "Primary schedule (and friend's schedules) retrieved successfully.",
+    #             },
+    #             "PUT": {
+    #                 200: "Primary schedule updated successfully.",
+    #                 400 : "Invalid schedule in request."
+    #             }
+    #         },
+    #     }
+    # )
 
     def put(self, request):
         res = {}
