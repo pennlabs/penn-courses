@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "shortener.apps.ShortenerConfig",
     "accounts.apps.AccountsConfig",
+    "identity.apps.IdentityConfig",
     "options.apps.OptionsConfig",
     "django.contrib.admindocs",
     "django_extensions",
