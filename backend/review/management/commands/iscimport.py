@@ -185,39 +185,42 @@ class Command(BaseCommand):
             "modified if the whole script succeeds."
         )
 
+
+        # TODO: When we import details and crosslistings, get their data here too.
+        tables_to_get = [summary_file]
+        idx = 1
+        detail_idx = -1
+        if import_details:
+            tables_to_get.append(ISC_RATING_TABLE)
+            detail_idx = idx
+            idx += 1
+
+        description_idx = -1
+        if import_descriptions:
+            tables_to_get.append(ISC_DESC_TABLE)
+            description_idx = idx
+            idx += 1
+
+        files = self.get_files(src, is_zip_file, tables_to_get)
+
+        summary_fo = files[0]
+        print("Loading summary file...")
+        summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
+        gc.collect()
+        print("SQL parsed and loaded!")
+
+        if not import_all:
+            full_len = len(summary_rows)
+            summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
+            gc.collect()
+            filtered_len = len(summary_rows)
+            print(f"Filtered {full_len} rows down to {filtered_len} rows.")
+
+        semesters = sorted(list({r["TERM"] for r in summary_rows}))
+
+        gc.collect()
+
         with transaction.atomic():  # Only commit changes if the whole script succeeds
-            # TODO: When we import details and crosslistings, get their data here too.
-            tables_to_get = [summary_file]
-            idx = 1
-            detail_idx = -1
-            if import_details:
-                tables_to_get.append(ISC_RATING_TABLE)
-                detail_idx = idx
-                idx += 1
-
-            description_idx = -1
-            if import_descriptions:
-                tables_to_get.append(ISC_DESC_TABLE)
-                description_idx = idx
-                idx += 1
-
-            files = self.get_files(src, is_zip_file, tables_to_get)
-
-            summary_fo = files[0]
-            print("Loading summary file...")
-            summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
-            gc.collect()
-            print("SQL parsed and loaded!")
-
-            if not import_all:
-                full_len = len(summary_rows)
-                summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
-                gc.collect()
-                filtered_len = len(summary_rows)
-                print(f"Filtered {full_len} rows down to {filtered_len} rows.")
-
-            semesters = sorted(list({r["TERM"] for r in summary_rows}))
-            gc.collect()
             to_delete = Review.objects.filter(section__course__semester__in=semesters)
             delete_count = to_delete.count()
 
