@@ -43,11 +43,23 @@ class Schedule(models.Model):
         """
         ),
     )
+
+    advanced_registration = models.BooleanField(
+        blank=False,
+        default=False,
+        help_text=dedent(
+            """
+            A label to denote whether the user's schedule was made for advanced registration.
+            """
+        ),
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = (("name", "semester", "person"),)
+        unique_together = (("name", "semester", "person", "advanced_registration"), ("semester", "person", "advanced_registration"))
 
     def __str__(self):
         return "User: %s, Schedule ID: %s" % (self.person, self.id)
