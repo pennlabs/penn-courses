@@ -20,7 +20,6 @@ import Timeline from "../components/Timeline";
 
 import MessageList from "../components/MessageList";
 import { User } from "../types";
-import { init } from "@sentry/browser";
 
 const Tagline = styled.h3`
     color: #4a4a4a;
