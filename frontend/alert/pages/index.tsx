@@ -144,17 +144,14 @@ function App() {
     const [timeline, setTimeline] = useState<string | null>(null);
 
     const { options } = usePlatformOptions();
-    const initialRender = useRef(true);
 
     const showRecruiting = options?.RECRUITING;
 
+    // update on router value updates as it fires multiple times, starting with null.
     useEffect(() => {
-        if (initialRender.current) {
-            setPage(router.query.route ? router.query.route as string : "home");
-            initialRender.current = false;
-            console.log(page);
-        }
-    })
+        // change page based on url route query. 
+        setPage(router.query.route ? router.query.route as string : "home");
+    }, [router.query.route])
 
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
@@ -261,7 +258,6 @@ function App() {
                 />
 
                 <Heading />
-                {console.log(page + " " + page === "home")}
                 {page === "home" ? (
                     <Flex col grow={1}>
                         {user ? (
