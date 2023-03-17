@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { validateScheduleName } from "../schedule/schedule_name_validation";
+import { validateInput } from "./input_validation";
 
 interface NameScheduleModalInteriorProps {
-    usedScheduleNames: string[];
+    existingData: string[];
     namingFunction: (_: string) => void;
     close: () => void;
     buttonName: string;
@@ -12,7 +12,7 @@ interface NameScheduleModalInteriorProps {
 }
 
 const NameScheduleModalInterior = ({
-    usedScheduleNames,
+    existingData,
     namingFunction,
     close,
     buttonName,
@@ -21,27 +21,15 @@ const NameScheduleModalInterior = ({
     mode,
 }: NameScheduleModalInteriorProps) => {
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
-    const [userInput, setUserInput] = useState(defaultValue);
-    const { error, message: errorMessage } = validateScheduleName(
+    const [userInput, setUserInput] = useState("");
+    const [changed, setChanged] = useState(false);
+    const { error, message: errorMessage } = validateInput(
         userInput,
-        usedScheduleNames,
-        mode
+        existingData,
+        mode,
+        changed
     );
-    useEffect(() => {
-        const listener = (event: MouseEvent) => {
-            if (
-                !userInput &&
-                inputRef &&
-                !inputRef.contains(event.target as Node)
-            ) {
-                setUserInput(defaultValue);
-            }
-        };
-        document.addEventListener("click", listener);
-        return () => {
-            document.removeEventListener("click", listener);
-        };
-    });
+    
     const submit = () => {
         if (!inputRef) {
             return;
@@ -59,17 +47,21 @@ const NameScheduleModalInterior = ({
                 type="text"
                 ref={(ref) => setInputRef(ref)}
                 style={{ backgroundColor: error ? "#f9dcda" : "#f1f1f1" }}
-                onChange={() => setUserInput(inputRef?.value || "")}
+                onChange={() => {
+                    setUserInput(inputRef?.value || "");
+                    setChanged(true)
+                }}
                 onClick={() => {
                     if (overwriteDefault && userInput === defaultValue) {
                         setUserInput("");
                     }
                 }}
                 onKeyUp={(e) => {
-                    if (e.keyCode === 13) {
+                    if (e.key === "Enter") {
                         submit();
                     }
                 }}
+                placeholder={defaultValue}
             />
             <p className="error_message">{errorMessage}</p>
             <button

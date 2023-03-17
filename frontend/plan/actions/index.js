@@ -640,9 +640,9 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
         });
 };
 
-export const addFriendOnBackend = (name, sections) => (dispatch) => {
+export const addFriendOnBackend = id => (dispatch) => {
     dispatch(creationAttempted(name));
-    rateLimitedFetch("/plan/schedules/", {
+    rateLimitedFetch("/base/friendship/", {
         method: "POST",
         credentials: "include",
         mode: "same-origin",
@@ -652,8 +652,7 @@ export const addFriendOnBackend = (name, sections) => (dispatch) => {
             "X-CSRFToken": getCsrf(),
         },
         body: JSON.stringify({
-            name,
-            sections,
+            id
         }),
     })
         .then((response) => response.json())

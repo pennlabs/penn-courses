@@ -5,6 +5,7 @@ import { Icon } from "../bulma_derived_components";
 interface DropdownButton {
     isActive: boolean;
     text: string;
+    hasFriends: boolean;
     onClick: () => void;
     makeActive: () => void;
     mutators: {
@@ -64,6 +65,7 @@ const ScheduleOptionsContainer = styled.div`
 const DropdownButton = ({
     isActive,
     text,
+    hasFriends,
     onClick,
     makeActive,
     mutators: { copy, remove, rename },
@@ -89,6 +91,13 @@ const DropdownButton = ({
     >
         <ScheduleNameContainer>{text}</ScheduleNameContainer>
         <ScheduleOptionsContainer>
+            {hasFriends && (
+                <div className="s-option-copy" role="button">
+                    <Icon>
+                        <i className="far fa-user" aria-hidden="true" />
+                    </Icon>
+                </div>
+            )}
             <div onClick={rename} className="s-option-copy" role="button">
                 <Icon>
                     <i className="far fa-edit" aria-hidden="true" />
@@ -180,6 +189,28 @@ const DropdownContent = styled.div`
     padding: 0;
 `;
 
+const FriendContent = styled.div`
+    background-color: #fff;
+    border-top: 0.05rem solid #c7c6ce;
+    padding: 0;
+
+    div.info {
+        font-weight: 450;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.5rem;
+        opacity: 75%;
+    }
+    div i {
+        color: #669afb;
+    }
+
+    .share-with {
+        font-size: 0.68rem;
+        color: #171717;
+        font-weight: 700;
+    }
+`;
+
 const AddNew = styled.a`
     display: flex;
     flex-direction: row;
@@ -203,6 +234,36 @@ const AddNew = styled.a`
     }
 `;
 
+const PendingRequests = styled.a`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    border-radius: 0 !important;
+    cursor: pointer;
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    transition: background 0.1s ease;
+    background: #fff;
+
+    &:hover {
+        background: #f5f6f8;
+    }
+
+    span {
+        float: left;
+        text-align: left;
+        color: #4a4a4a;
+    }
+
+    div {
+        background-color: #e58d8d;
+        border-radius: 0.5rem;
+        padding: 0.05rem 0.3rem 0 0.3rem;
+        color: white;
+        font-size: 0.6rem;
+    }
+`;
+
 const ScheduleSelectorDropdown = ({
     activeName,
     contents,
@@ -210,6 +271,9 @@ const ScheduleSelectorDropdown = ({
 }: ScheduleSelectorDropdownProps) => {
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+    const [hasFriends, setHasFriends] = useState(false);
+    const [numRequests, setNumRequests] = useState(2);
+    const [primarySelected, setPrimarySelected] = useState(false);
 
     useEffect(() => {
         const listener = (event: Event) => {
@@ -249,6 +313,7 @@ const ScheduleSelectorDropdown = ({
                                 makeActive={() => {
                                     setIsActive(false);
                                 }}
+                                hasFriends={hasFriends}
                                 onClick={onClick}
                                 text={scheduleName}
                                 mutators={{
@@ -265,13 +330,41 @@ const ScheduleSelectorDropdown = ({
                         </Icon>
                         <span> Add new schedule </span>
                     </AddNew>
-                    <AddNew onClick={addFriend} role="button" href="#">
-                        <Icon>
-                            <i className="fa fa-plus" aria-hidden="true" />
-                        </Icon>
-                        <span> Add new friend </span>
-                    </AddNew>                 
 
+                    <FriendContent>
+                        <div className="info">
+                            {hasFriends ? (
+                                <div>
+                                    {primarySelected ? (
+                                        <div className="share-with">
+                                            Share With
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            Click{" "}
+                                            <i
+                                                className="fa fa-user"
+                                                aria-hidden="true"
+                                            />{" "}
+                                            to set your shared schedule
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                "Add a friend to share a schedule"
+                            )}
+                        </div>
+                        <AddNew onClick={addFriend} role="button" href="#">
+                            <Icon>
+                                <i className="fa fa-plus" aria-hidden="true" />
+                            </Icon>
+                            <span> Add new friend </span>
+                        </AddNew>
+                        <PendingRequests role="button" href="#">
+                            <span> Pending Share Requests </span>
+                            <div>{numRequests}</div>
+                        </PendingRequests>
+                    </FriendContent>
                 </DropdownContent>
             </DropdownMenu>
         </ScheduleDropdownContainer>

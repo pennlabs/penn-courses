@@ -35,7 +35,7 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <NameScheduleModalInterior
                     buttonName="Create"
-                    usedScheduleNames={Object.keys(
+                    existingData={Object.keys(
                         reduxState.schedule.schedules
                     )}
                     mode="schedule"
@@ -45,7 +45,7 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <NameScheduleModalInterior
                     buttonName="Request"
-                    usedScheduleNames={Object.keys(
+                    existingData={Object.keys(
                         reduxState.schedule.schedules
                     )}
                     mode="friend"
