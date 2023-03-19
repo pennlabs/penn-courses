@@ -683,7 +683,7 @@ const mapDispatchToProps = (dispatch) => ({
         value: string,
         toggleState: boolean
     ) => dispatch(updateCheckboxFilter(field, value, toggleState)),
-    updateButtonFilter: (field: string) => (value: number | boolean) =>
+    updateButtonFilter: (field: string) => (value: number) =>
         dispatch(updateButtonFilter(field, value)),
     clearAll: () => dispatch(clearAll()),
     clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),
