@@ -16,7 +16,7 @@ def clear_cache():
         return -1
 
     # If redis is the cache backend, then we need to be careful to only delete django cache entries,
-    # since celery also uses redis as a message broker backend.
+    # since celery and search also use redis.
     r = redis.Redis.from_url(settings.REDIS_URL)
     del_count = 0
     for key in r.scan_iter("*views.decorators.cache*"):
