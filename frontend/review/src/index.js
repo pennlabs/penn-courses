@@ -10,7 +10,8 @@ import {
   CartPage,
   ErrorPage,
   FAQPage,
-  ReviewPage
+  ReviewPage,
+  SearchPage
 } from "./pages";
 import { GoogleAnalytics } from "./components/common";
 
@@ -23,6 +24,7 @@ if (window.location.hostname !== "localhost") {
 ReactDOM.render(
   <Router>
     <Switch>
+      <Route exact path="/search" component={SearchPage} />
       <Route exact path="/" component={ReviewPage} />
       <Route exact path="/about" component={AboutPage} />
       <Route exact path="/faq" component={FAQPage} />
