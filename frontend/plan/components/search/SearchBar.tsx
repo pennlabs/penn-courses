@@ -72,7 +72,7 @@ interface SearchBarProps {
     storeLoaded: boolean;
     setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
     activeSchedule: number;
-    updateButtonFilter: (field: string) => (value: number | boolean) => void;
+    updateButtonFilter: (field: string) => (value: number) => void;
 }
 
 function shouldSearch(filterData: FilterData) {
