@@ -1,17 +1,17 @@
-import redis
-import time
 import json
-from courses.models import Course, Topic
+import time
+
+import redis
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from review.management.commands.clearcache import clear_cache
-from django.conf import settings
-from django.db.models import Q, F
-from review.util import get_single_dict_from_qs, get_average_and_recent_dict_single
-from review.annotations import annotate_average_and_recent
+from django.db.models import F, Q
 from redis.commands.json.path import Path
-from redis.commands.search.field import TextField, NumericField
+from redis.commands.search.field import NumericField, TextField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+
+from courses.models import Course, Topic
+from review.annotations import annotate_average_and_recent
+from review.util import get_average_and_recent_dict_single
 
 
 course_filters_pcr_allow_xlist = ~Q(title="") | ~Q(description="") | Q(sections__has_reviews=True)
