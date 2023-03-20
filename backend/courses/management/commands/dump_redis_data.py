@@ -28,15 +28,13 @@ review_filters_pcr = Q(section__course__primary_listing_id=F("section__course_id
 
 def get_course_objs():
     topics = (
-        Topic.objects.all()
+        Topic.objects.filter(most_recent__semester="2023C")
         .select_related("most_recent")
         .prefetch_related("most_recent__primary_listing__listing_set")
     )
     c = 0
     start = time.time()
     for topic in topics:
-        if not c % 100:
-            print(f"Iteration {c} {time.time() - start}")
         c += 1
         course = topic.most_recent
         crosslistings = ", ".join([c.full_code for c in course.crosslistings])
@@ -82,8 +80,8 @@ def initialize_schema():
     try:
         # Check if exists, will throw error if not
         r.ft("courses").info()
-        # r.ft("courses").dropindex()  # -- optionally drop the index
     except Exception:
+        # If not, then create
         r.ft("courses").create_index(
             schema, definition=IndexDefinition(prefix=["course:"], index_type=IndexType.JSON)
         )
@@ -93,7 +91,7 @@ def dump_data(course_data):
     r = redis.Redis().from_url(settings.REDIS_URL)
     p = r.pipeline()
     for course in course_data:
-        p.json().set(name=f"course:{course['code']}", path=Path.root_path(), obj=json.dumps(course))
+        p.json().set(name=f"course:{course['code']}", path=Path.root_path(), obj=course)
 
     print(
         "Error while loading metadata into Redis"
