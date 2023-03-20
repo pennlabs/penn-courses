@@ -1,4 +1,5 @@
 import redis
+import time
 import json
 from courses.models import Course, Topic
 from django.conf import settings
@@ -29,41 +30,41 @@ def get_course_objs():
     topics = (
         Topic.objects.all()
         .select_related("most_recent")
-        .prefetch_related("primary_listing__listing_set")
+        .prefetch_related("most_recent__primary_listing__listing_set")
     )
     c = 0
+    start = time.time()
     for topic in topics:
-        if c > 100:
-            break
+        if not c % 100:
+            print(f"Iteration {c} {time.time() - start}")
         c += 1
         course = topic.most_recent
-        crosslistings = course.crosslistings
+        crosslistings = ", ".join([c.full_code for c in course.crosslistings])
+        course_qs = Course.objects.filter(pk=course.pk)
         course_qs = annotate_average_and_recent(
-            course,
+            course_qs,
             match_review_on=Q(section__course__topic=topic) & review_filters_pcr,
             match_section_on=Q(course__topic=topic) & section_filters_pcr,
             extra_metrics=True,
         )
-        reviewed_course = dict(course_qs[0].values()) if course_qs else None
-        reviewed_course = get_average_and_recent_dict_single(reviewed_course)
-        yield json.dumps(
-            {
-                "code": course["full_code"].replace("-", " "),
-                "title": course["title"],
-                "crosslistings": crosslistings,
-                "description": course["description"],
-                "semester": course["semester"],
-                "course_quality": reviewed_course["average_reviews"]["rCourseQuality"]
-                if reviewed_course
-                else None,
-                "difficulty": reviewed_course["average_reviews"]["rDifficulty"]
-                if reviewed_course
-                else None,
-                "work_required": reviewed_course["average_reviews"]["rWorkRequired"]
-                if reviewed_course
-                else None,
-            }
+        reviewed_course = (
+            get_average_and_recent_dict_single(dict(course_qs.values()[0])) if course_qs else None
         )
+        avg_reviews = reviewed_course["average_reviews"]
+        yield {
+            "code": course.full_code.replace("-", " "),
+            "title": course.title,
+            "crosslistings": crosslistings,
+            "description": course.description,
+            "semester": course.semester,
+            "course_quality": avg_reviews["rCourseQuality"]
+            if "rCourseQuality" in avg_reviews
+            else None,
+            "difficulty": avg_reviews["rDifficulty"] if "rDifficulty" in avg_reviews else None,
+            "work_required": avg_reviews["rWorkRequired"]
+            if "rWorkRequired" in avg_reviews
+            else None,
+        }
 
 
 def initialize_schema():
@@ -78,16 +79,21 @@ def initialize_schema():
         NumericField("$.work_required", as_name="work_required", sortable=True),
         NumericField("$.difficulty", as_name="difficulty", sortable=True),
     )
-    r.ft("courses").create_index(
-        schema, definition=IndexDefinition(prefix=["course:"], index_type=IndexType.JSON)
-    )
+    try:
+        # Check if exists, will throw error if not
+        r.ft("courses").info()
+        # r.ft("courses").dropindex()  # -- optionally drop the index
+    except Exception:
+        r.ft("courses").create_index(
+            schema, definition=IndexDefinition(prefix=["course:"], index_type=IndexType.JSON)
+        )
 
 
 def dump_data(course_data):
     r = redis.Redis().from_url(settings.REDIS_URL)
     p = r.pipeline()
     for course in course_data:
-        p.json().set(name=f"course:{course['code']}", path=Path.root_path(), obj=course)
+        p.json().set(name=f"course:{course['code']}", path=Path.root_path(), obj=json.dumps(course))
 
     print(
         "Error while loading metadata into Redis"
