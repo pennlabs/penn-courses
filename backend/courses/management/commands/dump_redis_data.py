@@ -32,10 +32,7 @@ def get_course_objs():
         .select_related("most_recent")
         .prefetch_related("most_recent__primary_listing__listing_set")
     )
-    c = 0
-    start = time.time()
     for topic in topics:
-        c += 1
         course = topic.most_recent
         crosslistings = ", ".join([c.full_code for c in course.crosslistings])
         course_qs = Course.objects.filter(pk=course.pk)
