@@ -9,7 +9,7 @@ from django.db.models import Q, F
 from review.util import get_single_dict_from_qs, get_average_and_recent_dict_single
 from review.annotations import annotate_average_and_recent
 from redis.commands.json.path import Path
-from redis.commands.search.fields import TextField, NumericField
+from redis.commands.search.field import TextField, NumericField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 
@@ -31,7 +31,11 @@ def get_course_objs():
         .select_related("most_recent")
         .prefetch_related("primary_listing__listing_set")
     )
+    c = 0
     for topic in topics:
+        if c > 100:
+            break
+        c += 1
         course = topic.most_recent
         crosslistings = course.crosslistings
         course_qs = annotate_average_and_recent(
@@ -61,6 +65,7 @@ def get_course_objs():
             }
         )
 
+
 def initialize_schema():
     r = redis.Redis().from_url(settings.REDIS_URL)
     schema = (
@@ -71,26 +76,25 @@ def initialize_schema():
         TextField("$.semester", as_name="semester", no_stem=True),
         NumericField("$.course_quality", as_name="course_quality", sortable=True),
         NumericField("$.work_required", as_name="work_required", sortable=True),
-        NumericField("$.difficulty", as_name="difficulty", sortable=True)
+        NumericField("$.difficulty", as_name="difficulty", sortable=True),
     )
     r.ft("courses").create_index(
-        schema,
-        definition=IndexDefinition(
-            prefix=["course:"], 
-            index_type=IndexType.JSON
-        )
+        schema, definition=IndexDefinition(prefix=["course:"], index_type=IndexType.JSON)
     )
+
 
 def dump_data(course_data):
     r = redis.Redis().from_url(settings.REDIS_URL)
     p = r.pipeline()
     for course in course_data:
-        p.json().set(
-            name=f"course:{course['code']}",
-            path=Path.root_path(),
-            obj=course
-        )
-    print("Error while loading metadata into Redis") if False in p.execute() else print("Successfully loaded metadata into Redis")
+        p.json().set(name=f"course:{course['code']}", path=Path.root_path(), obj=course)
+
+    print(
+        "Error while loading metadata into Redis"
+        if False in p.execute()
+        else "Successfully loaded metadata into Redis"
+    )
+
 
 class Command(BaseCommand):
 
@@ -98,7 +102,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         initialize_schema()
-        # URL = settings.REDIS_URL
-        # r = redis.Redis.from_url(URL)
         course_data = get_course_objs()
         dump_data(course_data)
