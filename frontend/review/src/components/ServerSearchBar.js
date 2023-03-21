@@ -4,7 +4,8 @@ import { components } from "react-select";
 import { css } from "emotion";
 import { withRouter } from "react-router-dom";
 import fuzzysort from "fuzzysort";
-import { api } from "../utils/api";
+import { apiSearch } from "../utils/api";
+import { CoursePreview } from "./CoursePreview";
 
 // Takes in a course (ex: CIS 160) and returns various formats (ex: CIS-160, CIS 160, CIS160).
 function expandCombo(course) {
@@ -12,13 +13,13 @@ function expandCombo(course) {
   return `${course} ${a[0]}-${a[1]} ${a[0]}${a[1]}`;
 }
 
-// Remove duplicate courses by title.
+// Remove duplicate courses by topic.
 function removeDuplicates(dups) {
   const used = new Set();
   const clean = [];
   dups.forEach(i => {
-    if (!used.has(i.title)) {
-      used.add(i.title);
+    if (!used.has(i.topic)) {
+      used.add(i.topic);
       clean.push(i);
     }
   });
@@ -28,8 +29,9 @@ function removeDuplicates(dups) {
 /**
  * The search bar that appears on the homepage and navigation bar.
  */
-class SearchBar extends Component {
+class ServerSearchBar extends Component {
   constructor(props) {
+    super(props)
     this.selectRef = React.createRef();
 
     this.state = {
@@ -42,11 +44,26 @@ class SearchBar extends Component {
     this.setFocusedOption = this.setFocusedOption.bind(this);
   }
 
-
   // Called each time the input value inside the searchbar changes
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
-    return  
+    return apiSearch(inputValue).then(courses => {
+      const options = removeDuplicates(courses).map(course => ({
+          label: course.title,
+          value: course.title,
+          code: course.code, 
+          crosslistings: course.crosslistings,
+          semester: course.semester,
+          quality: course.course_quality,
+          difficulty: course.difficulty,
+          workRequired: course.work_required,
+          description: course.description,
+          url: `/course/${course.code}`, // add extra fields
+      }));
+      this.setState({ autocompleteOptions: options });
+    });
+  }
+
   // Hack to modify the handler to set the first option as the most relevant option
   setFocusedOption() {
     this.selectRef.current.select.select.getNextFocusedOption = options =>
@@ -60,21 +77,12 @@ class SearchBar extends Component {
 
   render() {
     const { state: parent } = this;
+    const width = this.props.isTitle
+                ? "calc(100vw - 60px)"
+                : "calc(100vw - 200px)";
+    const maxWidth = this.props.isTitle ? 800 : 900;
     return (
       <div id="search" style={{ margin: "0 auto" }}>
-        <input
-            type="text"
-            value={this.state.searchValue}
-            onChange={this.autocompleteCallback}
-            className={
-                mobileView
-                    ? "input is-medium is-rounded"
-                    : "input is-small is-rounded"
-            }
-            autoComplete="off"
-            placeholder="Search"
-            disabled={isDisabled}
-        />
         <AsyncSelect
           ref={this.selectRef}
           autoFocus={this.props.isTitle}
@@ -146,10 +154,8 @@ class SearchBar extends Component {
           styles={{
             container: styles => ({
               ...styles,
-              width: this.props.isTitle
-                ? "calc(100vw - 60px)"
-                : "calc(100vw - 200px)",
-              maxWidth: this.props.isTitle ? 600 : 514
+              width: width,
+              maxWidth: maxWidth
             }),
             control: (styles, state) => ({
               ...styles,
@@ -184,9 +190,27 @@ class SearchBar extends Component {
             })
           }}
         />
+        {this.props.isTitle && 
+          <CoursePreview
+          style={{
+            width: width,
+            maxWidth: maxWidth
+          }}
+          course={{
+            code: "CSE 120",
+            title: "Introduction to Computer Systems",
+            semester: "Fall 2019",
+            quality: 2.5,
+            difficulty: 3.5,
+            workRequired: 4.0,
+
+            description: "This course is an introduction to computer systems, including the hardware and software components of modern computers. Topics include: computer architecture, assembly language programming, operating systems, and networking. Students will learn to program in C and x86 assembly language, and will gain experience with the Linux operating system. Students will also learn to use the Internet and the World Wide Web, and will learn about the security and privacy issues associated with these technologies. This course is intended for students who have not taken CSE 100 or CSE 101. Prerequisite: CSE 30 or equivalent.",
+          }}
+          />
+        }
       </div>
     );
   }
 }
 
-export default withRouter(SearchBar);
+export default withRouter(ServerSearchBar);

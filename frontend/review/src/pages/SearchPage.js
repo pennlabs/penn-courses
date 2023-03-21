@@ -13,7 +13,7 @@ import { apiReviewData, apiLive } from "../utils/api";
 /**
  * Represents a course, instructor, or department review page.
  */
-export class ReviewPage extends Component {
+export class SearchPage extends Component {
   constructor(props) {
     super(props);
     this.tableRef = React.createRef();

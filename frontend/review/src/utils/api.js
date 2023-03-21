@@ -33,6 +33,14 @@ const isCompressedAutocomplete = data => {
 // Cache the decompressed autocomplete dump as a global variable
 var uncompressedAutocompleteData = null;
 
+
+export function apiSearch(query) {
+  return apiFetch(
+    `${API_DOMAIN}/api/review/search?query=${encodeURIComponent(query)}`
+  );
+}
+
+// TODO: remove this function once
 export function apiAutocomplete() {
   // If we have decompressed autocomplete data since last page refresh, return previous data.
   if (uncompressedAutocompleteData) {
