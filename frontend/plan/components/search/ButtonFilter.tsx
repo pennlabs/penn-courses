@@ -1,40 +1,38 @@
 /* A button that toggles on click and allows search to filter class that only fits schedule */
 
-import React, { ReactElement, useState } from "react";
-import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
+import React, { useState } from "react";
+import { useOnClickOutside } from "../../../shared-components/src/useOnClickOutside";
 import { 
     DropdownContainer, 
     DropdownTrigger,
     DropdownFilterButton,
     DeleteButtonContainer,
-    DeleteButton } from "../DropdownButton";
+    DeleteButton } from "./DropdownButton";
 
-import { FilterData, FilterType } from "../../types";
+import { FilterType } from "../../types";
 
-interface FilterButtonProps<F, K extends keyof F> {
+interface ButtonFilterProps<F, K extends keyof F> {
     title: string;
     children: never[];
     filterData: F;
-    defaultFilter: FilterType;
     clearFilter: () => void;
     startSearch: (searchObj: F) => void;
-    activeSchedule: number;
+    value: number;
     buttonProperty: K;
-    updateButtonFilter: (value: number) => void
+    updateButtonFilter: (value: any) => void
 }
 
-export function FilterButton<
+export function ButtonFilter<
     F extends { [P in K]: number },
     K extends keyof F>({
     title,
     filterData,
-    defaultFilter,
     clearFilter,
     startSearch, 
-    activeSchedule,
+    value,
     buttonProperty,
     updateButtonFilter
-}: FilterButtonProps<F, K>) {
+}: ButtonFilterProps<F, K>) {
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
@@ -43,10 +41,10 @@ export function FilterButton<
             setIsActive(false);
         } else {
             setIsActive(true);
-            updateButtonFilter(activeSchedule);
+            updateButtonFilter(value);
             startSearch({
                 ...filterData,
-                [buttonProperty]: {[activeSchedule]: null},
+                [buttonProperty]: value,
             });
         }
     };
@@ -57,8 +55,6 @@ export function FilterButton<
             <DropdownTrigger className="dropdown-trigger">
                 <DropdownFilterButton
                     defaultData={!isActive}
-                    aria-haspopup="true"
-                    aria-controls="dropdown-menu"
                     onClick={toggleButton}
                     type="button"
                 >

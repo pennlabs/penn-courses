@@ -5,8 +5,8 @@ import styled from "styled-components";
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
-import { DropdownButton } from "../DropdownButton";
-import { FilterButton } from "./ButtonFilter";
+import { DropdownButton } from "./DropdownButton";
+import { ButtonFilter } from "./ButtonFilter";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
@@ -474,19 +474,28 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            <FilterButton
+            <ButtonFilter
                 title="Fit Schedule"
-                
                 filterData={filterData}
-                defaultFilter={defaultFilters.filterData.fit_schedule}
-                clearFilter={clearFilterSearch("fit_schedule")}
+                clearFilter={clearFilterSearch("schedule-fit")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
-                activeSchedule={activeSchedule}
-                buttonProperty="fit_schedule"
-                updateButtonFilter={updateButtonFilter("fit_schedule")}
+                value={activeSchedule}
+                buttonProperty="schedule-fit"
+                updateButtonFilter={updateButtonFilter("schedule-fit")}
             >
-            </FilterButton> 
+            </ButtonFilter> 
+            <ButtonFilter
+                title="Is Open"
+                filterData={filterData}
+                clearFilter={clearFilterSearch("is_open")}
+                // @ts-ignore
+                startSearch={conditionalStartSearch}
+                value={1}
+                buttonProperty="is_open"
+                updateButtonFilter={updateButtonFilter("is_open")}
+            >
+            </ButtonFilter> 
         </DropdownContainer>
     );
     if (mobileView) {
