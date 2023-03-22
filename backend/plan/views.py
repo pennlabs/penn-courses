@@ -302,7 +302,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-    def update(self, request, pk=None):
+    def update(self, request, pk=None, adv_reg_force_user=None):
         if not Schedule.objects.filter(id=pk).exists():
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         try:
@@ -326,7 +326,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return semester_check_response
 
         try:
-            schedule.person = request.user
+            schedule.person = request.user if adv_reg_force_user is None else adv_reg_force_user
             schedule.semester = request.data.get("semester", get_current_semester())
             schedule.name = request.data.get("name")
             schedule.save()
@@ -341,9 +341,18 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-    def create(self, request, *args, **kwargs):
-        if Schedule.objects.filter(id=request.data.get("id")).exists():
-            return self.update(request, request.data.get("id"))
+    def create(self, request, *args, adv_reg_force_user=None, **kwargs): # note: adv_reg_schedule will not be found in kwargs
+        try:
+            schedule = Schedule.objects.get(id=request.get("id"))
+            # check that we force a user if and only if the schedule is one from adv registration
+            if adv_reg_force_user is not None and not schedule.is_adv_reg:
+                return Response(
+                    {"detail": "A schedule with this name already exists and cannot be updated while forcing a user"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            return self.update(request, request.data.get("id"), adv_reg_force_user=adv_reg_force_user)
+        except ObjectDoesNotExist:
+            pass
 
         try:
             sections = self.get_sections(request.data)
@@ -362,16 +371,18 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 "id" in request.data
             ):  # Also from above we know that this id does not conflict with existing schedules.
                 schedule = self.get_queryset().create(
-                    person=request.user,
+                    person=request.user if adv_reg_force_user is None else adv_reg_force_user,
                     semester=request.data.get("semester", get_current_semester()),
                     name=request.data.get("name"),
                     id=request.data.get("id"),
+                    is_adv_reg=adv_reg_force_user is None
                 )
             else:
                 schedule = self.get_queryset().create(
-                    person=request.user,
+                    person=request.user if adv_reg_force_user is None else adv_reg_force_user,
                     semester=request.data.get("semester", get_current_semester()),
                     name=request.data.get("name"),
+                    is_adv_reg=adv_reg_force_user is None
                 )
             schedule.sections.set(sections)
             return Response(
@@ -399,3 +410,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             "sections__meetings__room",
         )
         return queryset
+
+@permission_classes([IsAuthenticated])
+def penn_mobile_schedule_view(request):
+    return ScheduleViewSet.as_view()(request, adv_reg_schedule=True)

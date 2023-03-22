@@ -1,4 +1,4 @@
-from decimal import Decimal
+decimalfrom decimal import Decimal
 
 from django.core.exceptions import BadRequest
 from django.db.models import Count, Exists, OuterRef, Q
