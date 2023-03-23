@@ -35,7 +35,7 @@ class ServerSearchBar extends Component {
     this.selectRef = React.createRef();
 
     this.state = {
-      autocompleteOptions: [], // TODO: add types
+      autocompleteOptions: [],
       searchValue: null
     };
 
@@ -61,6 +61,18 @@ class ServerSearchBar extends Component {
           url: `/course/${course.code}`, // add extra fields
       }));
       this.setState({ autocompleteOptions: options });
+    }).finally(() => {
+      // TODO: remove
+      this.setState({ autocompleteOptions: [{
+          code: "CSE 120",
+          title: "Introduction to Computer Systems",
+          semester: "Fall 2019",
+          quality: 2.5,
+          difficulty: 3.5,
+          workRequired: 4.0,
+          url: "/course/CSE-120",
+          description: "This course is an introduction to computer systems, including the hardware and software components of modern computers. Topics include: computer architecture, assembly language programming, operating systems, and networking. Students will learn to program in C and x86 assembly language, and will gain experience with the Linux operating system. Students will also learn to use the Internet and the World Wide Web, and will learn about the security and privacy issues associated with these technologies. This course is intended for students who have not taken CSE 100 or CSE 101. Prerequisite: CSE 30 or equivalent.",
+        }]})
     });
   }
 
@@ -81,133 +93,136 @@ class ServerSearchBar extends Component {
                 ? "calc(100vw - 60px)"
                 : "calc(100vw - 200px)";
     const maxWidth = this.props.isTitle ? 800 : 900;
-    return (
-      <div id="search" style={{ margin: "0 auto" }}>
-        <AsyncSelect
-          ref={this.selectRef}
-          autoFocus={this.props.isTitle}
-          onChange={this.handleChange}
-          value={this.state.searchValue}
-          placeholder={
-            this.props.isTitle ? "Search for a class or professor" : ""
-          }
-          loadOptions={this.autocompleteCallback}
-          defaultOptions
-          components={{
-            Option: props => {
-              const {
-                children,
-                className,
-                cx,
-                getStyles,
-                isDisabled,
-                isFocused,
-                isSelected,
-                innerRef,
-                innerProps,
-                data
-              } = props;
-              return (
-                <div
-                  ref={innerRef}
-                  className={cx(
-                    css(getStyles("option", props)),
-                    {
-                      option: true,
-                      "option--is-disabled": isDisabled,
-                      "option--is-focused": isFocused,
-                      "option--is-selected": isSelected
-                    },
-                    className
-                  )}
-                  {...innerProps}
-                >
-                  <b>{children}</b>
-                  <span
-                    style={{ color: "#aaa", fontSize: "0.8em", marginLeft: 3 }}
-                  >
-                    {(() => {
-                      const { desc } = data;
-                      if (Array.isArray(desc)) {
-                        const opt = fuzzysort
-                          .go(parent.searchValue, desc, {
-                            threshold: -Infinity,
-                            limit: 1
-                          })
-                          .map(a => a.target);
-                        return opt[0] || desc[0];
-                      }
-                      return desc;
-                    })()}
-                  </span>
-                </div>
-              );
-            },
-            DropdownIndicator: this.props.isTitle
-              ? null
-              : props => (
-                  <components.DropdownIndicator {...props}>
-                    <i className="fa fa-search mr-1" />
-                  </components.DropdownIndicator>
-                )
-          }}
-          styles={{
-            container: styles => ({
-              ...styles,
-              width: width,
-              maxWidth: maxWidth
-            }),
-            control: (styles, state) => ({
-              ...styles,
-              borderRadius: this.props.isTitle ? 0 : 32,
-              boxShadow: !this.props.isTitle
-                ? "none"
-                : state.isFocused
-                ? "0px 2px 14px #ddd"
-                : "0 2px 14px 0 rgba(0, 0, 0, 0.07)",
-              backgroundColor: this.props.isTitle ? "white" : "#f8f8f8",
-              borderColor: "transparent",
-              cursor: "pointer",
-              "&:hover": {},
-              fontSize: this.props.isTitle ? "30px" : null
-            }),
-            input: styles => ({
-              ...styles,
-              marginLeft: this.props.isTitle ? 0 : 10,
-              outline: "none",
-              border: "none"
-            }),
-            option: styles => ({
-              ...styles,
-              paddingTop: 5,
-              paddingBottom: 5,
-              cursor: "pointer"
-            }),
-            placeholder: styles => ({
-              ...styles,
-              whiteSpace: "nowrap",
-              color: "#b2b2b2"
-            })
-          }}
-        />
-        {this.props.isTitle && 
-          <CoursePreview
-          style={{
-            width: width,
-            maxWidth: maxWidth
-          }}
-          course={{
-            code: "CSE 120",
-            title: "Introduction to Computer Systems",
-            semester: "Fall 2019",
-            quality: 2.5,
-            difficulty: 3.5,
-            workRequired: 4.0,
+    const coursePreviews = this.state.autocompleteOptions.map(course => (
+      <CoursePreview 
+      course={course} 
+      style={{ margin: "10px 0 0 0", backgroundColor: "#ffffff" }}
+      />
+    )) 
 
-            description: "This course is an introduction to computer systems, including the hardware and software components of modern computers. Topics include: computer architecture, assembly language programming, operating systems, and networking. Students will learn to program in C and x86 assembly language, and will gain experience with the Linux operating system. Students will also learn to use the Internet and the World Wide Web, and will learn about the security and privacy issues associated with these technologies. This course is intended for students who have not taken CSE 100 or CSE 101. Prerequisite: CSE 30 or equivalent.",
-          }}
+    return (
+      <div style={{ ...this.props.style }}>
+        <div id="search" 
+        style={{ 
+          margin: "0 auto",
+          height: this.props.isTitle ? 58 : null
+        }}
+        >
+          <AsyncSelect
+            ref={this.selectRef}
+            autoFocus={this.props.isTitle}
+            onChange={this.handleChange}
+            value={this.state.searchValue}
+            placeholder={
+              this.props.isTitle ? "Search for a class or professor" : ""
+            }
+            loadOptions={this.autocompleteCallback}
+            defaultOptions
+            components={{
+              Option: props => {
+                const {
+                  children,
+                  className,
+                  cx,
+                  getStyles,
+                  isDisabled,
+                  isFocused,
+                  isSelected,
+                  innerRef,
+                  innerProps,
+                  data
+                } = props;
+                return (
+                  <div
+                    ref={innerRef}
+                    className={cx(
+                      css(getStyles("option", props)),
+                      {
+                        option: true,
+                        "option--is-disabled": isDisabled,
+                        "option--is-focused": isFocused,
+                        "option--is-selected": isSelected
+                      },
+                      className
+                    )}
+                    {...innerProps}
+                  >
+                    <b>{children}</b>
+                    <span
+                      style={{ color: "#aaa", fontSize: "0.8em", marginLeft: 3 }}
+                    >
+                      {(() => {
+                        const { desc } = data;
+                        if (Array.isArray(desc)) {
+                          const opt = fuzzysort
+                            .go(parent.searchValue, desc, {
+                              threshold: -Infinity,
+                              limit: 1
+                            })
+                            .map(a => a.target);
+                          return opt[0] || desc[0];
+                        }
+                        return desc;
+                      })()}
+                    </span>
+                  </div>
+                );
+              },
+              DropdownIndicator: this.props.isTitle
+                ? null
+                : props => (
+                    <components.DropdownIndicator {...props}>
+                      <i className="fa fa-search mr-1" />
+                    </components.DropdownIndicator>
+                  )
+            }}
+            styles={{
+              container: styles => ({
+                ...styles,
+                width: width,
+                maxWidth: maxWidth,
+              }),
+              control: (styles, state) => ({
+                ...styles,
+                borderRadius: this.props.isTitle ? 0 : 32,
+                boxShadow: !this.props.isTitle
+                  ? "none"
+                  : state.isFocused
+                  ? "0px 2px 14px #ddd"
+                  : "0 2px 14px 0 rgba(0, 0, 0, 0.07)",
+                backgroundColor: this.props.isTitle ? "white" : "#f8f8f8",
+                borderColor: "transparent",
+                cursor: "pointer",
+                "&:hover": {},
+                fontSize: this.props.isTitle ? "30px" : null
+              }),
+              input: styles => ({
+                ...styles,
+                marginLeft: this.props.isTitle ? 0 : 10,
+                outline: "none",
+                border: "none"
+              }),
+              option: styles => ({
+                ...styles,
+                paddingTop: 5,
+                paddingBottom: 5,
+                cursor: "pointer"
+              }),
+              placeholder: styles => ({
+                ...styles,
+                whiteSpace: "nowrap",
+                color: "#b2b2b2"
+              })
+            }}
           />
-        }
+        </div>
+        {this.props.isTitle &&
+          <div
+          style={{ width: width, maxWidth: maxWidth }}
+          >
+            {coursePreviews}
+          </div>
+          }
       </div>
     );
   }
