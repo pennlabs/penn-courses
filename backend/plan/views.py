@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, Subquery
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -196,7 +196,7 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     serializer_class = PrimaryScheduleSerializer
 
     def get_queryset(self):
-        return PrimarySchedule.objects.filter(Q(user=self.request.user) | Q(user__in=get_accepted_friends(self.request.user)))
+        return PrimarySchedule.objects.filter(Q(user=self.request.user) | Q(user_id__in=Subquery(get_accepted_friends(self.request.user).values("id"))))
 
     schema = PcxAutoSchema(
         response_codes={
@@ -215,12 +215,12 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     def put(self, request):
         res = {}
         user = request.user
-        schedule = Schedule.objects.filter(person_id=user.id, id=request.data.schedule_id).first()
+        schedule = Schedule.objects.filter(person_id=user.id, id=request.data.get("schedule_id")).first()
         if not schedule:
             res["message"] = "Schedule does not exist"
-            return JsonResponse(res, status=status.HTTP_STATUS_400_BAD_REQUEST)
+            return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
             
-        primary_schedule_entry = self.queryset.filter(user=user).first()
+        primary_schedule_entry = self.get_queryset().filter(user=user).first()
         if primary_schedule_entry:
             primary_schedule_entry.schedule = schedule
             primary_schedule_entry.save()

@@ -1,3 +1,4 @@
+from courses.serializers import PublicUserSerializer
 from plan.models import PrimarySchedule
 from rest_framework import serializers
 
@@ -20,9 +21,13 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
 class PrimaryScheduleSerializer(serializers.ModelSerializer):
     schedule = ScheduleSerializer(
-        read_only=True, help_text="The primary schedule.", required=False
+        read_only=True, help_text="The primary schedule.", required=False,
+    )
+
+    user = PublicUserSerializer(
+        read_only=True, help_text="The user to which the primary schedule belongs.", required=False,
     )
 
     class Meta:
         model = PrimarySchedule
-        fields = ["user_id", "schedule_id"]
+        fields = ["user", "user_id", "schedule_id", "schedule"]

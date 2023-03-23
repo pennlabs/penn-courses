@@ -42,18 +42,15 @@ class FriendshipModelTest(TestCase):
         self.assertFalse(Friendship.objects.filter(sender=u2, recipient=u1).exists())
     
     def test_basic_friendship_accept(self):
-        u1 = self.u1br
+        u1 = self.u1
         u2 = self.u2
-        friendship = Friendship(sender=u1, recipient=u2)
-        friendship.save()
 
         make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends.status_code, 200)
+                {"friend_id": u1.id})
+        self.assertEquals(make_friends.status_code, 201)
+
         make_friends2 = self.client1.post(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
+                {"friend_id": u2.id})
         self.assertEquals(make_friends2.status_code, 200)
 
         self.assertTrue(Friendship.objects.filter(sender=u2, recipient=u1, status=Friendship.Status.ACCEPTED).exists())
@@ -63,51 +60,37 @@ class FriendshipModelTest(TestCase):
         u1 = self.u1
         u2 = self.u2
         make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends.status_code, 200)
+                {"friend_id": u1.id})
+        self.assertEquals(make_friends.status_code, 201)
         make_friends2 = self.client1.delete(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
+                {"friend_id": u2.id})
         self.assertEquals(make_friends2.status_code, 200)
+        # print("MESSAGE:", make_friends2.content)
 
         self.assertTrue(Friendship.objects.filter(sender=u2, recipient=u1, status=Friendship.Status.REJECTED).exists())
         self.assertFalse(Friendship.objects.filter(sender=u2, recipient=u1, status=Friendship.Status.SENT).exists())
     
-    def test_basic_friendship_request_delete(self):
+    def test_basic_friendship_delete_request(self):
         u1 = self.u1
         u2 = self.u2
-        make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends.status_code, 200)
-
-        make_friends2 = self.client1.post(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends2.status_code, 200)
-
-        self.assertTrue(Friendship.objects.filter(sender=u2, recipient=u1, status=Friendship.Status.ACCEPTED).exists())
+        friendship = Friendship(sender=u1, recipient=u2, status=Friendship.Status.SENT)
+        friendship.save()
 
         remove_friend = self.client1.delete(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
-        self.assertEquals(remove_friend.status_code, 200) # delete friendship
+                {"friend_id": u2.id})
+        self.assertEquals(remove_friend.status_code, 200) # delete friendship request
 
         self.assertFalse(Friendship.objects.filter(sender=u2, recipient=u1).exists())
     
     def test_basic_friendship_remove(self):
         u1 = self.u1
         u2 = self.u2
-        make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends.status_code, 200)
+        friendship = Friendship(sender=u2, recipient=u1, status=Friendship.Status.ACCEPTED)
+        friendship.save()
 
-        make_friends2 = self.client1.delete(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends2.status_code, 200)
+        make_friends2 = self.client2.delete(friendship_url,
+                {"friend_id": u1.id})
+        self.assertEquals(make_friends2.status_code, 200) # remove friend
 
         self.assertFalse(Friendship.objects.filter(sender=u2, recipient=u1).exists())
     
@@ -115,49 +98,41 @@ class FriendshipModelTest(TestCase):
         u1 = self.u1
         u2 = self.u2
         make_friends = self.client2.delete(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
+                {"friend_id": u1.id})
         self.assertEquals(make_friends.status_code, 404) # friendship does not exist
 
     def test_duplicate_accepts(self):
         u1 = self.u1
         u2 = self.u2
         make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends.status_code, 200)
+                {"friend_id": u1.id})
+        self.assertEquals(make_friends.status_code, 201)
 
         make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
+                {"friend_id": u1.id})
         self.assertEquals(make_friends.status_code, 409) # duplicate friendship request
 
         make_friends2 = self.client1.post(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
+                {"friend_id": u2.id})
         self.assertEquals(make_friends2.status_code, 200) # accepted friend request
         
         make_friends2 = self.client1.post(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
+                {"friend_id": u2.id})
         self.assertEquals(make_friends2.status_code, 409) # duplicate accepted friendship
     
     def test_duplicate_rejects(self):
         u1 = self.u1
         u2 = self.u2
         make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends.status_code, 200)
+                {"friend_id": u1.id})
+        self.assertEquals(make_friends.status_code, 201)
 
         make_friends = self.client1.delete(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
+                {"friend_id": u2.id})
         self.assertEquals(make_friends.status_code, 200) # reject friendship request
 
         make_friends = self.client1.delete(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
+                {"friend_id": u2.id})
         self.assertEquals(make_friends.status_code, 409) # already rejected friendship request
 
 
@@ -165,19 +140,16 @@ class FriendshipModelTest(TestCase):
         u1 = self.u1
         u2 = self.u2
         make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends.status_code, 200)
+                {"friend_id": u1.id})
+        self.assertEquals(make_friends.status_code, 201)
         make_friends2 = self.client1.delete(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
+                {"friend_id": u2.id})
         self.assertEquals(make_friends2.status_code, 200)
 
         self.assertTrue(Friendship.objects.filter(sender=u2, recipient=u1, status=Friendship.Status.REJECTED).exists())
 
         make_friends3 = self.client1.post(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
+                {"friend_id": u2.id})
         self.assertEquals(make_friends3.status_code, 200)
         self.assertFalse(Friendship.objects.filter(sender=u2, recipient=u1).exists()) # request from other user should change the entry
         self.assertTrue(Friendship.objects.filter(sender=u1, recipient=u2).exists()) # row should be changed to this from the request
@@ -195,29 +167,29 @@ class FriendshipModelTest(TestCase):
         )
         self.client3 = APIClient()
         self.client4 = APIClient()
-        self.client3.login(username="test3", password="top_secret")
+        self.client3.login(username="test3", password="top_secret_pass")
         self.client4.login(username="test4", password="top_secret_pass")
 
         make_friends = self.client1.post(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends.status_code, 200)
+                {"friend_id": u2.id})
+        self.assertEquals(make_friends.status_code, 201)
         make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u1.id}),
-                content_type="application/json")
+                {"friend_id": u1.id})
         self.assertEquals(make_friends.status_code, 200)
 
         make_friends = self.client2.post(friendship_url,
-                json.dumps({"friend_id": u3.id}),
-                content_type="application/json")
-        self.assertEquals(make_friends.status_code, 200)
+                {"friend_id": u3.id})
+        self.assertEquals(make_friends.status_code, 201)
         make_friends = self.client3.post(friendship_url,
-                json.dumps({"friend_id": u2.id}),
-                content_type="application/json")
+                {"friend_id": u2.id})
         self.assertEquals(make_friends.status_code, 200)
+
+        make_friends = self.client2.post(friendship_url,
+                {"friend_id": u4.id})
+        self.assertEquals(make_friends.status_code, 201)
 
         get_friends = self.client2.get(friendship_url)
-        # how to check the response of the get request?
+        # print(get_friends.content)
         self.assertEquals(get_friends.status_code, 200)
 
 

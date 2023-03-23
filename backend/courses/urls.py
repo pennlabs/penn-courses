@@ -1,13 +1,9 @@
 from django.urls import path, include
-from rest_framework import routers
 
 from courses import views
 from courses.views import (
     CourseListSearch
 )
-
-router = routers.DefaultRouter()
-router.register("friendship", views.FriendshipViewSet, basename="friendship")
 
 urlpatterns = [
     path("<slug:semester>/courses/", views.CourseList.as_view(), name="courses-list"),
@@ -39,5 +35,5 @@ urlpatterns = [
         name="restrictions-list",
     ),
     path("statusupdate/<slug:full_code>/", views.StatusUpdateView.as_view(), name="statusupdate"),
-    path("", include(router.urls)),
+    path("friendship/", views.FriendshipView.as_view(), name="friendship"),
 ]

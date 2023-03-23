@@ -416,6 +416,12 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["username", "first_name", "last_name", "profile"]
         read_only_fields = ["username"]
 
+class PublicUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ["username", "first_name", "last_name"]
+        read_only_fields = ["username"]
+
 
 class StatusUpdateSerializer(serializers.ModelSerializer):
     section = serializers.ReadOnlyField(

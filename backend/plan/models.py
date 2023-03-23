@@ -47,6 +47,10 @@ class Schedule(models.Model):
         ),
     )
 
+    @property
+    def is_primary(self):
+        return hasattr(self, "primary_schedule")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
