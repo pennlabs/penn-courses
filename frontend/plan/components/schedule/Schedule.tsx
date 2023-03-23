@@ -32,13 +32,15 @@ interface ScheduleProps {
     scheduleNames: string[];
     switchSchedule: (scheduleName: string) => void;
     schedulesMutator: {
+        setPrimary: (scheduleName: string) => void;
         copy: (scheduleName: string) => void;
         remove: (scheduleName: string) => void;
+        rename: (oldName: string) => void;
 
         // NOT IN ORIGINAL PROPS
         createSchedule: () => void;
-        rename: (oldName: string) => void;
         addFriend: () => void;
+        showRequests: () => void;
     };
     activeScheduleName: string;
     setTab?: (_: number) => void;
@@ -357,6 +359,14 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
                     "ADD_FRIEND",
                     { defaultValue: "Enter your friend's PennKey" },
                     "Add New Friend"
+                )
+        ),
+        showRequests: () => 
+            dispatch(
+                openModal(
+                    "SHOW_REQUESTS",
+                    { defaultValue: "Enter your friend's PennKey" },
+                    "PENDING REQUESTS"
                 )
         ),
     },

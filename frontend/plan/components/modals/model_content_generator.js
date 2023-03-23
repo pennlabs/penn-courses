@@ -51,6 +51,16 @@ export const generateModalInterior = (reduxState) => {
                     mode="friend"
                 />
         );
+        case "SHOW_REQUESTS":
+            return (
+                <NameScheduleModalInterior
+                    buttonName="Request"
+                    existingData={Object.keys(
+                        reduxState.schedule.schedules
+                    )}
+                    mode="friend"
+                />
+        );
         case "WELCOME":
             return <WelcomeModalInterior />;
         case "MULTITAB":
@@ -90,6 +100,11 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
                 namingFunction: (newName) =>
                     dispatch(createScheduleOnFrontend(newName)),
             };
+        case "SHOW_REQUESTS":
+            return {
+                namingFunction: (newName) =>
+                    dispatch(createScheduleOnFrontend(newName)),
+            };    
         default:
             return {};
     }

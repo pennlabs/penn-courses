@@ -9,6 +9,7 @@ interface DropdownButton {
     onClick: () => void;
     makeActive: () => void;
     mutators: {
+        setPrimary: () => void;
         copy: () => void;
         remove: () => void;
         rename: () => void;
@@ -68,7 +69,7 @@ const DropdownButton = ({
     hasFriends,
     onClick,
     makeActive,
-    mutators: { copy, remove, rename },
+    mutators: { setPrimary, copy, remove, rename },
 }: DropdownButton) => (
     <DropdownButtonContainer
         role="button"
@@ -92,7 +93,11 @@ const DropdownButton = ({
         <ScheduleNameContainer>{text}</ScheduleNameContainer>
         <ScheduleOptionsContainer>
             {hasFriends && (
-                <div className="s-option-copy" role="button">
+                <div
+                    onClick={setPrimary}
+                    className="s-option-copy"
+                    role="button"
+                >
                     <Icon>
                         <i className="far fa-user" aria-hidden="true" />
                     </Icon>
@@ -124,11 +129,13 @@ interface ScheduleSelectorDropdownProps {
         onClick: () => void;
     }[];
     mutators: {
+        setPrimary: (scheduleName: string) => void;
         copy: (scheduleName: string) => void;
         remove: (scheduleName: string) => void;
+        rename: (oldName: string) => void;
         createSchedule: () => void;
         addFriend: () => void;
-        rename: (oldName: string) => void;
+        showRequests: () => void;
     };
 }
 
@@ -267,7 +274,15 @@ const PendingRequests = styled.a`
 const ScheduleSelectorDropdown = ({
     activeName,
     contents,
-    mutators: { copy, remove, rename, createSchedule, addFriend },
+    mutators: {
+        setPrimary,
+        copy,
+        remove,
+        rename,
+        createSchedule,
+        addFriend,
+        showRequests,
+    },
 }: ScheduleSelectorDropdownProps) => {
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -317,6 +332,7 @@ const ScheduleSelectorDropdown = ({
                                 onClick={onClick}
                                 text={scheduleName}
                                 mutators={{
+                                    setPrimary: () => setPrimary(scheduleName),
                                     copy: () => copy(scheduleName),
                                     remove: () => remove(scheduleName),
                                     rename: () => rename(scheduleName),
@@ -360,7 +376,11 @@ const ScheduleSelectorDropdown = ({
                             </Icon>
                             <span> Add new friend </span>
                         </AddNew>
-                        <PendingRequests role="button" href="#">
+                        <PendingRequests
+                            onClick={showRequests}
+                            role="button"
+                            href="#"
+                        >
                             <span> Pending Share Requests </span>
                             <div>{numRequests}</div>
                         </PendingRequests>
