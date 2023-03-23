@@ -30,11 +30,12 @@ def get_course_objs():
     topics = (
         Topic.objects.filter(most_recent__semester="2023C")
         .select_related("most_recent")
-        .prefetch_related("most_recent__primary_listing__listing_set")
+        .prefetch_related("most_recent__primary_listing__listing_set__sections__instructors")
     )
     for topic in topics:
         course = topic.most_recent
         crosslistings = ", ".join([c.full_code for c in course.crosslistings])
+        instructors = ", ".join({instructor.name for s in course.sections.all() for instructor in s.instructors.all()})
         course_qs = Course.objects.filter(pk=course.pk)
         course_qs = annotate_average_and_recent(
             course_qs,
@@ -50,6 +51,7 @@ def get_course_objs():
             "code": course.full_code.replace("-", " "),
             "title": course.title,
             "crosslistings": crosslistings,
+            "instructors": instructors,
             "description": course.description,
             "semester": course.semester,
             "course_quality": avg_reviews["rCourseQuality"]
@@ -67,6 +69,7 @@ def initialize_schema():
     schema = (
         TextField("$.code", as_name="code", weight=2, no_stem=True),
         TextField("$.crosslistings", as_name="crosslistings", weight=2, no_stem=True),
+        TextField("$.instructors", as_name="instructors", no_stem=True, phonetic_matcher="dm:en"),
         TextField("$.title", as_name="title", weight=2),
         TextField("$.description", as_name="description"),
         TextField("$.semester", as_name="semester", no_stem=True),
