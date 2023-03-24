@@ -526,9 +526,30 @@ export const fetchBackendFriends = () => (dispatch) => {
         .catch((error) => console.log(error));
 };
 
+export const doAccountsRequest = (path, options = {}) =>
+    fetch(`/accounts${path}`, options);
+
 export const sendFriendRequest = (pennkey) => {
-    doAPIRequest(`/accounts/user/${pennkey}`)
-        .then((res) => console.log(res));
+    doAccountsRequest(`/user/${pennkey}/`).then((res) => {
+        const pennIdObj = {
+            friend_id: res.pennid
+        };
+
+        const init = {
+            method: "POST",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
+            body: JSON.stringify(pennIdObj),
+        }
+        doAPIRequest("/base/friendship/", init).then((res) => {
+            console.log(res)
+        })
+    })
 };
 
 /**
