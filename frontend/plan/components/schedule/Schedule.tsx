@@ -30,6 +30,7 @@ interface ScheduleProps {
     removeSection: (idDashed: string) => void;
     focusSection: (id: string) => void;
     scheduleNames: string[];
+    friendNames: string[];
     switchSchedule: (scheduleName: string) => void;
     schedulesMutator: {
         setPrimary: (scheduleName: string) => void;
@@ -139,6 +140,7 @@ class Schedule extends Component {
             removeSection,
             focusSection,
             scheduleNames,
+            friendNames,
             switchSchedule,
             schedulesMutator,
             activeScheduleName,
@@ -289,6 +291,7 @@ class Schedule extends Component {
                             text: scheduleName,
                             onClick: () => switchSchedule(scheduleName),
                         }))}
+                        
                         mutators={schedulesMutator}
                     />
                 </ScheduleDropdownHeader>
@@ -324,6 +327,7 @@ class Schedule extends Component {
 const mapStateToProps = (state: any) => ({
     schedData: state.schedule.schedules[state.schedule.scheduleSelected],
     scheduleNames: Object.keys(state.schedule.schedules),
+    friendNames: Object.keys(state.schedule.schedules),
     activeScheduleName: state.schedule.scheduleSelected,
 });
 

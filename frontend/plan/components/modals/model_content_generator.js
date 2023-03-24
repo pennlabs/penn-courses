@@ -97,8 +97,8 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             };
         case "ADD_FRIEND":
             return {
-                namingFunction: (newName) =>
-                    dispatch(createScheduleOnFrontend(newName)),
+                namingFunction: (pennkey) =>
+                    dispatch(createFriendOnFrontend(pennkey)),
             };
         case "SHOW_REQUESTS":
             return {

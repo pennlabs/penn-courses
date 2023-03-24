@@ -12,7 +12,6 @@ const coursePlanApp = combineReducers({
     modals,
     filters,
     login,
-    friends,
 });
 
 export default coursePlanApp;

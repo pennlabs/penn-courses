@@ -65,6 +65,9 @@ export const ATTEMPT_DELETION = "ATTEMPT_DELETION";
 export const ATTEMPT_SCHEDULE_CREATION = "ATTEMPT_SCHEDULE_CREATION";
 export const UNSUCCESSFUL_SCHEDULE_CREATION = "UNSUCCESSFUL_SCHEDULE_CREATION";
 
+// Backend friends
+export const UPDATE_FRIENDS = "UPDATE_FRIENDS";
+
 export const markScheduleSynced = (scheduleName) => ({
     scheduleName,
     type: MARK_SCHEDULE_SYNCED,
@@ -467,6 +470,11 @@ export const updateSchedules = (schedulesFromBackend) => ({
     schedulesFromBackend,
 });
 
+export const updateFriends = (friendsFromBackend) => ({
+    type: UPDATE_FRIENDS,
+    friendsFromBackend,
+});
+
 let lastFetched = 0;
 /**
  * Ensure that fetches don't happen too frequently by requiring that it has been 250ms
@@ -504,6 +512,24 @@ export function fetchCourseDetails(courseId) {
             .catch((error) => dispatch(sectionInfoSearchError(error)));
     };
 }
+
+/**
+ * Pulls user's friends from the backend
+ * @returns {Function}
+ */
+export const fetchBackendFriends = () => (dispatch) => {
+    doAPIRequest("/base/friendship")
+        .then((res) => res.json())
+        .then((friends) => {
+            dispatch(updateFriends(friends));
+        })
+        .catch((error) => console.log(error));
+};
+
+export const sendFriendRequest = (pennkey) => {
+    doAPIRequest(`/accounts/user/${pennkey}`)
+        .then((res) => console.log(res));
+};
 
 /**
  * Pulls schedules from the backend
@@ -640,7 +666,7 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
         });
 };
 
-export const addFriendOnBackend = id => (dispatch) => {
+export const addFriendOnBackend = (id) => (dispatch) => {
     dispatch(creationAttempted(name));
     rateLimitedFetch("/base/friendship/", {
         method: "POST",
@@ -652,7 +678,7 @@ export const addFriendOnBackend = id => (dispatch) => {
             "X-CSRFToken": getCsrf(),
         },
         body: JSON.stringify({
-            id
+            id,
         }),
     })
         .then((response) => response.json())

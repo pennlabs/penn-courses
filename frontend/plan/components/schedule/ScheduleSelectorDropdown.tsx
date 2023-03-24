@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Icon } from "../bulma_derived_components";
 
+import { fetchBackendFriends, sendFriendRequest } from "../../actions/index.js";
+
 interface DropdownButton {
     isActive: boolean;
     text: string;
@@ -289,6 +291,11 @@ const ScheduleSelectorDropdown = ({
     const [hasFriends, setHasFriends] = useState(false);
     const [numRequests, setNumRequests] = useState(2);
     const [primarySelected, setPrimarySelected] = useState(false);
+
+    useEffect(() => {
+        fetchBackendFriends();
+        sendFriendRequest("liuamy05")
+      });
 
     useEffect(() => {
         const listener = (event: Event) => {
