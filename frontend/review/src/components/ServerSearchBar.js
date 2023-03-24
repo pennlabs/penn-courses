@@ -54,20 +54,7 @@ class ServerSearchBar extends Component {
           url: `/course/${course.code}`,
       }));
       this.setState({ autocompleteOptions: options });
-    }).finally(
-      this.setState({ 
-        autocompleteOptions: [{
-          code: "CSE 120",
-          title: "Introduction to Computer Systems",
-          semester: "Fall 2019",
-          quality: 2.5,
-          difficulty: 3.5,
-          workRequired: 4.0,
-          url: "/course/CSE-120",
-          description: "This course is an introduction to computer systems, including the hardware and software components of modern computers. Topics include: computer architecture, assembly language programming, operating systems, and networking. Students will learn to program in C and x86 assembly language, and will gain experience with the Linux operating system. Students will also learn to use the Internet and the World Wide Web, and will learn about the security and privacy issues associated with these technologies. This course is intended for students who have not taken CSE 100 or CSE 101. Prerequisite: CSE 30 or equivalent.",
-        }]
-      })
-    )
+    })
   }
 
   // Hack to modify the handler to set the first option as the most relevant option
