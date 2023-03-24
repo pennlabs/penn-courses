@@ -7,6 +7,7 @@ import fuzzysort from "fuzzysort";
 import { apiSearch } from "../utils/api";
 import { CoursePreview } from "./CoursePreview";
 
+
 // Takes in a course (ex: CIS 160) and returns various formats (ex: CIS-160, CIS 160, CIS160).
 function expandCombo(course) {
   const a = course.split(" ");
@@ -49,21 +50,13 @@ class ServerSearchBar extends Component {
     this.setState({ searchValue: inputValue });
     return apiSearch(inputValue).then(courses => {
       const options = removeDuplicates(courses).map(course => ({
-          label: course.title,
-          value: course.title,
-          code: course.code, 
-          crosslistings: course.crosslistings,
-          semester: course.semester,
-          quality: course.course_quality,
-          difficulty: course.difficulty,
-          workRequired: course.work_required,
-          description: course.description,
-          url: `/course/${course.code}`, // add extra fields
+          ...course,
+          url: `/course/${course.code}`,
       }));
       this.setState({ autocompleteOptions: options });
-    }).finally(() => {
-      // TODO: remove
-      this.setState({ autocompleteOptions: [{
+    }).finally(
+      this.setState({ 
+        autocompleteOptions: [{
           code: "CSE 120",
           title: "Introduction to Computer Systems",
           semester: "Fall 2019",
@@ -72,8 +65,9 @@ class ServerSearchBar extends Component {
           workRequired: 4.0,
           url: "/course/CSE-120",
           description: "This course is an introduction to computer systems, including the hardware and software components of modern computers. Topics include: computer architecture, assembly language programming, operating systems, and networking. Students will learn to program in C and x86 assembly language, and will gain experience with the Linux operating system. Students will also learn to use the Internet and the World Wide Web, and will learn about the security and privacy issues associated with these technologies. This course is intended for students who have not taken CSE 100 or CSE 101. Prerequisite: CSE 30 or equivalent.",
-        }]})
-    });
+        }]
+      })
+    )
   }
 
   // Hack to modify the handler to set the first option as the most relevant option
@@ -95,6 +89,10 @@ class ServerSearchBar extends Component {
     const maxWidth = this.props.isTitle ? 800 : 900;
     const coursePreviews = this.state.autocompleteOptions.map(course => (
       <CoursePreview 
+      onClick={() => {
+        console.log("hello")
+        this.handleChange(course)
+      }}
       course={course} 
       style={{ margin: "10px 0 0 0", backgroundColor: "#ffffff" }}
       />
@@ -215,7 +213,7 @@ class ServerSearchBar extends Component {
               }),
               menu: styles => ({
                 ...styles,
-                display: "none"
+                display: this.props.isTitle ? "none" : null
               })
             }}
           />

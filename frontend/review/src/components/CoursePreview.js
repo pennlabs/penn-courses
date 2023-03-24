@@ -1,7 +1,7 @@
 import React from "react";
 import { RatingBox } from "./RatingBox";
 
-export function CoursePreview({ course, style }) {
+export function CoursePreview({ course, style, onClick }) {
     return (
       <div
       style={{
@@ -9,6 +9,7 @@ export function CoursePreview({ course, style }) {
       boxShadow: "0 0 14px 0 rgba(0, 0, 0, 0.07)",
       padding: "10px 10px 10px 10px",
       }}
+      onClick={onClick}
       >
         <div
         style={{
