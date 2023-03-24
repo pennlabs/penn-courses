@@ -212,6 +212,10 @@ class ServerSearchBar extends Component {
                 ...styles,
                 whiteSpace: "nowrap",
                 color: "#b2b2b2"
+              }),
+              menu: styles => ({
+                ...styles,
+                display: "none"
               })
             }}
           />
