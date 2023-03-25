@@ -48,7 +48,7 @@ export class MyChart extends PennLabsChart {
       ingressProps: {
         annotations: { ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';" },
       },
-      domains: [],
+      domains: [{ host: 'penncoursereview.com', paths: ["/api/ws"] }],
     });
 
     new ReactApplication(this, 'landing', {
