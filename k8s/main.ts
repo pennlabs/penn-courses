@@ -37,6 +37,20 @@ export class MyChart extends PennLabsChart {
       { host: 'penncoursereview.com', paths: ["/api", "/admin", "/accounts", "/assets"] }],
     });
 
+    new DjangoApplication(this, 'backend-asgi', {
+      deployment: {
+        image: backendImage,
+        secret,
+        replicas: 1,
+      },
+      cmd: ['/usr/local/bin/asgi-run'],
+      djangoSettingsModule: 'PennCourses.settings.production',
+      ingressProps: {
+        annotations: { ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';" },
+      },
+      domains: [],
+    });
+
     new ReactApplication(this, 'landing', {
       deployment: {
         image: 'pennlabs/pcx-landing',
