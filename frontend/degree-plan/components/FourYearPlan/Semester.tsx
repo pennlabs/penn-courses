@@ -17,7 +17,7 @@ const semesterCardStyle = {
     borderWidth: '0px',
     padding: '15px'
 }
-const Semester = ({semester, addCourse, index} : any) => {
+const Semester = ({semester, addCourse, index, removeCourseFromSem} : any) => {
 
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
@@ -26,15 +26,19 @@ const Semester = ({semester, addCourse, index} : any) => {
           isOver: !!monitor.isOver()
         }),
       }), [])
+
+    const removeCourse = (course: any) => {
+        removeCourseFromSem(index, course);
+    }
     
     return (
         <>
             <div className="card col-5 m-3" style={semesterCardStyle} ref={drop}>
-                <h5 className="mt-1 mb-1">
+                <div className="mt-1 ms-2 mb-1" style={{fontWeight:500}}>
                     {semester.name}
-                </h5>
+                </div>
                 <div>
-                    <CoursesPlanned courses={semester.courses} semesterIndex={index}/>
+                    <CoursesPlanned courses={semester.courses} semesterIndex={index} removeCourse={removeCourse}/>
                 </div>
             </div>
         </>

@@ -1,4 +1,4 @@
-import Head from 'next/head'
+import Head from 'next/document'
 import Image from 'next/image'
 import { Inter } from 'next/font/google'
 import styles from '@/styles/Home.module.css'
@@ -14,15 +14,9 @@ const inter = Inter({ subsets: ['latin'] })
 export default function Home() {
   return (
     <>  
-      <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="Penn Degree Plan by Penn Labs" />
-      </Head>
-      {/* <main className={styles.main}> */}
-              <DndProvider backend={HTML5Backend}>
-                <MainPage />
-              </DndProvider>
-      {/* </main> */}
+        <DndProvider backend={HTML5Backend}>
+          <MainPage />
+        </DndProvider>
     </>
   )
 }

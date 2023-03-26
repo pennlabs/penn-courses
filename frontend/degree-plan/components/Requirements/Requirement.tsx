@@ -4,13 +4,13 @@
 
 import Course from "./Course";
 
-const Requirement = ({req} : any) => {
+const Requirement = ({requirement} : any) => {
     return (
         <div>
-            <label className="mb-2" style={{fontWeight: 250}}>{req.name}</label>
+            <label className="mb-2" style={{fontWeight: 500, color: '#575757'}}>{requirement.name}</label>
             <div className="ms-2">
-                {req.courses.map((course: any) => 
-                <Course course={course}/>)}
+                {requirement.topics.map((course: any, index: number) => 
+                <Course key={index} course={course}/>)}
             </div>
         </div>
     )

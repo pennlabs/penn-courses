@@ -13,20 +13,13 @@ const majorTitleStyle = {
 
 const Major = ({major, editMode, index, moveMajor}: any) => {
     const [collapsed, setCollapsed] = useState(false);
-    // const [canDrag, setCanDrag] = useState(editMode);
     let ref = useRef<HTMLInputElement>(null);
 
-    // useEffect(() => {
-    //     setCanDrag(editMode);
-    //     console.log(canDrag);
-    // }, [editMode]);
-
-    const [{ handlerId }, drop] = useDrop(
+    const [{ opacity }, drop] = useDrop(
         () => ({
           accept: ItemTypes.MAJOR,
           collect: (monitor) => ({
-            isOver: !!monitor.isOver(),
-            handlerId: monitor.getHandlerId()
+            opacity: !!monitor.isOver() ? 0 : 1
           }),
           hover(item: any, monitor) {
             if (!ref.current) {
@@ -38,46 +31,23 @@ const Major = ({major, editMode, index, moveMajor}: any) => {
             if (dragIndex === hoverIndex) {
               return
             }
-            // Determine rectangle on screen
-            const hoverBoundingRect = ref.current?.getBoundingClientRect()
-            // Get vertical middle
-            const hoverMiddleY =
-              (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
-            // Determine mouse position
-            const clientOffset = monitor.getClientOffset()
-            // Get pixels to the top
-            const hoverClientY = clientOffset!.y - hoverBoundingRect.top
-            // Only perform the move when the mouse has crossed half of the items height
-            // When dragging downwards, only move when the cursor is below 50%
-            // When dragging upwards, only move when the cursor is above 50%
-            // Dragging downwards
-            if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
-              return
-            }
-            // Dragging upwards
-            if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
-              return
-            }
             // Time to actually perform the action
             moveMajor(dragIndex, hoverIndex)
-            // Note: we're mutating the monitor item here!
-            // Generally it's better to avoid mutations,
-            // but it's good here for the sake of performance
-            // to avoid expensive index searches.
+            // mutate the monitor item for the sake of performance to avoid expensive index searches
             item.index = hoverIndex
           }
         }),
         []
       )
     /** React dnd */
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging}, drag] = useDrag(() => ({
         type: ItemTypes.MAJOR,
         item: () => {
             return { index }
           },
         canDrag: editMode,
         collect: (monitor) => ({
-          isDragging: false // editMode && !!monitor.isDragging(),
+          isDragging: !!monitor.isDragging()
         })
       }),[editMode])
       
@@ -95,16 +65,18 @@ const Major = ({major, editMode, index, moveMajor}: any) => {
 
     drag(drop(ref))
     return(
-        <>  
-            <div
-                ref={ref}
-                style={{
-                    opacity: isDragging ? 0.5 : 1,
-                    cursor: 'move',
-                }}
-                >
-                <label className='col-12'>
-                    <div style={{backgroundColor:"#DBE2F5", padding:'5px', paddingLeft:'10px', borderRadius:'12px'}}>
+      <>
+            <div style={{borderRadius:'12px'}}>
+                <div className='col-12' ref={ref} style={{
+                    opacity: opacity,
+                    backgroundColor:'#F2F2F2', 
+                    fontSize:'16px', 
+                    padding:'5px', 
+                    paddingLeft:'10px', 
+                    borderRadius:'12px',
+                    margin:'2px'
+                  }}>
+                    <div>
                         <label onMouseDown={handleCollapse} className="d-flex justify-content-between">
                             <div style={{borderWidth:'5px'}}>{major.name}</div>
                             {editMode ? 
@@ -116,10 +88,11 @@ const Major = ({major, editMode, index, moveMajor}: any) => {
                                 }
                         </label>
                     </div>
-                    <div className='m-2'>
-                        {major.reqs.map((req: any) => (!collapsed && <Requirement req={req}/>))}
-                    </div>
-                </label>
+                </div>
+                {!collapsed &&
+                <div className='m-2'>
+                    {major.requirements.map((requirement: any) => ( <Requirement key={requirement.id} requirement={requirement}/>))}
+                </div>}
             </div>
         </>
     )
