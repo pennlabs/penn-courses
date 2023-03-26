@@ -62,13 +62,13 @@ const InfoBox = ({
     rInstructorQuality: avgInstructorQuality,
     rCourseQuality: avgCourseQuality,
     rDifficulty: avgDifficulty,
-    rWorkRequired: avgWorkRequired,
+    rWorkRequired: avgWorkRequired
   } = average;
   const {
     rInstructorQuality: recentInstructorQuality,
     rCourseQuality: recentCourseQuality,
     rDifficulty: recentDifficulty,
-    rWorkRequired: recentWorkRequired,
+    rWorkRequired: recentWorkRequired
   } = recent;
   const hasReviews =
     avgInstructorQuality != null ||
