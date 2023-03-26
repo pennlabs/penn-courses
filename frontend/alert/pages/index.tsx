@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import usePlatformOptions from "pcx-shared-components/src/data-hooks/usePlatformOptions";
 import styled from "styled-components";
 import ReactGA from "react-ga";
@@ -133,8 +133,9 @@ const RecruitingBanner = styled.div`
 
 function App() {
     const router = useRouter();
+
     const [user, setUser] = useState<User | null>(null);
-    const [page, setPage] = useState("home");
+    const [page, setPage] = useState<string>("");
     const [messages, setMessages] = useState<
         { message: string; status: number; key: number }[]
     >([]);
@@ -144,6 +145,12 @@ function App() {
     const { options } = usePlatformOptions();
 
     const showRecruiting = options?.RECRUITING;
+
+    // update on router value updates as it fires multiple times, starting with null.
+    useEffect(() => {
+        // change page based on url route query. 
+        setPage(router.query.route ? router.query.route as string : "home");
+    }, [router.query.route])
 
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");

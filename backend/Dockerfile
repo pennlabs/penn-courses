@@ -14,5 +14,7 @@ COPY . /app/
 ENV DJANGO_SETTINGS_MODULE PennCourses.settings.production
 ENV SECRET_KEY 'temporary key just to build the docker image'
 
+COPY ./scripts/asgi-run /usr/local/bin/
+
 # Collect static files
 RUN python3 /app/manage.py collectstatic --noinput
