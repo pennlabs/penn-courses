@@ -35,7 +35,9 @@ def get_course_objs():
     for topic in topics:
         course = topic.most_recent
         crosslistings = ", ".join([c.full_code for c in course.crosslistings])
-        instructors = ", ".join({instructor.name for s in course.sections.all() for instructor in s.instructors.all()})
+        instructors = ", ".join(
+            {instructor.name for s in course.sections.all() for instructor in s.instructors.all()}
+        )
         course_qs = Course.objects.filter(pk=course.pk)
         course_qs = annotate_average_and_recent(
             course_qs,
