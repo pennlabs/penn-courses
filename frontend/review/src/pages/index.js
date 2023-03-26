@@ -4,4 +4,3 @@ export * from "./ErrorPage";
 export * from "./FAQPage";
 export * from "./CartPage";
 export * from "./ReviewPage";
-export * from "./SearchPage"

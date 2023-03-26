@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import SearchBar from "./SearchBar";
+import ServerSearchBar from "./ServerSearchBar";
 
 /**
  * The navigation bar at the top of the page, containing the logo, search bar, and cart icon.
@@ -27,7 +27,7 @@ const Navbar = () => {
         <Link to="/" title="Go to Penn Course Review Home">
           <div id="logo" />
         </Link>
-        <SearchBar />
+        <ServerSearchBar />
       </span>
       <span className="float-right">
         <Link to="/cart" id="cart-icon" title="Course Cart">
