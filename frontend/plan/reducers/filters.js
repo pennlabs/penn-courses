@@ -45,7 +45,8 @@ export const initialState = {
             U: true,
         },
         time: [1.5, 17],
-        fit_schedule: -1,
+        "schedule-fit": -1,
+        is_open: 0,
     },
     defaultReqs: null,
 };

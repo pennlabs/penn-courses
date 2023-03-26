@@ -41,6 +41,10 @@ django-runtime-options = "*"
 pyyaml = "*"
 uritemplate = "*"
 uwsgi = {version = "*", sys_platform = "== 'linux'"}
+uvloop = {version = "*", sys_platform = "== 'linux'"}
+gunicorn = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+httptools = "*"
 ddt = "*"
 lark-parser = "*"
 tqdm = "*"

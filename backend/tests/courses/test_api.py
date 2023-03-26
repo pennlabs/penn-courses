@@ -1253,15 +1253,15 @@ class DocumentationTestCase(TestCase):
         self.client = APIClient()
 
     def test_no_error(self):
-        response = self.client.get(reverse("openapi-schema"))
+        response = self.client.get(reverse("documentation"))
         self.assertEqual(response.status_code, 200)
 
     def test_no_error_multiple_times(self):
-        response = self.client.get(reverse("openapi-schema"))
+        response = self.client.get(reverse("documentation"))
         self.assertEqual(response.status_code, 200)
-        response = self.client.get(reverse("openapi-schema"))
+        response = self.client.get(reverse("documentation"))
         self.assertEqual(response.status_code, 200)
-        response = self.client.get(reverse("openapi-schema"))
+        response = self.client.get(reverse("documentation"))
         self.assertEqual(response.status_code, 200)
 
 
