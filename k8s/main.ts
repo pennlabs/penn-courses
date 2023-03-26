@@ -40,10 +40,10 @@ export class MyChart extends PennLabsChart {
     new DjangoApplication(this, 'backend-asgi', {
       deployment: {
         image: backendImage,
+        cmd: ['/usr/local/bin/asgi-run'],
         secret,
         replicas: 1,
       },
-      cmd: ['/usr/local/bin/asgi-run'],
       djangoSettingsModule: 'PennCourses.settings.production',
       ingressProps: {
         annotations: { ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';" },
