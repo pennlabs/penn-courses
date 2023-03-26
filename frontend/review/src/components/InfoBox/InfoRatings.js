@@ -8,7 +8,8 @@ const RatingRow = ({
   num_sections: numSections,
   course,
   instructor,
-  difficulty
+  difficulty,
+  work
 }) => {
   const numOrNA = num => (isNaN(num) ? "N/A" : num.toFixed(1));
   // TODO: After switching to styled-components or some other styling solution, refactor this code.
@@ -48,6 +49,10 @@ const RatingRow = ({
         <div className={`scorebox difficulty ${getColor(difficulty)}`}>
           <p className="num">{numOrNA(difficulty)}</p>
           <p className="desc">Difficulty</p>
+        </div>
+        <div className={`scorebox work ${getColor(work)}`}>
+          <p className="num">{numOrNA(work)}</p>
+          <p className="desc">Work</p>
         </div>
       </div>
     </div>
