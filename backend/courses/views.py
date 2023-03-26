@@ -410,11 +410,10 @@ class FriendshipView(generics.ListAPIView):
     we either delete the friendship request if the sender hits the route, or we reject the request if the recipient hits this route.
     """
     
-    model = Friendship
+    #  model = Friendship
+    serializer_class = FriendshipSerializer
     http_method_names = ["get", "post", "delete"]
     permission_classes = [IsAuthenticated]
-
-    serializer_class = FriendshipSerializer
 
     schema = PcxAutoSchema(
         response_codes={
@@ -438,10 +437,10 @@ class FriendshipView(generics.ListAPIView):
             reverse_func("friendship"): {
                 "DELETE": [
                     {
-                        "name": "friend_id",
+                        "name": "pennkey",
                         "in": "query",
-                        "description": "The ID of the user you are ending/rejecting your friendship/friend request with.",  # noqa E501
-                        "schema": {"type": "int"},
+                        "description": "The Pennkey of the user you are ending/rejecting your friendship/friend request with.",  # noqa E501
+                        "schema": {"type": "string"},
                         "required": True,
                     },
                 ]
@@ -452,9 +451,9 @@ class FriendshipView(generics.ListAPIView):
                 "POST": {
                     "type": "object",
                     "properties": {
-                        "friend_id": {
-                            "type": "int",
-                            "description": "The ID of the user you are sending a friend request to or handling a request from.",  # noqa E501
+                        "pennkey": {
+                            "type": "string",
+                            "description": "The Pennkey of the user you are sending a friend request to or handling a request from.",  # noqa E501
                             "required": True,
                         },
                     },
@@ -478,7 +477,7 @@ class FriendshipView(generics.ListAPIView):
     
     def post(self, request):
         sender = request.user
-        recipient = get_object_or_404(User, id=request.data.get("friend_id"))
+        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
 
         existing_friendship = self.get_all_friendships().filter(
             Q(recipient=recipient) | Q(sender=recipient)
@@ -511,7 +510,7 @@ class FriendshipView(generics.ListAPIView):
         # either deletes a friendship or cancels/rejects a friendship request (depends on who sends the request)
         res = {}
         sender = request.user
-        recipient = get_object_or_404(User, id=request.data.get("friend_id"))
+        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
 
 
         existing_friendship = self.get_all_friendships().filter(
