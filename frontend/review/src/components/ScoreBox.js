@@ -108,8 +108,7 @@ class ScoreBox extends Component {
 
   generateColumns() {
     const { data: results, liveData, type } = this.props;
-    console.log(this.state.currentInstructors);
-    
+
     const columns = {};
     const isCourse = type === "course";
     const isInstructor = type === "instructor";
