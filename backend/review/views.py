@@ -745,16 +745,16 @@ def quick_search(request):
     """
     Completes quick search.
     """
-    redis_client = redis.from_url(settings.REDIS_URL)
-    text_query = request.query_params.get("q")
-    course_quality = 0 or request.query_params.get("course_quality")
-    course_difficulty = 4 or request.query_params.get("course_difficulty")
-    work_required = 4 or request.query_params.get("work_required")
+    r = redis.Redis().from_url(settings.REDIS_URL)
+    text_query = request.query_params.get("query")
+    course_quality = request.query_params.get("course_quality", 0)
+    course_difficulty = request.query_params.get("course_difficulty", 4)
+    work_required = request.query_params.get("work_required", 4)
     
     # filters
-    search_term = Query(text_query).add_filter(NumericFilter("course_quality", 0.0, course_quality)) \
+    search_term = Query(text_query).add_filter(NumericFilter("course_quality", course_quality, 4)) \
         .add_filter(NumericFilter("work_required", 0, work_required)) \
         .add_filter(NumericFilter("course_difficulty", 0, course_difficulty))
 
-    results = redis_client.ft("courses").search(search_term)
+    results = r.ft("courses").search(search_term)
     return Response(results)
