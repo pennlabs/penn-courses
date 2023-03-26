@@ -6,7 +6,7 @@ import { withRouter } from "react-router-dom";
 import fuzzysort from "fuzzysort";
 import { apiSearch } from "../utils/api";
 import { CoursePreview } from "./CoursePreview";
-
+import { debounce } from 'lodash'
 
 // Takes in a course (ex: CIS 160) and returns various formats (ex: CIS-160, CIS 160, CIS160).
 function expandCombo(course) {
@@ -43,12 +43,14 @@ class ServerSearchBar extends Component {
     this.autocompleteCallback = this.autocompleteCallback.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.setFocusedOption = this.setFocusedOption.bind(this);
+    this.debouncedApiSearch = debounce(apiSearch, 250, { leading: true })
   }
 
   // Called each time the input value inside the searchbar changes
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
-    return apiSearch(inputValue).then(courses => {
+    if (inputValue.length < 3) return;
+    return this.debouncedApiSearch(inputValue).then(courses => {
       const options = removeDuplicates(courses).map(course => ({
           ...course,
           url: `/course/${course.code}`,
