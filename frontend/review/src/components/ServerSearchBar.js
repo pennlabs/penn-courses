@@ -73,7 +73,7 @@ class ServerSearchBar extends Component {
     const width = this.props.isTitle
                 ? "calc(100vw - 60px)"
                 : "calc(100vw - 200px)";
-    const maxWidth = this.props.isTitle ? 800 : 900;
+    const maxWidth = this.props.isTitle ? 800 : 514;
     const coursePreviews = this.state.autocompleteOptions.map(course => (
       <CoursePreview 
       onClick={() => {
@@ -86,11 +86,14 @@ class ServerSearchBar extends Component {
     )) 
 
     return (
-      <div style={{ ...this.props.style }}>
-        <div id="search" 
+      <div 
+      id="search"
+      style={{ ...this.props.style }}
+      >
+        <div 
         style={{ 
           margin: "0 auto",
-          height: this.props.isTitle ? 58 : null
+          height: this.props.isTitle ? 58 : 37
         }}
         >
           <AsyncSelect
