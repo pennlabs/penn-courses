@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from alert.management.commands.recomputestats import recompute_has_reviews
-from courses.util import get_current_semester
+from courses.util import get_current_semester, translate_semester_inv
 from PennCourses.settings.base import S3_client
 from review.import_utils.import_to_db import (
     import_description_rows,
@@ -59,6 +59,16 @@ class Command(BaseCommand):
             action="store_true",
             dest="import_all",
             help="Import reviews from all semesters in the dump files.",
+        )
+
+        parser.add_argument(
+            "-b"
+            "--banner-semesters",
+            action="store_true",
+            help="""
+            Expect semesters in the banner form (e.g., "202210", "202220", "202230") rather than "2022A" etc.
+            Semesters in banner form will be automatically converted to "20XXX[ABC]" form.
+            """
         )
 
         summary = parser.add_mutually_exclusive_group()
@@ -155,6 +165,7 @@ class Command(BaseCommand):
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
         force = kwargs["force"]
+        banner_semesters = ["banner_semesters"]
 
         if src is None:
             raise CommandError("source directory or zip must be defined.")
@@ -217,6 +228,9 @@ class Command(BaseCommand):
                 print(f"Filtered {full_len} rows down to {filtered_len} rows.")
 
             semesters = sorted(list({r["TERM"] for r in summary_rows}))
+            if banner_semesters:
+                semesters = [translate_semester_inv(semester) for semester in semesters]
+
             gc.collect()
             to_delete = Review.objects.filter(section__course__semester__in=semesters)
             delete_count = to_delete.count()
@@ -237,7 +251,7 @@ class Command(BaseCommand):
                 to_delete.delete()
 
             print(f"Importing reviews for semester(s) {', '.join(semesters)}")
-            stats = import_summary_rows(summary_rows, show_progress_bar)
+            stats = import_summary_rows(summary_rows, show_progress_bar, banner_semesters=banner_semesters)
             print(stats)
 
             gc.collect()

@@ -10,6 +10,7 @@ from courses.util import (
     get_or_create_course_and_section,
     merge_instructors,
     separate_course_code,
+    translate_semester_inv
 )
 from review.models import COLUMN_TO_SLUG, CONTEXT_TO_SLUG, Review, ReviewBit
 from review.util import titleize
@@ -133,7 +134,7 @@ def import_review(section, instructor, enrollment, responses, form_type, bits, s
     stat("reviewbit_created_count", len(review_bits))
 
 
-def import_summary_row(row, stat):
+def import_summary_row(row, stat, banner_semesters=False):
     # Import instructor.
     pennid = row.get("INSTRUCTOR_PENN_ID")
     firstname = row.get("INSTRUCTOR_FNAME", "")
@@ -144,6 +145,9 @@ def import_summary_row(row, stat):
     # Import course and section.
     full_course_code = row.get("SECTION_ID")
     semester = row.get("TERM")
+    if banner_semesters:
+        semester = translate_semester_inv(semester)
+
     if full_course_code is None:
         stat("no_course_code")
         return
@@ -270,14 +274,14 @@ def gen_stat(stats):
     return stat
 
 
-def import_summary_rows(summaries, show_progress_bar=True):
+def import_summary_rows(summaries, show_progress_bar=True, banner_semesters=False):
     """
     Imports summary rows given a summaries list.
     """
     stats = dict()
     stat = gen_stat(stats)
     for row in tqdm(summaries, disable=(not show_progress_bar)):
-        import_summary_row(row, stat)
+        import_summary_row(row, stat, banner_semesters=banner_semesters)
     return stats
 
 
