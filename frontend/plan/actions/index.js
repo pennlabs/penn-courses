@@ -530,9 +530,8 @@ export const doAccountsRequest = (path, options = {}) =>
     fetch(`/accounts${path}`, options);
 
 export const sendFriendRequest = (pennkey) => {
-    doAccountsRequest(`/user/${pennkey}/`).then((res) => {
-        const pennIdObj = {
-            friend_id: res.pennid
+    const pennIdObj = {
+            friend_id: pennkey
         };
 
         const init = {
@@ -547,9 +546,15 @@ export const sendFriendRequest = (pennkey) => {
             body: JSON.stringify(pennIdObj),
         }
         doAPIRequest("/base/friendship/", init).then((res) => {
-            console.log(res)
+            if (res.status == 200) {
+                
+            } else if (res.status == 201) {
+
+            } else if (res.status == 409) {
+
+            }
         })
-    })
+    
 };
 
 /**

@@ -294,7 +294,7 @@ const ScheduleSelectorDropdown = ({
 
     useEffect(() => {
         fetchBackendFriends();
-        sendFriendRequest("liuamy05")
+        sendFriendRequest("wharton")
       });
 
     useEffect(() => {
