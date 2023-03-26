@@ -86,7 +86,7 @@ const InnerBlock = styled.div`
     flex-direction: column;
     width: 100%;
     height: 100%;
-    font-size: 0.9em;
+    font-size: 0.85em;
 
     & > span {
         cursor: pointer;
