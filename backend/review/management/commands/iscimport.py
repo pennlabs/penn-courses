@@ -62,7 +62,7 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "-b"
+            "-b",
             "--banner-semesters",
             action="store_true",
             help="""
@@ -96,6 +96,18 @@ class Command(BaseCommand):
             "--import-details",
             action="store_true",
             help="import reviewbit details from the large RATING table.",
+        )
+        parser.add_argument(
+            "--force-review-from-details",
+            dest="force_review",
+            action="store_true",
+            help="""
+            Only applicable if --import-details is supplied.
+            Force Reviews to be created when importing ReviewBits from the details file.
+            The alternative (if this flag is not supplied) is to rely on Reviews created when
+            importing the summary file; Reviews and ReviewBits present in the detail file but not
+            present in the summary file would be ignored.
+            """
         )
         parser.add_argument(
             "--import-extra-crosslistings",
@@ -166,6 +178,7 @@ class Command(BaseCommand):
         show_progress_bar = kwargs["show_progress_bar"]
         force = kwargs["force"]
         banner_semesters = ["banner_semesters"]
+        force_review = kwargs["force_review"]
 
         if src is None:
             raise CommandError("source directory or zip must be defined.")
@@ -222,7 +235,11 @@ class Command(BaseCommand):
 
             if not import_all:
                 full_len = len(summary_rows)
-                summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
+                if banner_semesters:
+                    summary_rows = [r for r in summary_rows if translate_semester_inv(r["TERM"]) in semesters]
+                else:
+                    summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
+
                 gc.collect()
                 filtered_len = len(summary_rows)
                 print(f"Filtered {full_len} rows down to {filtered_len} rows.")
@@ -259,7 +276,8 @@ class Command(BaseCommand):
             if import_details:
                 print("Loading details file...")
                 stats = import_ratings_rows(
-                    *load_sql_dump(files[detail_idx]), semesters, show_progress_bar
+                    *load_sql_dump(files[detail_idx]), semesters, show_progress_bar,
+                    force_review=force_review, banner_semesters=banner_semesters
                 )
                 print(stats)
 

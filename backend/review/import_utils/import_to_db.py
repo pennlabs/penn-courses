@@ -188,7 +188,7 @@ def import_summary_row(row, stat, banner_semesters=False):
     stat("row_count")
 
 
-def import_ratings_row(row, stat):
+def import_ratings_row(row, stat, force_review=False, banner_semesters=False):
     context = row.get("CONTEXT_NAME")
     if context is None:
         stat("no_context_field")
@@ -213,6 +213,9 @@ def import_ratings_row(row, stat):
         stat("no_semester")
         return
 
+    if banner_semesters:
+        semester = translate_semester_inv(semester)
+
     course_title = titleize(row.get("TITLE", ""))
     course, section = import_course_and_section(
         full_course_code, semester, course_title, None, stat
@@ -221,12 +224,20 @@ def import_ratings_row(row, stat):
     if course is None or section is None:
         return
 
-    # ratings_row assumes that summary_row has already created a Review model for this review.
+    # ratings_row by default assumes that summary_row has already created a Review model for this review.
     try:
         review = Review.objects.get(section=section, instructor=inst)
     except Review.DoesNotExist:
+        # try to create the review if the force_review flag is passed
         stat("summary_missing")
-        return
+        if force_review:
+            review = Review.objects.create(
+                section=section,
+                instructor=inst
+            )
+            stat("review_created")  # NOTE: this stat will have the same value as summary_missing
+        else:
+            return
 
     field = CONTEXT_TO_SLUG.get(context)
     if field is None:
@@ -285,10 +296,13 @@ def import_summary_rows(summaries, show_progress_bar=True, banner_semesters=Fals
     return stats
 
 
-def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=True):
+def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=True,
+                        force_review=False, banner_semesters=False
+                        ):
     """
     Imports rating rows given an iterator ratings and total number of rows num_ratings.
     Optionally filter rows to import by semester with the given semesters list.
+    Optionally force creation of reviews if they do not exist (by default, this does not occur)
     """
     stats = dict()
     stat = gen_stat(stats)
@@ -296,7 +310,7 @@ def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=
         if i % 10000 == 0:
             gc.collect()
         if semesters is None or row["TERM"] in semesters:
-            import_ratings_row(row, stat)
+            import_ratings_row(row, stat, force_review=force_review, banner_semesters=banner_semesters)
     return stats
 
 
