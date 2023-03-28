@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from alert.management.commands.recomputestats import recompute_has_reviews
-from courses.util import get_current_semester, translate_semester_inv
+from courses.util import get_current_semester
 from PennCourses.settings.base import S3_client
 from review.import_utils.import_to_db import (
     import_description_rows,
@@ -19,6 +19,7 @@ from review.import_utils.parse_sql import load_sql_dump
 from review.management.commands.clearcache import clear_cache
 from review.models import Review
 
+from review.import_utils.parse_sql import RegularizeSemesterTransformer
 
 ISC_SUMMARY_TABLE = "TEST_PCR_SUMMARY_V"
 ISC_SUMMARY_HIST_TABLE = "TEST_PCR_SUMMARY_HIST_V"
@@ -59,16 +60,6 @@ class Command(BaseCommand):
             action="store_true",
             dest="import_all",
             help="Import reviews from all semesters in the dump files.",
-        )
-
-        parser.add_argument(
-            "-b",
-            "--banner-semesters",
-            action="store_true",
-            help="""
-            Expect semesters in the banner form (e.g., "202210", "202220", "202230") rather than "2022A" etc.
-            Semesters in banner form will be automatically converted to "20XXX[ABC]" form.
-            """
         )
 
         summary = parser.add_mutually_exclusive_group()
@@ -131,6 +122,10 @@ class Command(BaseCommand):
             "--force", action="store_true", help="Complete action in non-interactive mode."
         )
 
+        parser.add_argument(
+            "--regularize-term", action="store_true", help="regularize TERM fields from SQL dumps to 20XXc format"
+        )
+
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
 
     def get_files(self, src, is_zipfile, tables_to_get):
@@ -177,8 +172,8 @@ class Command(BaseCommand):
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
         force = kwargs["force"]
-        banner_semesters = ["banner_semesters"]
         force_review = kwargs["force_review"]
+        regularize_term = kwargs["regularize_term"]
 
         if src is None:
             raise CommandError("source directory or zip must be defined.")
@@ -229,24 +224,24 @@ class Command(BaseCommand):
 
             summary_fo = files[0]
             print("Loading summary file...")
-            summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
+            if regularize_term:
+                summary_rows = load_sql_dump(
+                    summary_fo, progress=show_progress_bar, lazy=False, T=RegularizeSemesterTransformer
+                )
+            else:
+                summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
             gc.collect()
             print("SQL parsed and loaded!")
 
             if not import_all:
                 full_len = len(summary_rows)
-                if banner_semesters:
-                    summary_rows = [r for r in summary_rows if translate_semester_inv(r["TERM"]) in semesters]
-                else:
-                    summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
+                summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
 
                 gc.collect()
                 filtered_len = len(summary_rows)
                 print(f"Filtered {full_len} rows down to {filtered_len} rows.")
 
             semesters = sorted(list({r["TERM"] for r in summary_rows}))
-            if banner_semesters:
-                semesters = [translate_semester_inv(semester) for semester in semesters]
 
             gc.collect()
             to_delete = Review.objects.filter(section__course__semester__in=semesters)
@@ -268,16 +263,19 @@ class Command(BaseCommand):
                 to_delete.delete()
 
             print(f"Importing reviews for semester(s) {', '.join(semesters)}")
-            stats = import_summary_rows(summary_rows, show_progress_bar, banner_semesters=banner_semesters)
+            stats = import_summary_rows(summary_rows, show_progress_bar)
             print(stats)
 
             gc.collect()
 
             if import_details:
                 print("Loading details file...")
+                if regularize_term:
+                    dump = load_sql_dump(files[detail_idx], T=RegularizeSemesterTransformer)
+                else:
+                    dump = load_sql_dump(files[detail_idx])
                 stats = import_ratings_rows(
-                    *load_sql_dump(files[detail_idx]), semesters, show_progress_bar,
-                    force_review=force_review, banner_semesters=banner_semesters
+                    *dump, semesters, show_progress_bar, force_review=force_review
                 )
                 print(stats)
 

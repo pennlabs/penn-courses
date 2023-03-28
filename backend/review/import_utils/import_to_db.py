@@ -10,7 +10,6 @@ from courses.util import (
     get_or_create_course_and_section,
     merge_instructors,
     separate_course_code,
-    translate_semester_inv
 )
 from review.models import COLUMN_TO_SLUG, CONTEXT_TO_SLUG, Review, ReviewBit
 from review.util import titleize
@@ -30,7 +29,6 @@ more granular unit tests.
 """
 
 User = get_user_model()
-
 
 def filter_by_term(rows, semesters, semester_key="TERM"):
     return [row for row in rows if row[semester_key] in semesters]
@@ -134,7 +132,7 @@ def import_review(section, instructor, enrollment, responses, form_type, bits, s
     stat("reviewbit_created_count", len(review_bits))
 
 
-def import_summary_row(row, stat, banner_semesters=False):
+def import_summary_row(row, stat):
     # Import instructor.
     pennid = row.get("INSTRUCTOR_PENN_ID")
     firstname = row.get("INSTRUCTOR_FNAME", "")
@@ -145,8 +143,6 @@ def import_summary_row(row, stat, banner_semesters=False):
     # Import course and section.
     full_course_code = row.get("SECTION_ID")
     semester = row.get("TERM")
-    if banner_semesters:
-        semester = translate_semester_inv(semester)
 
     if full_course_code is None:
         stat("no_course_code")
@@ -188,7 +184,7 @@ def import_summary_row(row, stat, banner_semesters=False):
     stat("row_count")
 
 
-def import_ratings_row(row, stat, force_review=False, banner_semesters=False):
+def import_ratings_row(row, stat, force_review=False):
     context = row.get("CONTEXT_NAME")
     if context is None:
         stat("no_context_field")
@@ -212,9 +208,6 @@ def import_ratings_row(row, stat, force_review=False, banner_semesters=False):
     if semester is None:
         stat("no_semester")
         return
-
-    if banner_semesters:
-        semester = translate_semester_inv(semester)
 
     course_title = titleize(row.get("TITLE", ""))
     course, section = import_course_and_section(
@@ -267,6 +260,7 @@ def import_ratings_row(row, stat, force_review=False, banner_semesters=False):
     )
 
     stat("detail_count")
+    return True
 
 
 def gen_stat(stats):
@@ -285,19 +279,19 @@ def gen_stat(stats):
     return stat
 
 
-def import_summary_rows(summaries, show_progress_bar=True, banner_semesters=False):
+def import_summary_rows(summaries, show_progress_bar=True):
     """
     Imports summary rows given a summaries list.
     """
     stats = dict()
     stat = gen_stat(stats)
     for row in tqdm(summaries, disable=(not show_progress_bar)):
-        import_summary_row(row, stat, banner_semesters=banner_semesters)
+        import_summary_row(row, stat)
     return stats
 
 
 def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=True,
-                        force_review=False, banner_semesters=False
+                        force_review=False
                         ):
     """
     Imports rating rows given an iterator ratings and total number of rows num_ratings.
@@ -310,7 +304,7 @@ def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=
         if i % 10000 == 0:
             gc.collect()
         if semesters is None or row["TERM"] in semesters:
-            import_ratings_row(row, stat, force_review=force_review, banner_semesters=banner_semesters)
+            import_ratings_row(row, stat, force_review=force_review)
     return stats
 
 
