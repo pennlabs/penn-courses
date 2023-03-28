@@ -45,6 +45,20 @@ semester_suffix_map = {
 }
 semester_suffix_map_inv = {v: k for k, v in semester_suffix_map.items()}
 
+def is_native_semester(semester):
+    """
+    Returns True if the semester is of the form "2022C"
+    """
+    old_suffix = semester[-1].upper()
+    return old_suffix in semester_suffix_map
+
+def is_opendata_semester(semester):
+    """
+    Return True if the semester is of the form "202210" (ie,
+    what is used by the new OpenData API.
+    """
+    new_suffix = semester[-2:]
+    return new_suffix in semester_suffix_map_inv
 
 def translate_semester(semester):
     """
@@ -54,7 +68,7 @@ def translate_semester(semester):
     if not semester:
         return None
     old_suffix = semester[-1].upper()
-    if old_suffix not in semester_suffix_map:
+    if not is_native_semester(semester):
         raise ValueError(
             f"Invalid semester suffix {old_suffix} (semester must have "
             "suffix A, B, or C; e.g. '2022C')."
@@ -70,12 +84,23 @@ def translate_semester_inv(semester):
     if not semester:
         return None
     new_suffix = semester[-2:]
-    if new_suffix not in semester_suffix_map_inv:
+    if not is_opendata_semester(semester):
         raise ValueError(
             f"Invalid semester suffix {new_suffix} (semester must have "
             "suffix '10', '20', or '30'; e.g. '202230')."
         )
     return semester[:-2] + semester_suffix_map_inv[new_suffix]
+
+
+def regularize_semester(semester):
+    """
+    Translates a semester in either the format of the new OpenData API (e.g., "202230")
+    or the format used our by our backend "2022C" to the format used by our backend.
+    That is, it does nothing if the semester is already specified in "20XXc" form.
+    """
+    if is_native_semester(semester):
+        return semester
+    return translate_semester_inv(semester)
 
 
 def get_current_semester(allow_not_found=False):

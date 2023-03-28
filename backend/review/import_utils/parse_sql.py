@@ -5,6 +5,7 @@ from datetime import datetime
 from lark import Lark, Transformer
 from tqdm import tqdm
 
+from courses.util import regularize_semester
 
 """
 This file contains functionality for parsing the SQL dump files that we get from ISC.
@@ -114,6 +115,16 @@ class TypeTransformer(SQLDumpTransformer):
 
     def date(self, items):
         return "DATE"
+
+
+class RegularizeSemesterTransformer(SQLDumpTransformer):
+    """
+    Transformer that merely regularizes the TERM field of a row.
+    """
+    def row(self, items):
+        row = super().row(items)
+        row["TERM"] = regularize_semester(row["TERM"])
+        return row
 
 
 def parse_row(s, T=SQLDumpTransformer):
