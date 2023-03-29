@@ -6,7 +6,9 @@ import { withRouter } from "react-router-dom";
 import fuzzysort from "fuzzysort";
 import { apiSearch } from "../utils/api";
 import { CoursePreview } from "./CoursePreview";
-import { debounce } from 'lodash'
+import { debounce } from 'lodash';
+import Slider from 'rc-slider';
+import 'rc-slider/assets/index.css';
 
 // Takes in a course (ex: CIS 160) and returns various formats (ex: CIS-160, CIS 160, CIS160).
 function expandCombo(course) {
@@ -25,7 +27,7 @@ function removeDuplicates(dups) {
     }
   });
   return clean;
-}
+} 
 
 /**
  * The search bar that appears on the homepage and navigation bar.
@@ -37,7 +39,11 @@ class ServerSearchBar extends Component {
 
     this.state = {
       autocompleteOptions: [],
-      searchValue: null
+      searchValue: null,
+      showFilters: false,
+      difficulty: [0, 4],
+      quality: [0, 4],
+      work: [0, 4],
     };
 
     this.autocompleteCallback = this.autocompleteCallback.bind(this);
@@ -95,7 +101,10 @@ class ServerSearchBar extends Component {
         <div 
         style={{ 
           margin: "0 auto",
-          height: this.props.isTitle ? 58 : 37
+          height: this.props.isTitle ? 58 : 37,
+          display: "flex",
+          flexDirection: "row",
+          gap: "5"
         }}
         >
           <AsyncSelect
@@ -209,6 +218,108 @@ class ServerSearchBar extends Component {
               })
             }}
           />
+          {this.props.isTitle &&
+            <div id="filter-dropdown">
+              <button 
+              className="btn btn-sm btn-outline-primary"
+              onClick={() => { this.setState({ showFilters: !this.state.showFilters }) }}
+              style={{
+                color: "#5a9093"
+              }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-filter">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3">
+                </polygon></svg>
+              </button>
+              <div
+              style={{
+                visibility: this.state.showFilters ? "visible" : "hidden",
+                marginTop: "0.7rem",
+                left: "0",
+                paddingTop: "4px",
+                position: "absolute",
+                top: "100%",
+                zIndex: 20,
+                height: "200px",
+                backgroundColor: "white",
+                borderRadius: "4px",
+                boxShadow: "0 2px 3px rgb(10 10 10 / 10%), 0 0 0 1px rgb(10 10 10 / 10%)",
+                padding: "1rem",
+                paddingRight: "1.25rem",
+              }}
+              >
+                <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "15px",
+                  height: "100%"
+                }}
+                >
+                  <Slider
+                  range
+                  vertical
+                  value={ this.state.quality }
+                  onChange={ (e) => this.setState({ quality: e }) }
+                  min={0}
+                  max={4}
+                  step={.1}
+                  marks={{
+                      0: { label: this.state.quality[0] },
+                      4: { label: this.state.quality[1] },
+                  }}
+                  trackStyle={[{
+                    backgroundColor: "#85b8ba"
+                  }]}
+                  handleStyle={[
+                    { borderColor: "#85b8ba" },
+                    { borderColor: "#85b8ba" },
+                  ]}
+                  />
+                  <Slider
+                  range
+                  vertical
+                  value={ this.state.difficulty }
+                  onChange={ (e) => this.setState({ difficulty: e }) }
+                  min={0}
+                  max={4}
+                  step={.1}
+                  marks={{
+                      0: { label: this.state.difficulty[0] },
+                      4: { label: this.state.difficulty[1] },
+                  }}
+                  trackStyle={[{
+                    backgroundColor: "#85b8ba"
+                  }]}
+                  handleStyle={[
+                    { borderColor: "#85b8ba" },
+                    { borderColor: "#85b8ba" },
+                  ]}
+                  />
+                  <Slider
+                  range
+                  vertical
+                  value={ this.state.work }
+                  onChange={ (e) => this.setState({ work: e }) }
+                  min={0}
+                  max={4}
+                  step={.1}
+                  marks={{
+                      0: { label: this.state.work[0] },
+                      4: { label: this.state.work[1] },
+                  }}
+                  trackStyle={[{
+                    backgroundColor: "#85b8ba"
+                  }]}
+                  handleStyle={[
+                    { borderColor: "#85b8ba" },
+                    { borderColor: "#85b8ba" },
+                  ]}
+                  />
+                </div>
+              </div>
+            </div>
+            }
         </div>
         {this.props.isTitle &&
           <div
