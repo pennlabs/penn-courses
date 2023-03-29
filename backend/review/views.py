@@ -746,7 +746,7 @@ def quick_search(request):
     Completes quick search.
     """
     r = redis.Redis().from_url(settings.REDIS_URL)
-    text_query = request.query_params.get("query")
+    text_query = request.query_params.get("q")
     course_quality = request.query_params.get("course_quality", 0)
     course_difficulty = request.query_params.get("course_difficulty", 4)
     work_required = request.query_params.get("work_required", 4)
