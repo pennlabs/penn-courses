@@ -32,7 +32,7 @@ export function RatingBox({ rating, label}) {
     style={{
         ...scoreBoxStyle,
     }}>
-        <p style={scoreStyle}>{rating}</p>
+        <p style={scoreStyle}>{rating == null ? 'N/A' : (rating).toFixed(1)}</p>
         <p style={scoreLabelStyle}>{label}</p>
     </div>
   );

@@ -8,6 +8,7 @@ from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 import redis
+import json
 from django.conf import settings
 from redis.commands.search.query import NumericFilter, Query
 
@@ -745,16 +746,24 @@ def quick_search(request):
     """
     Completes quick search.
     """
-    r = redis.Redis().from_url(settings.REDIS_URL)
+    r = redis.Redis.from_url(settings.REDIS_URL)
     text_query = request.query_params.get("query")
-    course_quality = request.query_params.get("course_quality", 0)
-    course_difficulty = request.query_params.get("course_difficulty", 4)
-    work_required = request.query_params.get("work_required", 4)
-    
-    # filters
-    search_term = Query(text_query).add_filter(NumericFilter("course_quality", course_quality, 4)) \
-        .add_filter(NumericFilter("work_required", 0, work_required)) \
-        .add_filter(NumericFilter("course_difficulty", 0, course_difficulty))
+    text_query += "|" + text_query + "*"
+    course_quality = request.query_params.get("course_quality")
+    course_difficulty = request.query_params.get("course_difficulty")
+    work_required = request.query_params.get("work_required")
 
-    results = r.ft("courses").search(search_term)
-    return Response(results)
+    # filters
+    search_term = Query(text_query)
+    if course_quality:
+        search_term.add_filter(NumericFilter("course_quality", course_quality, 4))
+    if course_difficulty:
+        search_term.add_filter(NumericFilter("course_difficulty", course_difficulty, 4))
+    if work_required:
+        search_term.add_filter(NumericFilter("course_difficulty", 0, course_difficulty))
+
+    results = r.ft("courses").search(search_term.with_scores())
+    print([{e.id: e.score} for e in results.docs])
+    out = [json.loads(e.json) for e in results.docs]
+
+    return Response(out)

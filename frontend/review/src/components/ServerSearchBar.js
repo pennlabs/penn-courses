@@ -19,8 +19,9 @@ function removeDuplicates(dups) {
   const used = new Set();
   const clean = [];
   dups.forEach(i => {
-    if (!used.has(i.topic)) {
-      used.add(i.topic);
+    if (!used.has(i.code)) {
+      console.log(i)
+      i.crosslistings.split(",").forEach(c => used.add(c));
       clean.push(i);
     }
   });
@@ -49,11 +50,11 @@ class ServerSearchBar extends Component {
   // Called each time the input value inside the searchbar changes
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
-    if (inputValue.length < 3) return;
+    if (inputValue.length < 3) return [];
     return this.debouncedApiSearch(inputValue).then(courses => {
       const options = removeDuplicates(courses).map(course => ({
           ...course,
-          url: `/course/${course.code}`,
+          url: `/course/${course.code.replace(' ', '-')}`,
       }));
       this.setState({ autocompleteOptions: options });
     })
@@ -76,10 +77,10 @@ class ServerSearchBar extends Component {
                 ? "calc(100vw - 60px)"
                 : "calc(100vw - 200px)";
     const maxWidth = this.props.isTitle ? 800 : 514;
-    const coursePreviews = this.state.autocompleteOptions.map(course => (
+    const coursePreviews = this.state.autocompleteOptions.map((course, index) => (
       <CoursePreview 
+      key={index}
       onClick={() => {
-        console.log("hello")
         this.handleChange(course)
       }}
       course={course} 

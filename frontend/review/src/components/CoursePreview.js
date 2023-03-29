@@ -42,11 +42,11 @@ export function CoursePreview({ course, style, onClick }) {
           flexDirection: "row",
           }}>
             <RatingBox
-            rating={course.quality}
+            rating={course.course_quality}
             label="Quality"
             />
             <RatingBox
-            rating={course.workRequired}
+            rating={course.work_required}
             label="Work"
             />
             <RatingBox
