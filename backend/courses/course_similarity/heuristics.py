@@ -1,8 +1,5 @@
 import re
 
-from jellyfish import levenshtein_distance
-
-
 def title_rejection_heuristics(title_a, title_b):
     """
     Handle special cases indicating dissimilarity and return True if they occur, False otherwise.
@@ -87,10 +84,3 @@ def description_rejection_heuristics(desc_a, desc_b):
             return True
 
     return False
-
-
-def lev_divided_by_avg_length(a, b):
-    """
-    Compute levenshtein distance between 2 strings and then divide by avg length.
-    """
-    return 2 * levenshtein_distance(a, b) / (len(a) + len(b))
