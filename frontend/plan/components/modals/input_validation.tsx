@@ -57,5 +57,5 @@ export const validateInput = (
         }
     }
 
-    return { error: false, message: null };
+    return { message: null, error: false };
 };

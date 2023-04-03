@@ -292,10 +292,11 @@ const ScheduleSelectorDropdown = ({
     const [numRequests, setNumRequests] = useState(2);
     const [primarySelected, setPrimarySelected] = useState(false);
 
-    useEffect(() => {
-        fetchBackendFriends();
-        sendFriendRequest("wharton")
-      });
+    // useEffect(() => {
+    //     fetchBackendFriends();
+
+    //     sendFriendRequest("wharton")
+    //   });
 
     useEffect(() => {
         const listener = (event: Event) => {

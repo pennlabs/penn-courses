@@ -531,7 +531,7 @@ export const doAccountsRequest = (path, options = {}) =>
 
 export const sendFriendRequest = (pennkey) => {
     const pennIdObj = {
-            friend_id: pennkey
+            pennkey: pennkey
         };
 
         const init = {
@@ -545,14 +545,53 @@ export const sendFriendRequest = (pennkey) => {
             },
             body: JSON.stringify(pennIdObj),
         }
+        console.log("called");
+        console.log(pennkey)
         doAPIRequest("/base/friendship/", init).then((res) => {
             if (res.status == 200) {
-                
+                // request accepted
+                // blob friendship already accepted?
+                return {
+                    message:
+                        "You are already friends with this user!",
+                    error: true,
+                };
+
             } else if (res.status == 201) {
+                // friendship not requested before
+                // request created
+                // blob friendship request sent
 
+                // friendship requested before
+                // request created
+                // blob friendship request sent
+
+                return {
+                    message:
+                        "",
+                    error: false,
+                };
+
+            } else if (res.status == 404) {
+                // pennkey not found
+                // blob pennkey not found
+
+                return {
+                    message:
+                        "User not found.",
+                    error: true,
+                };
+                
             } else if (res.status == 409) {
+                // request pending
+                // blob friendship request pending
 
-            }
+                return {
+                    message:
+                        "Friendship request still pending.",
+                    error: true,
+                };
+            } 
         })
     
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import { createScheduleOnFrontend, renameSchedule } from "../../actions";
+import { createScheduleOnFrontend, renameSchedule, sendFriendRequest } from "../../actions";
 import NameScheduleModalInterior from "./NameScheduleModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
 
@@ -97,8 +97,8 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             };
         case "ADD_FRIEND":
             return {
-                namingFunction: (pennkey) =>
-                    dispatch(createFriendOnFrontend(pennkey)),
+                requestFunction: (pennkey) =>
+                    dispatch(sendFriendRequest(pennkey)),
             };
         case "SHOW_REQUESTS":
             return {

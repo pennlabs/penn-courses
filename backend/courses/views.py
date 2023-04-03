@@ -494,7 +494,7 @@ class FriendshipView(generics.ListAPIView):
             existing_friendship.recipient = recipient
             existing_friendship.save()
             res = FriendshipSerializer(existing_friendship) 
-            return Response(data=res.data, status=status.HTTP_200_OK)
+            return Response(data=res.data, status=status.HTTP_201_CREATED)
         elif existing_friendship.status == Friendship.Status.SENT:
             if existing_friendship.sender == sender:
                 return Response({}, status=status.HTTP_409_CONFLICT)
