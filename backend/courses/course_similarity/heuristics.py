@@ -1,5 +1,6 @@
 import re
 
+
 def title_rejection_heuristics(title_a, title_b):
     """
     Handle special cases indicating dissimilarity and return True if they occur, False otherwise.
