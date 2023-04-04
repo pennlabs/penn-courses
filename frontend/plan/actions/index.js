@@ -65,9 +65,6 @@ export const ATTEMPT_DELETION = "ATTEMPT_DELETION";
 export const ATTEMPT_SCHEDULE_CREATION = "ATTEMPT_SCHEDULE_CREATION";
 export const UNSUCCESSFUL_SCHEDULE_CREATION = "UNSUCCESSFUL_SCHEDULE_CREATION";
 
-// Backend friends
-export const UPDATE_FRIENDS = "UPDATE_FRIENDS";
-
 export const markScheduleSynced = (scheduleName) => ({
     scheduleName,
     type: MARK_SCHEDULE_SYNCED,
@@ -470,11 +467,6 @@ export const updateSchedules = (schedulesFromBackend) => ({
     schedulesFromBackend,
 });
 
-export const updateFriends = (friendsFromBackend) => ({
-    type: UPDATE_FRIENDS,
-    friendsFromBackend,
-});
-
 let lastFetched = 0;
 /**
  * Ensure that fetches don't happen too frequently by requiring that it has been 250ms
@@ -512,89 +504,6 @@ export function fetchCourseDetails(courseId) {
             .catch((error) => dispatch(sectionInfoSearchError(error)));
     };
 }
-
-/**
- * Pulls user's friends from the backend
- * @returns {Function}
- */
-export const fetchBackendFriends = () => (dispatch) => {
-    doAPIRequest("/base/friendship")
-        .then((res) => res.json())
-        .then((friends) => {
-            dispatch(updateFriends(friends));
-        })
-        .catch((error) => console.log(error));
-};
-
-export const doAccountsRequest = (path, options = {}) =>
-    fetch(`/accounts${path}`, options);
-
-export const sendFriendRequest = (pennkey) => {
-    const pennIdObj = {
-            pennkey: pennkey
-        };
-
-        const init = {
-            method: "POST",
-            credentials: "include",
-            mode: "same-origin",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCsrf(),
-            },
-            body: JSON.stringify(pennIdObj),
-        }
-        console.log("called");
-        console.log(pennkey)
-        doAPIRequest("/base/friendship/", init).then((res) => {
-            if (res.status == 200) {
-                // request accepted
-                // blob friendship already accepted?
-                return {
-                    message:
-                        "You are already friends with this user!",
-                    error: true,
-                };
-
-            } else if (res.status == 201) {
-                // friendship not requested before
-                // request created
-                // blob friendship request sent
-
-                // friendship requested before
-                // request created
-                // blob friendship request sent
-
-                return {
-                    message:
-                        "",
-                    error: false,
-                };
-
-            } else if (res.status == 404) {
-                // pennkey not found
-                // blob pennkey not found
-
-                return {
-                    message:
-                        "User not found.",
-                    error: true,
-                };
-                
-            } else if (res.status == 409) {
-                // request pending
-                // blob friendship request pending
-
-                return {
-                    message:
-                        "Friendship request still pending.",
-                    error: true,
-                };
-            } 
-        })
-    
-};
 
 /**
  * Pulls schedules from the backend
@@ -716,34 +625,6 @@ export const createScheduleOnBackend = (name, sections) => (dispatch) => {
         body: JSON.stringify({
             name,
             sections,
-        }),
-    })
-        .then((response) => response.json())
-        .then(({ id }) => {
-            if (id) {
-                dispatch(creationSuccessful(name, id));
-            }
-        })
-        .catch(({ message }) => {
-            if (message !== "minDelayNotElapsed") {
-                dispatch(creationUnsuccessful(name));
-            }
-        });
-};
-
-export const addFriendOnBackend = (id) => (dispatch) => {
-    dispatch(creationAttempted(name));
-    rateLimitedFetch("/base/friendship/", {
-        method: "POST",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify({
-            id,
         }),
     })
         .then((response) => response.json())

@@ -21,16 +21,16 @@ import GridLines from "./GridLines";
 import Stats from "./Stats";
 import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
 
-import { Color, Day, Meeting, Section, MeetingBlock } from "../../types";
+import { Color, Day, Meeting, Section, MeetingBlock, User } from "../../types";
 
 interface ScheduleProps {
+    user: User;
     schedData: {
         meetings: Section[];
     };
     removeSection: (idDashed: string) => void;
     focusSection: (id: string) => void;
     scheduleNames: string[];
-    friendNames: string[];
     switchSchedule: (scheduleName: string) => void;
     schedulesMutator: {
         setPrimary: (scheduleName: string) => void;
@@ -136,11 +136,11 @@ const ScheduleContents = styled.div`
 class Schedule extends Component {
     render() {
         const {
+            user,
             schedData,
             removeSection,
             focusSection,
             scheduleNames,
-            friendNames,
             switchSchedule,
             schedulesMutator,
             activeScheduleName,
@@ -287,11 +287,11 @@ class Schedule extends Component {
                 <ScheduleDropdownHeader>
                     <ScheduleSelectorDropdown
                         activeName={activeScheduleName}
-                        contents={scheduleNames.map((scheduleName) => ({
+                        content={scheduleNames.map((scheduleName) => ({
                             text: scheduleName,
                             onClick: () => switchSchedule(scheduleName),
                         }))}
-                        
+                        user={user}
                         mutators={schedulesMutator}
                     />
                 </ScheduleDropdownHeader>
@@ -327,8 +327,8 @@ class Schedule extends Component {
 const mapStateToProps = (state: any) => ({
     schedData: state.schedule.schedules[state.schedule.scheduleSelected],
     scheduleNames: Object.keys(state.schedule.schedules),
-    friendNames: Object.keys(state.schedule.schedules),
     activeScheduleName: state.schedule.scheduleSelected,
+    user: state.login.user,
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
@@ -364,15 +364,15 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
                     { defaultValue: "Enter your friend's PennKey" },
                     "Add New Friend"
                 )
-        ),
-        showRequests: () => 
+            ),
+        showRequests: () =>
             dispatch(
                 openModal(
                     "SHOW_REQUESTS",
-                    { defaultValue: "Enter your friend's PennKey" },
+                    {},
                     "PENDING REQUESTS"
                 )
-        ),
+            ),
     },
 });
 

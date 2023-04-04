@@ -1,6 +1,8 @@
 import React from "react";
-import { createScheduleOnFrontend, renameSchedule, sendFriendRequest } from "../../actions";
-import NameScheduleModalInterior from "./NameScheduleModalInterior";
+import { createScheduleOnFrontend, renameSchedule } from "../../actions";
+import { sendFriendRequest } from "../../actions/friendshipUtil";
+import NameScheduleModalInterior from "./AddScheduleFriendsModalInterior";
+import PendingRequestsModalInterior from "./PendingRequestsModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
 
 /**
@@ -35,9 +37,7 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <NameScheduleModalInterior
                     buttonName="Create"
-                    existingData={Object.keys(
-                        reduxState.schedule.schedules
-                    )}
+                    existingData={Object.keys(reduxState.schedule.schedules)}
                     mode="schedule"
                 />
             );
@@ -45,22 +45,14 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <NameScheduleModalInterior
                     buttonName="Request"
-                    existingData={Object.keys(
-                        reduxState.schedule.schedules
-                    )}
+                    existingData={Object.keys(reduxState.schedule.schedules)}
                     mode="friend"
                 />
-        );
+            );
         case "SHOW_REQUESTS":
             return (
-                <NameScheduleModalInterior
-                    buttonName="Request"
-                    existingData={Object.keys(
-                        reduxState.schedule.schedules
-                    )}
-                    mode="friend"
-                />
-        );
+                <PendingRequestsModalInterior user={reduxState.login.user} />
+            );
         case "WELCOME":
             return <WelcomeModalInterior />;
         case "MULTITAB":
@@ -95,16 +87,6 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
                 namingFunction: (newName) =>
                     dispatch(createScheduleOnFrontend(newName)),
             };
-        case "ADD_FRIEND":
-            return {
-                requestFunction: (pennkey) =>
-                    dispatch(sendFriendRequest(pennkey)),
-            };
-        case "SHOW_REQUESTS":
-            return {
-                namingFunction: (newName) =>
-                    dispatch(createScheduleOnFrontend(newName)),
-            };    
         default:
             return {};
     }

@@ -447,6 +447,13 @@ class FriendshipSerializer(serializers.ModelSerializer):
         model = Friendship
         fields = ["sender", "recipient", "status", "sent_at", "accepted_at"]
 
+    sender = PublicUserSerializer(
+        read_only=True, help_text="The user that is sending the request.", required=False,
+    )
+    recipient = PublicUserSerializer(
+        read_only=True, help_text="The user that is recieving the request.", required=False,
+    )  
+
 class FriendshipRequestSerializer(serializers.Serializer):
     friend_id = serializers.IntegerField()
 

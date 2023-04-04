@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { validateInput } from "./input_validation";
-import { sendFriendRequest } from "../../actions/index.js";
+import React, { useState } from "react";
+import { validateInput } from "./modal_actions";
+import { sendFriendRequest } from "../../actions/friendshipUtil";
 
-interface NameScheduleModalInteriorProps {
+interface AddScheduleFriendsModalInteriorProps {
     existingData: string[];
     namingFunction: (_: string) => void;
-    requestFunction: (_: string) => {message: string, error: boolean}
     close: () => void;
     buttonName: string;
     defaultValue: string;
@@ -13,16 +12,15 @@ interface NameScheduleModalInteriorProps {
     mode: string;
 }
 
-const NameScheduleModalInterior = ({
+const AddScheduleFriendsModalInterior = ({
     existingData,
     namingFunction,
-    requestFunction,
     close,
     buttonName,
     defaultValue,
     overwriteDefault = false,
     mode,
-}: NameScheduleModalInteriorProps) => {
+}: AddScheduleFriendsModalInteriorProps) => {
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
     const [userInput, setUserInput] = useState("");
     const [changed, setChanged] = useState(false);
@@ -37,18 +35,17 @@ const NameScheduleModalInterior = ({
 
         if (!errorObj.error) {
             if (mode == "friend") {
-                const requestResult = requestFunction(inputRef.value)
-                if (requestResult.error) {
-                    console.log(requestResult);
-                    setErrorObj(requestResult);
-                } else {
-                    close();
-                }
+                sendFriendRequest(inputRef.value).then((res) => {
+                    if (res.error) {
+                        setErrorObj(res);
+                    } else {
+                        close();
+                    }
+                });
             } else if (mode == "schedule") {
                 namingFunction(inputRef.value);
                 close();
             }
-            
         }
     };
     return (
@@ -57,7 +54,9 @@ const NameScheduleModalInterior = ({
                 value={userInput}
                 type="text"
                 ref={(ref) => setInputRef(ref)}
-                style={{ backgroundColor: errorObj.error ? "#f9dcda" : "#f1f1f1" }}
+                style={{
+                    backgroundColor: errorObj.error ? "#f9dcda" : "#f1f1f1",
+                }}
                 onChange={() => {
                     setUserInput(inputRef?.value || "");
                     setChanged(true);
@@ -88,4 +87,4 @@ const NameScheduleModalInterior = ({
     );
 };
 
-export default NameScheduleModalInterior;
+export default AddScheduleFriendsModalInterior;

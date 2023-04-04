@@ -1390,9 +1390,9 @@ class PcxAutoSchema(AutoSchema):
         # we change certain response schemas in ways that we don't want to affect
         # request schemas, etc).
         item_schema = {}
-        serializer = self._get_serializer(path, method)
+        serializer = self.get_serializer(path, method)
         if isinstance(serializer, serializers.Serializer):
-            item_schema = self._map_serializer(serializer)
+            item_schema = self.map_serializer(serializer)
             # No write_only fields for response.
             for name, schema in item_schema["properties"].copy().items():
                 if "writeOnly" in schema:
@@ -1404,7 +1404,7 @@ class PcxAutoSchema(AutoSchema):
                 "type": "array",
                 "items": item_schema,
             }
-            paginator = self._get_paginator()
+            paginator = self.get_paginator()
             if paginator:
                 response_schema = paginator.get_paginated_response_schema(response_schema)
         else:

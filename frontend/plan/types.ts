@@ -166,6 +166,14 @@ export interface User {
     profile: Profile;
 }
 
+export interface Friendship {
+    sender: User;
+    recipient: User;
+    sent_at: string;
+    accepted_at: string;
+    status: string;
+}
+
 export interface FilterData {
     searchString: string;
     searchType: string;

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Icon } from "../bulma_derived_components";
-
-import { fetchBackendFriends, sendFriendRequest } from "../../actions/index.js";
+import { fetchFriendships } from "../../actions/friendshipUtil";
+import { User, Friendship } from "../../types";
 
 interface DropdownButton {
     isActive: boolean;
@@ -126,10 +126,11 @@ const DropdownButton = ({
 
 interface ScheduleSelectorDropdownProps {
     activeName: string;
-    contents: {
+    content: {
         text: string;
         onClick: () => void;
     }[];
+    user: User;
     mutators: {
         setPrimary: (scheduleName: string) => void;
         copy: (scheduleName: string) => void;
@@ -275,7 +276,8 @@ const PendingRequests = styled.a`
 
 const ScheduleSelectorDropdown = ({
     activeName,
-    contents,
+    content,
+    user,
     mutators: {
         setPrimary,
         copy,
@@ -291,12 +293,12 @@ const ScheduleSelectorDropdown = ({
     const [hasFriends, setHasFriends] = useState(false);
     const [numRequests, setNumRequests] = useState(2);
     const [primarySelected, setPrimarySelected] = useState(false);
-
-    // useEffect(() => {
-    //     fetchBackendFriends();
-
-    //     sendFriendRequest("wharton")
-    //   });
+    const [friendshipData, setFriendshipData] = useState<{
+        received: Friendship[];
+        sent: Friendship[];
+        accepted: Friendship[];
+    }>();
+    const [dataChanged, setDataChanged] = useState(false);
 
     useEffect(() => {
         const listener = (event: Event) => {
@@ -312,12 +314,16 @@ const ScheduleSelectorDropdown = ({
             document.removeEventListener("click", listener);
         };
     });
+
     return (
         <ScheduleDropdownContainer ref={ref} isActive={isActive}>
             <span className="selected_name">{activeName}</span>
             <DropdownTrigger
                 isActive={isActive}
-                onClick={() => setIsActive(!isActive)}
+                onClick={() => {
+                    fetchFriendships(setFriendshipData, user);
+                    setIsActive(!isActive);
+                }}
                 role="button"
             >
                 <div aria-haspopup={true} aria-controls="dropdown-menu">
@@ -328,7 +334,7 @@ const ScheduleSelectorDropdown = ({
             </DropdownTrigger>
             <DropdownMenu isActive={isActive} role="menu">
                 <DropdownContent>
-                    {Array.from(contents.entries()).map(
+                    {Array.from(content.entries()).map(
                         ([index, { onClick, text: scheduleName }]) => (
                             <DropdownButton
                                 key={index}
@@ -378,6 +384,9 @@ const ScheduleSelectorDropdown = ({
                                 "Add a friend to share a schedule"
                             )}
                         </div>
+                        {friendshipData?.accepted?.map((friendObj) => (
+                            <div>{friendObj.recipient.first_name}</div>
+                        ))}
                         <AddNew onClick={addFriend} role="button" href="#">
                             <Icon>
                                 <i className="fa fa-plus" aria-hidden="true" />
