@@ -15,6 +15,7 @@ from courses.management.commands.reset_topics import fill_topics
 from courses.models import Topic
 from review.management.commands.clearcache import clear_cache
 
+from django.contrib.postgres.aggregates import StringAgg
 
 def prompt_for_link_topics(topics):
     """
@@ -127,30 +128,43 @@ def merge_topics(verbose=False, ignore_inexact=False):
     dont_link = set()
     merge_count = 0
 
-    for topic in tqdm(list(topics), disable=(not verbose)):
+    for topic in tqdm(list(topics), disable=(not verbose)): # list(topics) creates a copy
+        if topic.id is None: # TODO: figure out root cause here
+            print("WARNING: topic id is None")
+            print("===")
+            print(topic)
+            print(topic.__dict__)
+            print("===")
+            topic.save()
+            topic = Topic.objects.get(id=topic.id) # TODO: is this good default behavior?
         if topic not in topics:
             continue
         keep_linking = True
         while keep_linking:
-            keep_linking = False
+            keep_linking = False # stop linking this topic with the other topics
             for topic2 in topics:
                 if topic == topic2:
                     continue
-                if topic.most_recent.semester == topic2.most_recent.semester:
+                if topic.most_recent.semester == topic2.most_recent.semester:  # no topic has 2 courses from same sem
                     continue
+
+                # Link
                 merged_courses = list(topic.courses.all()) + list(topic2.courses.all())
-                merged_courses.sort(key=lambda c: (c.semester, c.topic_id))
+                merged_courses.sort(key=lambda c: (c.semester, c.topic_id))  # sort by semester (increasing)
                 course_links = []
                 last = merged_courses[0]
+
+                overlapping_courses = False
                 for course in merged_courses[1:]:
                     if last.topic_id != course.topic_id:
                         course_links.append((last, course))
                     last = course
-                if any(
-                    course_a.semester == course_b.semester and not same_course(course_a, course_b)
-                    for course_a, course_b in course_links
-                ):
+                    if last.semester == course.semester and not same_course(last, course):
+                        overlapping_courses = True
+                        break
+                if overlapping_courses:  # do not allow topics to have overlapping courses
                     continue
+
                 should_link = True
                 for last, course in course_links:
                     if (last, course) in dont_link or (
@@ -251,7 +265,7 @@ class Command(BaseCommand):
             with transaction.atomic():
                 fill_topics(verbose=True)
                 merge_topics(verbose=True, ignore_inexact=ignore_inexact)
-                load_crosswalk(verbose=True)
+                # load_crosswalk(verbose=True)
 
         print("Clearing cache")
         del_count = clear_cache()
