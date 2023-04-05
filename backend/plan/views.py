@@ -462,25 +462,31 @@ class CalendarAPIView(APIView):
             start_time = str(Meeting.int_to_time(first_meeting.start))
             end_time = str(Meeting.int_to_time(first_meeting.end))
 
-            if (start_time == None):
-                start_time = "";
-            if (end_time == None):
+            if start_time == None:
+                start_time = ""
+            if end_time == None:
                 end_time = ""
 
             start_datetime = first_meeting.start_date + " "
-            end_datetime = first_meeting.end_date  + " "
+            end_datetime = first_meeting.end_date + " "
 
-            if (int(first_meeting.start) < 10): 
+            if int(first_meeting.start) < 10:
                 start_datetime += "0"
-            if (int(first_meeting.end) < 10): 
+            if int(first_meeting.end) < 10:
                 end_datetime += "0"
 
             start_datetime += start_time
             end_datetime += end_time
-            
-            e.begin = arrow.get(start_datetime, "YYYY-MM-DD HH:mm A", tzinfo='America/New York').format("YYYYMMDDTHHmmss")
-            e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo='America/New York').format("YYYYMMDDTHHmmss")
-            end_date = arrow.get(first_meeting.end_date, "YYYY-MM-DD", tzinfo='America/New York').format("YYYYMMDDTHHmmss")
+
+            e.begin = arrow.get(
+                start_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
+            ).format("YYYYMMDDTHHmmss")
+            e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York").format(
+                "YYYYMMDDTHHmmss"
+            )
+            end_date = arrow.get(
+                first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New York"
+            ).format("YYYYMMDDTHHmmss")
 
             e.extra.append(
                 ContentLine(
@@ -491,7 +497,7 @@ class CalendarAPIView(APIView):
             )
 
             calendar.events.add(e)
-            
+
         response = HttpResponse(calendar, content_type="text/calendar")
         response["Content-Disposition"] = "attachment; pcp-schedule.ics"
         return response
