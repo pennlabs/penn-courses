@@ -449,11 +449,6 @@ class CalendarAPIView(APIView):
         calendar = ICSCal(creator="Penn Labs")
         calendar.extra.append(ContentLine(name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
 
-        # def datetime_parser(dtime, fmt):
-        #     intr = arrow.get(dtime, fmt, tzinfo="Etc/GMT+5").format("YYYYMMDDTHHmmss")
-        #     return intr
-
-        # try:
         for section in schedule.sections.all():
             e = ICSEvent()
             e.name = section.full_code
@@ -467,8 +462,13 @@ class CalendarAPIView(APIView):
             start_time = str(Meeting.int_to_time(first_meeting.start))
             end_time = str(Meeting.int_to_time(first_meeting.end))
 
+            if (start_time == None):
+                start_time = "";
+            if (end_time == None):
+                end_time = ""
+
             start_datetime = first_meeting.start_date + " "
-            end_datetime = first_meeting.start_date + " "
+            end_datetime = first_meeting.end_date  + " "
 
             if (int(first_meeting.start) < 10): 
                 start_datetime += "0"
@@ -478,12 +478,6 @@ class CalendarAPIView(APIView):
             start_datetime += start_time
             end_datetime += end_time
             
-
-            # # need YYYYmmddTHHmmss format for ICS, easily done with Arrow
-            # e.begin = datetime_parser(start_datetime, "YYYY-MM-DD HH:mm A")
-            # e.end = datetime_parser(end_datetime, "YYYY-MM-DD HH:mm A")
-            # end_date = datetime_parser(first_meeting.end_date, "YYYY-MM-DD")
-
             e.begin = arrow.get(start_datetime, "YYYY-MM-DD HH:mm A", tzinfo='America/New York').format("YYYYMMDDTHHmmss")
             e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo='America/New York').format("YYYYMMDDTHHmmss")
             end_date = arrow.get(first_meeting.end_date, "YYYY-MM-DD", tzinfo='America/New York').format("YYYYMMDDTHHmmss")
@@ -497,10 +491,7 @@ class CalendarAPIView(APIView):
             )
 
             calendar.events.add(e)
-
-        # except Exception:
-        #     pass
-
+            
         response = HttpResponse(calendar, content_type="text/calendar")
         response["Content-Disposition"] = "attachment; pcp-schedule.ics"
         return response
