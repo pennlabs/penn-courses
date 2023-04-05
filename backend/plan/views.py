@@ -1,5 +1,4 @@
 import arrow
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q
@@ -462,9 +461,9 @@ class CalendarAPIView(APIView):
             start_time = str(Meeting.int_to_time(first_meeting.start))
             end_time = str(Meeting.int_to_time(first_meeting.end))
 
-            if start_time == None:
+            if not start_time:
                 start_time = ""
-            if end_time == None:
+            if not end_time:
                 end_time = ""
 
             start_datetime = first_meeting.start_date + " "
