@@ -685,7 +685,7 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data["semester"], TEST_SEMESTER)
         self.assertEqual(len(response.data["sections"]), 0)
 
-    def test_calendar_api_view_correct_info_empty_schedule(self): 
+    def test_calendar_api_view_correct_info_empty_schedule(self):
         response = self.client.get("/api/plan/" + str(self.s.id) + "/calendar/")
         self.assertEqual(200, response.status_code)
 
@@ -707,9 +707,3 @@ class ScheduleTest(TestCase):
 
         response = self.client.get("/api/plan/" + str(self.s.id) + "/calendar/")
         self.assertEqual(200, response.status_code)
-
-
-
-
-
-

@@ -9,7 +9,7 @@ router = routers.DefaultRouter()
 router.register(r"schedules", ScheduleViewSet, basename="schedules")
 
 urlpatterns = [
-    path("<int:schedule_pk>/calendar/",  CalendarAPIView.as_view(), name="calendar-view"),
+    path("<int:schedule_pk>/calendar/", CalendarAPIView.as_view(), name="calendar-view"),
     path("", TemplateView.as_view(template_name="plan/build/index.html")),
     path("recommendations/", recommend_courses_view, name="recommend-courses"),
     path("", include(router.urls)),
