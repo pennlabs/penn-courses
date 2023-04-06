@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
 import CartSection from "./CartSection";
-import { meetingsContainSection, meetingSetsIntersect } from "./meetUtil";
+import { scheduleContainsSection, meetingSetsIntersect } from "./meetUtil";
 import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
 
 import { Section, CartCourse } from "../types";
@@ -133,14 +133,14 @@ const mapStateToProps = ({
     courseInfoLoading,
     courses: cartSections.map((course: Section) => ({
         section: course,
-        checked: meetingsContainSection(
-            schedules[scheduleSelected].meetings,
+        checked: schedules[scheduleSelected] && scheduleContainsSection(
+            schedules[scheduleSelected].sections,
             course
         ),
-        overlaps: course.meetings
+        overlaps: (course.meetings && schedules[scheduleSelected])
             ? meetingSetsIntersect(
                   course.meetings,
-                  schedules[scheduleSelected].meetings
+                  schedules[scheduleSelected].sections
                       .filter((s: Section) => s.id !== course.id)
                       .map((s: Section) => s.meetings)
                       .flat()

@@ -56,30 +56,28 @@ const PendingRequestsModalInterior = ({
                 <ReceivedRequest
                     sender={fs.sender}
                     accept={() =>
-                        sendFriendRequest(fs.sender.username).then((res) => {
-                            if (res.error) {
-                                console.log(res.message);
-                            } else {
+                        sendFriendRequest(fs.sender.username)
+                            .then(() => {
                                 fetchFriendships(setFriendshipData, user);
-                            }
-                        })
+                            })
+                            .catch((error) => {
+                                console.log(error);
+                            })
                     }
-                    reject={() =>
-                        rejectFriendRequest(fs.sender.username).then(() =>
-                            fetchFriendships(setFriendshipData, user)
-                        )
-                    }
+                    reject={() => {
+                        rejectFriendRequest(fs.sender.username);
+                        fetchFriendships(setFriendshipData, user);
+                    }}
                 />
             ))}
 
             {friendshipData?.sent?.map((fs) => (
                 <SentRequest
                     recipient={fs.recipient}
-                    cancel={() =>
-                        rejectFriendRequest(fs.recipient.username).then(() =>
-                            fetchFriendships(setFriendshipData, user)
-                        )
-                    }
+                    cancel={() => {
+                        rejectFriendRequest(fs.recipient.username);
+                        fetchFriendships(setFriendshipData, user);
+                    }}
                 />
             ))}
         </div>

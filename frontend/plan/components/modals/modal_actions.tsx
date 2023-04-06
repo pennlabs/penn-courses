@@ -1,6 +1,3 @@
-import { doAPIRequest } from "../../actions";
-import getCsrf from "../csrf";
-
 const scheduleIllegalCharacters = /[^a-zA-Z\d\s-_]/;
 const friendIllegalCharacters = /[^a-zA-Z0-9]/;
 
@@ -14,51 +11,65 @@ export const validateInput = (
     input: string,
     existingData: string[],
     mode: string,
-    changed: boolean
+    changed: boolean,
+    callback: React.Dispatch<
+        React.SetStateAction<{
+            message: string;
+            error: boolean;
+        }>
+    >
 ) => {
     if (changed) {
         if (mode === "schedule") {
             if (input === "") {
-                return { message: "Name cannot be empty", error: true };
-            }
-            if (input.match(scheduleIllegalCharacters)) {
-                return {
+                callback({ message: "Name cannot be empty", error: true });
+            } else if (input.match(scheduleIllegalCharacters)) {
+                callback({
                     message:
                         "Name can only contain spaces, underscores, dashes, letters, and numbers",
                     error: true,
-                };
-            }
-            if (input.length > 25) {
-                return { message: "Name is too long", error: true };
-            }
-            if (existingData.indexOf(input) !== -1) {
-                return {
+                });
+            } else if (input.length > 25) {
+                callback({ message: "Name is too long", error: true });
+            } else if (existingData.indexOf(input) !== -1) {
+                callback({
                     message: "Schedule with this name already exists",
                     error: true,
-                };
+                });
+            } else if (input === "cart") {
+                callback({
+                    message: "'cart' is not a valid schedule name",
+                    error: true,
+                });
+            } else {
+                callback({
+                    message: "",
+                    error: false,
+                });
             }
         } else if (mode === "friend") {
-            if (changed && input === "") {
-                return {
+            if (input === "") {
+                callback({
                     message: "Friend's pennkey cannot be empty",
                     error: true,
-                };
-            }
-            if (input.match(friendIllegalCharacters)) {
-                return {
+                });
+            } else if (input.match(friendIllegalCharacters)) {
+                callback({
                     message:
                         "Friend's pennkey can only contain letters and numbers",
                     error: true,
-                };
+                });
+            } else {
+                callback({
+                    message: "",
+                    error: false,
+                });
             }
-            if (existingData.indexOf(input) !== -1) {
-                return {
-                    message: "Already friends with this user!",
-                    error: true,
-                };
-            }
+        } else {
+            callback({
+                message: "",
+                error: false,
+            });
         }
     }
-
-    return { message: null, error: false };
 };

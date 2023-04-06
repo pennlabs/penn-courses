@@ -1,6 +1,8 @@
 import React from "react";
-import { createScheduleOnFrontend, renameSchedule } from "../../actions";
-import { sendFriendRequest } from "../../actions/friendshipUtil";
+import {
+    renameSchedule,
+    createScheduleOnBackend,
+} from "../../actions";
 import NameScheduleModalInterior from "./AddScheduleFriendsModalInterior";
 import PendingRequestsModalInterior from "./PendingRequestsModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
@@ -45,8 +47,8 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <NameScheduleModalInterior
                     buttonName="Request"
-                    existingData={Object.keys(reduxState.schedule.schedules)}
                     mode="friend"
+                    placeholder="Enter your friend's PennKey"
                 />
             );
         case "SHOW_REQUESTS":
@@ -85,7 +87,7 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
         case "CREATE_SCHEDULE":
             return {
                 namingFunction: (newName) =>
-                    dispatch(createScheduleOnFrontend(newName)),
+                    dispatch(createScheduleOnBackend(newName)),
             };
         default:
             return {};

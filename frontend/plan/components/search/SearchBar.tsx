@@ -71,7 +71,7 @@ interface SearchBarProps {
     store: object;
     storeLoaded: boolean;
     setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
-    activeSchedule: number;
+    activeSchedule: {id: number};
     updateButtonFilter: (field: string) => (value: number) => void;
 }
 
@@ -474,7 +474,7 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            <FilterButton
+            {activeSchedule && <FilterButton
                 title="Fit Schedule"
                 
                 filterData={filterData}
@@ -482,11 +482,11 @@ SearchBarProps) {
                 clearFilter={clearFilterSearch("fit_schedule")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
-                activeSchedule={activeSchedule}
+                activeSchedule={activeSchedule.id}
                 buttonProperty="fit_schedule"
                 updateButtonFilter={updateButtonFilter("fit_schedule")}
             >
-            </FilterButton> 
+            </FilterButton> }
         </DropdownContainer>
     );
     if (mobileView) {
@@ -654,7 +654,7 @@ const mapStateToProps = (state) => ({
     isLoadingCourseInfo: state.sections.courseInfoLoading,
     isSearchingCourseInfo: state.sections.searchInfoLoading,
     user: state.login.user,
-    activeSchedule: state.schedule.schedules[state.schedule.scheduleSelected].id,
+    activeSchedule: state.schedule.schedules[state.schedule.scheduleSelected],
 });
 
 // @ts-ignore

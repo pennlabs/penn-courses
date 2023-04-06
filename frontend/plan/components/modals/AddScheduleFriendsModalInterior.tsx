@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { validateInput } from "./modal_actions";
 import { sendFriendRequest } from "../../actions/friendshipUtil";
 
@@ -8,6 +8,7 @@ interface AddScheduleFriendsModalInteriorProps {
     close: () => void;
     buttonName: string;
     defaultValue: string;
+    placeholder: string;
     overwriteDefault: boolean;
     mode: string;
 }
@@ -18,15 +19,18 @@ const AddScheduleFriendsModalInterior = ({
     close,
     buttonName,
     defaultValue,
+    placeholder,
     overwriteDefault = false,
     mode,
 }: AddScheduleFriendsModalInteriorProps) => {
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
-    const [userInput, setUserInput] = useState("");
+    const [userInput, setUserInput] = useState(defaultValue);
     const [changed, setChanged] = useState(false);
-    const [errorObj, setErrorObj] = useState(
-        validateInput(userInput, existingData, mode, changed)
-    );
+    const [errorObj, setErrorObj] = useState({ message: "", error: false });
+
+    useEffect(() => {
+        validateInput(userInput, existingData, mode, changed, setErrorObj);
+    }, [userInput]);
 
     const submit = () => {
         if (!inputRef) {
@@ -71,7 +75,7 @@ const AddScheduleFriendsModalInterior = ({
                         submit();
                     }
                 }}
-                placeholder={defaultValue}
+                placeholder={placeholder}
             />
             <p className="error_message">{errorObj.message}</p>
             <button

@@ -1,14 +1,6 @@
 import { doAPIRequest } from ".";
 import getCsrf from "../components/csrf";
 
-function compareFriendships(a, b) {
-    if (a.getTime() < b.getTime() && a < b) {
-        return -1;
-    } else {
-        return 1;
-    }
-}
-
 /**
  * Pulls user's friends from the backend
  */
@@ -18,7 +10,6 @@ export const fetchFriendships = (callback, user) => {
             return res.json();
         })
         .then((friendships) => {
-            console.log(friendships);
             const requestsReceived = friendships.filter(
                 (fs) => fs.status == "S" && fs.sender.username != user.username
             );
@@ -27,22 +18,26 @@ export const fetchFriendships = (callback, user) => {
                 (fs) => fs.status == "S" && fs.sender.username == user.username
             );
 
-            const friendshipsAccepted = friendships.filter(
-                (fs) => fs.status == "A"
-            );
+            const friends = friendships
+                .filter((fs) => fs.status == "A")
+                .map((fs) =>
+                    fs.recipient.username === user.username
+                        ? fs.sender
+                        : fs.recipient
+                );
 
             callback({
                 received: requestsReceived,
                 sent: requestsSent,
-                accepted: friendshipsAccepted,
+                friends,
             });
         })
         .catch((error) => console.log(error));
 };
 
-export const sendFriendRequest = (pennkey) => {
-    const pennIdObj = {
-        pennkey: pennkey,
+export const sendFriendRequest = async (pennkey) => {
+    const pennKeyObj = {
+        pennkey,
     };
 
     const init = {
@@ -54,52 +49,51 @@ export const sendFriendRequest = (pennkey) => {
             "Content-Type": "application/json",
             "X-CSRFToken": getCsrf(),
         },
-        body: JSON.stringify(pennIdObj),
+        body: JSON.stringify(pennKeyObj),
     };
-    return doAPIRequest("/base/friendship/", init).then((res) => {
-        if (res.status == 200) {
-            // request accepted
-            // blob friendship created successfully?
-            return {
-                message: "",
-                error: false,
-            };
-        } else if (res.status == 201) {
-            // friendship not requested before
-            // request created
-            // blob friendship request sent
-
-            // friendship requested before
-            // request created
-            // blob friendship request sent
-
-            return {
-                message: "",
-                error: false,
-            };
-        } else if (res.status == 404) {
-            // pennkey not found
-            // blob pennkey not found
-
-            return {
-                message: "User not found.",
-                error: true,
-            };
-        } else if (res.status == 409) {
-            // request pending
-            // blob friendship request pending
-            return {
-                message: "Friendship request still pending.",
-                error: true,
-            };
-        }
-        return { message: "", error: false };
-    });
+    const res = await doAPIRequest("/base/friendship/", init);
+    if (res.status == 200) {
+        // request accepted
+        // blob friendship created successfully?
+        return {
+            message: "",
+            error: false,
+        };
+    }
+    if (res.status == 201) {
+        // friendship not requested before
+        // request created
+        // blob friendship request sent
+        // friendship requested before
+        // request created
+        // blob friendship request sent
+        return {
+            message: "",
+            error: false,
+        };
+    }
+    if (res.status == 404) {
+        // pennkey not found
+        // blob pennkey not found
+        return {
+            message: "User not found.",
+            error: true,
+        };
+    }
+    if (res.status == 409) {
+        // request pending
+        // blob friendship request pending
+        return {
+            message: "Friendship request still pending.",
+            error: true,
+        };
+    }
+    return { message: "", error: false };
 };
 
-export const rejectFriendRequest = (pennkey) => {
+export const rejectFriendRequest = async (pennkey) => {
     const pennIdObj = {
-        pennkey: pennkey,
+        pennkey,
     };
 
     const init = {
@@ -113,7 +107,29 @@ export const rejectFriendRequest = (pennkey) => {
         },
         body: JSON.stringify(pennIdObj),
     };
-    return doAPIRequest("/base/friendship/", init).catch((error) =>
-        console.log(error)
-    );
+    try {
+        return await doAPIRequest("/base/friendship/", init);
+    } catch (error) {
+        return console.log(error);
+    }
+};
+
+export const fetchFriendPrimarySchedule = (pennkey, isDisplaying, callback) => {
+    doAPIRequest("/plan/primary-schedules/")
+        .then((res) => res.json())
+        .then((schedules) => {
+            return schedules.find((sched) => sched.user.username === pennkey);
+        })
+        .then((foundSched) => {
+            if (foundSched) {
+                isDisplaying(foundSched.user.first_name + "'s Schedule");
+                callback(foundSched.schedule.sections);
+            } else {
+                isDisplaying("Not Found");
+                callback({ sections: [] });
+            }
+        })
+        .catch((error) => {
+            error;
+        });
 };

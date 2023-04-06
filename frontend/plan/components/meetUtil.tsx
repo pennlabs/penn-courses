@@ -13,7 +13,7 @@ import { Meeting, MeetingBlock, Section, Day } from "../types";
  * @param section A section object
  * @returns {boolean} Whether section is in the list of meetings (based on id)
  */
-export const meetingsContainSection = (
+export const scheduleContainsSection = (
     meetings: Meeting[],
     section: Section
 ): boolean => {

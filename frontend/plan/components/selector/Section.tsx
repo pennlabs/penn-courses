@@ -142,7 +142,7 @@ export default function Section({ section, cart, inCart }: SectionProps) {
     const overlap = meetings
         ? meetingSetsIntersect(
               meetings,
-              schedules[scheduleSelected].meetings
+              schedules[scheduleSelected].sections
                   .filter((s: SectionType) => s.id !== section.id)
                   .map((s: SectionType) => s.meetings)
                   .flat()
