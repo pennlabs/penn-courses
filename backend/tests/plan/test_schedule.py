@@ -690,6 +690,8 @@ class ScheduleTest(TestCase):
         self.assertEqual(200, response.status_code)
 
     def test_calendar_api_view_correct_info(self):
+        _, cis121, cis121_reviews = create_mock_data_with_reviews("CIS-121-001", TEST_SEMESTER, 2)
+        _, cis160, cis160_reviews = create_mock_data_with_reviews("CIS-160-001", TEST_SEMESTER, 2)
         response = self.client.put(
             "/api/plan/schedules/" + str(self.s.id) + "/",
             json.dumps(
