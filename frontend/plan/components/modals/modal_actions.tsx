@@ -1,3 +1,5 @@
+import { User } from "../../types";
+
 const scheduleIllegalCharacters = /[^a-zA-Z\d\s-_]/;
 const friendIllegalCharacters = /[^a-zA-Z0-9]/;
 
@@ -8,6 +10,7 @@ const friendIllegalCharacters = /[^a-zA-Z0-9]/;
  * @returns {{message: string, error: boolean}}
  */
 export const validateInput = (
+    user: User,
     input: string,
     existingData: string[],
     mode: string,
@@ -59,6 +62,11 @@ export const validateInput = (
                         "Friend's pennkey can only contain letters and numbers",
                     error: true,
                 });
+            } else if (input === user.username) {
+                callback({
+                    message: "Cannot request friendship with yourself",
+                    error: true,
+                });
             } else {
                 callback({
                     message: "",
@@ -72,4 +80,48 @@ export const validateInput = (
             });
         }
     }
+};
+
+export const handleFriendshipRequestResponse = (
+    res: any,
+    requestedFriend: string,
+    existingData: User[]
+) => {
+    if (res.status == 200) {
+        return {
+            message: "",
+            error: false,
+        };
+    }
+    if (res.status == 201) {
+        return {
+            message: "",
+            error: false,
+        };
+    }
+    if (res.status == 404) {
+        return {
+            message: "User not found.",
+            error: true,
+        };
+    }
+    if (res.status == 409) {
+        if (
+            existingData.reduce(
+                (acc, friend) => acc || friend.username === requestedFriend,
+                false
+            )
+        ) {
+            return {
+                message: "Already friends with this user.",
+                error: true,
+            };
+        } else {
+            return {
+                message: "Friendship request still pending.",
+                error: true,
+            };
+        }
+    }
+    return { message: "", error: false };
 };

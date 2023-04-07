@@ -9,7 +9,9 @@ import {
     updateSchedulesOnFrontend,
     findOwnPrimarySchedule,
     clearAllScheduleData,
+    setStateReadOnly,
 } from "../actions";
+import { fetchBackendFriendships } from "../actions/friendshipUtil";
 import { SYNC_INTERVAL } from "../constants/sync_constants";
 
 /**
@@ -69,12 +71,21 @@ const initiateSync = async (store) => {
             });
     });
 
-    let firstSync = !localStorage.getItem("usesBackendSync");
-    localStorage.setItem("usesBackendSync", "true");
-
     const cloudPull = () => {
-        if (firstSync) {
-            store.dispatch(clearAllScheduleData());
+        if (!store.getState().friendships.pulledFromBackend) {
+            store.dispatch(
+                fetchBackendFriendships(
+                    store.getState().login.user,
+                    store.getState().friendships.activeFriend.username
+                )
+            );
+        }
+
+        if (
+            store.getState().friendships.activeFriend.username === "" &&
+            store.getState().schedule.readOnly
+        ) {
+            store.dispatch(setStateReadOnly(false));
         }
 
         return new Promise((resolve) => {
@@ -163,7 +174,6 @@ const initiateSync = async (store) => {
                 store.dispatch(updateScheduleOnBackend(name, data));
             }
         });
-        firstSync = false;
     };
 
     const waitBeforeNextSync = () =>

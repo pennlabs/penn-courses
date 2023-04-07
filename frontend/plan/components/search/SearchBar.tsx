@@ -311,6 +311,7 @@ SearchBarProps) {
     useEffect(() => {
         // ensure that the user is logged in before initiating the sync
         if (user && storeLoaded) {
+            clearScheduleData();
             initiateSync(store);
         }
     }, [user, store, storeLoaded]);
@@ -661,6 +662,7 @@ const mapStateToProps = (state) => ({
 const mapDispatchToProps = (dispatch) => ({
     login: (user: User) => dispatch(login(user)),
     logout: () => dispatch(logout()),
+    clearAllScheduleData: () => dispatch(clearAllScheduleData()),
     loadRequirements: () => dispatch(loadRequirements()),
     startSearch: (filterData: FilterData) =>
         dispatch(fetchCourseSearch(filterData)),

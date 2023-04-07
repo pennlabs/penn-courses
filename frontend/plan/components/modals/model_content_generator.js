@@ -1,8 +1,6 @@
 import React from "react";
-import {
-    renameSchedule,
-    createScheduleOnBackend,
-} from "../../actions";
+import { renameSchedule, createScheduleOnBackend } from "../../actions";
+import { sendFriendRequest, deleteFriendshipOnBackend } from "../../actions/friendshipUtil";
 import NameScheduleModalInterior from "./AddScheduleFriendsModalInterior";
 import PendingRequestsModalInterior from "./PendingRequestsModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
@@ -46,14 +44,26 @@ export const generateModalInterior = (reduxState) => {
         case "ADD_FRIEND":
             return (
                 <NameScheduleModalInterior
+                    user={reduxState.login.user}
                     buttonName="Request"
+                    existingData={reduxState.friendships.acceptedFriends}
                     mode="friend"
                     placeholder="Enter your friend's PennKey"
+                    activeFriendName={
+                        reduxState.friendships.activeFriend.username
+                    }
                 />
             );
         case "SHOW_REQUESTS":
             return (
-                <PendingRequestsModalInterior user={reduxState.login.user} />
+                <PendingRequestsModalInterior
+                    user={reduxState.login.user}
+                    received={reduxState.friendships.requestsReceived}
+                    sent={reduxState.friendships.requestsSent}
+                    activeFriendName={
+                        reduxState.friendships.activeFriend.username
+                    }
+                />
             );
         case "WELCOME":
             return <WelcomeModalInterior />;
@@ -88,6 +98,51 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             return {
                 namingFunction: (newName) =>
                     dispatch(createScheduleOnBackend(newName)),
+            };
+        case "ADD_FRIEND":
+            return {
+                sendFriendRequest: (
+                    user,
+                    friendPennkey,
+                    activeFriendName,
+                    onComplete
+                ) =>
+                    dispatch(
+                        sendFriendRequest(
+                            user,
+                            friendPennkey,
+                            activeFriendName,
+                            onComplete
+                        )
+                    ),
+            };
+        case "SHOW_REQUESTS":
+            return {
+                sendFriendRequest: (user, friendPennkey, activeFriendName) =>
+                    dispatch(
+                        sendFriendRequest(
+                            user,
+                            friendPennkey,
+                            activeFriendName,
+                            (res) => {
+                                if (!res.ok) {
+                                    console.log(res);
+                                }
+                            }
+                        )
+                    ),
+                deleteFriendshipOnBackend: (
+                    user,
+                    friendPennkey,
+                    activeFriendName
+                ) =>
+                    dispatch(
+                        deleteFriendshipOnBackend(
+                            user,
+                            friendPennkey,
+                            activeFriendName
+                        )
+                    ),
             };
         default:
             return {};

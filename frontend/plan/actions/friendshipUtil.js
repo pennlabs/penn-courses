@@ -1,101 +1,85 @@
-import { doAPIRequest } from ".";
+import { doAPIRequest, setStateReadOnly } from ".";
 import getCsrf from "../components/csrf";
+
+export const SWITCH_ACTIVE_FRIEND = "SWITCH_ACTIVE_FRIEND";
+export const UPDATE_FRIENDSHIPS_ON_FRONTEND = "UPDATE_FRIENDSHIPS_ON_FRONTEND";
+
+export const switchActiveFriend = (friend, found, sections) => ({
+    type: SWITCH_ACTIVE_FRIEND,
+    friend,
+    found,
+    sections,
+});
+
+export const updateFriendshipsOnFrontend = (
+    backendRequestsReceived,
+    backendRequestsSent,
+    backendAcceptedFriends
+) => ({
+    type: UPDATE_FRIENDSHIPS_ON_FRONTEND,
+    received: backendRequestsReceived,
+    sent: backendRequestsSent,
+    friends: backendAcceptedFriends,
+});
 
 /**
  * Pulls user's friends from the backend
  */
-export const fetchFriendships = (callback, user) => {
+export const fetchBackendFriendships = (user, activeFriendName) => (
+    dispatch
+) => {
     doAPIRequest("/base/friendship")
         .then((res) => {
             return res.json();
         })
         .then((friendships) => {
-            const requestsReceived = friendships.filter(
-                (fs) => fs.status == "S" && fs.sender.username != user.username
-            );
+            let backendRequestsReceived = [],
+                backendRequestsSent = [],
+                backendAcceptedFriends = [];
 
-            const requestsSent = friendships.filter(
-                (fs) => fs.status == "S" && fs.sender.username == user.username
-            );
-
-            const friends = friendships
-                .filter((fs) => fs.status == "A")
-                .map((fs) =>
-                    fs.recipient.username === user.username
-                        ? fs.sender
-                        : fs.recipient
-                );
-
-            callback({
-                received: requestsReceived,
-                sent: requestsSent,
-                friends,
+            friendships.forEach((fs) => {
+                if (fs.status === "S" && fs.sender.username !== user.username) {
+                    backendRequestsReceived.push(fs);
+                } else if (
+                    fs.status === "S" &&
+                    fs.sender.username === user.username
+                ) {
+                    backendRequestsSent.push(fs);
+                } else if (fs.status === "A") {
+                    backendAcceptedFriends.push(
+                        fs.recipient.username === user.username
+                            ? fs.sender
+                            : fs.recipient
+                    );
+                }
             });
+
+            dispatch(
+                updateFriendshipsOnFrontend(
+                    backendRequestsReceived,
+                    backendRequestsSent,
+                    backendAcceptedFriends
+                )
+            );
+
+            if (
+                !backendAcceptedFriends.reduce(
+                    (acc, friend) =>
+                        acc || friend.username === activeFriendName,
+                    false
+                )
+            ) {
+                dispatch(setStateReadOnly(false));
+            }
         })
         .catch((error) => console.log(error));
 };
 
-export const sendFriendRequest = async (pennkey) => {
-    const pennKeyObj = {
-        pennkey,
-    };
-
-    const init = {
-        method: "POST",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify(pennKeyObj),
-    };
-    const res = await doAPIRequest("/base/friendship/", init);
-    if (res.status == 200) {
-        // request accepted
-        // blob friendship created successfully?
-        return {
-            message: "",
-            error: false,
-        };
-    }
-    if (res.status == 201) {
-        // friendship not requested before
-        // request created
-        // blob friendship request sent
-        // friendship requested before
-        // request created
-        // blob friendship request sent
-        return {
-            message: "",
-            error: false,
-        };
-    }
-    if (res.status == 404) {
-        // pennkey not found
-        // blob pennkey not found
-        return {
-            message: "User not found.",
-            error: true,
-        };
-    }
-    if (res.status == 409) {
-        // request pending
-        // blob friendship request pending
-        return {
-            message: "Friendship request still pending.",
-            error: true,
-        };
-    }
-    return { message: "", error: false };
-};
-
-export const rejectFriendRequest = async (pennkey) => {
-    const pennIdObj = {
-        pennkey,
-    };
-
+export const deleteFriendshipOnBackend = (
+    user,
+    friendPennkey,
+    activeFriendName
+) => (dispatch) => {
     const init = {
         method: "DELETE",
         credentials: "include",
@@ -105,31 +89,63 @@ export const rejectFriendRequest = async (pennkey) => {
             "Content-Type": "application/json",
             "X-CSRFToken": getCsrf(),
         },
-        body: JSON.stringify(pennIdObj),
+        body: JSON.stringify({
+            pennkey: friendPennkey,
+        }),
     };
-    try {
-        return await doAPIRequest("/base/friendship/", init);
-    } catch (error) {
-        return console.log(error);
-    }
+    doAPIRequest("/base/friendship/", init)
+        .then(() => {
+            dispatch(fetchBackendFriendships(user, activeFriendName));
+        })
+        .catch((error) => console.log(error));
 };
 
-export const fetchFriendPrimarySchedule = (pennkey, isDisplaying, callback) => {
+export const sendFriendRequest = (
+    user,
+    friendPennkey,
+    activeFriendName,
+    onComplete
+) => (dispatch) => {
+    const init = {
+        method: "POST",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify({
+            pennkey: friendPennkey,
+        }),
+    };
+    doAPIRequest("/base/friendship/", init).then((res) => {
+        dispatch(fetchBackendFriendships(user, activeFriendName));
+        onComplete(res);
+    });
+};
+
+export const fetchFriendPrimarySchedule = (friend) => (dispatch) => {
     doAPIRequest("/plan/primary-schedules/")
         .then((res) => res.json())
         .then((schedules) => {
-            return schedules.find((sched) => sched.user.username === pennkey);
+            return schedules.find(
+                (sched) => sched.user.username === friend.username
+            );
         })
         .then((foundSched) => {
             if (foundSched) {
-                isDisplaying(foundSched.user.first_name + "'s Schedule");
-                callback(foundSched.schedule.sections);
+                dispatch(
+                    switchActiveFriend(
+                        foundSched.user,
+                        true,
+                        foundSched.schedule.sections
+                    )
+                );
             } else {
-                isDisplaying("Not Found");
-                callback({ sections: [] });
+                dispatch(switchActiveFriend(friend, false, []));
             }
+            dispatch(setStateReadOnly(true));
         })
-        .catch((error) => {
-            error;
-        });
+        .catch((error) => console.log(error));
 };

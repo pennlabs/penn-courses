@@ -1,6 +1,6 @@
 import {
     CLEAR_ALL_SCHEDULE_DATA,
-    SET_READ_ONLY,
+    SET_STATE_READ_ONLY,
     SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
     ENFORCE_SEMESTER,
     CHANGE_SCHEDULE,
@@ -77,6 +77,43 @@ const enforceCartSemester = (currentSemester, state) => {
             );
     }
     return state;
+};
+
+/**
+ * Returns the next available schedule name that is similar to the given schedule name
+ * Used for duplication
+ * @param scheduleName: current schedule name
+ * @param used: used schedule names stored in an object
+ */
+export const nextAvailable = (scheduleName, used) => {
+    let newScheduleName = scheduleName;
+    // compute the current number at the end of the string (if it exists)
+    let endNum = 0;
+    let numDigits = 0;
+    let selectionIndex = newScheduleName.length - 1;
+    while (
+        selectionIndex >= 0 &&
+        newScheduleName.charAt(selectionIndex) >= "0" &&
+        newScheduleName.charAt(selectionIndex) <= 9
+    ) {
+        endNum +=
+            Math.pow(10, numDigits) *
+            parseInt(newScheduleName.charAt(selectionIndex), 10);
+        numDigits += 1;
+        selectionIndex -= 1;
+    }
+    // prevent double arithmetic issues
+    endNum = Math.round(endNum);
+    // search for the next available number
+    const baseName = newScheduleName.substring(
+        0,
+        newScheduleName.length - numDigits
+    );
+    while (used[newScheduleName]) {
+        endNum += 1;
+        newScheduleName = baseName + endNum;
+    }
+    return newScheduleName;
 };
 
 /**
@@ -209,7 +246,6 @@ const handleRemoveCartItem = (sectionId, state) => ({
 });
 
 export const schedule = (state = initialState, action) => {
-    const { cartSections } = state;
     switch (action.type) {
         case CLEAR_ALL_SCHEDULE_DATA:
             return { ...initialState };
@@ -219,7 +255,7 @@ export const schedule = (state = initialState, action) => {
                 ...state,
                 primaryScheduleId: action.scheduleId,
             };
-        case SET_READ_ONLY:
+        case SET_STATE_READ_ONLY:
             return { ...state, readOnly: action.readOnly };
         case ENFORCE_SEMESTER:
             return Object.entries(state.schedules)
@@ -311,9 +347,9 @@ export const schedule = (state = initialState, action) => {
         case DELETION_ATTEMPTED:
             return {
                 ...state,
-                deletedSchedules: state.deletedSchedules.concat([
-                    action.scheduleName,
-                ]),
+                deletedSchedules: state.deletedSchedules.push(
+                    action.scheduleName
+                ),
             };
         case CREATE_CART_ON_FRONTEND:
             return {
@@ -376,7 +412,7 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
                 cartUpdatedAt: Date.now(),
-                cartSections: [...cartSections, action.section],
+                cartSections: [...state.cartSections, action.section],
                 lastAdded: action.section,
                 cartPushedToBackend: false,
             };

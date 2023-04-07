@@ -1,27 +1,41 @@
 import React, { useState, useEffect } from "react";
-import { validateInput } from "./modal_actions";
-import { sendFriendRequest } from "../../actions/friendshipUtil";
+import {
+    handleFriendshipRequestResponse,
+    validateInput,
+} from "./modal_actions";
+import { User } from "../../types";
 
 interface AddScheduleFriendsModalInteriorProps {
-    existingData: string[];
+    user: User;
+    existingData: string[] | User[];
     namingFunction: (_: string) => void;
+    sendFriendRequest: (
+        user: User,
+        pennkey: string,
+        activeFriendName: string,
+        callback: (res: any) => void
+    ) => void;
     close: () => void;
     buttonName: string;
     defaultValue: string;
     placeholder: string;
     overwriteDefault: boolean;
     mode: string;
+    activeFriendName: string;
 }
 
 const AddScheduleFriendsModalInterior = ({
+    user,
     existingData,
     namingFunction,
+    sendFriendRequest,
     close,
     buttonName,
     defaultValue,
     placeholder,
     overwriteDefault = false,
     mode,
+    activeFriendName,
 }: AddScheduleFriendsModalInteriorProps) => {
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
     const [userInput, setUserInput] = useState(defaultValue);
@@ -29,7 +43,14 @@ const AddScheduleFriendsModalInterior = ({
     const [errorObj, setErrorObj] = useState({ message: "", error: false });
 
     useEffect(() => {
-        validateInput(userInput, existingData, mode, changed, setErrorObj);
+        validateInput(
+            user,
+            userInput,
+            existingData as string[],
+            mode,
+            changed,
+            setErrorObj
+        );
     }, [userInput]);
 
     const submit = () => {
@@ -39,13 +60,23 @@ const AddScheduleFriendsModalInterior = ({
 
         if (!errorObj.error) {
             if (mode == "friend") {
-                sendFriendRequest(inputRef.value).then((res) => {
-                    if (res.error) {
-                        setErrorObj(res);
-                    } else {
-                        close();
+                sendFriendRequest(
+                    user,
+                    inputRef.value,
+                    activeFriendName,
+                    (res: any) => {
+                        const responseResult = handleFriendshipRequestResponse(
+                            res,
+                            inputRef.value,
+                            existingData as User[]
+                        );
+                        if (responseResult.error) {
+                            setErrorObj(responseResult);
+                        } else {
+                            close();
+                        }
                     }
-                });
+                );
             } else if (mode == "schedule") {
                 namingFunction(inputRef.value);
                 close();

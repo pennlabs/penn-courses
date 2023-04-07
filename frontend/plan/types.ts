@@ -214,3 +214,11 @@ export type FilterType =
           time: [number, number];
       }
     | number;
+
+export interface FriendshipState {
+    activeFriend: User;
+    activeFriendSchedule: { found: boolean; sections: Section[] };
+    acceptedFriends: User[];
+    requestsReceived: Friendship[];
+    requestsSent: Friendship[];
+}

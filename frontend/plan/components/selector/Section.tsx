@@ -30,13 +30,12 @@ const SectionInfoContainer = styled.li`
     margin-bottom: 0;
     border-bottom: 1px solid rgb(230, 230, 230);
     overflow-x: scroll;
-    -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+    scrollbar-width: none; /* Firefox */
 
     &::-webkit-scrollbar {
         display: none;
     }
-
 `;
 
 const SectionInfo = styled.div`
@@ -139,15 +138,16 @@ export default function Section({ section, cart, inCart }: SectionProps) {
         (store: any) => store.schedule
     );
 
-    const overlap = meetings
-        ? meetingSetsIntersect(
-              meetings,
-              schedules[scheduleSelected].sections
-                  .filter((s: SectionType) => s.id !== section.id)
-                  .map((s: SectionType) => s.meetings)
-                  .flat()
-          )
-        : false;
+    const overlap =
+        meetings && schedules[scheduleSelected]
+            ? meetingSetsIntersect(
+                  meetings,
+                  schedules[scheduleSelected].sections
+                      .filter((s: SectionType) => s.id !== section.id)
+                      .map((s: SectionType) => s.meetings)
+                      .flat()
+              )
+            : false;
 
     const cartAdd = () => {
         cart.add();
@@ -173,7 +173,9 @@ export default function Section({ section, cart, inCart }: SectionProps) {
         );
     return (
         <SectionContainer>
-            <SectionInfoContainer onClick={inCart ? cart.remove : () => cartAdd()}>
+            <SectionInfoContainer
+                onClick={inCart ? cart.remove : () => cartAdd()}
+            >
                 <SectionInfo>
                     <IdAndInstructorContainer>
                         <IdAndActivityContainer>

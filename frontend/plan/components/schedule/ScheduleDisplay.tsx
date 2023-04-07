@@ -7,7 +7,14 @@ import Block from "./Block";
 import GridLines from "./GridLines";
 import Stats from "./Stats";
 
-import { Color, Day, Meeting, Section, MeetingBlock } from "../../types";
+import {
+    Color,
+    Day,
+    Meeting,
+    Section,
+    MeetingBlock,
+    FriendshipState,
+} from "../../types";
 import { getConflictGroups } from "../meetUtil";
 
 const EmptyScheduleContainer = styled.div`
@@ -116,32 +123,41 @@ interface ScheduleDisplayProps {
     schedData: {
         sections: Section[];
     };
+    friendshipState: FriendshipState;
     focusSection: (id: string) => void;
     removeSection: (id: string) => void;
     setTab?: (_: number) => void;
-    displayState: string;
     readOnly: boolean;
 }
 
 const ScheduleDisplay = ({
     schedData,
+    friendshipState,
     focusSection,
     removeSection,
     setTab,
-    displayState,
     readOnly,
 }: ScheduleDisplayProps) => {
     // actual schedule elements are offset by the row/col offset since
     // days/times take up a row/col respectively.
 
-    if (!schedData) {
-        return <FriendEmptySchedule message="Loading...Standby" />
+    if (
+        !schedData
+    ) {
+        return <FriendEmptySchedule message="Loading...Standby" />;
     }
 
     const rowOffset = 1;
     const colOffset = 1;
 
-    const sections = schedData.sections || [];
+    let sections;
+
+    if (readOnly) {
+        sections = friendshipState.activeFriendSchedule.sections || [];
+    } else {
+        sections = schedData.sections || [];
+    }
+
     const notEmpty = sections.length > 0;
 
     let startHour = 10.5;
@@ -286,15 +302,20 @@ const ScheduleDisplay = ({
                             }}
                         />
                     ))}
-                {!notEmpty && displayState === "Self" && <EmptySchedule />}
-                {!notEmpty && displayState === "Not Found" && (
-                    <FriendEmptySchedule message="Your friend is not sharing a schedule yet" />
-                )}
-                {!notEmpty && displayState !== "Self" && displayState !== "Not Found" && (
-                    <FriendEmptySchedule message="Your friend has not added courses to their schedule yet" />
-                )}
+                {!notEmpty && !readOnly && <EmptySchedule />}
+                {!notEmpty &&
+                    readOnly &&
+                    friendshipState.activeFriendSchedule &&
+                    !friendshipState.activeFriendSchedule.found && (
+                        <FriendEmptySchedule message="Your friend is not sharing a schedule yet" />
+                    )}
+                {!notEmpty &&
+                    readOnly &&
+                    friendshipState.activeFriendSchedule.found && (
+                        <FriendEmptySchedule message="Your friend has not added courses to their schedule yet" />
+                    )}
             </ScheduleContents>
-            {notEmpty && <Stats meetings={schedData.sections} />}
+            {notEmpty && <Stats meetings={sections} />}
         </ScheduleBox>
     );
 };

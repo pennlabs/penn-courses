@@ -59,24 +59,9 @@ export const MARK_CART_SYNCED = "MARK_CART_SYNCED";
 export const DELETION_ATTEMPTED = "DELETION_ATTEMPTED";
 
 export const ENFORCE_SEMESTER = "ENFORCE_SEMESTER";
-export const SET_READ_ONLY = "SET_READ_ONLY";
+export const SET_STATE_READ_ONLY = "SET_STATE_READ_ONLY";
 export const SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND =
     "SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND";
-
-export const createCartOnFrontend = (cartId, cartSections) => ({
-    type: CREATE_CART_ON_FRONTEND,
-    cartId,
-    cartSections,
-});
-
-export const markScheduleSynced = (scheduleName) => ({
-    scheduleName,
-    type: MARK_SCHEDULE_SYNCED,
-});
-
-export const markCartSynced = () => ({
-    type: MARK_CART_SYNCED,
-});
 
 export const doAPIRequest = (path, options = {}) =>
     fetch(`/api${path}`, options);
@@ -92,6 +77,20 @@ export const changeSchedule = (scheduleName) => ({
     scheduleName,
 });
 
+export const createCartOnFrontend = (cartId, cartSections) => ({
+    type: CREATE_CART_ON_FRONTEND,
+    cartId,
+    cartSections,
+});
+
+export const markScheduleSynced = (scheduleName) => ({
+    scheduleName,
+    type: MARK_SCHEDULE_SYNCED,
+});
+
+export const markCartSynced = () => ({
+    type: MARK_CART_SYNCED,
+});
 
 export const addCartItem = (section) => ({
     type: ADD_CART_ITEM,
@@ -173,43 +172,6 @@ export const setPrimaryScheduleIdOnFrontend = (scheduleId) => ({
     scheduleId,
     type: SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
 });
-
-/**
- * Returns the next available schedule name that is similar to the given schedule name
- * Used for duplication
- * @param scheduleName: current schedule name
- * @param used: used schedule names stored in an object
- */
-export const nextAvailable = (scheduleName, used) => {
-    let newScheduleName = scheduleName;
-    // compute the current number at the end of the string (if it exists)
-    let endNum = 0;
-    let numDigits = 0;
-    let selectionIndex = newScheduleName.length - 1;
-    while (
-        selectionIndex >= 0 &&
-        newScheduleName.charAt(selectionIndex) >= "0" &&
-        newScheduleName.charAt(selectionIndex) <= 9
-    ) {
-        endNum +=
-            Math.pow(10, numDigits) *
-            parseInt(newScheduleName.charAt(selectionIndex), 10);
-        numDigits += 1;
-        selectionIndex -= 1;
-    }
-    // prevent double arithmetic issues
-    endNum = Math.round(endNum);
-    // search for the next available number
-    const baseName = newScheduleName.substring(
-        0,
-        newScheduleName.length - numDigits
-    );
-    while (used[newScheduleName]) {
-        endNum += 1;
-        newScheduleName = baseName + endNum;
-    }
-    return newScheduleName;
-};
 
 export const loadRequirements = () => (dispatch) =>
     doAPIRequest("/base/current/requirements/").then(
@@ -491,10 +453,9 @@ export const updateSchedulesOnFrontend = (schedulesFromBackend) => ({
 });
 
 export const setStateReadOnly = (readOnly) => ({
-    type: SET_READ_ONLY,
+    type: SET_STATE_READ_ONLY,
     readOnly,
 });
-
 
 export function courseSearchLoading() {
     return {
