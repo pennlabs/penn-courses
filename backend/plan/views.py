@@ -466,8 +466,13 @@ class CalendarAPIView(APIView):
             if not end_time:
                 end_time = ""
 
-            start_datetime = first_meeting.start_date + " "
-            end_datetime = first_meeting.start_date + " "
+            if first_meeting.start_date is None:
+                start_datetime = ""
+                end_datetime = ""
+            else:
+                start_datetime = first_meeting.start_date + " "
+                end_datetime = first_meeting.start_date + " "
+
 
             if int(first_meeting.start) < 10:
                 start_datetime += "0"
