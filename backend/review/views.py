@@ -754,7 +754,7 @@ def quick_search(request):
     work_required = request.query_params.get("work_required")
 
     # filters
-    search_term = Query(text_query)
+    search_term = Query(text_query).scorer("DISMAX").highlight()
     if course_quality:
         search_term.add_filter(NumericFilter("course_quality", course_quality, 4))
     if course_difficulty:
@@ -763,7 +763,7 @@ def quick_search(request):
         search_term.add_filter(NumericFilter("course_difficulty", 0, course_difficulty))
 
     results = r.ft("courses").search(search_term.with_scores())
-    print([{e.id: e.score} for e in results.docs])
+    print(results.docs)
     out = [json.loads(e.json) for e in results.docs]
 
     return Response(out)
