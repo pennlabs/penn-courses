@@ -53,14 +53,10 @@ def same_course(course_a, course_b):
 
 def similar_courses(course_a, course_b):
     title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
-    if (
-        not title_rejection_heuristics(title_a, title_b)
-    ):
+    if not title_rejection_heuristics(title_a, title_b):
         return True
     desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
-    if (
-        not description_rejection_heuristics(desc_a, desc_b)
-    ):
+    if not description_rejection_heuristics(desc_a, desc_b):
         return True
     return False
 
