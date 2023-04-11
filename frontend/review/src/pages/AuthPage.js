@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { ReviewPage } from "./ReviewPage";
 import { ErrorBox } from "../components/common";
 import { redirectForAuth, apiCheckAuth } from "../utils/api";
+import { ReviewPage } from "./ReviewPage";
 
 /**
  * A wrapper around a review page that performs Shibboleth authentication.

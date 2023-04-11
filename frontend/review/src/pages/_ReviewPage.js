@@ -5,7 +5,7 @@ import ScoreBox from "../components/ScoreBox";
 import GraphBox from "../components/GraphBox";
 import Navbar from "../components/Navbar";
 import DetailsBox from "../components/DetailsBox";
-import ServerSearchBar from "../components/ServerSearchBar";
+import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
 import { apiReviewData, apiLive } from "../utils/api";
@@ -179,49 +179,47 @@ export class ReviewPage extends Component {
 
     if (!this.state.code) {
       return (
-        <div>
-          <div id="content" className="row">
-            {this.state.showBanner && (
-              <div id="banner">
-                <span role="img" aria-label="Party Popper Emoji">
-                  🎉
-                </span>{" "}
-                <b>Want to build impactful products like Penn Course Review?</b>{" "}
-                Join Penn Labs this spring! Apply{" "}
-                <a
-                  href="https://pennlabs.org/apply"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  here
-                </a>
-                !{" "}
-                <span role="img" aria-label="Party Popper Emoji">
-                  🎉
-                </span>
-                <span
-                  className="close"
-                  onClick={e => {
-                    this.setState({ showBanner: false });
-                    this.cookies.set("hide_pcr_banner", true, {
-                      expires: new Date(Date.now() + 12096e5)
-                    });
-                    e.preventDefault();
-                  }}
-                >
-                  <i className="fa fa-times" />
-                </span>
-              </div>
-            )}
-            <div className="col-md-12">
-              <div id="title">
-                <img src="/static/image/logo.png" alt="Penn Course Review" />{" "}
-                <span className="title-text">Penn Course Review</span>
-              </div>
+        <div id="content" className="row">
+          {this.state.showBanner && (
+            <div id="banner">
+              <span role="img" aria-label="Party Popper Emoji">
+                🎉
+              </span>{" "}
+              <b>Want to build impactful products like Penn Course Review?</b>{" "}
+              Join Penn Labs this spring! Apply{" "}
+              <a
+                href="https://pennlabs.org/apply"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                here
+              </a>
+              !{" "}
+              <span role="img" aria-label="Party Popper Emoji">
+                🎉
+              </span>
+              <span
+                className="close"
+                onClick={e => {
+                  this.setState({ showBanner: false });
+                  this.cookies.set("hide_pcr_banner", true, {
+                    expires: new Date(Date.now() + 12096e5)
+                  });
+                  e.preventDefault();
+                }}
+              >
+                <i className="fa fa-times" />
+              </span>
             </div>
-            <ServerSearchBar style={{ marginLeft: "auto", marginRight: "auto" }} isTitle />
+          )}
+          <div className="col-md-12">
+            <div id="title">
+              <img src="/static/image/logo.png" alt="Penn Course Review" />{" "}
+              <span className="title-text">Penn Course Review</span>
+            </div>
           </div>
-          <Footer style={{ marginTop: 25 }} />
+          <SearchBar isTitle />
+          <Footer style={{ marginTop: 150 }} />
         </div>
       );
     }

@@ -7,6 +7,10 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+import redis
+from django.conf import settings
+from redis.commands.search.query import NumericFilter, Query
+
 
 from courses.models import Course, Department, Instructor, PreNGSSRestriction, Section
 from courses.util import get_current_semester, get_or_create_add_drop_period
@@ -724,3 +728,33 @@ def autocomplete(request):
     return Response(
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
+
+
+@api_view(["GET"])
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            reverse_func("review-quick-search"): {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Search successful."},
+            },
+        },
+        # override_response_schema=autocomplete_response_schema,
+    )
+)
+def quick_search(request):
+    """
+    Completes quick search.
+    """
+    r = redis.Redis().from_url(settings.REDIS_URL)
+    text_query = request.query_params.get("q")
+    course_quality = request.query_params.get("course_quality", 0)
+    course_difficulty = request.query_params.get("course_difficulty", 4)
+    work_required = request.query_params.get("work_required", 4)
+    
+    # filters
+    search_term = Query(text_query).add_filter(NumericFilter("course_quality", course_quality, 4)) \
+        .add_filter(NumericFilter("work_required", 0, work_required)) \
+        .add_filter(NumericFilter("course_difficulty", 0, course_difficulty))
+
+    results = r.ft("courses").search(search_term)
+    return Response(results)
