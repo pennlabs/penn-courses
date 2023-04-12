@@ -12,7 +12,7 @@ from django.db.models import (
     When,
 )
 
-from review.models import ALL_FIELD_SLUGS, Review, ReviewBit
+from review.models import ALL_FIELD_SLUGS, Review, ReviewBit, ReviewMemo
 
 
 """
@@ -45,6 +45,7 @@ def review_averages(
     prefix="",
     semester_aggregations=False,
     extra_metrics=True,
+    memo_id=None
 ):
     """
     Annotate the queryset with the average of all ReviewBits matching the given subfilters.
@@ -62,6 +63,7 @@ def review_averages(
     :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment,
         percent of add/drop period open, average number of openings during add/drop,
         and percentage of sections filled in advance registration
+    :param: memo_id: a distinct identifier for this kind of aggregation. Used to use aggregations from 
     """
     from courses.models import Section, StatusUpdate
     from review.views import extra_metrics_section_filters_pcr
@@ -80,106 +82,121 @@ def review_averages(
     class FilledInAdvRegAvg(Subquery):
         template = "(SELECT AVG(filled_in_adv_reg) FROM (%(subquery)s) filled_in_adv_reg_view)"
 
-    queryset = queryset.annotate(
-        **{
-            **{
-                (prefix + field): Subquery(
-                    ReviewBit.objects.filter(
-                        reviewbit_subfilters,
-                        field=field,
-                        review__responses__gt=0,
+    # Note: this needs to be kept in sync with extra_metrics_subqueries
+    extra_metrics_list = ["final_enrollment", "percent_open", "num_openings", "filled_in_adv_reg"] if extra_metrics else []
+    cached_fields = []
+    cached = ReviewMemo.objects.none()
+    if memo_id is not None:
+        all_fields = fields + extra_metrics_list
+        cached = ReviewMemo.objects.filter(memo_id=memo_id, field__in=all_fields)
+        cached_fields = cached.values_list("field", flat=True)
+
+    avg_metrics_subqueries = {
+        (prefix + field): (Subquery(
+            ReviewBit.objects.filter(
+                reviewbit_subfilters, # usually just filter to reviewbits matching the review
+                field=field,
+                review__responses__gt=0,
+            )
+            .values("field")
+            .order_by()
+            .annotate(avg=Avg("average")) # compute the average of the field
+            .values("avg")[:1], # all object are annotated with "avg", so we only take the first
+            # TODO: what if there are no matching reviewbits?
+            output_field=FloatField(),
+        ) if field not in cached_fields else cached.get(field=field).average)
+        for field in fields
+    }
+
+    extra_metrics_subqueries = ({
+        (prefix + "final_enrollment"): Subquery(
+            ReviewBit.objects.filter(reviewbit_subfilters, review__responses__gt=0)
+            .values("review_id", "review__enrollment", "review__section__capacity")
+            .order_by()
+            .distinct()
+            .annotate(common=Value(1))
+            .values("common")
+            .annotate(avg_final_enrollment=Avg("review__enrollment"))
+            .values("avg_final_enrollment")[:1],
+            output_field=FloatField(),
+        ),
+        (prefix + "percent_open"): PercentOpenSubqueryAvg(
+            Section.objects.filter(
+                extra_metrics_section_filters_pcr() & section_subfilters
+            )
+            .order_by()
+            .distinct(),
+            output_field=FloatField(),
+        ),
+        (prefix + "num_openings"): NumOpeningsSubqueryAvg(
+            Section.objects.filter(
+                extra_metrics_section_filters_pcr() & section_subfilters
+            )
+            .order_by()
+            .distinct()
+            .annotate(
+                num_openings=Subquery(
+                    StatusUpdate.objects.filter(
+                        in_add_drop_period=True,
+                        new_status="O",
+                        section_id=OuterRef("id"),
                     )
-                    .values("field")
+                    .annotate(common=Value(1))
+                    .values("common")
                     .order_by()
-                    .annotate(avg=Avg("average"))
-                    .values("avg")[:1],
+                    .annotate(count=Count("*"))
+                    .values("count")[:1],
+                    output_field=IntegerField(),
+                )
+            ),
+            output_field=FloatField(),
+        ),
+        (prefix + "filled_in_adv_reg"): FilledInAdvRegAvg(
+            Section.objects.filter(
+                extra_metrics_section_filters_pcr() & section_subfilters
+            )
+            .order_by()
+            .distinct()
+            .annotate(
+                filled_in_adv_reg=Subquery(
+                    StatusUpdate.objects.filter(
+                        in_add_drop_period=False,
+                        percent_through_add_drop_period=0,
+                        section_id=OuterRef("id"),
+                    )
+                    .order_by("-created_at")
+                    .annotate(
+                        filled=Case(
+                            When(
+                                Q(new_status="C"),
+                                then=Value(1.0),
+                            ),
+                            When(
+                                Q(new_status="O"),
+                                then=Value(0.0),
+                            ),
+                            output_field=FloatField(),
+                        )
+                    )
+                    .values("filled")[:1],
                     output_field=FloatField(),
                 )
-                for field in fields
-            },
-            **(
-                {
-                    (prefix + "final_enrollment"): Subquery(
-                        ReviewBit.objects.filter(reviewbit_subfilters, review__responses__gt=0)
-                        .values("review_id", "review__enrollment", "review__section__capacity")
-                        .order_by()
-                        .distinct()
-                        .annotate(common=Value(1))
-                        .values("common")
-                        .annotate(avg_final_enrollment=Avg("review__enrollment"))
-                        .values("avg_final_enrollment")[:1],
-                        output_field=FloatField(),
-                    ),
-                    (prefix + "percent_open"): PercentOpenSubqueryAvg(
-                        Section.objects.filter(
-                            extra_metrics_section_filters_pcr() & section_subfilters
-                        )
-                        .order_by()
-                        .distinct(),
-                        output_field=FloatField(),
-                    ),
-                    (prefix + "num_openings"): NumOpeningsSubqueryAvg(
-                        Section.objects.filter(
-                            extra_metrics_section_filters_pcr() & section_subfilters
-                        )
-                        .order_by()
-                        .distinct()
-                        .annotate(
-                            num_openings=Subquery(
-                                StatusUpdate.objects.filter(
-                                    in_add_drop_period=True,
-                                    new_status="O",
-                                    section_id=OuterRef("id"),
-                                )
-                                .annotate(common=Value(1))
-                                .values("common")
-                                .order_by()
-                                .annotate(count=Count("*"))
-                                .values("count")[:1],
-                                output_field=IntegerField(),
-                            )
-                        ),
-                        output_field=FloatField(),
-                    ),
-                    (prefix + "filled_in_adv_reg"): FilledInAdvRegAvg(
-                        Section.objects.filter(
-                            extra_metrics_section_filters_pcr() & section_subfilters
-                        )
-                        .order_by()
-                        .distinct()
-                        .annotate(
-                            filled_in_adv_reg=Subquery(
-                                StatusUpdate.objects.filter(
-                                    in_add_drop_period=False,
-                                    percent_through_add_drop_period=0,
-                                    section_id=OuterRef("id"),
-                                )
-                                .order_by("-created_at")
-                                .annotate(
-                                    filled=Case(
-                                        When(
-                                            Q(new_status="C"),
-                                            then=Value(1.0),
-                                        ),
-                                        When(
-                                            Q(new_status="O"),
-                                            then=Value(0.0),
-                                        ),
-                                        output_field=FloatField(),
-                                    )
-                                )
-                                .values("filled")[:1],
-                                output_field=FloatField(),
-                            )
-                        ),
-                        output_field=FloatField(),
-                    ),
-                }
-                if extra_metrics
-                else dict()
             ),
+            output_field=FloatField(),
+        ),
+    } if extra_metrics else dict())
+
+    extra_metrics_subqueries.update({
+        prefix + extra_metric: cached.get(field=extra_metric).average
+        for extra_metric in extra_metrics_list
+    })
+
+    queryset = queryset.annotate(
+        **{
+            **avg_metrics_subqueries,
+            **extra_metrics_subqueries,
         }
-    )
+    ) 
     if semester_aggregations:
         queryset = queryset.annotate(
             **{
@@ -208,6 +225,7 @@ def annotate_with_matching_reviews(
     fields=None,
     prefix="",
     extra_metrics=True,
+    memo_id=None
 ):
     """
     Annotate each element the passed-in queryset with a subset of all review averages.
@@ -255,10 +273,11 @@ def annotate_with_matching_reviews(
         prefix,
         semester_aggregations=True,
         extra_metrics=extra_metrics,
+        memo_id=memo_id,
     )
 
 
-def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_metrics=True):
+def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_metrics=True, memo_id=None):
     """
     Annotate queryset with both all reviews and recent reviews.
     :param qs: Queryset to annotate.
@@ -280,6 +299,7 @@ def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_met
         most_recent=False,
         prefix="average_",
         extra_metrics=extra_metrics,
+        memo_id="average_" + memo_id if memo_id else None,
     )
     qs = annotate_with_matching_reviews(
         qs,
@@ -288,5 +308,6 @@ def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_met
         most_recent=True,
         prefix="recent_",
         extra_metrics=extra_metrics,
+        memo_id="recent_" + memo_id if memo_id else None,
     )
     return qs
