@@ -9,6 +9,7 @@ from courses import registrar
 from courses.management.commands.load_crosswalk import load_crosswalk
 from courses.management.commands.loadstatus import set_all_status
 from courses.management.commands.reset_topics import fill_topics
+from courses.management.commands.add_topic_semester import add_most_common_semester_topic
 from courses.models import Department, Section
 from courses.util import get_current_semester, in_dev, upsert_course_from_opendata
 from review.management.commands.clearcache import clear_cache
@@ -41,6 +42,10 @@ def registrar_import(semester=None, query=""):
     recompute_stats(semesters=semester, verbose=True)
 
     fill_topics(verbose=True)
+
+    # common_semester_addition
+    add_most_common_semester_topic(verbose=True)
+
     try:
         load_crosswalk(print_missing=False, verbose=True)
     except NoCredentialsError as e:

@@ -376,6 +376,18 @@ class Topic(models.Model):
         ),
     )
 
+    most_frequent_semester = models.CharField(
+        max_length=1,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            The most commonly offered semester for this topic, where A [Spring],
+            B [Summmer], or C [Fall].
+            """
+        )
+    )
+
     branched_from = models.ForeignKey(
         "Topic",
         related_name="branched_to",
