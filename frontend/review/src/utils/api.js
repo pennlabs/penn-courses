@@ -36,7 +36,7 @@ var uncompressedAutocompleteData = null;
 
 export function apiSearch(query) {
   return apiFetch(
-    `${API_DOMAIN}/api/review/search?query=${encodeURIComponent(query)}`
+    `${API_DOMAIN}/api/review/search?q=${encodeURIComponent(query)}`
   );
 }
 
