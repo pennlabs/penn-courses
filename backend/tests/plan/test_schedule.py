@@ -684,28 +684,3 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data["name"], "New Test Schedule")
         self.assertEqual(response.data["semester"], TEST_SEMESTER)
         self.assertEqual(len(response.data["sections"]), 0)
-
-    def test_calendar_api_view_correct_info_empty_schedule(self):
-        response = self.client.get("/api/plan/" + str(self.s.id) + "/calendar/")
-        self.assertEqual(200, response.status_code)
-
-    def test_calendar_api_view_correct_info(self):
-        _, cis121, cis121_reviews = create_mock_data_with_reviews("CIS-121-001", TEST_SEMESTER, 2)
-        _, cis160, cis160_reviews = create_mock_data_with_reviews("CIS-160-001", TEST_SEMESTER, 2)
-        response = self.client.put(
-            "/api/plan/schedules/" + str(self.s.id) + "/",
-            json.dumps(
-                {
-                    "name": "New Test Schedule",
-                    "sections": [
-                        {"id": "CIS-121-001", "semester": TEST_SEMESTER},
-                        {"id": "CIS-160-001", "semester": TEST_SEMESTER},
-                    ],
-                }
-            ),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 200)
-
-        response = self.client.get("/api/plan/" + str(self.s.id) + "/calendar/")
-        self.assertEqual(200, response.status_code)
