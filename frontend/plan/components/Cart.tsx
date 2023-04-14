@@ -133,19 +133,24 @@ const mapStateToProps = ({
     courseInfoLoading,
     courses: cartSections.map((course: Section) => ({
         section: course,
-        checked: schedules[scheduleSelected] && scheduleContainsSection(
-            schedules[scheduleSelected].sections,
-            course
-        ),
-        overlaps: (course.meetings && schedules[scheduleSelected])
-            ? meetingSetsIntersect(
-                  course.meetings,
-                  schedules[scheduleSelected].sections
-                      .filter((s: Section) => s.id !== course.id)
-                      .map((s: Section) => s.meetings)
-                      .flat()
-              )
-            : false,
+        checked:
+            schedules[scheduleSelected] &&
+            scheduleContainsSection(
+                schedules[scheduleSelected].sections,
+                course
+            ),
+        overlaps:
+            course.meetings &&
+            schedules[scheduleSelected] &&
+            schedules[scheduleSelected].sections
+                ? meetingSetsIntersect(
+                      course.meetings,
+                      schedules[scheduleSelected].sections
+                          .filter((s: Section) => s.id !== course.id)
+                          .map((s: Section) => s.meetings)
+                          .flat()
+                  )
+                : false,
     })),
     lastAdded,
 });
