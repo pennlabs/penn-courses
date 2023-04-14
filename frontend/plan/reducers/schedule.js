@@ -365,7 +365,7 @@ export const schedule = (state = initialState, action) => {
                 scheduleSelected: action.scheduleName,
             };
         case TOGGLE_CHECK:
-            if (!state.readOnly && state.schedules[state.scheduleSelected]) {
+            if (!state.readOnly) {
                 return {
                     ...state,
                     schedules: {

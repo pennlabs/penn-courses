@@ -18,9 +18,11 @@ export const scheduleContainsSection = (
     section: Section
 ): boolean => {
     let sectionFound = false;
-    meetings.forEach(({ id }) => {
-        sectionFound = sectionFound || id === section.id;
-    });
+    if (meetings) {
+        meetings.forEach(({ id }) => {
+            sectionFound = sectionFound || id === section.id;
+        });
+    }
     return sectionFound;
 };
 
