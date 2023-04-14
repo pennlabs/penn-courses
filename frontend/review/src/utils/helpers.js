@@ -89,3 +89,17 @@ export const toNormalizedSemester = sem => {
       return sem;
   }
 };
+
+export const getColor = num => {
+  if (isNaN(num) || num == null) {
+    return "rating-good";
+  }
+  num = num.toFixed(1);
+  if (num < 2) {
+    return "rating-bad";
+  }
+  if (num < 3) {
+    return "rating-okay";
+  }
+  return "rating-good";
+};
