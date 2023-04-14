@@ -8,6 +8,27 @@ from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 import redis
+
+# def highlight(self, tags=None):
+#     fields = ['code', 'crosslistings', 'instructors', 'title', 'description', 'semester', 'course_quality', 'work_required', 'difficulty']
+
+#     # add return command
+#     return_args = ["RETURN"] + len(fields) + fields
+#     self._return_fields = return_args
+
+#     # add highlight command
+#     args += ["HIGHLIGHT", "fields"] + len(fields) + fields
+
+#     if tags:
+#     else:
+
+
+#     self._highlight_fields = args
+#     return self
+
+# FT.SEARCH courses "French" RETURN 2 title description HIGHLIGHT fields 2 title description
+
+
 import json
 from django.conf import settings
 from redis.commands.search.query import NumericFilter, Query
@@ -747,14 +768,17 @@ def quick_search(request):
     Completes quick search.
     """
     r = redis.Redis.from_url(settings.REDIS_URL)
-    text_query = request.query_params.get("query")
+    text_query = request.query_params.get("q")
     text_query += "|" + text_query + "*"
     course_quality = request.query_params.get("course_quality")
     course_difficulty = request.query_params.get("course_difficulty")
     work_required = request.query_params.get("work_required")
 
     # filters
-    search_term = Query(text_query).scorer("DISMAX").highlight()
+    search_term = Query(text_query) \
+        .return_fields('code', 'crosslistings', 'instructors', 'title', 'description', 'semester', 'course_quality', 'work_required', 'difficulty') \
+        .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
+        .scorer("DISMAX")
     if course_quality:
         search_term.add_filter(NumericFilter("course_quality", course_quality, 4))
     if course_difficulty:
@@ -763,7 +787,19 @@ def quick_search(request):
         search_term.add_filter(NumericFilter("course_difficulty", 0, course_difficulty))
 
     results = r.ft("courses").search(search_term.with_scores())
-    print(results.docs)
-    out = [json.loads(e.json) for e in results.docs]
+    print(results.docs[0].id)
+    out = [
+        {
+            'code': e.code,
+            'crosslistings': e.crosslistings,
+            'instructors': e.instructors,
+            'title': e.title,
+            'description': e.description,
+            'semester': e.semester,
+            'course_quality': e.course_quality,
+            'work_required': e.work_required,
+            'difficulty': e.difficulty
+        } for e in results.docs
+    ]
 
     return Response(out)

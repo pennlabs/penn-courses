@@ -26,9 +26,8 @@ export function CoursePreview({ course, style, onClick }) {
             fontSize: "20px",
             fontWeight: "bold",
             }}
-            >
-              <span>{course.code}</span>: {course.title}
-            </h3>
+            dangerouslySetInnerHTML={{__html: `<span>${course.code}</span>: ${course.title}`}}
+            />
             <div
             style={{
             font: "14px",
@@ -42,15 +41,15 @@ export function CoursePreview({ course, style, onClick }) {
           flexDirection: "row",
           }}>
             <RatingBox
-            rating={course.course_quality}
+            rating={parseFloat(course.course_quality)}
             label="Quality"
             />
             <RatingBox
-            rating={course.work_required}
+            rating={parseFloat(course.work_required)}
             label="Work"
             />
             <RatingBox
-            rating={course.difficulty}
+            rating={parseFloat(course.difficulty)}
             label="Difficulty"
             />
           </div>
@@ -60,9 +59,8 @@ export function CoursePreview({ course, style, onClick }) {
             fontSize: "14px",
             lineHeight: "16px"
         }}
-        >
-        {course.description}
-        </p>
+        dangerouslySetInnerHTML={{__html: course.description}}
+        />
       </div>
     );
 }
