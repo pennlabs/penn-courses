@@ -212,7 +212,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
             ) {
                 newState = {
                     ...newState,
-                    scheduleSelected: foundSchedule
+                    scheduleSelected: newState.schedules[newState.scheduleSelected]
                         ? newState.scheduleSelected
                         : scheduleFromBackend.name,
                     schedules: {
@@ -365,7 +365,7 @@ export const schedule = (state = initialState, action) => {
                 scheduleSelected: action.scheduleName,
             };
         case TOGGLE_CHECK:
-            if (!state.readOnly) {
+            if (!state.readOnly && state.schedules[state.scheduleSelected]) {
                 return {
                     ...state,
                     schedules: {

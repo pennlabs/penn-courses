@@ -251,7 +251,7 @@ const FriendContent = styled.div`
         color: #669afb;
     }
 
-    .share-with {
+    .friends {
         font-size: 0.68rem;
         color: #171717;
         font-weight: 700;
@@ -453,8 +453,8 @@ const ScheduleSelectorDropdown = ({
                             {hasFriends ? (
                                 <div>
                                     {primaryScheduleId !== "-1" ? (
-                                        <div className="share-with">
-                                            Share With
+                                        <div className="friends">
+                                            Friends
                                         </div>
                                     ) : (
                                         <div>
