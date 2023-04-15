@@ -113,7 +113,7 @@ const FriendRequest = ({
             role="button"
             className="cancel-icon"
         >
-            <i className="far fa-lg fa-minus-circle" aria-hidden="true" />
+            <i className="fa fa-lg fa-minus-circle" aria-hidden="true" />
         </Icon>
     </FriendRequestContainer>
 );

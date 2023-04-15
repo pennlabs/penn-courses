@@ -77,7 +77,7 @@ const FriendButton = ({
             role="button"
             className="option-icon"
         >
-            <i className="far fa-minus-circle" aria-hidden="true" />
+            <i className="fa fa-minus-circle" aria-hidden="true" />
         </Icon>
     </ButtonContainer>
 );
