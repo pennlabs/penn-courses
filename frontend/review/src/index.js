@@ -9,6 +9,7 @@ import {
   AuthPage,
   CartPage,
   ErrorPage,
+  DeepSearch,
   FAQPage,
   ReviewPage
 } from "./pages";
@@ -31,6 +32,7 @@ ReactDOM.render(
         path="/:type(course|department|instructor)/:code"
         component={AuthPage}
       />
+      <Route exact path="/test" component={DeepSearch} />
       <Route component={ErrorPage} />
     </Switch>
     <GoogleAnalytics />

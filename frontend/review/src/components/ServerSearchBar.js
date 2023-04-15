@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import AsyncSelect from "react-select/lib/Async";
 import { components } from "react-select";
-import { css } from "emotion";
 import { withRouter } from "react-router-dom";
 import fuzzysort from "fuzzysort";
 import { apiSearch } from "../utils/api";
@@ -9,6 +8,74 @@ import { CoursePreview } from "./CoursePreview";
 import { debounce } from 'lodash';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
+import styled, { css } from "styled-components";
+
+const PCAGreen = (opacity = 1) => `rgba(90, 144, 147, ${opacity})`;
+
+const Wrapper = styled.div`
+  max-width: 768px;
+  width: "100%";
+  &:hover {
+    cursor: pointer;
+  }
+`
+
+const SearchWrapper = styled.div` // wrapper for searchbar + results
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5;
+`
+
+const Search = styled.div`
+  margin: 0 auto;
+  width: 100%;
+  height: 4rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .5rem;
+  box-shadow: 25px 25px 50px -12px rgb(0 0 0 / 0.25);
+  padding: 1rem;
+  background-color: #ffffff;
+  border-radius: 5px;
+`
+
+const SliderDropDown = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 50%;
+  margin-top: 1.5rem;
+  right: -1rem;
+  position: absolute;
+  top: 100%;
+  z-index: 20;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 3px rgb(10 10 10 / 10%), 0 0 0 1px rgb(10 10 10 / 10%);
+  padding: 1rem;
+  padding-right: 1.25rem;
+  padding-bottom: 1.6rem;
+  width: 20rem;
+  box-shadow: 0 0 25px 0 rgb(0 0 0 / 10%);
+`
+
+const SearchInput = styled.input`
+  height: 100%;
+  border: none;
+  flex: 1;
+  border-bottom: 2px solid ${PCAGreen(.25)};
+  &:focus {
+    outline: none;
+    border-bottom: 2px solid ${PCAGreen(.75)};
+  }
+  ::placeholder,
+  ::-webkit-input-placeholder {
+    font-style: italic;
+  }
+`
 
 // Takes in a course (ex: CIS 160) and returns various formats (ex: CIS-160, CIS 160, CIS160).
 function expandCombo(course) {
@@ -37,9 +104,19 @@ class ServerSearchBar extends Component {
   constructor(props) {
     super(props)
     this.selectRef = React.createRef();
-
     this.state = {
-      autocompleteOptions: [],
+      autocompleteOptions: [
+        {
+          code: "CIS 160",
+          title: "Introduction to Computer Science",
+          description: "What are the basic mathematical concepts and techniques needed in computer science? This course provides an introduction to proof principles and logics, functions and relations, induction principles, combinatorics and graph theory, as well as a rigorous grounding in writing and reading mathematical proofs.",
+          quality: 4.0,
+          work: 4.0,
+          difficulty: 4.0,
+          current: true,
+          instructors: ["John Doe", "Jane Doe"]
+        }
+      ],
       searchValue: null,
       showFilters: false,
       difficulty: [0, 4],
@@ -92,174 +169,58 @@ class ServerSearchBar extends Component {
       course={course} 
       style={{ margin: "10px 0 0 0", backgroundColor: "#ffffff" }}
       />
-    )) 
+    ))
 
     return (
-      <div 
-      id="search"
-      style={{ ...this.props.style }}
+      <Wrapper
+      style={this.props.style}
       >
-        <div 
-        style={{ 
-          margin: "0 auto",
-          height: this.props.isTitle ? 58 : 37,
-          display: "flex",
-          flexDirection: "row",
-          gap: "5"
-        }}
-        >
-          <AsyncSelect
-            ref={this.selectRef}
-            autoFocus={this.props.isTitle}
-            onChange={this.handleChange}
-            value={this.state.searchValue}
-            placeholder={
-              this.props.isTitle ? "Search for a class or professor" : ""
-            }
-            loadOptions={this.autocompleteCallback}
-            defaultOptions
-            components={{
-              Option: props => {
-                const {
-                  children,
-                  className,
-                  cx,
-                  getStyles,
-                  isDisabled,
-                  isFocused,
-                  isSelected,
-                  innerRef,
-                  innerProps,
-                  data
-                } = props;
-                return (
-                  <div
-                    ref={innerRef}
-                    className={cx(
-                      css(getStyles("option", props)),
-                      {
-                        option: true,
-                        "option--is-disabled": isDisabled,
-                        "option--is-focused": isFocused,
-                        "option--is-selected": isSelected
-                      },
-                      className
-                    )}
-                    {...innerProps}
-                  >
-                    <b>{children}</b>
-                    <span
-                      style={{ color: "#aaa", fontSize: "0.8em", marginLeft: 3 }}
-                    >
-                      {(() => {
-                        const { desc } = data;
-                        if (Array.isArray(desc)) {
-                          const opt = fuzzysort
-                            .go(parent.searchValue, desc, {
-                              threshold: -Infinity,
-                              limit: 1
-                            })
-                            .map(a => a.target);
-                          return opt[0] || desc[0];
-                        }
-                        return desc;
-                      })()}
-                    </span>
-                  </div>
-                );
-              },
-              DropdownIndicator: this.props.isTitle
-                ? null
-                : props => (
-                    <components.DropdownIndicator {...props}>
-                      <i className="fa fa-search mr-1" />
-                    </components.DropdownIndicator>
-                  )
+        <SearchWrapper>
+          <Search>
+            <img 
+            src="/static/image/logo.png" 
+            alt="Penn Course Review" 
+            style={{
+              height: "100%",
             }}
-            styles={{
-              container: styles => ({
-                ...styles,
-                width: width,
-                maxWidth: maxWidth,
-              }),
-              control: (styles, state) => ({
-                ...styles,
-                borderRadius: this.props.isTitle ? 0 : 32,
-                boxShadow: !this.props.isTitle
-                  ? "none"
-                  : state.isFocused
-                  ? "0px 2px 14px #ddd"
-                  : "0 2px 14px 0 rgba(0, 0, 0, 0.07)",
-                backgroundColor: this.props.isTitle ? "white" : "#f8f8f8",
-                borderColor: "transparent",
-                cursor: "pointer",
-                "&:hover": {},
-                fontSize: this.props.isTitle ? "30px" : null
-              }),
-              input: styles => ({
-                ...styles,
-                marginLeft: this.props.isTitle ? 0 : 10,
-                outline: "none",
-                border: "none"
-              }),
-              option: styles => ({
-                ...styles,
-                paddingTop: 5,
-                paddingBottom: 5,
-                cursor: "pointer"
-              }),
-              placeholder: styles => ({
-                ...styles,
-                whiteSpace: "nowrap",
-                color: "#b2b2b2"
-              }),
-              menu: styles => ({
-                ...styles,
-                display: this.props.isTitle ? "none" : null
-              })
-            }}
-          />
-          {this.props.isTitle &&
-            <div id="filter-dropdown">
-              <button 
-              className="btn btn-sm btn-outline-primary"
-              onClick={() => { this.setState({ showFilters: !this.state.showFilters }) }}
+            />{" "}
+            <SearchInput 
+            placeholder="Search for anything..."
+            />
+            {this.props.isTitle &&
+              <div 
+              id="filter-dropdown"
               style={{
-                color: "#5a9093"
+                position: "relative"
               }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-filter">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3">
-                </polygon></svg>
-              </button>
-              <div
-              style={{
-                visibility: this.state.showFilters ? "visible" : "hidden",
-                marginTop: "0.7rem",
-                left: "0",
-                paddingTop: "4px",
-                position: "absolute",
-                top: "100%",
-                zIndex: 20,
-                height: "200px",
-                backgroundColor: "white",
-                borderRadius: "4px",
-                boxShadow: "0 2px 3px rgb(10 10 10 / 10%), 0 0 0 1px rgb(10 10 10 / 10%)",
-                padding: "1rem",
-                paddingRight: "1.25rem",
-              }}
-              >
-                <div
+                <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => { this.setState({ showFilters: !this.state.showFilters }) }}
                 style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  gap: "15px",
-                  height: "100%"
+                  color: PCAGreen(.5),
+                }}
+                >
+                  <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  style={{
+                    height: "1.5rem",
+                    width: "1.5rem",
+                  }} 
+                  viewBox="0 0 512 512"
+                  stroke="currentColor" 
+                  fill="currentColor"
+                  >
+                    <path d="M381.25 112a48 48 0 00-90.5 0H48v32h242.75a48 48 0 0090.5 0H464v-32zM176 208a48.09 48.09 0 00-45.25 32H48v32h82.75a48 48 0 0090.5 0H464v-32H221.25A48.09 48.09 0 00176 208zM336 336a48.09 48.09 0 00-45.25 32H48v32h242.75a48 48 0 0090.5 0H464v-32h-82.75A48.09 48.09 0 00336 336z"/>
+                  </svg>
+                </button>
+                <SliderDropDown
+                style={{
+                  visibility: this.state.showFilters ? "visible" : "hidden"
                 }}
                 >
                   <Slider
                   range
-                  vertical
                   value={ this.state.quality }
                   onChange={ (e) => this.setState({ quality: e }) }
                   min={0}
@@ -279,7 +240,6 @@ class ServerSearchBar extends Component {
                   />
                   <Slider
                   range
-                  vertical
                   value={ this.state.difficulty }
                   onChange={ (e) => this.setState({ difficulty: e }) }
                   min={0}
@@ -299,7 +259,6 @@ class ServerSearchBar extends Component {
                   />
                   <Slider
                   range
-                  vertical
                   value={ this.state.work }
                   onChange={ (e) => this.setState({ work: e }) }
                   min={0}
@@ -317,19 +276,18 @@ class ServerSearchBar extends Component {
                     { borderColor: "#85b8ba" },
                   ]}
                   />
-                </div>
+                </SliderDropDown>
               </div>
-            </div>
-            }
-        </div>
+              }
+          </Search>
+        </SearchWrapper>
         {this.props.isTitle &&
           <div
-          style={{ width: width, maxWidth: maxWidth }}
           >
             {coursePreviews}
           </div>
           }
-      </div>
+      </Wrapper>
     );
   }
 }
