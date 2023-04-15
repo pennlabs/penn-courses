@@ -12,11 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="userprofile",
-            name="uuid_secret",
-            field=models.UUIDField(default=uuid.uuid4),
-        ),
         migrations.AlterField(
             model_name="ngssrestriction",
             name="inclusive",
