@@ -1,6 +1,6 @@
 import React, { Component, useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
-import ServerSearchBar from "../components/ServerSearchBar";
+import DeepSearchBar from "../components/DeepSearch/DeepSearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
 import { apiSearch } from "../utils/api";
@@ -31,6 +31,12 @@ export const DeepSearch = ({ history }) => {
     [query, workLow, workHigh, difficultyLow, difficultyHigh, qualityLow, qualityHigh]
   );
 
+  // activate animation to move the search bar up
+  const [movedUp, setMovedUp] = useState(false);
+  useEffect(() => {
+    setMovedUp(true)
+  }, []);
+
 
   const navigateToPage = (value) => {
     if (!value) {
@@ -52,9 +58,10 @@ export const DeepSearch = ({ history }) => {
   }
   return (
     <div id="content">
-      <ServerSearchBar isTitle style={{
+      <DeepSearchBar isTitle style={{
         margin: "0 auto",
-        marginTop: "14rem"
+        transition: "margin 1s",
+        marginTop: movedUp ? "2rem" : "14rem"
       }}/>
       <Footer style={{ marginTop: 150 }} />
     </div>

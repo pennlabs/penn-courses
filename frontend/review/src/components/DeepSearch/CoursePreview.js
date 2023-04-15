@@ -1,12 +1,11 @@
 import React from "react";
 import { RatingBox } from "./RatingBox";
 import styled from "styled-components";
-import { Star } from "./common";
+import { Star } from "../common";
 
 const Instructors = styled.div`
   font-style: italic;
 `;
-
 
 const Header = styled.h3`
   font-size: 20px;
