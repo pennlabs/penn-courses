@@ -19,7 +19,7 @@ export class ReviewPage extends Component {
     this.tableRef = React.createRef();
     this.cookies = new Cookies();
     this.state = {
-      type: this.props.match.params.type,
+      type: this.props.match.params.type, // course, instructor, or department
       code: this.props.match.params.code,
       data: null,
       error: null,

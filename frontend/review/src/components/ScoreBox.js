@@ -15,7 +15,8 @@ import {
   ColumnSelector,
   CourseDetails,
   PopoverTitle,
-  ScoreTable
+  ScoreTable,
+  Star
 } from "./common";
 
 import "react-table/react-table.css";
@@ -296,7 +297,7 @@ class ScoreBox extends Component {
                 </span>
               }
             >
-              <i className={`fa-star ml-1 ${star.open ? "fa" : "far"}`} />
+              <Star isFilled={star.open} />
             </PopoverTitle>
           )}
           {isInstructor && Boolean(this.state.currentCourses[code]) && (
@@ -317,14 +318,12 @@ class ScoreBox extends Component {
                 </span>
               }
             >
-              <i
-                className={`ml-1 fa-star ${
+              <Star
+                isFilled = {
                   this.state.currentCourses[code].filter(
                     a => !a.is_closed && !a.is_cancelled
                   ).length
-                    ? "fa"
-                    : "far"
-                }`}
+                }
               />
             </PopoverTitle>
           )}
