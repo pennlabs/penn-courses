@@ -19,6 +19,7 @@
     "react-string-replace": "^0.4.4",
     "react-table": "^6.11.5",
     "react-tooltip": "^4.2.17",
+    "styled-components": "^5.3.9",
     "universal-cookie": "^4.0.2",
     "workerize-loader": "^1.3.0"
   },
