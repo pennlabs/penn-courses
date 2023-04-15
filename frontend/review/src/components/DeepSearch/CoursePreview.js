@@ -2,6 +2,7 @@ import React from "react";
 import { RatingBox } from "./RatingBox";
 import styled from "styled-components";
 import { Star } from "../common";
+import { CodeDecoration } from "./CommonStyles";
 
 const Instructors = styled.div`
   font-style: italic;
@@ -32,14 +33,6 @@ const ScoreWrapper = styled.div`
   flex-direction: row;
   padding-left: .5rem;
   border-left: 1px solid #e0e0e0;
-`
-
-const CodeDecoration = styled.span`
-  background-color: aliceblue;
-  padding: .5rem;
-  border-radius: 5px;
-  font-weight: bold;
-  margin-right: .25rem;
 `
 
 const Description = styled.p`

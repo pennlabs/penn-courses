@@ -10,6 +10,7 @@ import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import styled, { css } from "styled-components";
 import { RatingBox } from "./RatingBox";
+import { CodeDecoration } from "./CommonStyles";
 
 const PCAGreen = (opacity = 1) => `rgba(90, 144, 147, ${opacity})`;
 
@@ -85,6 +86,11 @@ const SearchInput = styled.input`
 `
 
 const PreviewWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: white;
+  padding: .5rem;
   margin-bottom: 2rem;
 `
 
@@ -102,27 +108,39 @@ const ResultCategory = styled.div` // Courses, Departments, Instructors
   justify-content: space-between;
 `
 
-const InstructorPreviewComponent = ({ instructor: { name, departments } }) => (
+const InstructorPreviewComponent = ({ instructor: { name, departments, quality, work, difficulty } }) => (
   <FlexRow
   style={{
-    fontSize: "2rem",
+    fontSize: "1.25rem",
     justifyContent: "space-between",
+    marginBottom: "2rem",
   }}
   >
-    <div>
-      Instructor Name
+    <div style={{
+      
+    }}>
+      <CodeDecoration>
+        { name }
+      </CodeDecoration>
+      {" "}
+      <span style={{
+        opacity: .75,
+        
+      }}>
+        { departments?.join(", ")}
+      </span>
     </div>
     <FlexRow>
       <RatingBox
-      rating={4.0}
+      rating={quality}
       label="Quality"
       />
       <RatingBox
-      rating={3.9}
+      rating={work}
       label="Work"
       />
       <RatingBox
-      rating={3.9}
+      rating={difficulty}
       label="Difficulty"
       />
     </FlexRow>
@@ -213,37 +231,14 @@ class DeepSearchBar extends Component {
       instructorOptions: [
         {
           Category: "Courses",
-          code: "CIS 160",
-          title: "Introduction to Computer Science",
-          description: "What are the basic mathematical concepts and techniques needed in computer science? This course provides an introduction to proof principles and logics, functions and relations, induction principles, combinatorics and graph theory, as well as a rigorous grounding in writing and reading mathematical proofs.",
-          quality: 4.0,
-          work: 4.0,
-          difficulty: 4.0,
-          current: true,
-          instructors: ["John Doe", "Jane Doe"]
+          departments: ["CIS", "MATH"],
+          name: "John Doe",
         },
         {
-          Category: "Departments",
-          code: "CIS 160",
-          title: "Introduction to Computer Science",
-          description: "What are the basic mathematical concepts and techniques needed in computer science? This course provides an introduction to proof principles and logics, functions and relations, induction principles, combinatorics and graph theory, as well as a rigorous grounding in writing and reading mathematical proofs.",
-          quality: 4.0,
-          work: 4.0,
-          difficulty: 4.0,
-          current: true,
-          instructors: ["John Doe", "Jane Doe"]
+          Category: "Courses",
+          departments: ["CIS", "MATH"],
+          name: "John Doe",
         },
-        {
-          Category: "Instructors",
-          code: "CIS 160",
-          title: "Introduction to Computer Science",
-          description: "What are the basic mathematical concepts and techniques needed in computer science? This course provides an introduction to proof principles and logics, functions and relations, induction principles, combinatorics and graph theory, as well as a rigorous grounding in writing and reading mathematical proofs.",
-          quality: 4.0,
-          work: 4.0,
-          difficulty: 4.0,
-          current: true,
-          instructors: ["John Doe", "Jane Doe"]
-        }
       ],
       departmentOptions: [],
       searchValue: null,
@@ -291,12 +286,21 @@ class DeepSearchBar extends Component {
 
     const coursePreviews = this.state.courseOptions.map((course, index) => (
       <CoursePreview 
-      key={index}
+      key={course.id}
       onClick={() => {
-        this.handleChange(course)
+        this.handleChange(`course/${course.code}`) // TODO: is this right?
       }}
       course={course} 
-      style={{ margin: "10px 0 0 0", backgroundColor: "#ffffff" }}
+      style={{ backgroundColor: "#ffffff" }}
+      />
+    ))
+
+    const instructorPreviews = this.state.instructorOptions.map((instructor, index) => (
+      <InstructorPreviewComponent
+      instructor={instructor}
+      onClick={() => {
+        this.handleChange(`instructor/${instructor.id}`)
+      }}
       />
     ))
 
@@ -432,7 +436,7 @@ class DeepSearchBar extends Component {
               />
               }
             { !this.state.instructorsFolded &&
-              <PreviewWrapper>{coursePreviews}</PreviewWrapper>
+              <PreviewWrapper>{instructorPreviews}</PreviewWrapper>
               }
           </>
           }
