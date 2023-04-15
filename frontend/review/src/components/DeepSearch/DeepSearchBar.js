@@ -91,19 +91,18 @@ const PreviewWrapper = styled.div`
   gap: 1rem;
   background-color: white;
   padding: 1rem;
-  box-shadow: 0 0 15px -12px rgb(0 0 0 / 0.25);
+  box-shadow: 0 0 22px -12px rgb(0 0 0 / 0.25);
   margin-bottom: 2rem;
   border-radius: 5px;
   & > div + div {
     border-top: 2px solid rgba(0, 0, 0, .25);
     padding-top: 1.5rem;
   }
-
 `
 
 const ResultCategory = styled.div` // Courses, Departments, Instructors
   margin-top: 1.5rem;
-  margin-bottom: .5rem;
+  margin-bottom: .75rem;
   width: 100%;
   color: #aaa;
   font-size: 14px;

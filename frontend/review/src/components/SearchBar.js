@@ -5,6 +5,7 @@ import { css } from "emotion";
 import { withRouter } from "react-router-dom";
 import fuzzysort from "fuzzysort";
 import { apiAutocomplete } from "../utils/api";
+import { useFlexLayout } from "react-table";
 
 // Takes in a course (ex: CIS 160) and returns various formats (ex: CIS-160, CIS 160, CIS160).
 function expandCombo(course) {
@@ -274,7 +275,30 @@ class SearchBar extends Component {
               );
             },
             DropdownIndicator: this.props.isTitle
-              ? null
+              ? props => (
+                <components.DropdownIndicator {...props}>
+                <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: "50px",
+                  borderRadius: "10px",
+                  backgroundColor: "#f5f5f5",
+                  padding: ".25em"
+                }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="26.83 169.5 453.17 303.5">                   
+                  <g>                   
+                    <title>Layer 1</title>                   
+                    <path id="svg_1" d="m112,457l-64,-64l64,-64" stroke-width="32" stroke-miterlimit="10" stroke-linecap="square" stroke="currentColor" fill="none"></path>                   
+                    <path id="svg_2" d="m64,393l400,0l0,-128" stroke-width="32" stroke-miterlimit="10" stroke-linecap="square" stroke="currentColor" fill="none"></path>                   
+                    <text font-weight="bold" text-anchor="start" font-family="Sans-Serif" font-size="124" id="svg_3" y="284.99999" x="30.33497" stroke-width="7" stroke="currentColor" fill="currentColor">ENTER</text>                   
+                    </g>                   
+                  </svg>              
+                </div>
+                </components.DropdownIndicator>
+              )
               : props => (
                   <components.DropdownIndicator {...props}>
                     <i className="fa fa-search mr-1" />
