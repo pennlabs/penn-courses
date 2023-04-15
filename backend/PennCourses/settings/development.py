@@ -11,6 +11,12 @@ INSTALLED_APPS += ["debug_toolbar"]
 MIDDLEWARE = ["debug_toolbar.middleware.DebugToolbarMiddleware"] + MIDDLEWARE
 INTERNAL_IPS = ["127.0.0.1"]
 
+DATABASES = {
+    "default": dj_database_url.config(
+        default="sqlite:///" + os.path.join(BASE_DIR, "db.sqlite3"), conn_max_age=20
+    )
+}
+
 CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 
 CACHES = {

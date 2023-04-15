@@ -1344,6 +1344,7 @@ class UserProfile(models.Model):
     email = models.EmailField(
         blank=True, null=True, help_text="The email of the User. Defaults to null."
     )
+    uuid_secret = models.UUIDField(default=uuid.uuid4)
     push_notifications = models.BooleanField(
         default=False,
         help_text=dedent(
