@@ -144,3 +144,15 @@ export function apiFetchPCADemandChartData(course) {
     )}?token=${encodeURIComponent(API_TOKEN)}`
   );
 }
+
+const urlParamsOfObj = obj => {
+  return Object.keys(obj)
+    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key])}`)
+    .join("&");
+}
+
+export const apiSearch = (q, ranges={workLow: 0, workHigh: 4, difficultyLow: 0, difficultHigh: 4, qualityLow: 0, qualityHigh: 4}) => {
+  return apiFetch(
+    `${API_DOMAIN}/api/review/search/?q=${encodeURIComponent(q)}&${urlParamsOfObj(ranges)}`
+  );
+}
