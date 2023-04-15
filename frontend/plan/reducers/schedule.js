@@ -9,6 +9,7 @@ import {
     TOGGLE_CHECK,
     ADD_CART_ITEM,
     REMOVE_CART_ITEM,
+    DOWNLOAD_SCHEDULE,
     UPDATE_SCHEDULES,
     CREATION_SUCCESSFUL,
     MARK_CART_SYNCED,
@@ -478,6 +479,14 @@ export const schedule = (state = initialState, action) => {
                     },
                 },
             };
+
+        case DOWNLOAD_SCHEDULE: {
+            return {
+                ...state,
+                clickedOnSchedule: state.schedules[action.scheduleName].id,
+            };
+        }
+
         case CREATE_SCHEDULE:
             return {
                 ...state,
