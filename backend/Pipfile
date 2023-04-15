@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [dev-packages]
-codecov = "*"
 coverage = "*"
 unittest-xml-reporting = "*"
 flake8 = "*"
