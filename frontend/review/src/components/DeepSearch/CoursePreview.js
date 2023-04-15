@@ -23,9 +23,6 @@ const Top = styled.div`
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 30px -12px rgb(0 0 0 / 0.25);
-  padding: 1rem;
-  border-radius: 5px;
 `;
 
 const ScoreWrapper = styled.div`

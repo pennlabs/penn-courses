@@ -7,6 +7,3 @@ export const CodeDecoration = styled.span`
   font-weight: bold;
   margin-right: .25rem;
 `
-
-export const PreviewWrap = styled.div`
-`

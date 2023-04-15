@@ -90,8 +90,15 @@ const PreviewWrapper = styled.div`
   flex-direction: column;
   gap: 1rem;
   background-color: white;
-  padding: .5rem;
+  padding: 1rem;
+  box-shadow: 0 0 15px -12px rgb(0 0 0 / 0.25);
   margin-bottom: 2rem;
+  border-radius: 5px;
+  & > div + div {
+    border-top: 2px solid rgba(0, 0, 0, .25);
+    padding-top: 1.5rem;
+  }
+
 `
 
 const ResultCategory = styled.div` // Courses, Departments, Instructors
@@ -108,18 +115,21 @@ const ResultCategory = styled.div` // Courses, Departments, Instructors
   justify-content: space-between;
 `
 
-const InstructorPreviewComponent = ({ instructor: { name, departments, quality, work, difficulty } }) => (
+const InstructorPreviewComponent = ({ instructor: { name, departments, quality, work, difficulty }, onClick }) => (
   <FlexRow
+  onClick={onClick}
   style={{
     fontSize: "1.25rem",
     justifyContent: "space-between",
-    marginBottom: "2rem",
+    marginBottom: "1.5rem",
   }}
   >
-    <div style={{
-      
-    }}>
-      <CodeDecoration>
+    <div>
+      <CodeDecoration
+      style={{
+        backgroundColor: "#e8f4ea",
+      }}
+      >
         { name }
       </CodeDecoration>
       {" "}
@@ -129,6 +139,43 @@ const InstructorPreviewComponent = ({ instructor: { name, departments, quality, 
       }}>
         { departments?.join(", ")}
       </span>
+    </div>
+    <FlexRow>
+      <RatingBox
+      rating={quality}
+      label="Quality"
+      />
+      <RatingBox
+      rating={work}
+      label="Work"
+      />
+      <RatingBox
+      rating={difficulty}
+      label="Difficulty"
+      />
+    </FlexRow>
+  </FlexRow>
+)
+
+const DepartmentPreviewComponent = ({ department: { code, name, quality, work, difficulty }, onClick }) => (
+  <FlexRow
+  style={{
+    fontSize: "1.25rem",
+    justifyContent: "space-between",
+    marginBottom: "1.5rem",
+  }}
+  onClick={onClick}
+  >
+    <div>
+      <CodeDecoration
+      style={{
+        backgroundColor: "lavender",
+      }}
+      >
+        { code }
+      </CodeDecoration>
+      {" "}
+      { name }
     </div>
     <FlexRow>
       <RatingBox
@@ -240,7 +287,24 @@ class DeepSearchBar extends Component {
           name: "John Doe",
         },
       ],
-      departmentOptions: [],
+      departmentOptions: [
+        {
+          code: "CIS",
+          name: "Computer Science",
+          quality: 4.0,
+          work: 4.0,
+          difficulty: 4.0,
+          id: 1
+        },
+        {
+          code: "CIS",
+          name: "Computer Science",
+          quality: 4.0,
+          work: 4.0,
+          difficulty: 4.0,
+          id: 1
+        }
+      ],
       searchValue: null,
       showFilters: false,
       coursesFolded: false,
@@ -284,23 +348,30 @@ class DeepSearchBar extends Component {
       this.state.departmentOptions.length
     ].filter(x => x > 0).length > 1;
 
-    const coursePreviews = this.state.courseOptions.map((course, index) => (
+    const coursePreviews = this.state.courseOptions.map((course) => (
       <CoursePreview 
       key={course.id}
       onClick={() => {
         this.handleChange(`course/${course.code}`) // TODO: is this right?
       }}
       course={course} 
-      style={{ backgroundColor: "#ffffff" }}
       />
     ))
 
-    const instructorPreviews = this.state.instructorOptions.map((instructor, index) => (
+    const instructorPreviews = this.state.instructorOptions.map((instructor) => (
       <InstructorPreviewComponent
+      key={instructor.id}
       instructor={instructor}
       onClick={() => {
         this.handleChange(`instructor/${instructor.id}`)
       }}
+      />
+    ))
+
+    const departmentPreviews = this.state.departmentOptions.map((department) => (
+      <DepartmentPreviewComponent
+      key={department.id}
+      department={department}
       />
     ))
 
@@ -411,7 +482,21 @@ class DeepSearchBar extends Component {
               </SliderDropDown>
             </div>
           </Search>
-        </SearchWrapper>  
+        </SearchWrapper>
+        { this.state.departmentOptions.length > 0 &&
+          <>
+            { showCategoryHeaders && 
+              <ResultCategoryComponent
+              category="DEPARTMENTS"
+              isFolded={this.state.departmentsFolded}
+              setIsFolded={(e) => this.setState({ departmentsFolded: e })}
+              />
+              }
+            { !this.state.departmentsFolded &&
+              <PreviewWrapper>{departmentPreviews}</PreviewWrapper>
+              }
+          </>
+          }  
         { this.state.courseOptions.length > 0 &&
           <>
             { showCategoryHeaders && 
