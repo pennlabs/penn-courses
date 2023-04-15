@@ -32,7 +32,7 @@ ReactDOM.render(
         path="/:type(course|department|instructor)/:code"
         component={AuthPage}
       />
-      <Route exact path="/test" component={DeepSearch} />
+      <Route exact path="/search" component={DeepSearch} />
       <Route component={ErrorPage} />
     </Switch>
     <GoogleAnalytics />

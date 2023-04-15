@@ -114,7 +114,7 @@ const ResultCategory = styled.div` // Courses, Departments, Instructors
   justify-content: space-between;
 `
 
-const InstructorPreviewComponent = ({ instructor: { name, departments, quality, work, difficulty }, onClick }) => (
+const InstructorPreviewComponent = ({ instructor: { name, departments, quality, work, difficulty }, onClick, history }) => (
   <FlexRow
   onClick={onClick}
   style={{
@@ -304,7 +304,7 @@ class DeepSearchBar extends Component {
           id: 1
         }
       ],
-      searchValue: null,
+      searchValue: props.initialSearchValue || null,
       showFilters: false,
       coursesFolded: false,
       departmentsFolded: false,
@@ -389,6 +389,9 @@ class DeepSearchBar extends Component {
             />{" "}
             <SearchInput 
             placeholder="Search for anything..."
+            value={this.state.searchValue}
+            onChange={(e) => this.autocompleteCallback(e.target.value)}
+            autoFocus
             />
             <div 
             id="filter-dropdown"

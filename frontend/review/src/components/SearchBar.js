@@ -210,11 +210,22 @@ class SearchBar extends Component {
     this.props.history.push(value.url);
   }
 
+  // Called to redirect to deep search
+  handleDeepSearch() {
+    this.props.history.push("/search", { query: this.state.searchValue })
+  }
+
   render() {
     const { state: parent } = this;
     return (
       <div id="search" style={{ margin: "0 auto" }}>
         <AsyncSelect
+          onKeyDown={this.props.isTitle && (e => {
+            if (e.keyCode === 13 && this.state.searchValue) { // if enter is pressed and there is a value in the search bar
+              e.preventDefault();
+              this.handleDeepSearch();
+            }
+          })}
           ref={this.selectRef}
           autoFocus={this.props.isTitle}
           onChange={this.handleChange}
@@ -275,29 +286,32 @@ class SearchBar extends Component {
               );
             },
             DropdownIndicator: this.props.isTitle
-              ? props => (
-                <components.DropdownIndicator {...props}>
+              ? ({ isFocused }) => (
                 <div
                 style={{
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  width: "50px",
+                  width: "1.75em",
+                  marginRight: "0.25em",
+                  marginLeft: "0.25em",
                   borderRadius: "10px",
                   backgroundColor: "#f5f5f5",
-                  padding: ".25em"
+                  padding: ".25em",
+                  opacity: isFocused ? 1 : 0.60
                 }}
+                onClick={() => this.handleChange({
+                  url: this.handleDeepSearch()
+                })}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="26.83 169.5 453.17 303.5">                   
                   <g>                   
-                    <title>Layer 1</title>                   
                     <path id="svg_1" d="m112,457l-64,-64l64,-64" stroke-width="32" stroke-miterlimit="10" stroke-linecap="square" stroke="currentColor" fill="none"></path>                   
                     <path id="svg_2" d="m64,393l400,0l0,-128" stroke-width="32" stroke-miterlimit="10" stroke-linecap="square" stroke="currentColor" fill="none"></path>                   
                     <text font-weight="bold" text-anchor="start" font-family="Sans-Serif" font-size="124" id="svg_3" y="284.99999" x="30.33497" stroke-width="7" stroke="currentColor" fill="currentColor">ENTER</text>                   
                     </g>                   
                   </svg>              
                 </div>
-                </components.DropdownIndicator>
               )
               : props => (
                   <components.DropdownIndicator {...props}>

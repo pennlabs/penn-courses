@@ -10,26 +10,7 @@ import { apiSearch } from "../utils/api";
  */
 export const DeepSearch = ({ history }) => {
   const [error, setError] = useState({ code: "", detail: "" });
-  const [query, setQuery] = useState("");
-  const [workLow, setWorklow] = useState(0);
-  const [workHigh, setWorkHigh] = useState(0);
-  const [difficultyLow, setDifficultyLow] = useState(0);
-  const [difficultyHigh, setDifficultyHigh] = useState(0);
-  const [qualityLow, setQualityLow] = useState(0);
-  const [qualityHigh, setQualityHigh] = useState(0);
-  const [results, setResults] = useState([]);
-
-  useEffect(
-    async () => setResults(await apiSearch(query, { 
-      workLow, 
-      workHigh, 
-      difficultyLow,
-      difficultyHigh,
-      qualityLow,
-      qualityHigh
-    })), 
-    [query, workLow, workHigh, difficultyLow, difficultyHigh, qualityLow, qualityHigh]
-  );
+  const query = history.location.state.query
 
   // activate animation to move the search bar up
   const [movedUp, setMovedUp] = useState(false);
@@ -58,9 +39,11 @@ export const DeepSearch = ({ history }) => {
   }
   return (
     <div id="content">
-      <DeepSearchBar isTitle style={{
+      <DeepSearchBar isTitle 
+      initialSearchValue={query}
+      style={{
         margin: "0 auto",
-        transition: "margin 1s",
+        transition: "margin 600ms",
         marginTop: movedUp ? "2rem" : "14rem"
       }}/>
       <Footer style={{ marginTop: 150 }} />
