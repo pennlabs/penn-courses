@@ -52,7 +52,7 @@ const CalendarModal = ({ schedulePk }: CalendarModalProps) => {
     const [url, setUrl] = useState<string>("INVALID");
 
     useEffect(() => {
-        setUrl(`http://localhost:3000/api/plan/${schedulePk}/calendar`);
+        setUrl(`http://penncourseplan.com/api/plan/${schedulePk}/calendar`);
     }, []);
 
     return (
