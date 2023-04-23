@@ -50,7 +50,7 @@ class ServerSearchBar extends Component {
     this.autocompleteCallback = this.autocompleteCallback.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.setFocusedOption = this.setFocusedOption.bind(this);
-    this.debouncedApiSearch = debounce(apiSearch, 250, { leading: true })
+    this.debouncedApiSearch = debounce(apiSearch, 10, { leading: true })
   }
 
   // Called each time the input value inside the searchbar changes

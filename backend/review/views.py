@@ -8,6 +8,7 @@ from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 import redis
+import re
 
 # def highlight(self, tags=None):
 #     fields = ['code', 'crosslistings', 'instructors', 'title', 'description', 'semester', 'course_quality', 'work_required', 'difficulty']
@@ -769,7 +770,9 @@ def quick_search(request):
     """
     r = redis.Redis.from_url(settings.REDIS_URL)
     text_query = request.query_params.get("q")
-    text_query += "|" + text_query + "*"
+    text_query = re.sub(r"[^a-zA-Z0-9@]+", "", text_query)
+    if text_query:
+        text_query += "|" + text_query + "*"
     course_quality = request.query_params.get("course_quality")
     course_difficulty = request.query_params.get("course_difficulty")
     work_required = request.query_params.get("work_required")
@@ -787,7 +790,6 @@ def quick_search(request):
         search_term.add_filter(NumericFilter("course_difficulty", 0, course_difficulty))
 
     results = r.ft("courses").search(search_term.with_scores())
-    print(results.docs[0].id)
     out = [
         {
             'code': e.code,
