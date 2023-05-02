@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.template import loader
@@ -101,6 +101,7 @@ class TopicAdmin(admin.ModelAdmin):
         "most_recent__full_code",
     )
     list_select_related = ("most_recent",)
+    actions = ["merge_topics"]
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("courses")
@@ -127,6 +128,36 @@ class TopicAdmin(admin.ModelAdmin):
             return "None"
         link = reverse("admin:courses_topic_change", args=[instance.branched_from_id])
         return format_html('<a href="{}">{}</a>', link, str(instance.branched_from_id))
+
+    @admin.action(description="Merge selected topics")
+    def merge_topics(self, request, queryset):
+        if queryset.count() < 2:
+            return self.message_user(
+                request,
+                "Need at least 2 topics to merge",
+                messages.ERROR,
+            )
+
+        try:
+            Topic.merge_all(queryset)
+        except ValueError:
+            self.message_user(
+                request,
+                "Cannot merge empty topics",
+                messages.ERROR,
+            )
+        except Exception as E:
+            self.message_user(
+                request,
+                f"Could not merge topics: {str(E)}",
+                messages.ERROR,
+            )
+
+        self.message_user(
+            request,
+            "Topics successfully merged",
+            messages.SUCCESS,
+        )
 
 
 class SectionAdmin(admin.ModelAdmin):
