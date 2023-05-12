@@ -119,3 +119,10 @@ class ReviewBit(models.Model):
 
     def __str__(self):
         return f"#{self.review.pk} - {self.field}: {self.average}"
+
+
+class ReviewMemo(models.Model):
+    memo_id = models.CharField(max_length=32, db_index=True, unique=True, null=False, blank=False)
+    updated = models.DateTimeField(auto_now=True)
+    field = models.CharField(max_length=32, db_index=True)
+    value = models.FloatField()

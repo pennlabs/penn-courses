@@ -135,6 +135,7 @@ def course_reviews(request, course_code):
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
+    # Getting the course
     try:
         course = (
             Course.objects.filter(course_filters_pcr_allow_xlist, full_code=course_code)
@@ -156,6 +157,7 @@ def course_reviews(request, course_code):
     course_code = course.full_code
     aliases = course.crosslistings.values_list("full_code", flat=True)
 
+    # Compute the averages on the topic
     instructor_reviews = review_averages(
         Review.objects.filter(review_filters_pcr, section__course__topic=topic),
         reviewbit_subfilters=Q(review_id=OuterRef("id")),
@@ -163,7 +165,9 @@ def course_reviews(request, course_code):
         fields=ALL_FIELD_SLUGS,
         prefix="bit_",
         extra_metrics=True,
+        memo_id=f"topic_{topic.id}",
     ).annotate(instructor_name=F("instructor__name"), semester=F("section__course__semester"))
+    # actually gets all instructors
     recent_instructors = list(
         Instructor.objects.filter(
             id__in=Subquery(
@@ -184,6 +188,7 @@ def course_reviews(request, course_code):
         )
         .values(instructor_id=F("id"), instructor_name=F("name"), semester=F("most_recent_sem"))
     )
+    # TODO: What is the point of most_recent_sem?
     for instructor in recent_instructors:
         instructor["exclude_from_recent"] = True
     all_instructors = list(instructor_reviews.values()) + recent_instructors
@@ -194,6 +199,7 @@ def course_reviews(request, course_code):
         match_review_on=Q(section__course__topic=topic) & review_filters_pcr,
         match_section_on=Q(course__topic=topic) & section_filters_pcr,
         extra_metrics=True,
+        memo_id=f"topic_{topic.id}",
     )
     course = get_single_dict_from_qs(course_qs)
 
@@ -513,6 +519,7 @@ def department_reviews(request, department_code):
             fields=ALL_FIELD_SLUGS,
             prefix="bit_",
             extra_metrics=True,
+            memo_id=f"department_{department.id}"
         )
         .annotate(
             topic_id=F("section__course__topic_id"),
