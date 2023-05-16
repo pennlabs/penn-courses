@@ -1,4 +1,3 @@
-from genericpath import exists
 import math
 import uuid
 from textwrap import dedent
@@ -12,6 +11,7 @@ from django.db.models import Case, OuterRef, Q, Subquery, Value, When
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from genericpath import exists
 
 from review.annotations import review_averages
 
@@ -1460,30 +1460,27 @@ class Friendship(models.Model):
         Checks if two users are friends (lookup by user id)
         """
         return Friendship.objects.filter(
-            Q(sender_id=user1_id, recipient_id=user2_id, status=Friendship.Status.ACCEPTED) 
+            Q(sender_id=user1_id, recipient_id=user2_id, status=Friendship.Status.ACCEPTED)
             | Q(sender_id=user2_id, recipient_id=user1_id, status=Friendship.Status.ACCEPTED)
         ).exists()
 
     def save(self, *args, **kwargs):
-        if (self.status == self.Status.ACCEPTED and self.accepted_at is None):
+        if self.status == self.Status.ACCEPTED and self.accepted_at is None:
             self.accepted_at = timezone.now()
-        if (self.status == self.Status.REJECTED):
+        if self.status == self.Status.REJECTED:
             self.accepted_at = None
-            self.sent_at = None 
-        if (self.status == self.Status.SENT and self.sent_at is None):
+            self.sent_at = None
+        if self.status == self.Status.SENT and self.sent_at is None:
             self.sent_at = timezone.now()
-        super().save(*args, **kwargs) 
+        super().save(*args, **kwargs)
 
-
-    accepted_at = models.DateTimeField(
-        null=True
-    )
-    sent_at = models.DateTimeField(
-        null=True
-    )
+    accepted_at = models.DateTimeField(null=True)
+    sent_at = models.DateTimeField(null=True)
 
     class Meta:
         unique_together = (("sender", "recipient"),)
 
     def __str__(self):
-        return f"Friendship(Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status})"
+        return (
+            f"Friendship(Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status})"
+        )

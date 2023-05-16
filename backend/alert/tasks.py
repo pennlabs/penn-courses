@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 
 import numpy as np
-import redis
 import scipy.stats as stats
 from celery import shared_task
 from django.conf import settings
@@ -11,6 +10,7 @@ from django.db import models, transaction
 from django.db.models import Case, Q, When
 from django.db.models.functions import Cast
 
+import redis
 from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import PcaDemandDistributionEstimate, Registration
 from courses.models import Section, StatusUpdate

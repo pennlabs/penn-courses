@@ -2,11 +2,7 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 from rest_framework import routers
 
-from plan.views import (
-    ScheduleViewSet,
-    PrimaryScheduleViewSet,
-    recommend_courses_view
-)
+from plan.views import PrimaryScheduleViewSet, ScheduleViewSet, recommend_courses_view
 
 
 router = routers.DefaultRouter()

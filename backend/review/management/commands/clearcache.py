@@ -1,9 +1,10 @@
 import logging
 
-import redis
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management import BaseCommand
+
+import redis
 
 
 def clear_cache():

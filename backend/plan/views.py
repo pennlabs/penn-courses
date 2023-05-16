@@ -4,19 +4,16 @@ from django.db.models import Prefetch, Q, Subquery
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from plan.serializers import PrimaryScheduleSerializer
-from courses.views import get_accepted_friends
-from plan.models import PrimarySchedule
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Friendship, User
-from courses.models import Course, Section
+from courses.models import Course, Friendship, Section, User
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
+from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from plan.management.commands.recommendcourses import (
     clean_course_input,
@@ -25,8 +22,8 @@ from plan.management.commands.recommendcourses import (
     vectorize_user,
     vectorize_user_by_courses,
 )
-from plan.models import Schedule
-from plan.serializers import ScheduleSerializer
+from plan.models import PrimarySchedule, Schedule
+from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
 
 
 @api_view(["POST"])
@@ -183,12 +180,14 @@ def recommend_courses_view(request):
         status=status.HTTP_200_OK,
     )
 
+
 class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     """
     list: Get the primary schedule for the current user as well as primary schedules of the user's friends.
 
     update: Create or update the primary schedule for the current user.
     """
+
     model = PrimarySchedule
     queryset = PrimarySchedule.objects.none()
     http_method_names = ["get", "put"]
@@ -196,7 +195,10 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     serializer_class = PrimaryScheduleSerializer
 
     def get_queryset(self):
-        return PrimarySchedule.objects.filter(Q(user=self.request.user) | Q(user_id__in=Subquery(get_accepted_friends(self.request.user).values("id"))))
+        return PrimarySchedule.objects.filter(
+            Q(user=self.request.user)
+            | Q(user_id__in=Subquery(get_accepted_friends(self.request.user).values("id")))
+        )
 
     # schema = PcxAutoSchema(
     #     response_codes={
@@ -215,11 +217,13 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     def put(self, request):
         res = {}
         user = request.user
-        schedule = Schedule.objects.filter(person_id=user.id, id=request.data.get("schedule_id")).first()
+        schedule = Schedule.objects.filter(
+            person_id=user.id, id=request.data.get("schedule_id")
+        ).first()
         if not schedule:
             res["message"] = "Schedule does not exist"
             return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
-            
+
         primary_schedule_entry = self.get_queryset().filter(user=user).first()
         if primary_schedule_entry:
             primary_schedule_entry.schedule = schedule
@@ -230,6 +234,7 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
             res["message"] = "Primary schedule successfully created"
 
         return JsonResponse(res, status=status.HTTP_200_OK)
+
 
 class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """

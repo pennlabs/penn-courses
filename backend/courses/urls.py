@@ -1,9 +1,8 @@
-from django.urls import path, include
+from django.urls import include, path
 
 from courses import views
-from courses.views import (
-    CourseListSearch
-)
+from courses.views import CourseListSearch
+
 
 urlpatterns = [
     path("<slug:semester>/courses/", views.CourseList.as_view(), name="courses-list"),
