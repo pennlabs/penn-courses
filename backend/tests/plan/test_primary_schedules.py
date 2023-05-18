@@ -1,32 +1,17 @@
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
 from django.test import TestCase
-from options.models import (  # TODO: can't resolve this import for some reason (also appears in other PCP Schedule tests)
-    Option,
-)
 from rest_framework.test import APIClient
 
-from alert.management.commands.recomputestats import recompute_precomputed_fields
-from alert.models import AddDropPeriod
 from courses.models import Friendship
-from courses.util import invalidate_current_semester_cache
-from plan.models import PrimarySchedule, Schedule
+from plan.models import Schedule
 from tests.alert.test_alert import TEST_SEMESTER, set_semester
-from tests.courses.util import create_mock_data, create_mock_data_with_reviews
+from tests.courses.util import create_mock_data_with_reviews
 
+
+# # TODO: can't resolve the options.model.Option import for some reason
+# (also appears in other PCP Schedule tests)
 
 primary_schedule_url = "/api/plan/primary-schedules/"
-TEST_SEMESTER = "2019A"
-
-
-def set_semester():
-    post_save.disconnect(
-        receiver=invalidate_current_semester_cache,
-        sender=Option,
-        dispatch_uid="invalidate_current_semester_cache",
-    )
-    Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
-    AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
 class PrimaryScheduleTest(TestCase):
@@ -60,12 +45,7 @@ class PrimaryScheduleTest(TestCase):
         self.client = APIClient()
         self.client.login(username="jacobily", password="top_secret")
 
-        # TODO: write test cases for the following cases
-        """
-            - remove primary schedule (and check no other primary scheudles in the models)
-                - can't do this since we don't have a remove primary schedule feature. I think 
-                it's fine that we don't have one for now.
-        """
+    #  TODO: create and test a way to remove a primary schedule for a user
 
     def test_put_primary_schedule(self):
         response = self.client.put(primary_schedule_url, {"schedule_id": self.s.id})

@@ -1,15 +1,8 @@
-import json
-
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
 from django.test import TestCase
-from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.management.commands.recomputestats import recompute_precomputed_fields
-from alert.models import AddDropPeriod
 from courses.models import Friendship, UserProfile
-from tests.courses.util import create_mock_data
 
 
 friendship_url = "/api/base/friendship/"
@@ -111,7 +104,6 @@ class FriendshipModelTest(TestCase):
 
     def test_basic_null_delete(self):
         u1 = self.u1
-        u2 = self.u2
         make_friends = self.client2.delete(friendship_url, {"friend_id": u1.id})
         self.assertEquals(make_friends.status_code, 404)  # friendship does not exist
 

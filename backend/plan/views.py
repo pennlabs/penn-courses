@@ -1,16 +1,14 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q, Subquery
-from django.forms.models import model_to_dict
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course, Friendship, Section, User
+from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from courses.views import get_accepted_friends
@@ -183,7 +181,8 @@ def recommend_courses_view(request):
 
 class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     """
-    list: Get the primary schedule for the current user as well as primary schedules of the user's friends.
+    list: Get the primary schedule for the current user as well as primary
+    schedules of the user's friends.
 
     update: Create or update the primary schedule for the current user.
     """

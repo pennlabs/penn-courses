@@ -11,7 +11,6 @@ from django.db.models import Case, OuterRef, Q, Subquery, Value, When
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from genericpath import exists
 
 from review.annotations import review_averages
 
