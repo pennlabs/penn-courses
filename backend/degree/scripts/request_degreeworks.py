@@ -21,7 +21,7 @@ s = Session()
 s.cookies.update(cookies)
 s.headers.update(headers)
 
-def audit(degree_plan: DegreePlan):
+def audit(degree_plan: DegreePlan, timeout=30):
     payload = {
         "studentId": env["PENN_ID"],
         "isIncludeInprogress":True,
@@ -42,7 +42,8 @@ def audit(degree_plan: DegreePlan):
         "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/audit",
         headers=headers,
         cookies=cookies,
-        json=payload
+        json=payload,
+        timeout=timeout
     )
 
     res.raise_for_status()
@@ -384,7 +385,7 @@ def degree_plans_of(program_code):
 
     return degree_plans
 
-def get_programs():
+def get_programs(timeout=30):
     goals_payload = [
         {
             "id": "programCollection",
@@ -2351,7 +2352,8 @@ def get_programs():
         "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
         headers=headers,
         cookies=cookies,
-        json=goals_payload
+        json=goals_payload,
+        timeout=timeout
     )
     res.raise_for_status()
 
