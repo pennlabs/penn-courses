@@ -17,15 +17,30 @@ def parse_coursearray(courseArray):
     q = Q()
     for course in courseArray:
         course_q = Q()
-        match course["discipline"], course["number"]:
-            case "@", "@": # any course
+        match course["discipline"], course["number"], course.get("numberEnd"):
+            case "@", "@", end: # any course
+                assert end is None
                 pass
-            case "PSEUDO@", "@":
-                pass # TODO: this creates opportunity for q to be empty... is this okay?
-            case _, "@":
+            case "PSEUDO@", "@", end:
+                assert end is None
+                pass
+            case _, "@", end:
+                assert end is None
                 course_q &= Q(department__code=course["discipline"])
-            case _, _:
+            case _, _, None:
+                try:
+                    int(course["number"])
+                except ValueError:
+                    print(f"WARNING: non-integer course number: {course['number']}")
                 course_q &= Q(department__code=course["discipline"], code=course["number"])
+            case _, _, _:
+                try:
+                    int(course["number"])
+                    int(course["numberEnd"])
+                except ValueError:
+                    print("WARNING: non-integer course number or numberEnd")
+                course_q &= Q(department__code=course["discipline"], code__gte=int(course["number"]), code__lte=course["numberEnd"])
+
         
         connector = "AND" # the connector to the next element; and by default
         if "withArray" in course:
@@ -56,7 +71,10 @@ def parse_coursearray(courseArray):
                             case "W" | "WU":
                                 sub_q = Q(course__department__code__in=W_DEPTS)
                             case _:
-                                raise ValueError(f"Unsupported college in withArray: {filter['valueList'][0]}")                        
+                                raise ValueError(f"Unsupported college in withArray: {filter['valueList'][0]}")
+                    case "DWRESIDENT":
+                        print("WARNING: ignoring DWRESIDENT")
+                        sub_q = Q()
                     case _:
                         raise LookupError(f"Unknown filter type in withArray: {filter['code']}")
                 match filter["connector"]: # TODO: this assumes the connector is to the next element (ie we use the previous filter's connector here)
@@ -66,7 +84,12 @@ def parse_coursearray(courseArray):
                         course_q |= sub_q
                     case _:
                         raise LookupError(f"Unknown connector type in withArray: {connector}")
+
                 connector = filter["connector"]
+        
+        if len(course_q) == 0:
+            print("Warning: empty course query")
+            continue
 
         match course.get("connector"):
             case "AND" | "+":
@@ -75,6 +98,10 @@ def parse_coursearray(courseArray):
                 q |= course_q
             case _:
                 raise LookupError(f"Unknown connector type in courseArray: {course['connector']}")
+            
+    if len(q) == 0:
+        print("Warning: empty query")
+    
     return q
 
 def evaluate_condition(condition, degree_plan) -> bool:    
@@ -121,9 +148,42 @@ def parse_rulearray(ruleArray, degree_plan) -> list[Rule]:
         rule_req = rule["requirement"]
         match rule["ruleType"]:
             case "Course":
-                assert rule_req["classCreditOperator"] == "OR"
+                num = None
+                cus = None
+                max_cus = None
+                max_num = None
+
+                # check the number of classes/credits
+                # TODO: clean this up
+                match rule_req.get("classesBegin"), rule_req.get("classesEnd"), rule_req.get("creditsBegin"), rule_req.get("creditsEnd"):
+                    case None, None, None, None:
+                        raise ValueError("No classesBegin or creditsBegin in Course requirement")
+                    case num, None, None, None:
+                        rule_req["classCreditOperator"] == "OR"
+                        num = int(num)
+                    case None, None, cus, None:
+                        rule_req["classCreditOperator"] == "OR"
+                        cus = float(cus)
+                    case num, None, cus, None:
+                        cus = float(cus)
+                        num = int(num)
+                        assert rule_req["classCreditOperator"] == "AND"
+                    case None, None, cus, max_cus:
+                        cus = float(cus)
+                        max_cus = float(max_cus)
+                    case num, max_num, None, None:
+                        num = int(num)
+                        max_num = int(max_num)
+                    case (None, _, _, _) | (_, _, None, _):
+                        raise ValueError(f"Specify end of range without start: {rule_req}")
+                    case num, max_num, cus, max_cus:
+                        num = int(num)
+                        max_num = int(max_num)
+                        cus = float(cus)
+                        max_cus = float(max_cus)
+
                 rules.append(
-                    Rule(q=parse_coursearray(rule_req["courseArray"]), num=1, cus=None)
+                    Rule(q=parse_coursearray(rule_req["courseArray"]), num=num, cus=cus, max_cus=max_cus, max_num=max_num)
                 )
             case "IfStmt":
                 assert "rightCondition" not in rule_req
@@ -144,7 +204,7 @@ def parse_rulearray(ruleArray, degree_plan) -> list[Rule]:
                     case _:
                         raise LookupError(f"Unknown boolean evaluation in ifStmt: {rule['booleanEvaluation']}")
 
-                assert degreeworks_eval is None or evaluation == bool(int(degreeworks_eval))
+                assert degreeworks_eval is None or evaluation == bool(degreeworks_eval)
 
                 # add if part or else part, depending on evaluation of the condition
                 if evaluation:
@@ -167,25 +227,29 @@ def parse_rulearray(ruleArray, degree_plan) -> list[Rule]:
                     q=q,
                     num=rule_req["numberOfGroups"],
                     cus=None,
-                    group=True
+                    group=True,
+                    max_cus=None,
+                    max_num=None
                 ))
             case _:
                 raise LookupError(f"Unknown rule type {rule['ruleType']}")
     return rules
 
-# The objective
-DEGREE : list[Requirement] = []
-
-def parse_degreeworks(json, degree_plan):
+def parse_degreeworks(json, degree_plan) -> list[Requirement]:
     blockArray = json.get("blockArray")
+    degree = []
 
     for requirement in blockArray:
-        DEGREE.append(Requirement(
+        degree.append(Requirement(
             name=requirement["title"], 
             code=requirement["requirementValue"], 
-            qualifiers=requirement["header"]["qualifierArray"], 
+            qualifiers=parse_qualifiers(requirement["header"]["qualifierArray"]), 
             rules=parse_rulearray(requirement["ruleArray"], degree_plan)
         ))
+    return degree
+
+def parse_qualifiers(qualifiers):
+    return [qualifier.get("label") or qualifier.get("name") for qualifier in qualifiers]
 
 if __name__ == "__main__":
     W_DEGREE_PLANS = [
@@ -783,4 +847,4 @@ if __name__ == "__main__":
 
     for i, degree_plan in enumerate(E_BSE_DEGREE_PLANS):
         print(degree_plan)
-        parse_degreeworks(audit(degree_plan), degree_plan)
+        print(parse_degreeworks(audit(degree_plan), degree_plan))
