@@ -5,7 +5,6 @@ The app has finished the transition from React with Redux to next.js with no Red
 <img src="./public/snapshot.png"/>
 
 To run the development server:
-
 ```
 yarn install
 
