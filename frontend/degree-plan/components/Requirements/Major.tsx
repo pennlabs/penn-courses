@@ -74,7 +74,6 @@ const Major = ({major, editMode, index, moveMajor}: any) => {
                     padding:'5px', 
                     paddingLeft:'10px', 
                     borderRadius:'12px',
-                    margin:'2px'
                   }}>
                     <div>
                         <label onMouseDown={handleCollapse} className="d-flex justify-content-between">

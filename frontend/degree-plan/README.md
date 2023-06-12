@@ -1,38 +1,47 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## Penn Degree Plan
 
-## Getting Started
+The app has finished the transition from React with Redux to next.js with no Redux. This was done to provide the possibility for server-side rendering and a more light-weight frontend framework. Here's what it looks like:
 
-First, run the development server:
+<img src="./public/snapshot.png"/>
 
-```bash
+To run the development server:
+
+```
+yarn install
+
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Currently, the following features are implemented and ready for testing:
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+Requirements
+- expand/collapse major to see/hide requirements
+- switch to edit mode by clicking edit button at top right corner of requirement panel
+- rearrange degrees in edit mode
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+TODO:
+- integrate types with backend
+- style adjustment
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+Courses
+- animation showing stats for all courses planned in a semester, including course quality, instructor quality, and difficulty
+- drag a course from requirement panel and drop it in a semester in planning panel
+- drag courses across semesters in planning panel
+- delete a course from a semester by hovering over it and clicking the delete button that shows up
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+TODO:
+- divider to seperate current and past semesters
+- display more statistics
 
-## Learn More
+Degree Plans
+- see all degree plans by expanding the top tab bar in planning panel
+- switch to a degree plan by clicking on its tab
+- create a new degree plan and give it a name from input box
+- current plan is switched to the new plan upon creation
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+TODO:
+- check with Aagam about data models, create temp data to implement types on the client side
+- should be able to switch between degree plans freely
+- style fix for dnd components (crop margin) 

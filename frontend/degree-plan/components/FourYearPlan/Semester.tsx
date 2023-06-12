@@ -4,6 +4,7 @@ import { ItemTypes } from "../dnd/constants";
 import CoursePlanned from "./CoursePlanned";
 import { addCourseToSem } from "@/store/reducers/courses";
 import CoursesPlanned from "./CoursesPlanned";
+import Stats from "./Stats";
 
 // interface SemesterProps {
 //     year: string,
@@ -18,7 +19,6 @@ const semesterCardStyle = {
     padding: '15px'
 }
 const Semester = ({semester, addCourse, index, removeCourseFromSem} : any) => {
-
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (item: any) => addCourse(index, item.course, item.semester),
@@ -37,8 +37,9 @@ const Semester = ({semester, addCourse, index, removeCourseFromSem} : any) => {
                 <div className="mt-1 ms-2 mb-1" style={{fontWeight:500}}>
                     {semester.name}
                 </div>
-                <div>
+                <div className="d-flex">
                     <CoursesPlanned courses={semester.courses} semesterIndex={index} removeCourse={removeCourse}/>
+                    <Stats courses={semester.courses}/>
                 </div>
             </div>
         </>

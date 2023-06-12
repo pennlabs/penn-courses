@@ -1,4 +1,4 @@
-# Penn Courses
+# Penn Courses with Penn Degree Plan
 ![Workflow](https://github.com/pennlabs/penn-courses/workflows/Workflow/badge.svg)
 [![Coverage Status](https://codecov.io/gh/pennlabs/penn-courses/branch/master/graph/badge.svg)](https://codecov.io/gh/pennlabs/penn-courses)
 

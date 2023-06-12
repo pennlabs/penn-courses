@@ -7,6 +7,7 @@ import _ from "lodash";
 import Icon from '@mdi/react';
 import { mdiMenuRight, mdiMenuLeft } from '@mdi/js';
 import PlanTabs from "./PlanTabs";
+import { Divider } from "@mui/material";
 
 const planPanelContainerStyle = {
     borderRadius: '10px',
@@ -16,13 +17,16 @@ const planPanelContainerStyle = {
     backgroundColor: '#FFFFFF'
   }
 
-const semesterCardStyle = {
-    background: 'linear-gradient(0deg, #FFFFFF, #FFFFFF), #FFFFFF',
-    boxShadow: '0px 0px 4px 2px rgba(0, 0, 0, 0.05)',
-    borderRadius: '10px',
-    borderWidth: '0px',
-    padding: '15px'
+const tabBarStyle = {
+    backgroundColor:'#DBE2F5', 
+    paddingLeft: '15px', 
+    paddingTop: '7px', 
+    paddingBottom: '5px', 
+    paddingRight: '15px', 
+    borderTopLeftRadius: '10px', 
+    borderTopRightRadius: '10px'
 }
+
 
 // const dropdownStyle = {
 //     position: 'relative',
@@ -40,7 +44,6 @@ const semesterCardStyle = {
 //   }
 
 
-
 const PlanPanel = () => {
     const [semesters, setSemesters] = useState(semestersData);
     const [plans, setPlans] = useState(['Degree Plan 1', 'Degree Plan 2']);
@@ -52,7 +55,8 @@ const PlanPanel = () => {
     }, [semesters])
 
     useEffect(() => {
-        // switch plan
+        // TODO: switch plan
+
     }, [currrentPlan])
 
     const addCourse = (toIndex: number, course: any, fromIndex:number) => {
@@ -92,11 +96,22 @@ const PlanPanel = () => {
         setShowDropdown(false);
     }
 
+    const checkPastSemester = (semester: any) => {
+        const currSem = 'Fall';
+        const currYear = '2023';
+        const [sem, year] = semester.name.split(' ');
+        if (year < currYear) return true;
+        if (year === currYear) {
+            return sem > currSem;
+        }
+        return false;
+    }
+
     return(
     <>
         <div style={planPanelContainerStyle}>
             {/* <Tabs/> */}
-            <div className="d-flex justify-content-start" style={{backgroundColor:'#DBE2F5', paddingLeft: '15px', paddingTop: '7px', paddingBottom: '5px', paddingRight: '15px', borderTopLeftRadius: '10px', borderTopRightRadius: '10px'}}>
+            <div className="d-flex justify-content-start" style={tabBarStyle}>
                 <div onClick={() => setShowDropdown(!showDropdown)}>
                     <div className="m-1 text-bold" style={{color: '#575757', fontWeight: 'bold'}}>
                         {currrentPlan}
@@ -106,10 +121,20 @@ const PlanPanel = () => {
                 {showDropdown && <PlanTabs plans={plans} handleChoosePlan={handleChoosePlan} setPlans={setPlans} setCurrentPlan={setCurrentPlan}/>}
             </div>
             {/** map to semesters */}
-            <div className="d-flex row justify-content-center">
-                {semesters.map((semester: any, index: number) => 
-                    <Semester semester={semester} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem}/>
-                )}
+            <div >
+                <div className="d-flex row justify-content-center">
+                    {semesters.map((semester: any, index: number) => 
+                        <Semester semester={semester} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem}/>
+                    )}
+                </div>
+
+                {/* <Divider variant="middle">past semesters</Divider> */}
+{/* 
+                <div className="d-flex row justify-content-center">
+                    {semesters.filter(s => !checkPastSemester(s)).map((semester: any, index: number) => 
+                        <Semester semester={semester} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem}/>
+                    )}
+                </div> */}
             </div>
         </div>
     </>);

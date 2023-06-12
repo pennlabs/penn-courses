@@ -4,6 +4,7 @@ import majorsdata from '../../data/majors';
 import Major from './Major';
 import { useCallback, useEffect, useState } from 'react';
 import update from 'immutability-helper'
+import { Stack } from '@mui/material';
 
 export const reqPanelContainerStyle = {
     // backgroundColor: '#FFFFFF', 
@@ -48,7 +49,9 @@ export const reqPanelContainerStyle = {
 
               {/** majors */}
               <div className='m-1' style={{maxHeight:'570px', overflow: 'auto'}}>
+                <Stack spacing={1}>
                   {majors.map((major, index) => <Major key={index} index={index} major={major} editMode={editMode} moveMajor={moveMajor}/>)}
+                </Stack>
               </div>
           </div>
         </div>
