@@ -1,6 +1,11 @@
+from textwrap import dedent
 from django.db import models
-from django.db.models import Avg, Q, UniqueConstraint
+from django.db.models import Avg, Q, UniqueConstraint, QuerySet
+from django.core.exceptions import ObjectDoesNotExist
+from courses.models import Topic, Instructor, Department
+from django.db import transaction
 
+from review.annotations import review_averages
 
 class Review(models.Model):
     """
@@ -91,7 +96,7 @@ REVIEW_BIT_LABEL = (
 COLUMN_TO_SLUG = {x[0]: x[2] for x in REVIEW_BIT_LABEL}
 # Maps "context" value from RATING table to common slug.
 CONTEXT_TO_SLUG = {x[1]: x[2] for x in REVIEW_BIT_LABEL}
-ALL_FIELD_SLUGS = [x[2] for x in REVIEW_BIT_LABEL]
+FIELD_SLUGS = [x[2] for x in REVIEW_BIT_LABEL]
 
 
 class ReviewBit(models.Model):
@@ -121,14 +126,35 @@ class ReviewBit(models.Model):
         return f"#{self.review.pk} - {self.field}: {self.average}"
 
 
-class BaseAverageBit(models.Model):
+
+
+# Cache Reviews
+EXTRA_METRICS_SLUGS = [
+    "final_enrollment",
+    "percent_open",
+    "num_openings",
+    "filled_in_adv_reg"
+]
+
+SEMESTER_AGGREGATION_SLUGS = [
+    "semester_calc",
+    "semester_count"
+]
+ALL_METRIC_SLUGS = FIELD_SLUGS + EXTRA_METRICS_SLUGS + SEMESTER_AGGREGATION_SLUGS
+
+class AverageBit(models.Model):
     """
     Like review.models.ReviewBit, but with only an average field.
     """
-    field = models.CharField(max_length=32, db_index=True)
-    average = models.DecimalField(max_digits=6, decimal_places=5)
+    constraints = [
+        UniqueConstraint(fields=['field', 'average_reviews'], name='unique_average_bit')
+    ]
 
-class BaseReviewAverage(models.Model):
+    field = models.CharField(max_length=32, db_index=True)
+    average = models.DecimalField(max_digits=6, decimal_places=5) # TODO: check how n/a values are handled
+    average_reviews = models.ForeignKey("AverageReviews", on_delete=models.CASCADE, related_name='bits', db_index=True) # TODO: add help strings
+
+class AverageReviews(models.Model):
     """
     The reviews for a model (e.g., topic or instructor). 
     This is used to cache the reviews for a given instance of that model. 
@@ -136,38 +162,64 @@ class BaseReviewAverage(models.Model):
 
     The average_or_recent field is used to distinguish between the average and recent reviews.
     """
-    updated_at = models.DateTimeField(auto_now=True)
+
+    MODEL_MAP = (
+        (1, "Topic", Topic),
+        (2, "Instructor", Instructor)
+        (3, "Department", Department)
+    )
+    MODEL_OPTIONS = tuple([(k, v) for k, v, _ in MODEL_MAP])
+    MODEL_OPTIONS_DICT = {k: v for k, v, _ in MODEL_OPTIONS}
+    MODEL_OPTIONS_REV_DICT = {v: k for k, v, _ in MODEL_OPTIONS}
+    MODEL_INDEX_TO_CLASS = {k: v for k, _, v in MODEL_MAP}
+
+    model = models.SmallIntegerField(choices=MODEL_OPTIONS) 
+    instance_id = models.PositiveBigIntegerField() # note: this is used to store primary keys, but it supports a 0 value (not supported for primary keys)
+    updated_at = models.DateTimeField(auto_now=True, help="Tracks the freshness of the average")
     average_or_recent = models.BooleanField()
 
-# Cache Topic Reviews
-class TopicReviews(BaseReviewAverage):
-    topic = models.ForeignKey("courses.Topic", on_delete=models.CASCADE)
     class Meta:
-        UniqueConstraint(fields=['instructor', 'average_or_recent'], name='unique_instructor_average_or_recent')
+        constraints = [
+            UniqueConstraint(fields=['model', 'instance_id', 'average_or_recent'], name='unique_instructor_average_or_recent')
+        ]
+        index_together = [
+            ['model', 'instance_id', 'average_or_recent']
+        ]
 
-class TopicReviewBit(BaseAverageBit):
-    topic_reviews = models.ForeignKey(TopicReviews, on_delete=models.CASCADE, related_name='bits', db_index=True)
-    class Meta:
-        UniqueConstraint(fields=['topic_reviews', 'field'], name='unique_topic_reviews_field')
+    @classmethod
+    def get_average(
+        cls,
+        model: str,
+        instance_id: int,
+        average_or_recent: bool
+    ) -> QuerySet["AverageBit"]:
+        model_index = cls.MODEL_OPTIONS_REV_DICT[model]
+        try:
+            bits = cls.objects.get(model=model_index, average_or_recent=average_or_recent, instance_id=instance_id).bits.all()
+            assert len(bits) == len(ALL_METRIC_SLUGS) # TODO: remove in production
+            return bits
+        except ObjectDoesNotExist:
+            # call code to try to compute it
+            with transaction.atomic():
+                average_reviews = cls.create(
+                    model=model,
+                    instance_id=instance_id,
+                    average_or_recent=average_or_recent
+                )
 
-# Cache Instructor Reviews
-class InstructorReviews(BaseReviewAverage):    
-    instructor = models.ForeignKey("courses.Instructor", on_delete=models.CASCADE)
-    class Meta:
-        UniqueConstraint(fields=['instructor', 'average_or_recent'], name='unique_instructor_average_or_recent')
+                annotation_dict = review_averages(
+                    queryset=cls.MODEL_INDEX_TO_CLASS[model_index].objects.filter(pk=instance_id),
+                    reviewbit_subfilters=[], # TODO
+                    section_subfilters=[], # TODO
+                    fields=FIELD_SLUGS,
+                    semester_aggregations=True # TODO: figure out where this is used
+                ).values().get()
 
-class InstructorReviewBit(BaseAverageBit):
-    instructor_reviews = models.ForeignKey(InstructorReviews, on_delete=models.CASCADE, related_name='bits', db_index=True)
-    class Meta:
-        UniqueConstraint(fields=['instructor_reviews', 'field'], name='unique_instructor_reviews_field')
-
-# Cache Department Reviews
-class DepartmentReviews(BaseReviewAverage):    
-    instructor = models.ForeignKey("courses.Department", on_delete=models.CASCADE)
-    class Meta:
-        UniqueConstraint(fields=['department', 'average_or_recent'], name='unique_department_average_or_recent')
-
-class DepartmentReviewBit(BaseAverageBit):
-    department_average = models.ForeignKey(DepartmentReviews, on_delete=models.CASCADE, related_name='bits', db_index=True)
-    class Meta:
-        UniqueConstraint(fields=['department_reviews', 'field'], name='unique_instructor_reviews_field')
+                # create the AverageBit for each one
+                for field in ALL_METRIC_SLUGS:
+                    AverageBit.objects.create(
+                        field=field,
+                        average=annotation_dict[field],
+                        average_reviews=average_reviews
+                    )                
+            return average_reviews.bits.all()

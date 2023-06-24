@@ -12,7 +12,7 @@ from django.db.models import (
     When,
 )
 
-from review.models import ALL_FIELD_SLUGS, Review, ReviewBit
+from review.models import FIELD_SLUGS, Review, ReviewBit
 
 
 """
@@ -230,7 +230,7 @@ def annotate_with_matching_reviews(
     from courses.models import Section  # avoid circular imports
 
     if fields is None:
-        fields = ALL_FIELD_SLUGS
+        fields = FIELD_SLUGS
 
     matching_reviews = Review.objects.filter(match_review_on, responses__gt=0)
     reviewbit_subfilters = Q(review_id__in=Subquery(matching_reviews.values("id")))

@@ -9,7 +9,7 @@ from courses.models import Department
 from courses.util import get_semesters
 from PennCourses.settings.base import S3_resource
 from review.annotations import review_averages
-from review.models import ALL_FIELD_SLUGS, Review
+from review.models import FIELD_SLUGS, Review
 from review.views import reviewbit_filters_pcr, section_filters_pcr
 
 
@@ -134,7 +134,7 @@ class Command(BaseCommand):
         semesters = get_semesters(semesters=kwargs["semesters"])
 
         if kwargs["fields"] is None:
-            fields = ALL_FIELD_SLUGS
+            fields = FIELD_SLUGS
         else:
             fields = kwargs["fields"].strip().split(",")
         if kwargs["departments"] is None:

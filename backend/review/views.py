@@ -26,7 +26,7 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS, Review
+from review.models import FIELD_SLUGS, Review
 from review.util import (
     aggregate_reviews,
     avg_and_recent_demand_plots,
@@ -160,7 +160,7 @@ def course_reviews(request, course_code):
         Review.objects.filter(review_filters_pcr, section__course__topic=topic),
         reviewbit_subfilters=Q(review_id=OuterRef("id")),
         section_subfilters=Q(id=OuterRef("section_id")),
-        fields=ALL_FIELD_SLUGS,
+        fields=FIELD_SLUGS,
         prefix="bit_",
         extra_metrics=True,
     ).annotate(instructor_name=F("instructor__name"), semester=F("section__course__semester"))
@@ -510,7 +510,7 @@ def department_reviews(request, department_code):
             Review.objects.filter(section__course__department=department),
             reviewbit_subfilters=Q(review_id=OuterRef("id")),
             section_subfilters=Q(id=OuterRef("section_id")),
-            fields=ALL_FIELD_SLUGS,
+            fields=FIELD_SLUGS,
             prefix="bit_",
             extra_metrics=True,
         )
@@ -582,7 +582,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         ),
         reviewbit_subfilters=Q(review_id=OuterRef("id")),
         section_subfilters=Q(id=OuterRef("section_id")),
-        fields=ALL_FIELD_SLUGS,
+        fields=FIELD_SLUGS,
         prefix="bit_",
         extra_metrics=True,
     )
