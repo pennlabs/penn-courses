@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Avg, Q
+from django.db.models import Avg, Q, UniqueConstraint
 
 
 class Review(models.Model):
@@ -119,3 +119,55 @@ class ReviewBit(models.Model):
 
     def __str__(self):
         return f"#{self.review.pk} - {self.field}: {self.average}"
+
+
+class BaseAverageBit(models.Model):
+    """
+    Like review.models.ReviewBit, but with only an average field.
+    """
+    field = models.CharField(max_length=32, db_index=True)
+    average = models.DecimalField(max_digits=6, decimal_places=5)
+
+class BaseReviewAverage(models.Model):
+    """
+    The reviews for a model (e.g., topic or instructor). 
+    This is used to cache the reviews for a given instance of that model. 
+    It is expected that subclasses of BaseReviewAverage will be instantiated by a cron job.
+
+    The average_or_recent field is used to distinguish between the average and recent reviews.
+    """
+    updated_at = models.DateTimeField(auto_now=True)
+    average_or_recent = models.BooleanField()
+
+# Cache Topic Reviews
+class TopicReviews(BaseReviewAverage):
+    topic = models.ForeignKey("courses.Topic", on_delete=models.CASCADE)
+    class Meta:
+        UniqueConstraint(fields=['instructor', 'average_or_recent'], name='unique_instructor_average_or_recent')
+
+class TopicReviewBit(BaseAverageBit):
+    topic_reviews = models.ForeignKey(TopicReviews, on_delete=models.CASCADE, related_name='bits', db_index=True)
+    class Meta:
+        UniqueConstraint(fields=['topic_reviews', 'field'], name='unique_topic_reviews_field')
+
+# Cache Instructor Reviews
+class InstructorReviews(BaseReviewAverage):    
+    instructor = models.ForeignKey("courses.Instructor", on_delete=models.CASCADE)
+    class Meta:
+        UniqueConstraint(fields=['instructor', 'average_or_recent'], name='unique_instructor_average_or_recent')
+
+class InstructorReviewBit(BaseAverageBit):
+    instructor_reviews = models.ForeignKey(InstructorReviews, on_delete=models.CASCADE, related_name='bits', db_index=True)
+    class Meta:
+        UniqueConstraint(fields=['instructor_reviews', 'field'], name='unique_instructor_reviews_field')
+
+# Cache Department Reviews
+class DepartmentReviews(BaseReviewAverage):    
+    instructor = models.ForeignKey("courses.Department", on_delete=models.CASCADE)
+    class Meta:
+        UniqueConstraint(fields=['department', 'average_or_recent'], name='unique_department_average_or_recent')
+
+class DepartmentReviewBit(BaseAverageBit):
+    department_average = models.ForeignKey(DepartmentReviews, on_delete=models.CASCADE, related_name='bits', db_index=True)
+    class Meta:
+        UniqueConstraint(fields=['department_reviews', 'field'], name='unique_instructor_reviews_field')
