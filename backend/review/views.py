@@ -7,6 +7,10 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+import redis
+import re
+from redis.commands.search.query import NumericFilter, Query
+from django.conf import settings
 
 from courses.models import Course, Department, Instructor, PreNGSSRestriction, Section
 from courses.util import get_current_semester, get_or_create_add_drop_period
@@ -724,3 +728,67 @@ def autocomplete(request):
     return Response(
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
+
+@api_view(["GET"])
+def deep_search(request):
+    """
+    Completes deep search.
+    """
+    # Setup Redis
+    r = redis.Redis.from_url(settings.REDIS_URL)
+
+    # Query Parameters
+    text_query = request.GET.get("q")
+    text_query = re.sub(r"[^a-zA-Z0-9@]+", "", text_query)
+    if text_query:
+        text_query += "|" + text_query + "*"
+    course_work_low = request.GET.get("workLow")
+    course_work_high = request.GET.get("workHigh")
+    course_difficulty_low = request.GET.get("difficultyLow")
+    course_difficulty_high = request.GET.get("difficultyHigh")
+    course_quality_low = request.GET.get("qualityLow")
+    course_quality_high = request.GET.get("qualityHigh")
+
+    # Create Filters
+    search_term = Query(text_query) \
+        .return_fields('code', 'crosslistings', 'instructors', 'title', 'description', 'semester', 'course_quality', 'work_required', 'difficulty') \
+        .scorer("DISMAX")
+        # .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
+        
+    # if course_work_low or course_work_high:
+    #     search_term.add_filter(NumericFilter("course_work", course_work_low or 0, course_work_high or 4))
+    # if course_difficulty_low or course_difficulty_high:
+    #     search_term.add_filter(NumericFilter("course_difficulty", course_difficulty_low or 0, course_difficulty_high or 4))
+    # if course_quality_low or course_quality_high:
+    #     search_term.add_filter(NumericFilter("course_quality", course_quality_low or 0, course_quality_high or 4))
+
+    # Result
+    results = r.ft("courses").search(search_term.with_scores())
+    # out = [
+    #     {
+    #         'code': e.code,
+    #         'crosslistings': e.crosslistings,
+    #         'instructors': e.instructors,
+    #         'title': e.title,
+    #         'description': e.description,
+    #         'semester': e.semester,
+    #         'course_quality': e.course_quality,
+    #         'work_required': e.work_required,
+    #         'difficulty': e.difficulty
+    #     } for e in results.docs
+    # ]
+    out = [
+        {
+            'Category': "Courses",
+            'code': e.code,
+            'title': e.title,
+            'description': e.description,
+            'quality': e.course_quality,
+            'work': e.work_required,
+            'difficulty': e.difficulty,
+            'current': True,
+            'instructors': e.instructors.split(', ')
+        } for e in results.docs
+    ]
+
+    return Response(out)

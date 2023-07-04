@@ -252,7 +252,7 @@ class DeepSearchBar extends Component {
           instructors: ["John Doe", "Jane Doe"]
         },
         {
-          Category: "Departments",
+          Category: "Courses",
           code: "CIS 160",
           title: "Introduction to Computer Science",
           description: "What are the basic mathematical concepts and techniques needed in computer science? This course provides an introduction to proof principles and logics, functions and relations, induction principles, combinatorics and graph theory, as well as a rigorous grounding in writing and reading mathematical proofs.",
@@ -263,7 +263,7 @@ class DeepSearchBar extends Component {
           instructors: ["John Doe", "Jane Doe"]
         },
         {
-          Category: "Instructors",
+          Category: "Courses",
           code: "CIS 160",
           title: "Introduction to Computer Science",
           description: "What are the basic mathematical concepts and techniques needed in computer science? This course provides an introduction to proof principles and logics, functions and relations, induction principles, combinatorics and graph theory, as well as a rigorous grounding in writing and reading mathematical proofs.",
@@ -320,12 +320,30 @@ class DeepSearchBar extends Component {
     this.debouncedApiSearch = debounce(apiSearch, 250, { leading: true })
   }
 
+  // componentDidMount() {
+  //   apiSearch()
+  //     .then
+  // }
+
   // Called each time the input value inside the searchbar changes
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
     if (inputValue.length < 3) return [];
-    return this.debouncedApiSearch(inputValue).then(({ courses, instructors }) => {
-      this.setState({ courseOptions: courses, instructorOptions: instructors });
+    return this.debouncedApiSearch(inputValue).then((input) => {
+      const new_input = input.map((course) => {
+        return {
+          Category: course.Category,
+          code: course.code,
+          title: course.title,
+          description: course.description,
+          quality: parseFloat(course.quality),
+          work: parseFloat(course.work),
+          difficulty: parseFloat(course.difficulty),
+          current: course.current,
+          instructors: course.instructors
+        }
+      })
+      this.setState({ courseOptions: new_input });
     })
   }
 

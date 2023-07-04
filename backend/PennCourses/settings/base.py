@@ -185,7 +185,7 @@ TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_TOKEN", "")
 TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12153984277")
 
 # Redis
-REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 
 # Celery
 MESSAGE_BROKER_URL = REDIS_URL
