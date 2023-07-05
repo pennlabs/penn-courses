@@ -6,7 +6,7 @@ import fuzzysort from "fuzzysort";
 import { apiSearch } from "../../utils/api";
 import { CoursePreview } from "./CoursePreview";
 import { debounce } from 'lodash';
-import Slider from 'rc-slider';
+import { Range } from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import styled, { css } from "styled-components";
 import { RatingBox } from "./RatingBox";
@@ -18,6 +18,10 @@ const FlexRow = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
+`
+
+const ConstWidthText = styled.div`
+  width: 100px;
 `
 
 const Wrapper = styled.div`
@@ -128,15 +132,16 @@ const InstructorPreviewComponent = ({ instructor: { name, departments, quality, 
       style={{
         backgroundColor: "#e8f4ea",
       }}
+      dangerouslySetInnerHTML={{ __html: name }}
       >
-        { name }
       </CodeDecoration>
       {" "}
       <span style={{
         opacity: .75,
         
-      }}>
-        { departments?.join(", ")}
+      }}
+      dangerouslySetInnerHTML={{ __html: departments?.join(", ") }}
+      >
       </span>
     </div>
     <FlexRow>
@@ -170,11 +175,14 @@ const DepartmentPreviewComponent = ({ department: { code, name, quality, work, d
       style={{
         backgroundColor: "lavender",
       }}
+      dangerouslySetInnerHTML={{ __html: code }}
       >
-        { code }
       </CodeDecoration>
       {" "}
-      { name }
+      <span
+      dangerouslySetInnerHTML={{ __html: name }}
+      >
+      </span>
     </div>
     <FlexRow>
       <RatingBox
@@ -203,7 +211,7 @@ const ResultCategoryComponent = ({ category, isFolded, setIsFolded }) => (
       height: "1rem",
     }}
     >
-      <path fill="none" stroke="currentColor" stroke-linecap="square" stroke-miterlimit="10" stroke-width="48" 
+      <path fill="none" stroke="currentColor" strokeLinecap="square" strokeMiterlimit="10" strokeWidth="48" 
       d={isFolded ? "MM112 328l144-144 144 144" : "M112 184l144 144 144-144"}
       key={isFolded}
       />
@@ -239,41 +247,7 @@ class DeepSearchBar extends Component {
     super(props)
     this.selectRef = React.createRef();
     this.state = {
-      courseOptions: [
-        {
-          Category: "Courses",
-          code: "CIS 160",
-          title: "Introduction to Computer Science",
-          description: "What are the basic mathematical concepts and techniques needed in computer science? This course provides an introduction to proof principles and logics, functions and relations, induction principles, combinatorics and graph theory, as well as a rigorous grounding in writing and reading mathematical proofs.",
-          quality: 4.0,
-          work: 4.0,
-          difficulty: 4.0,
-          current: true,
-          instructors: ["John Doe", "Jane Doe"]
-        },
-        {
-          Category: "Courses",
-          code: "CIS 160",
-          title: "Introduction to Computer Science",
-          description: "What are the basic mathematical concepts and techniques needed in computer science? This course provides an introduction to proof principles and logics, functions and relations, induction principles, combinatorics and graph theory, as well as a rigorous grounding in writing and reading mathematical proofs.",
-          quality: 4.0,
-          work: 4.0,
-          difficulty: 4.0,
-          current: true,
-          instructors: ["John Doe", "Jane Doe"]
-        },
-        {
-          Category: "Courses",
-          code: "CIS 160",
-          title: "Introduction to Computer Science",
-          description: "What are the basic mathematical concepts and techniques needed in computer science? This course provides an introduction to proof principles and logics, functions and relations, induction principles, combinatorics and graph theory, as well as a rigorous grounding in writing and reading mathematical proofs.",
-          quality: 4.0,
-          work: 4.0,
-          difficulty: 4.0,
-          current: true,
-          instructors: ["John Doe", "Jane Doe"]
-        }
-      ],
+      courseOptions: [],
       instructorOptions: [
         {
           Category: "Courses",
@@ -320,16 +294,20 @@ class DeepSearchBar extends Component {
     this.debouncedApiSearch = debounce(apiSearch, 250, { leading: true })
   }
 
-  // componentDidMount() {
-  //   apiSearch()
-  //     .then
-  // }
+  componentDidMount() {
+    const query = this.props.location.state.query;
+    this.autocompleteCallback(query);
+  }
 
   // Called each time the input value inside the searchbar changes
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
     if (inputValue.length < 3) return [];
-    return this.debouncedApiSearch(inputValue).then((input) => {
+    return this.debouncedApiSearch(inputValue, {
+      workLow: this.state.work[0], workHigh: this.state.work[1],
+      difficultyLow: this.state.difficulty[0], difficultyHigh: this.state.difficulty[1],
+      qualityLow: this.state.quality[0], qualityHigh: this.state.quality[1]
+    }).then((input) => {
       const new_input = input.map((course) => {
         return {
           Category: course.Category,
@@ -365,9 +343,9 @@ class DeepSearchBar extends Component {
       this.state.departmentOptions.length
     ].filter(x => x > 0).length > 1;
 
-    const coursePreviews = this.state.courseOptions.map((course) => (
+    const coursePreviews = this.state.courseOptions.map((course, idx) => (
       <CoursePreview 
-      key={course.id}
+      key={idx}
       onClick={() => {
         this.handleChange(`course/${course.code}`) // TODO: is this right?
       }}
@@ -375,9 +353,9 @@ class DeepSearchBar extends Component {
       />
     ))
 
-    const instructorPreviews = this.state.instructorOptions.map((instructor) => (
+    const instructorPreviews = this.state.instructorOptions.map((instructor, idx) => (
       <InstructorPreviewComponent
-      key={instructor.id}
+      key={idx}
       instructor={instructor}
       onClick={() => {
         this.handleChange(`instructor/${instructor.id}`)
@@ -385,9 +363,9 @@ class DeepSearchBar extends Component {
       />
     ))
 
-    const departmentPreviews = this.state.departmentOptions.map((department) => (
+    const departmentPreviews = this.state.departmentOptions.map((department, idx) => (
       <DepartmentPreviewComponent
-      key={department.id}
+      key={idx}
       department={department}
       />
     ))
@@ -442,63 +420,69 @@ class DeepSearchBar extends Component {
                 visibility: this.state.showFilters ? "visible" : "hidden"
               }}
               >
-                <Slider
-                range
-                value={ this.state.quality }
-                onChange={ (e) => this.setState({ quality: e }) }
-                min={0}
-                max={4}
-                step={.1}
-                marks={{
-                    0: { label: this.state.quality[0] },
-                    4: { label: this.state.quality[1] },
-                }}
-                trackStyle={[{
-                  backgroundColor: "#85b8ba"
-                }]}
-                handleStyle={[
-                  { borderColor: "#85b8ba" },
-                  { borderColor: "#85b8ba" },
-                ]}
-                />
-                <Slider
-                range
-                value={ this.state.difficulty }
-                onChange={ (e) => this.setState({ difficulty: e }) }
-                min={0}
-                max={4}
-                step={.1}
-                marks={{
-                    0: { label: this.state.difficulty[0] },
-                    4: { label: this.state.difficulty[1] },
-                }}
-                trackStyle={[{
-                  backgroundColor: "#85b8ba"
-                }]}
-                handleStyle={[
-                  { borderColor: "#85b8ba" },
-                  { borderColor: "#85b8ba" },
-                ]}
-                />
-                <Slider
-                range
-                value={ this.state.work }
-                onChange={ (e) => this.setState({ work: e }) }
-                min={0}
-                max={4}
-                step={.1}
-                marks={{
-                    0: { label: this.state.work[0] },
-                    4: { label: this.state.work[1] },
-                }}
-                trackStyle={[{
-                  backgroundColor: "#85b8ba"
-                }]}
-                handleStyle={[
-                  { borderColor: "#85b8ba" },
-                  { borderColor: "#85b8ba" },
-                ]}
-                />
+                <FlexRow>
+                  <ConstWidthText>Quality</ConstWidthText>
+                  <Range
+                    value={ this.state.quality }
+                    onChange={ (e) => this.setState({ quality: e }) }
+                    min={0}
+                    max={4}
+                    step={.1}
+                    marks={{
+                      0: { label: 0 },
+                      4: { label: 4 },
+                    }}
+                    trackStyle={[{
+                      backgroundColor: "#85b8ba"
+                    }]}
+                    handleStyle={[
+                      { borderColor: "#85b8ba" },
+                      { borderColor: "#85b8ba" },
+                    ]}
+                  />
+                </FlexRow>
+                <FlexRow>
+                  <ConstWidthText>Difficulty</ConstWidthText>
+                  <Range
+                    value={ this.state.difficulty }
+                    onChange={ (e) => this.setState({ difficulty: e }) }
+                    min={0}
+                    max={4}
+                    step={.1}
+                    marks={{
+                      0: { label: 0 },
+                      4: { label: 4 },
+                    }}
+                    trackStyle={[{
+                      backgroundColor: "#85b8ba"
+                    }]}
+                    handleStyle={[
+                      { borderColor: "#85b8ba" },
+                      { borderColor: "#85b8ba" },
+                    ]}
+                  />
+                </FlexRow>
+                <FlexRow>
+                  <ConstWidthText>Work</ConstWidthText>
+                  <Range
+                    value={ this.state.work }
+                    onChange={ (e) => this.setState({ work: e }) }
+                    min={0}
+                    max={4}
+                    step={.1}
+                    marks={{
+                      0: { label: 0 },
+                      4: { label: 4 },
+                    }}
+                    trackStyle={[{
+                      backgroundColor: "#85b8ba"
+                    }]}
+                    handleStyle={[
+                      { borderColor: "#85b8ba" },
+                      { borderColor: "#85b8ba" },
+                    ]}
+                  />
+                </FlexRow>
               </SliderDropDown>
             </div>
           </Search>

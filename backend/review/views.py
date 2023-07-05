@@ -742,41 +742,28 @@ def deep_search(request):
     text_query = re.sub(r"[^a-zA-Z0-9@]+", "", text_query)
     if text_query:
         text_query += "|" + text_query + "*"
-    course_work_low = request.GET.get("workLow")
-    course_work_high = request.GET.get("workHigh")
-    course_difficulty_low = request.GET.get("difficultyLow")
-    course_difficulty_high = request.GET.get("difficultyHigh")
-    course_quality_low = request.GET.get("qualityLow")
-    course_quality_high = request.GET.get("qualityHigh")
+    course_work_low = float(request.GET.get("workLow"))
+    course_work_high = float(request.GET.get("workHigh"))
+    course_difficulty_low = float(request.GET.get("difficultyLow"))
+    course_difficulty_high = float(request.GET.get("difficultyHigh"))
+    course_quality_low = float(request.GET.get("qualityLow"))
+    course_quality_high = float(request.GET.get("qualityHigh"))
 
     # Create Filters
     search_term = Query(text_query) \
         .return_fields('code', 'crosslistings', 'instructors', 'title', 'description', 'semester', 'course_quality', 'work_required', 'difficulty') \
+        .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
         .scorer("DISMAX")
-        # .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
-        
-    # if course_work_low or course_work_high:
-    #     search_term.add_filter(NumericFilter("course_work", course_work_low or 0, course_work_high or 4))
-    # if course_difficulty_low or course_difficulty_high:
-    #     search_term.add_filter(NumericFilter("course_difficulty", course_difficulty_low or 0, course_difficulty_high or 4))
-    # if course_quality_low or course_quality_high:
-    #     search_term.add_filter(NumericFilter("course_quality", course_quality_low or 0, course_quality_high or 4))
+
+    if course_work_low != 0 or course_work_high != 4:
+        search_term.add_filter(NumericFilter("course_work", course_work_low or 0, course_work_high or 4))
+    if course_difficulty_low != 0 or course_difficulty_high != 4:
+        search_term.add_filter(NumericFilter("course_difficulty", course_difficulty_low or 0, course_difficulty_high or 4))
+    if course_quality_low != 0 or course_quality_high != 4:
+        search_term.add_filter(NumericFilter("course_quality", course_quality_low or 0, course_quality_high or 4))
 
     # Result
     results = r.ft("courses").search(search_term.with_scores())
-    # out = [
-    #     {
-    #         'code': e.code,
-    #         'crosslistings': e.crosslistings,
-    #         'instructors': e.instructors,
-    #         'title': e.title,
-    #         'description': e.description,
-    #         'semester': e.semester,
-    #         'course_quality': e.course_quality,
-    #         'work_required': e.work_required,
-    #         'difficulty': e.difficulty
-    #     } for e in results.docs
-    # ]
     out = [
         {
             'Category': "Courses",

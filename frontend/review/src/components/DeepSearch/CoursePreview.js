@@ -67,7 +67,7 @@ export function CoursePreview({course: { code, description, title, quality, work
         >
           <Top>
             <Header>
-              <CodeDecoration>{code}</CodeDecoration> {title}
+              <CodeDecoration dangerouslySetInnerHTML={{ __html: code }}></CodeDecoration> <span dangerouslySetInnerHTML={{ __html: title }}></span>
             </Header>
             <Star isFilled={current}/>
           </Top>
@@ -81,7 +81,7 @@ export function CoursePreview({course: { code, description, title, quality, work
                 Most Recently:
               </span>
               {" "}
-              {instructors?.join(", ")}
+              <span dangerouslySetInnerHTML={{ __html: instructors?.join(", ") }}></span>
             </Instructors>
             }
         </div>
@@ -100,8 +100,7 @@ export function CoursePreview({course: { code, description, title, quality, work
           />
         </ScoreWrapper>
       </div>
-      <Description>
-        {description}
+      <Description dangerouslySetInnerHTML={{ __html: description }}>
       </Description>
     </Container>
   );

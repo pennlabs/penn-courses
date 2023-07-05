@@ -151,7 +151,7 @@ const urlParamsOfObj = obj => {
     .join("&");
 }
 
-export const apiSearch = (q, ranges={workLow: 0, workHigh: 4, difficultyLow: 0, difficultHigh: 4, qualityLow: 0, qualityHigh: 4}) => {
+export const apiSearch = (q, ranges={workLow: 0, workHigh: 4, difficultyLow: 0, difficultyHigh: 4, qualityLow: 0, qualityHigh: 4}) => {
   return apiFetch(
     `${API_DOMAIN}/api/review/search?q=${encodeURIComponent(q)}&${urlParamsOfObj(ranges)}`
   );
