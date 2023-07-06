@@ -84,6 +84,7 @@ def review_averages(
         **{
             **{
                 (prefix + field): Subquery(
+                    # aggregate reviewbits
                     ReviewBit.objects.filter(
                         reviewbit_subfilters,
                         field=field,
