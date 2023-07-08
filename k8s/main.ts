@@ -28,7 +28,7 @@ export class MyChart extends PennLabsChart {
       deployment: {
         image: backendImage,
         secret,
-        replicas: 2,
+        replicas: 1,
       },
       djangoSettingsModule: 'PennCourses.settings.production',
       ingressProps: {
