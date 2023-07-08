@@ -774,7 +774,8 @@ def deep_search(request):
             'work': e.work_required,
             'difficulty': e.difficulty,
             'current': True,
-            'instructors': e.instructors.split(', ')
+            'instructors': e.instructors.split(', '),
+            'cleanCode': re.sub('\s', '-', re.sub('<[^<]+?>|course/', '', e.code))
         } for e in results.docs
     ]
 

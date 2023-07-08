@@ -248,36 +248,8 @@ class DeepSearchBar extends Component {
     this.selectRef = React.createRef();
     this.state = {
       courseOptions: [],
-      instructorOptions: [
-        {
-          Category: "Courses",
-          departments: ["CIS", "MATH"],
-          name: "John Doe",
-        },
-        {
-          Category: "Courses",
-          departments: ["CIS", "MATH"],
-          name: "John Doe",
-        },
-      ],
-      departmentOptions: [
-        {
-          code: "CIS",
-          name: "Computer Science",
-          quality: 4.0,
-          work: 4.0,
-          difficulty: 4.0,
-          id: 1
-        },
-        {
-          code: "CIS",
-          name: "Computer Science",
-          quality: 4.0,
-          work: 4.0,
-          difficulty: 4.0,
-          id: 1
-        }
-      ],
+      instructorOptions: [],
+      departmentOptions: [],
       searchValue: props.initialSearchValue || null,
       showFilters: false,
       coursesFolded: false,
@@ -291,18 +263,22 @@ class DeepSearchBar extends Component {
     this.autocompleteCallback = this.autocompleteCallback.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.setFocusedOption = this.setFocusedOption.bind(this);
-    this.debouncedApiSearch = debounce(apiSearch, 250, { leading: true })
+    this.debouncedApiSearch = debounce(apiSearch, 50, { leading: true })
   }
 
   componentDidMount() {
-    const query = this.props.location.state.query;
-    this.autocompleteCallback(query);
+    if (this.props.state !== null) {
+      const query = this.props.location.state.query;
+      if (query !== '') {
+        this.autocompleteCallback(query);
+      }
+    }
   }
 
   // Called each time the input value inside the searchbar changes
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
-    if (inputValue.length < 3) return [];
+    // if (inputValue.length < 3) return [];
     return this.debouncedApiSearch(inputValue, {
       workLow: this.state.work[0], workHigh: this.state.work[1],
       difficultyLow: this.state.difficulty[0], difficultyHigh: this.state.difficulty[1],
@@ -318,7 +294,8 @@ class DeepSearchBar extends Component {
           work: parseFloat(course.work),
           difficulty: parseFloat(course.difficulty),
           current: course.current,
-          instructors: course.instructors
+          instructors: course.instructors,
+          cleanCode: course.cleanCode
         }
       })
       this.setState({ courseOptions: new_input });
@@ -333,7 +310,7 @@ class DeepSearchBar extends Component {
 
   // Called when an option is selected in the AsyncSelect component
   handleChange(value) {
-    this.props.history.push(value.url);
+    this.props.history.push("/course/", { query: value.url })
   }
 
   render() {
@@ -341,13 +318,13 @@ class DeepSearchBar extends Component {
       this.state.courseOptions.length,
       this.state.instructorOptions.length,
       this.state.departmentOptions.length
-    ].filter(x => x > 0).length > 1;
+    ].filter(x => x > 0).length > 0;
 
     const coursePreviews = this.state.courseOptions.map((course, idx) => (
       <CoursePreview 
       key={idx}
       onClick={() => {
-        this.handleChange(`course/${course.code}`) // TODO: is this right?
+        this.handleChange(course.cleanCode) // TODO: is this right?
       }}
       course={course} 
       />
@@ -358,7 +335,7 @@ class DeepSearchBar extends Component {
       key={idx}
       instructor={instructor}
       onClick={() => {
-        this.handleChange(`instructor/${instructor.id}`)
+        this.handleChange(`/instructor/${instructor.id}`)
       }}
       />
     ))
@@ -382,6 +359,7 @@ class DeepSearchBar extends Component {
             style={{
               height: "100%",
             }}
+            onClick={() => {this.props.history.push("/")}}
             />{" "}
             <SearchInput 
             placeholder="Search for anything..."
