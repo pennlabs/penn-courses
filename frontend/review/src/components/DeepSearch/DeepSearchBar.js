@@ -310,7 +310,7 @@ class DeepSearchBar extends Component {
 
   // Called when an option is selected in the AsyncSelect component
   handleChange(value) {
-    this.props.history.push("/course/", { query: value.url })
+    this.props.history.push("/course/" + value)
   }
 
   render() {

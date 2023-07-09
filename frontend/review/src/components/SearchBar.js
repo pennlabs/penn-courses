@@ -212,7 +212,7 @@ class SearchBar extends Component {
 
   // Called to redirect to deep search
   handleDeepSearch() {
-    this.props.history.push("/search", { query: this.state.searchValue })
+    this.props.history.push("/search", { query: this.state.searchValue });
   }
 
   render() {
