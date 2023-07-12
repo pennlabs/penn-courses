@@ -1,20 +1,23 @@
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
-from courses.util import invalidate_current_semester_cache
-from plan.models import Schedule, PrimarySchedule
-from tests.alert.test_alert import TEST_SEMESTER, set_semester
-from tests.courses.util import create_mock_data_with_reviews
-from options.models import Option # TODO: can't resolve this import for some reason (also appears in other PCP Schedule tests)
+from options.models import (  # TODO: can't resolve this import for some reason (also appears in other PCP Schedule tests)
+    Option,
+)
 from rest_framework.test import APIClient
 
 from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
 from courses.models import Friendship
-from tests.courses.util import create_mock_data
+from courses.util import invalidate_current_semester_cache
+from plan.models import PrimarySchedule, Schedule
+from tests.alert.test_alert import TEST_SEMESTER, set_semester
+from tests.courses.util import create_mock_data, create_mock_data_with_reviews
+
 
 primary_schedule_url = "/api/plan/primary-schedules/"
 TEST_SEMESTER = "2019A"
+
 
 def set_semester():
     post_save.disconnect(
@@ -25,12 +28,12 @@ def set_semester():
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
     AddDropPeriod(semester=TEST_SEMESTER).save()
 
+
 class PrimaryScheduleTest(TestCase):
-    
     def setUp(self):
         self.u1 = User.objects.create_user(
-                username="jacobily", email="jacob@example.com", password="top_secret"
-            )
+            username="jacobily", email="jacob@example.com", password="top_secret"
+        )
         set_semester()
         _, self.cis120, self.cis120_reviews = create_mock_data_with_reviews(
             "CIS-120-001", TEST_SEMESTER, 2
@@ -39,7 +42,7 @@ class PrimaryScheduleTest(TestCase):
             "CIS-121-001", TEST_SEMESTER, 2
         )
         self.s = Schedule(
-            person= self.u1,
+            person=self.u1,
             semester=TEST_SEMESTER,
             name="My Test Schedule",
         )
@@ -47,7 +50,7 @@ class PrimaryScheduleTest(TestCase):
         self.s.sections.set([self.cis120])
 
         self.s2 = Schedule(
-            person= self.u1,
+            person=self.u1,
             semester=TEST_SEMESTER,
             name="My Test Schedule 2",
         )
@@ -58,12 +61,12 @@ class PrimaryScheduleTest(TestCase):
         self.client.login(username="jacobily", password="top_secret")
 
         # TODO: write test cases for the following cases
-        '''
+        """
             - remove primary schedule (and check no other primary scheudles in the models)
                 - can't do this since we don't have a remove primary schedule feature. I think 
                 it's fine that we don't have one for now.
-        '''
-    
+        """
+
     def test_put_primary_schedule(self):
         response = self.client.put(primary_schedule_url, {"schedule_id": self.s.id})
         self.assertEqual(response.status_code, 200)
@@ -75,7 +78,7 @@ class PrimaryScheduleTest(TestCase):
         # self.assertEqual(response.json()["sections"][0]["course"]["id"], self.cis120.course.id)
 
     def test_replace_primary_schedule(self):
-        response = self.client.put(primary_schedule_url, {"schedule_id": 123}) #invalid ID
+        response = self.client.put(primary_schedule_url, {"schedule_id": 123})  # invalid ID
         self.assertEqual(response.status_code, 400)
 
         response = self.client.put(primary_schedule_url, {"schedule_id": self.s.id})
@@ -92,9 +95,11 @@ class PrimaryScheduleTest(TestCase):
         response = self.client.put(primary_schedule_url, {"schedule_id": self.s.id})
 
         u2 = User.objects.create_user(
-            username="jacob2", email="jacob2@gmail.com", password="top_secret")
+            username="jacob2", email="jacob2@gmail.com", password="top_secret"
+        )
         u3 = User.objects.create_user(
-            username="jacob3", email="jacob3@gmail.com", password="top_secret")
+            username="jacob3", email="jacob3@gmail.com", password="top_secret"
+        )
         self.client2 = APIClient()
         self.client2.login(username="jacob2", password="top_secret")
         self.client3 = APIClient()
@@ -102,7 +107,7 @@ class PrimaryScheduleTest(TestCase):
 
         Friendship.objects.create(sender=self.u1, recipient=u2, status=Friendship.Status.ACCEPTED)
         u2_s = Schedule(
-            person= u2,
+            person=u2,
             semester=TEST_SEMESTER,
             name="U2 Test Schedule",
         )
@@ -121,7 +126,7 @@ class PrimaryScheduleTest(TestCase):
 
         Friendship.objects.create(sender=self.u1, recipient=u3, status=Friendship.Status.ACCEPTED)
         u3_s = Schedule(
-            person= u3,
+            person=u3,
             semester=TEST_SEMESTER,
             name="U3 Test Schedule",
         )
@@ -156,5 +161,3 @@ class PrimaryScheduleTest(TestCase):
         # print("4", response.json())
         # self.assertEqual(response.data[0]["id"], self.s.id)
         # self.assertEqual(response.data[1]["id"], u3_s.id)
-
-

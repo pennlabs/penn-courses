@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0056_alter_friendship_accepted_at_and_more'),
+        ("courses", "0056_alter_friendship_accepted_at_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='ngssrestriction',
-            name='inclusive',
-            field=models.BooleanField(help_text='\nWhether this is an include or exclude restriction. Corresponds to the `incl_excl_ind`\nresponse field. `True` if include (ie, `incl_excl_ind` is "I") and `False`\nif exclude ("E").\n'),
+            model_name="ngssrestriction",
+            name="inclusive",
+            field=models.BooleanField(
+                help_text='\nWhether this is an include or exclude restriction. Corresponds to the `incl_excl_ind`\nresponse field. `True` if include (ie, `incl_excl_ind` is "I") and `False`\nif exclude ("E").\n'
+            ),
         ),
     ]

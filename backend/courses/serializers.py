@@ -2,12 +2,12 @@ import json
 from textwrap import dedent
 
 from django.contrib.auth import get_user_model
-from courses.models import Friendship
 from rest_framework import serializers
 
 from courses.models import (
     Attribute,
     Course,
+    Friendship,
     Instructor,
     Meeting,
     NGSSRestriction,
@@ -416,6 +416,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["username", "first_name", "last_name", "profile"]
         read_only_fields = ["username"]
 
+
 class PublicUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
@@ -441,11 +442,12 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
         fields = ["section", "old_status", "new_status", "created_at", "alert_sent"]
         read_only_fields = fields
 
+
 class FriendshipSerializer(serializers.ModelSerializer):
-    
     class Meta:
         model = Friendship
         fields = ["sender", "recipient", "status", "sent_at", "accepted_at"]
+
 
 class FriendshipRequestSerializer(serializers.Serializer):
     friend_id = serializers.IntegerField()
