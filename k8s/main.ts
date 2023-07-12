@@ -11,7 +11,9 @@ export class MyChart extends PennLabsChart {
     const backendImage = 'pennlabs/penn-courses-backend';
     const secret = 'penn-courses';
 
-    new RedisApplication(this, 'redis', { deployment: { tag: '4.0' } });
+    new RedisApplication(this, 'redis', { deployment: { 
+	    image: 'redis/redis-stack-server',
+	    tag: '6.2.6-v6' } });
 
     new DjangoApplication(this, 'celery', {
       deployment: {
@@ -26,7 +28,7 @@ export class MyChart extends PennLabsChart {
       deployment: {
         image: backendImage,
         secret,
-        replicas: 8,
+        replicas: 1,
       },
       djangoSettingsModule: 'PennCourses.settings.production',
       ingressProps: {
@@ -35,6 +37,20 @@ export class MyChart extends PennLabsChart {
       domains: [{ host: 'penncourseplan.com', paths: ["/api", "/admin", "/accounts", "/assets"] },
       { host: 'penncoursealert.com', paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"] },
       { host: 'penncoursereview.com', paths: ["/api", "/admin", "/accounts", "/assets"] }],
+    });
+
+    new DjangoApplication(this, 'backend-asgi', {
+      deployment: {
+        image: backendImage,
+        cmd: ['/usr/local/bin/asgi-run'],
+        secret,
+        replicas: 1,
+      },
+      djangoSettingsModule: 'PennCourses.settings.production',
+      ingressProps: {
+        annotations: { ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';" },
+      },
+      domains: [{ host: 'penncoursereview.com', paths: ["/api/ws"] }],
     });
 
     new ReactApplication(this, 'landing', {

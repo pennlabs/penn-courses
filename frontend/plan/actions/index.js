@@ -25,6 +25,7 @@ export const REMOVE_SCHED_ITEM = "REMOVE_SCHED_ITEM";
 export const DELETE_SCHEDULE = "DELETE_SCHEDULE";
 export const RENAME_SCHEDULE = "RENAME_SCHEDULE";
 export const DUPLICATE_SCHEDULE = "DUPLICATE_SCHEDULE";
+export const DOWNLOAD_SCHEDULE = "DOWNLOAD_SCHEDULE";
 export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
 export const ENFORCE_SEMESTER = "ENFORCE_SEMESTER";
 export const CLEAR_ALL_SCHEDULE_DATA = "CLEAR_ALL_SCHEDULE_DATA";
@@ -40,6 +41,7 @@ export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
 export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
 export const UPDATE_CHECKBOX_FILTER = "UPDATE_CHECKBOX_FILTER";
+export const UPDATE_BUTTON_FILTER = "UPDATE_BUTTON_FILTER";
 export const CLEAR_FILTER = "CLEAR_FILTER";
 export const CLEAR_ALL = "CLEAR_ALL";
 
@@ -78,6 +80,11 @@ export const doAPIRequest = (path, options = {}) =>
 
 export const duplicateSchedule = (scheduleName) => ({
     type: DUPLICATE_SCHEDULE,
+    scheduleName,
+});
+
+export const downloadSchedule = (scheduleName) => ({
+    type: DOWNLOAD_SCHEDULE,
     scheduleName,
 });
 
@@ -313,10 +320,24 @@ function buildCourseSearchUrl(filterData) {
         }
     }
 
-    // Fit Schedule filter
-    // if (filterData["fit_schedule"]) {
-    //     queryString += '&schedule-fit=${}'
-    // }
+    // toggle button filters
+    const buttonFields = ["schedule-fit", "is_open"];
+    const buttonDefaultFields = [-1, 0];
+
+    for (let i = 0; i < buttonFields.length; i += 1) {
+        if (
+            filterData[buttonFields[i]] &&
+            JSON.stringify(filterData[buttonFields[i]]) !==
+                JSON.stringify(buttonDefaultFields[i])
+        ) {
+            // get each filter's value
+            const applied = filterData[buttonFields[i]];
+            if (applied !== undefined && applied !== "" && applied !== null) {
+                queryString += `&${buttonFields[i]}=${applied}`;
+            }
+        }
+    }
+
     return queryString;
 }
 
@@ -396,6 +417,14 @@ export function updateCheckboxFilter(field, value, toggleState) {
         field,
         value,
         toggleState,
+    };
+}
+
+export function updateButtonFilter(field, value) {
+    return {
+        type: UPDATE_BUTTON_FILTER,
+        field,
+        value,
     };
 }
 

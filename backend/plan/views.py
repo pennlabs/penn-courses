@@ -1,20 +1,27 @@
+import arrow
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q, Subquery
 from django.forms.models import model_to_dict
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from plan.serializers import PrimaryScheduleSerializer
 from courses.views import get_accepted_friends
 from plan.models import PrimarySchedule
+from django.utils import timezone
 from django_auto_prefetching import AutoPrefetchViewSetMixin
+from ics import Calendar as ICSCal
+from ics import Event as ICSEvent
+from ics.grammar.parse import ContentLine
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from courses.models import Friendship, User
-from courses.models import Course, Section
+from courses.models import Course, Section, Meeting
+
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
@@ -453,3 +460,101 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             "sections__meetings__room",
         )
         return queryset
+
+
+class CalendarAPIView(APIView):
+    schema = PcxAutoSchema(
+        response_codes={
+            reverse_func("calendar-view", args=["schedule_pk"]): {
+                "GET": {
+                    200: "Schedule exported successfully",
+                },
+            },
+        },
+    )
+
+    def get(self, *args, **kwargs):
+        """
+        Return a .ics file of the user's selected schedule
+        ---
+        responses:
+            "200":
+                description: Return a calendar file in ICS format.
+                content:
+                    text/calendar:
+                        schema:
+                            type: string
+        ---
+        """
+        schedule_pk = kwargs["schedule_pk"]
+
+        schedule = (
+            Schedule.objects.filter(pk=schedule_pk)
+            .prefetch_related("sections", "sections__meetings")
+            .first()
+        )
+
+        if not schedule:
+            return Response({"detail": "Invalid schedule"}, status=status.HTTP_403_FORBIDDEN)
+
+        day_mapping = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR"}
+
+        calendar = ICSCal(creator="Penn Labs")
+        calendar.extra.append(ContentLine(name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
+
+        for section in schedule.sections.all():
+            e = ICSEvent()
+            e.name = section.full_code
+            e.created = timezone.now()
+
+            days = []
+            for meeting in section.meetings.all():
+                days.append(day_mapping[meeting.day])
+            first_meeting = list(section.meetings.all())[0]
+
+            start_time = str(Meeting.int_to_time(first_meeting.start))
+            end_time = str(Meeting.int_to_time(first_meeting.end))
+
+            if not start_time:
+                start_time = ""
+            if not end_time:
+                end_time = ""
+
+            if first_meeting.start_date is None:
+                start_datetime = ""
+                end_datetime = ""
+            else:
+                start_datetime = first_meeting.start_date + " "
+                end_datetime = first_meeting.start_date + " "
+
+            if int(first_meeting.start) < 10:
+                start_datetime += "0"
+            if int(first_meeting.end) < 10:
+                end_datetime += "0"
+
+            start_datetime += start_time
+            end_datetime += end_time
+
+            e.begin = arrow.get(
+                start_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
+            ).format("YYYYMMDDTHHmmss")
+            e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York").format(
+                "YYYYMMDDTHHmmss"
+            )
+            end_date = arrow.get(
+                first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New York"
+            ).format("YYYYMMDDTHHmmss")
+
+            e.extra.append(
+                ContentLine(
+                    "RRULE",
+                    {},
+                    f'FREQ=WEEKLY;UNTIL={end_date}Z;WKST=SU;BYDAY={",".join(days)}',
+                )
+            )
+
+            calendar.events.add(e)
+
+        response = HttpResponse(calendar, content_type="text/calendar")
+        response["Content-Disposition"] = "attachment; pcp-schedule.ics"
+        return response
