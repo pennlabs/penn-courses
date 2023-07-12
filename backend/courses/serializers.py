@@ -1,4 +1,3 @@
-import json
 from textwrap import dedent
 
 from django.contrib.auth import get_user_model

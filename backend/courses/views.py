@@ -1,14 +1,9 @@
-from datetime import timezone
-
 from django.contrib.auth import get_user_model
-from django.db.models import Prefetch, Q, Subquery
-from django.forms.models import model_to_dict
-from django.http import HttpResponse, JsonResponse
+from django.db.models import Prefetch, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.views import View
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics, mixins, serializers, status, viewsets
-from rest_framework.decorators import permission_classes
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -28,7 +23,6 @@ from courses.serializers import (
     AttributeListSerializer,
     CourseDetailSerializer,
     CourseListSerializer,
-    FriendshipRequestSerializer,
     FriendshipSerializer,
     MiniSectionSerializer,
     NGSSRestrictionListSerializer,
@@ -401,15 +395,18 @@ def get_accepted_friends(user):
 
 class FriendshipView(generics.ListAPIView):
     """
-    get: Get a list of all friendships and friendship requests (sent and recieved) for the specified user.
-    Filter the list by status (accepted, sent) to distinguish between friendships and friendship requests.
+    get: Get a list of all friendships and friendship requests (sent and recieved) for the
+    specified user. Filter the list by status (accepted, sent) to distinguish between
+    friendships and friendship requests.
 
-    post: Create a friendship between two users (sender and recipient). If a previous request does not exist between
-    the two friendships, then we create friendship request. If a previous request exists (where the recipient is the sender) and
-    the recipient of a request hits this route, then we accept the request.
+    post: Create a friendship between two users (sender and recipient). If a previous request does
+    not exist between the two friendships, then we create friendship request. If a previous request
+    exists (where the recipient is the sender) and the recipient of a request hits this route, then
+    we accept the request.
 
-    delete: Delete a friendship between two users (sender and recipient). If there exists only a friendship request between two users, then
-    we either delete the friendship request if the sender hits the route, or we reject the request if the recipient hits this route.
+    delete: Delete a friendship between two users (sender and recipient). If there exists only
+    a friendship request between two users, then we either delete the friendship request
+    if the sender hits the route, or we reject the request if the recipient hits this route.
     """
 
     #  model = Friendship
@@ -511,7 +508,8 @@ class FriendshipView(generics.ListAPIView):
             return Response({}, status=status.HTTP_409_CONFLICT)
 
     def delete(self, request):
-        # either deletes a friendship or cancels/rejects a friendship request (depends on who sends the request)
+        # either deletes a friendship or cancels/rejects a friendship request
+        # (depends on who sends the request)
         res = {}
         sender = request.user
         recipient = get_object_or_404(User, username=request.data.get("pennkey"))
