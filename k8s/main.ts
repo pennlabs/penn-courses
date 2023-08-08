@@ -11,9 +11,7 @@ export class MyChart extends PennLabsChart {
     const backendImage = 'pennlabs/penn-courses-backend';
     const secret = 'penn-courses';
 
-    new RedisApplication(this, 'redis', { deployment: { 
-	    image: 'redis/redis-stack-server',
-	    tag: '6.2.6-v6' } });
+    new RedisApplication(this, 'redis/redis-stack', { deployment: { tag: '418539118ee8' } });
 
     new DjangoApplication(this, 'celery', {
       deployment: {

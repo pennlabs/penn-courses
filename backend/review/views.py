@@ -750,33 +750,62 @@ def deep_search(request):
     course_quality_high = float(request.GET.get("qualityHigh"))
 
     # Create Filters
-    search_term = Query(text_query) \
+    department_search_term = Query(text_query) \
+        .return_fields('code', 'name') \
+        .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
+        .scorer("DISMAX")
+
+    course_search_term = Query(text_query) \
         .return_fields('code', 'crosslistings', 'instructors', 'title', 'description', 'semester', 'course_quality', 'work_required', 'difficulty') \
         .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
         .scorer("DISMAX")
 
+    instructor_search_term = Query(text_query) \
+        .return_fields('name', 'desc', 'id') \
+        .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
+        .scorer("DISMAX")
+
     if course_work_low != 0 or course_work_high != 4:
-        search_term.add_filter(NumericFilter("course_work", course_work_low or 0, course_work_high or 4))
+        course_search_term.add_filter(NumericFilter("course_work", course_work_low or 0, course_work_high or 4))
     if course_difficulty_low != 0 or course_difficulty_high != 4:
-        search_term.add_filter(NumericFilter("course_difficulty", course_difficulty_low or 0, course_difficulty_high or 4))
+        course_search_term.add_filter(NumericFilter("course_difficulty", course_difficulty_low or 0, course_difficulty_high or 4))
     if course_quality_low != 0 or course_quality_high != 4:
-        search_term.add_filter(NumericFilter("course_quality", course_quality_low or 0, course_quality_high or 4))
+        course_search_term.add_filter(NumericFilter("course_quality", course_quality_low or 0, course_quality_high or 4))
 
     # Result
-    results = r.ft("courses").search(search_term.with_scores())
-    out = [
-        {
-            'Category': "Courses",
-            'code': e.code,
-            'title': e.title,
-            'description': e.description,
-            'quality': e.course_quality,
-            'work': e.work_required,
-            'difficulty': e.difficulty,
-            'current': True,
-            'instructors': e.instructors.split(', '),
-            'cleanCode': re.sub('\s', '-', re.sub('<[^<]+?>|course/', '', e.code))
-        } for e in results.docs
-    ]
+    department_results = r.ft("departments").search(department_search_term)
+    course_results = r.ft("courses").search(course_search_term)
+    instructor_results = r.ft("instructors").search(instructor_search_term)
+
+    print(instructor_results)
+
+    out = {
+        "Departments": [
+            {
+                'code': e.code,
+                'name': e.name
+            } for e in department_results.docs
+        ],
+        "Courses": [
+            {
+                'code': e.code,
+                'title': e.title,
+                'description': e.description,
+                'quality': e.course_quality,
+                'work': e.work_required,
+                'difficulty': e.difficulty,
+                'current': True,
+                'instructors': e.instructors.split(', '),
+                'cleanCode': re.sub('\s', '-', re.sub('<[^<]+?>|course/', '', e.code))
+            } for e in course_results.docs
+        ],
+        "Instructors": [
+            {
+                'name': e.name,
+                'desc': e.desc,
+                'id': e.id
+            } for e in instructor_results.docs
+        ]
+    }
 
     return Response(out)

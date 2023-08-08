@@ -33,7 +33,7 @@ export function RatingBox({ rating, label}) {
     <Box 
     className={`scorebox ${getColor(rating)}`}
     >
-        <Score>{rating == null ? 'N/A' : (rating).toFixed(1)}</Score>
+        <Score>{isNaN(rating) ? 'N/A' : (rating).toFixed(1)}</Score>
         <Label >{label}</Label>
     </Box>
   );

@@ -184,20 +184,6 @@ const DepartmentPreviewComponent = ({ department: { code, name, quality, work, d
       >
       </span>
     </div>
-    <FlexRow>
-      <RatingBox
-      rating={quality}
-      label="Quality"
-      />
-      <RatingBox
-      rating={work}
-      label="Work"
-      />
-      <RatingBox
-      rating={difficulty}
-      label="Difficulty"
-      />
-    </FlexRow>
   </FlexRow>
 )
 
@@ -219,26 +205,6 @@ const ResultCategoryComponent = ({ category, isFolded, setIsFolded }) => (
   </ResultCategory>
 );
 
-// Takes in a course (ex: CIS 160) and returns various formats (ex: CIS-160, CIS 160, CIS160).
-function expandCombo(course) {
-  const a = course.split(" ");
-  return `${course} ${a[0]}-${a[1]} ${a[0]}${a[1]}`;
-}
-
-// Remove duplicate courses by topic.
-function removeDuplicates(dups) {
-  const used = new Set();
-  const clean = [];
-  dups.forEach(i => {
-    if (!used.has(i.code)) {
-      console.log(i)
-      i.crosslistings.split(",").forEach(c => used.add(c));
-      clean.push(i);
-    }
-  });
-  return clean;
-} 
-
 /**
  * The search bar that appears on the homepage and navigation bar.
  */
@@ -247,6 +213,7 @@ class DeepSearchBar extends Component {
     super(props)
     this.selectRef = React.createRef();
     this.state = {
+      isFirstRender: true,
       courseOptions: [],
       instructorOptions: [],
       departmentOptions: [],
@@ -259,7 +226,6 @@ class DeepSearchBar extends Component {
       quality: [0, 4],
       work: [0, 4],
     };
-
     this.autocompleteCallback = this.autocompleteCallback.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.setFocusedOption = this.setFocusedOption.bind(this);
@@ -278,15 +244,26 @@ class DeepSearchBar extends Component {
   // Called each time the input value inside the searchbar changes
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
-    // if (inputValue.length < 3) return [];
     return this.debouncedApiSearch(inputValue, {
       workLow: this.state.work[0], workHigh: this.state.work[1],
       difficultyLow: this.state.difficulty[0], difficultyHigh: this.state.difficulty[1],
       qualityLow: this.state.quality[0], qualityHigh: this.state.quality[1]
     }).then((input) => {
-      const new_input = input.map((course) => {
+      console.log(input);
+      const departments = input["Departments"];
+      const courses = input["Courses"];
+      const instructors = input["Instructors"];
+
+      const departments_input = departments.map((department) => {
         return {
-          Category: course.Category,
+          code: department.code,
+          name: department.name,
+        }
+      })
+      this.setState({ departmentOptions: departments_input });
+
+      const courses_input = courses.map((course) => {
+        return {
           code: course.code,
           title: course.title,
           description: course.description,
@@ -298,7 +275,16 @@ class DeepSearchBar extends Component {
           cleanCode: course.cleanCode
         }
       })
-      this.setState({ courseOptions: new_input });
+      this.setState({ courseOptions: courses_input });
+
+      const instructors_input = instructors.map((instructor) => {
+        return {
+          name: instructor.name,
+          desc: instructor.desc,
+          id: instructor.id
+        }
+      })
+      this.setState({ instructorOptions: instructors_input });
     })
   }
 
@@ -310,7 +296,7 @@ class DeepSearchBar extends Component {
 
   // Called when an option is selected in the AsyncSelect component
   handleChange(value) {
-    this.props.history.push("/course/" + value)
+    this.props.history.push(value)
   }
 
   render() {
@@ -324,7 +310,7 @@ class DeepSearchBar extends Component {
       <CoursePreview 
       key={idx}
       onClick={() => {
-        this.handleChange(course.cleanCode) // TODO: is this right?
+        this.handleChange(`/course/${course.cleanCode}`) // TODO: is this right?
       }}
       course={course} 
       />
@@ -343,6 +329,9 @@ class DeepSearchBar extends Component {
     const departmentPreviews = this.state.departmentOptions.map((department, idx) => (
       <DepartmentPreviewComponent
       key={idx}
+      onClick={() => {
+        this.handleChange(`/department/${department.code}`) // TODO: is this right?
+      }}
       department={department}
       />
     ))
@@ -364,7 +353,13 @@ class DeepSearchBar extends Component {
             <SearchInput 
             placeholder="Search for anything..."
             value={this.state.searchValue}
-            onChange={(e) => this.autocompleteCallback(e.target.value)}
+            onChange={(e) => {
+              if (!this.state.isFirstRender) {
+                this.autocompleteCallback(e.target.value);
+              } else {
+                this.setState({ isFirstRender: false });
+              }
+            }}
             autoFocus
             />
             <div 
