@@ -12,18 +12,7 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from courses.models import Course, Topic, Department, Instructor, Section
 from review.annotations import annotate_average_and_recent
 from review.util import get_average_and_recent_dict_single
-
-
-course_filters_pcr_allow_xlist = ~Q(title="") | ~Q(description="") | Q(sections__has_reviews=True)
-course_filters_pcr = Q(primary_listing_id=F("id")) & course_filters_pcr_allow_xlist
-course_filters_pcr_allow_xlist = ~Q(title="") | ~Q(description="") | Q(sections__has_reviews=True)
-
-section_filters_pcr = Q(course__primary_listing_id=F("course_id")) & (
-    Q(has_reviews=True)
-    | ((~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X"))
-)
-
-review_filters_pcr = Q(section__course__primary_listing_id=F("section__course_id"))
+from review.views import course_filters_pcr, section_filters_pcr, review_filters_pcr
 
 def get_department_objs():
     departments = Department.objects.all()
