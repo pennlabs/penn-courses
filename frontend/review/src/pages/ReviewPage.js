@@ -222,7 +222,7 @@ export class ReviewPage extends Component {
               <span className="title-text">Penn Course Review</span>
             </div>
           </div>
-          <SearchBar isTitle />
+          <SearchBar isTitle autoFocus={this.props.location.state?.animate} />
           <Footer style={{ marginTop: 150 }} />
         </div>
       );

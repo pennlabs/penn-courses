@@ -54,6 +54,7 @@ class SearchBar extends Component {
     return (
       <Search>
         <SearchInput
+          autoFocus={!!this.props.autoFocus}
           placeholder="Search for a class or professor"
           onKeyDown={(e => {this.handleDeepSearch(e)})}
         />
