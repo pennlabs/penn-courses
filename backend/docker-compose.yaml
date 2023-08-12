@@ -12,14 +12,14 @@ services:
       - "5432:5432"
     volumes:
       - ./postgres:/var/lib/postgresql/data
-  # redis:
-  #   image: redis:4.0
-  #   ports:
-  #     - "6379:6379"
+  redis:
+    image: redis:4.0
+    ports:
+      - "6379:6379"
   development:
     depends_on:
       - db
-      # - redis
+      - redis
     profiles:
       - dev
     build:
@@ -30,6 +30,6 @@ services:
     volumes:
       - .:/backend
     environment:
-      - REDIS_URL=redis://redis:6379/1
+      - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=postgres://penn-courses:postgres@db:5432/postgres
     command: tail -f /dev/null
