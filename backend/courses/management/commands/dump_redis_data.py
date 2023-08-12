@@ -181,10 +181,15 @@ class Command(BaseCommand):
     help = """Load in the courses' metadata into Redis for full-text searching"""
     def handle(self, *args, **kwargs):
         reset_database()
+        print("Cleared Redis database...")
         initialize_schema()
+        print("Initialized Redis schema...")
         department_data = get_department_objs()
+        print("Added departments...")
         course_data = get_course_objs()
+        print("Added courses...")
         instructor_data = get_instructor_objs()
+        print("Added instructors...")
         dump_data(
             department_data,
             course_data,

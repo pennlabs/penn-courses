@@ -777,8 +777,6 @@ def deep_search(request):
     course_results = r.ft("courses").search(course_search_term)
     instructor_results = r.ft("instructors").search(instructor_search_term)
 
-    print(instructor_results)
-
     out = {
         "Departments": [
             {
