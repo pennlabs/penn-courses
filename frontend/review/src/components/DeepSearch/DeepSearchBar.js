@@ -1,14 +1,11 @@
 import React, { Component } from "react";
-import AsyncSelect from "react-select/lib/Async";
-import { components } from "react-select";
 import { withRouter } from "react-router-dom";
-import fuzzysort from "fuzzysort";
 import { apiSearch } from "../../utils/api";
 import { CoursePreview } from "./CoursePreview";
 import { debounce } from 'lodash';
 import { Range } from 'rc-slider';
 import 'rc-slider/assets/index.css';
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 import { RatingBox } from "./RatingBox";
 import { CodeDecoration } from "./CommonStyles";
 
@@ -235,7 +232,7 @@ class DeepSearchBar extends Component {
   componentDidMount() {
     if (this.props.state !== null) {
       const query = this.props.location.state.query;
-      if (query !== '') {
+      if (query && /\S/.test(query)) {
         this.autocompleteCallback(query);
       }
     }
@@ -354,11 +351,13 @@ class DeepSearchBar extends Component {
             placeholder="Search for anything..."
             value={this.state.searchValue}
             onChange={(e) => {
-              if (!this.state.isFirstRender) {
+              if (!this.state.isFirstRender && e.target.value.length > 0) {
                 this.autocompleteCallback(e.target.value);
+              } else if (e.target.value.length === 0) {
+                this.props.history.push("/", { animate: true }); // send back to home page and add animation
               } else {
                 this.setState({ isFirstRender: false });
-              }
+              } 
             }}
             autoFocus
             />

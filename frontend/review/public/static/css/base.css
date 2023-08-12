@@ -943,3 +943,32 @@ hr {
     opacity: 1 !important;
     box-shadow: rgba(10, 10, 10, 0.1) 0px 2px 3px;
 }
+
+.animateDown { /* Animate review home */
+    position: relative;
+    animation-name: animateDown;
+    animation-duration: 500ms;
+    animation-delay: 0ms;
+
+}
+
+@keyframes animateDown {
+    from {
+        top: -12em;
+        opacity: 25%;
+    }
+    to {
+        top: 0;
+        opacity: 100%;
+    } 
+}
+
+@-moz-keyframes animateDown {
+    from {margin: -12em;} 
+    to {margin: 0;} 
+}
+
+@-webkit-keyframes animateDown {
+    from {margin: -12em;} 
+    to {margin: 0;} 
+}

@@ -50,6 +50,7 @@ export class ReviewPage extends Component {
 
   componentDidMount() {
     this.getReviewData();
+    window.history.replaceState(null, '')
 
     fetch("https://platform.pennlabs.org/options/")
       .then(response => response.json())
@@ -179,7 +180,10 @@ export class ReviewPage extends Component {
 
     if (!this.state.code) {
       return (
-        <div id="content" className="row">
+        <div 
+          id="content" 
+          className={"row" + (this.props.location.state?.animate ? " animateDown" : "")}
+        >
           {this.state.showBanner && (
             <div id="banner">
               <span role="img" aria-label="Party Popper Emoji">
