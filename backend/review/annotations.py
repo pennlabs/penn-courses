@@ -83,20 +83,23 @@ def review_averages(
     queryset = queryset.annotate(
         **{
             **{
-                (prefix + group.field): group.avg
-                for group in Subquery(
+                (prefix + field): Subquery(
                     ReviewBit.objects.filter(
                         reviewbit_subfilters,
+                        field=field,
                         review__responses__gt=0,
                     )
                     .values("field")
+                    .order_by()
                     .annotate(avg=Avg("average"))
-                    .order_by("field")
+                    .values("avg")[:1],
+                    output_field=FloatField(),
                 )
+                for field in fields
             },
             **(
                 {
-                    (prefix + "final_ejjknrollment"): Subquery(
+                    (prefix + "final_enrollment"): Subquery(
                         ReviewBit.objects.filter(reviewbit_subfilters, review__responses__gt=0)
                         .values("review_id", "review__enrollment", "review__section__capacity")
                         .order_by()
