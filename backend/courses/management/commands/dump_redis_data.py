@@ -166,21 +166,43 @@ def reset_database():
     r = redis.Redis().from_url(settings.REDIS_URL)
     r.flushdb()
 
+def dump_redis_data(verbose=True):
+    if verbose:
+        print("\n=== Dumping data into Redis ===")
+    reset_database()
+    if verbose:
+        print("Cleared Redis database...")
+    initialize_schema()
+    if verbose:
+        print("  Initialized Redis schema...")
+    department_data = get_department_objs()
+    if verbose:
+        print("  Fetch departments...")
+    course_data = get_course_objs()
+    if verbose:
+        print("  Fetch courses...")
+    instructor_data = get_instructor_objs()
+    if verbose:
+        print("  Fetch instructors...")
+    dump_data(
+        department_data,
+        course_data,
+        instructor_data
+    )
+    if verbose:
+        print("=== Done ===")
+
+
 class Command(BaseCommand):
     help = """Load in the courses' metadata into Redis for full-text searching"""
-    def handle(self, *args, **kwargs):
-        reset_database()
-        print("Cleared Redis database...")
-        initialize_schema()
-        print("Initialized Redis schema...")
-        department_data = get_department_objs()
-        print("Added departments...")
-        course_data = get_course_objs()
-        print("Added courses...")
-        instructor_data = get_instructor_objs()
-        print("Added instructors...")
-        dump_data(
-            department_data,
-            course_data,
-            instructor_data
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Print out verbose information",
         )
+
+    def handle(self, *args, **kwargs):
+        verbose = kwargs["verbose"]
+        dump_redis_data(verbose=verbose)
