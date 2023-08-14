@@ -166,7 +166,7 @@ def reset_database():
     r = redis.Redis().from_url(settings.REDIS_URL)
     r.flushdb()
 
-def dump_redis_data(verbose=True):
+def dump_autocomplete_data_to_redis(verbose=True):
     if verbose:
         print("\n=== Dumping data into Redis ===")
     reset_database()
@@ -205,4 +205,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         verbose = kwargs["verbose"]
-        dump_redis_data(verbose=verbose)
+        dump_autocomplete_data_to_redis(verbose=verbose)

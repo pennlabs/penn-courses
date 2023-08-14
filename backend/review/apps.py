@@ -5,6 +5,6 @@ class ReviewConfig(AppConfig):
     name = "review"
 
     def ready(self):
-        from courses.management.commands.dump_redis_data import dump_redis_data
+        from review.management.commands.dump_autocomplete_data_to_redis import dump_autocomplete_data_to_redis
 
-        dump_redis_data()
+        dump_autocomplete_data_to_redis()
