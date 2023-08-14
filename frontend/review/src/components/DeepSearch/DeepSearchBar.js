@@ -89,14 +89,17 @@ const SearchInput = styled.input`
 const PreviewWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: .5rem;
   background-color: white;
-  padding: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  padding-left: .75rem;
+  padding-right: .75rem;
   box-shadow: 0 0 22px -12px rgb(0 0 0 / 0.25);
   margin-bottom: 2rem;
   border-radius: 5px;
   & > div + div {
-    border-top: 2px solid rgba(0, 0, 0, .25);
+    border-top: 1px solid #e0e0e0;
     padding-top: 1.5rem;
   }
 `
@@ -119,9 +122,8 @@ const InstructorPreviewComponent = ({ instructor: { name, departments, quality, 
   <FlexRow
   onClick={onClick}
   style={{
-    fontSize: "1.25rem",
+    fontSize: "1rem",
     justifyContent: "space-between",
-    marginBottom: "1.5rem",
   }}
   >
     <div>
@@ -161,9 +163,8 @@ const InstructorPreviewComponent = ({ instructor: { name, departments, quality, 
 const DepartmentPreviewComponent = ({ department: { code, name, quality, work, difficulty }, onClick }) => (
   <FlexRow
   style={{
-    fontSize: "1.25rem",
+    fontSize: "1rem",
     justifyContent: "space-between",
-    marginBottom: "1.5rem",
   }}
   onClick={onClick}
   >
@@ -173,13 +174,11 @@ const DepartmentPreviewComponent = ({ department: { code, name, quality, work, d
         backgroundColor: "lavender",
       }}
       dangerouslySetInnerHTML={{ __html: code }}
-      >
-      </CodeDecoration>
+      />
       {" "}
       <span
       dangerouslySetInnerHTML={{ __html: name }}
-      >
-      </span>
+      />
     </div>
   </FlexRow>
 )
@@ -195,7 +194,7 @@ const ResultCategoryComponent = ({ category, isFolded, setIsFolded }) => (
     }}
     >
       <path fill="none" stroke="currentColor" strokeLinecap="square" strokeMiterlimit="10" strokeWidth="48" 
-      d={isFolded ? "MM112 328l144-144 144 144" : "M112 184l144 144 144-144"}
+      d={isFolded ? "M328 112L184 256l144 144" : "M112 184l144 144 144-144"}
       key={isFolded}
       />
     </svg>

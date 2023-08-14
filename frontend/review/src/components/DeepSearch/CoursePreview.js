@@ -8,11 +8,6 @@ const Instructors = styled.div`
   font-style: italic;
 `;
 
-const Header = styled.h3`
-  font-size: 20px;
-`;
-
-
 const Top = styled.div`
   display: flex;
   flex-direction: row;
@@ -33,6 +28,7 @@ const ScoreWrapper = styled.div`
 `
 
 const Description = styled.p`
+  padding: .5rem;
   font-size: 14px;
   line-height: 20px;
   margin-top: 1rem;
@@ -55,7 +51,6 @@ export function CoursePreview({course: { code, description, title, quality, work
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: "20px"
       }}
       >
         <div
@@ -66,9 +61,9 @@ export function CoursePreview({course: { code, description, title, quality, work
         }}
         >
           <Top>
-            <Header>
+            <div>
               <CodeDecoration dangerouslySetInnerHTML={{ __html: code }}></CodeDecoration> <span dangerouslySetInnerHTML={{ __html: title }}></span>
-            </Header>
+            </div>
             <Star isFilled={current}/>
           </Top>
           { instructors && instructors.length &&
