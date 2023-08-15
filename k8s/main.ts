@@ -11,7 +11,7 @@ export class MyChart extends PennLabsChart {
     const backendImage = 'pennlabs/penn-courses-backend';
     const secret = 'penn-courses';
 
-    new RedisApplication(this, 'redis/redis-stack', { deployment: { tag: '418539118ee8' } });
+    new RedisApplication(this, 'redis-stack', { deployment: { image: 'redis/redis-stack-server', tag: '6.2.6' } });
 
     new DjangoApplication(this, 'celery', {
       deployment: {
@@ -83,7 +83,7 @@ export class MyChart extends PennLabsChart {
       schedule: cronTime.everyDayAt(3),
       image: backendImage,
       secret,
-      cmd: ['python', 'manage.py', 'registrarimport'],
+      cmd: ['python', 'manage.py', 'registrarimport', '&&', 'python', 'manage.py', 'dump_autocomplete_data_to_redis'],
     });
 
     new CronJob(this, 'report-stats', {
