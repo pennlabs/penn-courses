@@ -395,20 +395,18 @@ def get_accepted_friends(user):
 
 class FriendshipView(generics.ListAPIView):
     """
-    get: Get a list of all friendships and friendship requests (sent and recieved)
-    for the specified user. Filter the list by status (accepted, sent) to
-    distinguish between friendships and friendship requests.
+    get: Get a list of all friendships and friendship requests (sent and recieved) for the
+    specified user. Filter the list by status (accepted, sent) to distinguish between
+    friendships and friendship requests.
 
-    post: Create a friendship between two users (sender and recipient). If a
-    previous request does not exist between the two friendships, then we create
-    friendship request. If a previous request exists (where the recipient is
-    the sender) and the recipient of a request hits this route, then we accept
-    the request.
+    post: Create a friendship between two users (sender and recipient). If a previous request does
+    not exist between the two friendships, then we create friendship request. If a previous request
+    exists (where the recipient is the sender) and the recipient of a request hits this route, then
+    we accept the request.
 
-    delete: Delete a friendship between two users (sender and recipient).
-    If there exists only a friendship request between two users, then
-    we either delete the friendship request if the sender hits the route,
-    or we reject the request if the recipient hits this route.
+    delete: Delete a friendship between two users (sender and recipient). If there exists only
+    a friendship request between two users, then we either delete the friendship request
+    if the sender hits the route, or we reject the request if the recipient hits this route.
     """
 
     #  model = Friendship
@@ -497,7 +495,7 @@ class FriendshipView(generics.ListAPIView):
             existing_friendship.recipient = recipient
             existing_friendship.save()
             res = FriendshipSerializer(existing_friendship)
-            return Response(data=res.data, status=status.HTTP_201_CREATED)
+            return Response(data=res.data, status=status.HTTP_200_OK)
         elif existing_friendship.status == Friendship.Status.SENT:
             if existing_friendship.sender == sender:
                 return Response({}, status=status.HTTP_409_CONFLICT)

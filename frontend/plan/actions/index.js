@@ -52,6 +52,7 @@ export const DELETE_SCHEDULE_ON_FRONTEND = "DELETE_SCHEDULE_ON_FRONTEND";
 export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
 export const RENAME_SCHEDULE = "RENAME_SCHEDULE";
 export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
+export const DOWNLOAD_SCHEDULE = "DOWNLOAD_SCHEDULE";
 
 export const UPDATE_SCHEDULES_ON_FRONTEND = "UPDATE_SCHEDULES_ON_FRONTEND";
 export const MARK_SCHEDULE_SYNCED = "MARK_SCHEDULE_SYNCED";
@@ -90,6 +91,11 @@ export const markScheduleSynced = (scheduleName) => ({
 
 export const markCartSynced = () => ({
     type: MARK_CART_SYNCED,
+});
+
+export const downloadSchedule = (scheduleName) => ({
+    type: DOWNLOAD_SCHEDULE,
+    scheduleName,
 });
 
 export const addCartItem = (section) => ({
@@ -315,8 +321,8 @@ function buildCourseSearchUrl(filterData) {
     }
 
     // toggle button filters
-    const buttonFields = ["fit_schedule"];
-    const buttonDefaultFields = [-1];
+    const buttonFields = ["schedule-fit", "is_open"];
+    const buttonDefaultFields = [-1, 0];
 
     for (let i = 0; i < buttonFields.length; i += 1) {
         if (
@@ -324,12 +330,10 @@ function buildCourseSearchUrl(filterData) {
             JSON.stringify(filterData[buttonFields[i]]) !==
                 JSON.stringify(buttonDefaultFields[i])
         ) {
-            const applied = Object.keys(filterData[buttonFields[i]]);
-            if (applied.length > 0) {
-                if (buttonFields[i] === "fit_schedule") {
-                    // pass in the schedule id
-                    queryString += `&schedule-fit=${applied[i]}`;
-                }
+            // get each filter's value
+            const applied = filterData[buttonFields[i]];
+            if (applied !== undefined && applied !== "" && applied !== null) {
+                queryString += `&${buttonFields[i]}=${applied}`;
             }
         }
     }
@@ -418,7 +422,7 @@ export function updateCheckboxFilter(field, value, toggleState) {
 
 export function updateButtonFilter(field, value) {
     return {
-        type: UPDATE_CHECKBOX_FILTER,
+        type: UPDATE_BUTTON_FILTER,
         field,
         value,
     };

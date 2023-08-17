@@ -1,5 +1,5 @@
 import React from "react";
-import { renameSchedule, createScheduleOnBackend } from "../../actions";
+import { renameSchedule, downloadSchedule, createScheduleOnBackend } from "../../actions";
 import { sendFriendRequest, deleteFriendshipOnBackend } from "../../actions/friendshipUtil";
 import NameScheduleModalInterior from "./AddScheduleFriendsModalInterior";
 import PendingRequestsModalInterior from "./PendingRequestsModalInterior";
@@ -66,7 +66,23 @@ export const generateModalInterior = (reduxState) => {
                 />
             );
         case "WELCOME":
-            return <WelcomeModalInterior />;
+            return (
+                <WelcomeModalInterior
+                    usedScheduleNames={Object.keys(
+                        reduxState.schedule.schedules
+                    )}
+                />
+            );
+        case "DOWNLOAD_SCHEDULE":
+            return (
+                <CalendarModal
+                    schedulePk={
+                        reduxState.schedule.schedules[
+                            reduxState.schedule.scheduleSelected
+                        ].id
+                    }
+                />
+            );
         case "MULTITAB":
             return (
                 <div>
@@ -143,6 +159,11 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
                             activeFriendName
                         )
                     ),
+            };
+        case "DOWNLOAD_SCHEDULE":
+            return {
+                namingFunction: (newName) =>
+                    dispatch(downloadSchedule(newName)),
             };
         default:
             return {};

@@ -193,7 +193,8 @@ export interface FilterData {
         U: boolean;
     };
     time: [number, number];
-    fit_schedule: number;
+    "schedule-fit": number;
+    is_open: number;
 }
 
 export type FilterType =
@@ -215,10 +216,10 @@ export type FilterType =
       }
     | number;
 
-export interface FriendshipState {
-    activeFriend: User;
-    activeFriendSchedule: { found: boolean; sections: Section[] };
-    acceptedFriends: User[];
-    requestsReceived: Friendship[];
-    requestsSent: Friendship[];
-}
+    export interface FriendshipState {
+        activeFriend: User;
+        activeFriendSchedule: { found: boolean; sections: Section[] };
+        acceptedFriends: User[];
+        requestsReceived: Friendship[];
+        requestsSent: Friendship[];
+    }

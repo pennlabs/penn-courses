@@ -8,9 +8,6 @@ from tests.alert.test_alert import TEST_SEMESTER, set_semester
 from tests.courses.util import create_mock_data_with_reviews
 
 
-# # TODO: can't resolve the options.model.Option import for some reason
-# (also appears in other PCP Schedule tests)
-
 primary_schedule_url = "/api/plan/primary-schedules/"
 
 
@@ -45,7 +42,12 @@ class PrimaryScheduleTest(TestCase):
         self.client = APIClient()
         self.client.login(username="jacobily", password="top_secret")
 
-    #  TODO: create and test a way to remove a primary schedule for a user
+        # TODO: write test cases for the following cases
+        """
+            - remove primary schedule (and check no other primary scheudles in the models)
+                - can't do this since we don't have a remove primary schedule feature. I think
+                it's fine that we don't have one for now.
+        """
 
     def test_put_primary_schedule(self):
         response = self.client.put(primary_schedule_url, {"schedule_id": self.s.id})

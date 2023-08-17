@@ -5,8 +5,8 @@ import styled from "styled-components";
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
-import { DropdownButton } from "../DropdownButton";
-import { FilterButton } from "./ButtonFilter";
+import { DropdownButton } from "./DropdownButton";
+import { ButtonFilter } from "./ButtonFilter";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
@@ -297,8 +297,8 @@ function SearchBar({
     store,
     storeLoaded,
     setShowLoginModal,
+    updateButtonFilter,
     activeSchedule,
-    updateButtonFilter
 }: /* eslint-enable no-shadow */
 SearchBarProps) {
     const router = useRouter();
@@ -475,19 +475,30 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            {activeSchedule && <FilterButton
-                title="Fit Schedule"
-                
+            {activeSchedule && 
+                <ButtonFilter
+                    title="Fit Schedule"
+                    filterData={filterData}
+                    clearFilter={clearFilterSearch("schedule-fit")}
+                    // @ts-ignore
+                    startSearch={conditionalStartSearch}
+                    value={activeSchedule.id}
+                    buttonProperty="schedule-fit"
+                    updateButtonFilter={updateButtonFilter("schedule-fit")}
+                >
+                </ButtonFilter> 
+            }
+            <ButtonFilter
+                title="Is Open"
                 filterData={filterData}
-                defaultFilter={defaultFilters.filterData.fit_schedule}
-                clearFilter={clearFilterSearch("fit_schedule")}
+                clearFilter={clearFilterSearch("is_open")}
                 // @ts-ignore
                 startSearch={conditionalStartSearch}
-                activeSchedule={activeSchedule.id}
-                buttonProperty="fit_schedule"
-                updateButtonFilter={updateButtonFilter("fit_schedule")}
+                value={1}
+                buttonProperty="is_open"
+                updateButtonFilter={updateButtonFilter("is_open")}
             >
-            </FilterButton> }
+            </ButtonFilter> 
         </DropdownContainer>
     );
     if (mobileView) {

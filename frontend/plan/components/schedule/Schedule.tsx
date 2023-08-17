@@ -9,6 +9,7 @@ import {
     changeSchedule,
     createScheduleOnBackend,
     deleteScheduleOnBackend,
+    downloadSchedule,
     openModal,
     setStateReadOnly,
     setCurrentUserPrimarySchedule,
@@ -69,6 +70,7 @@ interface ScheduleProps {
     schedulesMutator: {
         setPrimary: (user: User, scheduleId: string) => void;
         copy: (scheduleName: string) => void;
+        download: (scheduleName: string) => void;
         remove: (user: User, scheduleName: string, scheduleId: string) => void;
         rename: (oldName: string) => void;
 
@@ -164,6 +166,14 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
             dispatch(setCurrentUserPrimarySchedule(user, scheduleId)),
         copy: (scheduleName: string) =>
             dispatch(createScheduleOnBackend(scheduleName)),
+        download: (scheduleName: string) =>
+            dispatch(
+                openModal(
+                    "DOWNLOAD_SCHEDULE",
+                    { scheduleName: scheduleName },
+                    "Download Schedule"
+                )
+            ),
         remove: (user: User, scheduleName: string, scheduleId: string) =>
             dispatch(deleteScheduleOnBackend(user, scheduleName, scheduleId)),
         rename: (oldName: string) =>

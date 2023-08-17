@@ -6,6 +6,7 @@ import {
     CHANGE_SCHEDULE,
     RENAME_SCHEDULE,
     CLEAR_SCHEDULE,
+    DOWNLOAD_SCHEDULE,
     MARK_CART_SYNCED,
     MARK_SCHEDULE_SYNCED,
     UPDATE_SCHEDULES_ON_FRONTEND,
@@ -319,6 +320,11 @@ export const schedule = (state = initialState, action) => {
                 state,
                 action.schedulesFromBackend
             );
+        case DOWNLOAD_SCHEDULE: 
+            return {
+                ...state,
+                clickedOnSchedule: state.schedules[action.scheduleName].id,
+            };
         case CREATE_SCHEDULE_ON_FRONTEND:
             if (action.scheduleName === "cart") {
                 return {

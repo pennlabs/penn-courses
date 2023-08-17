@@ -99,6 +99,7 @@ interface DropdownButton {
     mutators: {
         setPrimary: () => void;
         copy: () => void;
+        download: () => void;
         remove: () => void;
         rename: () => void;
     };
@@ -111,7 +112,7 @@ const DropdownButton = ({
     hasFriends,
     onClick,
     makeActive,
-    mutators: { setPrimary, copy, remove, rename },
+    mutators: { setPrimary, copy, download, remove, rename },
 }: DropdownButton) => (
     <ButtonContainer
         role="button"
@@ -164,6 +165,16 @@ const DropdownButton = ({
                 className="option-icon"
             >
                 <i className="far fa-copy" aria-hidden="true" />
+            </Icon>
+            <Icon
+                onClick={(e) => {
+                    download();
+                    e.stopPropagation();
+                }}
+                role="button"
+                className="option-icon"
+            >
+                <i className="fa fa-download" aria-hidden="true" />
             </Icon>
             <Icon
                 onClick={(e) => {
@@ -222,7 +233,7 @@ const DropdownMenu = styled.div`
     display: ${({ isActive }: { isActive: boolean }) =>
         isActive ? "block" : "none"};
     left: 0;
-    min-width: 12.5rem;
+    min-width: 15rem;
     padding-top: 4px;
     position: absolute;
     top: 100%;
@@ -331,6 +342,7 @@ interface ScheduleSelectorDropdownProps {
     };
     schedulesMutators: {
         copy: (scheduleName: string) => void;
+        download: (scheduleName: string) => void;
         remove: (user: User, scheduleName: string, scheduleId: string) => void;
         rename: (oldName: string) => void;
         createSchedule: () => void;
@@ -355,6 +367,7 @@ const ScheduleSelectorDropdown = ({
     },
     schedulesMutators: {
         copy,
+        download, 
         remove,
         rename,
         createSchedule,
@@ -434,6 +447,7 @@ const ScheduleSelectorDropdown = ({
                                                     allSchedules
                                                 )
                                             ),
+                                        download: () => download(name),
                                         remove: () =>
                                             remove(user, name, data.id),
                                         rename: () => rename(name),
