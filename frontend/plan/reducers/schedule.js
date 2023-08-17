@@ -2,7 +2,6 @@ import {
     CLEAR_ALL_SCHEDULE_DATA,
     SET_STATE_READ_ONLY,
     SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
-    ENFORCE_SEMESTER,
     CHANGE_SCHEDULE,
     RENAME_SCHEDULE,
     CLEAR_SCHEDULE,
@@ -37,47 +36,6 @@ const initialState = {
 
     readOnly: false,
     primaryScheduleId: "-1",
-};
-
-/**
- * Returns whether the given array of sections contains
- * courses not from the current semester.
- * @param sections
- * @param currentSemester
- */
-const containsOldSemester = (sections, currentSemester) => {
-    if (sections) {
-        return sections.reduce(
-            (acc, { semester }) =>
-                acc || (semester && semester !== currentSemester),
-            false
-        );
-    } else {
-        return false;
-    }
-};
-
-/**
- * Resets the cart and filters out old cart sections
- * if it contains classes from the previous semester
- * @param currentSemester
- * @param state
- * @return {{cartSections: *[], cartPushedToBackend: boolean, cartUpdatedAt: boolean}|*}
- */
-const enforceCartSemester = (currentSemester, state) => {
-    const hasOldCartSections = containsOldSemester(
-        state.cartSections,
-        currentSemester
-    );
-    if (hasOldCartSections) {
-        return state.cartSections
-            .filter(({ semester }) => semester && semester !== currentSemester)
-            .reduce(
-                (acc, { id }) => handleRemoveCartItem(id, acc),
-                resetCartId(state)
-            );
-    }
-    return state;
 };
 
 /**
@@ -213,7 +171,9 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
             ) {
                 newState = {
                     ...newState,
-                    scheduleSelected: newState.schedules[newState.scheduleSelected]
+                    scheduleSelected: newState.schedules[
+                        newState.scheduleSelected
+                    ]
                         ? newState.scheduleSelected
                         : scheduleFromBackend.name,
                     schedules: {
@@ -258,16 +218,6 @@ export const schedule = (state = initialState, action) => {
             };
         case SET_STATE_READ_ONLY:
             return { ...state, readOnly: action.readOnly };
-        case ENFORCE_SEMESTER:
-            return Object.entries(state.schedules)
-                .filter(([_, { sections }]) =>
-                    containsOldSemester(sections, action.semester)
-                )
-                .reduce(
-                    (acc, [name, _]) =>
-                        processScheduleDeletion(acc, name, true),
-                    enforceCartSemester(action.semester, state)
-                );
         case MARK_SCHEDULE_SYNCED:
             return {
                 ...state,
@@ -320,7 +270,7 @@ export const schedule = (state = initialState, action) => {
                 state,
                 action.schedulesFromBackend
             );
-        case DOWNLOAD_SCHEDULE: 
+        case DOWNLOAD_SCHEDULE:
             return {
                 ...state,
                 clickedOnSchedule: state.schedules[action.scheduleName].id,

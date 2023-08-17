@@ -33,9 +33,9 @@ export const fetchBackendFriendships = (user, activeFriendName) => (
             return res.json();
         })
         .then((friendships) => {
-            let backendRequestsReceived = [],
-                backendRequestsSent = [],
-                backendAcceptedFriends = [];
+            const backendRequestsReceived = [];
+            const backendRequestsSent = [];
+            const backendAcceptedFriends = [];
 
             friendships.forEach((fs) => {
                 if (fs.status === "S" && fs.sender.username !== user.username) {

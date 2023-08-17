@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from courses.models import Friendship, UserProfile
 
 
-friendship_url = reverse("friendship") 
+friendship_url = reverse("friendship")
 print(friendship_url)
 
 

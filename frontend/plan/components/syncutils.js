@@ -1,15 +1,12 @@
 import {
-    createScheduleOnBackend,
     fetchBackendSchedules,
-    enforceSemester,
     updateScheduleOnBackend,
-    openModal,
     changeSchedule,
     deleteScheduleOnFrontend,
     updateSchedulesOnFrontend,
     findOwnPrimarySchedule,
-    clearAllScheduleData,
     setStateReadOnly,
+    checkForDefaultSchedules,
 } from "../actions";
 import { fetchBackendFriendships } from "../actions/friendshipUtil";
 import { SYNC_INTERVAL } from "../constants/sync_constants";
@@ -27,25 +24,6 @@ const allPushed = (scheduleState) => {
     );
 };
 
-export const checkForDefaultSchedules = (dispatch, schedulesFromBackend) => {
-    if (
-        !schedulesFromBackend.reduce(
-            (acc, { name }) => acc || name === "cart",
-            false
-        )
-    ) {
-        dispatch(createScheduleOnBackend("cart"));
-    }
-    // if the user doesn't have an initial schedule, create it
-    if (
-        schedulesFromBackend.length === 0 ||
-        (schedulesFromBackend.length === 1 &&
-            schedulesFromBackend[0].name === "cart")
-    ) {
-        dispatch(createScheduleOnBackend("Schedule"));
-    }
-};
-
 /**
  * Initiates schedule syncing on page load by first performing an initial sync and then
  * setting up a periodic loop.
@@ -53,24 +31,6 @@ export const checkForDefaultSchedules = (dispatch, schedulesFromBackend) => {
  * @param store The redux store
  */
 const initiateSync = async (store) => {
-    // Make sure the most up-to-date semester is being used
-    await new Promise((resolve) => {
-        const handleSemester = (semester) => {
-            store.dispatch(enforceSemester(semester));
-            resolve();
-        };
-        fetch("/api/options/")
-            .then((response) => response.json())
-            .then((options) => {
-                handleSemester(options.SEMESTER);
-            })
-            .catch(() => {
-                store.dispatch(
-                    openModal("SEMESTER_FETCH_ERROR", {}, "An Error Occurred")
-                );
-            });
-    });
-
     const cloudPull = () => {
         if (!store.getState().friendships.pulledFromBackend) {
             store.dispatch(
@@ -129,9 +89,8 @@ const initiateSync = async (store) => {
                         }
                     );
 
-                    checkForDefaultSchedules(
-                        store.dispatch,
-                        schedulesFromBackend
+                    store.dispatch(
+                        checkForDefaultSchedules(schedulesFromBackend)
                     );
 
                     if (

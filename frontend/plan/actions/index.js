@@ -3,7 +3,6 @@ import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { batch } from "react-redux";
 import getCsrf from "../components/csrf";
 import { MIN_FETCH_INTERVAL } from "../constants/sync_constants";
-import { checkForDefaultSchedules } from "../components/syncutils";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -58,8 +57,6 @@ export const UPDATE_SCHEDULES_ON_FRONTEND = "UPDATE_SCHEDULES_ON_FRONTEND";
 export const MARK_SCHEDULE_SYNCED = "MARK_SCHEDULE_SYNCED";
 export const MARK_CART_SYNCED = "MARK_CART_SYNCED";
 export const DELETION_ATTEMPTED = "DELETION_ATTEMPTED";
-
-export const ENFORCE_SEMESTER = "ENFORCE_SEMESTER";
 export const SET_STATE_READ_ONLY = "SET_STATE_READ_ONLY";
 export const SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND =
     "SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND";
@@ -111,11 +108,6 @@ export const removeSchedItem = (id) => ({
 export const updateSearch = (searchResults) => ({
     type: UPDATE_SEARCH,
     searchResults,
-});
-
-export const enforceSemester = (semester) => ({
-    type: ENFORCE_SEMESTER,
-    semester,
 });
 
 const updateSearchRequest = () => ({
@@ -178,6 +170,27 @@ export const setPrimaryScheduleIdOnFrontend = (scheduleId) => ({
     scheduleId,
     type: SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
 });
+
+export const checkForDefaultSchedules = (schedulesFromBackend) => (
+    dispatch
+) => {
+    if (
+        !schedulesFromBackend.reduce(
+            (acc, { name }) => acc || name === "cart",
+            false
+        )
+    ) {
+        dispatch(createScheduleOnBackend("cart"));
+    }
+    // if the user doesn't have an initial schedule, create it
+    if (
+        schedulesFromBackend.length === 0 ||
+        (schedulesFromBackend.length === 1 &&
+            schedulesFromBackend[0].name === "cart")
+    ) {
+        dispatch(createScheduleOnBackend("Schedule"));
+    }
+};
 
 export const loadRequirements = () => (dispatch) =>
     doAPIRequest("/base/current/requirements/").then(
@@ -605,7 +618,7 @@ export function fetchSectionInfo(searchData) {
  */
 export const createScheduleOnBackend = (name) => (dispatch) => {
     const scheduleObj = {
-        name: name,
+        name,
         sections: [],
     };
     doAPIRequest("/plan/schedules/", {
@@ -650,7 +663,7 @@ export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
             dispatch(findOwnPrimarySchedule(user));
             dispatch(
                 fetchBackendSchedules((schedulesFromBackend) => {
-                    checkForDefaultSchedules(dispatch, schedulesFromBackend);
+                    dispatch(checkForDefaultSchedules(schedulesFromBackend));
                 })
             );
         })

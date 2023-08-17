@@ -9,6 +9,7 @@ from plan.views import (
     recommend_courses_view,
 )
 
+
 router = routers.DefaultRouter()
 router.register(r"schedules", ScheduleViewSet, basename="schedules")
 router.register(r"primary-schedules", PrimaryScheduleViewSet, basename="primary-schedules")

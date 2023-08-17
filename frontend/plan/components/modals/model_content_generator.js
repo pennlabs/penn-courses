@@ -1,9 +1,17 @@
 import React from "react";
-import { renameSchedule, downloadSchedule, createScheduleOnBackend } from "../../actions";
-import { sendFriendRequest, deleteFriendshipOnBackend } from "../../actions/friendshipUtil";
+import {
+    renameSchedule,
+    downloadSchedule,
+    createScheduleOnBackend,
+} from "../../actions";
+import {
+    sendFriendRequest,
+    deleteFriendshipOnBackend,
+} from "../../actions/friendshipUtil";
 import NameScheduleModalInterior from "./AddScheduleFriendsModalInterior";
 import PendingRequestsModalInterior from "./PendingRequestsModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
+import CalendarModal from "./CalendarModal";
 
 /**
  * Generates a modal interior component based on the redux state.
