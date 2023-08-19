@@ -753,17 +753,20 @@ def deep_search(request):
     department_search_term = Query(text_query) \
         .return_fields('code', 'name') \
         .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
-        .scorer("DISMAX")
+        .scorer("DISMAX") \
+        .paging(0, 5)
 
     course_search_term = Query(text_query) \
         .return_fields('code', 'crosslistings', 'instructors', 'title', 'description', 'semester', 'course_quality', 'work_required', 'difficulty') \
         .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
-        .scorer("DISMAX")
+        .scorer("DISMAX") \
+        .paging(0, 5)
 
     instructor_search_term = Query(text_query) \
         .return_fields('name', 'desc', 'id') \
         .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
-        .scorer("DISMAX")
+        .scorer("DISMAX") \
+        .paging(0, 5)
 
     if course_work_low != 0 or course_work_high != 4:
         course_search_term.add_filter(NumericFilter("course_work", course_work_low or 0, course_work_high or 4))

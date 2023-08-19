@@ -87,7 +87,7 @@ def get_instructor_objs():
         yield {
             "name": instructor["title"],
             "desc": join_depts(instructor["desc"]),
-            "id": instructor["id"]
+            "id": str(instructor["id"])
         }
 
 def initialize_schema():
@@ -95,8 +95,8 @@ def initialize_schema():
 
     # Department Schema
     department_schema = (
-        TextField("$.code", as_name="code", weight=2, no_stem=True),
-        TextField("$.name", as_name="name", weight=2, no_stem=True)
+        TextField("$.code", as_name="code", weight=1, no_stem=True),
+        TextField("$.name", as_name="name", weight=1, no_stem=True)
     )
 
     # Course Schema
@@ -115,8 +115,8 @@ def initialize_schema():
     # Instructor Schema
     instructor_schema = (
         TextField("$.id", as_name="id", weight=0),
-        TextField("$.name", as_name="name", weight=20, no_stem=True, phonetic_matcher="dm:en"),
-        TextField("$.desc", as_name="desc", weight=5, no_stem=True)
+        TextField("$.name", as_name="name", weight=4, no_stem=True, phonetic_matcher="dm:en"),
+        TextField("$.desc", as_name="desc", weight=1, no_stem=True)
     )
 
     # check if schema exists, else create schema
