@@ -735,7 +735,7 @@ def deep_search(request):
     Completes deep search.
     """
     # Setup Redis
-    r = redis.Redis.from_url(settings.REDIS_URL)
+    r = redis.Redis(connection_pool=settings.REDIS_POOL)
 
     # Query Parameters
     text_query = request.GET.get("q")
