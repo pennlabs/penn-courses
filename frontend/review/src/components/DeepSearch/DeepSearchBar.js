@@ -118,7 +118,7 @@ const ResultCategory = styled.div` // Courses, Departments, Instructors
   justify-content: space-between;
 `
 
-const InstructorPreviewComponent = ({ instructor: { name, departments, quality, work, difficulty }, onClick, history }) => (
+const InstructorPreviewComponent = ({ instructor: { name, desc }, onClick, history }) => (
   <FlexRow
   onClick={onClick}
   style={{
@@ -139,11 +139,11 @@ const InstructorPreviewComponent = ({ instructor: { name, departments, quality, 
         opacity: .75,
         
       }}
-      dangerouslySetInnerHTML={{ __html: departments?.join(", ") }}
+      dangerouslySetInnerHTML={{ __html: desc }}
       >
       </span>
     </div>
-    <FlexRow>
+    {/* <FlexRow>
       <RatingBox
       rating={quality}
       label="Quality"
@@ -156,7 +156,7 @@ const InstructorPreviewComponent = ({ instructor: { name, departments, quality, 
       rating={difficulty}
       label="Difficulty"
       />
-    </FlexRow>
+    </FlexRow> */}
   </FlexRow>
 )
 
