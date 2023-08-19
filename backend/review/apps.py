@@ -7,4 +7,4 @@ class ReviewConfig(AppConfig):
     def ready(self):
         from review.management.commands.dump_autocomplete_data_to_redis import dump_autocomplete_data_to_redis
 
-        # dump_autocomplete_data_to_redis()
+        dump_autocomplete_data_to_redis()

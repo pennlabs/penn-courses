@@ -59,6 +59,12 @@ def get_course_objs():
             else None,
         }
 
+def join_depts(depts):
+    try:
+        return ",".join(sorted(list(depts)))
+    except TypeError:
+        return ""
+
 def get_instructor_objs():
     instructors = (
         Instructor.objects.filter(
@@ -76,12 +82,6 @@ def get_instructor_objs():
                 "id": inst["id"],
             }
         instructor_set[inst["id"]]["desc"].add(inst["section__course__department__code"])
-    
-    def join_depts(depts):
-        try:
-            return ",".join(sorted(list(depts)))
-        except TypeError:
-            return ""
     
     for instructor in instructor_set.values():
         yield {
