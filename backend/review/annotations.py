@@ -258,7 +258,9 @@ def annotate_with_matching_reviews(
     )
 
 
-def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_metrics=True, fields=None):
+def annotate_average_and_recent(
+    qs, match_review_on, match_section_on, extra_metrics=True, fields=None
+):
     """
     Annotate queryset with both all reviews and recent reviews.
     :param qs: Queryset to annotate.
@@ -281,7 +283,7 @@ def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_met
         most_recent=False,
         prefix="average_",
         extra_metrics=extra_metrics,
-        fields=fields
+        fields=fields,
     )
     qs = annotate_with_matching_reviews(
         qs,
@@ -290,6 +292,6 @@ def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_met
         most_recent=True,
         prefix="recent_",
         extra_metrics=extra_metrics,
-        fields=fields
+        fields=fields,
     )
     return qs
