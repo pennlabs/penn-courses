@@ -258,7 +258,7 @@ def annotate_with_matching_reviews(
     )
 
 
-def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_metrics=True):
+def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_metrics=True, fields=None):
     """
     Annotate queryset with both all reviews and recent reviews.
     :param qs: Queryset to annotate.
@@ -272,6 +272,7 @@ def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_met
     :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment,
         percent of add/drop period open, average number of openings during add/drop,
         and percentage of sections filled in advance registration
+    :param: fields: option to specify the fields averaged by the query
     """
     qs = annotate_with_matching_reviews(
         qs,
@@ -280,6 +281,7 @@ def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_met
         most_recent=False,
         prefix="average_",
         extra_metrics=extra_metrics,
+        fields=fields
     )
     qs = annotate_with_matching_reviews(
         qs,
@@ -288,5 +290,6 @@ def annotate_average_and_recent(qs, match_review_on, match_section_on, extra_met
         most_recent=True,
         prefix="recent_",
         extra_metrics=extra_metrics,
+        fields=fields
     )
     return qs
