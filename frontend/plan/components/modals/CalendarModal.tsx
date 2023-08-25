@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import styled from "styled-components";
+import { connect } from "react-redux";
 
 interface RowProps {
     align?: "flex-start" | "flex-end" | "center" | "baseline" | "stretch";
@@ -42,25 +43,32 @@ const FixedInput = styled.input`
     position: relative;
     top: 10px;
     margin: 0;
-`
+`;
 
 interface CalendarModalProps {
     schedulePk: number;
+    clickedOnSchedule: number;
 }
 
-const CalendarModal = ({ schedulePk }: CalendarModalProps) => {
+const CalendarModal = ({
+    schedulePk,
+    clickedOnSchedule,
+}: CalendarModalProps) => {
     const [url, setUrl] = useState<string>("INVALID");
 
     useEffect(() => {
-        setUrl(`http://penncourseplan.com/api/plan/${schedulePk}/calendar`);
-    }, []);
+        const { hostname } = window.location;
+        const protocol = hostname === "localhost" ? "http" : "https";
+        const baseApiUrl = `${protocol}://${hostname}/api`;
 
+        setUrl(`${baseApiUrl}/plan/${clickedOnSchedule}/calendar`);
+    }, [schedulePk]);
     return (
         <Outer>
             <BigText>
-                You can use the ICS URL below to import your schedule into a Google or macOS Calendar. This
-                calendar will display all your classes and class times until the
-                end of the semester.
+                You can use the ICS URL below to import your schedule into a
+                Google or macOS Calendar. This calendar will display all your
+                classes and class times until the end of the semester.
                 <br />
                 <br />
                 This link is personalized for your account, don't share it with
@@ -102,7 +110,9 @@ const CalendarModal = ({ schedulePk }: CalendarModalProps) => {
 
             <Row className="columns has-text-centered">
                 <div className="column">
-                    <h3><b>Import to Google Calendar</b></h3>
+                    <h3>
+                        <b>Import to Google Calendar</b>
+                    </h3>
                     <BigText>
                         Use the URL above to import to Google Calendar. Need
                         help?
@@ -117,7 +127,9 @@ const CalendarModal = ({ schedulePk }: CalendarModalProps) => {
                     </BigText>
                 </div>
                 <div className="column">
-                    <h3><b>Import to macOS Calendar</b></h3>
+                    <h3>
+                        <b>Import to macOS Calendar</b>
+                    </h3>
                     <BigText>
                         Use the URL above to import to the macOS Calendar app.
                         Need help?
@@ -147,4 +159,8 @@ const CalendarModal = ({ schedulePk }: CalendarModalProps) => {
     );
 };
 
-export default CalendarModal;
+const mapStateToProps = (state: any) => ({
+    clickedOnSchedule: state.schedule.clickedOnSchedule,
+});
+
+export default connect(mapStateToProps)(CalendarModal);

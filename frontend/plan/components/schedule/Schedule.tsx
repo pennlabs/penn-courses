@@ -9,9 +9,9 @@ import {
     fetchCourseDetails,
     changeSchedule,
     duplicateSchedule,
-    downloadSchedule,
     deleteSchedule,
     openModal,
+    downloadSchedule,
 } from "../../actions";
 import { getConflictGroups } from "../meetUtil";
 
@@ -334,14 +334,16 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     schedulesMutator: {
         copy: (scheduleName: string) =>
             dispatch(duplicateSchedule(scheduleName)),
-        download: (scheduleName: string) =>
+        download: (scheduleName: string) => {
+            dispatch(downloadSchedule(scheduleName));
             dispatch(
                 openModal(
                     "DOWNLOAD_SCHEDULE",
                     { scheduleName: scheduleName },
                     "Download Schedule"
                 )
-            ),
+            );
+        },
         remove: (scheduleName: string) =>
             dispatch(deleteSchedule(scheduleName)),
         rename: (oldName: string) =>
