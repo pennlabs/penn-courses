@@ -739,9 +739,6 @@ def deep_search(request):
 
     # Query Parameters
     text_query = request.GET.get("q")
-    text_query = re.sub(r"[^a-zA-Z0-9@]+", "", text_query)
-    if text_query:
-        text_query += "|" + text_query + "*"
     course_work_low = float(request.GET.get("workLow"))
     course_work_high = float(request.GET.get("workHigh"))
     course_difficulty_low = float(request.GET.get("difficultyLow"))

@@ -24,7 +24,7 @@ def get_department_objs():
 
 def get_course_objs():
     topics = (
-        Topic.objects.filter(most_recent__semester="2022C")[:100]
+        Topic.objects.filter(most_recent__semester="2022C")
         .select_related("most_recent")
         .prefetch_related("most_recent__primary_listing__listing_set__sections__instructors")
     )
@@ -101,7 +101,7 @@ def initialize_schema():
 
     # Course Schema
     course_schema = (
-        TextField("$.code", as_name="code", weight=5, no_stem=True),
+        TextField("$.code", as_name="code", weight=20, no_stem=True),
         TextField("$.crosslistings", as_name="crosslistings", weight=3, no_stem=True),
         TextField("$.instructors", as_name="instructors", weight=2, no_stem=True, phonetic_matcher="dm:en"),
         TextField("$.title", as_name="title", weight=4),

@@ -201,6 +201,22 @@ const ResultCategoryComponent = ({ category, isFolded, setIsFolded }) => (
   </ResultCategory>
 );
 
+const normalizeQuery = (query) => {
+  query = query.replaceAll("-", " ");
+  query = query.replaceAll(/[–—…«»‘’]/g, " ");
+  query = query.replaceAll(/[“”]/g, '"');
+
+  if (query.length >= 2 && query.slice(-2).match(/\w{2}/)) {
+    const i = /\w+$/.exec(query).index;
+    const partial = query.substring(i);
+    query = query.substring(0, i) + `(${partial}|${partial}*)`;
+  } else if (query.length >= 1 && query.slice(-1).match(/\w/)) {
+    query = query.slice(0, -1);
+  }
+  
+  return query;
+}
+
 /**
  * The search bar that appears on the homepage and navigation bar.
  */
@@ -240,12 +256,11 @@ class DeepSearchBar extends Component {
   // Called each time the input value inside the searchbar changes
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
-    return this.debouncedApiSearch(inputValue, {
+    return this.debouncedApiSearch(normalizeQuery(inputValue), {
       workLow: this.state.work[0], workHigh: this.state.work[1],
       difficultyLow: this.state.difficulty[0], difficultyHigh: this.state.difficulty[1],
       qualityLow: this.state.quality[0], qualityHigh: this.state.quality[1]
     }).then((input) => {
-      console.log(input);
       const departments = input["Departments"];
       const courses = input["Courses"];
       const instructors = input["Instructors"];
