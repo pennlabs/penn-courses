@@ -408,6 +408,23 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return queryset
 
 
+"""
+    Calendar API View to handle exporting of user schedules to a calendar file.
+
+    retrieve:
+    Retrieve a calendar (.ics) file for a specific user's schedule using the schedule's primary key (schedule_pk).
+    If a schedule with the specified primary key exists and is valid, a 200 response code is returned,
+    along with the calendar file in ICS format.
+    If the schedule does not exist or is invalid, a 403 is returned with data `{"detail": "Invalid schedule"}`.
+
+    get:
+    Use this route to export the authenticated user's selected schedule into an ICS calendar file.
+    This route will return a 200 if it succeeds, with a calendar file in ICS format attached.
+    To specify which schedule to export, include `schedule_pk` as a path parameter.
+    If the schedule is not found, a 403 is returned with data `{"detail": "Invalid schedule"}`.
+    """
+
+
 class CalendarAPIView(APIView):
     schema = PcxAutoSchema(
         response_codes={
