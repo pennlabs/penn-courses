@@ -1,36 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 import styled from "styled-components";
 import { connect } from "react-redux";
-
-interface RowProps {
-    align?: "flex-start" | "flex-end" | "center" | "baseline" | "stretch";
-}
-
-const Row = styled.div<RowProps>`
-    display: flex;
-    flex-wrap: wrap;
-    align-items: ${(props) => props.align || "stretch"};
-`;
-
-interface ColProps {
-    span?: number;
-}
 
 const Outer = styled.div`
     overflow-x: hidden;
 `;
 
-const Col = styled.div<ColProps>`
-    flex: ${(props) => props.span || 1};
-    padding: 0;
-    box-sizing: border-box;
-`;
-
-const LoveFromLabs = styled.div`
+const Row = styled.div`
     display: flex;
     align-items: center;
-    justify-content: center;
+`;
+
+const Col = styled.div`
+    flex: 1;
+    padding: 0;
 `;
 
 const BigText = styled.p`
@@ -38,11 +21,34 @@ const BigText = styled.p`
     line-height: 1.5;
 `;
 
-const FixedInput = styled.input`
+const Button = styled.a`
+    height: 30px;
     display: flex;
-    position: relative;
-    top: 10px;
-    margin: 0;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin: 0 5px;
+    border-radius: 5px;
+`;
+
+const ICSButton = styled(Button)`
+    background-color: #07aced;
+`;
+
+const CopyButton = styled(Button)`
+    background-color: #2ce84f;
+`;
+
+const FixedInput = styled.input`
+    height: 30px;
+    flex: 1;
+`;
+
+const LoveFromLabs = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
 `;
 
 interface CalendarModalProps {
@@ -50,11 +56,49 @@ interface CalendarModalProps {
     clickedOnSchedule: number;
 }
 
+interface ToastProps {
+    message: string;
+    show: boolean;
+}
+
+const ToastWrapper = styled.div`
+    position: fixed;
+    bottom: 50px;
+    left: 50%; 
+    transform: translateX(-50%); 
+    width: 330px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1e78e6;
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    z-index: 1000;
+    opacity: ${(props: { show: boolean }) => (props.show ? 1 : 0)};
+    transition: opacity 0.5s ease-in, visibility 0.5s ease-in;
+    visibility: ${(props: { show: boolean }) =>
+        props.show ? "visible" : "hidden"};
+`;
+
+const Toast: React.FC<ToastProps> = ({ message, show }) => {
+    return <ToastWrapper show={show}>{message}</ToastWrapper>;
+};
+
 const CalendarModal = ({
     schedulePk,
     clickedOnSchedule,
 }: CalendarModalProps) => {
     const [url, setUrl] = useState<string>("INVALID");
+    const [showToast, setShowToast] = useState<boolean>(false);
+    const [toastMessage, setToastMessage] = useState<string>("");
+
+    const showToastMessage = (message: string) => {
+        setToastMessage(message);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+    };
 
     useEffect(() => {
         const { hostname } = window.location;
@@ -63,6 +107,7 @@ const CalendarModal = ({
 
         setUrl(`${baseApiUrl}/plan/${clickedOnSchedule}/calendar`);
     }, [schedulePk]);
+
     return (
         <Outer>
             <BigText>
@@ -74,12 +119,11 @@ const CalendarModal = ({
                 This link is personalized for your account, don't share it with
                 others.
             </BigText>
-            <br />
-            <Row align="center" className="row field has-addons is-expanded">
-                <Col className="col control">
-                    <a className="button is-static">ICS URL</a>
+            <Row>
+                <Col>
+                    <ICSButton>ICS URL</ICSButton>
                 </Col>
-                <Col span={8}>
+                <Col>
                     <FixedInput
                         type="text"
                         readOnly
@@ -87,63 +131,26 @@ const CalendarModal = ({
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                     />
                 </Col>
-                <Col className="col control">
-                    <a
-                        className="button is-info"
+                <Col>
+                    <CopyButton
                         onClick={async () => {
                             try {
                                 await navigator.clipboard.writeText(url);
-                                toast.info("Copied to clipboard!");
+                                showToastMessage(
+                                    "Successfully copied to clipboard!"
+                                );
                             } catch (error) {
-                                toast.error(
+                                showToastMessage(
                                     "Failed to copy! You need to manually copy the URL."
                                 );
                             }
                         }}
                     >
                         Copy
-                    </a>
+                    </CopyButton>
                 </Col>
             </Row>
-
-            <hr />
-
-            <Row className="columns has-text-centered">
-                <div className="column">
-                    <h3>
-                        <b>Import to Google Calendar</b>
-                    </h3>
-                    <BigText>
-                        Use the URL above to import to Google Calendar. Need
-                        help?
-                        <br />
-                        <a
-                            href="https://support.google.com/calendar/answer/37100#add_via_link"
-                            target="_blank"
-                            rel="noreferrer noopener"
-                        >
-                            Check out this guide!
-                        </a>
-                    </BigText>
-                </div>
-                <div className="column">
-                    <h3>
-                        <b>Import to macOS Calendar</b>
-                    </h3>
-                    <BigText>
-                        Use the URL above to import to the macOS Calendar app.
-                        Need help?
-                        <br />
-                        <a
-                            href="https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac"
-                            target="_blank"
-                            rel="noreferrer noopener"
-                        >
-                            Check out this guide!
-                        </a>
-                    </BigText>
-                </div>
-            </Row>
+            {showToast && <Toast message={toastMessage} show={showToast} />}
             <LoveFromLabs>
                 With <i className="fa fa-heart" style={{ color: "red" }} />
                 <br />{" "}

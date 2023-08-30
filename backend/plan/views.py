@@ -490,10 +490,8 @@ class CalendarAPIView(APIView):
                 start_datetime = first_meeting.start_date + " "
                 end_datetime = first_meeting.start_date + " "
 
-            if int(first_meeting.start) < 10:
-                start_datetime += "0"
-            if int(first_meeting.end) < 10:
-                end_datetime += "0"
+            start_time = str(int(first_meeting.start)).zfill(2) + ":" + first_meeting.start.split(":")[1]
+            end_time = str(int(first_meeting.end)).zfill(2) + ":" + first_meeting.end.split(":")[1]
 
             start_datetime += start_time
             end_datetime += end_time
@@ -501,9 +499,9 @@ class CalendarAPIView(APIView):
             e.begin = arrow.get(
                 start_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
             ).format("YYYYMMDDTHHmmss")
-            e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York").format(
-                "YYYYMMDDTHHmmss"
-            )
+            e.end = arrow.get(
+                end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
+            ).format("YYYYMMDDTHHmmss")
             end_date = arrow.get(
                 first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New York"
             ).format("YYYYMMDDTHHmmss")
