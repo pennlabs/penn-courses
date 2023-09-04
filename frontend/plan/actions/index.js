@@ -693,5 +693,3 @@ export const changeSortType = (sortMode) => ({
     type: CHANGE_SORT_TYPE,
     sortMode,
 });
-
-

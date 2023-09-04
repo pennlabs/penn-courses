@@ -596,4 +596,3 @@ export const schedule = (state = initialState, action) => {
             };
     }
 };
-
