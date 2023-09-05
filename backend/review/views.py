@@ -365,6 +365,14 @@ def check_instructor_id(instructor_id):
         raise Http404("Instructor with given instructor_id not found.")
 
 
+INSTRUCTOR_COURSE_REVIEW_FIELDS = [
+    "instructor_quality",
+    "course_quality",
+    "work_required",
+    "difficulty",
+]
+
+
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
@@ -419,6 +427,7 @@ def instructor_reviews(request, instructor_id):
         )
         & section_filters_pcr,
         extra_metrics=True,
+        fields=INSTRUCTOR_COURSE_REVIEW_FIELDS,
     ).annotate(
         most_recent_full_code=F("topic__most_recent__full_code"),
     )
