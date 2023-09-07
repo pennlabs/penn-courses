@@ -298,9 +298,7 @@ def reverse_func(*pargs, args=None, **kwargs):
             raise ValueError(
                 "Please remove the string 'hopefully_unique_str_path_parameter' from all urls. Wtf."
             )
-        new_args = [
-            f"hopefully_unique_str_path_parameter_{i}" for i in range(len(args))
-        ]
+        new_args = [f"hopefully_unique_str_path_parameter_{i}" for i in range(len(args))]
         url = reverse(*pargs, args=new_args, **kwargs)
         for i, pretend_param in enumerate(new_args):
             # Surround given path parameters with curly braces (can't be used in the args
@@ -376,10 +374,7 @@ subpath_abbreviations = {
     "accounts": "Accounts",
 }
 assert all(
-    [
-        isinstance(key, str) and isinstance(val, str)
-        for key, val in subpath_abbreviations.items()
-    ]
+    [isinstance(key, str) and isinstance(val, str) for key, val in subpath_abbreviations.items()]
 )
 
 
@@ -397,10 +392,7 @@ tag_group_abbreviations = {
     # those views to be PcxAutoSchema, as is instructed in the meta docs above.
 }
 assert all(
-    [
-        isinstance(key, str) and isinstance(val, str)
-        for key, val in tag_group_abbreviations.items()
-    ]
+    [isinstance(key, str) and isinstance(val, str) for key, val in tag_group_abbreviations.items()]
 )
 
 
@@ -447,10 +439,7 @@ custom_name = {  # keys are (path, method) tuples, values are custom names
     (reverse_func("restrictions-list"), "GET"): "NGSS Restriction",
 }
 assert all(
-    [
-        isinstance(k, tuple) and len(k) == 2 and isinstance(k[1], str)
-        for k in custom_name.keys()
-    ]
+    [isinstance(k, tuple) and len(k) == 2 and isinstance(k[1], str) for k in custom_name.keys()]
 )
 
 
@@ -477,12 +466,7 @@ assert all(
 # Use this dictionary to rename tags, if you wish to do so
 # keys are old tag names (seen on docs), values are new tag names
 custom_tag_names = {}
-assert all(
-    [
-        isinstance(key, str) and isinstance(val, str)
-        for key, val in custom_tag_names.items()
-    ]
-)
+assert all([isinstance(key, str) and isinstance(val, str) for key, val in custom_tag_names.items()])
 
 
 # Note that you can customize the tag for all routes from a certain view by passing in a
@@ -597,10 +581,7 @@ custom_tag_descriptions = {
     ),
 }
 assert all(
-    [
-        isinstance(key, str) and isinstance(val, str)
-        for key, val in custom_tag_descriptions.items()
-    ]
+    [isinstance(key, str) and isinstance(val, str) for key, val in custom_tag_descriptions.items()]
 )
 
 
@@ -626,9 +607,9 @@ def make_manual_schema_changes(data):
     data["paths"][reverse_func("schedules-detail", args=["id"])()]["put"] = deepcopy(
         data["paths"][reverse_func("schedules-detail", args=["id"])()]["put"]
     )
-    for content_ob in data["paths"][reverse_func("schedules-detail", args=["id"])()][
-        "put"
-    ]["requestBody"]["content"].values():
+    for content_ob in data["paths"][reverse_func("schedules-detail", args=["id"])()]["put"][
+        "requestBody"
+    ]["content"].values():
         content_ob["schema"]["properties"].pop("id", None)
 
     # Make the name and sections fields of the PCP schedule request body required,
@@ -647,9 +628,7 @@ def make_manual_schema_changes(data):
                     if "required" not in section_ob["items"].keys():
                         section_ob["items"]["required"] = []
                     required = section_ob["items"]["required"]
-                    section_ob["items"]["required"] = list(
-                        set(required + ["id", "semester"])
-                    )
+                    section_ob["items"]["required"] = list(set(required + ["id", "semester"]))
                     for field, field_ob in section_ob["items"]["properties"].items():
                         if field == "id" or field == "semester":
                             field_ob["readOnly"] = False
@@ -776,24 +755,18 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                 val["tags"] = [(t if t != old_tag else new_tag) for t in val["tags"]]
             lst = tag_to_dicts.pop(old_tag)
             tag_to_dicts[new_tag] = lst
-            changes[
-                old_tag
-            ] = new_tag  # since tags cannot be updated while iterating through tags
+            changes[old_tag] = new_tag  # since tags cannot be updated while iterating through tags
             return new_tag
 
         # Pluralize tag name if all views in tag are lists, and apply custom tag names from
         # custom_tag_names dict defined above.
         for tag in tags:
             tag = update_tag(tag, split_camel(tag))
-            all_list = all(
-                [("list" in v["operationId"].lower()) for v in tag_to_dicts[tag]]
-            )
+            all_list = all([("list" in v["operationId"].lower()) for v in tag_to_dicts[tag]])
             if all_list:  # if all views in tag are lists, pluralize tag name
                 tag = update_tag(
                     tag,
-                    " ".join(
-                        tag.split(" ")[:-1] + [pluralize_word(tag.split(" ")[-1])]
-                    ),
+                    " ".join(tag.split(" ")[:-1] + [pluralize_word(tag.split(" ")[-1])]),
                 )
             if tag in custom_tag_names.keys():  # rename custom tags
                 tag = update_tag(tag, custom_tag_names[tag])
@@ -820,8 +793,7 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
 
         # Add custom tag descriptions from the custom_tag_descriptions dict defined above
         data["tags"] = [
-            {"name": tag, "description": custom_tag_descriptions.get(tag, "")}
-            for tag in tags
+            {"name": tag, "description": custom_tag_descriptions.get(tag, "")} for tag in tags
         ]
 
         # Add tags to tag groups based on the tag group abbreviation in the name of the tag
@@ -835,8 +807,7 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                 # used (so even if another tag group abbreviation is a substring, it won't be
                 # mistakenly used for the tag group).
                 if k in t and (
-                    t not in tags_to_tag_groups.keys()
-                    or len(k) > len(tags_to_tag_groups[t])
+                    t not in tags_to_tag_groups.keys() or len(k) > len(tags_to_tag_groups[t])
                 ):
                     tags_to_tag_groups[t] = k
         data["x-tagGroups"] = [
@@ -916,9 +887,7 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
                 if method_name.upper() not in new_cumulative_cp[path_name]:
                     continue
                 custom_query_params = new_cumulative_cp[path_name][method_name]
-                custom_query_params_names = {
-                    param_ob["name"] for param_ob in custom_query_params
-                }
+                custom_query_params_names = {param_ob["name"] for param_ob in custom_query_params}
                 v["parameters"] = [
                     param_ob
                     for param_ob in v["parameters"]
@@ -1246,9 +1215,7 @@ class PcxAutoSchema(AutoSchema):
 
             # Due to camel-casing of classes and `action` being lowercase, apply title in order to
             # find if action truly comes at the end of the name
-            if name.endswith(
-                action.title()
-            ):  # ListView, UpdateAPIView, ThingDelete ...
+            if name.endswith(action.title()):  # ListView, UpdateAPIView, ThingDelete ...
                 name = name[: -len(action)]
 
         # MODIFIED from AutoSchema's get_operation_id_base: "s" is not appended
@@ -1270,9 +1237,7 @@ class PcxAutoSchema(AutoSchema):
 
         name = self.get_name(path, method, action)
 
-        if action == "list" and not name.endswith(
-            "s"
-        ):  # listThings instead of listThing
+        if action == "list" and not name.endswith("s"):  # listThings instead of listThing
             name = pluralize_word(name)
 
         return name
@@ -1322,9 +1287,7 @@ class PcxAutoSchema(AutoSchema):
         # Create the tag from the first part of the path (other than "api") and the name
         name = self.get_name(path, method)
         path_components = (path[1:] if path.startswith("/") else path).split("/")
-        subpath = (
-            path_components[1] if path_components[0] == "api" else path_components[0]
-        )
+        subpath = path_components[1] if path_components[0] == "api" else path_components[0]
         if subpath not in subpath_abbreviations.keys():
             raise ValueError(
                 f"You must add the the '{subpath}' subpath to the "
@@ -1417,9 +1380,7 @@ class PcxAutoSchema(AutoSchema):
 
         if path in override_request_schema and method in override_request_schema[path]:
             for ct in request_body["content"]:
-                request_body["content"][ct]["schema"] = override_request_schema[path][
-                    method
-                ]
+                request_body["content"][ct]["schema"] = override_request_schema[path][method]
 
         return request_body
 
@@ -1442,9 +1403,7 @@ class PcxAutoSchema(AutoSchema):
         if IsAuthenticated in self.view.permission_classes and 403 not in responses:
             responses = {
                 **responses,
-                403: {
-                    "description": "Access denied (missing or improper authentication)."
-                },
+                403: {"description": "Access denied (missing or improper authentication)."},
             }
 
         # Get "default" schema content from response
@@ -1461,9 +1420,7 @@ class PcxAutoSchema(AutoSchema):
                 if "writeOnly" in schema:
                     del item_schema["properties"][name]
                     if "required" in item_schema:
-                        item_schema["required"] = [
-                            f for f in item_schema["required"] if f != name
-                        ]
+                        item_schema["required"] = [f for f in item_schema["required"] if f != name]
         if is_list_view(path, method, self.view):
             response_schema = {
                 "type": "array",
@@ -1471,9 +1428,7 @@ class PcxAutoSchema(AutoSchema):
             }
             paginator = self._get_paginator()
             if paginator:
-                response_schema = paginator.get_paginated_response_schema(
-                    response_schema
-                )
+                response_schema = paginator.get_paginated_response_schema(response_schema)
         else:
             response_schema = item_schema
         default_schema_content = {
@@ -1499,9 +1454,7 @@ class PcxAutoSchema(AutoSchema):
                 status_code = int(status_code)
                 custom_description = response_codes[path][method][status_code]
                 include_content = "[DESCRIBE_RESPONSE_SCHEMA]" in custom_description
-                custom_description = custom_description.replace(
-                    "[DESCRIBE_RESPONSE_SCHEMA]", ""
-                )
+                custom_description = custom_description.replace("[DESCRIBE_RESPONSE_SCHEMA]", "")
                 if status_code in responses.keys():
                     if "[UNDOCUMENTED]" in custom_description:
                         del responses[status_code]
@@ -1512,9 +1465,7 @@ class PcxAutoSchema(AutoSchema):
                 elif "[UNDOCUMENTED]" not in custom_description:
                     responses[status_code] = {"description": custom_description}
                     if include_content:
-                        responses[status_code]["content"] = deepcopy(
-                            default_schema_content
-                        )
+                        responses[status_code]["content"] = deepcopy(default_schema_content)
 
         # Create an override_response_schema dict which equals self.override_response_schema except
         # with the keys as strings (by calling each of the keys of self.override_response_schema)
@@ -1529,10 +1480,7 @@ class PcxAutoSchema(AutoSchema):
                 )
             override_response_schema[key()] = value
 
-        if (
-            path in override_response_schema
-            and method in override_response_schema[path]
-        ):
+        if path in override_response_schema and method in override_response_schema[path]:
             for status_code in override_response_schema[path][method]:
                 if status_code not in responses.keys():
                     responses[status_code] = {
@@ -1547,8 +1495,6 @@ class PcxAutoSchema(AutoSchema):
                         for ct in self.request_media_types:
                             responses[status_code]["content"][ct] = custom_schema
                     else:
-                        for response_schema in responses[status_code][
-                            "content"
-                        ].values():
+                        for response_schema in responses[status_code]["content"].values():
                             response_schema["schema"] = custom_schema
         return responses

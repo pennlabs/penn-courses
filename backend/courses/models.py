@@ -297,9 +297,7 @@ class Course(models.Model):
         departments set (related name requirements).
         """
         return (
-            PreNGSSRequirement.objects.exclude(
-                id__in=self.pre_ngss_nonrequirement_set.all()
-            )
+            PreNGSSRequirement.objects.exclude(id__in=self.pre_ngss_nonrequirement_set.all())
             .filter(semester=self.semester)
             .filter(
                 Q(id__in=self.pre_ngss_requirement_set.all())
@@ -337,11 +335,7 @@ class Course(models.Model):
                     topic = (
                         Topic.objects.filter(
                             Q(most_recent__full_code=primary.full_code)
-                            | Q(
-                                most_recent__full_code__in=primary.listing_set.values(
-                                    "full_code"
-                                )
-                            ),
+                            | Q(most_recent__full_code__in=primary.listing_set.values("full_code")),
                         )
                         .annotate(
                             most_recent_match=Case(
@@ -427,9 +421,7 @@ class Topic(models.Model):
                 and topic.branched_from
                 and self.branched_from != topic.branched_from
             ):
-                raise ValueError(
-                    "Cannot merge topics with different branched_from topics."
-                )
+                raise ValueError("Cannot merge topics with different branched_from topics.")
             if self.most_recent.semester >= topic.most_recent.semester:
                 Course.objects.filter(topic=topic).update(topic=self)
                 if topic.branched_from and not self.branched_from:
@@ -861,9 +853,7 @@ class Section(models.Model):
                 ).latest("created_at")
             except StatusUpdate.DoesNotExist:
                 last_status_update = None
-            last_update_dt = (
-                last_status_update.created_at if last_status_update else add_drop_start
-            )
+            last_update_dt = last_status_update.created_at if last_status_update else add_drop_start
             period_seconds = float(
                 (min(current_time, add_drop_end) - add_drop_start).total_seconds()
             )
@@ -1356,9 +1346,7 @@ class APIKey(models.Model):
     code = models.CharField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
     active = models.BooleanField(blank=True, default=True)
 
-    privileges = models.ManyToManyField(
-        APIPrivilege, related_name="key_set", blank=True
-    )
+    privileges = models.ManyToManyField(APIPrivilege, related_name="key_set", blank=True)
 
 
 class UserProfile(models.Model):
@@ -1436,9 +1424,7 @@ class UserProfile(models.Model):
                     phone_number, phonenumbers.PhoneNumberFormat.E164
                 )
             except phonenumbers.phonenumberutil.NumberParseException:
-                raise ValidationError(
-                    "Invalid phone number (this should have been caught already)"
-                )
+                raise ValidationError("Invalid phone number (this should have been caught already)")
         super().save(*args, **kwargs)
 
 

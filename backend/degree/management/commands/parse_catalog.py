@@ -19,13 +19,21 @@ PROGRAMS_PREFIX = "/undergraduate/programs"
 SELECT_N = "Select (?P<num>one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)"  # NOTE: does not handle decimals
 COURSE_UNITS = "course units?|courses?|electives?"
 WITH_OR_PARENTHESIS = "\bwith\b|\("
-SELECT_N_FROM_FOLLOWING = re.compile(f"{SELECT_N} (?P<course_units>{COURSE_UNITS}) of the following ?(?P<extra>.*)",
-                                     re.IGNORECASE)
-SELECT_N_COURSES = re.compile(f"{SELECT_N} (?P<course_units>{COURSE_UNITS}) (?P<course_set>.*)", re.IGNORECASE)
-SELECT_N_SET_COURSES = re.compile(f"{SELECT_N} ?(?P<course_set>.+) (?P<course_units>{COURSE_UNITS}) ?(?P<extra>.*)",
-                                  re.IGNORECASE)
+SELECT_N_FROM_FOLLOWING = re.compile(
+    f"{SELECT_N} (?P<course_units>{COURSE_UNITS}) of the following ?(?P<extra>.*)",
+    re.IGNORECASE,
+)
+SELECT_N_COURSES = re.compile(
+    f"{SELECT_N} (?P<course_units>{COURSE_UNITS}) (?P<course_set>.*)", re.IGNORECASE
+)
+SELECT_N_SET_COURSES = re.compile(
+    f"{SELECT_N} ?(?P<course_set>.+) (?P<course_units>{COURSE_UNITS}) ?(?P<extra>.*)",
+    re.IGNORECASE,
+)
 SELECT_N_COURSES_FROM_SET = re.compile(
-    f"{SELECT_N} (?P<course_units>{COURSE_UNITS})(?: (?:in|of|from))? ?(?P<course_set>.*)", re.IGNORECASE)
+    f"{SELECT_N} (?P<course_units>{COURSE_UNITS})(?: (?:in|of|from))? ?(?P<course_set>.*)",
+    re.IGNORECASE,
+)
 
 WORD_TO_NUMBER = {
     "one": 1,
@@ -52,6 +60,7 @@ WORD_TO_NUMBER = {
 #     def __init__(self, satisfied_by, value):
 #         self.satisfied_by = satisfied_by
 #         self.value = value
+
 
 class BaseRequirement:
     # def __init__(self, name, cus, satisfiedBy):
@@ -94,9 +103,7 @@ class QRequirement(BaseRequirement):
 
 
 def get_programs_urls():
-    soup = BeautifulSoup(
-        requests.get(CATALOG_PREFIX + "programs").content, "html.parser"
-    )
+    soup = BeautifulSoup(requests.get(CATALOG_PREFIX + "programs").content, "html.parser")
     links = {
         link.find_all("span", class_="title")[0].text: CATALOG_PREFIX + link.get("href")
         for link in soup.find_all("a")
@@ -107,6 +114,7 @@ def get_programs_urls():
 
 def startswith(prefix, string):
     return string.lower().startswith(prefix.lower())
+
 
 def test_courselist_row(row, ignore_indents=False):
     """
@@ -157,10 +165,10 @@ def parse_courselist_row(row, ignore_indent=False):
         return {
             "type": "header",
             "title": row_elts[0].find("span").text.strip(),
-            "superscript_ids": superscript_ids
+            "superscript_ids": superscript_ids,
         }
 
-    if "orclass" in row["class"]: # TODO: are there andclasses?
+    if "orclass" in row["class"]:  # TODO: are there andclasses?
         return {
             "type": "orcourse",
             "code": row_elts[0].text.replace("or", "").strip(),
@@ -175,15 +183,17 @@ def parse_courselist_row(row, ignore_indent=False):
         return None
 
     # for row in row_elts:
-        # if re.search('^Select', row.text.strip()):
-        #     string = row.text.strip()
-        #     select_file = open("management/commands/select.txt", "a")
-        #     select_file.write("{}\n".format(string))
-        #     select_file.close()
+    # if re.search('^Select', row.text.strip()):
+    #     string = row.text.strip()
+    #     select_file = open("management/commands/select.txt", "a")
+    #     select_file.write("{}\n".format(string))
+    #     select_file.close()
 
     if match := re.match(SELECT_N_FROM_FOLLOWING, row_elts[0].text):
         num, is_course_units, _ = match.groups()
-        is_course_units = is_course_units is not None and is_course_units.lower().startswith("course unit")
+        is_course_units = is_course_units is not None and is_course_units.lower().startswith(
+            "course unit"
+        )
         try:
             num = WORD_TO_NUMBER.get(num) or float(num)
         except ValueError:
@@ -241,7 +251,9 @@ def parse_courselist_row(row, ignore_indent=False):
 
     if match := re.match(SELECT_N_FROM_FOLLOWING, row_elts[0].text):
         num, is_course_units, _ = match.groups()
-        is_course_units = is_course_units is not None and is_course_units.lower().startswith("course unit")
+        is_course_units = is_course_units is not None and is_course_units.lower().startswith(
+            "course unit"
+        )
         try:
             num = WORD_TO_NUMBER.get(num) or float(num)
         except ValueError:
@@ -259,7 +271,7 @@ def parse_courselist_row(row, ignore_indent=False):
         return {
             "type": "header",
             "title": row_elts[0].find("span").text.strip(),
-            "superscript_ids": superscript_ids
+            "superscript_ids": superscript_ids,
         }
 
     if is_indented:
@@ -267,14 +279,10 @@ def parse_courselist_row(row, ignore_indent=False):
             "type": "textcourse",
             "name": row_elts[0].text.strip(),
             "indent": True,
-            "superscript_ids": superscript_ids
+            "superscript_ids": superscript_ids,
         }
 
-    return {
-        "type": "unknown",
-        "html": row,
-        "superscript_ids": superscript_ids
-    }
+    return {"type": "unknown", "html": row, "superscript_ids": superscript_ids}
 
 
 def parse_course_set_text(course_set_text: str):
@@ -308,8 +316,12 @@ def q_of_course_set(name: str):
         return None
     groups = match.groupdict()
     # NOTE: extra could None
-    num, course_units, course_set, extra = groups.get("num"), groups.get("course_units"), groups.get(
-        "course_set"), groups.get("extra")
+    num, course_units, course_set, extra = (
+        groups.get("num"),
+        groups.get("course_units"),
+        groups.get("course_set"),
+        groups.get("extra"),
+    )
     print(f"\t`{name}`\n\t`{course_set}`\n\t`{extra}`")
     if extra:
         print(f"\textra is defined: `{extra}`")
@@ -348,7 +360,9 @@ def parse_courselist(courselist, ignore_indent=False):
                 try:
                     cus = float(requirement["cus"])
                     current_requirement = Requirement(
-                        requirement["name"], [(requirement["code"], requirement["name"])], cus
+                        requirement["name"],
+                        [(requirement["code"], requirement["name"])],
+                        cus,
                     )
                 except ValueError:
                     # print("FIXME: Couldn't convert CUs")
@@ -439,7 +453,9 @@ def parse_courselist(courselist, ignore_indent=False):
 
 def get_program_requirements(program_url, timestamp=None):
     if timestamp:
-        wayback_url = f"https://archive.org/wayback/available?url={program_url}&timestamp={timestamp}"
+        wayback_url = (
+            f"https://archive.org/wayback/available?url={program_url}&timestamp={timestamp}"
+        )
         wayback = requests.get(wayback_url)
         wayback_json = wayback.json()
         if wayback_json is not None and "closest" in wayback_json["archived_snapshots"]:
@@ -474,7 +490,8 @@ class Command(BaseCommand):
             help=dedent(
                 """
             File to output to, relative to (...)/penn-courses/backend/degree/. Defaults to output.txt.
-            """)
+            """
+            ),
         )
 
     def handle(self, *args, **kwargs):

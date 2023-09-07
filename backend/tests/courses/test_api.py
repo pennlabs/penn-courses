@@ -59,14 +59,10 @@ class CourseListTestCase(TestCase):
         new_sem = TEST_SEMESTER[:-1] + "Z"
         create_mock_data("MATH-104-001", new_sem)
 
-        response = self.client.get(
-            reverse("courses-list", kwargs={"semester": TEST_SEMESTER})
-        )
+        response = self.client.get(reverse("courses-list", kwargs={"semester": TEST_SEMESTER}))
         self.assertEqual(len(response.data), 2)
 
-        response = self.client.get(
-            reverse("courses-list", kwargs={"semester": new_sem})
-        )
+        response = self.client.get(reverse("courses-list", kwargs={"semester": new_sem}))
         self.assertEqual(len(response.data), 1)
 
         response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))
@@ -74,9 +70,7 @@ class CourseListTestCase(TestCase):
 
     def test_current_semester(self):
         new_sem = TEST_SEMESTER[:-1] + "Z"
-        response = self.client.get(
-            reverse("courses-list", kwargs={"semester": "current"})
-        )
+        response = self.client.get(reverse("courses-list", kwargs={"semester": "current"}))
         create_mock_data("MATH-104-001", new_sem)
         self.assertEqual(len(response.data), 2)
 
@@ -105,16 +99,12 @@ class CourseDetailTestCase(TestCase):
     def test_get_course(self):
         course, section = create_mock_data("CIS-120-201", TEST_SEMESTER)
         response = self.client.get(
-            reverse(
-                "courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"}
-            )
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["id"], "CIS-120")
         self.assertEqual(len(response.data["sections"]), 2)
-        self.assertEqual(
-            "Test Instructor", response.data["sections"][0]["instructors"][0]["name"]
-        )
+        self.assertEqual("Test Instructor", response.data["sections"][0]["instructors"][0]["name"])
 
     def test_section_cancelled(self):
         course, section = create_mock_data("CIS-120-201", TEST_SEMESTER)
@@ -122,9 +112,7 @@ class CourseDetailTestCase(TestCase):
         section.status = "X"
         section.save()
         response = self.client.get(
-            reverse(
-                "courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"}
-            )
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["id"], "CIS-120")
@@ -135,9 +123,7 @@ class CourseDetailTestCase(TestCase):
         section.credits = None
         section.save()
         response = self.client.get(
-            reverse(
-                "courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"}
-            )
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["id"], "CIS-120")
@@ -147,9 +133,7 @@ class CourseDetailTestCase(TestCase):
         self.section.status = "X"
         self.section.save()
         response = self.client.get(
-            reverse(
-                "courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"}
-            )
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(response.data["id"], "CIS-120")
@@ -157,9 +141,7 @@ class CourseDetailTestCase(TestCase):
 
     def test_not_get_course(self):
         response = self.client.get(
-            reverse(
-                "courses-detail", kwargs={"semester": "all", "full_code": "CIS-160"}
-            )
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-160"})
         )
         self.assertEqual(response.status_code, 404)
 
@@ -203,9 +185,7 @@ class TypedSearchBackendTestCase(TestCase):
         for kw in keywords:
             req = self.factory.get("/", {"type": "auto", "search": kw})
             terms = self.search.get_search_fields(None, req)
-            self.assertEqual(
-                ["title", "sections__instructors__name"], terms, f"search:{kw}"
-            )
+            self.assertEqual(["title", "sections__instructors__name"], terms, f"search:{kw}")
 
 
 class CourseSearchTestCase(TestCase):
@@ -226,12 +206,8 @@ class CourseSearchTestCase(TestCase):
         self.assertTrue("CIS-120" not in course_codes and "MATH-114" in course_codes)
 
     def test_search_by_instructor(self):
-        self.section.instructors.add(
-            Instructor.objects.get_or_create(name="Tiffany Chang")[0]
-        )
-        self.math1.instructors.add(
-            Instructor.objects.get_or_create(name="Josh Doman")[0]
-        )
+        self.section.instructors.add(Instructor.objects.get_or_create(name="Tiffany Chang")[0])
+        self.math1.instructors.add(Instructor.objects.get_or_create(name="Josh Doman")[0])
         searches = ["Tiffany", "Chang"]
         for search in searches:
             response = self.client.get(
@@ -258,9 +234,7 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         set_semester()
         self.username = "jacob"
         self.password = "top_secret"
-        self.user = User.objects.create_user(
-            username=self.username, password=self.password
-        )
+        self.user = User.objects.create_user(username=self.username, password=self.password)
         self.client = APIClient()
 
     def test_recommendation_is_null_when_course_not_part_of_model_even_when_logged_in(
@@ -293,9 +267,7 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         new=production_CourseListSearch_get_serializer_context,
     )
     @patch("courses.views.retrieve_course_clusters")
-    def test_recommendation_is_number_when_user_is_logged_in(
-        self, course_clusters_mock
-    ):
+    def test_recommendation_is_number_when_user_is_logged_in(self, course_clusters_mock):
         course_clusters_mock.return_value = self.course_clusters
         self.client.login(username=self.username, password=self.password)
 
@@ -306,9 +278,7 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         # NOTE: the `semester` of many of the sections in this schedule do not match up with
         # the `semester` of the schedule
         curr_semester_schedule.sections.add(
-            Course.objects.get(full_code="PSCI-498", semester="2019A").sections.get(
-                code="001"
-            )
+            Course.objects.get(full_code="PSCI-498", semester="2019A").sections.get(code="001")
         )
 
         prev_semester_schedule = Schedule.objects.create(
@@ -316,9 +286,7 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         )
         prev_semester_schedule.save()
         prev_semester_schedule.sections.add(
-            Course.objects.get(full_code="PSCI-181", semester="2019A").sections.get(
-                code="001"
-            )
+            Course.objects.get(full_code="PSCI-181", semester="2019A").sections.get(code="001")
         )
 
         response = self.client.get(
@@ -367,39 +335,29 @@ class SectionSearchTestCase(TestCase):
         self.assertEqual("PSCI-1810-001", res.data[0]["section_id"])
 
     def test_match_full_course_nosep(self):
-        res = self.client.get(
-            reverse("section-search", args=["current"]), {"search": "CIS1200"}
-        )
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS1200"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(2, len(res.data))
         self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_full_course_exact(self):
-        res = self.client.get(
-            reverse("section-search", args=["current"]), {"search": "CIS-1200"}
-        )
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS-1200"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(2, len(res.data))
         self.assertEqual("CIS-1200-001", res.data[0]["section_id"])
 
     def test_match_full_course_space(self):
-        res = self.client.get(
-            reverse("section-search", args=["current"]), {"search": "PSCI 1810"}
-        )
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "PSCI 1810"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(1, len(res.data))
 
     def test_match_department(self):
-        res = self.client.get(
-            reverse("section-search", args=["current"]), {"search": "CIS"}
-        )
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "CIS"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(3, len(res.data))
 
     def test_match_lowercase(self):
-        res = self.client.get(
-            reverse("section-search", args=["current"]), {"search": "cis1200"}
-        )
+        res = self.client.get(reverse("section-search", args=["current"]), {"search": "cis1200"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(2, len(res.data))
 
@@ -428,9 +386,7 @@ class PreNGSSRequirementListTestCase(TestCase):
         self.req2 = PreNGSSRequirement(
             semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2"
         )
-        self.req3 = PreNGSSRequirement(
-            semester="XXXXX", school="SAS", code="TEST1", name="Test 1+"
-        )
+        self.req3 = PreNGSSRequirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
 
         self.req1.save()
         self.req2.save()
@@ -445,16 +401,12 @@ class PreNGSSRequirementListTestCase(TestCase):
         self.client = APIClient()
 
     def test_requirement_route(self):
-        response = self.client.get(
-            reverse("requirements-list", kwargs={"semester": "current"})
-        )
+        response = self.client.get(reverse("requirements-list", kwargs={"semester": "current"}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(2, len(response.data))
 
     def test_requirement_route_other_sem(self):
-        response = self.client.get(
-            reverse("requirements-list", kwargs={"semester": "XXXXX"})
-        )
+        response = self.client.get(reverse("requirements-list", kwargs={"semester": "XXXXX"}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(1, len(response.data))
 
@@ -572,9 +524,7 @@ class AttributeFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "WUOM|EMCI"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            {res["id"] for res in response.data}, {"MGMT-117", "ECON-001", "CIS-120"}
-        )
+        self.assertEqual({res["id"] for res in response.data}, {"MGMT-117", "ECON-001", "CIS-120"})
 
     def test_nonexistent_attribute(self):
         response = self.client.get(
@@ -641,9 +591,7 @@ class AttributeFilterTestCase(TestCase):
             {"attributes": "(EMCI*WUOM)|~EMCI"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            {res["id"] for res in response.data}, {"ECON-001", "MGMT-117", "ANTH-001"}
-        )
+        self.assertEqual({res["id"] for res in response.data}, {"ECON-001", "MGMT-117", "ANTH-001"})
 
     def test_and_or_nots(self):
         response = self.client.get(
@@ -651,9 +599,7 @@ class AttributeFilterTestCase(TestCase):
             {"attributes": "(~EMCI*WUOM)|~WUOM"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            {res["id"] for res in response.data}, {"CIS-120", "MGMT-117", "ANTH-001"}
-        )
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "MGMT-117", "ANTH-001"})
 
     def test_demorgan(self):
         response = self.client.get(
@@ -752,9 +698,7 @@ class SectionListTestCase(TestCase):
             kwargs={"semester": TEST_SEMESTER},
         )
         course_codes = [d["section_id"] for d in response.data]
-        self.assertTrue(
-            "CIS-120-001" in course_codes and "MATH-114-001" in course_codes
-        )
+        self.assertTrue("CIS-120-001" in course_codes and "MATH-114-001" in course_codes)
         self.assertEqual(2, len(response.data))
 
     def test_section_without_(self):
@@ -1197,9 +1141,7 @@ class UserTestCase(TestCase):
     def test_both_null(self):
         response = self.client.put(
             reverse("user-view"),
-            json.dumps(
-                {"profile": {"email": None, "phone": None, "push_notifications": True}}
-            ),
+            json.dumps({"profile": {"email": None, "phone": None, "push_notifications": True}}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
