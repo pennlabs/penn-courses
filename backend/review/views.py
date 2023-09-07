@@ -194,6 +194,7 @@ def course_reviews(request, course_code):
         match_review_on=Q(section__course__topic=topic) & review_filters_pcr,
         match_section_on=Q(course__topic=topic) & section_filters_pcr,
         extra_metrics=True,
+        reviewbit_subfilters=Q(review__section__course__topic=topic) & reviewbit_filters_pcr
     )
     course = get_single_dict_from_qs(course_qs)
 
@@ -408,6 +409,7 @@ def instructor_reviews(request, instructor_id):
         match_review_on=Q(instructor_id=instructor_id) & review_filters_pcr,
         match_section_on=Q(instructors__id=instructor_id) & section_filters_pcr,
         extra_metrics=True,
+        reviewbit_subfilters=Q(review__instructor_id=instructor_id) & reviewbit_filters_pcr
     )
     inst = get_single_dict_from_qs(instructor_qs)
 
@@ -428,6 +430,14 @@ def instructor_reviews(request, instructor_id):
         & section_filters_pcr,
         extra_metrics=True,
         fields=INSTRUCTOR_COURSE_REVIEW_FIELDS,
+        reviewbit_subfilters=Q(
+            review__section__course__topic=OuterRef("topic")
+        ),
+        reviewbit_subfilters=Q(
+            review__section__course__topic=OuterRef(OuterRef("topic")),
+            review_instructor_id=instructor_id,
+        ) 
+        & reviewbit_filters_pcr
     ).annotate(
         most_recent_full_code=F("topic__most_recent__full_code"),
     )

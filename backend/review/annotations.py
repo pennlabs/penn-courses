@@ -208,6 +208,7 @@ def annotate_with_matching_reviews(
     fields=None,
     prefix="",
     extra_metrics=True,
+    reviewbit_subfilters=None
 ):
     """
     Annotate each element the passed-in queryset with a subset of all review averages.
@@ -225,6 +226,12 @@ def annotate_with_matching_reviews(
     :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment,
         percent of add/drop period open, average number of openings during add/drop,
         and percentage of sections filled in advance registration
+    :param: reviewbit_subfilters: If None, then `reviewbit_subfilters` uses a subquery for 
+        `match_reviews_on` is used. If a `Q()` expression, then it is used to filter the reviewbits.
+        Typically, the reviewbit_subfilter should be almost identical to match_reviews_on but with
+        an additional join to go from reviewbits to reviews and without extra `OuterRef`s.
+        E.g., if `match_reviews_on=Q(section__course__topic=OuterRef(OuterRef("topic")))`, then 
+        `reviewbit_subfilters=Q(reviewcourse__topic=OuterRef("topic"))`
     """
 
     from courses.models import Section  # avoid circular imports
@@ -233,7 +240,7 @@ def annotate_with_matching_reviews(
         fields = ALL_FIELD_SLUGS
 
     matching_reviews = Review.objects.filter(match_review_on, responses__gt=0)
-    reviewbit_subfilters = Q(review_id__in=Subquery(matching_reviews.values("id")))
+    reviewbit_subfilters = reviewbit_subfilters if reviewbit_subfilters is not None else Q(review_id__in=Subquery(matching_reviews.values("id")))
     matching_sections = Section.objects.filter(match_section_on)
     section_subfilters = Q(id__in=Subquery(matching_sections.values("id")))
     if most_recent:
@@ -259,7 +266,7 @@ def annotate_with_matching_reviews(
 
 
 def annotate_average_and_recent(
-    qs, match_review_on, match_section_on, extra_metrics=True, fields=None
+    qs, match_review_on, match_section_on, extra_metrics=True, fields=None, reviewbit_subfilters=None
 ):
     """
     Annotate queryset with both all reviews and recent reviews.
@@ -275,6 +282,12 @@ def annotate_average_and_recent(
         percent of add/drop period open, average number of openings during add/drop,
         and percentage of sections filled in advance registration
     :param: fields: option to specify the fields averaged by the query
+    :param: reviewbit_subfilters: If None, then `reviewbit_subfilters` uses a subquery for 
+        `match_reviews_on` is used. If a `Q()` expression, then it is used to filter the reviewbits.
+        Typically, the reviewbit_subfilter should be almost identical to match_reviews_on but with
+        an additional join to go from reviewbits to reviews and without extra `OuterRef`s.
+        E.g., if `match_reviews_on=Q(section__course__topic=OuterRef(OuterRef("topic")))`, then 
+        `reviewbit_subfilters=Q(reviewcourse__topic=OuterRef("topic"))`
     """
     qs = annotate_with_matching_reviews(
         qs,
@@ -284,6 +297,7 @@ def annotate_average_and_recent(
         prefix="average_",
         extra_metrics=extra_metrics,
         fields=fields,
+        reviewbit_subfilters=reviewbit_subfilters
     )
     qs = annotate_with_matching_reviews(
         qs,
@@ -293,5 +307,6 @@ def annotate_average_and_recent(
         prefix="recent_",
         extra_metrics=extra_metrics,
         fields=fields,
+        reviewbit_subfilters=reviewbit_subfilters
     )
     return qs
