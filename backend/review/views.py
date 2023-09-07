@@ -431,10 +431,7 @@ def instructor_reviews(request, instructor_id):
         extra_metrics=True,
         fields=INSTRUCTOR_COURSE_REVIEW_FIELDS,
         reviewbit_subfilters=Q(
-            review__section__course__topic=OuterRef("topic")
-        ),
-        reviewbit_subfilters=Q(
-            review__section__course__topic=OuterRef(OuterRef("topic")),
+            review__section__course__topic=OuterRef("topic"),
             review_instructor_id=instructor_id,
         ) 
         & reviewbit_filters_pcr
