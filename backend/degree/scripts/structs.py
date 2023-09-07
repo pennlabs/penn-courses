@@ -55,7 +55,7 @@ class DegreePlan:
     def __str__(self) -> str:
         return dedent(
             f"""
-            {self.program} {self.degree} in {self.major} {f'with concentration {self.concentration} ' if self.concentration}({self.year})
+            {self.program} {self.degree} in {self.major} {f'with concentration {self.concentration} ' if self.concentration else ''}({self.year})
             """
         )
 
