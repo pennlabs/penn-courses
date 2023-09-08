@@ -209,7 +209,7 @@ const normalizeQuery = (query) => {
   if (query.length >= 2 && query.slice(-2).match(/\w{2}/)) {
     const i = /\w+$/.exec(query).index;
     const partial = query.substring(i);
-    query = query.substring(0, i) + `(${partial}|${partial}*)`;
+    query = query.substring(0, i) + `(${partial}|${partial}*|%%${partial}%%)`;
   } else if (query.length >= 1 && query.slice(-1).match(/\w/)) {
     query = query.slice(0, -1);
   }
@@ -241,7 +241,7 @@ class DeepSearchBar extends Component {
     this.autocompleteCallback = this.autocompleteCallback.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.setFocusedOption = this.setFocusedOption.bind(this);
-    this.debouncedApiSearch = debounce(apiSearch, 50, { leading: true })
+    this.debouncedApiSearch = debounce(apiSearch, 0, { leading: true })
   }
 
   componentDidMount() {
