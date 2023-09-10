@@ -103,9 +103,7 @@ class GetCourseSectionTest(TestCase):
             self.assertCourseSame(test)
 
     def test_create_course(self):
-        course, section, _, _ = get_or_create_course_and_section(
-            "CIS 120 001", TEST_SEMESTER
-        )
+        course, section, _, _ = get_or_create_course_and_section("CIS 120 001", TEST_SEMESTER)
         self.assertEqual("CIS-120-001", section.full_code)
         self.assertEqual(Course.objects.count(), 2)
         self.assertEqual(course.department.code, "CIS")
@@ -160,9 +158,7 @@ class CourseSaveAutoPrimaryListingTest(TestCase):
     def test_set_primary_listing(self):
         get_or_create_course("CIS", "120", TEST_SEMESTER)
         b, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
-        c, _ = get_or_create_course(
-            "LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b}
-        )
+        c, _ = get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b})
         b_db = Course.objects.get(full_code="OIDD-291")
         c_db = Course.objects.get(full_code="LGST-291")
         self.assertEqual(b.primary_listing, b)
@@ -211,9 +207,7 @@ class CourseTopicTestCase(TestCase):
         b, _ = get_or_create_course("CIS", "1200", "2021C")
         t.merge_with(b.topic)
         c, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
-        get_or_create_course(
-            "LGST", "291", TEST_SEMESTER, defaults={"primary_listing": c}
-        )
+        get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": c})
         t1 = Topic.objects.filter(courses__full_code="CIS-120")[:1].get()
         t2 = Topic.objects.filter(courses__full_code="OIDD-291")[:1].get()
         t_merged = t1.merge_with(t2)
@@ -233,9 +227,7 @@ class CourseTopicTestCase(TestCase):
     def test_crosslistings(self):
         a, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
         b, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
-        c, _ = get_or_create_course(
-            "LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b}
-        )
+        c, _ = get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b})
         a_db = Course.objects.get(full_code="CIS-120")
         b_db = Course.objects.get(full_code="OIDD-291")
         c_db = Course.objects.get(full_code="LGST-291")
@@ -255,12 +247,8 @@ class CourseTopicTestCase(TestCase):
         b, _ = get_or_create_course("OIDD", "291", "2020C")
         get_or_create_course("LGST", "291", "2020C", defaults={"primary_listing": b})
         d, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
-        get_or_create_course(
-            "MGMT", "291", TEST_SEMESTER, defaults={"primary_listing": d}
-        )
-        get_or_create_course(
-            "OPIM", "291", TEST_SEMESTER, defaults={"primary_listing": d}
-        )
+        get_or_create_course("MGMT", "291", TEST_SEMESTER, defaults={"primary_listing": d})
+        get_or_create_course("OPIM", "291", TEST_SEMESTER, defaults={"primary_listing": d})
         a_db = Course.objects.get(full_code="CIS-120")
         b_db = Course.objects.get(full_code="OIDD-291", semester="2020C")
         c_db = Course.objects.get(full_code="LGST-291")
@@ -301,9 +289,7 @@ class SectionHasStatusUpdateTestCase(TestCase):
 
     def test_no_updates(self):
         recompute_precomputed_fields()
-        self.assertFalse(
-            Section.objects.get(full_code="CIS-120-001").has_status_updates
-        )
+        self.assertFalse(Section.objects.get(full_code="CIS-120-001").has_status_updates)
 
     def test_one_update(self):
         up = record_update(self.section, TEST_SEMESTER, "C", "O", True, "JSON")
@@ -413,9 +399,7 @@ class PreNGSSRequirementTestCase(TestCase):
         self.req2 = PreNGSSRequirement(
             semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2"
         )
-        self.req3 = PreNGSSRequirement(
-            semester="XXXXX", school="SAS", code="TEST1", name="Test 1+"
-        )
+        self.req3 = PreNGSSRequirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
 
         self.req1.save()
         self.req2.save()

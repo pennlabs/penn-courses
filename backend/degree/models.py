@@ -35,13 +35,23 @@ class DegreeRequirement(models.Model):
     """
     This model represents a degree requirement as a recursive tree.
     """
+
     SATISFIED_BY = (
-        ("ALL", "Not an actual satisfied by mode: represented by NUM_COURSES where num = number of courses. Must "
-                "take all courses to satisfy requirements"),
-        ("ANY", "Not an actual satisfied by mode: represented by NUM_COURSES where num = 1. Can take any course to "
-                "satisfy requirements."),
+        (
+            "ALL",
+            "Not an actual satisfied by mode: represented by NUM_COURSES where num = number of courses. Must "
+            "take all courses to satisfy requirements",
+        ),
+        (
+            "ANY",
+            "Not an actual satisfied by mode: represented by NUM_COURSES where num = 1. Can take any course to "
+            "satisfy requirements.",
+        ),
         ("CUS", "Must take courses with total number of CUs to satisfy requirements"),
-        ("NUM_COURSES", "Must take a certain number of courses to satisfy requirements"),
+        (
+            "NUM_COURSES",
+            "Must take a certain number of courses to satisfy requirements",
+        ),
     )
 
     class SatisfiedBy(models.IntegerChoices):
@@ -76,7 +86,7 @@ class DegreeRequirement(models.Model):
         Used to store more complex & larger query sets using the same interface as Q() objects. Not null if and only iff
         courses is blank/empty.
         """
-        )
+        ),
     )
     topics = models.ManyToManyField(
         Topic,
@@ -108,7 +118,7 @@ class DegreeRequirement(models.Model):
         """
         ),
     )
-    created_at = models.DateTimeField(auto_now_add=True) # TODO: do we need these fields?
+    created_at = models.DateTimeField(auto_now_add=True)  # TODO: do we need these fields?
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -127,15 +137,16 @@ class DegreeFulfillment(models.Model):
 
     Note: this model is not tied to a user, but the DegreePlan model is.
     """
+
     STATUS = (
         ("TAKEN", "course has already been taken"),
         ("IN_PROGRESS", "course is currently in progress (in the current semester)"),
         ("PLANNED", "course is planned for the future"),
     )
 
-    class Status(models.IntegerChoices): # TODO: can we just infer this from the semester
+    class Status(models.IntegerChoices):  # TODO: can we just infer this from the semester
         TAKEN = 1
-        IN_PROGRESS = 2 # TODO: is this necessary
+        IN_PROGRESS = 2  # TODO: is this necessary
         PLANNED = 3
 
     degree_plan = models.ForeignKey(
@@ -170,9 +181,9 @@ class DegreeFulfillment(models.Model):
         """
         ),
     )
-    course = models.ForeignKey( # TODO: should be topic?
+    course = models.ForeignKey(  # TODO: should be topic?
         Course,
-        on_delete=models.CASCADE, # TODO: is cascade the right behavior here
+        on_delete=models.CASCADE,  # TODO: is cascade the right behavior here
         help_text=dedent(
             """
         The fulfilling course.
@@ -186,17 +197,18 @@ class DegreeFulfillment(models.Model):
         The requirement(s) this fulfils.
         """
         ),
-    ) # TODO: set related name?
+    )  # TODO: set related name?
     overridden = models.BooleanField(
         help_text=dedent(
             """
         Whether this is an override for one or more requirements.
         """
-        ), # TODO: this is actually a terrible way of representing this: what if we only want to override to fulfil 1 req?
+        ),  # TODO: this is actually a terrible way of representing this: what if we only want to override to fulfil 1 req?
     )
 
     class Meta:
         unique_together = (("degree_plan", "semester", "course"),)
+
 
 class DegreePlan(models.Model):
     """

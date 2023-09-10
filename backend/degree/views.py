@@ -18,6 +18,7 @@ from degree.serializers import (
 
 # Create your views here.
 
+
 class DegreeList(generics.ListAPIView):
     """
     Retrieve a list of (all) degrees available.
@@ -38,9 +39,11 @@ class DegreeList(generics.ListAPIView):
         queryset = Degree.filter()
         return queryset
 
+
 class DegreeListSearch(DegreeList):
     # TODO: unimplemented
     pass
+
 
 class DegreeDetail(generics.RetrieveAPIView):
     """
@@ -51,14 +54,12 @@ class DegreeDetail(generics.RetrieveAPIView):
     schema = PcxAutoSchema(
         response_codes={
             reverse_func("degree-detail", args=["graduation", "full_code"]): {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Degree detail retrieved successfully."
-                }
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Degree detail retrieved successfully."}
             }
         },
     )
 
-    serializer_class = DegreeSerializer # TODO: have a DegreeSerializer and DegreeListSerializer
+    serializer_class = DegreeSerializer  # TODO: have a DegreeSerializer and DegreeListSerializer
     lookup_field = "full_code"
 
     # TODO: Actually include requirement data

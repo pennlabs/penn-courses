@@ -334,9 +334,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             schedule.name = request.data.get("name")
             schedule.save()
             schedule.sections.set(sections)
-            return Response(
-                {"message": "success", "id": schedule.id}, status=status.HTTP_200_OK
-            )
+            return Response({"message": "success", "id": schedule.id}, status=status.HTTP_200_OK)
         except IntegrityError as e:
             return Response(
                 {

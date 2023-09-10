@@ -3,17 +3,12 @@ from textwrap import dedent
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from degree.models import (
-    DegreeRequirement,
-    DegreePlan,
-    Degree,
-    DegreeFulfillment
-)
+from degree.models import DegreeRequirement, DegreePlan, Degree, DegreeFulfillment
 
 
 class DegreeRequirementSerializer(serializers.ModelSerializer):
     courses = serializers.SlugRelatedField(
-        slug_field='full_code',
+        slug_field="full_code",
         many=True,
         read_only=True,
     )
@@ -43,7 +38,7 @@ class DegreeFulfillmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DegreeFulfillment
-        extra_kwargs = {"override": {"required": False}} # check if want to override
+        extra_kwargs = {"override": {"required": False}}  # check if want to override
 
 
 class DegreePlanSerializer(serializers.ModelSerializer):

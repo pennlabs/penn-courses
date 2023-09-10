@@ -9,33 +9,34 @@ with open(".env") as f:
 cookies = {
     "REFRESH_TOKEN": env["REFRESH_TOKEN"],
     "NAME": env["NAME"],
-    "X-AUTH-TOKEN": env["X-AUTH-TOKEN"]
+    "X-AUTH-TOKEN": env["X-AUTH-TOKEN"],
 }
 
 headers = {
     "Host": "degreeworks-prod-j.isc-seo.upenn.edu:9904",
-    "Origin": "https://degreeworks-prod-j.isc-seo.upenn.edu:9904"
+    "Origin": "https://degreeworks-prod-j.isc-seo.upenn.edu:9904",
 }
 
 s = Session()
 s.cookies.update(cookies)
 s.headers.update(headers)
 
+
 def audit(degree_plan: DegreePlan, timeout=30):
     payload = {
         "studentId": env["PENN_ID"],
-        "isIncludeInprogress":True,
-        "isIncludePreregistered":True,
-        "isKeepCurriculum":False,
-        "school":"UG",
-        "degree":"BA",
-        "catalogYear":"2023",
-        "goals":[
-            {"code":"MAJOR","value":degree_plan.major},
-            {"code":"PROGRAM","value":degree_plan.program},
-            {"code":"COLLEGE","value":degree_plan.program.split("_")[0]}
+        "isIncludeInprogress": True,
+        "isIncludePreregistered": True,
+        "isKeepCurriculum": False,
+        "school": "UG",
+        "degree": "BA",
+        "catalogYear": "2023",
+        "goals": [
+            {"code": "MAJOR", "value": degree_plan.major},
+            {"code": "PROGRAM", "value": degree_plan.program},
+            {"code": "COLLEGE", "value": degree_plan.program.split("_")[0]},
         ],
-        "classes":[]
+        "classes": [],
     }
 
     res = s.post(
@@ -43,12 +44,13 @@ def audit(degree_plan: DegreePlan, timeout=30):
         headers=headers,
         cookies=cookies,
         json=payload,
-        timeout=timeout
+        timeout=timeout,
     )
 
     res.raise_for_status()
 
     return res.json()
+
 
 def degree_plans_of(program_code):
     goals_payload = [
@@ -57,269 +59,257 @@ def degree_plans_of(program_code):
             "description": "Program",
             "isExpandable": False,
             "goals": [
-            {
-                "name": "catalogYear",
-                "selectedChoices": [
-                "2023"
-                ],
-                "ruleGoalCode": None,
-                "links": []
-            },
-            {
-                "name": "program",
-                "description": "Program",
-                "entityName": "programs",
-                "isDisabled": False,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": True,
-                "isStatic": False,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "",
-                "errorMessage": "",
-                "selectedChoices": [
-                "AU_BA_BIOD_U"
-                ],
-                "ruleGoalCode": "PROGRAM",
-                "links": []
-            },
-            {
-                "name": "school",
-                "description": "Level",
-                "entityName": "schools",
-                "isDisabled": True,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": True,
-                "isStatic": False,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "",
-                "errorMessage": "",
-                "choices": [
                 {
-                    "key": "UG",
-                    "description": "Undergraduate",
-                    "isVisibleInWhatif": True
-                }
-                ],
-                "selectedChoices": [
-                "UG"
-                ],
-                "ruleGoalCode": "SCHOOL",
-                "links": []
-            },
-            {
-                "name": "college",
-                "description": "College",
-                "entityName": "colleges",
-                "isDisabled": True,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": True,
-                "isStatic": False,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "",
-                "errorMessage": "",
-                "selectedChoices": [
-                "AU"
-                ],
-                "ruleGoalCode": "COLLEGE",
-                "links": []
-            },
-            {
-                "name": "degree",
-                "description": "Degree",
-                "entityName": "degrees",
-                "isDisabled": True,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": True,
-                "isStatic": False,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "",
-                "errorMessage": "",
-                "choices": [
+                    "name": "catalogYear",
+                    "selectedChoices": ["2023"],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
                 {
-                    "key": "BA",
-                    "description": "Bachelor of Arts",
-                    "isVisibleInWhatif": True
-                }
-                ],
-                "selectedChoices": [
-                "BA"
-                ],
-                "ruleGoalCode": "DEGREE",
-                "links": []
-            }
-            ]
+                    "name": "program",
+                    "description": "Program",
+                    "entityName": "programs",
+                    "isDisabled": False,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "selectedChoices": ["AU_BA_BIOD_U"],
+                    "ruleGoalCode": "PROGRAM",
+                    "links": [],
+                },
+                {
+                    "name": "school",
+                    "description": "Level",
+                    "entityName": "schools",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "choices": [
+                        {
+                            "key": "UG",
+                            "description": "Undergraduate",
+                            "isVisibleInWhatif": True,
+                        }
+                    ],
+                    "selectedChoices": ["UG"],
+                    "ruleGoalCode": "SCHOOL",
+                    "links": [],
+                },
+                {
+                    "name": "college",
+                    "description": "College",
+                    "entityName": "colleges",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "selectedChoices": ["AU"],
+                    "ruleGoalCode": "COLLEGE",
+                    "links": [],
+                },
+                {
+                    "name": "degree",
+                    "description": "Degree",
+                    "entityName": "degrees",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "choices": [
+                        {
+                            "key": "BA",
+                            "description": "Bachelor of Arts",
+                            "isVisibleInWhatif": True,
+                        }
+                    ],
+                    "selectedChoices": ["BA"],
+                    "ruleGoalCode": "DEGREE",
+                    "links": [],
+                },
+            ],
         },
         {
             "id": "curriculumCollection",
             "description": "Areas of study",
             "isExpandable": False,
             "goals": [
-            {
-                "name": "major",
-                "description": "Major",
-                "entityName": "majors",
-                "isDisabled": False,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": True,
-                "isStatic": False,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "",
-                "errorMessage": "",
-                "selectedChoices": [
-                "ANTH"
-                ],
-                "ruleGoalCode": "MAJOR",
-                "links": []
-            },
-            {
-                "name": "concentration",
-                "description": "Concentration",
-                "entityName": "concentrations",
-                "isDisabled": True,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": False,
-                "isStatic": True,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "",
-                "errorMessage": "",
-                "choices": [],
-                "selectedChoices": [],
-                "ruleGoalCode": None,
-                "links": []
-            },
-            {
-                "name": "minor",
-                "description": "Minor",
-                "entityName": "minors",
-                "isDisabled": False,
-                "isDriver": False,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": False,
-                "isStatic": False,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "",
-                "errorMessage": "",
-                "selectedChoices": [],
-                "ruleGoalCode": "PROGRAM",
-                "links": []
-            },
-            {
-                "name": "secondaryCollege",
-                "description": "College",
-                "entityName": "colleges",
-                "isDisabled": True,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": False,
-                "isStatic": True,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "api/colleges",
-                "errorMessage": "",
-                "choices": [],
-                "selectedChoices": [],
-                "ruleGoalCode": None,
-                "links": []
-            },
-            {
-                "name": "secondaryDegree",
-                "description": "Degree",
-                "entityName": "degrees",
-                "isDisabled": True,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": False,
-                "isStatic": True,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "api/degrees",
-                "errorMessage": "",
-                "choices": [],
-                "selectedChoices": [],
-                "ruleGoalCode": None,
-                "links": []
-            },
-            {
-                "name": "secondaryMajor",
-                "description": "Major",
-                "entityName": "majors",
-                "isDisabled": True,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": False,
-                "isStatic": True,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "api/majors-whatif",
-                "errorMessage": "",
-                "choices": [],
-                "selectedChoices": [],
-                "ruleGoalCode": None,
-                "links": []
-            },
-            {
-                "name": "secondaryConcentration",
-                "description": "Concentration",
-                "entityName": "concentrations",
-                "isDisabled": True,
-                "isDriver": False,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": False,
-                "isStatic": True,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "api/concentrations",
-                "errorMessage": "",
-                "choices": [],
-                "selectedChoices": [],
-                "ruleGoalCode": None,
-                "links": []
-            },
-            {
-                "name": "secondaryMinor",
-                "description": "Minor",
-                "entityName": "minors",
-                "isDisabled": True,
-                "isDriver": True,
-                "isError": False,
-                "isMultiple": False,
-                "isRequired": False,
-                "isStatic": True,
-                "isVisible": True,
-                "isNoValidOptionsWarning": False,
-                "source": "api/minors-whatif",
-                "errorMessage": "",
-                "choices": [],
-                "selectedChoices": [],
-                "ruleGoalCode": None,
-                "links": []
-            }
-            ]
-        }
+                {
+                    "name": "major",
+                    "description": "Major",
+                    "entityName": "majors",
+                    "isDisabled": False,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "selectedChoices": ["ANTH"],
+                    "ruleGoalCode": "MAJOR",
+                    "links": [],
+                },
+                {
+                    "name": "concentration",
+                    "description": "Concentration",
+                    "entityName": "concentrations",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "minor",
+                    "description": "Minor",
+                    "entityName": "minors",
+                    "isDisabled": False,
+                    "isDriver": False,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "selectedChoices": [],
+                    "ruleGoalCode": "PROGRAM",
+                    "links": [],
+                },
+                {
+                    "name": "secondaryCollege",
+                    "description": "College",
+                    "entityName": "colleges",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/colleges",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "secondaryDegree",
+                    "description": "Degree",
+                    "entityName": "degrees",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/degrees",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "secondaryMajor",
+                    "description": "Major",
+                    "entityName": "majors",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/majors-whatif",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "secondaryConcentration",
+                    "description": "Concentration",
+                    "entityName": "concentrations",
+                    "isDisabled": True,
+                    "isDriver": False,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/concentrations",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "secondaryMinor",
+                    "description": "Minor",
+                    "entityName": "minors",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/minors-whatif",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+            ],
+        },
     ]
 
     degree_plans: list[DegreePlan] = []
@@ -330,7 +320,7 @@ def degree_plans_of(program_code):
         "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
         headers=headers,
         cookies=cookies,
-        json=goals_payload
+        json=goals_payload,
     )
 
     # LEVEL
@@ -345,7 +335,7 @@ def degree_plans_of(program_code):
     for degree in degrees:
         degree_code = degree["key"]
         print(program_code, " : ", degree_code)
-        assert degree_code.startswith("B") # ie, is a bachelor's degree
+        assert degree_code.startswith("B")  # ie, is a bachelor's degree
 
         # set degree
         goals_payload[0]["goals"][4]["selectedChoices"] = [degree_code]
@@ -354,7 +344,7 @@ def degree_plans_of(program_code):
             "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
             headers=headers,
             cookies=cookies,
-            json=goals_payload
+            json=goals_payload,
         )
 
         majors = res.json()[1]["goals"][0]["choices"]
@@ -363,14 +353,14 @@ def degree_plans_of(program_code):
         for major in majors:
             major_code = major["key"]
             print("\t", major_code)
-            
+
             goals_payload[1]["goals"][0]["selectedChoices"] = [major_code]
-        
+
             res = s.post(
                 "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
                 headers=headers,
                 cookies=cookies,
-                json=goals_payload
+                json=goals_payload,
             )
 
             # CONCENTRATION
@@ -381,9 +371,12 @@ def degree_plans_of(program_code):
             for concentration in concentrations:
                 concentration_code = concentration["key"]
                 print("\t\t", concentration_code)
-                degree_plans.append(DegreePlan(program_code, degree_code, major_code, concentration_code, 2023))
+                degree_plans.append(
+                    DegreePlan(program_code, degree_code, major_code, concentration_code, 2023)
+                )
 
     return degree_plans
+
 
 def get_programs(timeout=30):
     goals_payload = [
@@ -407,11 +400,9 @@ def get_programs(timeout=30):
                     "source": "api/catalogYears",
                     "errorMessage": "",
                     "choices": [],
-                    "selectedChoices": [
-                        "2023"
-                    ],
+                    "selectedChoices": ["2023"],
                     "ruleGoalCode": None,
-                    "links": []
+                    "links": [],
                 },
                 {
                     "name": "program",
@@ -431,819 +422,817 @@ def get_programs(timeout=30):
                         {
                             "key": "NP_PHD_JOINT",
                             "description": "*Nursing Joint PhD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AU_BA_BIOD_U",
                             "description": "*Seven Yr Bio-Dent Pgrm Pre-Maj",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CP_MA",
                             "description": "Annenberg - MA (PhD)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CP_PHD",
                             "description": "Annenberg - PhD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AU_BA",
                             "description": "Arts & Sciences - BA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AU_BA_UNDC",
                             "description": "Arts & Sciences - BA - Pre-Major",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AP_PHD_JOINT",
                             "description": "Arts & Sciences - Joint PhD Degree",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AP_MA",
                             "description": "Arts & Sciences - MA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AP_MPHIL",
                             "description": "Arts & Sciences - MPhil",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AP_MS",
                             "description": "Arts & Sciences - MS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AP_PHD",
                             "description": "Arts & Sciences - PhD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DY_CERTF_DM",
                             "description": "Dental - Certificate (Post-Graduate FinAid)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DY_CERT_DM",
                             "description": "Dental - Certificate (Post-Graduate)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DM_DMD",
                             "description": "Dental - Doctor of Dental Medicine",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DM_DMD_BIOD",
                             "description": "Dental - Doctor of Dental Medicine (7-yr)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DM_DMD_PASS",
                             "description": "Dental - Doctor of Dental Medicine (Advanced)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DY_DSCD",
                             "description": "Dental - Doctor of Science in Dentistry",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DY_MADS",
                             "description": "Dental - Master of Advance Dental Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DY_MOHS",
                             "description": "Dental - Master of Oral Health Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DY_MSOB",
                             "description": "Dental - Master of Science in Oral Biology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FP_CERT_GR",
                             "description": "Design - Certificate (Graduate)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FM_CERT_PR",
                             "description": "Design - Certificate (Professional)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FP_MA",
                             "description": "Design - MA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FP_MS",
                             "description": "Design - MS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FM_MARCH",
                             "description": "Design - Master of Architecture",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FM_MCP",
                             "description": "Design - Master of City Planning",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FM_MEBD",
                             "description": "Design - Master of Environmental Building Design",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FM_MFA",
                             "description": "Design - Master of Fine Arts",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FM_MLA",
                             "description": "Design - Master of Landscape Architecture",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FM_MSDES",
                             "description": "Design - Master of Science in Design",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FM_MSHP",
                             "description": "Design - Master of Science in Historic Preserv",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FM_MUSA",
                             "description": "Design - Master of Urban Spatial Analytics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FP_PHD",
                             "description": "Design - PhD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AU_BA_CMPC_U",
                             "description": "Dual Degree - Computer & Cog Sci - BA - Pre-Major",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AU_BA_HUNTS",
                             "description": "Dual Degree - Huntsman - BA - Arts & Sciences",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WU_BS_HUNTS",
                             "description": "Dual Degree - Huntsman - BS - Wharton",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AP_MA_LAUD",
                             "description": "Dual Degree - Lauder - MA - Arts & Sciences",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA_LAUD",
                             "description": "Dual Degree - Lauder - MBA - Wharton",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BAS_MANT",
                             "description": "Dual Degree - M & T - BAS - SEAS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WU_BS_MANT",
                             "description": "Dual Degree - M & T - BS - Wharton",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WU_BS_MAT_U",
                             "description": "Dual Degree - M & T - BS - Wharton (Pre-Conc)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BSE_MANT",
                             "description": "Dual Degree - M & T - BSE - SEAS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BSE_MAT_U",
                             "description": "Dual Degree - M & T - BSE - SEAS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WU_BS_NHCM",
                             "description": "Dual Degree - Nursing & HC Mgmt - BS - Wharton",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NU_BSN_NHCM",
                             "description": "Dual Degree - Nursing & HC Mgmt - BSN - Nursing",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AU_BA_VIPR_U",
                             "description": "Dual Degree - VIPER - BA - A & S - Pre-Major",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AU_BA_VIPER",
                             "description": "Dual Degree - VIPER - BA - Arts & Sciences",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BAS_VIPER",
                             "description": "Dual Degree - VIPER - BAS - SEAS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BSE_VIPER",
                             "description": "Dual Degree - VIPER - BSE - SEAS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BSE_VIP_U",
                             "description": "Dual Degree - VIPER - BSE - SEAS - Curric Defer",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AU_BA_VAGL_U",
                             "description": "Dual Degree - Vagelos LSM - BA - A & S - Pre-Major",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AU_BA_VAGL",
                             "description": "Dual Degree - Vagelos LSM - BA - Arts & Sciences",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WU_BS_VAGL",
                             "description": "Dual Degree - Vagelos LSM - BS - Wharton",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WU_BS_VAGL_U",
                             "description": "Dual Degree - Vagelos LSM - BS - Wharton-Pre-Conc",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GM_CERT_CE",
                             "description": "GSE - Certificate (Continuing Ed.)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GM_CERT_ONL",
                             "description": "GSE - Certificate (Online Continuing Ed.)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GM_CERT_PR",
                             "description": "GSE - Certificate (Professional)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GP_CERT_GR",
                             "description": "GSE - Certificate (Research)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GM_CERTF_PR",
                             "description": "GSE - Certificate - UTRP/Sch Leadership (Graduate)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GM_EDD",
                             "description": "GSE - Doctor of Education (EdD)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GM_MSED",
                             "description": "GSE - MS in Education (MSEd)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GM_MSED_ONL",
                             "description": "GSE - MS in Education - Online (MSED)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GM_MPHILE",
                             "description": "GSE - Master of Philosophy in Education",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GP_PHD",
                             "description": "GSE - PhD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GP_PHD_JOINT",
                             "description": "GSE Joint Phd",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GP_MSED",
                             "description": "GSE Master of Sci in Education",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GP_MS",
                             "description": "GSE Master of Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LR_JD_JDMBA",
                             "description": "LAW JD/MBA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AB_BAAS_ONL",
                             "description": "LPS - Bachelor of Applied Arts & Sciences",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AL_BFA",
                             "description": "LPS - Bachelor of Fine Arts",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_CERTF_PR",
                             "description": "LPS - Certificate (Professional FinAid)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_CERT_PR",
                             "description": "LPS - Certificate (Professional)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AB_CERTA_OL",
                             "description": "LPS - Certificate (Undergraduate Advanced Online)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AL_CERTF_UG",
                             "description": "LPS - Certificate (Undergraduate FinAid)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AB_CRT_UG_OL",
                             "description": "LPS - Certificate (Undergraduate Online)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MPHIL",
                             "description": "LPS - MPhil",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MSAG",
                             "description": "LPS - MS in Applied Geosciences",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MSOD",
                             "description": "LPS - MS in Organizational Dynamics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MAPP",
                             "description": "LPS - Master of Applied Positive Psychology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MBDS",
                             "description": "LPS - Master of Behavioral & Decision Sciences",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MCS",
                             "description": "LPS - Master of Chemical Sciences",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MES",
                             "description": "LPS - Master of Environmental Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MLIBA",
                             "description": "LPS - Master of Liberal Arts",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MPA",
                             "description": "LPS - Master of Public Administration",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AM_MSAG_ONL",
                             "description": "LPS MS in Appl Geosci Online",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LY_CERT",
                             "description": "Law - Certificate (Professional)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LD_SJD",
                             "description": "Law - Doctorate of the Science of Law (SJD)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LR_JD",
                             "description": "Law - Juris Doctor (JD)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LY_MLAW",
                             "description": "Law - Master in Law (ML)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LY_LLM",
                             "description": "Law - Master of Laws (LLM)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LY_LLCM",
                             "description": "Law - Masters in Comparative Law (LLCM)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MP_CERT_GR",
                             "description": "Medicine - Certificate (Graduate)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_CERT_ONL",
                             "description": "Medicine - Certificate (Online Professional)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_CERTF_PR",
                             "description": "Medicine - Certificate (Professional FinAid)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_CERT_PR",
                             "description": "Medicine - Certificate (Professional)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MR_MD",
                             "description": "Medicine - MD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MP_MS",
                             "description": "Medicine - MS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MBE",
                             "description": "Medicine - Master of Bioethics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MBMI",
                             "description": "Medicine - Master of Biomedical Informatics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MHCI_ONL",
                             "description": "Medicine - Master of Health Care Innovation",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MHQS",
                             "description": "Medicine - Master of Healthcare Quality and Safety",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MPH",
                             "description": "Medicine - Master of Public Health",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MRA",
                             "description": "Medicine - Master of Regulatory Affairs",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MRA_ONL",
                             "description": "Medicine - Master of Regulatory Affairs (ONL)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MSCE",
                             "description": "Medicine - Master of Science in Clin Epidemiology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MSGC",
                             "description": "Medicine - Master of Science in Genetic Counseling",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MPR",
                             "description": "Medicine - Master of Science in Health Pol Resrch",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MSME",
                             "description": "Medicine - Master of Science in Medical Ethics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MSMP",
                             "description": "Medicine - Master of Science in Medical Physics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MSRS",
                             "description": "Medicine - Master of Science in Regulatory Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MM_MSTR",
                             "description": "Medicine - Master of Science in Translatnal Resrch",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MP_PHD",
                             "description": "Medicine - PhD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NU_BSN",
                             "description": "Nursing - BSN",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NU_BSN_NAP",
                             "description": "Nursing - BSN (Accelerated)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NM_PMN",
                             "description": "Nursing - Certificate (Post-Masters)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NM_CERT_PR",
                             "description": "Nursing - Certificate (Professional)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ND_DNP",
                             "description": "Nursing - Doctor of Nursing Practice",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ND_DNP_ONL",
                             "description": "Nursing - Doctor of Nursing Practice (Online)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NP_MS",
                             "description": "Nursing - MS (PhD)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NM_MSN",
                             "description": "Nursing - MSN",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NP_PHD",
                             "description": "Nursing - PhD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MP_PHD_MDPHD",
                             "description": "PSOM Doctor of Philosophy/MD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MP_PHD_VRPHD",
                             "description": "PSOM Doctor of Philosophy/VMD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BSE",
                             "description": "SEAS - BSE",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BSE_CD",
                             "description": "SEAS - BSE - Curric Defer",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BAS",
                             "description": "SEAS - Bachelor of Applied Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EU_BAS_CD",
                             "description": "SEAS - Bachelor of Applied Science - Curric Defer",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EX_MSE",
                             "description": "SEAS - Executive MS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EM_MCIT",
                             "description": "SEAS - MCIT (On Campus)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EM_MCIT_ONL",
                             "description": "SEAS - MCIT (Online)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EM_MSE",
                             "description": "SEAS - MSE",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EM_MBIOT",
                             "description": "SEAS - Master of Biotechnology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EM_MIPD",
                             "description": "SEAS - Master of Intg Prod Design",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EP_PHD",
                             "description": "SEAS - PhD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SP_PHD_JOINT",
                             "description": "SP2 Joint Phd",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SM_MSNPL",
                             "description": "Social Policy & Prac - MS in Non-Profit Leadership",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SM_MSNPL_ONL",
                             "description": "Social Policy & Prac - MS in Non-Profit Leadership",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SD_DSW_ONL",
                             "description": "Social Policy & Practice - Doctor of Social Work",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SM_MSSP",
                             "description": "Social Policy & Practice - MS in Social Policy",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SM_MSW",
                             "description": "Social Policy & Practice - Master of Social Work",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SP_PHD",
                             "description": "Social Policy & Practice - PhD in Social Welfare",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "VM_MSAWB_ONL",
                             "description": "VET Mstr of Sci Ani Wlfr Bhvr",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "VM_CERT_ONL",
                             "description": "Vet - Certificate (Professional)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "VR_VMD",
                             "description": "Vet - PhD/Doctor of Veterinary Medicine",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "VP_VMD",
                             "description": "Vet - Veterinariae Medicinae Doctoris-VMD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA_JDMBA",
                             "description": "WH JD/MBA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA_EBMBA",
                             "description": "WH MBA/MBIOT",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA_ECMBA",
                             "description": "WH MBA/MCIT",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA_FMMBA",
                             "description": "WH MBA/MFA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA_EIMBA",
                             "description": "WH MBA/MIPD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA_EMMBA",
                             "description": "WH MBA/MSEng",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA_MDMBA",
                             "description": "WH MD/MBA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA_VRMBA",
                             "description": "WH VMD/MBA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WU_BS",
                             "description": "Wharton - BS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WX_MBA_PHL",
                             "description": "Wharton - Executive MBA (Philadelphia)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WX_MBA_SFO",
                             "description": "Wharton - Executive MBA (San Francisco)",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WP_PHD_JOINT",
                             "description": "Wharton - Joint PhD Degree",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WP_MA",
                             "description": "Wharton - MA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WM_MBA",
                             "description": "Wharton - MBA",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WP_MS",
                             "description": "Wharton - MS",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WP_PHD",
                             "description": "Wharton - PhD",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WU_BS_WUNG",
                             "description": "Wharton - Pre Concentration (Undergraduate)",
-                            "isVisibleInWhatif": True
-                        }
+                            "isVisibleInWhatif": True,
+                        },
                     ],
-                    "selectedChoices": [
-                        "EU_BSE"
-                    ],
+                    "selectedChoices": ["EU_BSE"],
                     "ruleGoalCode": "PROGRAM",
-                    "links": []
+                    "links": [],
                 },
                 {
                     "name": "school",
@@ -1263,14 +1252,12 @@ def get_programs(timeout=30):
                         {
                             "key": "UG",
                             "description": "Undergraduate",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         }
                     ],
-                    "selectedChoices": [
-                        "UG"
-                    ],
+                    "selectedChoices": ["UG"],
                     "ruleGoalCode": "SCHOOL",
-                    "links": []
+                    "links": [],
                 },
                 {
                     "name": "college",
@@ -1290,14 +1277,12 @@ def get_programs(timeout=30):
                         {
                             "key": "EU",
                             "description": "SEAS Undergraduate",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         }
                     ],
-                    "selectedChoices": [
-                        "EU"
-                    ],
+                    "selectedChoices": ["EU"],
                     "ruleGoalCode": "COLLEGE",
-                    "links": []
+                    "links": [],
                 },
                 {
                     "name": "degree",
@@ -1317,16 +1302,14 @@ def get_programs(timeout=30):
                         {
                             "key": "BSE",
                             "description": "Bachelor of Sci in Engineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         }
                     ],
-                    "selectedChoices": [
-                        "BSE"
-                    ],
+                    "selectedChoices": ["BSE"],
                     "ruleGoalCode": "DEGREE",
-                    "links": []
-                }
-            ]
+                    "links": [],
+                },
+            ],
         },
         {
             "id": "curriculumCollection",
@@ -1351,344 +1334,342 @@ def get_programs(timeout=30):
                         {
                             "key": "AFRC",
                             "description": "Africana Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ANCH",
                             "description": "Ancient History",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ANTH",
                             "description": "Anthropology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ARCH",
                             "description": "Architecture",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "BCHE",
                             "description": "Biochemistry",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "BE",
                             "description": "Bioengineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "BIOL",
                             "description": "Biology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "BIOP",
                             "description": "Biophysics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CBSC",
                             "description": "Chem & Biomolecular Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CBE",
                             "description": "Chemical & Biomolecular Eng",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CHEM",
                             "description": "Chemistry",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CIMS",
                             "description": "Cinema and Media Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CLST",
                             "description": "Classical Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "COGS",
                             "description": "Cognitive Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "COMM",
                             "description": "Communication",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CMPL",
                             "description": "Comparative Literature",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CMPE",
                             "description": "Computer Engineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CSCI",
                             "description": "Computer Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CRIM",
                             "description": "Criminology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DSGN",
                             "description": "Design",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DMD",
                             "description": "Digital Media Design",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EASC",
                             "description": "Earth Sciences",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EALC",
                             "description": "East Asian Lang & Civilization",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ECOQ",
                             "description": "Economics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EE",
                             "description": "Electrical Engineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ENGL",
                             "description": "English",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ENVS",
                             "description": "Environmental Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FNAR",
                             "description": "Fine Arts",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FRFS",
                             "description": "French and Francophone Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GSWS",
                             "description": "Gen, Sexuality & Womens Sts",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GRMN",
                             "description": "German",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "HSOC",
                             "description": "Health and Societies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "HSPN",
                             "description": "Hispanic Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "HIST",
                             "description": "History",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ARTH",
                             "description": "History of Art",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "INDM",
                             "description": "Individualized",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "INTR",
                             "description": "International Relations",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ITST",
                             "description": "Italian Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "JWST",
                             "description": "Jewish Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LALX",
                             "description": "Latin American and Latinx Stds - LALX",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LING",
                             "description": "Linguistics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LOGC",
                             "description": "Logic Info  & Computation",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MSE",
                             "description": "Materials Science & Engineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MAEC",
                             "description": "Mathematical Economics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MATH",
                             "description": "Mathematics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MEAM",
                             "description": "Mech Engr & Appl Mechanics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MMES",
                             "description": "Modern Middle Eastern Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MUSC",
                             "description": "Music",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NELC",
                             "description": "Near Eastern Lang & Civilizatn",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NETS",
                             "description": "Networked And Social Systems",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NRSC",
                             "description": "Neuroscience",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NTSC",
                             "description": "Nutrition Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PHIL",
                             "description": "Philosophy",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PPE",
                             "description": "Philosophy Politics & Econ",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PHYS",
                             "description": "Physics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PSCI",
                             "description": "Political Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PSYC",
                             "description": "Psychology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "RELS",
                             "description": "Religious Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ROML",
                             "description": "Romance Languages",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "REES",
                             "description": "Russian& East European Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "STSC",
                             "description": "Science Technology & Society",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SOCI",
                             "description": "Sociology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SAST",
                             "description": "South Asia Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SSE",
                             "description": "Systems Science & Engineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "THAR",
                             "description": "Theatre Arts",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "URBS",
                             "description": "Urban Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "VLST",
                             "description": "Visual Studies",
-                            "isVisibleInWhatif": True
-                        }
+                            "isVisibleInWhatif": True,
+                        },
                     ],
-                    "selectedChoices": [
-                        "BE"
-                    ],
+                    "selectedChoices": ["BE"],
                     "ruleGoalCode": "MAJOR",
-                    "links": []
+                    "links": [],
                 },
                 {
                     "name": "concentration",
@@ -1708,52 +1689,52 @@ def get_programs(timeout=30):
                         {
                             "key": "BDS",
                             "description": "Biomed Data Sci&Cmptationl Med",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "BIR",
                             "description": "Biomed Imgng&Radiation Physics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "BDV",
                             "description": "Biomedical Devices",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CEB",
                             "description": "Cellular/Tissue Engin & Biomat",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MSB",
                             "description": "Multiscale Biomechanics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NRE",
                             "description": "Neuroengineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NONE",
                             "description": "Non Designated",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SSB",
                             "description": "Systems and Synthetic Biology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "TDN",
                             "description": "Therapeutics,Drug Dliv&Nanomed",
-                            "isVisibleInWhatif": True
-                        }
+                            "isVisibleInWhatif": True,
+                        },
                     ],
                     "selectedChoices": [],
                     "ruleGoalCode": "CONC",
-                    "links": []
+                    "links": [],
                 },
                 {
                     "name": "minor",
@@ -1773,536 +1754,534 @@ def get_programs(timeout=30):
                         {
                             "key": "ACRL",
                             "description": "Actuarial Mathematics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AFRC",
                             "description": "Africana Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AMPP",
                             "description": "American Public Policy",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ASL",
                             "description": "American Sign Lang/Deaf Stds",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ANCH",
                             "description": "Ancient History",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ANEN",
                             "description": "Ancient Near East",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ANTH",
                             "description": "Anthropology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AHSN",
                             "description": "Arabic & Hebrew Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "AISN",
                             "description": "Arabic & Islamic Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CAAM",
                             "description": "Archaeological Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ARCH",
                             "description": "Architecture",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ASAM",
                             "description": "Asian American Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "BIOE",
                             "description": "Bioethics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "BIOL",
                             "description": "Biology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "BIOP",
                             "description": "Biophysics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CBE",
                             "description": "Chemical & Biomolecular Eng",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CHEM",
                             "description": "Chemistry",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CIMS",
                             "description": "Cinema and Media Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CLST",
                             "description": "Classical Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "COGS",
                             "description": "Cognitive Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CMPL",
                             "description": "Comparative Literature",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CNSC",
                             "description": "Computational Neuroscience",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CSCI",
                             "description": "Computer Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "CNPS",
                             "description": "Consumer Psychology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DATS",
                             "description": "Data Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DSGN",
                             "description": "Design",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DHUM",
                             "description": "Digital Humanities",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "DMD",
                             "description": "Digital Media Design",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EAST",
                             "description": "East Asian Area Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EALJ",
                             "description": "East Asian Lang  Civil/Jpn",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EALN",
                             "description": "East Asian Lang & Civil/Chns",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EALK",
                             "description": "East Asian Lang & Civil/Korean",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ECES",
                             "description": "East Central European Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EPOL",
                             "description": "Economic Policy",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ECON",
                             "description": "Economics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EE",
                             "description": "Electrical Engineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ENSU",
                             "description": "Energy & Sustainability",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EENT",
                             "description": "Engineering Entrepreneurship",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ENGL",
                             "description": "English",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ENVH",
                             "description": "Environmental Humanities",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EVSC",
                             "description": "Environmental Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ENVS",
                             "description": "Environmental Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "EURO",
                             "description": "European Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FNAR",
                             "description": "Fine Arts",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "FRFS",
                             "description": "French and Francophone Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GSWS",
                             "description": "Gen, Sexuality & Women's Sts",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GEOL",
                             "description": "Geology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GRMN",
                             "description": "German",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "GMST",
                             "description": "Global Medieval Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "HEBN",
                             "description": "Hebrew & Judaica",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "HSPN",
                             "description": "Hispanic Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "HIST",
                             "description": "History",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ARTH",
                             "description": "History of Art",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PSCD",
                             "description": "International Development",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "INTR",
                             "description": "International Relations",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ITCL",
                             "description": "Italian Culture",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ITLT",
                             "description": "Italian Literature",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "JAZZ",
                             "description": "Jazz & Popular Music Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "JWST",
                             "description": "Jewish Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "JRNL",
                             "description": "Journalistic Writing",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LANS",
                             "description": "Landscape Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LALX",
                             "description": "Latin American and Latinx Stds",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LAWS",
                             "description": "Law and Society",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LSHS",
                             "description": "Legal Studies & History",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LING",
                             "description": "Linguistics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "LOGC",
                             "description": "Logic Info & Computation",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MSE",
                             "description": "Materials Science & Engin",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MATH",
                             "description": "Mathematics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MEAM",
                             "description": "Mech Engr & Appl Mechanics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MSOC",
                             "description": "Medical Sociology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ATCH",
                             "description": "Minor In Architectural History",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MMES",
                             "description": "Modern Middle Eastern Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "MUSC",
                             "description": "Music",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NANO",
                             "description": "Nanotechnology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NAIS",
                             "description": "Native American And Indigenous",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NELC",
                             "description": "Near Eastern Lang & Civilizatn",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NHMG",
                             "description": "Neurosci & Health Care Mgmt",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NRSC",
                             "description": "Neuroscience",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NHSM",
                             "description": "Nursing & Hlth Services Mgmt",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "NUTR",
                             "description": "Nutrition",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "APEN",
                             "description": "Persian Language & Literature",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PHIL",
                             "description": "Philosophy",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PHYS",
                             "description": "Physics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PSCI",
                             "description": "Political Science",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PSYS",
                             "description": "Psychoanalytic Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "PSYC",
                             "description": "Psychology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "RELS",
                             "description": "Religious Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "ROML",
                             "description": "Romance Languages",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "RULA",
                             "description": "Russ Lang.,Lit.,&Culture",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "RUCH",
                             "description": "Russian Culture & History",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "STSC",
                             "description": "Science Technology & Society",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SOCI",
                             "description": "Sociology",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SARS",
                             "description": "South Asia Regional Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SAST",
                             "description": "South Asia Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SPAN",
                             "description": "Spanish",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "STAT",
                             "description": "Statistics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SRDA",
                             "description": "Survey Res & Data Analytics",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SEVM",
                             "description": "Sustainability & Envl Mgmt",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SE",
                             "description": "Systems Engineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "SSE",
                             "description": "Systems Science & Engineering",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "THAR",
                             "description": "Theatre Arts",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "URED",
                             "description": "Urban Education",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "URRE",
                             "description": "Urban Real Estate & Dvpmt",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "URBS",
                             "description": "Urban Studies",
-                            "isVisibleInWhatif": True
+                            "isVisibleInWhatif": True,
                         },
                         {
                             "key": "WSTD",
                             "description": "Womens Studies",
-                            "isVisibleInWhatif": True
-                        }
+                            "isVisibleInWhatif": True,
+                        },
                     ],
-                    "selectedChoices": [
-                        "AHSN"
-                    ],
+                    "selectedChoices": ["AHSN"],
                     "ruleGoalCode": "MINOR",
-                    "links": []
-                }
-            ]
+                    "links": [],
+                },
+            ],
         },
         {
             "id": "secondaryCurriculumCollection",
@@ -2313,7 +2292,7 @@ def get_programs(timeout=30):
                     "name": "secondaryProgram",
                     "description": "Program",
                     "selectedChoices": [],
-                    "choices": []
+                    "choices": [],
                 },
                 {
                     "name": "secondaryCollege",
@@ -2344,16 +2323,16 @@ def get_programs(timeout=30):
                     "description": "Minor",
                     "choices": [],
                     "selectedChoices": [],
-                }
-            ]
-        }
+                },
+            ],
+        },
     ]
     res = s.post(
         "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
         headers=headers,
         cookies=cookies,
         json=goals_payload,
-        timeout=timeout
+        timeout=timeout,
     )
     res.raise_for_status()
 
