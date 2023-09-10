@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/browser";
 
 import InfoTool from "pcx-shared-components/src/common/InfoTool";
 
-import { parsePhoneNumberFromString } from "libphonenumber-js/min";
+import { parsePhoneNumberFromString, isValidNumber } from "libphonenumber-js";
 
 import { Center } from "pcx-shared-components/src/common/layout";
 import { Input } from "../Input";
@@ -101,13 +101,14 @@ const AlertForm = ({
 
     const autoCompleteInputRef = useRef<HTMLInputElement>(null);
 
+    const formatPhoneNumber = (phone) => {
+        const parsedNumber = parsePhoneNumberFromString(phone);
+        return parsedNumber ? parsedNumber.formatNational() : (user && user.profile.phone) || ""
+    }
+
     useEffect(() => {
-        const phonenumber =
-            user && parsePhoneNumberFromString(user.profile.phone || "");
         setPhone(
-            phonenumber
-                ? phonenumber.formatNational()
-                : (user && user.profile.phone) || ""
+            formatPhoneNumber((user && user.profile.phone) || "")
         );
         setEmail((user && user.profile.email) || "");
     }, [user]);
@@ -263,7 +264,7 @@ const AlertForm = ({
             );
             return;
         }
-        if (phone.length !== 0 && !parsePhoneNumberFromString(phone, "US")) {
+        if (phone.length !== 0 && !isValidNumber(phone, "US")) {
             sendError(
                 400,
                 "Please enter a valid phone US # (or leave the field blank)."
