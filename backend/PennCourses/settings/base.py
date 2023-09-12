@@ -209,6 +209,7 @@ S3_resource = boto3.resource("s3")
 # NGSS course code crosswalk stored in S3
 XWALK_S3_BUCKET = "penn.courses"
 XWALK_SRC = "xwalk_csre_number.txt"
+XWALK_SEMESTER_TO = "2023A"
 
 # Registration Metrics Settings
 
