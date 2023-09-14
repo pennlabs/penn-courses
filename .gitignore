@@ -20,3 +20,6 @@ postgres
 *-test.json
 celerybeat-schedule
 pcr-backup*
+# Ignore pipenv environment above the backend directory
+./Pipfile
+./Pipfile.lock
