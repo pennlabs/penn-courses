@@ -749,19 +749,16 @@ def deep_search(request):
     # Create Filters
     department_search_term = Query(text_query) \
         .return_fields('code', 'name') \
-        .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
         .scorer("DISMAX") \
         .paging(0, 5)
 
     course_search_term = Query(text_query) \
         .return_fields('code', 'crosslistings', 'instructors', 'title', 'description', 'semester', 'course_quality', 'work_required', 'difficulty') \
-        .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
         .scorer("DISMAX") \
         .paging(0, 5)
 
     instructor_search_term = Query(text_query) \
         .return_fields('name', 'desc', 'id') \
-        .highlight(tags=["<span style='background-color: yellow;'>", "</span>"]) \
         .scorer("DISMAX") \
         .paging(0, 5)
 

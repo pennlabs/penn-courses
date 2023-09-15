@@ -31,7 +31,8 @@ def get_course_objs():
     for topic in topics:
         course = topic.most_recent
         crosslistings = ", ".join([c.full_code for c in course.crosslistings])
-        instructors = ", ".join({instructor.name for s in course.sections.all() for instructor in s.instructors.all()})
+        all_instructors = {instructor.name for s in course.sections.all() for instructor in s.instructors.all()}
+        instructors = ", ".join(all_instructors[:min(len(all_instructors), 5)])
         course_qs = Course.objects.filter(pk=course.pk)
         course_qs = annotate_average_and_recent(
             course_qs,
@@ -104,7 +105,7 @@ def initialize_schema():
         TextField("$.code", as_name="code", weight=20, no_stem=True),
         TextField("$.crosslistings", as_name="crosslistings", weight=3, no_stem=True),
         TextField("$.instructors", as_name="instructors", weight=2, no_stem=True, phonetic_matcher="dm:en"),
-        TextField("$.title", as_name="title", weight=4),
+        TextField("$.title", as_name="title", weight=10),
         TextField("$.description", as_name="description", weight=2),
         TextField("$.semester", as_name="semester", no_stem=True, weight=0),
         NumericField("$.course_quality", as_name="course_quality", sortable=True),

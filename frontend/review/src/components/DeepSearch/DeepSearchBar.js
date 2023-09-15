@@ -209,7 +209,7 @@ const normalizeQuery = (query) => {
   if (query.length >= 2 && query.slice(-2).match(/\w{2}/)) {
     const i = /\w+$/.exec(query).index;
     const partial = query.substring(i);
-    query = query.substring(0, i) + `(${partial}|${partial}*|%%${partial}%%)`;
+    query = query.substring(0, i) + `(${partial}|${partial}*|%${partial}%)`;
   } else if (query.length == 1) {
     query = `(${query}|${query}*)`;
   } else if (query.length >= 1 && query.slice(-1).match(/\w/)) {
