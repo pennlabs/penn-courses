@@ -9,6 +9,7 @@ interface DropdownButton {
     makeActive: () => void;
     mutators: {
         copy: () => void;
+        download: () => void;
         remove: () => void;
         rename: () => void;
     };
@@ -66,7 +67,7 @@ const DropdownButton = ({
     text,
     onClick,
     makeActive,
-    mutators: { copy, remove, rename },
+    mutators: { copy, download, remove, rename },
 }: DropdownButton) => (
     <DropdownButtonContainer
         role="button"
@@ -99,6 +100,11 @@ const DropdownButton = ({
                     <i className="far fa-copy" aria-hidden="true" />
                 </Icon>
             </div>
+            <div onClick={download} className="s-option-copy" role="button">
+                <Icon>
+                    <i className="fa fa-download" aria-hidden="true" />
+                </Icon>
+            </div>
             <div onClick={remove} className="s-option-copy" role="button">
                 <Icon>
                     <i className="fa fa-trash" aria-hidden="true" />
@@ -107,7 +113,7 @@ const DropdownButton = ({
         </ScheduleOptionsContainer>
     </DropdownButtonContainer>
 );
-
+``
 interface ScheduleSelectorDropdownProps {
     activeName: string;
     contents: {
@@ -116,6 +122,7 @@ interface ScheduleSelectorDropdownProps {
     }[];
     mutators: {
         copy: (scheduleName: string) => void;
+        download: (scheduleName: string) => void;
         remove: (scheduleName: string) => void;
         create: () => void;
         rename: (oldName: string) => void;
@@ -205,7 +212,7 @@ const AddSchedule = styled.a`
 const ScheduleSelectorDropdown = ({
     activeName,
     contents,
-    mutators: { copy, remove, rename, create },
+    mutators: { download, copy, remove, rename, create },
 }: ScheduleSelectorDropdownProps) => {
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -252,6 +259,7 @@ const ScheduleSelectorDropdown = ({
                                 text={scheduleName}
                                 mutators={{
                                     copy: () => copy(scheduleName),
+                                    download: () => download(scheduleName),
                                     remove: () => remove(scheduleName),
                                     rename: () => rename(scheduleName),
                                 }}
