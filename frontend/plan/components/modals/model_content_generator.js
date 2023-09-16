@@ -55,11 +55,7 @@ export const generateModalInterior = (reduxState) => {
         case "DOWNLOAD_SCHEDULE":
             return (
                 <CalendarModal
-                    schedulePk={
-                        reduxState.schedule.schedules[
-                            reduxState.schedule.scheduleSelected
-                        ].id
-                    }
+                    schedulePk={reduxState.schedule.clickedOnSchedule}
                 />
             );
         case "MULTITAB":

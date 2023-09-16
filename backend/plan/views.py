@@ -408,6 +408,23 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return queryset
 
 
+"""
+    Calendar API View to handle exporting of user schedules to a calendar file.
+
+    retrieve:
+    Retrieve a calendar (.ics) file for a specific user's schedule using the schedule's primary key (schedule_pk).
+    If a schedule with the specified primary key exists and is valid, a 200 response code is returned,
+    along with the calendar file in ICS format.
+    If the schedule does not exist or is invalid, a 403 is returned with data `{"detail": "Invalid schedule"}`.
+
+    get:
+    Use this route to export the authenticated user's selected schedule into an ICS calendar file.
+    This route will return a 200 if it succeeds, with a calendar file in ICS format attached.
+    To specify which schedule to export, include `schedule_pk` as a path parameter.
+    If the schedule is not found, a 403 is returned with data `{"detail": "Invalid schedule"}`.
+    """
+
+
 class CalendarAPIView(APIView):
     schema = PcxAutoSchema(
         response_codes={
@@ -473,10 +490,8 @@ class CalendarAPIView(APIView):
                 start_datetime = first_meeting.start_date + " "
                 end_datetime = first_meeting.start_date + " "
 
-            if int(first_meeting.start) < 10:
-                start_datetime += "0"
-            if int(first_meeting.end) < 10:
-                end_datetime += "0"
+            start_time = str(int(first_meeting.start)).zfill(2) + ":" + first_meeting.start.split(":")[1]
+            end_time = str(int(first_meeting.end)).zfill(2) + ":" + first_meeting.end.split(":")[1]
 
             start_datetime += start_time
             end_datetime += end_time
@@ -484,9 +499,9 @@ class CalendarAPIView(APIView):
             e.begin = arrow.get(
                 start_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
             ).format("YYYYMMDDTHHmmss")
-            e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York").format(
-                "YYYYMMDDTHHmmss"
-            )
+            e.end = arrow.get(
+                end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
+            ).format("YYYYMMDDTHHmmss")
             end_date = arrow.get(
                 first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New York"
             ).format("YYYYMMDDTHHmmss")
