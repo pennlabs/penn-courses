@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
-from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from PennCourses.docs_settings import PcxAutoSchema
 from plan.management.commands.recommendcourses import (
     clean_course_input,
     recommend_courses,
@@ -33,7 +33,7 @@ from plan.serializers import ScheduleSerializer
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("recommend-courses"): {
+            "recommend-courses": {
                 "POST": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Response returned successfully.",
                     201: "[UNDOCUMENTED]",
@@ -42,7 +42,7 @@ from plan.serializers import ScheduleSerializer
             }
         },
         override_request_schema={
-            reverse_func("recommend-courses"): {
+            "recommend-courses": {
                 "POST": {
                     "type": "object",
                     "properties": {
@@ -76,7 +76,7 @@ from plan.serializers import ScheduleSerializer
             }
         },
         override_response_schema={
-            reverse_func("recommend-courses"): {
+            "recommend-courses": {
                 "POST": {
                     200: {"type": "array", "items": {"$ref": "#/components/schemas/CourseList"}}
                 }
@@ -251,7 +251,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("schedules-list"): {
+            "schedules-list": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Schedules listed successfully.",
                 },
@@ -262,7 +262,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     400: "Bad request (see description above).",
                 },
             },
-            reverse_func("schedules-detail", args=["id"]): {
+            "schedules-detail": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Successful retrieve "
                     "(the specified schedule exists).",
@@ -411,7 +411,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 class CalendarAPIView(APIView):
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("calendar-view", args=["schedule_pk"]): {
+            "calendar-view": {
                 "GET": {
                     200: "Schedule exported successfully",
                 },
