@@ -24,14 +24,14 @@ def get_department_objs():
 
 def get_course_objs():
     topics = (
-        Topic.objects.filter(most_recent__semester="2022C")
+        Topic.objects.filter(most_recent__semester="2022C")[:100]
         .select_related("most_recent")
         .prefetch_related("most_recent__primary_listing__listing_set__sections__instructors")
     )
     for topic in topics:
         course = topic.most_recent
         crosslistings = ", ".join([c.full_code for c in course.crosslistings])
-        all_instructors = {instructor.name for s in course.sections.all() for instructor in s.instructors.all()}
+        all_instructors = list({instructor.name for s in course.sections.all() for instructor in s.instructors.all()})
         instructors = ", ".join(all_instructors[:min(len(all_instructors), 5)])
         course_qs = Course.objects.filter(pk=course.pk)
         course_qs = annotate_average_and_recent(

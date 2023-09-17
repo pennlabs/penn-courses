@@ -20,3 +20,5 @@ postgres
 *-test.json
 celerybeat-schedule
 pcr-backup*
+
+.venv

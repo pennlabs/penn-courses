@@ -1,3 +1,3 @@
-export * from "CommonStyles";
-export * from "DeepSearch";
-export * from "CoursePreview";
+export * from "CommonStyles"
+export * from "DeepSearch"
+export * from "CoursePreview"
