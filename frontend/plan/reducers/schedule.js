@@ -147,6 +147,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
         if (scheduleFromBackend.name === "cart") {
             // If changes to the cart are still syncing, ignore the requested update
             if (
+                !("cartId" in newState) ||
                 newState.cartPushedToBackend &&
                 cloudUpdated >= newState.cartUpdatedAt &&
                 cloudUpdated - newState.cartUpdatedAt >= MIN_TIME_DIFFERENCE
