@@ -3,9 +3,10 @@ from textwrap import dedent
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import F, Exists, OuterRef, Count
+from django.db.models import F, Exists, OuterRef, Count, Q
 
 from alert.management.commands.recomputestats import garbage_collect_topics
+from backend.courses.util import get_current_semester
 from courses.management.commands.load_crosswalk import get_crosswalk_s3
 from courses.management.commands.merge_topics import prompt_for_link, similar_courses
 from courses.models import Course, Topic
@@ -28,16 +29,13 @@ def course_code_heuristics(full_codes: Iterable[str]) -> list[str]:
             out.append(f"{dept}-{number[::-1].replace('0', 1)[::-1]}")
     return out
 
-def reform_topics(topic_ids=None, interactive=True, use_heuristics=True):
+def reform_topics(min_semester=None, interactive=True, use_heuristics=True):
     # delete the topics
     # TODO: does `courses` still contain the same courses once
     # we delete the topics associated with `topic_ids`?
     courses = Course.objects.all()
-    if topic_ids is not None:
-        courses = courses.filter(topic_id__in=topic_ids)
-        courses = Course.objects.filter(id__in=list(courses.values_list("id", flat=True)))
-    courses.update(topic=None)
-    primary_listings = courses.filter(primary_listing_id=F("id"))
+    Course.objects.all().update(topic=None)
+    primary_listings = Course.objects.all().filter(primary_listing_id=F("id"))
     garbage_collect_topics()
 
     # create topics for each primary listing
@@ -45,14 +43,28 @@ def reform_topics(topic_ids=None, interactive=True, use_heuristics=True):
         topic = Topic.objects.create(most_recent=primary_listing)
         primary_listing.listing_set.all().update(topic=topic)
 
+    semester_filter = Q()
+    if min_semester is None:
+        semester_filter = Q(semester=get_current_semester())
+    elif min_semester == "all":
+        pass
+    else:
+        semester_filter = Q(semester__gte=min_semester)
+
     # compute mapping from new codes to old codes
     crosswalk = get_crosswalk_s3(verbose=True)
 
-    for semester in primary_listings.values_list("semester", flat=True).order_by("semester"):
+    for semester in (
+        primary_listings
+        .filter(semester_filter)
+        .values_list("semester", flat=True)
+        .order_by("semester")
+        .distinct()
+    ):
         # pass 1: use crosswalk
         if semester == XWALK_SEMESTER_TO:
             for old_code, new_codes in crosswalk.items():                     
-                prev_course = courses.filter(
+                prev_course = Course.objects.all().filter(
                     full_code=old_code, semester__lt=semester
                 ).order_by("-semester").first()
                 if not prev_course:
@@ -63,7 +75,7 @@ def reform_topics(topic_ids=None, interactive=True, use_heuristics=True):
                 # be for many semesters in the future. Breaking this assumption
                 # means that we could end up having partially filled topics.
                 for new_code in new_codes:
-                    next_code = courses.filter(
+                    next_code = Course.objects.all().filter(
                         full_code=new_code, semester__gt=semester
                     ).order_by("semester").first()
                     if not next_code:
@@ -106,12 +118,12 @@ def reform_topics(topic_ids=None, interactive=True, use_heuristics=True):
 
     garbage_collect_topics()
 
-    pprint(list(courses.values_list("topic__id", "topic__most_recent", "topic__most_recent__semester").distinct()))
+    pprint(list(Course.objects.all().values_list("topic__id", "topic__most_recent", "topic__most_recent__semester").distinct()))
     
     # TODO: we should print where the overlap is
-    overlaps = courses.filter(
+    overlaps = Course.objects.all().filter(
         Exists(
-            courses.exclude(
+            Course.objects.all().exclude(
                 topic_id=OuterRef("topic_id"),
             ).filter(
                 full_code=OuterRef("full_code")
@@ -134,20 +146,20 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "-t",
-            "--topic-ids",
-            nargs="*",
+            "-s",
+            "--min-semester",
+            type=str,
             help=dedent(
                 """
-            Specify a (space-separated) list of Topic IDs to split and merge.
-            You can find Topic IDs from the django admin interface (either by searching through
-            Topics or by following the topic field from a course entry). If none are provided
-            then all topics are used.
-            """
+                The semester to start the script at, or "all" to start from the earliest 
+                semester. If this argument is omitted, the script will use the current 
+                semester (as determined by `get_current_semester()`).
+                """
             ),
-            required=False,
+            nargs="?",
+            default=None,
         )
-        
+
         parser.add_argument(
             "-n",
             "--not-interactive",
@@ -170,19 +182,17 @@ class Command(BaseCommand):
         
 
     def handle(self, *args, **kwargs):
-        topic_ids = set(kwargs["topic_ids"]) if kwargs["topic_ids"] else None
-        use_heuristics = not kwargs["no_heuristics"]
-        interactive = not kwargs["not_interactive"]
-
         print(
             "This script is atomic, meaning either all Topic merges will be comitted to the "
             "database, or otherwise if an error is encountered, all changes will be rolled back "
             "and the database will remain as it was before the script was run."
         )
 
+        use_heuristics = not kwargs["no_heuristics"]
+        interactive = not kwargs["not_interactive"]
         with transaction.atomic():
             reform_topics(
-                topic_ids=topic_ids, 
+                min_semester=kwargs["min_semester"],
                 use_heuristics=use_heuristics, 
                 interactive=interactive
             )
