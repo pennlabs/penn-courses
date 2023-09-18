@@ -244,6 +244,106 @@ class Course(models.Model):
         ),
     )
 
+    previously = models.ForeignKey(
+        "Course",
+        related_name="next_course_set",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+        The course which this course was previously (e.g., CIS-120 2022C -> CIS-120 2022A).
+        The series of backlinks from a course to its previous course, and from the previous
+        course to its previous course (etc.) is called a lineage.
+        There are some invariants:
+        1. This link should be between primary listings. This field should not be set 
+           besides for primary listings. 
+        2. A course (call it X) can be linked to by many courses. 
+           X belongs to the lineage of exactly 1 of the linking courses.
+           The remaining linking courses are branches off of X.
+        3. If a course is in the same lineage as another course it should have the same topic.
+           This requirement is looser, since Topics are soft-state.
+        You likely do not want to set this manually, but rather use `set_previously`, 
+        which preserves these invariants.
+        """
+        ),
+    )
+
+    # TODO: this is confusingly named
+    def is_branch(self):
+        return self.primary_listing.previously.topic == self.topic       
+
+    def is_root(self):
+        return self.primary_listing.previously is None
+    
+    def is_head(self):
+        # TODO: is this a hacky way of checking this? instead, should it 
+        # do a query to check if there is any course that points back to this
+        # course?
+        return self.topic.most_recent == self.primary_listing
+    
+    def set_previously(self, previously: "Course" | None):
+        """
+        Set the `previously` field of this course's primary listing to the provided course's
+        primary listing or null. This method modifies topics as necessary (including 
+        splitting them in an efficient way).
+        """
+        other_topic = previously.topic
+
+        with transaction.atomic():
+            # All the previous courses in the lineage of this course are now their
+            # own lineage
+
+            if not self.is_root() and not self.is_branch():
+                new_topic = Topic(most_recent=self.primary_listing.previously)
+                new_topic.save()
+                self.topic.courses.filter(semester__lte=self.primary_listing.previously.semester).update(topic=new_topic)
+            
+            if not previously.is_head():
+                # compare against the other potential branches
+                trunk = Course.objects.filter(Q(previously=previously) | Q(id=self.id)).annotate(
+                    title_match=Case(
+                        When(title=previously.title, then=Value(1)),
+                        default=Value(0),
+                    ),
+                    description_match=Case(
+                        When(description=previously.description, then=Value(1)),
+                        default=Value(0),
+                    ),
+                    cross_listing_title_match=Case(
+                        When(listing_set__title=previously.title, then=Value(1)),
+                        default=Value(0),
+                    ),
+                    already_branching=Case(
+                        When(previously=previously, then=Value(1)),
+                        default=Value(0),
+                    ),
+                ).order_by(
+                    "title_match", 
+                    "description_match", 
+                    "cross_listing_title_match", 
+                    "already_branching"
+                ).first()
+
+                if self == trunk:
+                    # make self the new trunk (with self.topic.most_recent as the head)
+                    previously.topic.courses.filter(semester__lte=previously.semester).update(topic=self.topic)
+                
+                # Otherwise, do nothing to make self a new branch
+            else:
+                # Check if there are previous courses in the lineage 
+                # (excluding any courses we merely branched from)
+                other_topic.courses.update(topic=self.topic)
+                other_topic.delete()
+            self.primary_listing.previously = previously.primary_listing
+            self.save()
+
+    def get_previously(self):
+        """
+        Get the `previously` field of this course's primary listing.
+        """
+        return self.primary_listing.previously
+
     class Meta:
         unique_together = (
             ("department", "code", "semester"),
@@ -305,11 +405,6 @@ class Course(models.Model):
         This overridden `.save()` method enforces the following invariants on the course:
           - The course's full code equals the dash-joined department and code
           - If a course doesn't have crosslistings, its `primary_listing` is a self-reference
-          - If a course doesn't have a topic, by default it joins the topics of which any
-            of its crosslisted codes are members (if there are multiple such topics, they are
-            merged).
-          - All crosslisted courses have the same topic
-          - The `Topic.most_recent` invariant (see the help_text on that field)
         """
         from courses.util import get_set_id, is_fk_set  # avoid circular imports
 
@@ -321,43 +416,18 @@ class Course(models.Model):
 
         super().save(*args, **kwargs)
 
-        # Give this course's listing set a topic if it doesn't already have one
-        # (merge topics if this course connects to multiple topics)
         if not self.topic:
-            with transaction.atomic():
-                primary = self.primary_listing
-                try:
-                    topic = (
-                        Topic.objects.filter(
-                            Q(most_recent__full_code=primary.full_code)
-                            | Q(most_recent__full_code__in=primary.listing_set.values("full_code")),
-                        )
-                        .annotate(
-                            most_recent_match=Case(
-                                When(most_recent__full_code=primary.full_code, then=Value(1)),
-                                default=Value(0),
-                                output_field=models.IntegerField(),
-                            )
-                        )
-                        .order_by("-most_recent_match", "-most_recent__semester")
-                        .select_related("most_recent")[:1]
-                        .get()
-                    )
-                    if topic.most_recent.semester < primary.semester:
-                        topic.most_recent = primary
-                        topic.save()
-                except Topic.DoesNotExist:
-                    topic = Topic(most_recent=primary)
-                    topic.save()
+            self.topic = Topic(most_recent=self.primary_listing)
+            self.topic.save()
+        
+        self.primary_listing.listing_set.all().update(topic=self.topic)
 
-                self.topic = topic
-                # This update takes care of saving self.topic
-                primary.listing_set.all().update(topic=topic)
-
-
+# TODO: should we rename this to "Lineage" or something?
 class Topic(models.Model):
     """
-    A grouping of courses of the same topic (to accomodate course code changes).
+    A grouping of courses belonging to the same lineage of courses. This is
+    a soft-state built on top of the Course.previously backlinks. Topics are
+    are destroyed and recreated regularly.
     """
 
     most_recent = models.ForeignKey(
@@ -368,67 +438,14 @@ class Topic(models.Model):
             """
         The most recent course (by semester) of this topic. The `most_recent` course should
         be the `primary_listing` if it has crosslistings. These invariants are maintained
-        by the `Course.save()` and `Topic.merge_with()` methods. Defer to using these methods
+        by the `Course.save()`. Defer to using these methods
         rather than setting this field manually. You must change the corresponding
         `Topic` object's `most_recent` field before deleting a Course if it is the
         `most_recent` course (`on_delete=models.PROTECT`).
         """
         ),
     )
-
-    branched_from = models.ForeignKey(
-        "Topic",
-        related_name="branched_to",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text=dedent(
-            """
-        When relevant, the Topic from which this Topic was branched (this will likely only be
-        useful for the spring 2022 NGSS course code changes, where some courses were split into
-        multiple new courses of different topics).
-        """
-        ),
-    )
-
-    @staticmethod
-    def merge_all(topics):
-        if not topics:
-            raise ValueError("Cannot merge an empty list of topics.")
-        with transaction.atomic():
-            topic = topics[0]
-            for topic2 in topics[1:]:
-                topic = topic.merge_with(topic2)
-            return topic
-
-    def merge_with(self, topic):
-        """
-        Merges this topic with the specified topic. Returns the resulting topic.
-        """
-        with transaction.atomic():
-            if self == topic:
-                return self
-            if (
-                self.branched_from
-                and topic.branched_from
-                and self.branched_from != topic.branched_from
-            ):
-                raise ValueError("Cannot merge topics with different branched_from topics.")
-            if self.most_recent.semester >= topic.most_recent.semester:
-                Course.objects.filter(topic=topic).update(topic=self)
-                if topic.branched_from and not self.branched_from:
-                    self.branched_from = topic.branched_from
-                    self.save()
-                topic.delete()
-                return self
-            else:
-                Course.objects.filter(topic=self).update(topic=topic)
-                if self.branched_from and not topic.branched_from:
-                    topic.branched_from = self.branched_from
-                    topic.save()
-                self.delete()
-                return topic
-
+    
     def __str__(self):
         return f"Topic {self.id} ({self.most_recent.full_code} most recently)"
 
