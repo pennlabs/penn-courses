@@ -30,7 +30,7 @@ def course_code_heuristics(full_codes: Iterable[str]) -> list[str]:
 
 def reform_topics(topic_ids=None, interactive=True, use_heuristics=True):
     # delete the topics
-    # TODO: does `courses`` still contain the same courses once
+    # TODO: does `courses` still contain the same courses once
     # we delete the topics associated with `topic_ids`?
     courses = Course.objects.all()
     if topic_ids is not None:
@@ -47,39 +47,37 @@ def reform_topics(topic_ids=None, interactive=True, use_heuristics=True):
 
     # compute mapping from new codes to old codes
     crosswalk = get_crosswalk_s3(verbose=True)
-    rev_crosswalk = {}
-    for old_code, new_codes in crosswalk.items():
-        for new_code in new_codes:
-            assert new_code not in rev_crosswalk
-            rev_crosswalk[new_code] = old_code
 
     for semester in primary_listings.values_list("semester", flat=True).order_by("semester"):
         # pass 1: use crosswalk
         if semester == XWALK_SEMESTER_TO:
-            for primary_listing in primary_listings.filter(full_code__in=rev_crosswalk.keys(), semester=semester):                        
-                old_code = rev_crosswalk[primary_listing.full_code]
+            for old_code, new_codes in crosswalk.items():                     
                 prev_course = courses.filter(
                     full_code=old_code, semester__lt=semester
                 ).order_by("-semester").first()
-                
-                # check if the old_code is already part of a different topic
-                if (
-                    not prev_course 
-                    or prev_course.topic.most_recent.semester >= primary_listing.semester
-                ):
-                    # Assume we branched from this topic
-                    primary_listing.topic.update(branched_from=prev_course.topic)
+                if not prev_course:
                     continue
 
-                # if, possible merge the current course with the topic of old_code
-                prev_course.topic.merge_with(primary_listing.topic)
-            
+                # TODO: this is logically inconsistent with the assumption that we
+                # are progressing semester by semester, since these new_codes could 
+                # be for many semesters in the future. Breaking this assumption
+                # means that we could end up having partially filled topics.
+                for new_code in new_codes:
+                    next_code = courses.filter(
+                        full_code=new_code, semester__gt=semester
+                    ).order_by("semester").first()
+                    if not next_code:
+                        continue
+                    next_code.set_previously(prev_course)
+                
         # pass 2: try to use course code
         for primary_listing in primary_listings.filter(semester=semester):
             if use_heuristics:
-                full_codes = course_code_heuristics(primary_listing.listing_set.all().values_list("full_code", flat=True))
+                full_codes = course_code_heuristics(
+                    primary_listing.listing_set.all().values_list("full_code", flat=True)
+                )
             else:
-               full_codes = primary_listing.listing_set.all().values("full_code") 
+                full_codes = primary_listing.listing_set.all().values("full_code") 
 
             prev_courses = (
                 courses
@@ -101,10 +99,9 @@ def reform_topics(topic_ids=None, interactive=True, use_heuristics=True):
                         f"{str(prev_course)} is not very similar to {str(primary_listing)}. "
                         f"Have {len(prev_courses) - 1 - i} remaining options to link to."
                     )
-                    if interactive and prompt_for_link(prev_course, primary_listing):
-                        prev_course.topic.merge_with(primary_listing.topic)   
-                else:
-                    prev_course.topic.merge_with(primary_listing.topic) 
+                    if not interactive or not prompt_for_link(prev_course, primary_listing):
+                        continue  
+                primary_listing.set_previously(prev_course) 
 
 
     garbage_collect_topics()

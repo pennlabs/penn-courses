@@ -288,6 +288,9 @@ class Course(models.Model):
         primary listing or null. This method modifies topics as necessary (including 
         splitting them in an efficient way).
         """
+
+        # TODO: does this handle the case where topics don't already exist for te courses?
+
         other_topic = previously.topic
 
         with transaction.atomic():
