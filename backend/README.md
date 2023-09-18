@@ -38,7 +38,7 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
         - `export LDFLAGS="-L/usr/local/opt/openssl@3/lib"`
         - `export CPPFLAGS="-I/usr/local/opt/openssl@3/include"`
 
-   - Windows (WSL) or Linux:
+   - **Windows (WSL) or Linux:**
      - `apt-get install gcc python3-dev libpq-dev`
 
 3. Running Docker
@@ -48,7 +48,7 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
       > - (linux) `[sudo] systemctl start docker`
       > - (WSL) `[sudo] service docker start`
 
-> ⚠️ **NOTE** If you are having trouble installing packages or with installing pipenv (e.g., on Apple silicon), see [Trouble Installing Packages (Apple Silicon)](#trouble-installing-packages-apple-silicon). Return to finish these instructions from step 4.
+> :warning: NOTE: If you are having trouble installing packages or with installing pipenv (e.g., on Apple silicon), see [Trouble Installing Packages (Apple Silicon)](#trouble-installing-packages-apple-silicon). Return to finish these instructions from step 4.
 
 4. Setting up your Penn Courses development environment
 
@@ -63,22 +63,25 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
      SQL dump file.
    - Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
    - Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
+     
+     > :warning: NOTE: If this is giving you permission denied, try running `psql template1` and enter the following query `CREATE DATABASE postgres WITH OWNER "penn-courses"`.
    - Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` (replacing `pcx_test.sql` with the full path to that file on your computer) to load
      the contents of the test database (this might take a while).
    - For accessing the Django admin site, the admin username is `admin` and the password is `admin` if you use this test db.
-   - Run `python manage.py migrate` to apply migrations
 
 6. Running the backend
 
    - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
    - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`
-   - Note: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
+     
+      > :warning: NOTE: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
    - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
-   - Note: If you have not loaded the test data from the previous step (Step 4), ensure that you have created a local user named "Penn-Courses" with the password "postgres" in your PostgreSQL. To add the user, navigate to your pgAdmin, and follow the path of Object -> Create -> Login/Group Role and create the appropriate user.
-   - Note: If you ever encounter a `pg_hba.conf` entry error, open the `~/var/lib/postgresql/data/pg_hba.conf` file in your docker container and append the line `host  all  all 0.0.0.0/0 md5` into the file.
+     
+      > :warning: NOTE: If you have not loaded the test data from the previous step (Step 4), ensure that you have created a local user named "Penn-Courses" with the password "postgres" in your PostgreSQL. To add the user, navigate to your pgAdmin, and follow the path of Object -> Create -> Login/Group Role and create the appropriate user.
+      
+      > :warning: NOTE: If you ever encounter a `pg_hba.conf` entry error, open the `~/var/lib/postgresql/data/pg_hba.conf` file in your docker container and append the line `host  all  all 0.0.0.0/0 md5` into the file.
 
 7. Running tests
-8. Running tests
    - Run `python manage.py test` to run our test suite.
    - To run a specific test, you can use the format `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` (also note that in this example, you can use any prefix of that path to run a larger set of tests).
 
