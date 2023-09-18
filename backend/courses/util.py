@@ -78,6 +78,45 @@ def translate_semester_inv(semester):
     return semester[:-2] + semester_suffix_map_inv[new_suffix]
 
 
+def decr_semester(semester, skip_summer=False) -> str:
+    """
+    Decrement the semester
+    (e.g., 2022C is mapped to 2022B; 2022A -> 2021C).
+    If skip_summer is True, then any B semester is skipped (e.g., 2022C -> 2022A).
+    """
+
+    year = semester[:-1]
+    semester = semester[-1]
+    if semester == "A":
+        year = str(int(year) - 1)
+        semester = "C"
+    elif semester == "C" and skip_summer:
+        semester = "A"
+    else:
+        semester = chr(ord(semester) - 1)
+    return year + semester
+
+
+def incr_semester(semester, skip_summer=False) -> str:
+    """
+    Increment the semester
+    (e.g., 2022C is mapped to 2023A; 2022A -> 2021B).
+    If skip_summer is True, then any B semester is skipped (e.g., 2022A -> 2022C).
+    """
+
+    year = semester[:-1]
+    semester = semester[-1]
+
+    if semester == "C":
+        year = str(int(year) + 1)
+        semester = "A"
+    elif semester == "A" and skip_summer:
+        semester = "C"
+    else:
+        semester = chr(ord(semester) + 1)
+    return year + semester
+
+
 def get_current_semester(allow_not_found=False):
     """
     This function retrieves the string value of the current semester, either from
