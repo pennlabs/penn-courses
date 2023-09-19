@@ -516,10 +516,15 @@ def add_attributes(course, attributes):
     course.attributes.clear()
     for attribute in attributes:
         school = identify_school(attribute.get("attribute_code"))
+        desc = attribute.get("attribute_desc")
         attr, _ = Attribute.objects.get_or_create(
             code=attribute.get("attribute_code"),
-            defaults={"description": attribute.get("attribute_desc"), "school": school},
+            defaults={"description": desc, "school": school},
         )
+        if attr.description != desc or attr.school != school:
+            attr.description = desc
+            attr.school = school
+            attr.save()
         attr.courses.add(course)
 
 

@@ -1,5 +1,4 @@
 from courses.models import Section
-from PennCourses.docs_settings import reverse_func
 from review.models import REVIEW_BIT_LABEL
 from review.util import to_r_camel
 
@@ -125,7 +124,7 @@ instructor_review_aggregation_schema = {
 }
 
 course_reviews_response_schema = {
-    reverse_func("course-reviews", args=["course_code"]): {
+    "course-reviews": {
         "GET": {
             200: {
                 "properties": {
@@ -243,7 +242,7 @@ course_reviews_response_schema = {
 }
 
 course_plots_response_schema = {
-    reverse_func("course-plots", args=["course_code"]): {
+    "course-plots": {
         "GET": {
             200: {
                 "properties": {
@@ -282,7 +281,7 @@ course_plots_response_schema = {
 }
 
 instructor_reviews_response_schema = {
-    reverse_func("instructor-reviews", args=["instructor_id"]): {
+    "instructor-reviews": {
         "GET": {
             200: {
                 "properties": {
@@ -358,7 +357,7 @@ instructor_reviews_response_schema = {
 }
 
 autocomplete_response_schema = {
-    reverse_func("review-autocomplete"): {
+    "review-autocomplete": {
         "GET": {
             200: {
                 "properties": {
@@ -432,7 +431,7 @@ autocomplete_response_schema = {
 }
 
 department_reviews_response_schema = {
-    reverse_func("department-reviews", args=["department_code"]): {
+    "department-reviews": {
         "GET": {
             200: {
                 "properties": {
@@ -490,7 +489,7 @@ department_reviews_response_schema = {
 }
 
 instructor_for_course_reviews_response_schema = {
-    reverse_func("course-history", args=["course_code", "instructor_id"]): {
+    "course-history": {
         "GET": {
             200: {
                 "properties": {

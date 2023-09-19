@@ -26,7 +26,7 @@ from courses.serializers import (
     UserSerializer,
 )
 from courses.util import get_current_semester
-from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from PennCourses.docs_settings import PcxAutoSchema
 from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
 
@@ -72,14 +72,12 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("section-search", args=["semester"]): {
+            "section-search": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Sections Listed Successfully."}
             }
         },
         custom_path_parameter_desc={
-            reverse_func("section-search", args=["semester"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "section-search": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
@@ -100,14 +98,12 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("sections-detail", args=["semester", "full_code"]): {
+            "sections-detail": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
             }
         },
         custom_path_parameter_desc={
-            reverse_func("sections-detail", args=["semester", "full_code"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "sections-detail": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
@@ -126,14 +122,10 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("courses-list", args=["semester"]): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
-            }
+            "courses-list": {"GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}}
         },
         custom_path_parameter_desc={
-            reverse_func("courses-list", args=["semester"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "courses-list": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
@@ -171,7 +163,7 @@ class CourseListSearch(CourseList):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("courses-search", args=["semester"]): {
+            "courses-search": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully.",
                     400: "Bad request (invalid query).",
@@ -179,9 +171,7 @@ class CourseListSearch(CourseList):
             }
         },
         custom_path_parameter_desc={
-            reverse_func("courses-search", args=["semester"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "courses-search": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
@@ -229,14 +219,12 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("courses-detail", args=["semester", "full_code"]): {
+            "courses-detail": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
             }
         },
         custom_path_parameter_desc={
-            reverse_func("courses-detail", args=["semester", "full_code"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "courses-detail": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
@@ -270,12 +258,12 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("requirements-list", args=["semester"]): {
+            "requirements-list": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
             },
         },
         custom_path_parameter_desc={
-            reverse_func("requirements-list", args=["semester"]): {
+            "requirements-list": {
                 "GET": {
                     "semester": (
                         "The semester of the requirement (of the form YYYYx where x is A "
@@ -299,7 +287,7 @@ class AttributeList(generics.ListAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("attributes-list"): {
+            "attributes-list": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."}
             },
         },
@@ -316,7 +304,7 @@ class NGSSRestrictionList(generics.ListAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("restrictions-list"): {
+            "restrictions-list": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."}
             },
         },
@@ -348,14 +336,14 @@ class StatusUpdateView(generics.ListAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("statusupdate", args=["full_code"]): {
+            "statusupdate": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Status Updates for section listed successfully."
                 }
             }
         },
         custom_path_parameter_desc={
-            reverse_func("statusupdate", args=["full_code"]): {
+            "statusupdate": {
                 "GET": {
                     "full_code": (
                         "The code of the section which this status update applies to, in the "
