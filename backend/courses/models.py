@@ -392,7 +392,7 @@ class Topic(models.Model):
     )
 
     @staticmethod
-    def merge_all(topics):
+    def merge_all(topics: list["Topic"]):
         if not topics:
             raise ValueError("Cannot merge an empty list of topics.")
         with transaction.atomic():
