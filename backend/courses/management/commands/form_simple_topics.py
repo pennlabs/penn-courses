@@ -28,9 +28,7 @@ def form_simple_topics():
                 set(
                     course.topic
                     for course in (
-                        primary_listings
-                        .filter(full_code=full_code)
-                        .select_related("topic")
+                        primary_listings.filter(full_code=full_code).select_related("topic")
                     )
                 )
             )
