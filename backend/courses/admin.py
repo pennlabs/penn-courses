@@ -55,7 +55,7 @@ class AttributeAdmin(admin.ModelAdmin):
         "code",
         "description",
     )
-    list_display = ("code", "school")
+    list_display = ("code", "school", "description")
     exclude = ("courses",)
 
 
