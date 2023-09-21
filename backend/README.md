@@ -47,9 +47,9 @@ exit # leave docker shell
 
 Many IDEs allow attachment to running docker containers, which allows for nice features like intellisense.
 1. [VSCode](https://code.visualstudio.com/docs/devcontainers/attach-container)
-  1. `CTRL-SHIFT-P` and type "Attach to Running Container"
-  2. Select the `backend_development_1` container (or a similarly named one). This should open a new VSCode window attached to the container
-  3. Open the `/backend` folder within the container
+>  1. `CTRL-SHIFT-P` and type "Attach to Running Container"
+>  2. Select the `backend_development_1` container (or a similarly named one). This should open a new VSCode window attached to the container
+>  3. Open the `/backend` folder within the container
 2. [PyCharm](https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html#config-docker)
 
 
