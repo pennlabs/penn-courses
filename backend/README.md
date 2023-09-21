@@ -9,10 +9,6 @@ Welcome to the Penn Courses Backend (PCX)!
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
 
 ### Running the Backend with Docker-Compose
-> :warning: Depending on your system configuration, you may have to start `docker` manually. If this is the case (ie, if you cannot get `docker-compose run` to work due to a docker connection error) try this:
->
-> - linux `[sudo] systemctl start docker`
-> - WSL `[sudo] service docker start`
 
 1. Build the docker image (the `[sudo]` part means try running without sudo first)
 ```sh
@@ -20,6 +16,10 @@ cd backend
 [sudo] docker-compose down
 [sudo] docker-compose build --no-cache development
 ```
+> :warning: Depending on your system configuration, you may have to start `docker` manually. If this is the case (ie, if you cannot get `docker-compose run` to work due to a docker connection error) try this:
+>
+> - linux `[sudo] systemctl start docker`
+> - WSL `[sudo] service docker start`
 2. Run shell inside the container
 ```sh
 [sudo] docker-compose run --service-ports development /bin/bash # launch shell inside container
@@ -42,6 +42,16 @@ exit # leave docker shell
 **If you're a backend developer** you'll often want to open the shell as we did in #2 (you'll only need to re-run #1 if you see a problem).
 
 > *If you want to run the backend natively (ie, outside of docker-compose), see the [Running the Backend Natively](#running-the-backend-natively) section. You might want to do this if, for example, you really like your local shell set up*
+
+### Attaching to Docker from IDE
+
+Many IDEs allow attachment to running docker containers, which allows for nice features like intellisense.
+1. [VSCode](https://code.visualstudio.com/docs/devcontainers/attach-container)
+  1. `CTRL-SHIFT-P` and type "Attach to Running Container"
+  2. Select the `backend_development_1` container (or a similarly named one). This should open a new VSCode window attached to the container
+  3. Open the `/backend` folder within the container
+2. [PyCharm](https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html#config-docker)
+
 
 ## Environment Variables
 
