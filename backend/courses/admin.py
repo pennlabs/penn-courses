@@ -14,6 +14,7 @@ from courses.models import (
     Department,
     Instructor,
     Meeting,
+    NGSSRestriction,
     PreNGSSRequirement,
     PreNGSSRestriction,
     Room,
@@ -50,8 +51,21 @@ class InstructorAdmin(admin.ModelAdmin):
 
 
 class AttributeAdmin(admin.ModelAdmin):
-    search_fields = ("code",)
-    list_display = ("code", "school")
+    search_fields = (
+        "code",
+        "description",
+    )
+    list_display = ("code", "school", "description")
+    exclude = ("courses",)
+
+
+class NGSSRestrictionAdmin(admin.ModelAdmin):
+    search_fields = (
+        "code",
+        "restriction_type",
+        "description",
+    )
+    list_display = ("code", "restriction_type", "inclusive", "description")
     exclude = ("courses",)
 
 
@@ -202,6 +216,7 @@ admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Meeting, MeetingAdmin)
 admin.site.register(StatusUpdate, StatusUpdateAdmin)
 admin.site.register(Attribute, AttributeAdmin)
+admin.site.register(NGSSRestriction, NGSSRestrictionAdmin)
 
 # https://github.com/sibtc/django-admin-user-profile
 admin.site.unregister(User)

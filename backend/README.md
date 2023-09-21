@@ -82,6 +82,27 @@ PCX gets its data from two primary sources: the Penn Registrar for the
 current semester's data (via the [OpenData API](https://app.swaggerhub.com/apis-docs/UPennISC/open-data/prod)),
 and ISC data dumps containing review statistics (from Terry Weber, [weberte@isc.upenn.edu](mailto:weberte@isc.upenn.edu)).
 
+#### API Credentials
+
+Interacting with the OpenData API requires credentials, `OPEN_DATA_CLIENT_ID` (`CLIENT-ID`) and `OPEN_DATA_OIDC_SECRET` (`OIDC-SECRET`). These credentials are already included in the .env file you should receive from a team lead if you are in Labs. Otherwise, you can register for prod OpenData API credentials [here](https://hosted.apps.upenn.edu/PennOpenshiftCommandCenter_UI/PublicRestAccounts.aspx).
+
+#### Exploring the OpenData API via Postman
+
+While the OpenData API docs are OK, sometimes it's easiest to explore the data via requests to the API (although if you want to explore PCX data specifically, I recommend using the Django admin console, available at e.g. [penncoursereview.com/admin](https://penncoursereview.com/admin)).
+
+OpenData uses [OAuth2](https://oauth.net/2/) for authentication (I highly recommend the official video course on OAuth2 for anyone interested in better understanding this industry-standard authentication flow - this is also the basis of the [auth flow](https://penncoursereview.com/api/documentation/#section/Authentication) used by Labs / PCX apps). Specifically, OpenData uses [client credentials](https://aaronparecki.com/oauth-2-simplified/#client-credentials) as its OAuth2 "grant type" (this is pretty standard for server-to-server/userless API access). Basically, this means you need to use your client credentials (client ID / secret) to get a temporary "access token" from the authorization server.
+
+To receive an access token, you can send a POST request to `https://sso.apps.k8s.upenn.edu/auth/realms/master/protocol/openid-connect/token` (or whatever your `OIDC-TOKEN-URL` is, if you registered for your own credentials). The body should be x-www-form-urlencoded with the key/value pairs:
+   - `grant_type`: `client_credentials`
+   - `client_id`: `YOUR_CLIENT_ID`
+   - `client_secret`: `YOUR_CLIENT_SECRET`
+
+You then can make authenticated requests to the API by providing a request header of the form key/value: `Authorization`: `Bearer ACCESS_TOKEN` (where `ACCESS_TOKEN` is the token you received from the authorization server).
+
+See [courses/registrar.py](https://github.com/pennlabs/penn-courses/blob/master/backend/courses/registrar.py) to understand which OpenData API endpoints are used by PCX, and how.
+
+For example, you can try out: `https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search?section_id=CIS&term=2023C&page_number=1&number_of_results_per_page=100` (remember to set the `Authorization` header).
+
 #### Registrar
 
 To load in course data for a certain semester, set the environment variables
