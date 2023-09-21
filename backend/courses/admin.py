@@ -70,11 +70,12 @@ class NGSSRestrictionAdmin(admin.ModelAdmin):
 
 
 class CourseAdmin(admin.ModelAdmin):
-    search_fields = ("full_code", "department__code", "code", "semester")
+    search_fields = ("full_code", "department__code", "code", "semester", "title")
     autocomplete_fields = ("department", "primary_listing")
     readonly_fields = ("topic", "crosslistings", "course_attributes")
     exclude = ("attributes",)
     list_filter = ("semester",)
+    list_display = ("full_code", "semester", "title")
 
     list_select_related = ("department", "topic")
 
