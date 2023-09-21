@@ -2,13 +2,17 @@ from django.db.models.signals import post_save
 from django.test.testcases import TestCase
 from options.models import Option
 
-from alert.management.commands.recomputestats import (
+from alert.models import AddDropPeriod
+from courses.management.commands.recompute_soft_state import (
     deduplicate_status_updates,
     recompute_precomputed_fields,
 )
-from alert.models import AddDropPeriod
 from courses.models import Building, Course, Meeting, Room, Section, StatusUpdate
-from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
+from courses.util import (
+    all_semesters,
+    get_or_create_course_and_section,
+    invalidate_current_semester_cache,
+)
 from tests.courses.util import create_mock_data
 
 
@@ -63,7 +67,7 @@ class DeduplicateStatusUpdatesTestCase(TestCase):
             5, StatusUpdate.objects.filter(section__course__semester=TEST_SEMESTER).count()
         )
         self.assertEqual(2, StatusUpdate.objects.filter(section__course__semester="2017C").count())
-        deduplicate_status_updates(semesters="all")
+        deduplicate_status_updates(semesters=list(all_semesters()))
         self.assertEqual(
             5, StatusUpdate.objects.filter(section__course__semester=TEST_SEMESTER).count()
         )
@@ -113,7 +117,7 @@ class DeduplicateStatusUpdatesTestCase(TestCase):
             9, StatusUpdate.objects.filter(section__course__semester=TEST_SEMESTER).count()
         )
         self.assertEqual(3, StatusUpdate.objects.filter(section__course__semester="2017C").count())
-        deduplicate_status_updates(semesters="all")
+        deduplicate_status_updates(semesters=list(all_semesters()))
         self.assertEqual(
             5, StatusUpdate.objects.filter(section__course__semester=TEST_SEMESTER).count()
         )

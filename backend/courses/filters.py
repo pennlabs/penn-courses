@@ -367,7 +367,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "required": False,
                 "in": "query",
                 "description": (
-                    "Deprecated since 2022C. Filter courses by comma-separated pre "
+                    "Deprecated since 2022B. Filter courses by comma-separated pre "
                     "ngss requirements, ANDed together. Use the "
                     "[List Requirements](/api/documentation/#operation/List%20Pre-Ngss%20Requirements) "  # noqa: E501
                     "endpoint to get requirement IDs."

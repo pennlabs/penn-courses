@@ -210,13 +210,18 @@ S3_resource = boto3.resource("s3")
 XWALK_S3_BUCKET = "penn.courses"
 XWALK_SRC = "xwalk_csre_number.txt"
 
+# The first semester that used Banner/NGSS for course data.
+# This was when course codes changed from 3-digit to 4-digit.
+# Note that the above crosswalk connects pre and post NGSS courses
+FIRST_BANNER_SEM = "2022B"
+
 # Registration Metrics Settings
 
 STATUS_UPDATES_RECORDED_SINCE = "2019C"  # How far back does our valid Status Update data span?
 PCA_REGISTRATIONS_RECORDED_SINCE = "2020A"  # How far back does our valid Registration data span?
 WAITLIST_DEPARTMENT_CODES = []  # Which departments (referenced by code) have a waitlist system
 # or require permits for registration during the add/drop period?
-PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES = [  # TODO: add post-NGSS list
+PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES = [
     "PCG",
     "PAD",
     "PCW",
