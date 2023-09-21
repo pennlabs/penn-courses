@@ -17,6 +17,7 @@ Welcome to the Penn Courses Backend (PCX)!
 1. Build the docker image (the `[sudo]` part means try running without sudo first)
 ```sh
 cd backend
+[sudo] docker-compose down
 [sudo] docker-compose build --no-cache development
 ```
 2. Run shell inside the container
@@ -26,6 +27,7 @@ pipenv shell # activate shell with python packages
 python manage.py makemigrations
 python manage.py migrate # database migrations
 python manage.py test # run tests
+python manage.py test tests.review.test_api.OneReviewTestCase.test_course # re-run a specific test
 runserver # optionally, run the server from within the shell
 exit # leave pipenv shell 
 exit # leave docker shell
@@ -99,6 +101,8 @@ data, run `./manage.py iscimport --current --semester 2022A path/to/dump.zip`.
 You'll be prompted for confirmation at different times in the script. If you want to skip these
 prompts, add the `--force` flag.
 
+# Appendix
+
 ## Running the Backend Natively
 
 If you don't want to use docker, you can also set up and run the dev environment natively.
@@ -107,9 +111,6 @@ If you don't want to use docker, you can also set up and run the dev environment
 2. Compiling postgres (`psycopg2`)
 
    - **Mac**
-
-     > :warning: NOTE: If you are having trouble installing packages (e.g. on Apple silicon), you can use the workaround described in the next section ([Trouble Installing Packages (Apple Silicon)](#trouble-installing-packages-apple-silicon)) to run the server in a docker container.
-
      > :warning: NOTE: If your computer runs on Apple silicon and you use Rosetta to run Python as an x86 program, use `arch -x86_64 brew <rest of command>` for all `brew` commands.
 
      1. `brew install postgresql`
