@@ -32,7 +32,7 @@ runserver # optionally, run the server from within the shell
 exit # leave pipenv shell 
 exit # leave docker shell
 ```
-3. Run the server on `127.0.0.1:8000`
+3. Run the server on `127.0.0.1:8000` (use `CTRL+C` to stop running this)
 ```
 [sudo] docker-compose --profile dev up
 ```
