@@ -7,11 +7,41 @@ Welcome to the Penn Courses Backend (PCX)!
 - Python 3.10 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
 - [`pipenv`](https://pipenv.pypa.io/en/latest/)
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
-- Python 3.10 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
-- [`pipenv`](https://pipenv.pypa.io/en/latest/)
-- [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
 
-### Environment Variables
+### Running the Backend with Docker-Compose
+> :warning: Depending on your system configuration, you may have to start `docker` manually. If this is the case (ie, if you cannot get `docker-compose run` to work due to a docker connection error) try this:
+>
+> - linux `[sudo] systemctl start docker`
+> - WSL `[sudo] service docker start`
+
+1. Build the docker image (the `[sudo]` part means try running without sudo first)
+```sh
+cd backend
+[sudo] docker-compose build --no-cache development
+```
+2. Run shell inside the container
+```sh
+[sudo] docker-compose run --service-ports development /bin/bash # launch shell inside container
+pipenv shell # activate shell with python packages
+python manage.py makemigrations
+python manage.py migrate # database migrations
+python manage.py test # run tests
+runserver # optionally, run the server from within the shell
+exit # leave pipenv shell 
+exit # leave docker shell
+```
+3. Run the server on `127.0.0.1:8000`
+```
+[sudo] docker-compose --profile dev up
+```
+
+**If you're a frontend developer** you'll want to use #2 from now on (only re-running #2 or #1 when you see a problem)
+
+**If you're a backend developer** you'll often want to open the shell as we did in #2 (you'll only need to re-run #1 if you see a problem).
+
+> *If you want to run the backend natively (ie, outside of docker-compose), see the [Running the Backend Natively](#running-the-backend-natively) section. You might want to do this if, for example, you really like your local shell set up*
+
+## Environment Variables
 
 If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file to
 put in your `backend` directory. This will contain some sensitive credentials (which is why the file contents are not
@@ -19,7 +49,59 @@ pasted in this public README). If you are not in Penn Labs, see the "Loading Cou
 
 NOTE: when using `pipenv`, environment variables are only refreshed when you exit your shell and rerun `pipenv shell` (this is a common source of confusing behavior, so it's good to know about).
 
-### Setting Up the Backend
+## Loading Courses Data 
+
+### Via Database Dump (Penn Labs members)
+
+- To get going quickly with a local database loaded with lots of test data,
+   you can download this [pcx_test.sql](https://files.slack.com/files-pri/T4EM1119V-F04FPSTNF46/download/pcx_test_12_2022.sql) SQL dump file. You will only be able to access this if you are a member of labs; if you still need access to data, read on. 
+- Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
+- Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
+   
+   > :warning: NOTE: If this is giving you permission denied, try running `psql template1` and enter the following query `CREATE DATABASE postgres WITH OWNER "penn-courses"`.
+- Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` (replacing `pcx_test.sql` with the full path to that file on your computer) to load
+   the contents of the test database (this might take a while).
+- For accessing the Django admin site, the admin username is `admin` and the password is `admin` if you use this test db.
+
+
+### On Demand
+
+PCX gets its data from two primary sources: the Penn Registrar for the
+current semester's data (via the [OpenData API](https://app.swaggerhub.com/apis-docs/UPennISC/open-data/prod)),
+and ISC data dumps containing review statistics (from Terry Weber, [weberte@isc.upenn.edu](mailto:weberte@isc.upenn.edu)).
+
+#### Registrar
+
+To load in course data for a certain semester, set the environment variables
+`OPEN_DATA_CLIENT_ID` and `OPEN_DATA_OIDC_SECRET` to the corresponding credentials you
+receive from the OpenData API. These credentials are already included in the .env file you should receive from a team lead if you are in Labs. Otherwise, you can register for prod OpenData API credentials [here](https://hosted.apps.upenn.edu/PennOpenshiftCommandCenter_UI/PublicRestAccounts.aspx).
+After your environment variables have been set (remember to refresh your pipenv shell), run
+
+`python manage.py registrarimport --semester=<semester> --query=<query>`
+
+Let `semester` be the desired semester (for example, `2022C` represents
+Fall 2022), and let `query` be the prefix of all courses you would like to
+load in (no dashes). If you're just interested in the CIS department, put `CIS`. If
+you'd like to load in **ALL** courses, omit the query parameter. Note
+that this will take a long time, as all sections in Penn's course catalog,
+along with rooms, buildings, and instructors will be loaded in.
+
+#### ISC Review Data
+
+The ISC import script has a lot of options depending on what exactly you want to do.
+It can import all historical data, or just data from a specific semester. It can use
+a zip file or an unzipped directory. Run `./manage.py iscimport --help` for all the
+options.
+
+If you have an ISC data dump in a ZIP format and want to import the most recent semester's (e.g. 2022A)
+data, run `./manage.py iscimport --current --semester 2022A path/to/dump.zip`.
+
+You'll be prompted for confirmation at different times in the script. If you want to skip these
+prompts, add the `--force` flag.
+
+## Running the Backend Natively
+
+If you don't want to use docker, you can also set up and run the dev environment natively.
 
 1. `cd backend`
 2. Compiling postgres (`psycopg2`)
@@ -48,8 +130,6 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
       > - (linux) `[sudo] systemctl start docker`
       > - (WSL) `[sudo] service docker start`
 
-> :warning: NOTE: If you are having trouble installing packages or with installing pipenv (e.g., on Apple silicon), see [Trouble Installing Packages (Apple Silicon)](#trouble-installing-packages-apple-silicon). Return to finish these instructions from step 4.
-
 4. Setting up your Penn Courses development environment
 
    1. `pipenv install --dev`
@@ -58,16 +138,6 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
 
 5. Loading test data (if you are a member of Penn Labs). If you are not a member of Penn Labs, you can skip this section and load in course data from the registrar, as explained below.
 
-   - To get going quickly with a local database loaded with lots of test data,
-     you can download this [pcx_test.sql](https://files.slack.com/files-pri/T4EM1119V-F04FPSTNF46/download/pcx_test_12_2022.sql)
-     SQL dump file.
-   - Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
-   - Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
-     
-     > :warning: NOTE: If this is giving you permission denied, try running `psql template1` and enter the following query `CREATE DATABASE postgres WITH OWNER "penn-courses"`.
-   - Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` (replacing `pcx_test.sql` with the full path to that file on your computer) to load
-     the contents of the test database (this might take a while).
-   - For accessing the Django admin site, the admin username is `admin` and the password is `admin` if you use this test db.
 
 6. Running the backend
 
@@ -84,49 +154,3 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
 7. Running tests
    - Run `python manage.py test` to run our test suite.
    - To run a specific test, you can use the format `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` (also note that in this example, you can use any prefix of that path to run a larger set of tests).
-
-### Trouble Installing Packages (Apple Silicon)
-
-1. Always run `docker-compose --profile=dev up` instead of just `docker-compose up`.
-   - To alias this command, run `echo "alias courses-compose='cd "$PWD"; docker-compose up'" >> ~/.zshrc; source ~/.zshrc` (replacing `~/.zshrc` with `~/.bashrc` or whatever configuration file your shell uses, if you don't use zsh).
-   - This will spin up a container from which you can run the server (with all required packages preinstalled).
-2. In a separate terminal (from any directory), run `docker exec -it backend-development-1 /bin/bash` to open a shell in the container (if this says "no such container", run `docker container ls` and use the name of whatever container most closely matches the `backend_development` image). Just like exiting a Pipenv shell, you can exit the container by pressing `Ctrl+D` (which sends the "end of transmission" / EOF character).
-   - You might want to add an alias for this command so it is easier to run (e.g. `echo 'alias courses-backend="docker exec -it backend_development_1 /bin/bash"' >> ~/.zshrc && source ~/.zshrc`). Then you can just run `courses-backend` from any directory to connect to the Docker container from which you will run the server (assuming `courses-compose` is already running in another terminal).
-3. Once you have a shell open in the container, you can continue running the rest of the commands in this README (except you can skip `pipenv install --dev` since that has already been done for you).
-   1. Remember to run `pipenv shell` (to open a [Pipenv] shell inside of a [docker container] shell inside of your computer's shell!). Note that the `/backend` directory inside the container is automatically synced with the `backend` directory on your host machine (from which you ran `docker-compose --profile=dev up`).
-4. There's just one last complication. Due to some annoying details of Docker networking, you have to expose the server on IP address `0.0.0.0` inside the container, rather than `127.0.0.1` or `localhost` as is default (otherwise the server won't be accessible from outside of the container). To do this, instead of running `python manage.py runserver`, run `python manage.py runserver 0.0.0.0:8000`. In `Dockerfile.dev`, we automatically alias the command `runserver` to the latter, so in the container shell (in `/backend`, as is default) you can simply run the command `runserver` (no `python manage.py` necessary).
-
-## Loading Course Data on Demand
-
-PCX gets its data from two primary sources: the Penn Registrar for the
-current semester's data (via the [OpenData API](https://app.swaggerhub.com/apis-docs/UPennISC/open-data/prod)),
-and ISC data dumps containing review statistics (from Terry Weber, [weberte@isc.upenn.edu](mailto:weberte@isc.upenn.edu)).
-
-### Registrar
-
-To load in course data for a certain semester, set the environment variables
-`OPEN_DATA_CLIENT_ID` and `OPEN_DATA_OIDC_SECRET` to the corresponding credentials you
-receive from the OpenData API. These credentials are already included in the .env file you should receive from a team lead if you are in Labs. Otherwise, you can register for prod OpenData API credentials [here](https://hosted.apps.upenn.edu/PennOpenshiftCommandCenter_UI/PublicRestAccounts.aspx).
-After your environment variables have been set (remember to refresh your pipenv shell), run
-
-`python manage.py registrarimport --semester=<semester> --query=<query>`
-
-Let `semester` be the desired semester (for example, `2022C` represents
-Fall 2022), and let `query` be the prefix of all courses you would like to
-load in (no dashes). If you're just interested in the CIS department, put `CIS`. If
-you'd like to load in **ALL** courses, omit the query parameter. Note
-that this will take a long time, as all sections in Penn's course catalog,
-along with rooms, buildings, and instructors will be loaded in.
-
-### ISC Review Data
-
-The ISC import script has a lot of options depending on what exactly you want to do.
-It can import all historical data, or just data from a specific semester. It can use
-a zip file or an unzipped directory. Run `./manage.py iscimport --help` for all the
-options.
-
-If you have an ISC data dump in a ZIP format and want to import the most recent semester's (e.g. 2022A)
-data, run `./manage.py iscimport --current --semester 2022A path/to/dump.zip`.
-
-You'll be prompted for confirmation at different times in the script. If you want to skip these
-prompts, add the `--force` flag.
