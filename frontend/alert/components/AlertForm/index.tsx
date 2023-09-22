@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/browser";
 
 import InfoTool from "pcx-shared-components/src/common/InfoTool";
 
-import { parsePhoneNumberFromString, isValidNumber } from "libphonenumber-js";
+import { isValidNumber, parsePhoneNumberFromString } from "libphonenumber-js";
 
 import { Center } from "pcx-shared-components/src/common/layout";
 import { Input } from "../Input";
@@ -91,24 +91,18 @@ const AlertForm = ({
         new Set()
     );
     const [value, setValue] = useState(autofillSection);
-
     const [email, setEmail] = useState("");
-
     const [phone, setPhone] = useState("");
     const [isPhoneDirty, setPhoneDirty] = useState(false);
-
     const [closedNotif, setClosedNotif] = useState(false);
-
     const autoCompleteInputRef = useRef<HTMLInputElement>(null);
 
-    const formatPhoneNumber = (phone) => {
-        const parsedNumber = parsePhoneNumberFromString(phone);
-        return parsedNumber ? parsedNumber.formatNational() : (user && user.profile.phone) || ""
-    }
-
     useEffect(() => {
+        const parsedNumber = user && parsePhoneNumberFromString(user.profile.phone || "", "US");
         setPhone(
-            formatPhoneNumber((user && user.profile.phone) || "")
+            parsedNumber
+                ? parsedNumber.formatNational()
+                : (user && user.profile.phone) || ""
         );
         setEmail((user && user.profile.email) || "");
     }, [user]);
@@ -245,8 +239,6 @@ const AlertForm = ({
                             deselectCourse(sections[i]);
                             setClosedNotif(false);
                         }
-
-                        //only if network error occurred
                     } else {
                         //only if network error occurred
                         handleError(res.reason);
@@ -274,7 +266,7 @@ const AlertForm = ({
 
         if (contactInfoChanged()) {
             doAPIRequest("/accounts/me/", "PATCH", {
-                profile: { email, phone },
+                profile: { email, phone: parsePhoneNumberFromString(phone, "US")?.number ?? ""},
             })
                 .then((res) => {
                     if (!res.ok) {
