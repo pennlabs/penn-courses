@@ -20,3 +20,4 @@ postgres
 *-test.json
 celerybeat-schedule
 pcr-backup*
+degreeworks_env.json

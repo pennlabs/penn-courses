@@ -3,7 +3,7 @@ from requests import Session
 from structs import DegreePlan
 import json
 
-with open(".env") as f:
+with open("degreeworks_env.json") as f:
     env = json.load(f)
 
 cookies = {
