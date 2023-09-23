@@ -1369,7 +1369,6 @@ class UserProfile(models.Model):
             return
         try:
             parsed_number = phonenumbers.parse(value, "US")
-            print(parsed_number)
             if not phonenumbers.is_valid_number(parsed_number):
                 raise ValueError(f"Invalid phone number '{value}'.")
         except (phonenumbers.phonenumberutil.NumberParseException, ValueError) as e:
