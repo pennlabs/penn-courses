@@ -1405,7 +1405,7 @@ class UserProfile(models.Model):
         if not self.phone or not self.phone.strip():
             self.phone = None
         if self.phone:
-            # self.phone validated by `validate_phone`
+            # self.phone should be validated by `validate_phone`
             phone_number = phonenumbers.parse(self.phone, "US")
             self.phone = phonenumbers.format_number(
                 phone_number, phonenumbers.PhoneNumberFormat.E164
