@@ -1,6 +1,7 @@
 from django.db.models import Q
 from request_degreeworks import audit
 from structs import DegreePlan, Requirement, Rule
+from pprint import pprint
 
 # TODO: these should not be hardcoded, but rather added to the database
 E_DEPTS = ["BE", "CIS", "CMPE", "EAS", "ESE", "MEAM", "MSE", "NETS", "ROBO"]  # SEAS
@@ -244,6 +245,7 @@ def parse_rulearray(ruleArray, degree_plan) -> list[Rule]:
     rules = []
     for rule in ruleArray:
         rule_req = rule["requirement"]
+        # pprint(rule)
         assert rule["ruleType"] == "Group" or rule["ruleType"] == "Subset" or "ruleArray" not in rule
         match rule["ruleType"]:
             case "Course":
@@ -1405,6 +1407,13 @@ if __name__ == "__main__":
         DegreePlan(program="EU_BAS", degree="BAS", major="VLST", concentration="PAS", year=2023),
     ]
 
-    for i, degree_plan in enumerate(E_BSE_DEGREE_PLANS):
+    for i, degree_plan in enumerate(E_BAS_DEGREE_PLANS):
         print(degree_plan)
-        print(parse_degreeworks(audit(degree_plan), degree_plan))
+        pprint(parse_degreeworks(audit(degree_plan), degree_plan))
+
+    # degree_plan = DegreePlan(
+    #     program="EU_BSE", degree="BSE", major="VLST", concentration="ACS", year=2023
+    # )
+    # import json
+    # print(json.dumps(audit(degree_plan), indent=2))
+    # pprint(parse_degreeworks(audit(degree_plan), degree_plan))
