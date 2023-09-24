@@ -3,7 +3,7 @@ from requests import Session
 from structs import DegreePlan
 import json
 
-with open(".env") as f:
+with open("degreeworks_env.json") as f:
     env = json.load(f)
 
 cookies = {
@@ -29,10 +29,11 @@ def audit(degree_plan: DegreePlan, timeout=30):
         "isIncludePreregistered": True,
         "isKeepCurriculum": False,
         "school": "UG",
-        "degree": "BA",
-        "catalogYear": "2023",
+        "degree": degree_plan.degree,
+        "catalogYear": degree_plan.year,
         "goals": [
             {"code": "MAJOR", "value": degree_plan.major},
+            {"code": "CONC", "value": degree_plan.concentration},
             {"code": "PROGRAM", "value": degree_plan.program},
             {"code": "COLLEGE", "value": degree_plan.program.split("_")[0]},
         ],

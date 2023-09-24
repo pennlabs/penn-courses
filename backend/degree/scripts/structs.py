@@ -23,33 +23,6 @@ class Rule:
         )
 
 
-class QualifierType(str, Enum):
-    GPA = "GPA"
-    CUS = "CUS"
-    NUM = "NUM"  # number of classes
-
-
-class Exactness(str, Enum):
-    EXACT = "EXACT"
-    MIN = "MIN"
-    MAX = "MAX"
-    RANGE = "RANGE"
-
-
-class Among(str, Enum):
-    PASSFAIL = "PASSFAIL"
-
-
-@dataclass  # TODO: unused
-class Qualifier:  # ex: min 5 CUS among NSCI
-    label: str
-    code: str
-    min_or: Exactness
-    num: float | int | None
-    type: QualifierType
-    among: Q | Among | None
-
-
 @dataclass
 class DegreePlan:
     # NOTE: in the future, this might require a year field
