@@ -182,7 +182,7 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 # Twilio Credentials
 TWILIO_SID = os.environ.get("TWILIO_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_TOKEN", "")
-TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12153984277")
+TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12157826689")
 
 # Redis
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
