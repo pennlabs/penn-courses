@@ -1359,14 +1359,20 @@ class UserProfile(models.Model):
         """
         Validator to check that a phone number is in the proper form. The number must be in a
         form which is parseable by the
-        [phonenumbers library](https://pypi.org/project/phonenumbers/).
+        [phonenumbers library](https://pypi.org/project/phonenumbers/) and also valid.
+
+        Note: validators are NOT called automatically on model object save. They are called
+        on `object.full_clean()`, and also on serializer validation (returning a 400 if violated).
+        https://docs.djangoproject.com/en/4.2/ref/validators/
         """
-        if value.strip() == "":
+        if not value or not value.strip():
             return
         try:
-            phonenumbers.parse(value, "US")
-        except phonenumbers.phonenumberutil.NumberParseException:
-            raise ValidationError("Enter a valid phone number.")
+            parsed_number = phonenumbers.parse(value, "US")
+            if not phonenumbers.is_valid_number(parsed_number):
+                raise ValueError(f"Invalid phone number '{value}'.")
+        except (phonenumbers.phonenumberutil.NumberParseException, ValueError) as e:
+            raise ValidationError(str(e))
 
     phone = models.CharField(
         blank=True,
@@ -1396,16 +1402,14 @@ class UserProfile(models.Model):
         does not throw an error.
         It then calls the normal save method.
         """
-        if self.phone is not None and self.phone.strip() == "":
+        if not self.phone or not self.phone.strip():
             self.phone = None
-        if self.phone is not None:
-            try:
-                phone_number = phonenumbers.parse(self.phone, "US")
-                self.phone = phonenumbers.format_number(
-                    phone_number, phonenumbers.PhoneNumberFormat.E164
-                )
-            except phonenumbers.phonenumberutil.NumberParseException:
-                raise ValidationError("Invalid phone number (this should have been caught already)")
+        if self.phone:
+            # self.phone should be validated by `validate_phone`
+            phone_number = phonenumbers.parse(self.phone, "US")
+            self.phone = phonenumbers.format_number(
+                phone_number, phonenumbers.PhoneNumberFormat.E164
+            )
         super().save(*args, **kwargs)
 
 
