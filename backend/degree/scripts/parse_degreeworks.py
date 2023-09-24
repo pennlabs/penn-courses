@@ -109,9 +109,9 @@ def parse_coursearray(courseArray) -> Q:
                 course_q &= Q(department__code=discipline)
             case discipline, number, None:
                 if number.isdigit():
-                    course_q &= Q(department__code=discipline, code=int(number))
+                    course_q &= Q(full_code=f"{discipline}-{number}")
                 elif number[:-1].isdigit() and number[-1] == "@":
-                    course_q &= Q(full_code__startswith=discipline + number[:-1])
+                    course_q &= Q(full_code__startswith=f"{discipline}-{number[:-1]}")
                 else:
                     print(f"WARNING: non-integer course number: {number}")
             case discipline, number, end:
@@ -244,6 +244,7 @@ def parse_rulearray(ruleArray, degree_plan) -> list[Rule]:
     rules = []
     for rule in ruleArray:
         rule_req = rule["requirement"]
+        assert rule["ruleType"] == "Group" or rule["ruleType"] == "Subset" or "ruleArray" not in rule
         match rule["ruleType"]:
             case "Course":
                 """
@@ -336,7 +337,7 @@ def parse_rulearray(ruleArray, degree_plan) -> list[Rule]:
                     print("WARNING: subset has no ruleArray")
             case "Group":  # TODO: this is nested
                 q = Q()
-                [q := q | rule.q for rule in parse_rulearray(rule["ruleArray"], degree_plan)]
+                [q := q & rule.q for rule in parse_rulearray(rule["ruleArray"], degree_plan)]
                 rules.append(
                     Rule(
                         q=q,
