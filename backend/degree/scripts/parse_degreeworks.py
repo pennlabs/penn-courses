@@ -246,7 +246,9 @@ def parse_rulearray(ruleArray, degree_plan) -> list[Rule]:
     for rule in ruleArray:
         rule_req = rule["requirement"]
         # pprint(rule)
-        assert rule["ruleType"] == "Group" or rule["ruleType"] == "Subset" or "ruleArray" not in rule
+        assert (
+            rule["ruleType"] == "Group" or rule["ruleType"] == "Subset" or "ruleArray" not in rule
+        )
         match rule["ruleType"]:
             case "Course":
                 """
