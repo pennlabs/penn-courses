@@ -1,6 +1,7 @@
 import gc
 import re
 from datetime import datetime
+from courses.util import translate_semester_inv, semester_suffix_map_inv
 
 from lark import Lark, Transformer
 from tqdm import tqdm
@@ -72,7 +73,13 @@ class SQLDumpTransformer(Transformer):
         to generate a row in a quasi-JSON format. Who needs MongoDB?
         """
         _, col_names, values = items
-        return dict(zip(col_names, values))
+        row_dict = dict(zip(col_names, values))
+
+        # Convert new OpenData API semesters to internal semesters
+        if "TERM" in row_dict and row_dict["TERM"] in semester_suffix_map_inv:
+            row_dict["TERM"] = translate_semester_inv(row_dict["TERM"])
+        return row_dict
+
 
     def TOKEN(self, items):
         """

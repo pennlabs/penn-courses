@@ -150,7 +150,7 @@ class Command(BaseCommand):
         import_all = kwargs["import_all"]
         s3_bucket = kwargs["s3_bucket"]
         is_zip_file = kwargs["zip"] or s3_bucket is not None
-        summary_file = kwargs["summary_file"]
+        summary_file = kwargs["summary_file"] # either summary table or summary hist table
         import_details = kwargs["import_details"]
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
