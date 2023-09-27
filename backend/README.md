@@ -4,7 +4,6 @@ Welcome to the Penn Courses Backend (PCX)!
 
 ### Prerequisites
 
-- [`pipenv`](https://pipenv.pypa.io/en/latest/)
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
 - `psql` (usually packaged as `postgresql-client`)
 
