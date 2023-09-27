@@ -76,8 +76,10 @@ class SQLDumpTransformer(Transformer):
         row_dict = dict(zip(col_names, values))
 
         # Convert new OpenData API semesters to internal semesters
-        if "TERM" in row_dict and row_dict["TERM"] in semester_suffix_map_inv:
-            row_dict["TERM"] = translate_semester_inv(row_dict["TERM"])
+        if "TERM" in row_dict:
+            stripped_term = row_dict["TERM"].strip()
+            if stripped_term[-2:] in semester_suffix_map_inv:
+                row_dict["TERM"] = translate_semester_inv(stripped_term)
         return row_dict
 
 

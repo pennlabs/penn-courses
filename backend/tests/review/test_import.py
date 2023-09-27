@@ -116,6 +116,17 @@ class SQLParseTestCase(TestCase):
         self.assertIsInstance(parse, dict)
         self.assertDictEqual(expected, parse)
 
+    def test_semester_transformation(self):
+        query = """
+        INSERT into PCRDEV.TEST_PCR_COURSE_DESC_V
+        (TERM) Values ('202230');
+        """
+        parse = parse_row(query)
+        expected = {
+            "TERM": "2022C"
+        }
+        self.assertDictEqual(parse, expected)
+
 
 class ReviewImportTestCase(TestCase):
     def setUp(self):
