@@ -32,7 +32,11 @@ export class MyChart extends PennLabsChart {
       },
       djangoSettingsModule: 'PennCourses.settings.production',
       ingressProps: {
-        annotations: { ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';" },
+        annotations: {
+          ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';",
+          ["ingress.kubernetes.io/protocol"]: "https",
+          ["traefik.ingress.kubernetes.io/router.middlewares"]: "default-redict-http@kubernetescrd"
+        },
       },
       domains: [{ host: 'penncourseplan.com', paths: ["/api", "/admin", "/accounts", "/assets"] },
       { host: 'penncoursealert.com', paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"] },
@@ -48,7 +52,11 @@ export class MyChart extends PennLabsChart {
       },
       djangoSettingsModule: 'PennCourses.settings.production',
       ingressProps: {
-        annotations: { ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';" },
+        annotations: {
+          ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';",
+          ["ingress.kubernetes.io/protocol"]: "https",
+          ["traefik.ingress.kubernetes.io/router.middlewares"]: "default-redict-http@kubernetescrd"
+        },
       },
       domains: [{ host: 'penncoursereview.com', paths: ["/api/ws"] }],
     });
