@@ -4,9 +4,8 @@ Welcome to the Penn Courses Backend (PCX)!
 
 ### Prerequisites
 
-- Python 3.10 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
-- [`pipenv`](https://pipenv.pypa.io/en/latest/)
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
+- `psql` (usually packaged as `postgresql-client`)
 
 ### Running the Backend with Docker-Compose
 
@@ -66,7 +65,8 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
 ### Via Database Dump (Penn Labs members)
 
 - To get going quickly with a local database loaded with lots of test data,
-   you can download this [pcx_test.sql](https://files.slack.com/files-pri/T4EM1119V-F04FPSTNF46/download/pcx_test_12_2022.sql) SQL dump file. You will only be able to access this if you are a member of labs; if you still need access to data, read on. 
+   you can download this [pcx_test.sql](https://files.slack.com/files-pri/T4EM1119V-F04FPSTNF46/download/pcx_test_12_2022.sql) SQL dump file. You will only be able to access this if you are a member of labs; if you still need access to data, read on.
+- First you'll need to install `psql` (see [Prerequisites](#prerequisites))
 - Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
 - Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
    
@@ -136,7 +136,14 @@ prompts, add the `--force` flag.
 
 ## Running the Backend Natively
 
-If you don't want to use docker, you can also set up and run the dev environment natively.
+If you don't want to use docker alone, you can also set up and run the dev environment more natively.
+
+### Prerequisites
+- Python 3.10 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
+- [`pipenv`](https://pipenv.pypa.io/en/latest/)
+- [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
+
+`psql` is required to load data into the db, but it should be installed when you install `postgres`/`psycopg2`.
 
 1. `cd backend`
 2. Compiling postgres (`psycopg2`)
