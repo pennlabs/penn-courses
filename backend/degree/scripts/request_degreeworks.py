@@ -3,6 +3,7 @@ from requests import Session
 from structs import DegreePlan
 from tqdm import tqdm
 import json
+from pathlib import Path
 
 with open("degreeworks_env.json") as f:
     env = json.load(f)
@@ -2344,12 +2345,18 @@ def get_programs(timeout=30, year: int=2023) -> str:
     return [program["key"] for program in res.json()[0]["goals"][1]["choices"]]
 
 
+def write_dp(dp: DegreePlan, json: dict, dir: str | Path="degreeplans"):
+    with open(Path(
+        dir, 
+        f"{dp.year}-{dp.program}-{dp.degree}-{dp.major}-{dp.concentration}"
+    )) as f:
+        json.dump(json, f, indent=4)
+
 if __name__ == "__main__":
     for year in range(2017, 2023 + 1):
+        print(year)
         for program in get_programs(year=year):
-            print(program)
+            print("\t" + program)
             for degree_plan in tqdm(degree_plans_of(program), year=year):
-                audit(degree_plan)
-
-            
+                write_dp(degree_plan, audit(degree_plan))
             
