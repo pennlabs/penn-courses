@@ -237,7 +237,7 @@ def evaluate_condition(condition, degree_plan) -> bool:
         raise LookupError(f"Unknown condition type in ifStmt: {condition.keys()}")
 
 
-def parse_rulearray(ruleArray, degree_plan) -> list[Rule]:
+def parse_rulearray(ruleArray, degree_plan, parent_rule=None) -> list[Rule]:
     """
     Logic to parse a single degree ruleArray in a blockArray requirement.
     A ruleArray consists of a list of rule objects that contain a requirement object.
@@ -340,6 +340,7 @@ def parse_rulearray(ruleArray, degree_plan) -> list[Rule]:
                 else:
                     print("WARNING: subset has no ruleArray")
             case "Group":  # TODO: this is nested
+                assert parent_rule is None or parent_rule["ruleType"] != "Group"
                 q = Q()
                 [q := q & rule.q for rule in parse_rulearray(rule["ruleArray"], degree_plan)]
                 rules.append(
@@ -1409,7 +1410,7 @@ if __name__ == "__main__":
         DegreePlan(program="EU_BAS", degree="BAS", major="VLST", concentration="PAS", year=2023),
     ]
 
-    for i, degree_plan in enumerate(E_BAS_DEGREE_PLANS):
+    for i, degree_plan in enumerate(W_BAS_DEGREE_PLANS):
         print(degree_plan)
         pprint(parse_degreeworks(audit(degree_plan), degree_plan))
 
