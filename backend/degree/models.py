@@ -12,6 +12,12 @@ class DegreePlan(models.Model):
 
     program = models.CharField(
         max_length=32,
+        choices=[
+            ("EU_BSE", "Engineering BSE"),
+            ("EU_BAS", "Engineering BAS"),
+            ("AU_BA", "College BA"),
+            ("WU_BS", "Wharton BS"),
+        ],
         help_text=dedent(
             """
             The program code for this degree plan, e.g., EU_BSE
