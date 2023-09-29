@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from requests import Session
 from structs import DegreePlan
+from tqdm import tqdm
 import json
 
 with open("degreeworks_env.json") as f:
@@ -22,7 +23,10 @@ s.cookies.update(cookies)
 s.headers.update(headers)
 
 
-def audit(degree_plan: DegreePlan, timeout=30):
+def audit(degree_plan: DegreePlan, timeout=30) -> dict:
+    """
+    
+    """
     payload = {
         "studentId": env["PENN_ID"],
         "isIncludeInprogress": True,
@@ -53,7 +57,7 @@ def audit(degree_plan: DegreePlan, timeout=30):
     return res.json()
 
 
-def degree_plans_of(program_code):
+def degree_plans_of(program_code: str, year: int=2023) -> list[DegreePlan]:
     goals_payload = [
         {
             "id": "programCollection",
@@ -62,7 +66,7 @@ def degree_plans_of(program_code):
             "goals": [
                 {
                     "name": "catalogYear",
-                    "selectedChoices": ["2023"],
+                    "selectedChoices": [str(year)],
                     "ruleGoalCode": None,
                     "links": [],
                 },
@@ -379,7 +383,7 @@ def degree_plans_of(program_code):
     return degree_plans
 
 
-def get_programs(timeout=30):
+def get_programs(timeout=30, year: int=2023) -> str:
     goals_payload = [
         {
             "id": "programCollection",
@@ -401,7 +405,7 @@ def get_programs(timeout=30):
                     "source": "api/catalogYears",
                     "errorMessage": "",
                     "choices": [],
-                    "selectedChoices": ["2023"],
+                    "selectedChoices": [str(year)],
                     "ruleGoalCode": None,
                     "links": [],
                 },
@@ -2341,4 +2345,11 @@ def get_programs(timeout=30):
 
 
 if __name__ == "__main__":
-    print(sorted(get_programs()))
+    for year in range(2017, 2023 + 1):
+        for program in get_programs(year=year):
+            print(program)
+            for degree_plan in tqdm(degree_plans_of(program), year=year):
+                audit(degree_plan)
+
+            
+            
