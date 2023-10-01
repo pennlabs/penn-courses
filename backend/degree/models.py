@@ -92,12 +92,11 @@ class Requirement(models.Model):
             """
         ),
     )
-    degree_plan = models.ForeignKey(
+    degree_plan = models.ManyToManyField(
         DegreePlan,
-        on_delete=models.CASCADE,
         help_text=dedent(
             """
-            The degree plan that has this requirement.
+            The degree plan(s) that have this requirement.
             """
         ),
     )

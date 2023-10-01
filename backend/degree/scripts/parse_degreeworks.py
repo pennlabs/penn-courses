@@ -1410,7 +1410,7 @@ if __name__ == "__main__":
         DegreePlan(program="EU_BAS", degree="BAS", major="VLST", concentration="PAS", year=2023),
     ]
 
-    for i, degree_plan in enumerate(W_BAS_DEGREE_PLANS):
+    for i, degree_plan in enumerate(E_BAS_DEGREE_PLANS):
         print(degree_plan)
         pprint(parse_degreeworks(audit(degree_plan), degree_plan))
 

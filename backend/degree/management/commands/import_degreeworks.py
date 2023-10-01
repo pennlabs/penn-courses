@@ -1,12 +1,13 @@
-from django.core.management.base import BaseCommand
 import tqdm
+from django.core.management.base import BaseCommand
 
 from degree.models import DegreePlan, Requirement, Rule
-from degree.utils.request_degreeworks import get_programs, degree_plans_of, audit, write_dp
+from degree.utils.request_degreeworks import audit, degree_plans_of, get_programs, write_dp
 
 
 class Command(BaseCommand):
-    help = "TODO: ADD HELP TEXT"
+    # TODO: ADD HELP TEXT
+    help = ""
 
     def handle(self, *args, **kwargs):
         for year in range(2017, 2023 + 1):
