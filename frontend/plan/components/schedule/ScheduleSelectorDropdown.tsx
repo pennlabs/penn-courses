@@ -466,20 +466,14 @@ const ScheduleSelectorDropdown = ({
                         <div className="info">
                             {hasFriends ? (
                                 <div>
-                                    {primaryScheduleId !== "-1" ? (
-                                        <div className="friends">
-                                            Friends
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            Click{" "}
-                                            <i
-                                                className="fa fa-user"
-                                                aria-hidden="true"
-                                            />{" "}
-                                            to set your shared schedule
-                                        </div>
-                                    )}
+                                    <div>
+                                        Click{" "}
+                                        <i
+                                            className="fa fa-user"
+                                            aria-hidden="true"
+                                        />{" "}
+                                        to set your shared schedule
+                                    </div>
                                 </div>
                             ) : (
                                 "Add a friend to share a schedule"

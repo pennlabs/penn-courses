@@ -43,6 +43,7 @@ const AddScheduleFriendsModalInterior = ({
     const [errorObj, setErrorObj] = useState({ message: "", error: false });
 
     useEffect(() => {
+        console.log(existingData)
         validateInput(
             user,
             userInput,
