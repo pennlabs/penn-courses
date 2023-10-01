@@ -1,9 +1,12 @@
-from dataclasses import dataclass
-from requests import Session
-from structs import DegreePlan
-from tqdm import tqdm
 import json
 from pathlib import Path
+
+from requests import Session
+
+from degree.models import DegreePlan
+
+
+DEGREEWORKS_HOST = "degreeworks-prod-j.isc-seo.upenn.edu:9904"
 
 with open("degreeworks_env.json") as f:
     env = json.load(f)
@@ -15,8 +18,8 @@ cookies = {
 }
 
 headers = {
-    "Host": "degreeworks-prod-j.isc-seo.upenn.edu:9904",
-    "Origin": "https://degreeworks-prod-j.isc-seo.upenn.edu:9904",
+    "Host": DEGREEWORKS_HOST,
+    "Origin": f"https://{DEGREEWORKS_HOST}",
 }
 
 s = Session()
@@ -24,364 +27,10 @@ s.cookies.update(cookies)
 s.headers.update(headers)
 
 
-def audit(degree_plan: DegreePlan, timeout=30):
-    payload = {
-        "studentId": env["PENN_ID"],
-        "isIncludeInprogress": True,
-        "isIncludePreregistered": True,
-        "isKeepCurriculum": False,
-        "school": "UG",
-        "degree": degree_plan.degree,
-        "catalogYear": degree_plan.year,
-        "goals": [
-            {"code": "MAJOR", "value": degree_plan.major},
-            {"code": "CONC", "value": degree_plan.concentration},
-            {"code": "PROGRAM", "value": degree_plan.program},
-            {"code": "COLLEGE", "value": degree_plan.program.split("_")[0]},
-        ],
-        "classes": [],
-    }
-
-    res = s.post(
-        "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/audit",
-        headers=headers,
-        cookies=cookies,
-        json=payload,
-        timeout=timeout,
-    )
-
-    res.raise_for_status()
-
-    return res.json()
-
-
-def degree_plans_of(program_code):
-    goals_payload = [
-        {
-            "id": "programCollection",
-            "description": "Program",
-            "isExpandable": False,
-            "goals": [
-                {
-                    "name": "catalogYear",
-                    "selectedChoices": ["2023"],
-                    "ruleGoalCode": None,
-                    "links": [],
-                },
-                {
-                    "name": "program",
-                    "description": "Program",
-                    "entityName": "programs",
-                    "isDisabled": False,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": True,
-                    "isStatic": False,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "",
-                    "errorMessage": "",
-                    "selectedChoices": ["AU_BA_BIOD_U"],
-                    "ruleGoalCode": "PROGRAM",
-                    "links": [],
-                },
-                {
-                    "name": "school",
-                    "description": "Level",
-                    "entityName": "schools",
-                    "isDisabled": True,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": True,
-                    "isStatic": False,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "",
-                    "errorMessage": "",
-                    "choices": [
-                        {
-                            "key": "UG",
-                            "description": "Undergraduate",
-                            "isVisibleInWhatif": True,
-                        }
-                    ],
-                    "selectedChoices": ["UG"],
-                    "ruleGoalCode": "SCHOOL",
-                    "links": [],
-                },
-                {
-                    "name": "college",
-                    "description": "College",
-                    "entityName": "colleges",
-                    "isDisabled": True,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": True,
-                    "isStatic": False,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "",
-                    "errorMessage": "",
-                    "selectedChoices": ["AU"],
-                    "ruleGoalCode": "COLLEGE",
-                    "links": [],
-                },
-                {
-                    "name": "degree",
-                    "description": "Degree",
-                    "entityName": "degrees",
-                    "isDisabled": True,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": True,
-                    "isStatic": False,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "",
-                    "errorMessage": "",
-                    "choices": [
-                        {
-                            "key": "BA",
-                            "description": "Bachelor of Arts",
-                            "isVisibleInWhatif": True,
-                        }
-                    ],
-                    "selectedChoices": ["BA"],
-                    "ruleGoalCode": "DEGREE",
-                    "links": [],
-                },
-            ],
-        },
-        {
-            "id": "curriculumCollection",
-            "description": "Areas of study",
-            "isExpandable": False,
-            "goals": [
-                {
-                    "name": "major",
-                    "description": "Major",
-                    "entityName": "majors",
-                    "isDisabled": False,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": True,
-                    "isStatic": False,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "",
-                    "errorMessage": "",
-                    "selectedChoices": ["ANTH"],
-                    "ruleGoalCode": "MAJOR",
-                    "links": [],
-                },
-                {
-                    "name": "concentration",
-                    "description": "Concentration",
-                    "entityName": "concentrations",
-                    "isDisabled": True,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": False,
-                    "isStatic": True,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "",
-                    "errorMessage": "",
-                    "choices": [],
-                    "selectedChoices": [],
-                    "ruleGoalCode": None,
-                    "links": [],
-                },
-                {
-                    "name": "minor",
-                    "description": "Minor",
-                    "entityName": "minors",
-                    "isDisabled": False,
-                    "isDriver": False,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": False,
-                    "isStatic": False,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "",
-                    "errorMessage": "",
-                    "selectedChoices": [],
-                    "ruleGoalCode": "PROGRAM",
-                    "links": [],
-                },
-                {
-                    "name": "secondaryCollege",
-                    "description": "College",
-                    "entityName": "colleges",
-                    "isDisabled": True,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": False,
-                    "isStatic": True,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "api/colleges",
-                    "errorMessage": "",
-                    "choices": [],
-                    "selectedChoices": [],
-                    "ruleGoalCode": None,
-                    "links": [],
-                },
-                {
-                    "name": "secondaryDegree",
-                    "description": "Degree",
-                    "entityName": "degrees",
-                    "isDisabled": True,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": False,
-                    "isStatic": True,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "api/degrees",
-                    "errorMessage": "",
-                    "choices": [],
-                    "selectedChoices": [],
-                    "ruleGoalCode": None,
-                    "links": [],
-                },
-                {
-                    "name": "secondaryMajor",
-                    "description": "Major",
-                    "entityName": "majors",
-                    "isDisabled": True,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": False,
-                    "isStatic": True,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "api/majors-whatif",
-                    "errorMessage": "",
-                    "choices": [],
-                    "selectedChoices": [],
-                    "ruleGoalCode": None,
-                    "links": [],
-                },
-                {
-                    "name": "secondaryConcentration",
-                    "description": "Concentration",
-                    "entityName": "concentrations",
-                    "isDisabled": True,
-                    "isDriver": False,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": False,
-                    "isStatic": True,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "api/concentrations",
-                    "errorMessage": "",
-                    "choices": [],
-                    "selectedChoices": [],
-                    "ruleGoalCode": None,
-                    "links": [],
-                },
-                {
-                    "name": "secondaryMinor",
-                    "description": "Minor",
-                    "entityName": "minors",
-                    "isDisabled": True,
-                    "isDriver": True,
-                    "isError": False,
-                    "isMultiple": False,
-                    "isRequired": False,
-                    "isStatic": True,
-                    "isVisible": True,
-                    "isNoValidOptionsWarning": False,
-                    "source": "api/minors-whatif",
-                    "errorMessage": "",
-                    "choices": [],
-                    "selectedChoices": [],
-                    "ruleGoalCode": None,
-                    "links": [],
-                },
-            ],
-        },
-    ]
-
-    degree_plans: list[DegreePlan] = []
-    # set program
-    goals_payload[0]["goals"][1]["selectedChoices"] = [program_code]
-
-    res = s.post(
-        "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
-        headers=headers,
-        cookies=cookies,
-        json=goals_payload,
-    )
-
-    # LEVEL
-    levels = res.json()[0]["goals"][2]["choices"]
-    if len([choice for choice in levels if choice["key"] == "UG"]) < 1:
-        print("No undergraduate degree for program", program_code)
-        return
-    goals_payload[0]["goals"][2]["selectedChoices"] = ["UG"]
-
-    # DEGREE
-    degrees = res.json()[0]["goals"][4]["choices"]
-    for degree in degrees:
-        degree_code = degree["key"]
-        print(program_code, " : ", degree_code)
-        assert degree_code.startswith("B")  # ie, is a bachelor's degree
-
-        # set degree
-        goals_payload[0]["goals"][4]["selectedChoices"] = [degree_code]
-
-        res = s.post(
-            "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
-            headers=headers,
-            cookies=cookies,
-            json=goals_payload,
-        )
-
-        majors = res.json()[1]["goals"][0]["choices"]
-
-        # MAJOR
-        for major in majors:
-            major_code = major["key"]
-            print("\t", major_code)
-
-            goals_payload[1]["goals"][0]["selectedChoices"] = [major_code]
-
-            res = s.post(
-                "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
-                headers=headers,
-                cookies=cookies,
-                json=goals_payload,
-            )
-
-            # CONCENTRATION
-            concentrations = res.json()[1]["goals"][1]["choices"]
-            if len(concentrations) == 0:
-                degree_plans.append(DegreePlan(program_code, degree_code, major_code, None, 2023))
-                continue
-            for concentration in concentrations:
-                concentration_code = concentration["key"]
-                print("\t\t", concentration_code)
-                degree_plans.append(
-                    DegreePlan(program_code, degree_code, major_code, concentration_code, 2023)
-                )
-
-    return degree_plans
-
-
-def get_programs(timeout=30):
+def get_programs(timeout: int = 30, year: int = 2023) -> list[str]:
+    """
+    Returns a list of program codes for each program in the given year
+    """
     goals_payload = [
         {
             "id": "programCollection",
@@ -403,7 +52,7 @@ def get_programs(timeout=30):
                     "source": "api/catalogYears",
                     "errorMessage": "",
                     "choices": [],
-                    "selectedChoices": ["2023"],
+                    "selectedChoices": [str(year)],
                     "ruleGoalCode": None,
                     "links": [],
                 },
@@ -2331,7 +1980,7 @@ def get_programs(timeout=30):
         },
     ]
     res = s.post(
-        "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
+        f"https://{DEGREEWORKS_HOST}/api/goals",
         headers=headers,
         cookies=cookies,
         json=goals_payload,
@@ -2342,15 +1991,376 @@ def get_programs(timeout=30):
     return [program["key"] for program in res.json()[0]["goals"][1]["choices"]]
 
 
+def degree_plans_of(program_code):
+    goals_payload = [
+        {
+            "id": "programCollection",
+            "description": "Program",
+            "isExpandable": False,
+            "goals": [
+                {
+                    "name": "catalogYear",
+                    "selectedChoices": ["2023"],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "program",
+                    "description": "Program",
+                    "entityName": "programs",
+                    "isDisabled": False,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "selectedChoices": ["AU_BA_BIOD_U"],
+                    "ruleGoalCode": "PROGRAM",
+                    "links": [],
+                },
+                {
+                    "name": "school",
+                    "description": "Level",
+                    "entityName": "schools",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "choices": [
+                        {
+                            "key": "UG",
+                            "description": "Undergraduate",
+                            "isVisibleInWhatif": True,
+                        }
+                    ],
+                    "selectedChoices": ["UG"],
+                    "ruleGoalCode": "SCHOOL",
+                    "links": [],
+                },
+                {
+                    "name": "college",
+                    "description": "College",
+                    "entityName": "colleges",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "selectedChoices": ["AU"],
+                    "ruleGoalCode": "COLLEGE",
+                    "links": [],
+                },
+                {
+                    "name": "degree",
+                    "description": "Degree",
+                    "entityName": "degrees",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "choices": [
+                        {
+                            "key": "BA",
+                            "description": "Bachelor of Arts",
+                            "isVisibleInWhatif": True,
+                        }
+                    ],
+                    "selectedChoices": ["BA"],
+                    "ruleGoalCode": "DEGREE",
+                    "links": [],
+                },
+            ],
+        },
+        {
+            "id": "curriculumCollection",
+            "description": "Areas of study",
+            "isExpandable": False,
+            "goals": [
+                {
+                    "name": "major",
+                    "description": "Major",
+                    "entityName": "majors",
+                    "isDisabled": False,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": True,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "selectedChoices": ["ANTH"],
+                    "ruleGoalCode": "MAJOR",
+                    "links": [],
+                },
+                {
+                    "name": "concentration",
+                    "description": "Concentration",
+                    "entityName": "concentrations",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "minor",
+                    "description": "Minor",
+                    "entityName": "minors",
+                    "isDisabled": False,
+                    "isDriver": False,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": False,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "",
+                    "errorMessage": "",
+                    "selectedChoices": [],
+                    "ruleGoalCode": "PROGRAM",
+                    "links": [],
+                },
+                {
+                    "name": "secondaryCollege",
+                    "description": "College",
+                    "entityName": "colleges",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/colleges",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "secondaryDegree",
+                    "description": "Degree",
+                    "entityName": "degrees",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/degrees",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "secondaryMajor",
+                    "description": "Major",
+                    "entityName": "majors",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/majors-whatif",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "secondaryConcentration",
+                    "description": "Concentration",
+                    "entityName": "concentrations",
+                    "isDisabled": True,
+                    "isDriver": False,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/concentrations",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+                {
+                    "name": "secondaryMinor",
+                    "description": "Minor",
+                    "entityName": "minors",
+                    "isDisabled": True,
+                    "isDriver": True,
+                    "isError": False,
+                    "isMultiple": False,
+                    "isRequired": False,
+                    "isStatic": True,
+                    "isVisible": True,
+                    "isNoValidOptionsWarning": False,
+                    "source": "api/minors-whatif",
+                    "errorMessage": "",
+                    "choices": [],
+                    "selectedChoices": [],
+                    "ruleGoalCode": None,
+                    "links": [],
+                },
+            ],
+        },
+    ]
+
+    degree_plans: list[DegreePlan] = []
+    # Set program code
+    goals_payload[0]["goals"][1]["selectedChoices"] = [program_code]
+
+    res = s.post(
+        f"https://{DEGREEWORKS_HOST}/api/goals",
+        headers=headers,
+        cookies=cookies,
+        json=goals_payload,
+    )
+
+    # LEVEL
+    levels = res.json()[0]["goals"][2]["choices"]
+    if len([choice for choice in levels if choice["key"] == "UG"]) < 1:
+        print("No undergraduate degree for program", program_code)
+        return
+    goals_payload[0]["goals"][2]["selectedChoices"] = ["UG"]
+
+    # DEGREE
+    degrees = res.json()[0]["goals"][4]["choices"]
+    for degree in degrees:
+        degree_code = degree["key"]
+        print(program_code, " : ", degree_code)
+        assert degree_code.startswith("B")  # i.e., is a bachelor's degree
+
+        # set degree
+        goals_payload[0]["goals"][4]["selectedChoices"] = [degree_code]
+
+        res = s.post(
+            f"https://{DEGREEWORKS_HOST}/api/goals",
+            headers=headers,
+            cookies=cookies,
+            json=goals_payload,
+        )
+
+        majors = res.json()[1]["goals"][0]["choices"]
+
+        # MAJOR
+        for major in majors:
+            major_code = major["key"]
+            print("\t", major_code)
+
+            goals_payload[1]["goals"][0]["selectedChoices"] = [major_code]
+
+            res = s.post(
+                f"https://{DEGREEWORKS_HOST}/api/goals",
+                headers=headers,
+                cookies=cookies,
+                json=goals_payload,
+            )
+
+            # CONCENTRATION
+            concentrations = res.json()[1]["goals"][1]["choices"]
+            if len(concentrations) == 0:
+                degree_plans.append(
+                    DegreePlan(
+                        program=program_code,
+                        degree=degree_code,
+                        major=major_code,
+                        concentration=None,
+                        year=2023,
+                    )
+                )
+                continue
+            for concentration in concentrations:
+                concentration_code = concentration["key"]
+                print("\t\t", concentration_code)
+                degree_plans.append(
+                    DegreePlan(
+                        program=program_code,
+                        degree=degree_code,
+                        major=major_code,
+                        concentration=concentration_code,
+                        year=2023,
+                    )
+                )
+
+    return degree_plans
+
+
+def audit(degree_plan: DegreePlan, timeout=30):
+    payload = {
+        "studentId": env["PENN_ID"],
+        "isIncludeInprogress": True,
+        "isIncludePreregistered": True,
+        "isKeepCurriculum": False,
+        "school": "UG",
+        "degree": degree_plan.degree,
+        "catalogYear": degree_plan.year,
+        "goals": [
+            {"code": "MAJOR", "value": degree_plan.major},
+            {"code": "CONC", "value": degree_plan.concentration},
+            {"code": "PROGRAM", "value": degree_plan.program},
+            {"code": "COLLEGE", "value": degree_plan.program.split("_")[0]},
+        ],
+        "classes": [],
+    }
+
+    res = s.post(
+        f"https://{DEGREEWORKS_HOST}/api/audit",
+        headers=headers,
+        cookies=cookies,
+        json=payload,
+        timeout=timeout,
+    )
+
+    res.raise_for_status()
+    return res.json()
+
+
 def write_dp(dp: DegreePlan, json: dict, dir: str | Path = "degreeplans"):
     with open(Path(dir, f"{dp.year}-{dp.program}-{dp.degree}-{dp.major}-{dp.concentration}")) as f:
         json.dump(json, f, indent=4)
-
-
-if __name__ == "__main__":
-    for year in range(2017, 2023 + 1):
-        print(year)
-        for program in get_programs(year=year):
-            print("\t" + program)
-            for degree_plan in tqdm(degree_plans_of(program), year=year):
-                write_dp(degree_plan, audit(degree_plan))

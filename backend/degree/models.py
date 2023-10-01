@@ -58,7 +58,7 @@ class DegreePlan(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"DegreePlan: {self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})"
+        return f"{self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})"
 
 
 class Requirement(models.Model):
@@ -103,7 +103,7 @@ class Requirement(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"Requirement: {self.name} ({self.code}), min_cus={self.min_cus}, degree_plan={self.degree_plan}"
+        return f"{self.name} ({self.code}), min_cus={self.min_cus}, degree_plan={self.degree_plan}"
 
 
 class Rule(models.Model):
@@ -168,4 +168,4 @@ class Rule(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"Rule: {self.q}, min_num={self.min_num}, max_num={self.max_num}, min_cus={self.min_cus}, max_cus={self.max_cus}, requirement={self.requirement}"
+        return f"{self.q}, min_num={self.min_num}, max_num={self.max_num}, min_cus={self.min_cus}, max_cus={self.max_cus}, requirement={self.requirement}"
