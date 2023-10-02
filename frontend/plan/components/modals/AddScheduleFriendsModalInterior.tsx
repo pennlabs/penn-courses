@@ -74,7 +74,10 @@ const AddScheduleFriendsModalInterior = ({
                         if (responseResult.error) {
                             setErrorObj(responseResult);
                         } else {
-                            close();
+                            setErrorObj({
+                                message: "Success! Your friendship request was sent.",
+                                error: false,
+                            });
                         }
                     }
                 );
@@ -109,7 +112,13 @@ const AddScheduleFriendsModalInterior = ({
                 }}
                 placeholder={placeholder}
             />
-            <p className="error_message">{errorObj.message}</p>
+            <p 
+                className="error_message" 
+                style={{
+                    color: errorObj.error ? "red" : "green",
+                }}>
+                    {errorObj.message}
+            </p>
             <button
                 className="button is-link"
                 type="button"
