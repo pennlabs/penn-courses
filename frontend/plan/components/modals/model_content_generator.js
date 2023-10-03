@@ -35,9 +35,7 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <NameScheduleModalInterior
                     buttonName="Rename"
-                    existingData={Object.keys(
-                        reduxState.schedule.schedules
-                    )}
+                    existingData={Object.keys(reduxState.schedule.schedules)}
                     mode="schedule"
                 />
             );
