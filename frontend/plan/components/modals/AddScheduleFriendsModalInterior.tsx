@@ -4,6 +4,7 @@ import {
     validateInput,
 } from "./modal_actions";
 import { User } from "../../types";
+import { showToast } from "../../pages";
 
 interface AddScheduleFriendsModalInteriorProps {
     user: User;
@@ -43,7 +44,7 @@ const AddScheduleFriendsModalInterior = ({
     const [errorObj, setErrorObj] = useState({ message: "", error: false });
 
     useEffect(() => {
-        console.log(existingData)
+        console.log(existingData);
         validateInput(
             user,
             userInput,
@@ -74,10 +75,11 @@ const AddScheduleFriendsModalInterior = ({
                         if (responseResult.error) {
                             setErrorObj(responseResult);
                         } else {
-                            setErrorObj({
-                                message: "Success! Your friendship request was sent.",
-                                error: false,
-                            });
+                            showToast(
+                                "Success! Your friend request was sent.",
+                                false
+                            );
+                            close();
                         }
                     }
                 );
@@ -112,13 +114,7 @@ const AddScheduleFriendsModalInterior = ({
                 }}
                 placeholder={placeholder}
             />
-            <p 
-                className="error_message" 
-                style={{
-                    color: errorObj.error ? "red" : "green",
-                }}>
-                    {errorObj.message}
-            </p>
+            <p className="error_message">{errorObj.message}</p>
             <button
                 className="button is-link"
                 type="button"

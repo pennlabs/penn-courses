@@ -19,6 +19,7 @@ import {
     REMOVE_CART_ITEM,
 } from "../actions";
 import { scheduleContainsSection } from "../components/meetUtil";
+import { showToast } from "../pages";
 
 import { MIN_TIME_DIFFERENCE } from "../constants/sync_constants";
 
@@ -148,9 +149,10 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
             // If changes to the cart are still syncing, ignore the requested update
             if (
                 !("cartId" in newState) ||
-                newState.cartPushedToBackend &&
-                cloudUpdated >= newState.cartUpdatedAt &&
-                cloudUpdated - newState.cartUpdatedAt >= MIN_TIME_DIFFERENCE
+                (newState.cartPushedToBackend &&
+                    cloudUpdated >= newState.cartUpdatedAt &&
+                    cloudUpdated - newState.cartUpdatedAt >=
+                        MIN_TIME_DIFFERENCE)
             ) {
                 newState = {
                     ...newState,
@@ -340,6 +342,8 @@ export const schedule = (state = initialState, action) => {
                     },
                 };
             }
+            showToast("Cannot add courses to a friend's schedule!", true);
+
             return {
                 ...state,
             };
@@ -361,6 +365,8 @@ export const schedule = (state = initialState, action) => {
                     },
                 };
             }
+            showToast("Cannot remove courses from a friend's schedule!", true);
+
             return {
                 ...state,
             };
