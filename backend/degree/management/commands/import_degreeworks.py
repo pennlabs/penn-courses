@@ -1,7 +1,7 @@
 import tqdm
 from django.core.management.base import BaseCommand
 
-from degree.models import DegreePlan, Requirement, Rule
+from degree.models import DegreePlan, Rule
 from degree.utils.request_degreeworks import audit, degree_plans_of, get_programs, write_dp
 
 

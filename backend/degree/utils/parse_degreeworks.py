@@ -1,6 +1,6 @@
 from django.db.models import Q
 
-from degree.models import DegreePlan, Requirement, Rule
+from degree.models import DegreePlan, Rule
 
 # TODO: these should not be hardcoded, but rather added to the database
 E_DEPTS = ["BE", "CIS", "CMPE", "EAS", "ESE", "MEAM", "MSE", "NETS", "ROBO"]  # SEAS
@@ -354,9 +354,9 @@ def parse_rulearray(ruleArray, degree_plan, parent_rule=None) -> list[Rule]:
 
 
 # TODO: Make the function names more descriptive
-def parse_degreeworks(json: str, degree_plan: DegreePlan) -> list[Requirement]:
+def parse_degreeworks(json: str, degree_plan: DegreePlan) -> list[Rule]:
     """
-    Returns a list of Requirements given a DegreeWorks JSON audit and a DegreePlan.
+    Returns a list of Rules given a DegreeWorks JSON audit and a DegreePlan.
     """
     blockArray = json.get("blockArray")
 
@@ -364,7 +364,7 @@ def parse_degreeworks(json: str, degree_plan: DegreePlan) -> list[Requirement]:
     degree_reqs = []
 
     for requirement in blockArray:
-        degree_req = Requirement(
+        degree_req = Rule(
             name=requirement["title"],
             code=requirement["requirementValue"],
             # TODO: parse min_cus
