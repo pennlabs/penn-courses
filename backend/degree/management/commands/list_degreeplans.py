@@ -1,30 +1,86 @@
 
 from textwrap import dedent
 
+from dataclasses import asdict
+
 from django.core.management.base import BaseCommand
 
-from degree.degreeworks.request_degreeworks import degree_plans_of, get_programs
+from degree.degreeworks.request_degreeworks import DegreeworksClient
+
+from os import getenv
+
+from tqdm import tqdm
+
+from pprint import pprint
+
+from courses.util import get_current_semester
 
 class Command(BaseCommand):
-    help = "Remove duplicate/redundant status updates from the given semesters."
+    help = dedent("""
+    Lists the available degreeplans for a semester. 
+        
+    Expects PENN_ID, X-AUTH-TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
+    recommended you add a .env file to the backend and let pipenv load it in for you.
+    """
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--semesters",
-            type=str,
-            help=dedent(
-                """
-                The semesters argument should be a comma-separated list of semesters
-            corresponding to the semesters for which you want to remove duplicate/redundant
-            status updates, i.e. "2019C,2020A,2020C" for fall 2019, spring 2020, and fall 2020.
-            If this argument is omitted, stats are only recomputed for the current semester.
-            If you pass "all" to this argument, this script will remove duplicate/redundant
-            status updates for all semesters found in Courses in the db.
-                """
-            ),
+            "--out-file",
+            help=dedent("""
+            A .json to write out the degreeplans to
+            """
+            )
+        )
+
+        parser.add_argument(
+            "--since-year",
             nargs="?",
-            default=None,
+            type=int,
+            default=2017,
+            help=dedent("""
+            The minimum year to list degreeplans from.
+            """
+            ),
+        )
+        
+        parser.add_argument(
+            "--to-year",
+            type=int,
+            help=dedent("""
+            The max year to list degreeplans from. If this is not provided, then
+            degree plans are listed until the current year (as provided by get_current_semester).
+            """
+            ),
         )
 
     def handle(self, *args, **kwargs):
-        pass
+        pennid = getenv("PENN_ID")
+        assert pennid is not None        
+        auth_token = getenv("X-AUTH-TOKEN")
+        assert pennid is not None
+        refresh_token = getenv("REFRESH_TOKEN")
+        assert refresh_token is not None
+        name = getenv("NAME")
+        assert name is not None
+
+        client = DegreeworksClient(
+            pennid=pennid,
+            auth_token=auth_token,
+            refresh_token=refresh_token,
+            name=name
+        )
+
+        out_handle = open(kwargs["out_file"], "w") if kwargs["out_file"] is not None else None
+        since_year = kwargs["since_year"]
+        to_year = kwargs["to_year"] or int(get_current_semester()[:4])
+
+        for year in range(since_year, to_year + 1):
+            for program in client.get_programs(year=year):
+                for degree_plan in client.degree_plans_of(program, year=year):
+                    if out_handle is not None:
+                        out_handle.write(asdict(degree_plan)) 
+                    pprint(degree_plan, width=-1)
+
+        if out_handle is not None:
+            out_handle.close()
