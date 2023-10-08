@@ -8,6 +8,8 @@ from pathlib import Path
 with open("degreeworks_env.json") as f:
     env = json.load(f)
 
+BASE_URL = "https://degreeworks-prod-j.isc-seo.upenn.edu:9904" # "128.91.225.72:9904" 
+
 cookies = {
     "REFRESH_TOKEN": env["REFRESH_TOKEN"],
     "NAME": env["NAME"],
@@ -16,7 +18,7 @@ cookies = {
 
 headers = {
     "Host": "degreeworks-prod-j.isc-seo.upenn.edu:9904",
-    "Origin": "https://degreeworks-prod-j.isc-seo.upenn.edu:9904",
+    "Origin": f"{BASE_URL}",
 }
 
 s = Session()
@@ -46,7 +48,7 @@ def audit(degree_plan: DegreePlan, timeout=30) -> dict:
     }
 
     res = s.post(
-        "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/audit",
+        f"{BASE_URL}/api/audit",
         headers=headers,
         cookies=cookies,
         json=payload,
@@ -58,7 +60,7 @@ def audit(degree_plan: DegreePlan, timeout=30) -> dict:
     return res.json()
 
 
-def degree_plans_of(program_code: str, year: int=2023) -> list[DegreePlan]:
+def degree_plans_of(program_code: str, year: int=2023, undergrad_only=False) -> list[DegreePlan]:
     goals_payload = [
         {
             "id": "programCollection",
@@ -323,7 +325,7 @@ def degree_plans_of(program_code: str, year: int=2023) -> list[DegreePlan]:
     goals_payload[0]["goals"][1]["selectedChoices"] = [program_code]
 
     res = s.post(
-        "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
+        f"{BASE_URL}/api/goals",
         headers=headers,
         cookies=cookies,
         json=goals_payload,
@@ -331,9 +333,9 @@ def degree_plans_of(program_code: str, year: int=2023) -> list[DegreePlan]:
 
     # LEVEL
     levels = res.json()[0]["goals"][2]["choices"]
-    if len([choice for choice in levels if choice["key"] == "UG"]) < 1:
+    if undergrad_only and len([choice for choice in levels if choice["key"] == "UG"]) < 1:
         print("No undergraduate degree for program", program_code)
-        return
+        return []
     goals_payload[0]["goals"][2]["selectedChoices"] = ["UG"]
 
     # DEGREE
@@ -341,13 +343,14 @@ def degree_plans_of(program_code: str, year: int=2023) -> list[DegreePlan]:
     for degree in degrees:
         degree_code = degree["key"]
         print(program_code, " : ", degree_code)
-        assert degree_code.startswith("B")  # ie, is a bachelor's degree
+        if undergrad_only:
+            assert degree_code.startswith("B")  # ie, is a bachelor's degree
 
         # set degree
         goals_payload[0]["goals"][4]["selectedChoices"] = [degree_code]
 
         res = s.post(
-            "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
+            f"{BASE_URL}/api/goals",
             headers=headers,
             cookies=cookies,
             json=goals_payload,
@@ -363,7 +366,7 @@ def degree_plans_of(program_code: str, year: int=2023) -> list[DegreePlan]:
             goals_payload[1]["goals"][0]["selectedChoices"] = [major_code]
 
             res = s.post(
-                "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
+                f"{BASE_URL}/api/goals",
                 headers=headers,
                 cookies=cookies,
                 json=goals_payload,
@@ -2334,7 +2337,7 @@ def get_programs(timeout=30, year: int=2023) -> str:
         },
     ]
     res = s.post(
-        "https://degreeworks-prod-j.isc-seo.upenn.edu:9904/api/goals",
+        f"{BASE_URL}/api/goals",
         headers=headers,
         cookies=cookies,
         json=goals_payload,
@@ -2345,18 +2348,29 @@ def get_programs(timeout=30, year: int=2023) -> str:
     return [program["key"] for program in res.json()[0]["goals"][1]["choices"]]
 
 
-def write_dp(dp: DegreePlan, json: dict, dir: str | Path="degreeplans"):
-    with open(Path(
+def write_dp(dp: DegreePlan, audit_json: dict, dir: str | Path="degreeplans", overwrite=False):
+    file_name = f"{dp.year}-{dp.program}-{dp.degree}-{dp.major}"
+    if dp.concentration is not None:
+        file_name += f"-{dp.concentration}"
+    Path(dir).mkdir(
+        exist_ok=True, # will still throw an error if dir is a non-directory file
+        parents=True
+    )
+    file_path = Path(
         dir, 
-        f"{dp.year}-{dp.program}-{dp.degree}-{dp.major}-{dp.concentration}"
-    )) as f:
-        json.dump(json, f, indent=4)
+        file_name
+    )
+    if not overwrite and file_path.exists():
+        return
+
+    with open(file_path, "w") as f:
+        json.dump(audit_json, f, indent=4)
 
 if __name__ == "__main__":
     for year in range(2017, 2023 + 1):
         print(year)
         for program in get_programs(year=year):
             print("\t" + program)
-            for degree_plan in tqdm(degree_plans_of(program), year=year):
+            for degree_plan in tqdm(degree_plans_of(program, year=year)):
                 write_dp(degree_plan, audit(degree_plan))
             
