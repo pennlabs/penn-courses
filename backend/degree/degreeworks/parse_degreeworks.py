@@ -1,5 +1,5 @@
 from django.db.models import Q
-from request_degreeworks import audit
+from backend.degree.degreeworks.request_degreeworks import audit
 from structs import DegreePlan, Requirement, Rule
 from pprint import pprint
 
