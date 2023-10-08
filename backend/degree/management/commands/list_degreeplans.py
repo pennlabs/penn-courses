@@ -55,6 +55,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
+        out_handle = open(kwargs["out_file"], "w") if kwargs["out_file"] is not None else None
+        since_year = kwargs["since_year"]
+        to_year = kwargs["to_year"] or int(get_current_semester()[:4])
+        
         pennid = getenv("PENN_ID")
         assert pennid is not None        
         auth_token = getenv("X-AUTH-TOKEN")
@@ -71,9 +75,6 @@ class Command(BaseCommand):
             name=name
         )
 
-        out_handle = open(kwargs["out_file"], "w") if kwargs["out_file"] is not None else None
-        since_year = kwargs["since_year"]
-        to_year = kwargs["to_year"] or int(get_current_semester()[:4])
 
         for year in range(since_year, to_year + 1):
             for program in client.get_programs(year=year):
